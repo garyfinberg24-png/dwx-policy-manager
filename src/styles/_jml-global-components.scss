@@ -1,0 +1,313 @@
+// =============================================================================
+// JML GLOBAL COMPONENT STYLES
+// =============================================================================
+// This file contains the official standardized styles for JML layout components.
+// Import this file in any webpart that uses Tab Panels, Sub Headers, or other
+// standardized components.
+//
+// Usage: @import '../../styles/jml-global-components';
+//
+// Last Updated: December 2024
+// =============================================================================
+
+// =============================================================================
+// CSS CUSTOM PROPERTIES (Design Tokens)
+// =============================================================================
+:root {
+  // Primary Colors
+  --jml-primary: #0078d4;
+  --jml-primary-dark: #004578;
+  --jml-primary-darker: #003057;
+  --jml-primary-light: #2899f5;
+  --jml-teal: #03787c;
+
+  // Neutral Colors
+  --jml-white: #ffffff;
+  --jml-neutral-lighter: #f3f2f1;
+  --jml-neutral-light: #edebe9;
+  --jml-neutral: #d2d0ce;
+  --jml-neutral-dark: #605e5c;
+  --jml-neutral-primary: #323130;
+
+  // Status Colors
+  --jml-success: #107c10;
+  --jml-warning: #ffb900;
+  --jml-error: #d13438;
+
+  // Spacing (4px grid)
+  --jml-spacing-xxs: 4px;
+  --jml-spacing-xs: 8px;
+  --jml-spacing-s: 12px;
+  --jml-spacing-m: 16px;
+  --jml-spacing-l: 24px;
+  --jml-spacing-xl: 32px;
+  --jml-spacing-xxl: 48px;
+
+  // Border Radius
+  --jml-radius-small: 2px;
+  --jml-radius-medium: 4px;
+  --jml-radius-large: 6px;
+  --jml-radius-xlarge: 8px;
+  --jml-radius-xxlarge: 12px;
+  --jml-radius-pill: 9999px;
+
+  // Typography
+  --jml-font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  --jml-font-size-xs: 10px;
+  --jml-font-size-s: 12px;
+  --jml-font-size-m: 14px;
+  --jml-font-size-l: 16px;
+  --jml-font-size-xl: 20px;
+  --jml-font-size-xxl: 24px;
+  --jml-font-size-hero: 32px;
+
+  // Shadows
+  --jml-shadow-2: 0 1px 2px rgba(0, 0, 0, 0.1);
+  --jml-shadow-4: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --jml-shadow-8: 0 4px 8px rgba(0, 0, 0, 0.1);
+  --jml-shadow-16: 0 8px 16px rgba(0, 0, 0, 0.14);
+}
+
+// =============================================================================
+// 1. TAB PANEL - OFFICIAL STANDARD
+// =============================================================================
+// Container: White bg, 4px blue left border, 8px radius (all corners)
+// Active Tab: Blue background (#0078d4), white text
+// Inactive Tab: Transparent bg, dark text
+// Icons: Monochrome line-style (stroke only), blue inactive, white active
+// =============================================================================
+
+.jml-tab-panel {
+  background: var(--jml-white);
+  border: 1px solid var(--jml-neutral-light);
+  border-left: 4px solid var(--jml-primary);
+  border-radius: var(--jml-radius-xlarge);
+  padding: var(--jml-spacing-xs) var(--jml-spacing-s) var(--jml-spacing-xs) var(--jml-spacing-m);
+  box-shadow: var(--jml-shadow-2);
+  display: flex;
+  align-items: center;
+  gap: var(--jml-spacing-xs);
+  flex-wrap: wrap;
+  margin-bottom: var(--jml-spacing-m);
+}
+
+.jml-tab-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--jml-spacing-xs);
+  padding: 10px 16px;
+  border: none;
+  border-radius: var(--jml-radius-medium);
+  background: transparent;
+  color: var(--jml-neutral-primary);
+  font-family: var(--jml-font-family);
+  font-size: var(--jml-font-size-m);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: var(--jml-neutral-lighter);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--jml-primary);
+    outline-offset: 2px;
+  }
+
+  &.active,
+  &[aria-selected="true"] {
+    background: var(--jml-primary);
+    color: var(--jml-white);
+
+    .jml-tab-icon {
+      stroke: var(--jml-white);
+    }
+  }
+}
+
+// Tab icons - monochrome line-style (stroke only, no fill)
+.jml-tab-icon {
+  width: 18px;
+  height: 18px;
+  stroke: var(--jml-primary);
+  stroke-width: 1.5;
+  fill: none;
+}
+
+.jml-tab-button.active .jml-tab-icon,
+.jml-tab-button[aria-selected="true"] .jml-tab-icon {
+  stroke: var(--jml-white);
+}
+
+// =============================================================================
+// 2. SUB HEADER - OFFICIAL STANDARD (Style 1: Blue Left Accent)
+// =============================================================================
+// Container: Gradient bg (#f0f6ff → #e8f4fd), 4px blue left border
+// Title: Dark text, semibold
+// Description: Muted text
+// Icon: Optional, blue stroke
+// =============================================================================
+
+.jml-sub-header {
+  background: linear-gradient(135deg, #f0f6ff 0%, #e8f4fd 100%);
+  border-left: 4px solid var(--jml-primary);
+  border-radius: var(--jml-radius-xlarge);
+  padding: var(--jml-spacing-m) var(--jml-spacing-l);
+  margin-bottom: var(--jml-spacing-m);
+  display: flex;
+  align-items: center;
+  gap: var(--jml-spacing-m);
+}
+
+.jml-sub-header-icon {
+  width: 24px;
+  height: 24px;
+  stroke: var(--jml-primary);
+  stroke-width: 1.5;
+  fill: none;
+  flex-shrink: 0;
+}
+
+.jml-sub-header-content {
+  flex: 1;
+}
+
+.jml-sub-header-title {
+  font-family: var(--jml-font-family);
+  font-size: var(--jml-font-size-l);
+  font-weight: 600;
+  color: var(--jml-neutral-primary);
+  margin: 0 0 var(--jml-spacing-xxs) 0;
+}
+
+.jml-sub-header-description {
+  font-family: var(--jml-font-family);
+  font-size: var(--jml-font-size-m);
+  color: var(--jml-neutral-dark);
+  margin: 0;
+  line-height: 1.4;
+}
+
+// =============================================================================
+// 3. PAGE HEADER TITLE BLOCK - OFFICIAL STANDARD
+// =============================================================================
+// Order: Breadcrumb → Title → Icon and Description
+// Background: Gradient (#004578 → #005a9e)
+// Title: White text, semibold
+// =============================================================================
+
+.jml-page-header {
+  background: linear-gradient(135deg, #004578 0%, #005a9e 100%);
+  padding: var(--jml-spacing-l) var(--jml-spacing-xl);
+  border-bottom: 4px solid var(--jml-primary);
+}
+
+.jml-page-header-breadcrumb {
+  font-family: var(--jml-font-family);
+  font-size: var(--jml-font-size-s);
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: var(--jml-spacing-xs);
+
+  a {
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+
+    &:hover {
+      color: var(--jml-white);
+      text-decoration: underline;
+    }
+  }
+
+  .separator {
+    margin: 0 var(--jml-spacing-xs);
+  }
+}
+
+.jml-page-header-title {
+  font-family: var(--jml-font-family);
+  font-size: var(--jml-font-size-xxl);
+  font-weight: 600;
+  color: var(--jml-white);
+  margin: 0 0 var(--jml-spacing-xs) 0;
+}
+
+.jml-page-header-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--jml-spacing-s);
+}
+
+.jml-page-header-icon {
+  width: 20px;
+  height: 20px;
+  stroke: rgba(255, 255, 255, 0.9);
+  stroke-width: 1.5;
+  fill: none;
+}
+
+.jml-page-header-description {
+  font-family: var(--jml-font-family);
+  font-size: var(--jml-font-size-m);
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+  max-width: 600px;
+  line-height: 1.5;
+}
+
+// =============================================================================
+// 4. CONTENT CONTAINER - OFFICIAL STANDARD
+// =============================================================================
+// Background: White
+// Border: 1px neutral-light
+// Radius: 8px
+// Shadow: Subtle
+// =============================================================================
+
+.jml-content-container {
+  background: var(--jml-white);
+  border: 1px solid var(--jml-neutral-light);
+  border-radius: var(--jml-radius-xlarge);
+  box-shadow: var(--jml-shadow-2);
+  padding: var(--jml-spacing-l);
+}
+
+// =============================================================================
+// 5. UTILITY CLASSES
+// =============================================================================
+
+// Spacing utilities
+.jml-mt-xs { margin-top: var(--jml-spacing-xs); }
+.jml-mt-s { margin-top: var(--jml-spacing-s); }
+.jml-mt-m { margin-top: var(--jml-spacing-m); }
+.jml-mt-l { margin-top: var(--jml-spacing-l); }
+.jml-mt-xl { margin-top: var(--jml-spacing-xl); }
+
+.jml-mb-xs { margin-bottom: var(--jml-spacing-xs); }
+.jml-mb-s { margin-bottom: var(--jml-spacing-s); }
+.jml-mb-m { margin-bottom: var(--jml-spacing-m); }
+.jml-mb-l { margin-bottom: var(--jml-spacing-l); }
+.jml-mb-xl { margin-bottom: var(--jml-spacing-xl); }
+
+.jml-p-xs { padding: var(--jml-spacing-xs); }
+.jml-p-s { padding: var(--jml-spacing-s); }
+.jml-p-m { padding: var(--jml-spacing-m); }
+.jml-p-l { padding: var(--jml-spacing-l); }
+.jml-p-xl { padding: var(--jml-spacing-xl); }
+
+// Text utilities
+.jml-text-center { text-align: center; }
+.jml-text-muted { color: var(--jml-neutral-dark); }
+.jml-text-primary { color: var(--jml-primary); }
+.jml-text-success { color: var(--jml-success); }
+.jml-text-warning { color: var(--jml-warning); }
+.jml-text-error { color: var(--jml-error); }
+
+// Flex utilities
+.jml-flex { display: flex; }
+.jml-flex-center { display: flex; align-items: center; justify-content: center; }
+.jml-flex-between { display: flex; align-items: center; justify-content: space-between; }
+.jml-flex-wrap { flex-wrap: wrap; }
+.jml-gap-xs { gap: var(--jml-spacing-xs); }
+.jml-gap-s { gap: var(--jml-spacing-s); }
+.jml-gap-m { gap: var(--jml-spacing-m); }

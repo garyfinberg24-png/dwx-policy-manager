@@ -1,0 +1,64 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/config.2.0.schema.json",
+  "version": "2.0",
+  "bundles": {
+    "jml-policy-hub-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/jmlPolicyHub/JmlPolicyHubWebPart.js",
+          "manifest": "./src/webparts/jmlPolicyHub/JmlPolicyHubWebPart.manifest.json"
+        }
+      ]
+    },
+    "jml-policy-details-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/jmlPolicyDetails/JmlPolicyDetailsWebPart.js",
+          "manifest": "./src/webparts/jmlPolicyDetails/JmlPolicyDetailsWebPart.manifest.json"
+        }
+      ]
+    },
+    "jml-policy-author-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/jmlPolicyAuthor/JmlPolicyAuthorWebPart.js",
+          "manifest": "./src/webparts/jmlPolicyAuthor/JmlPolicyAuthorWebPart.manifest.json"
+        }
+      ]
+    },
+    "jml-policy-admin-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/jmlPolicyAdmin/JmlPolicyAdminWebPart.js",
+          "manifest": "./src/webparts/jmlPolicyAdmin/JmlPolicyAdminWebPart.manifest.json"
+        }
+      ]
+    },
+    "jml-policy-pack-manager-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/jmlPolicyPackManager/JmlPolicyPackManagerWebPart.js",
+          "manifest": "./src/webparts/jmlPolicyPackManager/JmlPolicyPackManagerWebPart.manifest.json"
+        }
+      ]
+    },
+    "jml-my-policies-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/jmlMyPolicies/JmlMyPoliciesWebPart.js",
+          "manifest": "./src/webparts/jmlMyPolicies/JmlMyPoliciesWebPart.manifest.json"
+        }
+      ]
+    }
+  },
+  "externals": {},
+  "localizedResources": {
+    "JmlPolicyHubWebPartStrings": "lib/webparts/jmlPolicyHub/loc/{locale}.js",
+    "JmlPolicyDetailsWebPartStrings": "lib/webparts/jmlPolicyDetails/loc/{locale}.js",
+    "JmlPolicyAuthorWebPartStrings": "lib/webparts/jmlPolicyAuthor/loc/{locale}.js",
+    "JmlPolicyAdminWebPartStrings": "lib/webparts/jmlPolicyAdmin/loc/{locale}.js",
+    "JmlPolicyPackManagerWebPartStrings": "lib/webparts/jmlPolicyPackManager/loc/{locale}.js",
+    "JmlMyPoliciesWebPartStrings": "lib/webparts/jmlMyPolicies/loc/{locale}.js",
+    "ControlStrings": "node_modules/@pnp/spfx-controls-react/lib/loc/{locale}.js"
+  }
+}

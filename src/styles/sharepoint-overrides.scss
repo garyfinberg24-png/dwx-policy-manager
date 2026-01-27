@@ -1,0 +1,75 @@
+/**
+ * SharePoint Global Overrides - MINIMAL VERSION
+ *
+ * IMPORTANT: Footer/Social hiding is handled by the JML Page Customizer
+ * Application Customizer (src/extensions/jmlPageCustomizer).
+ *
+ * This file ONLY contains:
+ * - Canvas overflow for full-bleed layouts
+ *
+ * RULE: NO Panel/Dialog/Layer CSS here - they work naturally
+ * RULE: NO footer/social hiding here - handled by App Customizer
+ * RULE: Keep this file as small as possible
+ *
+ * Usage: @import '../../../styles/sharepoint-overrides';
+ */
+
+:global {
+  // =============================================================================
+  // SHAREPOINT CANVAS OVERRIDES - Enable full-bleed layouts ONLY
+  // =============================================================================
+
+  // Target canvas zones for overflow visibility
+  [data-sp-canvaszone] {
+    overflow: visible !important;
+  }
+
+  .CanvasZone,
+  .CanvasSection,
+  .ControlZone,
+  .CanvasZoneContainer {
+    overflow: visible !important;
+    max-width: none !important;
+  }
+
+  // Webpart wrapper overflow
+  [data-sp-web-part] {
+    overflow: visible !important;
+  }
+
+  // =============================================================================
+  // FLUENT UI v9 DRAWER/PANEL - JML STANDARD: Square corners (no border-radius)
+  // Fluent UI v9 Drawer uses atomic CSS that overrides inline styles
+  // This global override ensures all panels have professional square corners
+  // =============================================================================
+
+  // Target Fluent UI v9 Drawer surfaces - force square corners
+  [class*="fui-DrawerSurface"],
+  [class*="fui-Drawer"] > div,
+  [data-fui-focus-visible] [class*="DrawerSurface"],
+  div[role="dialog"][class*="fui-"] {
+    border-radius: 0 !important;
+    border-top-left-radius: 0 !important;
+    border-top-right-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+  }
+
+  // Target inner Drawer containers
+  [class*="fui-DrawerBody"],
+  [class*="fui-DrawerHeader"] {
+    border-radius: 0 !important;
+  }
+
+  // Also ensure Fluent UI v8 Panel has square corners
+  .ms-Panel,
+  .ms-Panel-main,
+  .ms-Panel-content,
+  [class*="ms-Panel"] {
+    border-radius: 0 !important;
+  }
+
+  // =============================================================================
+  // END - All other hiding is done by Application Customizer
+  // =============================================================================
+}

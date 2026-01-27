@@ -1,0 +1,527 @@
+/**
+ * Global Dropdown Fix - Solution-Wide
+ * Fixes floating dropdown items issue where options appear without background
+ *
+ * This file addresses dropdown styling for both:
+ * - Fluent UI v8 (@fluentui/react) - uses role="listbox", role="option"
+ * - Fluent UI v9 (@fluentui/react-components) - uses .fui-Listbox, .fui-Option
+ *
+ * Automatically imported via fluent-mixins.scss
+ */
+
+/* ============================================
+   FLUENT UI V8 DROPDOWN FIXES (@fluentui/react)
+   ============================================ */
+
+/* Dropdown menu container (callout) */
+:global {
+  .ms-Dropdown-callout,
+  .ms-Callout-main,
+  [role="listbox"] {
+    background-color: #ffffff !important;
+    border: 1px solid #d1d1d1 !important;
+    box-shadow: 0 6.4px 14.4px 0 rgba(0, 0, 0, 0.132), 0 1.2px 3.6px 0 rgba(0, 0, 0, 0.108) !important;
+    border-radius: 2px !important;
+  }
+
+  /* Dropdown options */
+  .ms-Dropdown-item,
+  .ms-Dropdown-optionText,
+  [role="option"] {
+    background-color: #ffffff !important;
+    color: #323130 !important;
+    font-family: "Segoe UI", "Segoe UI Web (West European)", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif !important;
+    font-size: 14px !important;
+    padding: 8px 12px !important;
+    cursor: pointer !important;
+    transition: background-color 0.1s ease !important;
+  }
+
+  /* Hover state for dropdown options */
+  .ms-Dropdown-item:hover,
+  [role="option"]:hover,
+  .ms-Dropdown-item.is-highlighted,
+  [role="option"][aria-selected="true"] {
+    background-color: #f3f2f1 !important;
+    color: #323130 !important;
+  }
+
+  /* Selected/Active dropdown option */
+  .ms-Dropdown-item.is-selected,
+  [role="option"][aria-checked="true"] {
+    background-color: #e3f2fd !important;
+    color: #0078d4 !important;
+    font-weight: 600 !important;
+  }
+
+  /* Dropdown items container */
+  .ms-Dropdown-items {
+    background-color: #ffffff !important;
+    padding: 4px 0 !important;
+  }
+
+  /* Fix for dropdown header */
+  .ms-Dropdown-header {
+    background-color: #f3f2f1 !important;
+    color: #605e5c !important;
+    font-weight: 600 !important;
+    padding: 8px 12px !important;
+    border-bottom: 1px solid #edebe9 !important;
+  }
+
+  /* Fix for dropdown divider */
+  .ms-Dropdown-divider {
+    height: 1px !important;
+    background-color: #edebe9 !important;
+    margin: 4px 0 !important;
+  }
+
+  /* ============================================
+     FLUENT UI V9 DROPDOWN FIXES (@fluentui/react-components)
+     ============================================ */
+
+  /* Listbox container (v9) */
+  .fui-Listbox,
+  .fui-Dropdown__listbox {
+    background-color: #ffffff !important;
+    border: 1px solid #d1d1d1 !important;
+    box-shadow: 0 6.4px 14.4px 0 rgba(0, 0, 0, 0.132), 0 1.2px 3.6px 0 rgba(0, 0, 0, 0.108) !important;
+    border-radius: 4px !important;
+    padding: 4px 0 !important;
+  }
+
+  /* Option items (v9) */
+  .fui-Option,
+  .fui-Listbox__option {
+    background-color: #ffffff !important;
+    color: #323130 !important;
+    font-family: "Segoe UI", "Segoe UI Web (West European)", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif !important;
+    font-size: 14px !important;
+    padding: 8px 12px !important;
+    cursor: pointer !important;
+    transition: background-color 0.1s ease !important;
+    min-height: 32px !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  /* Hover state for options (v9) */
+  .fui-Option:hover,
+  .fui-Listbox__option:hover,
+  .fui-Option[data-fui-focus-visible] {
+    background-color: #f3f2f1 !important;
+    color: #323130 !important;
+  }
+
+  /* Selected option (v9) */
+  .fui-Option[aria-selected="true"],
+  .fui-Listbox__option[aria-selected="true"] {
+    background-color: #e3f2fd !important;
+    color: #0078d4 !important;
+    font-weight: 600 !important;
+  }
+
+  /* Active/pressed option (v9) */
+  .fui-Option:active,
+  .fui-Listbox__option:active {
+    background-color: #e3f2fd !important;
+    color: #0078d4 !important;
+  }
+
+  /* Dropdown portal/popup (v9) */
+  .fui-Portal,
+  .fui-Dropdown__popup {
+    z-index: 1000000 !important;
+  }
+
+  /* ============================================
+     COMBOBOX FIXES (Both v8 and v9)
+     ============================================ */
+
+  /* Combobox button styling */
+  button[role="combobox"],
+  .ms-Dropdown .ms-Dropdown-title,
+  .fui-Combobox__button {
+    background-color: #ffffff !important;
+    border: 1px solid #d1d1d1 !important;
+    color: #323130 !important;
+    min-height: 32px !important;
+  }
+
+  button[role="combobox"]:hover,
+  .ms-Dropdown .ms-Dropdown-title:hover,
+  .fui-Combobox__button:hover {
+    border-color: #a6a6a6 !important;
+    background-color: #ffffff !important;
+  }
+
+  button[role="combobox"]:focus,
+  .ms-Dropdown .ms-Dropdown-title:focus,
+  .fui-Combobox__button:focus {
+    border-color: #0078d4 !important;
+    box-shadow: 0 0 0 1px #0078d4 !important;
+    background-color: #ffffff !important;
+  }
+
+  /* ============================================
+     Z-INDEX FIXES FOR OVERLAPPING ISSUES
+     ============================================ */
+
+  /* Ensure dropdown menus appear above all other content */
+  .ms-Layer,
+  .ms-Callout-container {
+    z-index: 1000000 !important;
+    pointer-events: auto !important; // Ensure clicks reach dropdown items
+  }
+
+  /* Layer host containers - ensure they're not clipped */
+  .ms-Layer-content,
+  [class*="layerHost"],
+  .ms-Callout {
+    pointer-events: auto !important;
+    overflow: visible !important;
+  }
+
+  /* ============================================
+     CRITICAL: PARENT CONTAINER OVERFLOW FIXES
+     ============================================ */
+
+  /* Ensure dropdown portals can escape parent containers */
+  .ms-Dropdown-container,
+  .ms-ComboBox-container {
+    overflow: visible !important;
+  }
+
+  /* Ensure callouts render above SharePoint canvas zones */
+  .ms-Callout-main,
+  .ms-Dropdown-callout {
+    pointer-events: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Fix for dropdowns inside panels */
+  .ms-Panel .ms-Layer,
+  .ms-Panel .ms-Callout-container,
+  .ms-Panel .ms-Dropdown-callout {
+    z-index: 1000001 !important;
+    pointer-events: auto !important;
+  }
+
+  /* ============================================
+     ADDITIONAL FIXES FOR EDGE CASES
+     ============================================ */
+
+  /* Fix for disabled options */
+  .ms-Dropdown-item.is-disabled,
+  [role="option"][aria-disabled="true"],
+  .fui-Option[aria-disabled="true"] {
+    background-color: #f3f2f1 !important;
+    color: #a6a6a6 !important;
+    cursor: not-allowed !important;
+    opacity: 0.6 !important;
+  }
+
+  /* Fix for multiselect checkboxes in dropdowns */
+  .ms-Dropdown-item .ms-Checkbox,
+  .fui-Option .fui-Checkbox {
+    background-color: transparent !important;
+  }
+
+  /* Fix for option icons */
+  .ms-Dropdown-item .ms-Icon,
+  .fui-Option .fui-Icon {
+    color: inherit !important;
+  }
+
+  /* ============================================
+     FLUENT UI V9 DIALOG FIXES
+     ============================================ */
+
+  /* Dialog surface/backdrop */
+  .fui-DialogSurface,
+  [role="dialog"] .fui-DialogSurface {
+    background-color: #ffffff !important;
+    border-radius: 8px !important;
+    box-shadow: 0 25.6px 57.6px 0 rgba(0, 0, 0, 0.22), 0 4.8px 14.4px 0 rgba(0, 0, 0, 0.18) !important;
+  }
+
+  /* Dialog backdrop/overlay */
+  .fui-DialogBackdrop {
+    background-color: rgba(0, 0, 0, 0.4) !important;
+  }
+
+  /* Dialog body */
+  .fui-DialogBody {
+    background-color: #ffffff !important;
+    color: #323130 !important;
+  }
+
+  /* Dialog title */
+  .fui-DialogTitle {
+    color: #323130 !important;
+  }
+
+  /* Dialog content */
+  .fui-DialogContent {
+    background-color: #ffffff !important;
+    color: #323130 !important;
+  }
+
+  /* Dialog actions */
+  .fui-DialogActions {
+    background-color: #ffffff !important;
+  }
+
+  /* ============================================
+     FLUENT UI V9 TOOLTIP FIXES
+     ============================================ */
+
+  /* Tooltip content */
+  .fui-Tooltip,
+  .fui-Tooltip__content {
+    background-color: #323130 !important;
+    color: #ffffff !important;
+    border-radius: 4px !important;
+    box-shadow: 0 6.4px 14.4px 0 rgba(0, 0, 0, 0.132), 0 1.2px 3.6px 0 rgba(0, 0, 0, 0.108) !important;
+    padding: 8px 12px !important;
+    font-size: 12px !important;
+    max-width: 300px !important;
+  }
+
+  /* Tooltip with inverted appearance */
+  .fui-Tooltip--inverted,
+  .fui-Tooltip__content--inverted {
+    background-color: #ffffff !important;
+    color: #323130 !important;
+    border: 1px solid #d1d1d1 !important;
+  }
+
+  /* Tooltip arrow */
+  .fui-Tooltip__arrow {
+    background-color: inherit !important;
+  }
+
+  /* ============================================
+     FLUENT UI V9 POPOVER FIXES
+     ============================================ */
+
+  /* Popover surface */
+  .fui-PopoverSurface {
+    background-color: #ffffff !important;
+    border: 1px solid #d1d1d1 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 6.4px 14.4px 0 rgba(0, 0, 0, 0.132), 0 1.2px 3.6px 0 rgba(0, 0, 0, 0.108) !important;
+    color: #323130 !important;
+  }
+
+  /* ============================================
+     FLUENT UI V9 MENU FIXES
+     ============================================ */
+
+  /* Menu list container */
+  .fui-MenuList,
+  .fui-Menu__list {
+    background-color: #ffffff !important;
+    border: 1px solid #d1d1d1 !important;
+    border-radius: 4px !important;
+    box-shadow: 0 6.4px 14.4px 0 rgba(0, 0, 0, 0.132), 0 1.2px 3.6px 0 rgba(0, 0, 0, 0.108) !important;
+    padding: 4px 0 !important;
+  }
+
+  /* Menu items */
+  .fui-MenuItem,
+  .fui-MenuList__item {
+    background-color: #ffffff !important;
+    color: #323130 !important;
+    padding: 8px 12px !important;
+  }
+
+  .fui-MenuItem:hover,
+  .fui-MenuList__item:hover {
+    background-color: #f3f2f1 !important;
+  }
+
+  .fui-MenuItem[aria-selected="true"],
+  .fui-MenuList__item[aria-selected="true"] {
+    background-color: #e3f2fd !important;
+    color: #0078d4 !important;
+  }
+
+  /* Menu popover */
+  .fui-MenuPopover {
+    background-color: #ffffff !important;
+    border: 1px solid #d1d1d1 !important;
+    border-radius: 4px !important;
+    box-shadow: 0 6.4px 14.4px 0 rgba(0, 0, 0, 0.132), 0 1.2px 3.6px 0 rgba(0, 0, 0, 0.108) !important;
+  }
+
+  /* ============================================
+     GENERAL PORTAL Z-INDEX FIXES
+     ============================================ */
+
+  /* Ensure all Fluent UI v9 portals have proper z-index and can receive clicks */
+  .fui-Portal {
+    z-index: 1000000 !important;
+    pointer-events: auto !important;
+  }
+
+  /* Fluent UI v9 portal containers */
+  .fui-Portal > * {
+    pointer-events: auto !important;
+  }
+
+  /* Ensure Fluent UI v9 listbox is clickable */
+  .fui-Listbox,
+  .fui-Dropdown__listbox,
+  .fui-Combobox__listbox {
+    pointer-events: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Fluent UI v9 option items - ensure they receive click events */
+  .fui-Option,
+  .fui-Listbox__option {
+    pointer-events: auto !important;
+  }
+
+  /* ============================================
+     FLUENT UI V9 DRAWER/PANEL FIXES - SharePoint Style
+     ============================================ */
+
+  /* Drawer surface - SharePoint panel style with no rounded corners */
+  .fui-DrawerSurface,
+  .fui-Drawer,
+  [role="dialog"] .fui-DrawerSurface {
+    border-radius: 0 !important;
+    border-top-left-radius: 0 !important;
+    border-top-right-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+  }
+
+  /* Drawer overlay container */
+  .fui-DrawerOverlay {
+    z-index: 1000001 !important;
+  }
+
+  /* Drawer surface inner container */
+  .fui-DrawerSurface > div,
+  .fui-DrawerBody,
+  .fui-DrawerHeader {
+    border-radius: 0 !important;
+  }
+
+  /* Right-side drawer (most common for SP panels) - shadow on left */
+  .fui-Drawer--end .fui-DrawerSurface,
+  [data-fui-placement="end"] .fui-DrawerSurface {
+    box-shadow: -8px 0 32px rgba(0, 0, 0, 0.18) !important;
+    border-left: none !important;
+  }
+
+  /* Left-side drawer - shadow on right */
+  .fui-Drawer--start .fui-DrawerSurface,
+  [data-fui-placement="start"] .fui-DrawerSurface {
+    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.18) !important;
+    border-right: none !important;
+  }
+
+  /* Drawer header styling */
+  .fui-DrawerHeader {
+    background-color: #ffffff !important;
+    border-bottom: 1px solid #edebe9 !important;
+    padding: 16px 24px !important;
+  }
+
+  /* Drawer header title */
+  .fui-DrawerHeaderTitle {
+    font-size: 20px !important;
+    font-weight: 600 !important;
+    color: #323130 !important;
+  }
+
+  /* Drawer body styling */
+  .fui-DrawerBody {
+    background-color: #fafafa !important;
+    padding: 0 !important;
+  }
+
+  /* Drawer backdrop */
+  .fui-DrawerMotion__backdrop,
+  .fui-DialogBackdrop {
+    background-color: rgba(0, 0, 0, 0.4) !important;
+  }
+
+  /* Ensure drawer has proper stacking in SharePoint */
+  .fui-Portal .fui-Drawer,
+  .fui-Portal .fui-DrawerSurface {
+    z-index: 1000001 !important;
+  }
+
+  /* Dark theme support (if applicable) */
+  [data-theme="dark"] {
+    .ms-Dropdown-callout,
+    [role="listbox"],
+    .fui-Listbox {
+      background-color: #292827 !important;
+      border-color: #3b3a39 !important;
+    }
+
+    .ms-Dropdown-item,
+    [role="option"],
+    .fui-Option {
+      background-color: #292827 !important;
+      color: #ffffff !important;
+    }
+
+    .ms-Dropdown-item:hover,
+    [role="option"]:hover,
+    .fui-Option:hover {
+      background-color: #3b3a39 !important;
+    }
+
+    .ms-Dropdown-item.is-selected,
+    [role="option"][aria-selected="true"],
+    .fui-Option[aria-selected="true"] {
+      background-color: #004578 !important;
+      color: #ffffff !important;
+    }
+
+    /* Dark theme dialog */
+    .fui-DialogSurface,
+    .fui-DialogBody,
+    .fui-DialogContent {
+      background-color: #292827 !important;
+      color: #ffffff !important;
+    }
+
+    /* Dark theme tooltip (inverted for dark mode) */
+    .fui-Tooltip,
+    .fui-Tooltip__content {
+      background-color: #ffffff !important;
+      color: #323130 !important;
+    }
+
+    /* Dark theme popover */
+    .fui-PopoverSurface {
+      background-color: #292827 !important;
+      color: #ffffff !important;
+      border-color: #3b3a39 !important;
+    }
+
+    /* Dark theme menu */
+    .fui-MenuList,
+    .fui-MenuPopover {
+      background-color: #292827 !important;
+      border-color: #3b3a39 !important;
+    }
+
+    .fui-MenuItem {
+      background-color: #292827 !important;
+      color: #ffffff !important;
+    }
+
+    .fui-MenuItem:hover {
+      background-color: #3b3a39 !important;
+    }
+  }
+}

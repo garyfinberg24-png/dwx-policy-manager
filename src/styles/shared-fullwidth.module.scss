@@ -1,0 +1,98 @@
+@import '~@fluentui/react/dist/sass/References.scss';
+
+@import './fluent-mixins';
+// Shared styles for full-width applications
+// Use @import '../../styles/shared-fullwidth.scss'; in your component's SCSS file
+
+// Base full-width app container
+@mixin fullWidthAppContainer {
+  padding: 0;
+  background-color: $ms-color-neutralLighterAlt;
+  min-height: 100vh;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+// Full-width app header
+@mixin fullWidthAppHeader {
+  background: linear-gradient(135deg, $ms-color-themePrimary 0%, $ms-color-themeDark 100%);
+  color: $ms-color-white;
+  padding: 24px 40px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 32px;
+
+  @media (max-width: 768px) {
+    padding: 16px 20px;
+  }
+}
+
+// Header content wrapper
+@mixin headerContent {
+  max-width: 1600px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+    @include grid-gap-small;
+  }
+}
+
+// Header left section (icon + title)
+@mixin headerLeft {
+  display: flex;
+  align-items: center;
+  @include grid-gap-medium;
+}
+
+// Header icon
+@mixin headerIcon {
+  font-size: 32px;
+  color: $ms-color-white;
+
+  @media (max-width: 768px) {
+    font-size: 24px;
+  }
+}
+
+// Page title in header
+@mixin pageTitle {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 600;
+  color: $ms-color-white;
+
+  @media (max-width: 768px) {
+    font-size: 20px;
+  }
+}
+
+// Header right section (welcome message)
+@mixin headerRight {
+  display: flex;
+  align-items: center;
+}
+
+// Welcome message
+@mixin welcome {
+  font-size: 16px;
+  font-weight: 500;
+  opacity: 0.95;
+
+  @media (max-width: 768px) {
+    font-size: 14px;
+  }
+}
+
+// Content container
+@mixin contentContainer {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 40px 40px;
+
+  @media (max-width: 768px) {
+    padding: 0 20px 20px;
+  }
+}

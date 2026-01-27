@@ -1,0 +1,947 @@
+import { WebPartContext } from '@microsoft/sp-webpart-base';
+import { SPFI, spfi, SPFx } from '@pnp/sp';
+import '@pnp/sp/webs';
+import '@pnp/sp/lists';
+import '@pnp/sp/items';
+import '@pnp/sp/attachments';
+import '@pnp/sp/site-users/web';
+import { CacheService } from './CacheService';
+import { LoggingService } from './LoggingService';
+import {
+  ICertification,
+  IUserCertification,
+  CertificationType,
+  CertificationStatus
+} from '../models/ITraining';
+
+// Certification filter interface
+export interface ICertificationFilter {
+  type?: CertificationType;
+  provider?: string;
+  isActive?: boolean;
+  skillIds?: number[];
+  searchQuery?: string;
+}
+
+// User certification filter interface
+export interface IUserCertificationFilter {
+  userId?: number;
+  status?: CertificationStatus;
+  isExpired?: boolean;
+  isExpiringSoon?: boolean; // Within 90 days
+  certificationId?: number;
+}
+
+// Certification enrollment request
+export interface ICertificationEnrollmentRequest {
+  userId: number;
+  userEmail: string;
+  certificationId: number;
+  targetDate?: Date;
+  notes?: string;
+}
+
+// Certification completion request
+export interface ICertificationCompletionRequest {
+  userId: number;
+  certificationId: number;
+  earnedDate: Date;
+  expirationDate?: Date;
+  credentialId?: string;
+  credentialUrl?: string;
+  score?: number;
+  notes?: string;
+}
+
+// Certification renewal request
+export interface ICertificationRenewalRequest {
+  userCertificationId: number;
+  newExpirationDate: Date;
+  renewalCredentialId?: string;
+  notes?: string;
+}
+
+// Certification statistics
+export interface ICertificationStats {
+  totalActive: number;
+  totalExpired: number;
+  expiringSoon: number;
+  totalCertifications: number;
+  byType: Array<{ type: CertificationType; count: number }>;
+  byProvider: Array<{ provider: string; count: number }>;
+  completionRate: number;
+}
+
+// Certification reminder
+export interface ICertificationReminder {
+  userCertificationId: number;
+  certificationName: string;
+  expirationDate: Date;
+  daysUntilExpiration: number;
+  userName: string;
+  userEmail: string;
+}
+
+// SharePoint list names
+const CERTIFICATIONS_LIST = 'JML_Certifications';
+const USER_CERTIFICATIONS_LIST = 'JML_UserCertifications';
+const CERTIFICATION_PROVIDERS_LIST = 'JML_CertificationProviders';
+
+// Cache keys
+const CACHE_KEYS = {
+  ALL_CERTIFICATIONS: 'all_certifications',
+  CERTIFICATION: (id: number) => `certification_${id}`,
+  USER_CERTIFICATIONS: (userId: number) => `user_certifications_${userId}`,
+  PROVIDERS: 'certification_providers',
+  EXPIRING_SOON: 'certifications_expiring_soon'
+};
+
+// Cache durations (in seconds)
+const CACHE_DURATION = {
+  CERTIFICATIONS: 3600, // 1 hour
+  USER_CERTIFICATIONS: 300, // 5 minutes
+  PROVIDERS: 3600, // 1 hour
+  EXPIRING: 600 // 10 minutes
+};
+
+export class CertificationService {
+  private sp: SPFI;
+  private cache: CacheService;
+  private logger: LoggingService;
+
+  constructor(context: WebPartContext) {
+    this.sp = spfi().using(SPFx(context));
+    this.cache = CacheService.getInstance();
+    this.logger = LoggingService.getInstance();
+  }
+
+  // ===========================================
+  // CERTIFICATION CATALOG OPERATIONS
+  // ===========================================
+
+  /**
+   * Get all certifications
+   */
+  async getCertifications(filters?: ICertificationFilter): Promise<ICertification[]> {
+    const cacheKey = CACHE_KEYS.ALL_CERTIFICATIONS;
+
+    // Only use cache if no filters
+    if (!filters) {
+      const cached = this.cache.get<ICertification[]>(cacheKey);
+      if (cached) return cached;
+    }
+
+    try {
+      let query = this.sp.web.lists.getByTitle(CERTIFICATIONS_LIST).items
+        .select(
+          'Id', 'Title', 'Description', 'CertificationType', 'Provider',
+          'ValidityPeriod', 'RenewalRequired', 'RenewalPeriod', 'Prerequisites',
+          'RelatedSkillIds', 'RelatedCourseIds', 'ExamRequired', 'ExamDetails',
+          'Cost', 'Currency', 'ExternalUrl', 'BadgeImageUrl', 'IsActive',
+          'Created', 'Modified'
+        )
+        .orderBy('Title', true);
+
+      if (filters?.type) {
+        query = query.filter(`CertificationType eq '${filters.type}'`);
+      }
+      if (filters?.provider) {
+        query = query.filter(`Provider eq '${filters.provider}'`);
+      }
+      if (filters?.isActive !== undefined) {
+        query = query.filter(`IsActive eq ${filters.isActive ? 1 : 0}`);
+      }
+
+      const items = await query();
+      let certifications = items.map(item => this.mapToCertification(item));
+
+      // Apply additional filters client-side
+      if (filters?.skillIds && filters.skillIds.length > 0) {
+        certifications = certifications.filter(cert =>
+          cert.RelatedSkillIds?.some(id => filters.skillIds!.includes(id))
+        );
+      }
+
+      if (filters?.searchQuery) {
+        const search = filters.searchQuery.toLowerCase();
+        certifications = certifications.filter(cert =>
+          cert.Title.toLowerCase().includes(search) ||
+          cert.Description?.toLowerCase().includes(search) ||
+          cert.Provider?.toLowerCase().includes(search)
+        );
+      }
+
+      if (!filters) {
+        this.cache.set(cacheKey, certifications, CACHE_DURATION.CERTIFICATIONS);
+      }
+
+      return certifications;
+    } catch (error) {
+      this.logger.error('Error fetching certifications', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get certification by ID
+   */
+  async getCertificationById(certificationId: number): Promise<ICertification | null> {
+    const cacheKey = CACHE_KEYS.CERTIFICATION(certificationId);
+    const cached = this.cache.get<ICertification>(cacheKey);
+    if (cached) return cached;
+
+    try {
+      const item = await this.sp.web.lists.getByTitle(CERTIFICATIONS_LIST).items
+        .getById(certificationId)
+        .select(
+          'Id', 'Title', 'Description', 'CertificationType', 'Provider',
+          'ValidityPeriod', 'RenewalRequired', 'RenewalPeriod', 'Prerequisites',
+          'RelatedSkillIds', 'RelatedCourseIds', 'ExamRequired', 'ExamDetails',
+          'Cost', 'Currency', 'ExternalUrl', 'BadgeImageUrl', 'IsActive',
+          'Created', 'Modified'
+        )();
+
+      const certification = this.mapToCertification(item);
+      this.cache.set(cacheKey, certification, CACHE_DURATION.CERTIFICATIONS);
+      return certification;
+    } catch (error) {
+      this.logger.error(`Error fetching certification ${certificationId}`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Get certification providers
+   */
+  async getProviders(): Promise<Array<{ id: number; name: string; logoUrl?: string }>> {
+    const cacheKey = CACHE_KEYS.PROVIDERS;
+    const cached = this.cache.get<Array<{ id: number; name: string; logoUrl?: string }>>(cacheKey);
+    if (cached) return cached;
+
+    try {
+      const items = await this.sp.web.lists.getByTitle(CERTIFICATION_PROVIDERS_LIST).items
+        .select('Id', 'Title', 'LogoUrl')
+        .filter('IsActive eq 1')
+        .orderBy('Title', true)();
+
+      const providers = items.map(item => ({
+        id: item.Id,
+        name: item.Title,
+        logoUrl: item.LogoUrl
+      }));
+
+      this.cache.set(cacheKey, providers, CACHE_DURATION.PROVIDERS);
+      return providers;
+    } catch (error) {
+      this.logger.error('Error fetching certification providers', error);
+      // Return empty array as fallback - providers list might not exist
+      return [];
+    }
+  }
+
+  /**
+   * Create a new certification
+   */
+  async createCertification(certification: Partial<ICertification>): Promise<ICertification> {
+    try {
+      const itemData = {
+        Title: certification.Title,
+        Description: certification.Description,
+        CertificationType: certification.CertificationType,
+        Provider: certification.Provider,
+        ValidityPeriod: certification.ValidityPeriod,
+        RenewalRequired: certification.RenewalRequired || false,
+        RenewalPeriod: certification.RenewalPeriod,
+        Prerequisites: certification.Prerequisites
+          ? JSON.stringify(certification.Prerequisites)
+          : null,
+        RelatedSkillIds: certification.RelatedSkillIds
+          ? JSON.stringify(certification.RelatedSkillIds)
+          : null,
+        RelatedCourseIds: certification.RelatedCourseIds
+          ? JSON.stringify(certification.RelatedCourseIds)
+          : null,
+        ExamRequired: certification.ExamRequired || false,
+        ExamDetails: certification.ExamDetails,
+        Cost: certification.Cost,
+        Currency: certification.Currency || 'USD',
+        ExternalUrl: certification.ExternalUrl,
+        BadgeImageUrl: certification.BadgeImageUrl,
+        IsActive: true
+      };
+
+      const result = await this.sp.web.lists.getByTitle(CERTIFICATIONS_LIST).items.add(itemData);
+
+      // Invalidate cache
+      this.cache.remove(CACHE_KEYS.ALL_CERTIFICATIONS);
+
+      return this.mapToCertification(result.data);
+    } catch (error) {
+      this.logger.error('Error creating certification', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update a certification
+   */
+  async updateCertification(
+    certificationId: number,
+    updates: Partial<ICertification>
+  ): Promise<void> {
+    try {
+      const itemData: Record<string, unknown> = {};
+
+      if (updates.Title !== undefined) itemData.Title = updates.Title;
+      if (updates.Description !== undefined) itemData.Description = updates.Description;
+      if (updates.CertificationType !== undefined) itemData.CertificationType = updates.CertificationType;
+      if (updates.Provider !== undefined) itemData.Provider = updates.Provider;
+      if (updates.ValidityPeriod !== undefined) itemData.ValidityPeriod = updates.ValidityPeriod;
+      if (updates.RenewalRequired !== undefined) itemData.RenewalRequired = updates.RenewalRequired;
+      if (updates.RenewalPeriod !== undefined) itemData.RenewalPeriod = updates.RenewalPeriod;
+      if (updates.Prerequisites !== undefined) {
+        itemData.Prerequisites = JSON.stringify(updates.Prerequisites);
+      }
+      if (updates.RelatedSkillIds !== undefined) {
+        itemData.RelatedSkillIds = JSON.stringify(updates.RelatedSkillIds);
+      }
+      if (updates.RelatedCourseIds !== undefined) {
+        itemData.RelatedCourseIds = JSON.stringify(updates.RelatedCourseIds);
+      }
+      if (updates.ExamRequired !== undefined) itemData.ExamRequired = updates.ExamRequired;
+      if (updates.ExamDetails !== undefined) itemData.ExamDetails = updates.ExamDetails;
+      if (updates.Cost !== undefined) itemData.Cost = updates.Cost;
+      if (updates.Currency !== undefined) itemData.Currency = updates.Currency;
+      if (updates.ExternalUrl !== undefined) itemData.ExternalUrl = updates.ExternalUrl;
+      if (updates.BadgeImageUrl !== undefined) itemData.BadgeImageUrl = updates.BadgeImageUrl;
+      if (updates.IsActive !== undefined) itemData.IsActive = updates.IsActive;
+
+      await this.sp.web.lists.getByTitle(CERTIFICATIONS_LIST).items
+        .getById(certificationId)
+        .update(itemData);
+
+      // Invalidate cache
+      this.cache.remove(CACHE_KEYS.ALL_CERTIFICATIONS);
+      this.cache.remove(CACHE_KEYS.CERTIFICATION(certificationId));
+    } catch (error) {
+      this.logger.error(`Error updating certification ${certificationId}`, error);
+      throw error;
+    }
+  }
+
+  // ===========================================
+  // USER CERTIFICATION OPERATIONS
+  // ===========================================
+
+  /**
+   * Get user's certifications
+   */
+  async getUserCertifications(
+    userId: number,
+    filters?: IUserCertificationFilter
+  ): Promise<IUserCertification[]> {
+    const cacheKey = CACHE_KEYS.USER_CERTIFICATIONS(userId);
+
+    if (!filters || Object.keys(filters).length === 0) {
+      const cached = this.cache.get<IUserCertification[]>(cacheKey);
+      if (cached) return cached;
+    }
+
+    try {
+      let filterStr = `UserId eq ${userId}`;
+
+      if (filters?.status) {
+        filterStr += ` and Status eq '${filters.status}'`;
+      }
+      if (filters?.certificationId) {
+        filterStr += ` and CertificationId eq ${filters.certificationId}`;
+      }
+
+      const items = await this.sp.web.lists.getByTitle(USER_CERTIFICATIONS_LIST).items
+        .select(
+          'Id', 'Title', 'UserId', 'UserEmail', 'CertificationId', 'Status',
+          'EnrollmentDate', 'TargetDate', 'EarnedDate', 'ExpirationDate',
+          'CredentialId', 'CredentialUrl', 'Score', 'Attempts', 'Notes',
+          'RenewalHistory', 'Created', 'Modified'
+        )
+        .filter(filterStr)
+        .orderBy('Modified', false)();
+
+      let userCerts = items.map(item => this.mapToUserCertification(item));
+      const now = new Date();
+
+      // Apply additional filters
+      if (filters?.isExpired) {
+        userCerts = userCerts.filter(uc =>
+          uc.ExpirationDate && new Date(uc.ExpirationDate) < now
+        );
+      }
+
+      if (filters?.isExpiringSoon) {
+        const soonThreshold = new Date();
+        soonThreshold.setDate(soonThreshold.getDate() + 90);
+        userCerts = userCerts.filter(uc =>
+          uc.ExpirationDate &&
+          new Date(uc.ExpirationDate) >= now &&
+          new Date(uc.ExpirationDate) <= soonThreshold
+        );
+      }
+
+      if (!filters || Object.keys(filters).length === 0) {
+        this.cache.set(cacheKey, userCerts, CACHE_DURATION.USER_CERTIFICATIONS);
+      }
+
+      return userCerts;
+    } catch (error) {
+      this.logger.error(`Error fetching user certifications for user ${userId}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get a specific user certification
+   */
+  async getUserCertification(
+    userId: number,
+    certificationId: number
+  ): Promise<IUserCertification | null> {
+    try {
+      const items = await this.sp.web.lists.getByTitle(USER_CERTIFICATIONS_LIST).items
+        .select(
+          'Id', 'Title', 'UserId', 'UserEmail', 'CertificationId', 'Status',
+          'EnrollmentDate', 'TargetDate', 'EarnedDate', 'ExpirationDate',
+          'CredentialId', 'CredentialUrl', 'Score', 'Attempts', 'Notes',
+          'RenewalHistory', 'Created', 'Modified'
+        )
+        .filter(`UserId eq ${userId} and CertificationId eq ${certificationId}`)
+        .top(1)();
+
+      if (items.length === 0) return null;
+      return this.mapToUserCertification(items[0]);
+    } catch (error) {
+      this.logger.error('Error fetching user certification', error);
+      return null;
+    }
+  }
+
+  /**
+   * Enroll user in a certification program
+   */
+  async enrollUserInCertification(
+    request: ICertificationEnrollmentRequest
+  ): Promise<IUserCertification> {
+    try {
+      // Check if already enrolled
+      const existing = await this.getUserCertification(request.userId, request.certificationId);
+      if (existing && existing.Status !== CertificationStatus.Expired) {
+        throw new Error('User is already enrolled in this certification');
+      }
+
+      const certification = await this.getCertificationById(request.certificationId);
+      if (!certification) {
+        throw new Error('Certification not found');
+      }
+
+      const itemData = {
+        Title: `${certification.Title} - Enrollment`,
+        UserId: request.userId,
+        UserEmail: request.userEmail,
+        CertificationId: request.certificationId,
+        Status: CertificationStatus.InProgress,
+        EnrollmentDate: new Date().toISOString(),
+        TargetDate: request.targetDate?.toISOString(),
+        Notes: request.notes,
+        Attempts: 0
+      };
+
+      const result = await this.sp.web.lists.getByTitle(USER_CERTIFICATIONS_LIST).items.add(itemData);
+
+      // Invalidate cache
+      this.cache.remove(CACHE_KEYS.USER_CERTIFICATIONS(request.userId));
+
+      return this.mapToUserCertification(result.data);
+    } catch (error) {
+      this.logger.error('Error enrolling user in certification', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Record certification completion
+   */
+  async completeCertification(
+    request: ICertificationCompletionRequest
+  ): Promise<IUserCertification> {
+    try {
+      const existing = await this.getUserCertification(request.userId, request.certificationId);
+
+      if (!existing) {
+        throw new Error('User is not enrolled in this certification');
+      }
+
+      const certification = await this.getCertificationById(request.certificationId);
+
+      // Calculate expiration date if not provided and certification has validity period
+      let expirationDate = request.expirationDate;
+      if (!expirationDate && certification?.ValidityPeriod) {
+        expirationDate = new Date(request.earnedDate);
+        expirationDate.setMonth(expirationDate.getMonth() + certification.ValidityPeriod);
+      }
+
+      const itemData = {
+        Status: CertificationStatus.Active,
+        EarnedDate: request.earnedDate.toISOString(),
+        ExpirationDate: expirationDate?.toISOString(),
+        CredentialId: request.credentialId,
+        CredentialUrl: request.credentialUrl,
+        Score: request.score,
+        Attempts: (existing.Attempts || 0) + 1,
+        Notes: request.notes || existing.Notes
+      };
+
+      await this.sp.web.lists.getByTitle(USER_CERTIFICATIONS_LIST).items
+        .getById(existing.Id!)
+        .update(itemData);
+
+      // Invalidate cache
+      this.cache.remove(CACHE_KEYS.USER_CERTIFICATIONS(request.userId));
+
+      return {
+        ...existing,
+        Status: CertificationStatus.Active,
+        EarnedDate: request.earnedDate,
+        ExpirationDate: expirationDate,
+        CredentialId: request.credentialId,
+        CredentialUrl: request.credentialUrl,
+        Score: request.score,
+        Attempts: (existing.Attempts || 0) + 1
+      };
+    } catch (error) {
+      this.logger.error('Error completing certification', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Renew a certification
+   */
+  async renewCertification(request: ICertificationRenewalRequest): Promise<IUserCertification> {
+    try {
+      const item = await this.sp.web.lists.getByTitle(USER_CERTIFICATIONS_LIST).items
+        .getById(request.userCertificationId)
+        .select('*')();
+
+      const userCert = this.mapToUserCertification(item);
+
+      // Build renewal history
+      const renewalHistory = userCert.RenewalHistory || [];
+      renewalHistory.push({
+        previousExpirationDate: userCert.ExpirationDate!,
+        renewalDate: new Date(),
+        newExpirationDate: request.newExpirationDate,
+        credentialId: request.renewalCredentialId
+      });
+
+      const itemData = {
+        Status: CertificationStatus.Active,
+        ExpirationDate: request.newExpirationDate.toISOString(),
+        RenewalHistory: JSON.stringify(renewalHistory),
+        Notes: request.notes || userCert.Notes
+      };
+
+      await this.sp.web.lists.getByTitle(USER_CERTIFICATIONS_LIST).items
+        .getById(request.userCertificationId)
+        .update(itemData);
+
+      // Invalidate cache
+      this.cache.remove(CACHE_KEYS.USER_CERTIFICATIONS(userCert.UserId));
+
+      return {
+        ...userCert,
+        Status: CertificationStatus.Active,
+        ExpirationDate: request.newExpirationDate,
+        RenewalHistory: renewalHistory
+      };
+    } catch (error) {
+      this.logger.error('Error renewing certification', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Record a failed certification attempt
+   */
+  async recordFailedAttempt(
+    userId: number,
+    certificationId: number,
+    score?: number,
+    notes?: string
+  ): Promise<IUserCertification> {
+    try {
+      const existing = await this.getUserCertification(userId, certificationId);
+
+      if (!existing) {
+        throw new Error('User is not enrolled in this certification');
+      }
+
+      const itemData = {
+        Attempts: (existing.Attempts || 0) + 1,
+        Score: score,
+        Notes: notes
+          ? `${existing.Notes || ''}\n[${new Date().toISOString()}] Failed attempt: ${notes}`
+          : existing.Notes
+      };
+
+      await this.sp.web.lists.getByTitle(USER_CERTIFICATIONS_LIST).items
+        .getById(existing.Id!)
+        .update(itemData);
+
+      // Invalidate cache
+      this.cache.remove(CACHE_KEYS.USER_CERTIFICATIONS(userId));
+
+      return {
+        ...existing,
+        Attempts: (existing.Attempts || 0) + 1,
+        Score: score
+      };
+    } catch (error) {
+      this.logger.error('Error recording failed attempt', error);
+      throw error;
+    }
+  }
+
+  // ===========================================
+  // EXPIRATION & RENEWAL TRACKING
+  // ===========================================
+
+  /**
+   * Get certifications expiring soon (within specified days)
+   */
+  async getCertificationsExpiringSoon(
+    daysAhead: number = 90
+  ): Promise<ICertificationReminder[]> {
+    try {
+      const now = new Date();
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + daysAhead);
+
+      const items = await this.sp.web.lists.getByTitle(USER_CERTIFICATIONS_LIST).items
+        .select(
+          'Id', 'Title', 'UserId', 'UserEmail', 'CertificationId',
+          'ExpirationDate', 'Status'
+        )
+        .filter(`Status eq 'Active' and ExpirationDate ge datetime'${now.toISOString()}' and ExpirationDate le datetime'${futureDate.toISOString()}'`)
+        .orderBy('ExpirationDate', true)();
+
+      const reminders: ICertificationReminder[] = [];
+
+      for (const item of items) {
+        const expirationDate = new Date(item.ExpirationDate);
+        const daysUntilExpiration = Math.ceil(
+          (expirationDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+        );
+
+        // Get certification name
+        const cert = await this.getCertificationById(item.CertificationId);
+
+        reminders.push({
+          userCertificationId: item.Id,
+          certificationName: cert?.Title || item.Title,
+          expirationDate,
+          daysUntilExpiration,
+          userName: '', // Would need to fetch from user profile
+          userEmail: item.UserEmail
+        });
+      }
+
+      return reminders;
+    } catch (error) {
+      this.logger.error('Error fetching expiring certifications', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update expired certifications status
+   */
+  async updateExpiredCertifications(): Promise<number> {
+    try {
+      const now = new Date();
+
+      const items = await this.sp.web.lists.getByTitle(USER_CERTIFICATIONS_LIST).items
+        .select('Id', 'UserId')
+        .filter(`Status eq 'Active' and ExpirationDate lt datetime'${now.toISOString()}'`)();
+
+      let updatedCount = 0;
+      const affectedUserIds = new Set<number>();
+
+      for (const item of items) {
+        await this.sp.web.lists.getByTitle(USER_CERTIFICATIONS_LIST).items
+          .getById(item.Id)
+          .update({ Status: CertificationStatus.Expired });
+
+        affectedUserIds.add(item.UserId);
+        updatedCount++;
+      }
+
+      // Invalidate affected user caches
+      affectedUserIds.forEach(userId => {
+        this.cache.remove(CACHE_KEYS.USER_CERTIFICATIONS(userId));
+      });
+
+      return updatedCount;
+    } catch (error) {
+      this.logger.error('Error updating expired certifications', error);
+      throw error;
+    }
+  }
+
+  // ===========================================
+  // STATISTICS & ANALYTICS
+  // ===========================================
+
+  /**
+   * Get certification statistics for a user
+   */
+  async getUserCertificationStats(userId: number): Promise<ICertificationStats> {
+    try {
+      const userCerts = await this.getUserCertifications(userId);
+      const now = new Date();
+      const soonThreshold = new Date();
+      soonThreshold.setDate(soonThreshold.getDate() + 90);
+
+      const active = userCerts.filter(uc => uc.Status === CertificationStatus.Active);
+      const expired = userCerts.filter(uc => uc.Status === CertificationStatus.Expired);
+      const expiringSoon = active.filter(uc =>
+        uc.ExpirationDate && new Date(uc.ExpirationDate) <= soonThreshold
+      );
+
+      // Get certification details for type breakdown
+      const certIds = [...new Set(userCerts.map(uc => uc.CertificationId))];
+      const certDetails = await Promise.all(
+        certIds.map(id => this.getCertificationById(id))
+      );
+      const certMap = new Map(certDetails.filter(c => c).map(c => [c!.Id, c!]));
+
+      // Type breakdown
+      const typeCount = new Map<CertificationType, number>();
+      const providerCount = new Map<string, number>();
+
+      active.forEach(uc => {
+        const cert = certMap.get(uc.CertificationId);
+        if (cert) {
+          typeCount.set(cert.CertificationType, (typeCount.get(cert.CertificationType) || 0) + 1);
+          if (cert.Provider) {
+            providerCount.set(cert.Provider, (providerCount.get(cert.Provider) || 0) + 1);
+          }
+        }
+      });
+
+      const byType = Array.from(typeCount.entries()).map(([type, count]) => ({ type, count }));
+      const byProvider = Array.from(providerCount.entries()).map(([provider, count]) => ({ provider, count }));
+
+      // Calculate completion rate
+      const inProgress = userCerts.filter(uc => uc.Status === CertificationStatus.InProgress);
+      const completed = userCerts.filter(uc =>
+        uc.Status === CertificationStatus.Active ||
+        uc.Status === CertificationStatus.Expired
+      );
+      const completionRate = inProgress.length + completed.length > 0
+        ? Math.round((completed.length / (inProgress.length + completed.length)) * 100)
+        : 0;
+
+      return {
+        totalActive: active.length,
+        totalExpired: expired.length,
+        expiringSoon: expiringSoon.length,
+        totalCertifications: userCerts.length,
+        byType,
+        byProvider,
+        completionRate
+      };
+    } catch (error) {
+      this.logger.error(`Error fetching certification stats for user ${userId}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get organization-wide certification statistics
+   */
+  async getOrganizationCertificationStats(): Promise<{
+    totalCertified: number;
+    totalCertifications: number;
+    expiringSoon: number;
+    topCertifications: Array<{ certificationId: number; name: string; count: number }>;
+    topProviders: Array<{ provider: string; count: number }>;
+  }> {
+    try {
+      // Get all active user certifications
+      const items = await this.sp.web.lists.getByTitle(USER_CERTIFICATIONS_LIST).items
+        .select('Id', 'UserId', 'CertificationId', 'ExpirationDate', 'Status')
+        .filter(`Status eq 'Active'`)();
+
+      const now = new Date();
+      const soonThreshold = new Date();
+      soonThreshold.setDate(soonThreshold.getDate() + 90);
+
+      const uniqueUsers = new Set(items.map(i => i.UserId));
+      const expiringSoon = items.filter(i =>
+        i.ExpirationDate && new Date(i.ExpirationDate) <= soonThreshold
+      );
+
+      // Count by certification
+      const certCount = new Map<number, number>();
+      items.forEach(item => {
+        certCount.set(item.CertificationId, (certCount.get(item.CertificationId) || 0) + 1);
+      });
+
+      // Get certification details
+      const allCerts = await this.getCertifications();
+      const certMap = new Map(allCerts.map(c => [c.Id, c]));
+
+      const topCertifications = Array.from(certCount.entries())
+        .map(([certificationId, count]) => ({
+          certificationId,
+          name: certMap.get(certificationId)?.Title || `Certification ${certificationId}`,
+          count
+        }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10);
+
+      // Count by provider
+      const providerCount = new Map<string, number>();
+      items.forEach(item => {
+        const cert = certMap.get(item.CertificationId);
+        if (cert?.Provider) {
+          providerCount.set(cert.Provider, (providerCount.get(cert.Provider) || 0) + 1);
+        }
+      });
+
+      const topProviders = Array.from(providerCount.entries())
+        .map(([provider, count]) => ({ provider, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+
+      return {
+        totalCertified: uniqueUsers.size,
+        totalCertifications: items.length,
+        expiringSoon: expiringSoon.length,
+        topCertifications,
+        topProviders
+      };
+    } catch (error) {
+      this.logger.error('Error fetching organization certification stats', error);
+      throw error;
+    }
+  }
+
+  // ===========================================
+  // VERIFICATION
+  // ===========================================
+
+  /**
+   * Verify a certification credential
+   */
+  async verifyCertification(
+    credentialId: string
+  ): Promise<{ isValid: boolean; certification?: IUserCertification; message: string }> {
+    try {
+      const items = await this.sp.web.lists.getByTitle(USER_CERTIFICATIONS_LIST).items
+        .select(
+          'Id', 'Title', 'UserId', 'UserEmail', 'CertificationId', 'Status',
+          'EarnedDate', 'ExpirationDate', 'CredentialId'
+        )
+        .filter(`CredentialId eq '${credentialId}'`)
+        .top(1)();
+
+      if (items.length === 0) {
+        return { isValid: false, message: 'Credential not found' };
+      }
+
+      const userCert = this.mapToUserCertification(items[0]);
+      const now = new Date();
+
+      if (userCert.Status === CertificationStatus.Revoked) {
+        return { isValid: false, certification: userCert, message: 'Credential has been revoked' };
+      }
+
+      if (userCert.ExpirationDate && new Date(userCert.ExpirationDate) < now) {
+        return { isValid: false, certification: userCert, message: 'Credential has expired' };
+      }
+
+      if (userCert.Status !== CertificationStatus.Active) {
+        return { isValid: false, certification: userCert, message: 'Credential is not active' };
+      }
+
+      return { isValid: true, certification: userCert, message: 'Credential is valid' };
+    } catch (error) {
+      this.logger.error('Error verifying certification', error);
+      throw error;
+    }
+  }
+
+  // ===========================================
+  // PRIVATE HELPER METHODS
+  // ===========================================
+
+  private mapToCertification(item: Record<string, unknown>): ICertification {
+    return {
+      Id: item.Id as number,
+      Title: item.Title as string,
+      Description: item.Description as string,
+      CertificationType: item.CertificationType as CertificationType,
+      Provider: item.Provider as string,
+      ValidityPeriod: item.ValidityPeriod as number,
+      RenewalRequired: item.RenewalRequired as boolean,
+      RenewalPeriod: item.RenewalPeriod as number,
+      Prerequisites: item.Prerequisites
+        ? JSON.parse(item.Prerequisites as string)
+        : [],
+      RelatedSkillIds: item.RelatedSkillIds
+        ? JSON.parse(item.RelatedSkillIds as string)
+        : [],
+      RelatedCourseIds: item.RelatedCourseIds
+        ? JSON.parse(item.RelatedCourseIds as string)
+        : [],
+      ExamRequired: item.ExamRequired as boolean,
+      ExamDetails: item.ExamDetails as string,
+      Cost: item.Cost as number,
+      Currency: item.Currency as string,
+      ExternalUrl: item.ExternalUrl as string,
+      BadgeImageUrl: item.BadgeImageUrl as string,
+      IsActive: item.IsActive as boolean
+    };
+  }
+
+  private mapToUserCertification(item: Record<string, unknown>): IUserCertification {
+    return {
+      Id: item.Id as number,
+      Title: item.Title as string,
+      UserId: item.UserId as number,
+      UserEmail: item.UserEmail as string,
+      CertificationId: item.CertificationId as number,
+      Status: item.Status as CertificationStatus,
+      EnrollmentDate: item.EnrollmentDate
+        ? new Date(item.EnrollmentDate as string)
+        : undefined,
+      TargetDate: item.TargetDate
+        ? new Date(item.TargetDate as string)
+        : undefined,
+      EarnedDate: item.EarnedDate
+        ? new Date(item.EarnedDate as string)
+        : undefined,
+      ExpirationDate: item.ExpirationDate
+        ? new Date(item.ExpirationDate as string)
+        : undefined,
+      CredentialId: item.CredentialId as string,
+      CredentialUrl: item.CredentialUrl as string,
+      Score: item.Score as number,
+      Attempts: item.Attempts as number,
+      Notes: item.Notes as string,
+      RenewalHistory: item.RenewalHistory
+        ? JSON.parse(item.RenewalHistory as string)
+        : []
+    };
+  }
+}

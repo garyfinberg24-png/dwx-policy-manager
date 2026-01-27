@@ -1,0 +1,1386 @@
+@import '~@fluentui/react/dist/sass/References.scss';
+@import '../../../styles/fluent-mixins';
+
+// Full-bleed container styles are applied via @include full-bleed-container from fluent-mixins
+// SharePoint canvas overrides and social bar hiding come from sharepoint-overrides.scss (imported via fluent-mixins)
+
+// SharePoint canvas and social bar overrides - REQUIRED for full-bleed and embedded mode
+:global {
+  // Enable full-bleed layouts
+  .CanvasZone,
+  [class*="CanvasZone"],
+  .CanvasSection,
+  [class*="CanvasSection"],
+  .ControlZone,
+  [class*="ControlZone"],
+  .CanvasZoneContainer,
+  [class*="CanvasZoneContainer"] {
+    overflow: visible !important;
+    max-width: none !important;
+  }
+
+  [data-sp-web-part],
+  .webPartContainer,
+  [class*="webPartContainer"] {
+    overflow: visible !important;
+  }
+
+  [class*="CanvasComponent"],
+  .CanvasComponent {
+    overflow: visible !important;
+  }
+
+  // Hide SharePoint social bar
+  [class*="pageReactions"],
+  [class*="PageReactions"],
+  [class*="pageLikes"],
+  [class*="PageLikes"],
+  [class*="socialBar"],
+  [class*="SocialBar"],
+  [class*="pageFooter"],
+  [class*="PageFooter"],
+  [data-automation-id="pageFooter"],
+  [data-automation-id="PageLikes"],
+  [data-automation-id="pageComments"],
+  .ms-CommentsWrapper,
+  [class*="CommentsWrapper"],
+  [class*="pageActions"],
+  [class*="PageActions"] {
+    display: none !important;
+  }
+}
+
+.policyHub {
+  @include full-bleed-container;
+  background-color: $ms-color-neutralLighter;
+
+  .title {
+    font-weight: 600;
+    color: $ms-color-themePrimary;
+  }
+
+  .searchBar {
+    background: white;
+    padding: 16px;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  }
+
+  .facetsContainer {
+    width: 280px;
+    flex-shrink: 0;
+  }
+
+  .facetsPanel {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    position: sticky;
+    top: 20px;
+
+    .facetsTitle {
+      font-weight: 600;
+      color: $ms-color-themePrimary;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      .filterIcon {
+        color: $ms-color-themePrimary;
+      }
+    }
+
+    .facetGroup {
+      padding-top: 8px;
+    }
+  }
+
+  .mainContent {
+    flex: 1;
+    min-width: 0;
+  }
+
+  // Grid view
+  .policiesGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+    padding: 20px 0;
+
+    .policyCard {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+      border-left: 4px solid $ms-color-themePrimary;
+      transition: all 0.2s ease;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+
+      &:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        transform: translateY(-2px);
+      }
+
+      .policyTitle {
+        font-weight: 600;
+        color: $ms-color-themePrimary;
+        margin: 0;
+      }
+
+      .policyName {
+        font-weight: 500;
+        color: $ms-color-neutralPrimary;
+        line-height: 1.4;
+      }
+
+      .category {
+        color: $ms-color-neutralSecondary;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 4px 12px;
+        background: $ms-color-neutralLight;
+        border-radius: 4px;
+        display: inline-block;
+      }
+
+      .summary {
+        color: $ms-color-neutralSecondary;
+        line-height: 1.5;
+        flex: 1;
+      }
+
+      .statusBadge {
+        color: white;
+        padding: 4px 12px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+
+      .riskBadge {
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+
+        &.riskHigh {
+          background: #FDE7E9;
+          color: #D13438;
+        }
+
+        &.riskMedium {
+          background: #FFF4CE;
+          color: #F7630C;
+        }
+
+        &.riskLow {
+          background: #DFF6DD;
+          color: #107C10;
+        }
+      }
+
+      .cardActions {
+        padding-top: 12px;
+        border-top: 1px solid $ms-color-neutralLight;
+        margin-top: auto;
+      }
+    }
+  }
+
+  // List view
+  .policiesList {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+
+    .policyListItem {
+      padding: 20px;
+      border-bottom: 1px solid $ms-color-neutralLight;
+      transition: background-color 0.2s ease;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      &:hover {
+        background-color: $ms-color-neutralLighter;
+      }
+
+      .policyTitle {
+        font-weight: 600;
+        color: $ms-color-themePrimary;
+        margin: 0;
+      }
+
+      .category {
+        color: $ms-color-neutralSecondary;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .statusBadge {
+        color: white;
+        padding: 4px 12px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+    }
+  }
+
+  // Documents grid
+  .documentsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+    padding: 20px 0;
+
+    .documentCard {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+      text-align: center;
+      transition: all 0.2s ease;
+
+      &:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        transform: translateY(-2px);
+      }
+
+      .docIcon {
+        font-size: 48px;
+        color: $ms-color-themePrimary;
+        margin-bottom: 8px;
+      }
+
+      .docTitle {
+        font-weight: 500;
+        color: $ms-color-neutralPrimary;
+        word-wrap: break-word;
+      }
+    }
+  }
+
+  // Empty state
+  .emptyState {
+    background: white;
+    padding: 60px 40px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+
+    .emptyIcon {
+      font-size: 64px;
+      color: $ms-color-neutralTertiary;
+      margin-bottom: 16px;
+    }
+
+    .subText {
+      color: $ms-color-neutralSecondary;
+    }
+  }
+
+  // Pagination
+  .pagination {
+    padding: 20px 0;
+    background: white;
+    border-radius: 8px;
+    margin-top: 16px;
+  }
+
+  // ============================================
+  // TAB PANEL - JML Official Style Guide Pattern
+  // Full width with integrated search, blue left accent
+  // Blue block active state with 4px radius
+  // ============================================
+  .moduleNav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #ffffff;
+    border: 1px solid #edebe9;
+    border-left: 4px solid #0078d4; // Blue accent
+    border-radius: 8px;
+    padding: 8px 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    box-sizing: border-box;
+    width: 100%;
+    gap: 16px;
+  }
+
+  .moduleNavTabs {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .moduleNavTitle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #0078d4;
+
+    i {
+      font-size: 18px;
+    }
+  }
+
+  .moduleNavSearch {
+    flex: 1;
+    max-width: 320px;
+    min-width: 200px;
+  }
+
+  .integratedSearchBox {
+    width: 100%;
+
+    :global(.ms-SearchBox) {
+      border-radius: 4px;
+      border: 1px solid #edebe9;
+
+      &:hover {
+        border-color: #0078d4;
+      }
+
+      &.is-active {
+        border-color: #0078d4;
+      }
+    }
+  }
+
+  .moduleNavButton {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: $ms-color-neutralSecondary;
+    font-weight: 500;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    min-width: auto;
+    white-space: nowrap;
+    flex-shrink: 0;
+
+    &:hover {
+      color: $ms-color-themePrimary;
+      background: $ms-color-neutralLighter;
+    }
+
+    &:focus {
+      outline: 2px solid $ms-color-themePrimary;
+      outline-offset: 2px;
+    }
+
+    i {
+      font-size: 16px;
+    }
+  }
+
+  .moduleNavActive {
+    // Blue block highlighting with 4px border radius
+    background: #0078d4 !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    border-radius: 4px;
+
+    &:hover {
+      background: #106ebe !important; // Slightly darker on hover
+      color: #ffffff !important;
+    }
+
+    &:focus {
+      outline: 2px solid #ffffff;
+      outline-offset: 2px;
+    }
+
+    i {
+      color: #ffffff !important;
+    }
+  }
+
+  .navDivider {
+    width: 1px;
+    height: 24px;
+    background: $ms-color-neutralLight;
+    margin: 0 4px;
+    flex-shrink: 0;
+  }
+
+  // ============================================
+  // ROLE INDICATOR
+  // ============================================
+
+  .roleIndicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    background: $ms-color-neutralLight;
+    border-radius: 16px;
+    font-size: 12px;
+    color: $ms-color-neutralSecondary;
+
+    i {
+      font-size: 12px;
+    }
+  }
+
+  // ============================================
+  // ROLE-BASED VIEW STYLES
+  // ============================================
+
+  // Summary Cards (shared across views)
+  .summaryCard,
+  .metricCard {
+    background: white;
+    padding: 24px;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    min-width: 160px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+
+    &:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+      transform: translateY(-2px);
+    }
+
+    .summaryIcon,
+    .metricIcon {
+      font-size: 32px;
+      color: $ms-color-themePrimary;
+    }
+
+    .summaryNumber,
+    .metricNumber {
+      font-weight: 600;
+      color: $ms-color-neutralPrimary;
+      margin: 0;
+    }
+  }
+
+  .sectionTitle {
+    font-weight: 600;
+    color: $ms-color-themePrimary;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  // ============================================
+  // MY POLICIES VIEW
+  // ============================================
+
+  .myPoliciesView {
+    .progressSection {
+      background: white;
+      padding: 24px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+
+    .policySection {
+      background: white;
+      padding: 24px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+
+    .policiesList {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .myPolicyCard {
+      background: $ms-color-neutralLighter;
+      padding: 16px 20px;
+      border-radius: 6px;
+      border-left: 4px solid $ms-color-themePrimary;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: white;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .policyTitle {
+        font-weight: 600;
+        color: $ms-color-themePrimary;
+        margin: 0;
+      }
+
+      .category {
+        color: $ms-color-neutralSecondary;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+    }
+  }
+
+  // ============================================
+  // AUTHORED POLICIES VIEW
+  // ============================================
+
+  .authoredView {
+    .assignmentsSection {
+      background: white;
+      padding: 24px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+      border-left: 4px solid #FFA500;
+    }
+
+    .assignmentCard {
+      background: $ms-color-neutralLighter;
+      padding: 16px 20px;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: white;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+    }
+
+    .priorityBadge {
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+
+      &[data-priority="Low"] {
+        background: #DFF6DD;
+        color: #107C10;
+      }
+
+      &[data-priority="Normal"] {
+        background: #DEECF9;
+        color: #0078D4;
+      }
+
+      &[data-priority="High"] {
+        background: #FFF4CE;
+        color: #F7630C;
+      }
+
+      &[data-priority="Urgent"] {
+        background: #FDE7E9;
+        color: #D13438;
+      }
+    }
+
+    .authoredListSection {
+      background: white;
+      padding: 24px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+  }
+
+  // ============================================
+  // MANAGER VIEW
+  // ============================================
+
+  .managerView {
+    .approvalsSection {
+      background: white;
+      padding: 24px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+      border-left: 4px solid #FFA500;
+    }
+
+    .delegationSection {
+      background: white;
+      padding: 24px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+  }
+
+  // ============================================
+  // ANALYTICS VIEW
+  // ============================================
+
+  .analyticsView {
+    .complianceSection {
+      background: white;
+      padding: 24px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+
+    .complianceNumber {
+      font-size: 48px;
+      font-weight: 600;
+      min-width: 100px;
+      text-align: center;
+    }
+
+    .chartSection {
+      background: white;
+      padding: 24px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+
+    .activitySection {
+      background: white;
+      padding: 24px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+
+    .activityRow {
+      padding: 8px 12px;
+      border-radius: 4px;
+      transition: background-color 0.2s ease;
+
+      &:hover {
+        background: $ms-color-neutralLighter;
+      }
+    }
+
+    .departmentSection {
+      background: white;
+      padding: 24px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+  }
+
+  // ============================================
+  // ANALYTICS VIEW (continued inside .policyHub)
+  // ============================================
+}
+
+// ============================================
+// ENHANCED BROWSE VIEW STYLES
+// Root level for CSS Module export
+// ============================================
+
+.browseView {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+// Module Nav Controls
+.moduleNavControls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+// View Toggle
+.viewToggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.viewToggleBtn {
+  padding: 8px 12px;
+  background: transparent;
+  border: 1px solid #edebe9;
+  border-radius: 4px;
+  color: #605e5c;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: #f3f2f1;
+    color: #0078d4;
+  }
+}
+
+.viewToggleActive {
+  background: #0078d4;
+  color: #ffffff;
+  border-color: #0078d4;
+
+  &:hover {
+    background: #106ebe;
+    color: #ffffff;
+  }
+}
+
+.viewToggleBar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+// ============================================
+// FILTER BAR
+// ============================================
+
+.filterBar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #ffffff;
+  border-radius: 8px;
+  border-left: 4px solid #0078d4;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  flex-wrap: wrap;
+}
+
+.filterDropdown {
+  min-width: 140px;
+
+  :global(.ms-Dropdown-title) {
+    border-radius: 4px;
+    font-size: 13px;
+  }
+
+  :global(.ms-Dropdown-title:hover) {
+    border-color: #0078d4;
+  }
+}
+
+.filterGroupBy {
+  :global(.ms-Dropdown-title) {
+    background: #f3f2f1;
+    font-weight: 500;
+  }
+}
+
+// ============================================
+// RESULTS BAR
+// ============================================
+
+.resultsBar {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  background: #ffffff;
+  border-radius: 8px;
+  border-left: 4px solid #0078d4;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.resultsDivider {
+  width: 1px;
+  height: 20px;
+  background: #edebe9;
+  flex-shrink: 0;
+}
+
+.resultsActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.resultsLeft {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.resultsCount {
+  font-size: 14px;
+  color: #605e5c;
+}
+
+.sortDropdown {
+  min-width: 180px;
+
+  :global(.ms-Dropdown-title) {
+    border-radius: 4px;
+    font-size: 13px;
+  }
+}
+
+.btnClearFilters {
+  :global(.ms-Button) {
+    border-color: #edebe9;
+    color: #605e5c;
+
+    &:hover {
+      background: #fde7e9;
+      border-color: #c50f1f;
+      color: #c50f1f;
+    }
+  }
+}
+
+.resultsRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btnAction {
+  :global(.ms-Button) {
+    border-color: #edebe9;
+    color: #605e5c;
+
+    &:hover {
+      background: #f3f2f1;
+      color: #0078d4;
+      border-color: #0078d4;
+    }
+  }
+}
+
+// ============================================
+// ACTIVE FILTER PILLS
+// ============================================
+
+.activeFilters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.activeFiltersLabel {
+  font-size: 13px;
+  color: #605e5c;
+  font-weight: 500;
+}
+
+.filterPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: #deecf9;
+  border-radius: 16px;
+  font-size: 12px;
+  color: #0078d4;
+}
+
+.filterPillRemove {
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px !important;
+  padding: 0 !important;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+
+  :global(.ms-Button-icon) {
+    font-size: 10px;
+    color: #0078d4;
+  }
+
+  &:hover {
+    background: #0078d4;
+
+    :global(.ms-Button-icon) {
+      color: #ffffff;
+    }
+  }
+}
+
+// ============================================
+// FEATURED POLICIES SECTION
+// ============================================
+
+.featuredSection {
+  padding: 16px;
+  background: linear-gradient(135deg, #faf9f8 0%, #f3f2f1 100%);
+  border-radius: 8px;
+  border: 1px solid #edebe9;
+  border-left: 4px solid #0078d4;
+  margin-bottom: 16px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.sectionTitleIcon {
+  color: #ffaa44;
+}
+
+.sectionToggle {
+  font-size: 12px;
+  color: #0078d4;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.featuredGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.featuredCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #ffffff;
+  border-radius: 6px;
+  border: 1px solid #edebe9;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    border-color: #0078d4;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.featuredCardIcon {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #ffaa44 0%, #ff8c00 100%);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.featuredCardContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.featuredCardTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: #323130;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.featuredCardMeta {
+  font-size: 11px;
+  color: #605e5c;
+  display: block;
+}
+
+// ============================================
+// RECENTLY VIEWED SECTION
+// ============================================
+
+.recentSection {
+  padding: 16px;
+  background: linear-gradient(135deg, #faf9f8 0%, #f3f2f1 100%);
+  border-radius: 8px;
+  border: 1px solid #edebe9;
+  border-left: 4px solid #0078d4;
+  margin-bottom: 16px;
+}
+
+.recentScroll {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+
+  &::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f3f2f1;
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #c8c6c4;
+    border-radius: 3px;
+  }
+}
+
+.recentCard {
+  flex-shrink: 0;
+  width: 200px;
+  padding: 12px;
+  background: #ffffff;
+  border-radius: 6px;
+  border: 1px solid #edebe9;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    border-color: #0078d4;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.recentCardTitle {
+  font-size: 13px;
+  font-weight: 500;
+  color: #323130;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.recentCardMeta {
+  font-size: 11px;
+  color: #a19f9d;
+  display: block;
+}
+
+// ============================================
+// ENHANCED POLICY CARDS GRID
+// ============================================
+
+.enhancedPoliciesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 16px;
+}
+
+.enhancedPolicyCard {
+  background: #ffffff;
+  border: 1px solid #edebe9;
+  border-radius: 8px;
+  padding: 20px;
+  transition: all 0.15s ease;
+  position: relative;
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+  }
+}
+
+.policyCardBadges {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 6px;
+}
+
+.badgeNew {
+  padding: 2px 8px;
+  background: #107c10;
+  color: #ffffff;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.badgeUpdated {
+  padding: 2px 8px;
+  background: #0078d4;
+  color: #ffffff;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.policyHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.policyIcon {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #0078d4 0%, #004578 100%);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.policyTitleSection {
+  flex: 1;
+  min-width: 0;
+}
+
+.policyNumber {
+  font-size: 12px;
+  color: #605e5c;
+  display: block;
+}
+
+.policyBookmark {
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  background: transparent;
+  border: 1px solid #edebe9;
+  border-radius: 4px;
+  color: #a19f9d;
+  flex-shrink: 0;
+
+  &:hover {
+    background: #fff4ce;
+    border-color: #ffaa44;
+    color: #ffaa44;
+  }
+}
+
+.bookmarkActive {
+  background: #fff4ce;
+  border-color: #ffaa44;
+  color: #ffaa44;
+}
+
+.policyMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.policyBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.badgeCategory {
+  background: #e1dfdd;
+  color: #323130;
+}
+
+.badgeActive {
+  background: #dff6dd;
+  color: #107c10;
+}
+
+.badgePending {
+  background: #fff4ce;
+  color: #8a6914;
+}
+
+.badgeMandatory {
+  background: #fde7e9;
+  color: #c50f1f;
+}
+
+.badgeTimeline {
+  background: #deecf9;
+  color: #0078d4;
+}
+
+.policyDescription {
+  font-size: 13px;
+  color: #605e5c;
+  line-height: 1.5;
+  margin-bottom: 12px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.policyInfoRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  font-size: 12px;
+  color: #605e5c;
+}
+
+.policyInfoItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  i {
+    font-size: 12px;
+    color: #a19f9d;
+  }
+}
+
+.policyFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px solid #edebe9;
+}
+
+.policyDate {
+  font-size: 12px;
+  color: #a19f9d;
+}
+
+.policyActions {
+  display: flex;
+  gap: 8px;
+}
+
+.btnView {
+  padding: 6px 16px;
+  font-size: 13px;
+}
+
+.btnViewSmall {
+  padding: 4px 12px;
+  font-size: 12px;
+  min-width: auto;
+}
+
+// ============================================
+// ENHANCED LIST VIEW
+// ============================================
+
+.policiesListView {
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #edebe9;
+  overflow: hidden;
+}
+
+.policyTable {
+  width: 100%;
+  border-collapse: collapse;
+
+  th {
+    background: #f3f2f1;
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 13px;
+    color: #323130;
+    border-bottom: 1px solid #edebe9;
+  }
+
+  td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #edebe9;
+    font-size: 14px;
+    color: #323130;
+  }
+
+  tr:hover td {
+    background: #f9f8f7;
+  }
+}
+
+.policyNameCell {
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.policyNumberCell {
+  color: #605e5c;
+  font-size: 13px;
+}
+
+.tableBadgeNew {
+  padding: 2px 6px;
+  background: #107c10;
+  color: #ffffff;
+  border-radius: 8px;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.tableBadgeUpdated {
+  padding: 2px 6px;
+  background: #0078d4;
+  color: #ffffff;
+  border-radius: 8px;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.tableBookmark {
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  background: transparent;
+  border: none;
+  color: #a19f9d;
+
+  &:hover {
+    color: #ffaa44;
+  }
+}
+
+.readingStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.statusRead {
+  background: #dff6dd;
+  color: #107c10;
+}
+
+.statusUnread {
+  background: #f3f2f1;
+  color: #605e5c;
+}
+
+.statusAcknowledged {
+  background: #deecf9;
+  color: #0078d4;
+}

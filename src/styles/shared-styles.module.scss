@@ -1,0 +1,387 @@
+/**
+ * JML Solution - Shared SCSS Styles
+ * Consistent styling patterns across all web parts
+ *
+ * Import this file in your component SCSS:
+ * @import '../../styles/shared-styles.scss';
+ @import './fluent-mixins';
+*
+ * @version 1.0.0
+ */
+
+@import '~@fluentui/react/dist/sass/References.scss';
+
+@import './fluent-mixins';
+/* ============================================
+   DESIGN TOKENS (SCSS Variables)
+   ============================================ */
+
+/* Colors */
+$jml-color-primary: #0078d4;
+$jml-color-primary-dark: #106ebe;
+$jml-color-success: #4caf50;
+$jml-color-warning: #f57c00;
+$jml-color-error: #f44336;
+$jml-color-info: #0078d4;
+
+/* Spacing (4px grid) */
+$jml-spacing-xxs: 4px;
+$jml-spacing-xs: 8px;
+$jml-spacing-s: 12px;
+$jml-spacing-m: 16px;
+$jml-spacing-l: 20px;
+$jml-spacing-xl: 24px;
+$jml-spacing-xxl: 32px;
+$jml-spacing-xxxl: 40px;
+
+/* Border Radius */
+$jml-border-radius-small: 2px;
+$jml-border-radius-medium: 4px;
+$jml-border-radius-large: 8px; /* STANDARD for cards */
+$jml-border-radius-xlarge: 12px;
+$jml-border-radius-circle: 50%;
+
+/* Shadows (Fluent UI) */
+$jml-shadow-depth4: 0 2px 4px rgba(0, 0, 0, 0.08); /* STANDARD */
+$jml-shadow-depth8: 0 4px 8px rgba(0, 0, 0, 0.12); /* Hover */
+$jml-shadow-depth16: 0 8px 16px rgba(0, 0, 0, 0.14);
+$jml-shadow-depth64: 0 16px 32px rgba(0, 0, 0, 0.18);
+
+/* Typography */
+$jml-font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+$jml-font-size-hero: 32px;
+$jml-font-size-title: 28px; /* STANDARD page title */
+$jml-font-size-h1: 24px;
+$jml-font-size-h2: 20px;
+$jml-font-size-h3: 18px;
+$jml-font-size-h4: 16px;
+$jml-font-size-base: 14px;
+$jml-font-size-small: 13px;
+$jml-font-size-caption: 12px;
+
+/* Header */
+$jml-header-icon-size: 32px; /* STANDARD */
+$jml-header-title-size: 28px; /* STANDARD */
+$jml-header-subtitle-size: 14px;
+
+/* Container */
+$jml-container-max-width: 1600px;
+$jml-container-padding-desktop: 0 40px 40px;
+$jml-container-padding-mobile: 0 20px 20px;
+
+/* Breakpoints */
+$jml-breakpoint-mobile: 768px;
+$jml-breakpoint-tablet: 1024px;
+$jml-breakpoint-desktop: 1440px;
+
+/* ============================================
+   STANDARD HEADER PATTERN
+   ============================================ */
+
+@mixin jml-header {
+  background: linear-gradient(135deg, $jml-color-primary 0%, $jml-color-primary-dark 100%);
+  color: $ms-color-white;
+  padding: $jml-spacing-xl $jml-spacing-xxxl;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: $jml-spacing-xxl;
+
+  .headerContent {
+    max-width: $jml-container-max-width;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .headerLeft {
+      display: flex;
+      align-items: center;
+      gap: $jml-spacing-m;
+
+      .headerIcon {
+        font-size: $jml-header-icon-size; /* STANDARD: 32px */
+        color: $ms-color-white;
+      }
+
+      .pageTitle {
+        margin: 0;
+        font-size: $jml-header-title-size; /* STANDARD: 28px */
+        font-weight: 600;
+        color: $ms-color-white;
+      }
+    }
+
+    .headerRight {
+      .welcome {
+        font-size: $jml-spacing-m;
+        font-weight: 500;
+        opacity: 0.95;
+      }
+    }
+  }
+
+  @media (max-width: $jml-breakpoint-mobile) {
+    padding: $jml-spacing-m 20px;
+
+    .headerContent {
+      flex-direction: column;
+      align-items: flex-start;
+      @include grid-gap-small;
+
+      .headerLeft {
+        .headerIcon {
+          font-size: 24px;
+        }
+
+        .pageTitle {
+          font-size: 20px;
+        }
+      }
+
+      .headerRight {
+        .welcome {
+          font-size: 14px;
+        }
+      }
+    }
+  }
+}
+
+/* ============================================
+   STANDARD CONTENT CONTAINER
+   ============================================ */
+
+@mixin jml-content-container {
+  max-width: $jml-container-max-width;
+  margin: 0 auto;
+  padding: $jml-container-padding-desktop;
+
+  @media (max-width: $jml-breakpoint-mobile) {
+    padding: $jml-container-padding-mobile;
+  }
+}
+
+/* ============================================
+   STANDARD CARD PATTERN
+   ============================================ */
+
+@mixin jml-card {
+  border: 1px solid $ms-color-neutralLight;
+  border-radius: $jml-border-radius-large; /* STANDARD: 8px */
+  padding: 20px;
+  background: $ms-color-white;
+  box-shadow: $jml-shadow-depth4; /* Fluent shadow */
+  transition: all 0.2s ease;
+
+  &:hover {
+    box-shadow: $jml-shadow-depth8; /* Fluent hover shadow */
+    border-color: $jml-color-primary;
+    transform: translateY(-2px);
+  }
+}
+
+/* ============================================
+   SECTION HEADERS
+   ============================================ */
+
+@mixin jml-section-header {
+  font-size: $jml-font-size-h2;
+  font-weight: 600;
+  color: $ms-color-neutralPrimary;
+  margin-bottom: $jml-spacing-m;
+}
+
+/* ============================================
+   BADGE STYLES
+   ============================================ */
+
+@mixin jml-badge($background, $color) {
+  padding: 4px 12px;
+  border-radius: $jml-border-radius-xlarge;
+  font-size: $jml-font-size-caption;
+  font-weight: 600;
+  background-color: $background;
+  color: $color;
+  display: inline-block;
+}
+
+.badge {
+  @include jml-badge($ms-color-neutralLight, $ms-color-neutralPrimary);
+
+  &.joiner {
+    @include jml-badge(#e3f2fd, $jml-color-primary);
+  }
+
+  &.mover {
+    @include jml-badge(#f3e5f5, #9c27b0);
+  }
+
+  &.leaver {
+    @include jml-badge(#fff3e0, $jml-color-warning);
+  }
+
+  &.completed {
+    @include jml-badge(#e8f5e9, $jml-color-success);
+  }
+
+  &.inProgress {
+    @include jml-badge(#fff3e0, $jml-color-warning);
+  }
+
+  &.pending {
+    @include jml-badge(#fff3e0, $jml-color-warning);
+  }
+
+  &.overdue {
+    @include jml-badge(#ffebee, $jml-color-error);
+  }
+
+  &.high {
+    @include jml-badge(#ffebee, $jml-color-error);
+  }
+
+  &.medium {
+    @include jml-badge(#fff3e0, $jml-color-warning);
+  }
+
+  &.low {
+    @include jml-badge(#e8f5e9, $jml-color-success);
+  }
+}
+
+/* ============================================
+   PROGRESS BAR
+   ============================================ */
+
+@mixin jml-progress-bar {
+  .progressBar {
+    height: 8px;
+    background-color: $ms-color-neutralLight;
+    border-radius: $jml-border-radius-medium;
+    overflow: hidden;
+
+    .progressFill {
+      height: 100%;
+      background: linear-gradient(90deg, $jml-color-primary 0%, $jml-color-primary-dark 100%);
+      transition: width 0.3s ease;
+    }
+  }
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+
+@mixin jml-button-primary {
+  height: 40px;
+  padding: 0 20px;
+  border: none;
+  border-radius: $jml-border-radius-medium;
+  background-color: $jml-color-primary;
+  color: $ms-color-white;
+  font-size: $jml-font-size-base;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: $jml-color-primary-dark;
+  }
+
+  &:disabled {
+    background-color: $ms-color-neutralTertiary;
+    cursor: not-allowed;
+  }
+}
+
+@mixin jml-button-secondary {
+  height: 40px;
+  padding: 0 20px;
+  border: 1px solid $jml-color-primary;
+  border-radius: $jml-border-radius-medium;
+  background-color: transparent;
+  color: $jml-color-primary;
+  font-size: $jml-font-size-base;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background-color: $ms-color-neutralLighter;
+  }
+
+  &:disabled {
+    border-color: $ms-color-neutralTertiary;
+    color: $ms-color-neutralTertiary;
+    cursor: not-allowed;
+  }
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+/* Spacing utilities */
+.jml-mb-xs { margin-bottom: $jml-spacing-xs; }
+.jml-mb-s { margin-bottom: $jml-spacing-s; }
+.jml-mb-m { margin-bottom: $jml-spacing-m; }
+.jml-mb-l { margin-bottom: $jml-spacing-l; }
+.jml-mb-xl { margin-bottom: $jml-spacing-xl; }
+.jml-mb-xxl { margin-bottom: $jml-spacing-xxl; }
+
+.jml-mt-xs { margin-top: $jml-spacing-xs; }
+.jml-mt-s { margin-top: $jml-spacing-s; }
+.jml-mt-m { margin-top: $jml-spacing-m; }
+.jml-mt-l { margin-top: $jml-spacing-l; }
+.jml-mt-xl { margin-top: $jml-spacing-xl; }
+.jml-mt-xxl { margin-top: $jml-spacing-xxl; }
+
+/* Text utilities */
+.jml-text-primary { color: $jml-color-primary; }
+.jml-text-success { color: $jml-color-success; }
+.jml-text-warning { color: $jml-color-warning; }
+.jml-text-error { color: $jml-color-error; }
+
+/* Truncate text */
+.jml-text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ============================================
+   GRID LAYOUTS
+   ============================================ */
+
+@mixin jml-grid-auto($min-width: 240px, $gap: 16px) {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax($min-width, 1fr));
+  gap: $gap;
+}
+
+@mixin jml-grid-columns($columns: 3, $gap: 16px) {
+  display: grid;
+  grid-template-columns: repeat($columns, 1fr);
+  gap: $gap;
+
+  @media (max-width: $jml-breakpoint-mobile) {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================
+   RESPONSIVE HELPERS
+   ============================================ */
+
+@mixin jml-hide-mobile {
+  @media (max-width: $jml-breakpoint-mobile) {
+    display: none !important;
+  }
+}
+
+@mixin jml-show-mobile {
+  display: none;
+
+  @media (max-width: $jml-breakpoint-mobile) {
+    display: block;
+  }
+}

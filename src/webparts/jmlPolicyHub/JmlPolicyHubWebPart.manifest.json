@@ -1,0 +1,29 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx/client-side-web-part-manifest.schema.json",
+  "id": "bdd031ca-9ea8-40df-b0e5-e7cdd43eaa27",
+  "alias": "DwxPolicyHubWebPart",
+  "componentType": "WebPart",
+
+  "version": "*",
+  "manifestVersion": 2,
+
+  "requiresCustomScript": false,
+  "supportedHosts": ["SharePointWebPart", "SharePointFullPage", "TeamsPersonalApp", "TeamsTab"],
+  "supportsThemeVariants": true,
+
+  "preconfiguredEntries": [{
+    "groupId": "e4b0a295-44e2-4fa4-8f15-4eac5edf4275",
+    "group": { "default": "DWx Policy Manager" },
+    "title": { "default": "DWx Policy Hub" },
+    "description": { "default": "Browse all policies with advanced search, faceted filtering, and document center" },
+    "officeFabricIconFontName": "DocumentSet",
+    "properties": {
+      "title": "DWx Policy Hub",
+      "showDocumentCenter": true,
+      "enableAdvancedSearch": true,
+      "itemsPerPage": 20,
+      "showFacets": true
+    }
+  }],
+  "supportsFullBleed": true
+}

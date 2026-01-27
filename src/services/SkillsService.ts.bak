@@ -1,0 +1,994 @@
+import { WebPartContext } from '@microsoft/sp-webpart-base';
+import { SPFI, spfi, SPFx } from '@pnp/sp';
+import '@pnp/sp/webs';
+import '@pnp/sp/lists';
+import '@pnp/sp/items';
+import '@pnp/sp/site-users/web';
+import { CacheService } from './CacheService';
+import { LoggingService } from './LoggingService';
+import {
+  ISkill,
+  IUserSkill,
+  ISkillAssessment,
+  ISkillGap,
+  IRoleCompetency,
+  ICareerPath,
+  ICareerMilestone,
+  ProficiencyLevel,
+  SkillDomain,
+  SkillCategory
+} from '../models/ITraining';
+
+// Skills filter interface
+export interface ISkillsFilter {
+  domain?: SkillDomain;
+  category?: SkillCategory;
+  searchQuery?: string;
+  includeArchived?: boolean;
+}
+
+// User skills filter interface
+export interface IUserSkillsFilter {
+  userId?: number;
+  skillId?: number;
+  minProficiency?: ProficiencyLevel;
+  domain?: SkillDomain;
+}
+
+// Gap analysis request interface
+export interface IGapAnalysisRequest {
+  userId: number;
+  targetRoleId?: number;
+  targetCareerPathId?: number;
+}
+
+// Gap analysis result interface
+export interface IGapAnalysisResult {
+  userId: number;
+  targetRole?: string;
+  currentSkills: IUserSkill[];
+  requiredSkills: IRoleCompetency[];
+  gaps: ISkillGap[];
+  overallReadiness: number;
+  recommendations: ISkillRecommendation[];
+}
+
+// Skill recommendation interface
+export interface ISkillRecommendation {
+  skill: ISkill;
+  currentLevel: ProficiencyLevel;
+  targetLevel: ProficiencyLevel;
+  priority: 'Critical' | 'High' | 'Medium' | 'Low';
+  suggestedCourses: number[];
+  estimatedTimeToAchieve: number; // hours
+}
+
+// Skills taxonomy interface
+export interface ISkillsTaxonomy {
+  domains: ISkillDomainNode[];
+  totalSkills: number;
+  lastUpdated: Date;
+}
+
+export interface ISkillDomainNode {
+  domain: SkillDomain;
+  categories: ISkillCategoryNode[];
+  skillCount: number;
+}
+
+export interface ISkillCategoryNode {
+  category: SkillCategory;
+  skills: ISkill[];
+}
+
+// Assessment submission interface
+export interface IAssessmentSubmission {
+  userId: number;
+  skillId: number;
+  selfAssessedLevel: ProficiencyLevel;
+  confidence: number; // 1-5
+  notes?: string;
+  evidenceUrls?: string[];
+}
+
+// SharePoint list names
+const SKILLS_LIST = 'JML_Skills';
+const USER_SKILLS_LIST = 'JML_UserSkills';
+const SKILL_ASSESSMENTS_LIST = 'JML_SkillAssessments';
+const ROLE_COMPETENCIES_LIST = 'JML_RoleCompetencies';
+const CAREER_PATHS_LIST = 'JML_CareerPaths';
+
+// Cache keys
+const CACHE_KEYS = {
+  SKILLS_TAXONOMY: 'skills_taxonomy',
+  ALL_SKILLS: 'all_skills',
+  USER_SKILLS: (userId: number) => `user_skills_${userId}`,
+  ROLE_COMPETENCIES: (roleId: number) => `role_competencies_${roleId}`,
+  CAREER_PATHS: 'career_paths'
+};
+
+// Cache durations (in seconds)
+const CACHE_DURATION = {
+  SKILLS: 3600, // 1 hour
+  USER_SKILLS: 300, // 5 minutes
+  TAXONOMY: 3600, // 1 hour
+  CAREER_PATHS: 1800 // 30 minutes
+};
+
+export class SkillsService {
+  private sp: SPFI;
+  private cache: CacheService;
+  private logger: LoggingService;
+
+  constructor(context: WebPartContext) {
+    this.sp = spfi().using(SPFx(context));
+    this.cache = CacheService.getInstance();
+    this.logger = LoggingService.getInstance();
+  }
+
+  // ===========================================
+  // SKILLS TAXONOMY OPERATIONS
+  // ===========================================
+
+  /**
+   * Get the complete skills taxonomy
+   */
+  async getSkillsTaxonomy(): Promise<ISkillsTaxonomy> {
+    const cacheKey = CACHE_KEYS.SKILLS_TAXONOMY;
+    const cached = this.cache.get<ISkillsTaxonomy>(cacheKey);
+    if (cached) return cached;
+
+    try {
+      const skills = await this.getAllSkills();
+
+      // Build taxonomy structure
+      const domainMap = new Map<SkillDomain, Map<SkillCategory, ISkill[]>>();
+
+      skills.forEach(skill => {
+        if (!domainMap.has(skill.Domain)) {
+          domainMap.set(skill.Domain, new Map());
+        }
+        const categoryMap = domainMap.get(skill.Domain)!;
+        if (!categoryMap.has(skill.Category)) {
+          categoryMap.set(skill.Category, []);
+        }
+        categoryMap.get(skill.Category)!.push(skill);
+      });
+
+      const domains: ISkillDomainNode[] = [];
+      domainMap.forEach((categoryMap, domain) => {
+        const categories: ISkillCategoryNode[] = [];
+        let skillCount = 0;
+
+        categoryMap.forEach((categorySkills, category) => {
+          categories.push({
+            category,
+            skills: categorySkills.sort((a, b) => a.Title.localeCompare(b.Title))
+          });
+          skillCount += categorySkills.length;
+        });
+
+        domains.push({
+          domain,
+          categories: categories.sort((a, b) => a.category.localeCompare(b.category)),
+          skillCount
+        });
+      });
+
+      const taxonomy: ISkillsTaxonomy = {
+        domains: domains.sort((a, b) => a.domain.localeCompare(b.domain)),
+        totalSkills: skills.length,
+        lastUpdated: new Date()
+      };
+
+      this.cache.set(cacheKey, taxonomy, CACHE_DURATION.TAXONOMY);
+      return taxonomy;
+    } catch (error) {
+      this.logger.error('Error fetching skills taxonomy', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all skills
+   */
+  async getAllSkills(filters?: ISkillsFilter): Promise<ISkill[]> {
+    const cacheKey = CACHE_KEYS.ALL_SKILLS;
+
+    // Only use cache if no filters
+    if (!filters) {
+      const cached = this.cache.get<ISkill[]>(cacheKey);
+      if (cached) return cached;
+    }
+
+    try {
+      let query = this.sp.web.lists.getByTitle(SKILLS_LIST).items
+        .select(
+          'Id', 'Title', 'Description', 'Domain', 'Category',
+          'IsCore', 'IsActive', 'RelatedSkillIds', 'Prerequisites',
+          'Proficiency1Description', 'Proficiency2Description',
+          'Proficiency3Description', 'Proficiency4Description',
+          'Proficiency5Description', 'Created', 'Modified'
+        )
+        .orderBy('Title', true);
+
+      if (filters?.domain) {
+        query = query.filter(`Domain eq '${filters.domain}'`);
+      }
+      if (filters?.category) {
+        query = query.filter(`Category eq '${filters.category}'`);
+      }
+      if (!filters?.includeArchived) {
+        query = query.filter(`IsActive eq 1`);
+      }
+
+      const items = await query();
+      const skills = items.map(item => this.mapToSkill(item));
+
+      // Apply search filter client-side
+      let result = skills;
+      if (filters?.searchQuery) {
+        const search = filters.searchQuery.toLowerCase();
+        result = skills.filter(s =>
+          s.Title.toLowerCase().includes(search) ||
+          s.Description?.toLowerCase().includes(search)
+        );
+      }
+
+      if (!filters) {
+        this.cache.set(cacheKey, result, CACHE_DURATION.SKILLS);
+      }
+
+      return result;
+    } catch (error) {
+      this.logger.error('Error fetching skills', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get a skill by ID
+   */
+  async getSkillById(skillId: number): Promise<ISkill | null> {
+    try {
+      const item = await this.sp.web.lists.getByTitle(SKILLS_LIST).items
+        .getById(skillId)
+        .select(
+          'Id', 'Title', 'Description', 'Domain', 'Category',
+          'IsCore', 'IsActive', 'RelatedSkillIds', 'Prerequisites',
+          'Proficiency1Description', 'Proficiency2Description',
+          'Proficiency3Description', 'Proficiency4Description',
+          'Proficiency5Description', 'Created', 'Modified'
+        )();
+
+      return this.mapToSkill(item);
+    } catch (error) {
+      this.logger.error(`Error fetching skill ${skillId}`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Create a new skill
+   */
+  async createSkill(skill: Partial<ISkill>): Promise<ISkill> {
+    try {
+      const itemData = {
+        Title: skill.Title,
+        Description: skill.Description,
+        Domain: skill.Domain,
+        Category: skill.Category,
+        IsCore: skill.IsCore || false,
+        IsActive: true,
+        RelatedSkillIds: skill.RelatedSkillIds ? JSON.stringify(skill.RelatedSkillIds) : null,
+        Prerequisites: skill.Prerequisites ? JSON.stringify(skill.Prerequisites) : null,
+        Proficiency1Description: skill.Proficiency1Description,
+        Proficiency2Description: skill.Proficiency2Description,
+        Proficiency3Description: skill.Proficiency3Description,
+        Proficiency4Description: skill.Proficiency4Description,
+        Proficiency5Description: skill.Proficiency5Description
+      };
+
+      const result = await this.sp.web.lists.getByTitle(SKILLS_LIST).items.add(itemData);
+
+      // Invalidate cache
+      this.cache.remove(CACHE_KEYS.ALL_SKILLS);
+      this.cache.remove(CACHE_KEYS.SKILLS_TAXONOMY);
+
+      return this.mapToSkill(result.data);
+    } catch (error) {
+      this.logger.error('Error creating skill', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update a skill
+   */
+  async updateSkill(skillId: number, updates: Partial<ISkill>): Promise<void> {
+    try {
+      const itemData: Record<string, unknown> = {};
+
+      if (updates.Title !== undefined) itemData.Title = updates.Title;
+      if (updates.Description !== undefined) itemData.Description = updates.Description;
+      if (updates.Domain !== undefined) itemData.Domain = updates.Domain;
+      if (updates.Category !== undefined) itemData.Category = updates.Category;
+      if (updates.IsCore !== undefined) itemData.IsCore = updates.IsCore;
+      if (updates.IsActive !== undefined) itemData.IsActive = updates.IsActive;
+      if (updates.RelatedSkillIds !== undefined) {
+        itemData.RelatedSkillIds = JSON.stringify(updates.RelatedSkillIds);
+      }
+      if (updates.Prerequisites !== undefined) {
+        itemData.Prerequisites = JSON.stringify(updates.Prerequisites);
+      }
+
+      await this.sp.web.lists.getByTitle(SKILLS_LIST).items
+        .getById(skillId)
+        .update(itemData);
+
+      // Invalidate cache
+      this.cache.remove(CACHE_KEYS.ALL_SKILLS);
+      this.cache.remove(CACHE_KEYS.SKILLS_TAXONOMY);
+    } catch (error) {
+      this.logger.error(`Error updating skill ${skillId}`, error);
+      throw error;
+    }
+  }
+
+  // ===========================================
+  // USER SKILLS OPERATIONS
+  // ===========================================
+
+  /**
+   * Get user skills
+   */
+  async getUserSkills(userId: number, filters?: IUserSkillsFilter): Promise<IUserSkill[]> {
+    const cacheKey = CACHE_KEYS.USER_SKILLS(userId);
+
+    if (!filters || (filters.userId === userId && Object.keys(filters).length === 1)) {
+      const cached = this.cache.get<IUserSkill[]>(cacheKey);
+      if (cached) return cached;
+    }
+
+    try {
+      let filterStr = `UserId eq ${userId}`;
+
+      if (filters?.skillId) {
+        filterStr += ` and SkillId eq ${filters.skillId}`;
+      }
+      if (filters?.minProficiency) {
+        filterStr += ` and CurrentLevel ge ${filters.minProficiency}`;
+      }
+
+      const items = await this.sp.web.lists.getByTitle(USER_SKILLS_LIST).items
+        .select(
+          'Id', 'Title', 'UserId', 'SkillId', 'CurrentLevel', 'TargetLevel',
+          'SelfAssessedLevel', 'ManagerAssessedLevel', 'LastAssessmentDate',
+          'CertificationIds', 'CourseIds', 'Notes', 'Created', 'Modified'
+        )
+        .filter(filterStr)
+        .orderBy('Modified', false)();
+
+      const userSkills = items.map(item => this.mapToUserSkill(item));
+
+      // Apply domain filter client-side (requires skill lookup)
+      let result = userSkills;
+      if (filters?.domain) {
+        const allSkills = await this.getAllSkills();
+        const skillsInDomain = new Set(
+          allSkills.filter(s => s.Domain === filters.domain).map(s => s.Id)
+        );
+        result = userSkills.filter(us => skillsInDomain.has(us.SkillId));
+      }
+
+      if (!filters || (filters.userId === userId && Object.keys(filters).length === 1)) {
+        this.cache.set(cacheKey, result, CACHE_DURATION.USER_SKILLS);
+      }
+
+      return result;
+    } catch (error) {
+      this.logger.error(`Error fetching user skills for user ${userId}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get user skill for a specific skill
+   */
+  async getUserSkill(userId: number, skillId: number): Promise<IUserSkill | null> {
+    try {
+      const items = await this.sp.web.lists.getByTitle(USER_SKILLS_LIST).items
+        .select(
+          'Id', 'Title', 'UserId', 'SkillId', 'CurrentLevel', 'TargetLevel',
+          'SelfAssessedLevel', 'ManagerAssessedLevel', 'LastAssessmentDate',
+          'CertificationIds', 'CourseIds', 'Notes', 'Created', 'Modified'
+        )
+        .filter(`UserId eq ${userId} and SkillId eq ${skillId}`)
+        .top(1)();
+
+      if (items.length === 0) return null;
+      return this.mapToUserSkill(items[0]);
+    } catch (error) {
+      this.logger.error(`Error fetching user skill`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Update or create user skill
+   */
+  async updateUserSkill(
+    userId: number,
+    skillId: number,
+    updates: Partial<IUserSkill>
+  ): Promise<IUserSkill> {
+    try {
+      const existing = await this.getUserSkill(userId, skillId);
+
+      const itemData: Record<string, unknown> = {
+        UserId: userId,
+        SkillId: skillId
+      };
+
+      if (updates.CurrentLevel !== undefined) itemData.CurrentLevel = updates.CurrentLevel;
+      if (updates.TargetLevel !== undefined) itemData.TargetLevel = updates.TargetLevel;
+      if (updates.SelfAssessedLevel !== undefined) itemData.SelfAssessedLevel = updates.SelfAssessedLevel;
+      if (updates.ManagerAssessedLevel !== undefined) itemData.ManagerAssessedLevel = updates.ManagerAssessedLevel;
+      if (updates.Notes !== undefined) itemData.Notes = updates.Notes;
+      if (updates.CertificationIds !== undefined) {
+        itemData.CertificationIds = JSON.stringify(updates.CertificationIds);
+      }
+      if (updates.CourseIds !== undefined) {
+        itemData.CourseIds = JSON.stringify(updates.CourseIds);
+      }
+      itemData.LastAssessmentDate = new Date().toISOString();
+
+      let result: IUserSkill;
+
+      if (existing) {
+        await this.sp.web.lists.getByTitle(USER_SKILLS_LIST).items
+          .getById(existing.Id!)
+          .update(itemData);
+        result = { ...existing, ...updates, LastAssessmentDate: new Date() };
+      } else {
+        // Get skill title for the new record
+        const skill = await this.getSkillById(skillId);
+        itemData.Title = skill?.Title || `Skill ${skillId}`;
+
+        const addResult = await this.sp.web.lists.getByTitle(USER_SKILLS_LIST).items.add(itemData);
+        result = this.mapToUserSkill(addResult.data);
+      }
+
+      // Invalidate cache
+      this.cache.remove(CACHE_KEYS.USER_SKILLS(userId));
+
+      return result;
+    } catch (error) {
+      this.logger.error(`Error updating user skill`, error);
+      throw error;
+    }
+  }
+
+  // ===========================================
+  // SKILL ASSESSMENTS
+  // ===========================================
+
+  /**
+   * Submit a self-assessment
+   */
+  async submitSelfAssessment(assessment: IAssessmentSubmission): Promise<ISkillAssessment> {
+    try {
+      const skill = await this.getSkillById(assessment.skillId);
+
+      const itemData = {
+        Title: `${skill?.Title || 'Skill'} - Self Assessment`,
+        UserId: assessment.userId,
+        SkillId: assessment.skillId,
+        AssessmentType: 'Self',
+        AssessedLevel: assessment.selfAssessedLevel,
+        Confidence: assessment.confidence,
+        Notes: assessment.notes,
+        EvidenceUrls: assessment.evidenceUrls ? JSON.stringify(assessment.evidenceUrls) : null,
+        AssessmentDate: new Date().toISOString(),
+        Status: 'Submitted'
+      };
+
+      const result = await this.sp.web.lists.getByTitle(SKILL_ASSESSMENTS_LIST).items.add(itemData);
+
+      // Update user skill with self-assessed level
+      await this.updateUserSkill(assessment.userId, assessment.skillId, {
+        SelfAssessedLevel: assessment.selfAssessedLevel
+      });
+
+      return this.mapToSkillAssessment(result.data);
+    } catch (error) {
+      this.logger.error('Error submitting self-assessment', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get assessment history for a user
+   */
+  async getAssessmentHistory(userId: number, skillId?: number): Promise<ISkillAssessment[]> {
+    try {
+      let filter = `UserId eq ${userId}`;
+      if (skillId) {
+        filter += ` and SkillId eq ${skillId}`;
+      }
+
+      const items = await this.sp.web.lists.getByTitle(SKILL_ASSESSMENTS_LIST).items
+        .select(
+          'Id', 'Title', 'UserId', 'SkillId', 'AssessmentType', 'AssessedLevel',
+          'AssessorId', 'Confidence', 'Notes', 'EvidenceUrls', 'AssessmentDate',
+          'Status', 'Created', 'Modified'
+        )
+        .filter(filter)
+        .orderBy('AssessmentDate', false)();
+
+      return items.map(item => this.mapToSkillAssessment(item));
+    } catch (error) {
+      this.logger.error('Error fetching assessment history', error);
+      throw error;
+    }
+  }
+
+  // ===========================================
+  // GAP ANALYSIS
+  // ===========================================
+
+  /**
+   * Perform gap analysis for a user against a target role
+   */
+  async performGapAnalysis(request: IGapAnalysisRequest): Promise<IGapAnalysisResult> {
+    try {
+      const { userId, targetRoleId, targetCareerPathId } = request;
+
+      // Get user's current skills
+      const userSkills = await this.getUserSkills(userId);
+      const userSkillMap = new Map(userSkills.map(us => [us.SkillId, us]));
+
+      // Get required competencies for the target role
+      let requiredCompetencies: IRoleCompetency[] = [];
+      let targetRoleName = '';
+
+      if (targetRoleId) {
+        requiredCompetencies = await this.getRoleCompetencies(targetRoleId);
+        // Get role name from first competency or fetch separately
+        if (requiredCompetencies.length > 0) {
+          targetRoleName = requiredCompetencies[0].RoleTitle || `Role ${targetRoleId}`;
+        }
+      } else if (targetCareerPathId) {
+        // Get career path and its milestone competencies
+        const careerPath = await this.getCareerPathById(targetCareerPathId);
+        if (careerPath?.Milestones) {
+          const nextMilestone = careerPath.Milestones.find(m => !m.IsCompleted);
+          if (nextMilestone) {
+            requiredCompetencies = nextMilestone.RequiredCompetencies || [];
+            targetRoleName = nextMilestone.Title;
+          }
+        }
+      }
+
+      // Calculate gaps
+      const gaps: ISkillGap[] = [];
+      const recommendations: ISkillRecommendation[] = [];
+      let totalRequired = 0;
+      let totalMet = 0;
+
+      for (const competency of requiredCompetencies) {
+        const userSkill = userSkillMap.get(competency.SkillId);
+        const currentLevel = userSkill?.CurrentLevel || ProficiencyLevel.None;
+        const requiredLevel = competency.RequiredLevel;
+
+        totalRequired++;
+
+        if (currentLevel >= requiredLevel) {
+          totalMet++;
+        } else {
+          const skill = await this.getSkillById(competency.SkillId);
+
+          const gap: ISkillGap = {
+            SkillId: competency.SkillId,
+            SkillName: skill?.Title || `Skill ${competency.SkillId}`,
+            CurrentLevel: currentLevel,
+            RequiredLevel: requiredLevel,
+            GapSize: requiredLevel - currentLevel,
+            Priority: this.calculateGapPriority(requiredLevel - currentLevel, competency.IsRequired),
+            RecommendedCourses: competency.RecommendedCourseIds || [],
+            EstimatedTimeToClose: this.estimateTimeToClose(currentLevel, requiredLevel)
+          };
+
+          gaps.push(gap);
+
+          // Generate recommendation
+          if (skill) {
+            recommendations.push({
+              skill,
+              currentLevel,
+              targetLevel: requiredLevel,
+              priority: gap.Priority,
+              suggestedCourses: competency.RecommendedCourseIds || [],
+              estimatedTimeToAchieve: gap.EstimatedTimeToClose
+            });
+          }
+        }
+      }
+
+      const overallReadiness = totalRequired > 0
+        ? Math.round((totalMet / totalRequired) * 100)
+        : 0;
+
+      return {
+        userId,
+        targetRole: targetRoleName,
+        currentSkills: userSkills,
+        requiredSkills: requiredCompetencies,
+        gaps: gaps.sort((a, b) => {
+          const priorityOrder = { Critical: 0, High: 1, Medium: 2, Low: 3 };
+          return priorityOrder[a.Priority] - priorityOrder[b.Priority];
+        }),
+        overallReadiness,
+        recommendations: recommendations.sort((a, b) => {
+          const priorityOrder = { Critical: 0, High: 1, Medium: 2, Low: 3 };
+          return priorityOrder[a.priority] - priorityOrder[b.priority];
+        })
+      };
+    } catch (error) {
+      this.logger.error('Error performing gap analysis', error);
+      throw error;
+    }
+  }
+
+  // ===========================================
+  // ROLE COMPETENCIES
+  // ===========================================
+
+  /**
+   * Get competencies required for a role
+   */
+  async getRoleCompetencies(roleId: number): Promise<IRoleCompetency[]> {
+    const cacheKey = CACHE_KEYS.ROLE_COMPETENCIES(roleId);
+    const cached = this.cache.get<IRoleCompetency[]>(cacheKey);
+    if (cached) return cached;
+
+    try {
+      const items = await this.sp.web.lists.getByTitle(ROLE_COMPETENCIES_LIST).items
+        .select(
+          'Id', 'Title', 'RoleId', 'RoleTitle', 'SkillId', 'RequiredLevel',
+          'IsRequired', 'Weight', 'RecommendedCourseIds', 'Created', 'Modified'
+        )
+        .filter(`RoleId eq ${roleId}`)
+        .orderBy('Weight', false)();
+
+      const competencies = items.map(item => this.mapToRoleCompetency(item));
+      this.cache.set(cacheKey, competencies, CACHE_DURATION.SKILLS);
+      return competencies;
+    } catch (error) {
+      this.logger.error(`Error fetching role competencies for role ${roleId}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all roles with their competency counts
+   */
+  async getRoles(): Promise<Array<{ roleId: number; roleTitle: string; competencyCount: number }>> {
+    try {
+      const items = await this.sp.web.lists.getByTitle(ROLE_COMPETENCIES_LIST).items
+        .select('RoleId', 'RoleTitle')();
+
+      // Group by role
+      const roleMap = new Map<number, { title: string; count: number }>();
+      items.forEach(item => {
+        const existing = roleMap.get(item.RoleId);
+        if (existing) {
+          existing.count++;
+        } else {
+          roleMap.set(item.RoleId, { title: item.RoleTitle, count: 1 });
+        }
+      });
+
+      return Array.from(roleMap.entries()).map(([roleId, data]) => ({
+        roleId,
+        roleTitle: data.title,
+        competencyCount: data.count
+      }));
+    } catch (error) {
+      this.logger.error('Error fetching roles', error);
+      throw error;
+    }
+  }
+
+  // ===========================================
+  // CAREER PATHS
+  // ===========================================
+
+  /**
+   * Get all career paths
+   */
+  async getCareerPaths(): Promise<ICareerPath[]> {
+    const cacheKey = CACHE_KEYS.CAREER_PATHS;
+    const cached = this.cache.get<ICareerPath[]>(cacheKey);
+    if (cached) return cached;
+
+    try {
+      const items = await this.sp.web.lists.getByTitle(CAREER_PATHS_LIST).items
+        .select(
+          'Id', 'Title', 'Description', 'Department', 'StartingRole',
+          'TargetRole', 'EstimatedDuration', 'Milestones', 'IsActive',
+          'Created', 'Modified'
+        )
+        .filter('IsActive eq 1')
+        .orderBy('Title', true)();
+
+      const paths = items.map(item => this.mapToCareerPath(item));
+      this.cache.set(cacheKey, paths, CACHE_DURATION.CAREER_PATHS);
+      return paths;
+    } catch (error) {
+      this.logger.error('Error fetching career paths', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get career path by ID
+   */
+  async getCareerPathById(pathId: number): Promise<ICareerPath | null> {
+    try {
+      const item = await this.sp.web.lists.getByTitle(CAREER_PATHS_LIST).items
+        .getById(pathId)
+        .select(
+          'Id', 'Title', 'Description', 'Department', 'StartingRole',
+          'TargetRole', 'EstimatedDuration', 'Milestones', 'IsActive',
+          'Created', 'Modified'
+        )();
+
+      return this.mapToCareerPath(item);
+    } catch (error) {
+      this.logger.error(`Error fetching career path ${pathId}`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Get user's career path progress
+   */
+  async getUserCareerProgress(
+    userId: number,
+    careerPathId: number
+  ): Promise<{
+    careerPath: ICareerPath;
+    completedMilestones: number;
+    currentMilestone: ICareerMilestone | null;
+    overallProgress: number;
+    skillsProgress: IGapAnalysisResult;
+  } | null> {
+    try {
+      const careerPath = await this.getCareerPathById(careerPathId);
+      if (!careerPath) return null;
+
+      const milestones = careerPath.Milestones || [];
+      const completedMilestones = milestones.filter(m => m.IsCompleted).length;
+      const currentMilestone = milestones.find(m => !m.IsCompleted) || null;
+
+      const skillsProgress = await this.performGapAnalysis({
+        userId,
+        targetCareerPathId: careerPathId
+      });
+
+      return {
+        careerPath,
+        completedMilestones,
+        currentMilestone,
+        overallProgress: milestones.length > 0
+          ? Math.round((completedMilestones / milestones.length) * 100)
+          : 0,
+        skillsProgress
+      };
+    } catch (error) {
+      this.logger.error('Error fetching user career progress', error);
+      return null;
+    }
+  }
+
+  // ===========================================
+  // SKILL INSIGHTS & ANALYTICS
+  // ===========================================
+
+  /**
+   * Get skill distribution across the organization
+   */
+  async getOrganizationSkillDistribution(): Promise<{
+    byDomain: Array<{ domain: SkillDomain; userCount: number; avgProficiency: number }>;
+    topSkills: Array<{ skillId: number; skillName: string; userCount: number }>;
+    skillGaps: Array<{ skillId: number; skillName: string; gapCount: number }>;
+  }> {
+    try {
+      // This would typically involve aggregating user skills data
+      // For now, return structure that can be populated
+      const allSkills = await this.getAllSkills();
+
+      // Get all user skills (this might need pagination for large orgs)
+      const userSkillItems = await this.sp.web.lists.getByTitle(USER_SKILLS_LIST).items
+        .select('SkillId', 'CurrentLevel')
+        .top(5000)();
+
+      // Aggregate by skill
+      const skillCounts = new Map<number, { count: number; totalLevel: number }>();
+      userSkillItems.forEach(item => {
+        const existing = skillCounts.get(item.SkillId);
+        if (existing) {
+          existing.count++;
+          existing.totalLevel += item.CurrentLevel || 0;
+        } else {
+          skillCounts.set(item.SkillId, { count: 1, totalLevel: item.CurrentLevel || 0 });
+        }
+      });
+
+      // Aggregate by domain
+      const domainStats = new Map<SkillDomain, { userCount: number; totalLevel: number }>();
+      allSkills.forEach(skill => {
+        const skillData = skillCounts.get(skill.Id!) || { count: 0, totalLevel: 0 };
+        const existing = domainStats.get(skill.Domain);
+        if (existing) {
+          existing.userCount += skillData.count;
+          existing.totalLevel += skillData.totalLevel;
+        } else {
+          domainStats.set(skill.Domain, {
+            userCount: skillData.count,
+            totalLevel: skillData.totalLevel
+          });
+        }
+      });
+
+      const byDomain = Array.from(domainStats.entries()).map(([domain, stats]) => ({
+        domain,
+        userCount: stats.userCount,
+        avgProficiency: stats.userCount > 0 ? stats.totalLevel / stats.userCount : 0
+      }));
+
+      // Top skills by user count
+      const skillCountsArray = Array.from(skillCounts.entries())
+        .map(([skillId, data]) => {
+          const skill = allSkills.find(s => s.Id === skillId);
+          return {
+            skillId,
+            skillName: skill?.Title || `Skill ${skillId}`,
+            userCount: data.count
+          };
+        })
+        .sort((a, b) => b.userCount - a.userCount)
+        .slice(0, 10);
+
+      return {
+        byDomain,
+        topSkills: skillCountsArray,
+        skillGaps: [] // Would need more complex analysis with role requirements
+      };
+    } catch (error) {
+      this.logger.error('Error fetching organization skill distribution', error);
+      throw error;
+    }
+  }
+
+  // ===========================================
+  // PRIVATE HELPER METHODS
+  // ===========================================
+
+  private mapToSkill(item: Record<string, unknown>): ISkill {
+    return {
+      Id: item.Id as number,
+      Title: item.Title as string,
+      Description: item.Description as string,
+      Domain: item.Domain as SkillDomain,
+      Category: item.Category as SkillCategory,
+      IsCore: item.IsCore as boolean,
+      IsActive: item.IsActive as boolean,
+      RelatedSkillIds: item.RelatedSkillIds
+        ? JSON.parse(item.RelatedSkillIds as string)
+        : [],
+      Prerequisites: item.Prerequisites
+        ? JSON.parse(item.Prerequisites as string)
+        : [],
+      Proficiency1Description: item.Proficiency1Description as string,
+      Proficiency2Description: item.Proficiency2Description as string,
+      Proficiency3Description: item.Proficiency3Description as string,
+      Proficiency4Description: item.Proficiency4Description as string,
+      Proficiency5Description: item.Proficiency5Description as string
+    };
+  }
+
+  private mapToUserSkill(item: Record<string, unknown>): IUserSkill {
+    return {
+      Id: item.Id as number,
+      Title: item.Title as string,
+      UserId: item.UserId as number,
+      SkillId: item.SkillId as number,
+      CurrentLevel: item.CurrentLevel as ProficiencyLevel,
+      TargetLevel: item.TargetLevel as ProficiencyLevel,
+      SelfAssessedLevel: item.SelfAssessedLevel as ProficiencyLevel,
+      ManagerAssessedLevel: item.ManagerAssessedLevel as ProficiencyLevel,
+      LastAssessmentDate: item.LastAssessmentDate
+        ? new Date(item.LastAssessmentDate as string)
+        : undefined,
+      CertificationIds: item.CertificationIds
+        ? JSON.parse(item.CertificationIds as string)
+        : [],
+      CourseIds: item.CourseIds
+        ? JSON.parse(item.CourseIds as string)
+        : [],
+      Notes: item.Notes as string
+    };
+  }
+
+  private mapToSkillAssessment(item: Record<string, unknown>): ISkillAssessment {
+    return {
+      Id: item.Id as number,
+      Title: item.Title as string,
+      UserId: item.UserId as number,
+      SkillId: item.SkillId as number,
+      AssessmentType: item.AssessmentType as 'Self' | 'Manager' | 'Peer' | '360' | 'Test',
+      AssessedLevel: item.AssessedLevel as ProficiencyLevel,
+      AssessorId: item.AssessorId as number,
+      Confidence: item.Confidence as number,
+      Notes: item.Notes as string,
+      EvidenceUrls: item.EvidenceUrls
+        ? JSON.parse(item.EvidenceUrls as string)
+        : [],
+      AssessmentDate: item.AssessmentDate
+        ? new Date(item.AssessmentDate as string)
+        : new Date(),
+      Status: item.Status as 'Pending' | 'Submitted' | 'Reviewed' | 'Approved'
+    };
+  }
+
+  private mapToRoleCompetency(item: Record<string, unknown>): IRoleCompetency {
+    return {
+      Id: item.Id as number,
+      Title: item.Title as string,
+      RoleId: item.RoleId as number,
+      RoleTitle: item.RoleTitle as string,
+      SkillId: item.SkillId as number,
+      RequiredLevel: item.RequiredLevel as ProficiencyLevel,
+      IsRequired: item.IsRequired as boolean,
+      Weight: item.Weight as number,
+      RecommendedCourseIds: item.RecommendedCourseIds
+        ? JSON.parse(item.RecommendedCourseIds as string)
+        : []
+    };
+  }
+
+  private mapToCareerPath(item: Record<string, unknown>): ICareerPath {
+    return {
+      Id: item.Id as number,
+      Title: item.Title as string,
+      Description: item.Description as string,
+      Department: item.Department as string,
+      StartingRole: item.StartingRole as string,
+      TargetRole: item.TargetRole as string,
+      EstimatedDuration: item.EstimatedDuration as number,
+      Milestones: item.Milestones
+        ? JSON.parse(item.Milestones as string)
+        : [],
+      IsActive: item.IsActive as boolean
+    };
+  }
+
+  private calculateGapPriority(
+    gapSize: number,
+    isRequired: boolean
+  ): 'Critical' | 'High' | 'Medium' | 'Low' {
+    if (isRequired && gapSize >= 3) return 'Critical';
+    if (isRequired && gapSize >= 2) return 'High';
+    if (gapSize >= 3) return 'High';
+    if (gapSize >= 2) return 'Medium';
+    return 'Low';
+  }
+
+  private estimateTimeToClose(current: ProficiencyLevel, target: ProficiencyLevel): number {
+    const gapSize = target - current;
+    // Estimate ~20 hours per proficiency level
+    return gapSize * 20;
+  }
+}

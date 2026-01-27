@@ -1,0 +1,3871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DWx Style Guide - Interactive Preview</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ============================================================================
+       CSS VARIABLES - DWx Design Tokens
+       ============================================================================ */
+    :root {
+      /* Colors - Primary */
+      --dwx-primary: #1a5a8a;
+      --dwx-primary-dark: #0d3a5c;
+      --dwx-primary-light: #2d7ab8;
+
+      /* Colors - Neutral */
+      --dwx-text-primary: #333333;
+      --dwx-text-secondary: #6c757d;
+      --dwx-text-muted: #a0a0a0;
+      --dwx-border: #c8c6c4;
+      --dwx-border-light: #e1dfdd;
+      --dwx-bg-subtle: #f3f2f1;
+      --dwx-bg-white: #ffffff;
+
+      /* Colors - Semantic */
+      --dwx-success: #107c10;
+      --dwx-warning: #986f0b;
+      --dwx-error: #d13438;
+
+      /* Typography */
+      --dwx-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --dwx-font-weight-normal: 400;
+      --dwx-font-weight-medium: 500;
+      --dwx-font-weight-semibold: 600;
+      --dwx-font-weight-bold: 700;
+
+      /* Spacing */
+      --dwx-space-xs: 4px;
+      --dwx-space-sm: 8px;
+      --dwx-space-md: 12px;
+      --dwx-space-lg: 16px;
+      --dwx-space-xl: 20px;
+      --dwx-space-xxl: 24px;
+    }
+
+    /* ============================================================================
+       BASE STYLES
+       ============================================================================ */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--dwx-font-family);
+      font-size: 14px;
+      font-weight: var(--dwx-font-weight-normal);
+      color: var(--dwx-text-primary);
+      background-color: #f5f5f5;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ============================================================================
+       LAYOUT
+       ============================================================================ */
+    .guide-header {
+      background: linear-gradient(135deg, #1a5a8a 0%, #2d7ab8 100%);
+      color: white;
+      padding: 40px;
+      text-align: center;
+    }
+
+    .guide-header h1 {
+      font-size: 32px;
+      font-weight: var(--dwx-font-weight-medium);
+      margin-bottom: 8px;
+    }
+
+    .guide-header p {
+      font-size: 16px;
+      opacity: 0.9;
+    }
+
+    .guide-nav {
+      background: white;
+      border-bottom: 1px solid var(--dwx-border-light);
+      padding: 16px 40px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+
+    .guide-nav a {
+      color: var(--dwx-text-secondary);
+      text-decoration: none;
+      margin-right: 24px;
+      font-size: 13px;
+      font-weight: var(--dwx-font-weight-medium);
+      transition: color 0.2s;
+    }
+
+    .guide-nav a:hover {
+      color: var(--dwx-primary);
+    }
+
+    .guide-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px;
+    }
+
+    .section {
+      background: white;
+      border-radius: 8px;
+      padding: 32px;
+      margin-bottom: 32px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .section-title {
+      font-size: 24px;
+      font-weight: var(--dwx-font-weight-medium);
+      color: var(--dwx-primary);
+      margin-bottom: 8px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid var(--dwx-primary);
+    }
+
+    .section-description {
+      color: var(--dwx-text-secondary);
+      margin-bottom: 24px;
+    }
+
+    .subsection {
+      margin-bottom: 32px;
+    }
+
+    .subsection:last-child {
+      margin-bottom: 0;
+    }
+
+    .subsection-title {
+      font-size: 16px;
+      font-weight: var(--dwx-font-weight-medium);
+      color: var(--dwx-text-primary);
+      margin-bottom: 16px;
+    }
+
+    /* Example Grid */
+    .example-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .example-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .example-item {
+      text-align: center;
+    }
+
+    /* Code Block */
+    .code-block {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 16px;
+      border-radius: 4px;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 13px;
+      overflow-x: auto;
+      margin-top: 16px;
+    }
+
+    .code-block .comment {
+      color: #6a9955;
+    }
+
+    .code-block .property {
+      color: #9cdcfe;
+    }
+
+    .code-block .value {
+      color: #ce9178;
+    }
+
+    .code-block .selector {
+      color: #d7ba7d;
+    }
+
+    /* Table */
+    .spec-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+    }
+
+    .spec-table th,
+    .spec-table td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--dwx-border-light);
+    }
+
+    .spec-table th {
+      background: var(--dwx-bg-subtle);
+      font-weight: var(--dwx-font-weight-medium);
+      font-size: 13px;
+    }
+
+    .spec-table td {
+      font-size: 14px;
+    }
+
+    .spec-table code {
+      background: var(--dwx-bg-subtle);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: 'Consolas', monospace;
+      font-size: 12px;
+    }
+
+    /* ============================================================================
+       SECTION 1: COLORS
+       ============================================================================ */
+    .color-swatch {
+      width: 100%;
+      height: 80px;
+      border-radius: 8px 8px 0 0;
+      display: flex;
+      align-items: flex-end;
+      padding: 8px;
+    }
+
+    .color-info {
+      background: white;
+      border: 1px solid var(--dwx-border-light);
+      border-top: none;
+      border-radius: 0 0 8px 8px;
+      padding: 12px;
+    }
+
+    .color-name {
+      font-weight: var(--dwx-font-weight-medium);
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .color-hex {
+      font-family: 'Consolas', monospace;
+      font-size: 12px;
+      color: var(--dwx-text-secondary);
+    }
+
+    .color-var {
+      font-family: 'Consolas', monospace;
+      font-size: 11px;
+      color: var(--dwx-text-muted);
+      margin-top: 4px;
+    }
+
+    /* ============================================================================
+       SECTION 2: TYPOGRAPHY
+       ============================================================================ */
+    .font-sample {
+      padding: 16px;
+      background: var(--dwx-bg-subtle);
+      border-radius: 4px;
+      margin-bottom: 8px;
+    }
+
+    .font-label {
+      font-size: 12px;
+      color: var(--dwx-text-secondary);
+      margin-top: 4px;
+    }
+
+    /* ============================================================================
+       SECTION 3: FONT WEIGHTS
+       ============================================================================ */
+    .weight-demo {
+      padding: 20px;
+      background: var(--dwx-bg-subtle);
+      border-radius: 8px;
+      margin-bottom: 16px;
+    }
+
+    .weight-400 { font-weight: 400; }
+    .weight-500 { font-weight: 500; }
+    .weight-600 { font-weight: 600; }
+    .weight-700 { font-weight: 700; }
+
+    .do-not-use {
+      background: #fde7e9;
+      border: 2px dashed var(--dwx-error);
+      position: relative;
+    }
+
+    .do-not-use::after {
+      content: 'DO NOT USE';
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: var(--dwx-error);
+      color: white;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 500;
+    }
+
+    /* ============================================================================
+       SECTION 4: SPACING
+       ============================================================================ */
+    .spacing-demo {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+
+    .spacing-box {
+      background: var(--dwx-primary);
+      opacity: 0.3;
+    }
+
+    .spacing-label {
+      min-width: 80px;
+      font-weight: var(--dwx-font-weight-medium);
+    }
+
+    .spacing-value {
+      font-family: 'Consolas', monospace;
+      color: var(--dwx-text-secondary);
+      min-width: 60px;
+    }
+
+    /* ============================================================================
+       SECTION 5: BUTTONS
+       ============================================================================ */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 20px;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: var(--dwx-font-weight-medium);
+      font-family: var(--dwx-font-family);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      border: none;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background-color: var(--dwx-primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--dwx-primary-dark);
+    }
+
+    .btn-secondary {
+      background-color: white;
+      color: var(--dwx-text-primary);
+      border: 1px solid var(--dwx-border);
+    }
+
+    .btn-secondary:hover {
+      background-color: var(--dwx-bg-subtle);
+      border-color: #8a8886;
+    }
+
+    .btn-danger {
+      background-color: white;
+      color: var(--dwx-error);
+      border: 1px solid var(--dwx-error);
+    }
+
+    .btn-danger:hover {
+      background-color: #fde7e9;
+    }
+
+    .btn-danger-solid {
+      background-color: var(--dwx-error);
+      color: white;
+    }
+
+    .btn-danger-solid:hover {
+      background-color: #a80000;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-sm {
+      padding: 4px 12px;
+      font-size: 12px;
+    }
+
+    .btn-lg {
+      padding: 12px 24px;
+      font-size: 16px;
+    }
+
+    /* ============================================================================
+       SECTION 6: FORM INPUTS
+       ============================================================================ */
+    .form-field {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 14px;
+      font-weight: var(--dwx-font-weight-normal);
+      color: var(--dwx-text-primary);
+      margin-bottom: 4px;
+    }
+
+    .form-label.required::after {
+      content: ' *';
+      color: var(--dwx-error);
+    }
+
+    .form-input {
+      width: 100%;
+      min-height: 32px;
+      padding: 4px 12px;
+      border: 1px solid var(--dwx-border);
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: var(--dwx-font-weight-normal);
+      font-family: var(--dwx-font-family);
+      color: var(--dwx-text-primary);
+      background-color: white;
+      transition: border-color 0.15s;
+    }
+
+    .form-input:hover {
+      border-color: #8a8886;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--dwx-primary);
+    }
+
+    .form-input::placeholder {
+      color: var(--dwx-text-muted);
+      font-weight: var(--dwx-font-weight-normal);
+    }
+
+    .form-input.error {
+      border-color: var(--dwx-error);
+    }
+
+    .form-input:disabled {
+      background-color: var(--dwx-bg-subtle);
+      border-color: var(--dwx-border-light);
+      cursor: not-allowed;
+    }
+
+    .form-select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 36px;
+    }
+
+    .form-textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+
+    .form-hint {
+      font-size: 12px;
+      color: var(--dwx-text-secondary);
+      margin-top: 4px;
+    }
+
+    .form-error {
+      font-size: 12px;
+      color: var(--dwx-error);
+      margin-top: 4px;
+    }
+
+    .form-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+
+    .form-checkbox input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--dwx-primary);
+    }
+
+    .form-checkbox-label {
+      font-size: 14px;
+      font-weight: var(--dwx-font-weight-normal);
+      color: var(--dwx-text-primary);
+    }
+
+    /* ============================================================================
+       SECTION 7: BADGES
+       ============================================================================ */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: var(--dwx-font-weight-medium);
+      white-space: nowrap;
+    }
+
+    .badge-success {
+      background-color: #dff6dd;
+      color: #107c10;
+    }
+
+    .badge-warning {
+      background-color: #fff4ce;
+      color: #986f0b;
+    }
+
+    .badge-error {
+      background-color: #fde7e9;
+      color: #d13438;
+    }
+
+    .badge-info {
+      background-color: #e5f2ff;
+      color: #1a5a8a;
+    }
+
+    .badge-neutral {
+      background-color: #f3f2f1;
+      color: #6c757d;
+    }
+
+    /* ============================================================================
+       SECTION 8: CARDS
+       ============================================================================ */
+    .card {
+      background: white;
+      border: 1px solid var(--dwx-border-light);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .card-elevated {
+      border: none;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .card-interactive {
+      cursor: pointer;
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+
+    .card-interactive:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      transform: translateY(-2px);
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: var(--dwx-font-weight-medium);
+      margin-bottom: 8px;
+    }
+
+    .card-content {
+      font-size: 14px;
+      color: var(--dwx-text-secondary);
+    }
+
+    /* ============================================================================
+       OFFICIAL STATS CARD STYLES (January 2026)
+       Style 1 (Label First) is the DEFAULT - use unless alternate style requested
+       ============================================================================ */
+
+    /* Accent Colors for Stats/KPI Cards */
+    --accent-blue: #0078d4;
+    --accent-green: #107c10;
+    --accent-orange: #ff8c00;
+    --accent-purple: #8764b8;
+    --accent-teal: #038387;
+    --accent-pink: #d13438;
+
+    /* STATS CARD STYLE 1: Label First + Pill Trend (DEFAULT) */
+    .stats-s1 {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 16px 20px;
+      background: white;
+      border-radius: 8px;
+      border: 1px solid var(--dwx-border-light);
+      min-width: 180px;
+      flex: 1;
+    }
+
+    .s1-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .s1-icon.blue { background: #e5f2ff; color: #0078d4; }
+    .s1-icon.green { background: #dff6dd; color: #107c10; }
+    .s1-icon.orange { background: #fff4ce; color: #ff8c00; }
+    .s1-icon.purple { background: #f3e8ff; color: #8764b8; }
+    .s1-icon.teal { background: #e0f7f7; color: #038387; }
+    .s1-icon.pink { background: #fde7e9; color: #d13438; }
+
+    .s1-content {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .s1-label {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--dwx-text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    .s1-value-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .s1-value {
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1;
+      color: var(--dwx-text-primary);
+      font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    .s1-trend {
+      font-size: 10px;
+      font-weight: 500;
+      padding: 3px 8px;
+      border-radius: 12px;
+      white-space: nowrap;
+    }
+
+    .s1-trend.up { color: #107c10; background: #dff6dd; }
+    .s1-trend.down { color: #d13438; background: #fde7e9; }
+    .s1-trend.neutral { color: #8a8886; background: #f3f2f1; }
+
+    /* STATS CARD STYLE 2: Number First + Pill Trend (ALTERNATE) */
+    .stats-s2 {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 16px 20px;
+      background: white;
+      border-radius: 8px;
+      border: 1px solid var(--dwx-border-light);
+      min-width: 180px;
+      flex: 1;
+    }
+
+    .s2-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .s2-icon.blue { background: #e5f2ff; color: #0078d4; }
+    .s2-icon.green { background: #dff6dd; color: #107c10; }
+    .s2-icon.orange { background: #fff4ce; color: #ff8c00; }
+    .s2-icon.purple { background: #f3e8ff; color: #8764b8; }
+    .s2-icon.teal { background: #e0f7f7; color: #038387; }
+    .s2-icon.pink { background: #fde7e9; color: #d13438; }
+
+    .s2-content {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .s2-value-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .s2-value {
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1;
+      color: var(--dwx-text-primary);
+      font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    .s2-label {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--dwx-text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    .s2-trend {
+      font-size: 10px;
+      font-weight: 500;
+      padding: 3px 8px;
+      border-radius: 12px;
+      white-space: nowrap;
+    }
+
+    .s2-trend.up { color: #107c10; background: #dff6dd; }
+    .s2-trend.down { color: #d13438; background: #fde7e9; }
+    .s2-trend.neutral { color: #8a8886; background: #f3f2f1; }
+
+    /* ============================================================================
+       LEGACY KPI CARD STYLES - 8 Variations (Reference Only)
+       For new implementations, use Stats Card Style 1 or Style 2 above
+       ============================================================================ */
+
+    /* LEGACY STYLE 1: Left Accent Bar */
+    .kpi-v1 {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 20px;
+      background: white;
+      border-radius: 8px;
+      border: 1px solid var(--dwx-border-light);
+      min-width: 180px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .kpi-v1::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+    }
+
+    .kpi-v1.blue::before { background: #0078d4; }
+    .kpi-v1.green::before { background: #107c10; }
+    .kpi-v1.orange::before { background: #ff8c00; }
+    .kpi-v1.purple::before { background: #8764b8; }
+    .kpi-v1.teal::before { background: #038387; }
+    .kpi-v1.pink::before { background: #d13438; }
+
+    .kpi-v1-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .kpi-v1-icon.blue { background: #e5f2ff; color: #0078d4; }
+    .kpi-v1-icon.green { background: #dff6dd; color: #107c10; }
+    .kpi-v1-icon.orange { background: #fff4ce; color: #ff8c00; }
+    .kpi-v1-icon.purple { background: #f3e8ff; color: #8764b8; }
+    .kpi-v1-icon.teal { background: #e0f7f7; color: #038387; }
+    .kpi-v1-icon.pink { background: #fde7e9; color: #d13438; }
+
+    .kpi-v1-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--dwx-text-primary);
+      line-height: 1.1;
+    }
+
+    .kpi-v1-label {
+      font-size: 12px;
+      color: var(--dwx-text-secondary);
+      margin-top: 2px;
+    }
+
+    .kpi-v1-trend {
+      font-size: 11px;
+      margin-top: 4px;
+    }
+
+    .kpi-v1-trend.up { color: #107c10; }
+    .kpi-v1-trend.down { color: #d13438; }
+
+    /* STYLE 2: Compact Horizontal */
+    .kpi-v2 {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: white;
+      border-radius: 8px;
+      border: 1px solid var(--dwx-border-light);
+      min-width: 160px;
+    }
+
+    .kpi-v2-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: white;
+    }
+
+    .kpi-v2-icon.blue { background: #0078d4; }
+    .kpi-v2-icon.green { background: #107c10; }
+    .kpi-v2-icon.orange { background: #ff8c00; }
+    .kpi-v2-icon.purple { background: #8764b8; }
+    .kpi-v2-icon.teal { background: #038387; }
+    .kpi-v2-icon.pink { background: #d13438; }
+
+    .kpi-v2-label {
+      font-size: 11px;
+      color: var(--dwx-text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .kpi-v2-value {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--dwx-text-primary);
+      line-height: 1.1;
+    }
+
+    /* STYLE 3: Top Border Accent */
+    .kpi-v3 {
+      padding: 16px 20px;
+      background: white;
+      border-radius: 8px;
+      border: 1px solid var(--dwx-border-light);
+      border-top: 3px solid;
+      min-width: 150px;
+      text-align: center;
+    }
+
+    .kpi-v3.blue { border-top-color: #0078d4; }
+    .kpi-v3.green { border-top-color: #107c10; }
+    .kpi-v3.orange { border-top-color: #ff8c00; }
+    .kpi-v3.purple { border-top-color: #8764b8; }
+    .kpi-v3.teal { border-top-color: #038387; }
+    .kpi-v3.pink { border-top-color: #d13438; }
+
+    .kpi-v3-value {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--dwx-text-primary);
+      line-height: 1;
+    }
+
+    .kpi-v3-label {
+      font-size: 12px;
+      color: var(--dwx-text-secondary);
+      margin-top: 6px;
+    }
+
+    /* STYLE 4: Gradient Background */
+    .kpi-v4 {
+      padding: 20px;
+      border-radius: 12px;
+      min-width: 170px;
+      color: white;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .kpi-v4.blue { background: linear-gradient(135deg, #0078d4 0%, #004578 100%); }
+    .kpi-v4.green { background: linear-gradient(135deg, #107c10 0%, #054b05 100%); }
+    .kpi-v4.orange { background: linear-gradient(135deg, #ff8c00 0%, #d66a00 100%); }
+    .kpi-v4.purple { background: linear-gradient(135deg, #8764b8 0%, #5c3d8e 100%); }
+    .kpi-v4.teal { background: linear-gradient(135deg, #038387 0%, #025e61 100%); }
+    .kpi-v4.pink { background: linear-gradient(135deg, #d13438 0%, #a80000 100%); }
+
+    .kpi-v4-icon {
+      position: absolute;
+      right: 12px;
+      top: 12px;
+      opacity: 0.3;
+      font-size: 32px;
+    }
+
+    .kpi-v4-label {
+      font-size: 12px;
+      opacity: 0.9;
+      margin-bottom: 4px;
+    }
+
+    .kpi-v4-value {
+      font-size: 32px;
+      font-weight: 700;
+      line-height: 1.1;
+    }
+
+    /* STYLE 5: Outlined with Circle Icon */
+    .kpi-v5 {
+      padding: 16px;
+      background: white;
+      border-radius: 12px;
+      border: 2px solid;
+      min-width: 160px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .kpi-v5.blue { border-color: #0078d4; }
+    .kpi-v5.green { border-color: #107c10; }
+    .kpi-v5.orange { border-color: #ff8c00; }
+    .kpi-v5.purple { border-color: #8764b8; }
+    .kpi-v5.teal { border-color: #038387; }
+    .kpi-v5.pink { border-color: #d13438; }
+
+    .kpi-v5-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+
+    .kpi-v5.blue .kpi-v5-icon { background: #e5f2ff; color: #0078d4; }
+    .kpi-v5.green .kpi-v5-icon { background: #dff6dd; color: #107c10; }
+    .kpi-v5.orange .kpi-v5-icon { background: #fff4ce; color: #ff8c00; }
+    .kpi-v5.purple .kpi-v5-icon { background: #f3e8ff; color: #8764b8; }
+    .kpi-v5.teal .kpi-v5-icon { background: #e0f7f7; color: #038387; }
+    .kpi-v5.pink .kpi-v5-icon { background: #fde7e9; color: #d13438; }
+
+    .kpi-v5-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--dwx-text-primary);
+    }
+
+    .kpi-v5-label {
+      font-size: 12px;
+      color: var(--dwx-text-secondary);
+      margin-top: 4px;
+    }
+
+    /* STYLE 6: Split Design */
+    .kpi-v6 {
+      display: flex;
+      border-radius: 10px;
+      overflow: hidden;
+      min-width: 200px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .kpi-v6-value-section {
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      min-width: 80px;
+    }
+
+    .kpi-v6.blue .kpi-v6-value-section { background: #0078d4; }
+    .kpi-v6.green .kpi-v6-value-section { background: #107c10; }
+    .kpi-v6.orange .kpi-v6-value-section { background: #ff8c00; }
+    .kpi-v6.purple .kpi-v6-value-section { background: #8764b8; }
+    .kpi-v6.teal .kpi-v6-value-section { background: #038387; }
+    .kpi-v6.pink .kpi-v6-value-section { background: #d13438; }
+
+    .kpi-v6-value {
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .kpi-v6-info-section {
+      padding: 12px 16px;
+      background: white;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .kpi-v6-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--dwx-text-primary);
+    }
+
+    .kpi-v6-trend {
+      font-size: 11px;
+      color: var(--dwx-text-secondary);
+      margin-top: 4px;
+    }
+
+    .kpi-v6-trend.up { color: #107c10; }
+    .kpi-v6-trend.down { color: #d13438; }
+
+    /* STYLE 7: Floating Card with Shadow */
+    .kpi-v7 {
+      padding: 20px;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      min-width: 170px;
+      position: relative;
+    }
+
+    .kpi-v7-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      font-size: 24px;
+      color: white;
+    }
+
+    .kpi-v7.blue .kpi-v7-icon { background: linear-gradient(135deg, #0078d4 0%, #004578 100%); }
+    .kpi-v7.green .kpi-v7-icon { background: linear-gradient(135deg, #107c10 0%, #054b05 100%); }
+    .kpi-v7.orange .kpi-v7-icon { background: linear-gradient(135deg, #ff8c00 0%, #d66a00 100%); }
+    .kpi-v7.purple .kpi-v7-icon { background: linear-gradient(135deg, #8764b8 0%, #5c3d8e 100%); }
+    .kpi-v7.teal .kpi-v7-icon { background: linear-gradient(135deg, #038387 0%, #025e61 100%); }
+    .kpi-v7.pink .kpi-v7-icon { background: linear-gradient(135deg, #d13438 0%, #a80000 100%); }
+
+    .kpi-v7-label {
+      font-size: 12px;
+      color: var(--dwx-text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .kpi-v7-value {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--dwx-text-primary);
+      margin-top: 4px;
+    }
+
+    .kpi-v7-trend {
+      font-size: 12px;
+      margin-top: 8px;
+    }
+
+    .kpi-v7-trend.up { color: #107c10; }
+    .kpi-v7-trend.down { color: #d13438; }
+
+    /* STYLE 8: Minimal Line */
+    .kpi-v8 {
+      padding: 16px 20px;
+      background: white;
+      border-radius: 8px;
+      min-width: 140px;
+      position: relative;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+
+    .kpi-v8::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 20px;
+      right: 20px;
+      height: 3px;
+      border-radius: 3px 3px 0 0;
+    }
+
+    .kpi-v8.blue::after { background: #0078d4; }
+    .kpi-v8.green::after { background: #107c10; }
+    .kpi-v8.orange::after { background: #ff8c00; }
+    .kpi-v8.purple::after { background: #8764b8; }
+    .kpi-v8.teal::after { background: #038387; }
+    .kpi-v8.pink::after { background: #d13438; }
+
+    .kpi-v8-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .kpi-v8-label {
+      font-size: 12px;
+      color: var(--dwx-text-secondary);
+    }
+
+    .kpi-v8-icon {
+      font-size: 16px;
+    }
+
+    .kpi-v8.blue .kpi-v8-icon { color: #0078d4; }
+    .kpi-v8.green .kpi-v8-icon { color: #107c10; }
+    .kpi-v8.orange .kpi-v8-icon { color: #ff8c00; }
+    .kpi-v8.purple .kpi-v8-icon { color: #8764b8; }
+    .kpi-v8.teal .kpi-v8-icon { color: #038387; }
+    .kpi-v8.pink .kpi-v8-icon { color: #d13438; }
+
+    .kpi-v8-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--dwx-text-primary);
+    }
+
+    .kpi-v8-trend {
+      font-size: 11px;
+      margin-top: 4px;
+    }
+
+    .kpi-v8-trend.up { color: #107c10; }
+    .kpi-v8-trend.down { color: #d13438; }
+
+    /* Legacy simple KPI card */
+    .kpi-card {
+      text-align: center;
+      padding: 20px;
+    }
+
+    .kpi-value {
+      font-size: 32px;
+      font-weight: var(--dwx-font-weight-bold);
+      color: var(--dwx-primary);
+      line-height: 1;
+    }
+
+    .kpi-label {
+      font-size: 14px;
+      font-weight: var(--dwx-font-weight-normal);
+      color: var(--dwx-text-secondary);
+      margin-top: 8px;
+    }
+
+    /* ============================================================================
+       PANEL STYLES
+       ============================================================================ */
+    .panel-demo {
+      border: 1px solid var(--dwx-border-light);
+      border-radius: 8px;
+      overflow: hidden;
+      max-width: 400px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      height: 48px;
+      background: linear-gradient(135deg, #1a5a8a 0%, #2d7ab8 100%);
+      color: white;
+    }
+
+    .panel-header-56 {
+      height: 56px;
+    }
+
+    .panel-header-content {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .panel-header-icon {
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .panel-header-title {
+      font-size: 16px;
+      font-weight: var(--dwx-font-weight-medium);
+      line-height: 1;
+    }
+
+    .panel-header-subtitle {
+      font-size: 12px;
+      font-weight: var(--dwx-font-weight-normal);
+      opacity: 0.9;
+    }
+
+    .panel-header-close {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      color: white;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: background 0.15s;
+    }
+
+    .panel-header-close:hover {
+      background: rgba(255,255,255,0.1);
+    }
+
+    .panel-body {
+      padding: 20px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .panel-section {
+      margin-bottom: 20px;
+    }
+
+    .panel-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .panel-section-title {
+      font-size: 14px;
+      font-weight: var(--dwx-font-weight-medium);
+      color: var(--dwx-text-primary);
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--dwx-border-light);
+    }
+
+    .panel-field {
+      margin-bottom: 12px;
+    }
+
+    .panel-field:last-child {
+      margin-bottom: 0;
+    }
+
+    .panel-field-label {
+      font-size: 12px;
+      font-weight: var(--dwx-font-weight-normal);
+      color: var(--dwx-text-secondary);
+      margin-bottom: 2px;
+    }
+
+    .panel-field-value {
+      font-size: 14px;
+      font-weight: var(--dwx-font-weight-normal);
+      color: var(--dwx-text-primary);
+    }
+
+    .panel-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      padding: 16px 20px;
+      border-top: 1px solid var(--dwx-border-light);
+      background: #fafafa;
+    }
+
+    .panel-footer-left {
+      justify-content: flex-start;
+    }
+
+    .panel-footer-split {
+      justify-content: space-between;
+    }
+
+    /* ============================================================================
+       SECTION 9: MODALS
+       ============================================================================ */
+    .modal-demo {
+      border: 1px solid var(--dwx-border-light);
+      border-radius: 12px;
+      overflow: hidden;
+      max-width: 500px;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      height: 48px;
+      background: linear-gradient(135deg, #1a5a8a 0%, #2d7ab8 100%);
+      color: white;
+    }
+
+    .modal-header-56 {
+      height: 56px;
+    }
+
+    .modal-header-content {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .modal-header-icon {
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-header-title {
+      font-size: 18px;
+      font-weight: var(--dwx-font-weight-medium);
+      line-height: 1;
+    }
+
+    .modal-header-subtitle {
+      font-size: 13px;
+      font-weight: var(--dwx-font-weight-normal);
+      opacity: 0.9;
+    }
+
+    .modal-header-close {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      color: white;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: background 0.15s;
+    }
+
+    .modal-header-close:hover {
+      background: rgba(255,255,255,0.1);
+    }
+
+    .modal-header-danger {
+      background: linear-gradient(135deg, #d13438 0%, #a80000 100%);
+    }
+
+    .modal-body {
+      padding: 24px;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      padding: 16px 24px;
+      border-top: 1px solid var(--dwx-border-light);
+      background: white;
+    }
+
+    /* ============================================================================
+       SECTION 10: TABLES
+       ============================================================================ */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid var(--dwx-border-light);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .data-table th {
+      background: var(--dwx-bg-subtle);
+      font-weight: var(--dwx-font-weight-medium);
+      font-size: 14px;
+      color: var(--dwx-text-primary);
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--dwx-border-light);
+    }
+
+    .data-table td {
+      font-weight: var(--dwx-font-weight-normal);
+      font-size: 14px;
+      color: var(--dwx-text-primary);
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--dwx-border-light);
+    }
+
+    .data-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .data-table tr:hover td {
+      background: #f9f9f9;
+    }
+
+    /* ============================================================================
+       SECTION 11: NAVIGATION
+       ============================================================================ */
+    .nav-sidebar {
+      width: 240px;
+      background: white;
+      border: 1px solid var(--dwx-border-light);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      font-size: 14px;
+      font-weight: var(--dwx-font-weight-normal);
+      color: var(--dwx-text-primary);
+      text-decoration: none;
+      transition: background 0.15s;
+      cursor: pointer;
+    }
+
+    .nav-item:hover {
+      background: var(--dwx-bg-subtle);
+    }
+
+    .nav-item.active {
+      background: #e5f2ff;
+      color: var(--dwx-primary);
+      font-weight: var(--dwx-font-weight-medium);
+    }
+
+    .nav-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--dwx-border-light);
+    }
+
+    .nav-tab {
+      padding: 12px 16px;
+      font-size: 14px;
+      font-weight: var(--dwx-font-weight-normal);
+      color: var(--dwx-text-secondary);
+      text-decoration: none;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .nav-tab:hover {
+      color: var(--dwx-text-primary);
+    }
+
+    .nav-tab.active {
+      color: var(--dwx-primary);
+      font-weight: var(--dwx-font-weight-medium);
+      border-bottom-color: var(--dwx-primary);
+    }
+
+    /* ============================================================================
+       SECTION 12: SHADOWS
+       ============================================================================ */
+    .shadow-demo {
+      width: 120px;
+      height: 80px;
+      background: white;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: var(--dwx-text-secondary);
+    }
+
+    .shadow-sm { box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+    .shadow-base { box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .shadow-md { box-shadow: 0 4px 8px rgba(0,0,0,0.12); }
+    .shadow-lg { box-shadow: 0 8px 16px rgba(0,0,0,0.15); }
+
+    /* ============================================================================
+       SECTION 13: BORDERS
+       ============================================================================ */
+    .radius-demo {
+      width: 80px;
+      height: 80px;
+      background: var(--dwx-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 12px;
+    }
+
+    /* ============================================================================
+       UTILITY CLASSES
+       ============================================================================ */
+    .mt-16 { margin-top: 16px; }
+    .mb-16 { margin-bottom: 16px; }
+    .mb-24 { margin-bottom: 24px; }
+    .text-center { text-align: center; }
+    .flex { display: flex; }
+    .flex-wrap { flex-wrap: wrap; }
+    .gap-8 { gap: 8px; }
+    .gap-16 { gap: 16px; }
+    .gap-24 { gap: 24px; }
+    .items-center { align-items: center; }
+
+    /* Warning callout */
+    .warning-callout {
+      background: #fff4ce;
+      border-left: 4px solid var(--dwx-warning);
+      padding: 16px;
+      border-radius: 0 4px 4px 0;
+      margin: 16px 0;
+    }
+
+    .warning-callout-title {
+      font-weight: var(--dwx-font-weight-medium);
+      color: var(--dwx-warning);
+      margin-bottom: 4px;
+    }
+
+    /* Success callout */
+    .success-callout {
+      background: #dff6dd;
+      border-left: 4px solid var(--dwx-success);
+      padding: 16px;
+      border-radius: 0 4px 4px 0;
+      margin: 16px 0;
+    }
+
+    .success-callout-title {
+      font-weight: var(--dwx-font-weight-medium);
+      color: var(--dwx-success);
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="guide-header">
+    <h1>DWx Style Guide</h1>
+    <p>Contract Manager Design System - Interactive Preview v3.0</p>
+  </header>
+
+  <!-- Navigation -->
+  <nav class="guide-nav">
+    <a href="#colors">Colors</a>
+    <a href="#typography">Typography</a>
+    <a href="#font-weights">Font Weights</a>
+    <a href="#spacing">Spacing</a>
+    <a href="#buttons">Buttons</a>
+    <a href="#forms">Forms</a>
+    <a href="#badges">Badges</a>
+    <a href="#cards">Cards</a>
+    <a href="#kpi-cards">KPI Cards</a>
+    <a href="#modals">Modals</a>
+    <a href="#panels">Panels</a>
+    <a href="#tables">Tables</a>
+    <a href="#navigation">Navigation</a>
+    <a href="#shadows">Shadows</a>
+    <a href="#borders">Borders</a>
+  </nav>
+
+  <div class="guide-container">
+
+    <!-- ============================================================================
+         SECTION 1: COLORS
+         ============================================================================ -->
+    <section id="colors" class="section">
+      <h2 class="section-title">1. Colors</h2>
+      <p class="section-description">DWx brand colors and semantic palette. Always use CSS variables, never hardcoded hex values.</p>
+
+      <div class="subsection">
+        <h3 class="subsection-title">Primary Palette</h3>
+        <div class="example-grid">
+          <div class="example-item">
+            <div class="color-swatch" style="background: #1a5a8a;">
+              <span style="color: white; font-size: 12px;">Primary</span>
+            </div>
+            <div class="color-info">
+              <div class="color-name">Primary</div>
+              <div class="color-hex">#1a5a8a</div>
+              <div class="color-var">--dwx-primary</div>
+            </div>
+          </div>
+          <div class="example-item">
+            <div class="color-swatch" style="background: #0d3a5c;">
+              <span style="color: white; font-size: 12px;">Primary Dark</span>
+            </div>
+            <div class="color-info">
+              <div class="color-name">Primary Dark</div>
+              <div class="color-hex">#0d3a5c</div>
+              <div class="color-var">--dwx-primary-dark</div>
+            </div>
+          </div>
+          <div class="example-item">
+            <div class="color-swatch" style="background: #2d7ab8;">
+              <span style="color: white; font-size: 12px;">Primary Light</span>
+            </div>
+            <div class="color-info">
+              <div class="color-name">Primary Light</div>
+              <div class="color-hex">#2d7ab8</div>
+              <div class="color-var">--dwx-primary-light</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h3 class="subsection-title">Neutral Palette</h3>
+        <div class="example-grid">
+          <div class="example-item">
+            <div class="color-swatch" style="background: #333333;">
+              <span style="color: white; font-size: 12px;">Text Primary</span>
+            </div>
+            <div class="color-info">
+              <div class="color-name">Text Primary</div>
+              <div class="color-hex">#333333</div>
+              <div class="color-var">--dwx-text-primary</div>
+            </div>
+          </div>
+          <div class="example-item">
+            <div class="color-swatch" style="background: #6c757d;">
+              <span style="color: white; font-size: 12px;">Text Secondary</span>
+            </div>
+            <div class="color-info">
+              <div class="color-name">Text Secondary</div>
+              <div class="color-hex">#6c757d</div>
+              <div class="color-var">--dwx-text-secondary</div>
+            </div>
+          </div>
+          <div class="example-item">
+            <div class="color-swatch" style="background: #a0a0a0;">
+              <span style="color: white; font-size: 12px;">Text Muted</span>
+            </div>
+            <div class="color-info">
+              <div class="color-name">Text Muted</div>
+              <div class="color-hex">#a0a0a0</div>
+              <div class="color-var">--dwx-text-muted</div>
+            </div>
+          </div>
+          <div class="example-item">
+            <div class="color-swatch" style="background: #c8c6c4; border: 1px solid #999;">
+              <span style="color: #333; font-size: 12px;">Border</span>
+            </div>
+            <div class="color-info">
+              <div class="color-name">Border</div>
+              <div class="color-hex">#c8c6c4</div>
+              <div class="color-var">--dwx-border</div>
+            </div>
+          </div>
+          <div class="example-item">
+            <div class="color-swatch" style="background: #e1dfdd; border: 1px solid #ccc;">
+              <span style="color: #333; font-size: 12px;">Border Light</span>
+            </div>
+            <div class="color-info">
+              <div class="color-name">Border Light</div>
+              <div class="color-hex">#e1dfdd</div>
+              <div class="color-var">--dwx-border-light</div>
+            </div>
+          </div>
+          <div class="example-item">
+            <div class="color-swatch" style="background: #f3f2f1; border: 1px solid #ccc;">
+              <span style="color: #333; font-size: 12px;">Background Subtle</span>
+            </div>
+            <div class="color-info">
+              <div class="color-name">Background Subtle</div>
+              <div class="color-hex">#f3f2f1</div>
+              <div class="color-var">--dwx-bg-subtle</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h3 class="subsection-title">Semantic Colors</h3>
+        <div class="example-grid">
+          <div class="example-item">
+            <div class="color-swatch" style="background: #107c10;">
+              <span style="color: white; font-size: 12px;">Success</span>
+            </div>
+            <div class="color-info">
+              <div class="color-name">Success</div>
+              <div class="color-hex">#107c10</div>
+              <div class="color-var">--dwx-success</div>
+            </div>
+          </div>
+          <div class="example-item">
+            <div class="color-swatch" style="background: #986f0b;">
+              <span style="color: white; font-size: 12px;">Warning</span>
+            </div>
+            <div class="color-info">
+              <div class="color-name">Warning</div>
+              <div class="color-hex">#986f0b</div>
+              <div class="color-var">--dwx-warning</div>
+            </div>
+          </div>
+          <div class="example-item">
+            <div class="color-swatch" style="background: #d13438;">
+              <span style="color: white; font-size: 12px;">Error</span>
+            </div>
+            <div class="color-info">
+              <div class="color-name">Error</div>
+              <div class="color-hex">#d13438</div>
+              <div class="color-var">--dwx-error</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h3 class="subsection-title">Gradient</h3>
+        <div style="height: 60px; border-radius: 8px; background: linear-gradient(135deg, #1a5a8a 0%, #2d7ab8 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 500;">
+          DWx Blue Gradient - Modal/Panel Headers
+        </div>
+        <div class="code-block">
+<span class="property">background</span>: <span class="value">linear-gradient(135deg, #1a5a8a 0%, #2d7ab8 100%)</span>;
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================================
+         SECTION 2: TYPOGRAPHY
+         ============================================================================ -->
+    <section id="typography" class="section">
+      <h2 class="section-title">2. Typography</h2>
+      <p class="section-description">Inter is the primary font family. Fall back to system fonts for performance.</p>
+
+      <div class="subsection">
+        <h3 class="subsection-title">Font Family</h3>
+        <div class="code-block">
+<span class="property">font-family</span>: <span class="value">'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif</span>;
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h3 class="subsection-title">Font Sizes</h3>
+        <div class="font-sample" style="font-size: 10px;">10px - XS (Fine print, timestamps)</div>
+        <div class="font-label">font-size: 10px</div>
+
+        <div class="font-sample mt-16" style="font-size: 12px;">12px - Small (Captions, help text, badges)</div>
+        <div class="font-label">font-size: 12px</div>
+
+        <div class="font-sample mt-16" style="font-size: 14px;">14px - Base (Body text, inputs, labels)</div>
+        <div class="font-label">font-size: 14px</div>
+
+        <div class="font-sample mt-16" style="font-size: 16px;">16px - Large (Section headers)</div>
+        <div class="font-label">font-size: 16px</div>
+
+        <div class="font-sample mt-16" style="font-size: 18px;">18px - XL (Modal/panel titles)</div>
+        <div class="font-label">font-size: 18px</div>
+
+        <div class="font-sample mt-16" style="font-size: 20px;">20px - XXL (Page titles)</div>
+        <div class="font-label">font-size: 20px</div>
+
+        <div class="font-sample mt-16" style="font-size: 32px; font-weight: 700; color: #1a5a8a;">32px - Hero (KPI numbers)</div>
+        <div class="font-label">font-size: 32px; font-weight: 700</div>
+      </div>
+    </section>
+
+    <!-- ============================================================================
+         SECTION 3: FONT WEIGHTS
+         ============================================================================ -->
+    <section id="font-weights" class="section">
+      <h2 class="section-title">3. Font Weights</h2>
+      <p class="section-description">Strict font weight hierarchy. Default to 400, use 500 for emphasis, NEVER use 600.</p>
+
+      <div class="warning-callout">
+        <div class="warning-callout-title">⚠️ Critical Rule</div>
+        <div>Never use font-weight: 600 (semibold). It creates visual inconsistency and looks "muddy" between normal and bold.</div>
+      </div>
+
+      <div class="subsection">
+        <h3 class="subsection-title">Weight Comparison</h3>
+
+        <div class="weight-demo">
+          <div style="font-size: 18px;" class="weight-400">400 (Normal) - Default for body text, labels, field values</div>
+          <div style="font-size: 12px; color: #6c757d; margin-top: 8px;">font-weight: 400 | --dwx-font-weight-normal</div>
+        </div>
+
+        <div class="weight-demo">
+          <div style="font-size: 18px;" class="weight-500">500 (Medium) - Titles, buttons, badges, table headers</div>
+          <div style="font-size: 12px; color: #6c757d; margin-top: 8px;">font-weight: 500 | --dwx-font-weight-medium</div>
+        </div>
+
+        <div class="weight-demo do-not-use">
+          <div style="font-size: 18px;" class="weight-600">600 (Semibold) - DO NOT USE THIS WEIGHT</div>
+          <div style="font-size: 12px; color: #6c757d; margin-top: 8px;">font-weight: 600 | PROHIBITED</div>
+        </div>
+
+        <div class="weight-demo">
+          <div style="font-size: 18px;" class="weight-700">700 (Bold) - KPI numbers and statistics ONLY</div>
+          <div style="font-size: 12px; color: #6c757d; margin-top: 8px;">font-weight: 700 | --dwx-font-weight-bold</div>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h3 class="subsection-title">Weight Assignment Reference</h3>
+        <table class="spec-table">
+          <thead>
+            <tr>
+              <th>Element</th>
+              <th>Weight</th>
+              <th>Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Page/Modal Titles</td><td>Medium</td><td><code>500</code></td></tr>
+            <tr><td>Section Headers</td><td>Normal</td><td><code>400</code></td></tr>
+            <tr><td>Button Text</td><td>Medium</td><td><code>500</code></td></tr>
+            <tr><td>Field Labels</td><td>Normal</td><td><code>400</code></td></tr>
+            <tr><td>Body Text</td><td>Normal</td><td><code>400</code></td></tr>
+            <tr><td>Field Values</td><td>Normal</td><td><code>400</code></td></tr>
+            <tr><td>Table Headers</td><td>Medium</td><td><code>500</code></td></tr>
+            <tr><td>Table Data</td><td>Normal</td><td><code>400</code></td></tr>
+            <tr><td>Badges/Tags</td><td>Medium</td><td><code>500</code></td></tr>
+            <tr><td>Navigation Items</td><td>Normal</td><td><code>400</code></td></tr>
+            <tr><td>Placeholder Text</td><td>Normal</td><td><code>400</code></td></tr>
+            <tr><td>Help Text</td><td>Normal</td><td><code>400</code></td></tr>
+            <tr><td>KPI Numbers</td><td>Bold</td><td><code>700</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================================
+         SECTION 4: SPACING
+         ============================================================================ -->
+    <section id="spacing" class="section">
+      <h2 class="section-title">4. Spacing</h2>
+      <p class="section-description">Consistent spacing scale based on 4px increments.</p>
+
+      <div class="subsection">
+        <div class="spacing-demo">
+          <div class="spacing-label">XS</div>
+          <div class="spacing-box" style="width: 4px; height: 24px;"></div>
+          <div class="spacing-value">4px</div>
+          <code>--dwx-space-xs</code>
+        </div>
+        <div class="spacing-demo">
+          <div class="spacing-label">SM</div>
+          <div class="spacing-box" style="width: 8px; height: 24px;"></div>
+          <div class="spacing-value">8px</div>
+          <code>--dwx-space-sm</code>
+        </div>
+        <div class="spacing-demo">
+          <div class="spacing-label">MD</div>
+          <div class="spacing-box" style="width: 12px; height: 24px;"></div>
+          <div class="spacing-value">12px</div>
+          <code>--dwx-space-md</code>
+        </div>
+        <div class="spacing-demo">
+          <div class="spacing-label">LG</div>
+          <div class="spacing-box" style="width: 16px; height: 24px;"></div>
+          <div class="spacing-value">16px</div>
+          <code>--dwx-space-lg</code>
+        </div>
+        <div class="spacing-demo">
+          <div class="spacing-label">XL</div>
+          <div class="spacing-box" style="width: 20px; height: 24px;"></div>
+          <div class="spacing-value">20px</div>
+          <code>--dwx-space-xl</code>
+        </div>
+        <div class="spacing-demo">
+          <div class="spacing-label">XXL</div>
+          <div class="spacing-box" style="width: 24px; height: 24px;"></div>
+          <div class="spacing-value">24px</div>
+          <code>--dwx-space-xxl</code>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h3 class="subsection-title">Common Spacing Patterns</h3>
+        <table class="spec-table">
+          <thead>
+            <tr>
+              <th>Context</th>
+              <th>Spacing</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Modal/Panel padding</td><td><code>24px</code></td></tr>
+            <tr><td>Card padding</td><td><code>16px</code></td></tr>
+            <tr><td>Form field gap</td><td><code>16px</code></td></tr>
+            <tr><td>Button padding</td><td><code>8px 20px</code></td></tr>
+            <tr><td>Icon-text gap</td><td><code>8px</code></td></tr>
+            <tr><td>Section gap</td><td><code>24px</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================================
+         SECTION 5: BUTTONS
+         ============================================================================ -->
+    <section id="buttons" class="section">
+      <h2 class="section-title">5. Buttons</h2>
+      <p class="section-description">Button styles for primary actions, secondary actions, and danger states.</p>
+
+      <div class="subsection">
+        <h3 class="subsection-title">Button Types</h3>
+        <div class="example-row">
+          <button class="btn btn-primary">Primary Button</button>
+          <button class="btn btn-secondary">Secondary Button</button>
+          <button class="btn btn-danger">Danger (Outline)</button>
+          <button class="btn btn-danger-solid">Danger (Solid)</button>
+        </div>
+
+        <div class="code-block">
+<span class="comment">/* Primary Button */</span>
+.<span class="selector">btn-primary</span> {
+  <span class="property">background-color</span>: <span class="value">#1a5a8a</span>;
+  <span class="property">color</span>: <span class="value">#ffffff</span>;
+  <span class="property">border</span>: <span class="value">none</span>;
+  <span class="property">border-radius</span>: <span class="value">4px</span>;
+  <span class="property">padding</span>: <span class="value">8px 20px</span>;
+  <span class="property">font-size</span>: <span class="value">14px</span>;
+  <span class="property">font-weight</span>: <span class="value">500</span>;  <span class="comment">/* Medium, NOT bold */</span>
+}
+
+<span class="comment">/* Secondary Button */</span>
+.<span class="selector">btn-secondary</span> {
+  <span class="property">background-color</span>: <span class="value">#ffffff</span>;
+  <span class="property">color</span>: <span class="value">#333333</span>;
+  <span class="property">border</span>: <span class="value">1px solid #c8c6c4</span>;
+  <span class="property">border-radius</span>: <span class="value">4px</span>;
+  <span class="property">padding</span>: <span class="value">8px 20px</span>;
+  <span class="property">font-size</span>: <span class="value">14px</span>;
+  <span class="property">font-weight</span>: <span class="value">500</span>;
+}
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h3 class="subsection-title">Button Sizes</h3>
+        <div class="example-row">
+          <button class="btn btn-primary btn-sm">Small</button>
+          <button class="btn btn-primary">Medium (Default)</button>
+          <button class="btn btn-primary btn-lg">Large</button>
+        </div>
+        <table class="spec-table">
+          <thead>
+            <tr>
+              <th>Size</th>
+              <th>Padding</th>
+              <th>Font Size</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Small</td><td><code>4px 12px</code></td><td><code>12px</code></td></tr>
+            <tr><td>Medium</td><td><code>8px 20px</code></td><td><code>14px</code></td></tr>
+            <tr><td>Large</td><td><code>12px 24px</code></td><td><code>16px</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="subsection">
+        <h3 class="subsection-title">Button States</h3>
+        <div class="example-row">
+          <button class="btn btn-primary">Default</button>
+          <button class="btn btn-primary" style="background-color: #0d3a5c;">Hover</button>
+          <button class="btn btn-primary" disabled>Disabled</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================================
+         SECTION 6: FORMS
+         ============================================================================ -->
+    <section id="forms" class="section">
+      <h2 class="section-title">6. Forms & Inputs</h2>
+      <p class="section-description">Form elements with consistent styling. Labels are NOT bold (weight 400).</p>
+
+      <div class="subsection">
+        <h3 class="subsection-title">Text Input</h3>
+        <div style="max-width: 400px;">
+          <div class="form-field">
+            <label class="form-label required">Contract Name</label>
+            <input type="text" class="form-input" placeholder="Enter contract name">
+          </div>
+        </div>
+
+        <div class="code-block">
+<span class="comment">/* Label - NOT bold */</span>
+.<span class="selector">form-label</span> {
+  <span class="property">font-size</span>: <span class="value">14px</span>;
+  <span class="property">font-weight</span>: <span class="value">400</span>;  <span class="comment">/* Normal, NOT bold */</span>
+  <span class="property">color</span>: <span class="value">#333333</span>;
+  <span class="property">margin-bottom</span>: <span class="value">4px</span>;
+}
+
+<span class="comment">/* Input */</span>
+.<span class="selector">form-input</span> {
+  <span class="property">min-height</span>: <span class="value">32px</span>;
+  <span class="property">padding</span>: <span class="value">4px 12px</span>;
+  <span class="property">border</span>: <span class="value">1px solid #c8c6c4</span>;
+  <span class="property">border-radius</span>: <span class="value">4px</span>;
+  <span class="property">font-size</span>: <span class="value">14px</span>;
+  <span class="property">font-weight</span>: <span class="value">400</span>;  <span class="comment">/* Normal, NOT bold */</span>
+}
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h3 class="subsection-title">Input States</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; max-width: 800px;">
+          <div class="form-field">
+            <label class="form-label">Default</label>
+            <input type="text" class="form-input" value="Contract value">
+          </div>
+          <div class="form-field">
+            <label class="form-label">Hover</label>
+            <input type="text" class="form-input" style="border-color: #8a8886;" value="Hover state">
+          </div>
+          <div class="form-field">
+            <label class="form-label">Focus</label>
+            <input type="text" class="form-input" style="border-color: #1a5a8a;" value="Focus state">
+          </div>
+          <div class="form-field">
+            <label class="form-label">Error</label>
+            <input type="text" class="form-input error" value="Invalid value">
+            <div class="form-error">This field is required</div>
+          </div>
+          <div class="form-field">
+            <label class="form-label">Disabled</label>
+            <input type="text" class="form-input" disabled value="Disabled input">
+          </div>
+          <div class="form-field">
+            <label class="form-label">With Hint</label>
+            <input type="text" class="form-input" placeholder="Enter value">
+            <div class="form-hint">Helper text goes here</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h3 class="subsection-title">Select / Dropdown</h3>
+        <div style="max-width: 400px;">
+          <div class="form-field">
+            <label class="form-label">Contract Type</label>
+            <select class="form-input form-select">
+              <option value="">Select a type...</option>
+              <option value="service">Service Agreement</option>
+              <option value="nda">NDA</option>
+              <option value="employment">Employment Contract</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h3 class="subsection-title">Textarea</h3>
+        <div style="max-width: 400px;">
+          <div class="form-field">
+            <label class="form-label">Description</label>
+            <textarea class="form-input form-textarea" placeholder="Enter description..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h3 class="subsection-title">Checkbox</h3>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <label class="form-checkbox">
+            <input type="checkbox" checked>
+            <span class="form-checkbox-label">Auto-renewal enabled</span>
+          </label>
+          <label class="form-checkbox">
+            <input type="checkbox">
+            <span class="form-checkbox-label">Send email notifications</span>
+          </label>
+        </div>
+        <div class="code-block">
+<span class="comment">/* Checkbox label - NOT bold */</span>
+.<span class="selector">form-checkbox-label</span> {
+  <span class="property">font-size</span>: <span class="value">14px</span>;
+  <span class="property">font-weight</span>: <span class="value">400</span>;  <span class="comment">/* Normal, NOT bold */</span>
+  <span class="property">color</span>: <span class="value">#333333</span>;
+}
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================================
+         SECTION 7: BADGES
+         ============================================================================ -->
+    <section id="badges" class="section">
+      <h2 class="section-title">7. Badges & Status</h2>
+      <p class="section-description">Status indicators with semantic colors. Badge text uses weight 500.</p>
+
+      <div class="subsection">
+        <h3 class="subsection-title">Badge Types</h3>
+        <div class="example-row">
+          <span class="badge badge-success">Active</span>
+          <span class="badge badge-success">Completed</span>
+          <span class="badge badge-success">Approved</span>
+          <span class="badge badge-warning">Pending</span>
+          <span class="badge badge-warning">In Review</span>
+          <span class="badge badge-error">Overdue</span>
+          <span class="badge badge-error">Rejected</span>
+          <span class="badge badge-info">New</span>
+          <span class="badge badge-info">Draft</span>
+          <span class="badge badge-neutral">Inactive</span>
+        </div>
+
+        <div class="code-block">
+<span class="comment">/* Badge base */</span>
+.<span class="selector">badge</span> {
+  <span class="property">display</span>: <span class="value">inline-flex</span>;
+  <span class="property">padding</span>: <span class="value">4px 12px</span>;
+  <span class="property">border-radius</span>: <span class="value">4px</span>;
+  <span class="property">font-size</span>: <span class="value">12px</span>;
+  <span class="property">font-weight</span>: <span class="value">500</span>;  <span class="comment">/* Medium weight */</span>
+}
+
+<span class="comment">/* Success (green) */</span>
+.<span class="selector">badge-success</span> {
+  <span class="property">background-color</span>: <span class="value">#dff6dd</span>;
+  <span class="property">color</span>: <span class="value">#107c10</span>;
+}
+
+<span class="comment">/* Warning (amber) */</span>
+.<span class="selector">badge-warning</span> {
+  <span class="property">background-color</span>: <span class="value">#fff4ce</span>;
+  <span class="property">color</span>: <span class="value">#986f0b</span>;
+}
+
+<span class="comment">/* Error (red) */</span>
+.<span class="selector">badge-error</span> {
+  <span class="property">background-color</span>: <span class="value">#fde7e9</span>;
+  <span class="property">color</span>: <span class="value">#d13438</span>;
+}
+
+<span class="comment">/* Info (blue) */</span>
+.<span class="selector">badge-info</span> {
+  <span class="property">background-color</span>: <span class="value">#e5f2ff</span>;
+  <span class="property">color</span>: <span class="value">#1a5a8a</span>;
+}
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h3 class="subsection-title">Status Mapping Reference</h3>
+        <table class="spec-table">
+          <thead>
+            <tr>
+              <th>Badge Type</th>
+              <th>Status Values</th>
+              <th>Background</th>
+              <th>Text</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="badge badge-success">Success</span></td>
+              <td>Active, Approved, Completed, Signed</td>
+              <td><code>#dff6dd</code></td>
+              <td><code>#107c10</code></td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-warning">Warning</span></td>
+              <td>Pending, In Review, Draft</td>
+              <td><code>#fff4ce</code></td>
+              <td><code>#986f0b</code></td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-error">Error</span></td>
+              <td>Expired, Overdue, Rejected, Cancelled</td>
+              <td><code>#fde7e9</code></td>
+              <td><code>#d13438</code></td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-info">Info</span></td>
+              <td>New, Info, Selected</td>
+              <td><code>#e5f2ff</code></td>
+              <td><code>#1a5a8a</code></td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-neutral">Neutral</span></td>
+              <td>Inactive, Archived, N/A</td>
+              <td><code>#f3f2f1</code></td>
+              <td><code>#6c757d</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================================
+         SECTION 8: CARDS
+         ============================================================================ -->
+    <section id="cards" class="section">
+      <h2 class="section-title">8. Cards</h2>
+      <p class="section-description">Card containers for content grouping.</p>
+
+      <div class="subsection">
+        <h3 class="subsection-title">Card Variants</h3>
+        <div class="example-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+          <div>
+            <div class="card">
+              <div class="card-title">Flat Card</div>
+              <div class="card-content">Standard card with border. Use for most content containers.</div>
+            </div>
+            <div class="font-label mt-16">border: 1px solid #e1dfdd</div>
+          </div>
+          <div>
+            <div class="card card-elevated">
+              <div class="card-title">Elevated Card</div>
+              <div class="card-content">Card with shadow instead of border. Use for emphasis.</div>
+            </div>
+            <div class="font-label mt-16">box-shadow: 0 2px 8px rgba(0,0,0,0.1)</div>
+          </div>
+          <div>
+            <div class="card card-interactive">
+              <div class="card-title">Interactive Card</div>
+              <div class="card-content">Hover to see lift effect. Use for clickable items.</div>
+            </div>
+            <div class="font-label mt-16">Hover: transform + shadow</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h3 class="subsection-title">KPI Cards</h3>
+        <div class="example-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));">
+          <div class="card kpi-card">
+            <div class="kpi-value">245</div>
+            <div class="kpi-label">Active Contracts</div>
+          </div>
+          <div class="card kpi-card">
+            <div class="kpi-value">R12.5M</div>
+            <div class="kpi-label">Total Value</div>
+          </div>
+          <div class="card kpi-card">
+            <div class="kpi-value">18</div>
+            <div class="kpi-label">Pending Approval</div>
+          </div>
+          <div class="card kpi-card">
+            <div class="kpi-value">97%</div>
+            <div class="kpi-label">Compliance Rate</div>
+          </div>
+        </div>
+        <div class="code-block">
+<span class="comment">/* KPI Value - Bold (700) is allowed for statistics */</span>
+.<span class="selector">kpi-value</span> {
+  <span class="property">font-size</span>: <span class="value">32px</span>;
+  <span class="property">font-weight</span>: <span class="value">700</span>;  <span class="comment">/* Bold - exception for KPIs */</span>
+  <span class="property">color</span>: <span class="value">#1a5a8a</span>;
+}
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================================
+         SECTION 9: KPI / STATS CARDS
+         ============================================================================ -->
+    <section id="kpi-cards" class="section">
+      <h2 class="section-title">9. KPI / Stats Cards</h2>
+      <p class="section-description">Standardized KPI/Stats card styles for dashboards. <strong>Stats Card Style 1 (Label First + Pill Trend)</strong> is the DEFAULT - use unless an alternate style is specifically requested.</p>
+
+      <div class="success-callout">
+        <div class="success-callout-title">Official Stats Card Styles (January 2026)</div>
+        <div>
+          <strong>Style 1: Label First + Pill Trend</strong> is the official DEFAULT stats card style.<br>
+          <strong>Style 2: Number First + Pill Trend</strong> is the official ALTERNATE style.<br>
+          Both use pill-shaped trend badges for change indicators. See detailed specifications below.
+        </div>
+      </div>
+
+      <!-- ========================================================================
+           OFFICIAL STATS CARD STYLES (January 2026)
+           ======================================================================== -->
+
+      <!-- STATS CARD STYLE 1: Label First + Pill Trend (DEFAULT) -->
+      <div class="subsection">
+        <h3 class="subsection-title">Stats Card Style 1: Label First + Pill Trend (DEFAULT)</h3>
+        <p style="color: var(--dwx-text-secondary); margin-bottom: 16px;">
+          The official default implementation. Label appears first to provide context, followed by the large number value and optional pill-shaped trend badge. Best for dashboard overviews where users need to quickly understand what each metric represents.
+        </p>
+
+        <!-- Live Examples -->
+        <div class="example-row" style="flex-wrap: wrap; gap: 16px; background: #f5f5f5; padding: 20px; border-radius: 8px;">
+          <div class="stats-s1">
+            <div class="s1-icon blue">📄</div>
+            <div class="s1-content">
+              <span class="s1-label">TOTAL CONTRACTS</span>
+              <div class="s1-value-row">
+                <span class="s1-value">245</span>
+                <span class="s1-trend up">+12 this month</span>
+              </div>
+            </div>
+          </div>
+          <div class="stats-s1">
+            <div class="s1-icon green">✓</div>
+            <div class="s1-content">
+              <span class="s1-label">ACTIVE</span>
+              <div class="s1-value-row">
+                <span class="s1-value">189</span>
+                <span class="s1-trend up">+8 new</span>
+              </div>
+            </div>
+          </div>
+          <div class="stats-s1">
+            <div class="s1-icon orange">⚠</div>
+            <div class="s1-content">
+              <span class="s1-label">EXPIRING SOON</span>
+              <div class="s1-value-row">
+                <span class="s1-value">18</span>
+                <span class="s1-trend down">-3 from last week</span>
+              </div>
+            </div>
+          </div>
+          <div class="stats-s1">
+            <div class="s1-icon pink">⚡</div>
+            <div class="s1-content">
+              <span class="s1-label">OVERDUE</span>
+              <div class="s1-value-row">
+                <span class="s1-value">7</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Code Block -->
+        <div class="code-block">
+<span class="comment">/* Stats Card Style 1: Label First + Pill Trend (DEFAULT) */</span>
+.<span class="selector">stats-s1</span> {
+  <span class="property">display</span>: <span class="value">flex</span>;
+  <span class="property">align-items</span>: <span class="value">flex-start</span>;
+  <span class="property">gap</span>: <span class="value">16px</span>;
+  <span class="property">padding</span>: <span class="value">16px 20px</span>;
+  <span class="property">background</span>: <span class="value">white</span>;
+  <span class="property">border-radius</span>: <span class="value">8px</span>;
+  <span class="property">border</span>: <span class="value">1px solid #edebe9</span>;
+  <span class="property">min-width</span>: <span class="value">180px</span>;
+  <span class="property">flex</span>: <span class="value">1</span>;
+}
+
+.<span class="selector">s1-icon</span> {
+  <span class="property">width</span>: <span class="value">44px</span>;
+  <span class="property">height</span>: <span class="value">44px</span>;
+  <span class="property">border-radius</span>: <span class="value">10px</span>;
+  <span class="property">display</span>: <span class="value">flex</span>;
+  <span class="property">align-items</span>: <span class="value">center</span>;
+  <span class="property">justify-content</span>: <span class="value">center</span>;
+  <span class="property">font-size</span>: <span class="value">20px</span>;
+  <span class="property">flex-shrink</span>: <span class="value">0</span>;
+}
+
+.<span class="selector">s1-content</span> {
+  <span class="property">display</span>: <span class="value">flex</span>;
+  <span class="property">flex-direction</span>: <span class="value">column</span>;
+  <span class="property">gap</span>: <span class="value">4px</span>;
+  <span class="property">min-width</span>: <span class="value">0</span>;
+  <span class="property">flex</span>: <span class="value">1</span>;
+}
+
+<span class="comment">/* Label: UPPERCASE, small, above the value */</span>
+.<span class="selector">s1-label</span> {
+  <span class="property">font-size</span>: <span class="value">11px</span>;
+  <span class="property">font-weight</span>: <span class="value">500</span>;
+  <span class="property">color</span>: <span class="value">#605e5c</span>;  <span class="comment">/* neutralSecondary */</span>
+  <span class="property">text-transform</span>: <span class="value">uppercase</span>;
+  <span class="property">letter-spacing</span>: <span class="value">0.5px</span>;
+  <span class="property">white-space</span>: <span class="value">nowrap</span>;
+}
+
+<span class="comment">/* Value row: number + optional trend badge */</span>
+.<span class="selector">s1-value-row</span> {
+  <span class="property">display</span>: <span class="value">flex</span>;
+  <span class="property">align-items</span>: <span class="value">center</span>;
+  <span class="property">gap</span>: <span class="value">10px</span>;
+}
+
+.<span class="selector">s1-value</span> {
+  <span class="property">font-size</span>: <span class="value">28px</span>;
+  <span class="property">font-weight</span>: <span class="value">700</span>;
+  <span class="property">line-height</span>: <span class="value">1</span>;
+  <span class="property">color</span>: <span class="value">#323130</span>;  <span class="comment">/* neutralPrimary */</span>
+  <span class="property">font-family</span>: <span class="value">"Segoe UI", -apple-system, sans-serif</span>;
+}
+
+<span class="comment">/* Pill-shaped trend badge */</span>
+.<span class="selector">s1-trend</span> {
+  <span class="property">font-size</span>: <span class="value">10px</span>;
+  <span class="property">font-weight</span>: <span class="value">500</span>;
+  <span class="property">padding</span>: <span class="value">3px 8px</span>;
+  <span class="property">border-radius</span>: <span class="value">12px</span>;  <span class="comment">/* Pill shape */</span>
+  <span class="property">white-space</span>: <span class="value">nowrap</span>;
+}
+
+.<span class="selector">s1-trend.up</span> {
+  <span class="property">color</span>: <span class="value">#107c10</span>;
+  <span class="property">background</span>: <span class="value">#dff6dd</span>;
+}
+
+.<span class="selector">s1-trend.down</span> {
+  <span class="property">color</span>: <span class="value">#d13438</span>;
+  <span class="property">background</span>: <span class="value">#fde7e9</span>;
+}
+
+.<span class="selector">s1-trend.neutral</span> {
+  <span class="property">color</span>: <span class="value">#8a8886</span>;
+  <span class="property">background</span>: <span class="value">#f3f2f1</span>;
+}
+        </div>
+
+        <!-- Specification Table -->
+        <table class="spec-table" style="margin-top: 16px;">
+          <thead>
+            <tr>
+              <th>Element</th>
+              <th>Property</th>
+              <th>Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Card</td>
+              <td>Padding</td>
+              <td><code>16px 20px</code></td>
+            </tr>
+            <tr>
+              <td>Card</td>
+              <td>Border radius</td>
+              <td><code>8px</code></td>
+            </tr>
+            <tr>
+              <td>Icon</td>
+              <td>Size</td>
+              <td><code>44px × 44px</code></td>
+            </tr>
+            <tr>
+              <td>Label</td>
+              <td>Font</td>
+              <td><code>11px / 500 / uppercase / 0.5px spacing</code></td>
+            </tr>
+            <tr>
+              <td>Value</td>
+              <td>Font</td>
+              <td><code>28px / 700</code></td>
+            </tr>
+            <tr>
+              <td>Trend Badge</td>
+              <td>Font</td>
+              <td><code>10px / 500</code></td>
+            </tr>
+            <tr>
+              <td>Trend Badge</td>
+              <td>Padding</td>
+              <td><code>3px 8px</code></td>
+            </tr>
+            <tr>
+              <td>Trend Badge</td>
+              <td>Border radius</td>
+              <td><code>12px</code> (pill shape)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- STATS CARD STYLE 2: Number First + Pill Trend (ALTERNATE) -->
+      <div class="subsection">
+        <h3 class="subsection-title">Stats Card Style 2: Number First + Pill Trend (ALTERNATE)</h3>
+        <p style="color: var(--dwx-text-secondary); margin-bottom: 16px;">
+          The alternate implementation. Large number appears first for immediate impact, with the uppercase label below. Use when users are already familiar with the metrics and need to quickly scan values.
+        </p>
+
+        <!-- Live Examples -->
+        <div class="example-row" style="flex-wrap: wrap; gap: 16px; background: #f5f5f5; padding: 20px; border-radius: 8px;">
+          <div class="stats-s2">
+            <div class="s2-icon blue">📄</div>
+            <div class="s2-content">
+              <div class="s2-value-row">
+                <span class="s2-value">245</span>
+                <span class="s2-trend up">+12 this month</span>
+              </div>
+              <span class="s2-label">TOTAL CONTRACTS</span>
+            </div>
+          </div>
+          <div class="stats-s2">
+            <div class="s2-icon green">✓</div>
+            <div class="s2-content">
+              <div class="s2-value-row">
+                <span class="s2-value">189</span>
+                <span class="s2-trend up">+8 new</span>
+              </div>
+              <span class="s2-label">ACTIVE</span>
+            </div>
+          </div>
+          <div class="stats-s2">
+            <div class="s2-icon orange">⚠</div>
+            <div class="s2-content">
+              <div class="s2-value-row">
+                <span class="s2-value">18</span>
+                <span class="s2-trend down">-3 from last week</span>
+              </div>
+              <span class="s2-label">EXPIRING SOON</span>
+            </div>
+          </div>
+          <div class="stats-s2">
+            <div class="s2-icon pink">⚡</div>
+            <div class="s2-content">
+              <div class="s2-value-row">
+                <span class="s2-value">7</span>
+              </div>
+              <span class="s2-label">OVERDUE</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Code Block -->
+        <div class="code-block">
+<span class="comment">/* Stats Card Style 2: Number First + Pill Trend (ALTERNATE) */</span>
+.<span class="selector">stats-s2</span> {
+  <span class="property">display</span>: <span class="value">flex</span>;
+  <span class="property">align-items</span>: <span class="value">flex-start</span>;
+  <span class="property">gap</span>: <span class="value">16px</span>;
+  <span class="property">padding</span>: <span class="value">16px 20px</span>;
+  <span class="property">background</span>: <span class="value">white</span>;
+  <span class="property">border-radius</span>: <span class="value">8px</span>;
+  <span class="property">border</span>: <span class="value">1px solid #edebe9</span>;
+  <span class="property">min-width</span>: <span class="value">180px</span>;
+  <span class="property">flex</span>: <span class="value">1</span>;
+}
+
+.<span class="selector">s2-content</span> {
+  <span class="property">display</span>: <span class="value">flex</span>;
+  <span class="property">flex-direction</span>: <span class="value">column</span>;
+  <span class="property">gap</span>: <span class="value">4px</span>;
+}
+
+<span class="comment">/* Value row comes FIRST */</span>
+.<span class="selector">s2-value-row</span> {
+  <span class="property">display</span>: <span class="value">flex</span>;
+  <span class="property">align-items</span>: <span class="value">center</span>;
+  <span class="property">gap</span>: <span class="value">10px</span>;
+}
+
+.<span class="selector">s2-value</span> {
+  <span class="property">font-size</span>: <span class="value">28px</span>;
+  <span class="property">font-weight</span>: <span class="value">700</span>;
+  <span class="property">line-height</span>: <span class="value">1</span>;
+}
+
+<span class="comment">/* Label: UPPERCASE, below the value */</span>
+.<span class="selector">s2-label</span> {
+  <span class="property">font-size</span>: <span class="value">11px</span>;
+  <span class="property">font-weight</span>: <span class="value">500</span>;
+  <span class="property">color</span>: <span class="value">#605e5c</span>;
+  <span class="property">text-transform</span>: <span class="value">uppercase</span>;
+  <span class="property">letter-spacing</span>: <span class="value">0.5px</span>;
+}
+
+<span class="comment">/* Trend badge (same as Style 1) */</span>
+.<span class="selector">s2-trend</span> {
+  <span class="property">font-size</span>: <span class="value">10px</span>;
+  <span class="property">font-weight</span>: <span class="value">500</span>;
+  <span class="property">padding</span>: <span class="value">3px 8px</span>;
+  <span class="property">border-radius</span>: <span class="value">12px</span>;
+}
+        </div>
+      </div>
+
+      <!-- Style Comparison -->
+      <div class="subsection">
+        <h3 class="subsection-title">Stats Card Style Comparison</h3>
+        <table class="spec-table">
+          <thead>
+            <tr>
+              <th>Aspect</th>
+              <th>Style 1: Label First (DEFAULT)</th>
+              <th>Style 2: Number First (ALTERNATE)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Layout Order</td>
+              <td>Label → Value + Trend</td>
+              <td>Value + Trend → Label</td>
+            </tr>
+            <tr>
+              <td>Best For</td>
+              <td>New users, mixed audiences, accessibility</td>
+              <td>Expert users, familiar dashboards</td>
+            </tr>
+            <tr>
+              <td>Cognitive Load</td>
+              <td>Lower (context first)</td>
+              <td>Higher (data first)</td>
+            </tr>
+            <tr>
+              <td>Scanning Speed</td>
+              <td>Moderate</td>
+              <td>Fast (for familiar metrics)</td>
+            </tr>
+            <tr>
+              <td>Accessibility</td>
+              <td>Better (label provides context)</td>
+              <td>Good</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ========================================================================
+           LEGACY KPI CARD STYLES (Reference Only)
+           ======================================================================== -->
+
+      <div class="subsection" style="margin-top: 48px; padding-top: 24px; border-top: 2px solid #e1dfdd;">
+        <h3 class="subsection-title" style="color: #8a8886;">Legacy KPI Card Styles (Reference Only)</h3>
+        <p style="color: #8a8886; margin-bottom: 24px;">
+          The following styles are provided for reference and backwards compatibility. For new implementations, use <strong>Stats Card Style 1</strong> or <strong>Style 2</strong> above.
+        </p>
+      </div>
+
+      <!-- STYLE 1: Left Accent Bar (DEFAULT) -->
+      <div class="subsection">
+        <h3 class="subsection-title">Style 1: Left Accent Bar (DEFAULT)</h3>
+        <p style="color: var(--dwx-text-secondary); margin-bottom: 16px;">The default implementation with colored left border and icon in tinted background. Clean and professional.</p>
+        <div class="example-row" style="flex-wrap: wrap; gap: 16px; background: #f5f5f5; padding: 20px; border-radius: 8px;">
+          <div class="kpi-v1 blue">
+            <div class="kpi-v1-icon blue">📄</div>
+            <div>
+              <div class="kpi-v1-value">245</div>
+              <div class="kpi-v1-label">Total Contracts</div>
+              <div class="kpi-v1-trend up">↑ 12 this month</div>
+            </div>
+          </div>
+          <div class="kpi-v1 green">
+            <div class="kpi-v1-icon green">✓</div>
+            <div>
+              <div class="kpi-v1-value">189</div>
+              <div class="kpi-v1-label">Active</div>
+              <div class="kpi-v1-trend up">↑ 8 new</div>
+            </div>
+          </div>
+          <div class="kpi-v1 orange">
+            <div class="kpi-v1-icon orange">⚠</div>
+            <div>
+              <div class="kpi-v1-value">18</div>
+              <div class="kpi-v1-label">Expiring Soon</div>
+              <div class="kpi-v1-trend down">↓ 3 from last week</div>
+            </div>
+          </div>
+          <div class="kpi-v1 pink">
+            <div class="kpi-v1-icon pink">⚡</div>
+            <div>
+              <div class="kpi-v1-value">7</div>
+              <div class="kpi-v1-label">Overdue</div>
+              <div class="kpi-v1-trend up">↑ 2 this week</div>
+            </div>
+          </div>
+        </div>
+        <div class="code-block">
+<span class="comment">/* Style 1: Left Accent Bar (DEFAULT) */</span>
+.<span class="selector">kpi-v1</span> {
+  <span class="property">display</span>: <span class="value">flex</span>;
+  <span class="property">align-items</span>: <span class="value">center</span>;
+  <span class="property">gap</span>: <span class="value">16px</span>;
+  <span class="property">padding</span>: <span class="value">16px 20px</span>;
+  <span class="property">background</span>: <span class="value">white</span>;
+  <span class="property">border-radius</span>: <span class="value">8px</span>;
+  <span class="property">border</span>: <span class="value">1px solid #edebe9</span>;
+  <span class="property">position</span>: <span class="value">relative</span>;
+  <span class="property">overflow</span>: <span class="value">hidden</span>;
+}
+
+.<span class="selector">kpi-v1::before</span> {
+  <span class="property">content</span>: <span class="value">''</span>;
+  <span class="property">position</span>: <span class="value">absolute</span>;
+  <span class="property">left</span>: <span class="value">0</span>;
+  <span class="property">top</span>: <span class="value">0</span>;
+  <span class="property">bottom</span>: <span class="value">0</span>;
+  <span class="property">width</span>: <span class="value">4px</span>;
+  <span class="property">background</span>: <span class="value">#0078d4</span>;  <span class="comment">/* Accent color */</span>
+}
+
+.<span class="selector">kpi-v1-icon</span> {
+  <span class="property">width</span>: <span class="value">44px</span>;
+  <span class="property">height</span>: <span class="value">44px</span>;
+  <span class="property">border-radius</span>: <span class="value">8px</span>;
+  <span class="property">background</span>: <span class="value">#e5f2ff</span>;  <span class="comment">/* Tinted background */</span>
+  <span class="property">color</span>: <span class="value">#0078d4</span>;
+}
+
+.<span class="selector">kpi-v1-value</span> {
+  <span class="property">font-size</span>: <span class="value">28px</span>;
+  <span class="property">font-weight</span>: <span class="value">700</span>;
+  <span class="property">color</span>: <span class="value">#333333</span>;
+}
+        </div>
+      </div>
+
+      <!-- STYLE 2: Compact Horizontal -->
+      <div class="subsection">
+        <h3 class="subsection-title">Style 2: Compact Horizontal</h3>
+        <p style="color: var(--dwx-text-secondary); margin-bottom: 16px;">Space-efficient design with solid-colored icons. Great for dashboards with limited vertical space.</p>
+        <div class="example-row" style="flex-wrap: wrap; gap: 16px; background: #f5f5f5; padding: 20px; border-radius: 8px;">
+          <div class="kpi-v2">
+            <div class="kpi-v2-icon blue">📄</div>
+            <div>
+              <div class="kpi-v2-label">Total Contracts</div>
+              <div class="kpi-v2-value">245</div>
+            </div>
+          </div>
+          <div class="kpi-v2">
+            <div class="kpi-v2-icon green">✓</div>
+            <div>
+              <div class="kpi-v2-label">Active</div>
+              <div class="kpi-v2-value">189</div>
+            </div>
+          </div>
+          <div class="kpi-v2">
+            <div class="kpi-v2-icon orange">⚠</div>
+            <div>
+              <div class="kpi-v2-label">Expiring</div>
+              <div class="kpi-v2-value">18</div>
+            </div>
+          </div>
+          <div class="kpi-v2">
+            <div class="kpi-v2-icon pink">⚡</div>
+            <div>
+              <div class="kpi-v2-label">Overdue</div>
+              <div class="kpi-v2-value">7</div>
+            </div>
+          </div>
+        </div>
+        <div class="code-block">
+<span class="comment">/* Style 2: Compact Horizontal */</span>
+.<span class="selector">kpi-v2</span> {
+  <span class="property">display</span>: <span class="value">flex</span>;
+  <span class="property">align-items</span>: <span class="value">center</span>;
+  <span class="property">gap</span>: <span class="value">12px</span>;
+  <span class="property">padding</span>: <span class="value">12px 16px</span>;
+  <span class="property">background</span>: <span class="value">white</span>;
+  <span class="property">border-radius</span>: <span class="value">8px</span>;
+  <span class="property">border</span>: <span class="value">1px solid #edebe9</span>;
+}
+
+.<span class="selector">kpi-v2-icon</span> {
+  <span class="property">width</span>: <span class="value">36px</span>;
+  <span class="property">height</span>: <span class="value">36px</span>;
+  <span class="property">border-radius</span>: <span class="value">6px</span>;
+  <span class="property">background</span>: <span class="value">#0078d4</span>;  <span class="comment">/* Solid color */</span>
+  <span class="property">color</span>: <span class="value">white</span>;
+}
+
+.<span class="selector">kpi-v2-label</span> {
+  <span class="property">font-size</span>: <span class="value">11px</span>;
+  <span class="property">text-transform</span>: <span class="value">uppercase</span>;
+  <span class="property">letter-spacing</span>: <span class="value">0.5px</span>;
+}
+
+.<span class="selector">kpi-v2-value</span> {
+  <span class="property">font-size</span>: <span class="value">22px</span>;
+  <span class="property">font-weight</span>: <span class="value">700</span>;
+}
+        </div>
+      </div>
+
+      <!-- STYLE 3: Top Border Accent -->
+      <div class="subsection">
+        <h3 class="subsection-title">Style 3: Top Border Accent</h3>
+        <p style="color: var(--dwx-text-secondary); margin-bottom: 16px;">Clean, centered design with colored top border. Minimalist and elegant.</p>
+        <div class="example-row" style="flex-wrap: wrap; gap: 16px; background: #f5f5f5; padding: 20px; border-radius: 8px;">
+          <div class="kpi-v3 blue">
+            <div class="kpi-v3-value">245</div>
+            <div class="kpi-v3-label">Total Contracts</div>
+          </div>
+          <div class="kpi-v3 green">
+            <div class="kpi-v3-value">189</div>
+            <div class="kpi-v3-label">Active</div>
+          </div>
+          <div class="kpi-v3 orange">
+            <div class="kpi-v3-value">18</div>
+            <div class="kpi-v3-label">Expiring Soon</div>
+          </div>
+          <div class="kpi-v3 pink">
+            <div class="kpi-v3-value">7</div>
+            <div class="kpi-v3-label">Overdue</div>
+          </div>
+        </div>
+        <div class="code-block">
+<span class="comment">/* Style 3: Top Border Accent */</span>
+.<span class="selector">kpi-v3</span> {
+  <span class="property">padding</span>: <span class="value">16px 20px</span>;
+  <span class="property">background</span>: <span class="value">white</span>;
+  <span class="property">border-radius</span>: <span class="value">8px</span>;
+  <span class="property">border</span>: <span class="value">1px solid #edebe9</span>;
+  <span class="property">border-top</span>: <span class="value">3px solid #0078d4</span>;  <span class="comment">/* Colored top border */</span>
+  <span class="property">text-align</span>: <span class="value">center</span>;
+}
+
+.<span class="selector">kpi-v3-value</span> {
+  <span class="property">font-size</span>: <span class="value">32px</span>;
+  <span class="property">font-weight</span>: <span class="value">700</span>;
+}
+
+.<span class="selector">kpi-v3-label</span> {
+  <span class="property">font-size</span>: <span class="value">12px</span>;
+  <span class="property">color</span>: <span class="value">#6c757d</span>;
+  <span class="property">margin-top</span>: <span class="value">6px</span>;
+}
+        </div>
+      </div>
+
+      <!-- STYLE 4: Gradient Background -->
+      <div class="subsection">
+        <h3 class="subsection-title">Style 4: Gradient Background</h3>
+        <p style="color: var(--dwx-text-secondary); margin-bottom: 16px;">Bold, colorful cards with gradient backgrounds. High visual impact for executive dashboards.</p>
+        <div class="example-row" style="flex-wrap: wrap; gap: 16px; background: #f5f5f5; padding: 20px; border-radius: 8px;">
+          <div class="kpi-v4 blue">
+            <div class="kpi-v4-icon">📄</div>
+            <div class="kpi-v4-label">Total Contracts</div>
+            <div class="kpi-v4-value">245</div>
+          </div>
+          <div class="kpi-v4 green">
+            <div class="kpi-v4-icon">✓</div>
+            <div class="kpi-v4-label">Active</div>
+            <div class="kpi-v4-value">189</div>
+          </div>
+          <div class="kpi-v4 orange">
+            <div class="kpi-v4-icon">⚠</div>
+            <div class="kpi-v4-label">Expiring Soon</div>
+            <div class="kpi-v4-value">18</div>
+          </div>
+          <div class="kpi-v4 purple">
+            <div class="kpi-v4-icon">💰</div>
+            <div class="kpi-v4-label">Total Value</div>
+            <div class="kpi-v4-value">R12.5M</div>
+          </div>
+        </div>
+        <div class="code-block">
+<span class="comment">/* Style 4: Gradient Background */</span>
+.<span class="selector">kpi-v4</span> {
+  <span class="property">padding</span>: <span class="value">20px</span>;
+  <span class="property">border-radius</span>: <span class="value">12px</span>;
+  <span class="property">background</span>: <span class="value">linear-gradient(135deg, #0078d4 0%, #004578 100%)</span>;
+  <span class="property">color</span>: <span class="value">white</span>;
+  <span class="property">position</span>: <span class="value">relative</span>;
+  <span class="property">overflow</span>: <span class="value">hidden</span>;
+}
+
+.<span class="selector">kpi-v4-icon</span> {
+  <span class="property">position</span>: <span class="value">absolute</span>;
+  <span class="property">right</span>: <span class="value">12px</span>;
+  <span class="property">top</span>: <span class="value">12px</span>;
+  <span class="property">opacity</span>: <span class="value">0.3</span>;
+  <span class="property">font-size</span>: <span class="value">32px</span>;
+}
+
+.<span class="selector">kpi-v4-value</span> {
+  <span class="property">font-size</span>: <span class="value">32px</span>;
+  <span class="property">font-weight</span>: <span class="value">700</span>;
+}
+        </div>
+      </div>
+
+      <!-- STYLE 5: Outlined with Circle Icon -->
+      <div class="subsection">
+        <h3 class="subsection-title">Style 5: Outlined with Circle Icon</h3>
+        <p style="color: var(--dwx-text-secondary); margin-bottom: 16px;">Bordered cards with circular icons. Friendly and approachable design.</p>
+        <div class="example-row" style="flex-wrap: wrap; gap: 16px; background: #f5f5f5; padding: 20px; border-radius: 8px;">
+          <div class="kpi-v5 blue">
+            <div class="kpi-v5-icon">📄</div>
+            <div class="kpi-v5-value">245</div>
+            <div class="kpi-v5-label">Total Contracts</div>
+          </div>
+          <div class="kpi-v5 green">
+            <div class="kpi-v5-icon">✓</div>
+            <div class="kpi-v5-value">189</div>
+            <div class="kpi-v5-label">Active</div>
+          </div>
+          <div class="kpi-v5 orange">
+            <div class="kpi-v5-icon">⚠</div>
+            <div class="kpi-v5-value">18</div>
+            <div class="kpi-v5-label">Expiring Soon</div>
+          </div>
+          <div class="kpi-v5 pink">
+            <div class="kpi-v5-icon">⚡</div>
+            <div class="kpi-v5-value">7</div>
+            <div class="kpi-v5-label">Overdue</div>
+          </div>
+        </div>
+        <div class="code-block">
+<span class="comment">/* Style 5: Outlined with Circle Icon */</span>
+.<span class="selector">kpi-v5</span> {
+  <span class="property">padding</span>: <span class="value">16px</span>;
+  <span class="property">background</span>: <span class="value">white</span>;
+  <span class="property">border-radius</span>: <span class="value">12px</span>;
+  <span class="property">border</span>: <span class="value">2px solid #0078d4</span>;  <span class="comment">/* Colored border */</span>
+  <span class="property">display</span>: <span class="value">flex</span>;
+  <span class="property">flex-direction</span>: <span class="value">column</span>;
+  <span class="property">align-items</span>: <span class="value">center</span>;
+  <span class="property">text-align</span>: <span class="value">center</span>;
+}
+
+.<span class="selector">kpi-v5-icon</span> {
+  <span class="property">width</span>: <span class="value">48px</span>;
+  <span class="property">height</span>: <span class="value">48px</span>;
+  <span class="property">border-radius</span>: <span class="value">50%</span>;  <span class="comment">/* Circular */</span>
+  <span class="property">background</span>: <span class="value">#e5f2ff</span>;
+  <span class="property">color</span>: <span class="value">#0078d4</span>;
+  <span class="property">margin-bottom</span>: <span class="value">12px</span>;
+}
+        </div>
+      </div>
+
+      <!-- STYLE 6: Split Design -->
+      <div class="subsection">
+        <h3 class="subsection-title">Style 6: Split Design</h3>
+        <p style="color: var(--dwx-text-secondary); margin-bottom: 16px;">Two-tone split layout with value highlight. Strong visual hierarchy.</p>
+        <div class="example-row" style="flex-wrap: wrap; gap: 16px; background: #f5f5f5; padding: 20px; border-radius: 8px;">
+          <div class="kpi-v6 blue">
+            <div class="kpi-v6-value-section">
+              <div class="kpi-v6-value">245</div>
+            </div>
+            <div class="kpi-v6-info-section">
+              <div class="kpi-v6-label">Total Contracts</div>
+              <div class="kpi-v6-trend up">↑ 12 this month</div>
+            </div>
+          </div>
+          <div class="kpi-v6 green">
+            <div class="kpi-v6-value-section">
+              <div class="kpi-v6-value">189</div>
+            </div>
+            <div class="kpi-v6-info-section">
+              <div class="kpi-v6-label">Active</div>
+              <div class="kpi-v6-trend up">↑ 8 new</div>
+            </div>
+          </div>
+          <div class="kpi-v6 orange">
+            <div class="kpi-v6-value-section">
+              <div class="kpi-v6-value">18</div>
+            </div>
+            <div class="kpi-v6-info-section">
+              <div class="kpi-v6-label">Expiring Soon</div>
+              <div class="kpi-v6-trend down">↓ 3 from last week</div>
+            </div>
+          </div>
+        </div>
+        <div class="code-block">
+<span class="comment">/* Style 6: Split Design */</span>
+.<span class="selector">kpi-v6</span> {
+  <span class="property">display</span>: <span class="value">flex</span>;
+  <span class="property">border-radius</span>: <span class="value">10px</span>;
+  <span class="property">overflow</span>: <span class="value">hidden</span>;
+  <span class="property">box-shadow</span>: <span class="value">0 2px 8px rgba(0,0,0,0.08)</span>;
+}
+
+.<span class="selector">kpi-v6-value-section</span> {
+  <span class="property">padding</span>: <span class="value">16px 20px</span>;
+  <span class="property">background</span>: <span class="value">#0078d4</span>;  <span class="comment">/* Colored section */</span>
+  <span class="property">color</span>: <span class="value">white</span>;
+  <span class="property">min-width</span>: <span class="value">80px</span>;
+}
+
+.<span class="selector">kpi-v6-info-section</span> {
+  <span class="property">padding</span>: <span class="value">12px 16px</span>;
+  <span class="property">background</span>: <span class="value">white</span>;
+  <span class="property">flex</span>: <span class="value">1</span>;
+}
+        </div>
+      </div>
+
+      <!-- STYLE 7: Floating Card with Shadow -->
+      <div class="subsection">
+        <h3 class="subsection-title">Style 7: Floating Card with Shadow</h3>
+        <p style="color: var(--dwx-text-secondary); margin-bottom: 16px;">Elevated cards with gradient icons and pronounced shadows. Modern and premium feel.</p>
+        <div class="example-row" style="flex-wrap: wrap; gap: 16px; background: #f5f5f5; padding: 20px; border-radius: 8px;">
+          <div class="kpi-v7 blue">
+            <div class="kpi-v7-icon">📄</div>
+            <div class="kpi-v7-label">Total Contracts</div>
+            <div class="kpi-v7-value">245</div>
+            <div class="kpi-v7-trend up">↑ 12 this month</div>
+          </div>
+          <div class="kpi-v7 green">
+            <div class="kpi-v7-icon">✓</div>
+            <div class="kpi-v7-label">Active</div>
+            <div class="kpi-v7-value">189</div>
+            <div class="kpi-v7-trend up">↑ 8 new</div>
+          </div>
+          <div class="kpi-v7 orange">
+            <div class="kpi-v7-icon">⚠</div>
+            <div class="kpi-v7-label">Expiring Soon</div>
+            <div class="kpi-v7-value">18</div>
+            <div class="kpi-v7-trend down">↓ 3 from last week</div>
+          </div>
+          <div class="kpi-v7 teal">
+            <div class="kpi-v7-icon">💰</div>
+            <div class="kpi-v7-label">Total Value</div>
+            <div class="kpi-v7-value">R12.5M</div>
+          </div>
+        </div>
+        <div class="code-block">
+<span class="comment">/* Style 7: Floating Card with Shadow */</span>
+.<span class="selector">kpi-v7</span> {
+  <span class="property">padding</span>: <span class="value">20px</span>;
+  <span class="property">background</span>: <span class="value">white</span>;
+  <span class="property">border-radius</span>: <span class="value">16px</span>;
+  <span class="property">box-shadow</span>: <span class="value">0 4px 20px rgba(0,0,0,0.1)</span>;  <span class="comment">/* Pronounced shadow */</span>
+}
+
+.<span class="selector">kpi-v7-icon</span> {
+  <span class="property">width</span>: <span class="value">52px</span>;
+  <span class="property">height</span>: <span class="value">52px</span>;
+  <span class="property">border-radius</span>: <span class="value">12px</span>;
+  <span class="property">background</span>: <span class="value">linear-gradient(135deg, #0078d4 0%, #004578 100%)</span>;  <span class="comment">/* Gradient icon */</span>
+  <span class="property">color</span>: <span class="value">white</span>;
+  <span class="property">margin-bottom</span>: <span class="value">16px</span>;
+}
+
+.<span class="selector">kpi-v7-label</span> {
+  <span class="property">font-size</span>: <span class="value">12px</span>;
+  <span class="property">text-transform</span>: <span class="value">uppercase</span>;
+  <span class="property">letter-spacing</span>: <span class="value">0.5px</span>;
+}
+        </div>
+      </div>
+
+      <!-- STYLE 8: Minimal Line -->
+      <div class="subsection">
+        <h3 class="subsection-title">Style 8: Minimal Line</h3>
+        <p style="color: var(--dwx-text-secondary); margin-bottom: 16px;">Ultra-minimal design with bottom accent line. Clean and unobtrusive.</p>
+        <div class="example-row" style="flex-wrap: wrap; gap: 16px; background: #f5f5f5; padding: 20px; border-radius: 8px;">
+          <div class="kpi-v8 blue">
+            <div class="kpi-v8-header">
+              <div class="kpi-v8-label">Total Contracts</div>
+              <div class="kpi-v8-icon">📄</div>
+            </div>
+            <div class="kpi-v8-value">245</div>
+            <div class="kpi-v8-trend up">↑ 12 this month</div>
+          </div>
+          <div class="kpi-v8 green">
+            <div class="kpi-v8-header">
+              <div class="kpi-v8-label">Active</div>
+              <div class="kpi-v8-icon">✓</div>
+            </div>
+            <div class="kpi-v8-value">189</div>
+            <div class="kpi-v8-trend up">↑ 8 new</div>
+          </div>
+          <div class="kpi-v8 orange">
+            <div class="kpi-v8-header">
+              <div class="kpi-v8-label">Expiring Soon</div>
+              <div class="kpi-v8-icon">⚠</div>
+            </div>
+            <div class="kpi-v8-value">18</div>
+            <div class="kpi-v8-trend down">↓ 3 from last week</div>
+          </div>
+          <div class="kpi-v8 pink">
+            <div class="kpi-v8-header">
+              <div class="kpi-v8-label">Overdue</div>
+              <div class="kpi-v8-icon">⚡</div>
+            </div>
+            <div class="kpi-v8-value">7</div>
+            <div class="kpi-v8-trend up">↑ 2 this week</div>
+          </div>
+        </div>
+        <div class="code-block">
+<span class="comment">/* Style 8: Minimal Line */</span>
+.<span class="selector">kpi-v8</span> {
+  <span class="property">padding</span>: <span class="value">16px 20px</span>;
+  <span class="property">background</span>: <span class="value">white</span>;
+  <span class="property">border-radius</span>: <span class="value">8px</span>;
+  <span class="property">position</span>: <span class="value">relative</span>;
+  <span class="property">box-shadow</span>: <span class="value">0 1px 4px rgba(0,0,0,0.06)</span>;
+}
+
+.<span class="selector">kpi-v8::after</span> {
+  <span class="property">content</span>: <span class="value">''</span>;
+  <span class="property">position</span>: <span class="value">absolute</span>;
+  <span class="property">bottom</span>: <span class="value">0</span>;
+  <span class="property">left</span>: <span class="value">20px</span>;
+  <span class="property">right</span>: <span class="value">20px</span>;
+  <span class="property">height</span>: <span class="value">3px</span>;
+  <span class="property">border-radius</span>: <span class="value">3px 3px 0 0</span>;
+  <span class="property">background</span>: <span class="value">#0078d4</span>;  <span class="comment">/* Bottom accent line */</span>
+}
+        </div>
+      </div>
+
+      <!-- Color Reference -->
+      <div class="subsection">
+        <h3 class="subsection-title">KPI Card Color Reference</h3>
+        <table class="spec-table">
+          <thead>
+            <tr>
+              <th>Color</th>
+              <th>Class</th>
+              <th>Accent Color</th>
+              <th>Background Tint</th>
+              <th>Usage</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span style="display: inline-block; width: 16px; height: 16px; background: #0078d4; border-radius: 3px;"></span> Blue</td>
+              <td><code>.blue</code></td>
+              <td><code>#0078d4</code></td>
+              <td><code>#e5f2ff</code></td>
+              <td>Total counts, primary metrics</td>
+            </tr>
+            <tr>
+              <td><span style="display: inline-block; width: 16px; height: 16px; background: #107c10; border-radius: 3px;"></span> Green</td>
+              <td><code>.green</code></td>
+              <td><code>#107c10</code></td>
+              <td><code>#dff6dd</code></td>
+              <td>Active, completed, success</td>
+            </tr>
+            <tr>
+              <td><span style="display: inline-block; width: 16px; height: 16px; background: #ff8c00; border-radius: 3px;"></span> Orange</td>
+              <td><code>.orange</code></td>
+              <td><code>#ff8c00</code></td>
+              <td><code>#fff4ce</code></td>
+              <td>Expiring, warnings, attention</td>
+            </tr>
+            <tr>
+              <td><span style="display: inline-block; width: 16px; height: 16px; background: #8764b8; border-radius: 3px;"></span> Purple</td>
+              <td><code>.purple</code></td>
+              <td><code>#8764b8</code></td>
+              <td><code>#f3e8ff</code></td>
+              <td>Pending, in-progress</td>
+            </tr>
+            <tr>
+              <td><span style="display: inline-block; width: 16px; height: 16px; background: #038387; border-radius: 3px;"></span> Teal</td>
+              <td><code>.teal</code></td>
+              <td><code>#038387</code></td>
+              <td><code>#e0f7f7</code></td>
+              <td>Financial, value metrics</td>
+            </tr>
+            <tr>
+              <td><span style="display: inline-block; width: 16px; height: 16px; background: #d13438; border-radius: 3px;"></span> Pink/Red</td>
+              <td><code>.pink</code></td>
+              <td><code>#d13438</code></td>
+              <td><code>#fde7e9</code></td>
+              <td>Overdue, errors, alerts</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Style Selection Guide -->
+      <div class="subsection">
+        <h3 class="subsection-title">Style Selection Guide</h3>
+        <table class="spec-table">
+          <thead>
+            <tr>
+              <th>Use Case</th>
+              <th>Recommended Styles</th>
+              <th>Why</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Standard Dashboard</td>
+              <td><strong>Style 1 (Default)</strong>, Style 7, Style 8</td>
+              <td>Professional appearance, clear hierarchy</td>
+            </tr>
+            <tr>
+              <td>Executive Summary</td>
+              <td>Style 4 (Gradient), Style 6 (Split)</td>
+              <td>High visual impact, bold colors</td>
+            </tr>
+            <tr>
+              <td>Data-Heavy Views</td>
+              <td>Style 2 (Compact), Style 3 (Top Border)</td>
+              <td>Space-efficient, maximum density</td>
+            </tr>
+            <tr>
+              <td>Modern/Trendy UI</td>
+              <td>Style 5 (Outlined), Style 7 (Floating)</td>
+              <td>Contemporary design appeal</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================================
+         SECTION 10: MODALS
+         ============================================================================ -->
+    <section id="modals" class="section">
+      <h2 class="section-title">10. Modals</h2>
+      <p class="section-description">Modal and panel structure with DWx gradient header.</p>
+
+      <div class="subsection">
+        <h3 class="subsection-title">Standard Modal (48px header)</h3>
+        <div class="modal-demo">
+          <div class="modal-header">
+            <div class="modal-header-content">
+              <div class="modal-header-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+              </div>
+              <div class="modal-header-title">Edit Contract</div>
+            </div>
+            <button class="modal-header-close">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="form-field">
+              <label class="form-label required">Contract Name</label>
+              <input type="text" class="form-input" value="Service Agreement - Acme Corp">
+            </div>
+            <div class="form-field">
+              <label class="form-label">Description</label>
+              <textarea class="form-input form-textarea">Annual service agreement for IT support and maintenance.</textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary">Cancel</button>
+            <button class="btn btn-primary">Save Changes</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h3 class="subsection-title">Modal with Subtitle (56px header)</h3>
+        <div class="modal-demo">
+          <div class="modal-header modal-header-56">
+            <div class="modal-header-content">
+              <div class="modal-header-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M9 12l2 2 4-4"></path>
+                </svg>
+              </div>
+              <div>
+                <div class="modal-header-title">Approve Contract</div>
+                <div class="modal-header-subtitle">Review and approve this contract</div>
+              </div>
+            </div>
+            <button class="modal-header-close">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+          <div class="modal-body">
+            <p style="margin-bottom: 16px;">Are you sure you want to approve this contract?</p>
+            <div class="form-field">
+              <label class="form-label">Comments (optional)</label>
+              <textarea class="form-input form-textarea" placeholder="Add approval comments..."></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary">Cancel</button>
+            <button class="btn btn-primary">Approve</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h3 class="subsection-title">Danger Modal (Red Header)</h3>
+        <div class="modal-demo">
+          <div class="modal-header modal-header-danger modal-header-56">
+            <div class="modal-header-content">
+              <div class="modal-header-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+              </div>
+              <div>
+                <div class="modal-header-title">Delete Contract</div>
+                <div class="modal-header-subtitle">This action cannot be undone</div>
+              </div>
+            </div>
+            <button class="modal-header-close">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+          <div class="modal-body">
+            <p>Are you sure you want to delete "Service Agreement - Acme Corp"? This action cannot be undone.</p>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary">Cancel</button>
+            <button class="btn btn-danger-solid">Delete</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h3 class="subsection-title">Modal Header CSS</h3>
+        <div class="code-block">
+<span class="comment">/* DWx Blue Gradient Header */</span>
+.<span class="selector">modal-header</span> {
+  <span class="property">display</span>: <span class="value">flex</span>;
+  <span class="property">align-items</span>: <span class="value">center</span>;
+  <span class="property">justify-content</span>: <span class="value">space-between</span>;
+  <span class="property">padding</span>: <span class="value">0 24px</span>;
+  <span class="property">height</span>: <span class="value">48px</span>;  <span class="comment">/* or 56px for with subtitle */</span>
+  <span class="property">background</span>: <span class="value">linear-gradient(135deg, #1a5a8a 0%, #2d7ab8 100%)</span>;
+  <span class="property">color</span>: <span class="value">#ffffff</span>;
+}
+
+<span class="comment">/* Header Title */</span>
+.<span class="selector">modal-header-title</span> {
+  <span class="property">font-size</span>: <span class="value">18px</span>;
+  <span class="property">font-weight</span>: <span class="value">500</span>;  <span class="comment">/* Medium, NOT bold */</span>
+  <span class="property">line-height</span>: <span class="value">1</span>;
+}
+
+<span class="comment">/* Header Subtitle */</span>
+.<span class="selector">modal-header-subtitle</span> {
+  <span class="property">font-size</span>: <span class="value">13px</span>;
+  <span class="property">font-weight</span>: <span class="value">400</span>;
+  <span class="property">opacity</span>: <span class="value">0.9</span>;
+}
+
+<span class="comment">/* Danger Header (Red) */</span>
+.<span class="selector">modal-header-danger</span> {
+  <span class="property">background</span>: <span class="value">linear-gradient(135deg, #d13438 0%, #a80000 100%)</span>;
+}
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================================
+         SECTION 11: PANELS (Fly-in / Side Panels)
+         ============================================================================ -->
+    <section id="panels" class="section">
+      <h2 class="section-title">11. Panels (Fly-in / Side Panels)</h2>
+      <p class="section-description">Side panel structure for detail views, property panes, and forms. Panels slide in from the right side of the screen.</p>
+
+      <div class="subsection">
+        <h3 class="subsection-title">Panel Anatomy</h3>
+        <table class="spec-table">
+          <thead>
+            <tr>
+              <th>Section</th>
+              <th>Height/Padding</th>
+              <th>Background</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Header</td>
+              <td><code>48px</code> or <code>56px</code> (with subtitle)</td>
+              <td>DWx Blue Gradient</td>
+              <td>Title, icon, close button</td>
+            </tr>
+            <tr>
+              <td>Body</td>
+              <td><code>padding: 20px</code></td>
+              <td><code>#ffffff</code></td>
+              <td>Scrollable content area</td>
+            </tr>
+            <tr>
+              <td>Footer</td>
+              <td><code>padding: 16px 20px</code></td>
+              <td><code>#fafafa</code></td>
+              <td>Action buttons, border-top</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="subsection">
+        <h3 class="subsection-title">Detail View Panel</h3>
+        <div class="panel-demo">
+          <div class="panel-header">
+            <div class="panel-header-content">
+              <div class="panel-header-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+              </div>
+              <div class="panel-header-title">Contract Details</div>
+            </div>
+            <button class="panel-header-close">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+          <div class="panel-body">
+            <div class="panel-section">
+              <div class="panel-section-title">General Information</div>
+              <div class="panel-field">
+                <div class="panel-field-label">Contract Name</div>
+                <div class="panel-field-value">Service Agreement - Acme Corp</div>
+              </div>
+              <div class="panel-field">
+                <div class="panel-field-label">Contract Type</div>
+                <div class="panel-field-value">Service Agreement</div>
+              </div>
+              <div class="panel-field">
+                <div class="panel-field-label">Status</div>
+                <div class="panel-field-value"><span class="badge badge-success">Active</span></div>
+              </div>
+              <div class="panel-field">
+                <div class="panel-field-label">Value</div>
+                <div class="panel-field-value">R250,000.00</div>
+              </div>
+            </div>
+            <div class="panel-section">
+              <div class="panel-section-title">Key Dates</div>
+              <div class="panel-field">
+                <div class="panel-field-label">Start Date</div>
+                <div class="panel-field-value">01 January 2025</div>
+              </div>
+              <div class="panel-field">
+                <div class="panel-field-label">End Date</div>
+                <div class="panel-field-value">31 December 2025</div>
+              </div>
+            </div>
+          </div>
+          <div class="panel-footer">
+            <button class="btn btn-secondary">Close</button>
+            <button class="btn btn-primary">Edit</button>
+          </div>
+        </div>
+
+        <div class="code-block">
+<span class="comment">/* Panel Header */</span>
+.<span class="selector">panel-header</span> {
+  <span class="property">display</span>: <span class="value">flex</span>;
+  <span class="property">align-items</span>: <span class="value">center</span>;
+  <span class="property">justify-content</span>: <span class="value">space-between</span>;
+  <span class="property">padding</span>: <span class="value">0 20px</span>;
+  <span class="property">height</span>: <span class="value">48px</span>;
+  <span class="property">background</span>: <span class="value">linear-gradient(135deg, #1a5a8a 0%, #2d7ab8 100%)</span>;
+  <span class="property">color</span>: <span class="value">white</span>;
+}
+
+<span class="comment">/* Panel Title */</span>
+.<span class="selector">panel-header-title</span> {
+  <span class="property">font-size</span>: <span class="value">16px</span>;
+  <span class="property">font-weight</span>: <span class="value">500</span>;
+}
+
+<span class="comment">/* Panel Body */</span>
+.<span class="selector">panel-body</span> {
+  <span class="property">padding</span>: <span class="value">20px</span>;
+  <span class="property">max-height</span>: <span class="value">calc(100vh - 130px)</span>;
+  <span class="property">overflow-y</span>: <span class="value">auto</span>;
+}
+
+<span class="comment">/* Panel Section */</span>
+.<span class="selector">panel-section</span> {
+  <span class="property">margin-bottom</span>: <span class="value">20px</span>;
+}
+
+.<span class="selector">panel-section-title</span> {
+  <span class="property">font-size</span>: <span class="value">14px</span>;
+  <span class="property">font-weight</span>: <span class="value">500</span>;
+  <span class="property">color</span>: <span class="value">#333333</span>;
+  <span class="property">margin-bottom</span>: <span class="value">12px</span>;
+  <span class="property">padding-bottom</span>: <span class="value">8px</span>;
+  <span class="property">border-bottom</span>: <span class="value">1px solid #e1dfdd</span>;
+}
+
+<span class="comment">/* Panel Field (Label + Value) */</span>
+.<span class="selector">panel-field</span> {
+  <span class="property">margin-bottom</span>: <span class="value">12px</span>;
+}
+
+.<span class="selector">panel-field-label</span> {
+  <span class="property">font-size</span>: <span class="value">12px</span>;
+  <span class="property">font-weight</span>: <span class="value">400</span>;  <span class="comment">/* NOT bold */</span>
+  <span class="property">color</span>: <span class="value">#6c757d</span>;
+  <span class="property">margin-bottom</span>: <span class="value">2px</span>;
+}
+
+.<span class="selector">panel-field-value</span> {
+  <span class="property">font-size</span>: <span class="value">14px</span>;
+  <span class="property">font-weight</span>: <span class="value">400</span>;  <span class="comment">/* NOT bold */</span>
+  <span class="property">color</span>: <span class="value">#333333</span>;
+}
+
+<span class="comment">/* Panel Footer */</span>
+.<span class="selector">panel-footer</span> {
+  <span class="property">display</span>: <span class="value">flex</span>;
+  <span class="property">justify-content</span>: <span class="value">flex-end</span>;
+  <span class="property">gap</span>: <span class="value">12px</span>;
+  <span class="property">padding</span>: <span class="value">16px 20px</span>;
+  <span class="property">border-top</span>: <span class="value">1px solid #e1dfdd</span>;
+  <span class="property">background</span>: <span class="value">#fafafa</span>;
+}
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h3 class="subsection-title">Form Panel (Edit Mode)</h3>
+        <div class="panel-demo">
+          <div class="panel-header panel-header-56">
+            <div class="panel-header-content">
+              <div class="panel-header-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+              </div>
+              <div>
+                <div class="panel-header-title">Edit Contract</div>
+                <div class="panel-header-subtitle">Update contract details</div>
+              </div>
+            </div>
+            <button class="panel-header-close">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+          <div class="panel-body">
+            <div class="form-field">
+              <label class="form-label required">Contract Name</label>
+              <input type="text" class="form-input" value="Service Agreement - Acme Corp">
+            </div>
+            <div class="form-field">
+              <label class="form-label required">Contract Type</label>
+              <select class="form-input form-select">
+                <option value="service" selected>Service Agreement</option>
+                <option value="nda">NDA</option>
+                <option value="employment">Employment Contract</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label class="form-label">Value (ZAR)</label>
+              <input type="text" class="form-input" value="250000">
+            </div>
+            <div class="form-field">
+              <label class="form-label">Description</label>
+              <textarea class="form-input form-textarea">Annual IT support and maintenance agreement.</textarea>
+            </div>
+          </div>
+          <div class="panel-footer">
+            <button class="btn btn-secondary">Cancel</button>
+            <button class="btn btn-primary">Save Changes</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h3 class="subsection-title">Panel Width Standards</h3>
+        <table class="spec-table">
+          <thead>
+            <tr>
+              <th>Size</th>
+              <th>Width</th>
+              <th>Use Case</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Small</td>
+              <td><code>340px</code></td>
+              <td>Simple forms, confirmations</td>
+            </tr>
+            <tr>
+              <td>Medium</td>
+              <td><code>480px</code></td>
+              <td>Detail views, standard forms</td>
+            </tr>
+            <tr>
+              <td>Large</td>
+              <td><code>640px</code></td>
+              <td>Complex forms, wizards</td>
+            </tr>
+            <tr>
+              <td>Extra Large</td>
+              <td><code>800px</code></td>
+              <td>Data-heavy views, multi-column</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="subsection">
+        <h3 class="subsection-title">Panel Footer Button Alignment</h3>
+        <table class="spec-table">
+          <thead>
+            <tr>
+              <th>Alignment</th>
+              <th>CSS</th>
+              <th>Use Case</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Right (Default)</td>
+              <td><code>justify-content: flex-end</code></td>
+              <td>Standard confirm/cancel flows</td>
+            </tr>
+            <tr>
+              <td>Left</td>
+              <td><code>justify-content: flex-start</code></td>
+              <td>Single action (e.g., Close only)</td>
+            </tr>
+            <tr>
+              <td>Split</td>
+              <td><code>justify-content: space-between</code></td>
+              <td>Delete on left, Save/Cancel on right</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================================
+         SECTION 12: TABLES
+         ============================================================================ -->
+    <section id="tables" class="section">
+      <h2 class="section-title">12. Tables</h2>
+      <p class="section-description">Data table styling with proper header and cell weights.</p>
+
+      <div class="subsection">
+        <h3 class="subsection-title">Data Table</h3>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Contract Name</th>
+              <th>Type</th>
+              <th>Value</th>
+              <th>Status</th>
+              <th>Expiry Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Service Agreement - Acme Corp</td>
+              <td>Service</td>
+              <td>R250,000</td>
+              <td><span class="badge badge-success">Active</span></td>
+              <td>2025-12-31</td>
+            </tr>
+            <tr>
+              <td>NDA - Beta Industries</td>
+              <td>NDA</td>
+              <td>N/A</td>
+              <td><span class="badge badge-success">Active</span></td>
+              <td>2026-06-15</td>
+            </tr>
+            <tr>
+              <td>Employment - John Smith</td>
+              <td>Employment</td>
+              <td>R45,000/mo</td>
+              <td><span class="badge badge-warning">Pending</span></td>
+              <td>Indefinite</td>
+            </tr>
+            <tr>
+              <td>Lease Agreement - Office Space</td>
+              <td>Lease</td>
+              <td>R85,000/mo</td>
+              <td><span class="badge badge-error">Expiring Soon</span></td>
+              <td>2025-02-28</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="code-block">
+<span class="comment">/* Table Header */</span>
+.<span class="selector">data-table th</span> {
+  <span class="property">background</span>: <span class="value">#f3f2f1</span>;
+  <span class="property">font-weight</span>: <span class="value">500</span>;  <span class="comment">/* Medium weight */</span>
+  <span class="property">font-size</span>: <span class="value">14px</span>;
+  <span class="property">padding</span>: <span class="value">12px 16px</span>;
+  <span class="property">border-bottom</span>: <span class="value">1px solid #e1dfdd</span>;
+}
+
+<span class="comment">/* Table Cell */</span>
+.<span class="selector">data-table td</span> {
+  <span class="property">font-weight</span>: <span class="value">400</span>;  <span class="comment">/* Normal weight */</span>
+  <span class="property">font-size</span>: <span class="value">14px</span>;
+  <span class="property">padding</span>: <span class="value">12px 16px</span>;
+  <span class="property">border-bottom</span>: <span class="value">1px solid #e1dfdd</span>;
+}
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================================
+         SECTION 13: NAVIGATION
+         ============================================================================ -->
+    <section id="navigation" class="section">
+      <h2 class="section-title">13. Navigation</h2>
+      <p class="section-description">Sidebar and tab navigation patterns.</p>
+
+      <div class="subsection">
+        <h3 class="subsection-title">Sidebar Navigation</h3>
+        <div style="display: grid; grid-template-columns: 240px 1fr; gap: 24px;">
+          <div class="nav-sidebar">
+            <div class="nav-item active">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              </svg>
+              Dashboard
+            </div>
+            <div class="nav-item">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+              </svg>
+              Contracts
+            </div>
+            <div class="nav-item">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M9 12l2 2 4-4"></path>
+              </svg>
+              Approvals
+            </div>
+            <div class="nav-item">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+              </svg>
+              Settings
+            </div>
+          </div>
+          <div class="code-block" style="margin: 0;">
+<span class="comment">/* Nav Item - Normal weight */</span>
+.<span class="selector">nav-item</span> {
+  <span class="property">font-size</span>: <span class="value">14px</span>;
+  <span class="property">font-weight</span>: <span class="value">400</span>;
+  <span class="property">padding</span>: <span class="value">12px 16px</span>;
+}
+
+<span class="comment">/* Active Nav Item */</span>
+.<span class="selector">nav-item.active</span> {
+  <span class="property">background</span>: <span class="value">#e5f2ff</span>;
+  <span class="property">color</span>: <span class="value">#1a5a8a</span>;
+  <span class="property">font-weight</span>: <span class="value">500</span>;
+}
+          </div>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h3 class="subsection-title">Tab Navigation</h3>
+        <div class="nav-tabs">
+          <div class="nav-tab active">Overview</div>
+          <div class="nav-tab">Details</div>
+          <div class="nav-tab">Parties</div>
+          <div class="nav-tab">Obligations</div>
+          <div class="nav-tab">History</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================================
+         SECTION 14: SHADOWS
+         ============================================================================ -->
+    <section id="shadows" class="section">
+      <h2 class="section-title">14. Shadows</h2>
+      <p class="section-description">Elevation levels using box-shadow.</p>
+
+      <div class="example-row" style="gap: 24px; background: #e8e8e8; padding: 24px; border-radius: 8px;">
+        <div class="shadow-demo" style="box-shadow: none; border: 1px dashed #ccc;">None</div>
+        <div class="shadow-demo shadow-sm">SM</div>
+        <div class="shadow-demo shadow-base">Base</div>
+        <div class="shadow-demo shadow-md">MD</div>
+        <div class="shadow-demo shadow-lg">LG</div>
+      </div>
+
+      <table class="spec-table mt-16">
+        <thead>
+          <tr>
+            <th>Level</th>
+            <th>Value</th>
+            <th>Usage</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>None</td><td><code>none</code></td><td>Flat elements</td></tr>
+          <tr><td>SM</td><td><code>0 1px 2px rgba(0,0,0,0.05)</code></td><td>Subtle lift</td></tr>
+          <tr><td>Base</td><td><code>0 2px 4px rgba(0,0,0,0.1)</code></td><td>Cards, dropdowns</td></tr>
+          <tr><td>MD</td><td><code>0 4px 8px rgba(0,0,0,0.12)</code></td><td>Modals, panels</td></tr>
+          <tr><td>LG</td><td><code>0 8px 16px rgba(0,0,0,0.15)</code></td><td>Overlays</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ============================================================================
+         SECTION 15: BORDERS
+         ============================================================================ -->
+    <section id="borders" class="section">
+      <h2 class="section-title">15. Border Radius</h2>
+      <p class="section-description">Consistent border radius values.</p>
+
+      <div class="example-row" style="gap: 24px;">
+        <div class="example-item">
+          <div class="radius-demo" style="border-radius: 2px;">2px</div>
+          <div class="font-label mt-16">Checkboxes</div>
+        </div>
+        <div class="example-item">
+          <div class="radius-demo" style="border-radius: 4px;">4px</div>
+          <div class="font-label mt-16">Inputs, buttons, badges</div>
+        </div>
+        <div class="example-item">
+          <div class="radius-demo" style="border-radius: 8px;">8px</div>
+          <div class="font-label mt-16">Cards, panels</div>
+        </div>
+        <div class="example-item">
+          <div class="radius-demo" style="border-radius: 12px;">12px</div>
+          <div class="font-label mt-16">Modals, large cards</div>
+        </div>
+        <div class="example-item">
+          <div class="radius-demo" style="border-radius: 50%;">50%</div>
+          <div class="font-label mt-16">Avatars, circles</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================================
+         FOOTER
+         ============================================================================ -->
+    <footer style="text-align: center; padding: 40px; color: #6c757d;">
+      <p>DWx Contract Manager Style Guide v3.0</p>
+      <p style="font-size: 12px; margin-top: 8px;">Last Updated: 25 January 2026</p>
+      <p style="font-size: 11px; margin-top: 4px; color: #a0a0a0;">15 Sections | 8 KPI Card Styles | Detailed Panel Specifications</p>
+    </footer>
+
+  </div>
+
+</body>
+</html>

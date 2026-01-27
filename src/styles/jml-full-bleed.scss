@@ -1,0 +1,17 @@
+// JML Full-Bleed Global Styles
+// This file provides full-width styling for all JML webparts when used in embedded mode
+// The styles target the common container patterns used across JML webparts
+
+// Full-bleed mixin - can be used by any component
+@mixin jml-full-bleed {
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  margin-left: -50vw;
+  box-sizing: border-box;
+  padding: 20px 40px;
+  min-height: 100vh;
+}
+
+// Export the mixin for use in component stylesheets
+// Components should: @include jml-full-bleed;

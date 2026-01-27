@@ -1,0 +1,28 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx/client-side-web-part-manifest.schema.json",
+  "id": "7b731f99-a2a0-40f7-ab48-7825aa36f003",
+  "alias": "DwxMyPoliciesWebPart",
+  "componentType": "WebPart",
+
+  "version": "*",
+  "manifestVersion": 2,
+
+  "requiresCustomScript": false,
+  "supportedHosts": ["SharePointWebPart", "SharePointFullPage", "TeamsPersonalApp", "TeamsTab"],
+  "supportsThemeVariants": true,
+
+  "preconfiguredEntries": [{
+    "groupId": "e4b0a295-44e2-4fa4-8f15-4eac5edf4275",
+    "group": { "default": "DWx Policy Manager" },
+    "title": { "default": "DWx My Policies" },
+    "description": { "default": "Personal policy dashboard showing urgent policies, acknowledgements, and compliance tracking" },
+    "officeFabricIconFontName": "PolicyManagement",
+    "properties": {
+      "title": "DWx My Policies",
+      "showComplianceScore": true,
+      "showPolicyPacks": true,
+      "showJMLIntegration": false
+    }
+  }],
+  "supportsFullBleed": true
+}

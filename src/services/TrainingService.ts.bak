@@ -1,0 +1,798 @@
+// Training Service
+// Core service for training catalog, enrollments, and learning path operations
+
+import { SPFI } from '@pnp/sp';
+import '@pnp/sp/webs';
+import '@pnp/sp/lists';
+import '@pnp/sp/items';
+import '@pnp/sp/batching';
+import { CacheService, CacheKeys, CacheDurations } from './CacheService';
+import { LoggingService as logger } from './LoggingService';
+import {
+  ITrainingCourse,
+  ITrainingCourseForm,
+  ITrainingCategory,
+  ILearningPath,
+  ILearningPathForm,
+  ITrainingEnrollment,
+  IEnrollmentOptions,
+  ILearnerPathProgress,
+  ITrainingSession,
+  ITrainingFeedback,
+  ITrainingRequest,
+  ITrainingRequestForm,
+  ILearnerDashboard,
+  IAdminDashboardMetrics,
+  ICourseFilters,
+  IEnrollmentFilters,
+  EnrollmentStatus,
+  AssignmentType,
+  CourseType,
+  DifficultyLevel
+} from '../models/ITraining';
+
+// SharePoint List Names
+const LISTS = {
+  COURSES: 'JML_TrainingCatalog',
+  CATEGORIES: 'JML_TrainingCategories',
+  PATHS: 'JML_LearningPaths',
+  ENROLLMENTS: 'JML_TrainingEnrollments',
+  SESSIONS: 'JML_TrainingSessions',
+  FEEDBACK: 'JML_TrainingFeedback',
+  REQUESTS: 'JML_TrainingRequests'
+};
+
+export class TrainingService {
+  private sp: SPFI;
+  private cache: CacheService;
+
+  constructor(sp: SPFI) {
+    this.sp = sp;
+    this.cache = CacheService.getInstance();
+  }
+
+  // ============================================================================
+  // COURSE CATALOG OPERATIONS
+  // ============================================================================
+
+  /**
+   * Get all courses with optional filtering
+   */
+  async getCourses(filters?: ICourseFilters): Promise<ITrainingCourse[]> {
+    try {
+      const cacheKey = `training_courses_${JSON.stringify(filters || {})}`;
+
+      return await this.cache.getOrFetch(
+        cacheKey,
+        async () => {
+          let filterQuery = "IsActive eq 1";
+
+          if (filters) {
+            if (filters.searchQuery) {
+              filterQuery += ` and (substringof('${filters.searchQuery}', Title) or substringof('${filters.searchQuery}', Description))`;
+            }
+            if (filters.courseTypes && filters.courseTypes.length > 0) {
+              const typeFilters = filters.courseTypes.map(t => `CourseType eq '${t}'`).join(' or ');
+              filterQuery += ` and (${typeFilters})`;
+            }
+            if (filters.difficultyLevels && filters.difficultyLevels.length > 0) {
+              const diffFilters = filters.difficultyLevels.map(d => `DifficultyLevel eq '${d}'`).join(' or ');
+              filterQuery += ` and (${diffFilters})`;
+            }
+            if (filters.isMandatory !== undefined) {
+              filterQuery += ` and IsMandatory eq ${filters.isMandatory ? 1 : 0}`;
+            }
+          }
+
+          const items = await this.sp.web.lists
+            .getByTitle(LISTS.COURSES)
+            .items
+            .select(
+              'Id', 'Title', 'Description', 'CourseCode', 'CourseType', 'ContentFormat',
+              'ContentUrl', 'Duration', 'DifficultyLevel', 'CategoryId', 'SubCategory',
+              'Provider', 'Language', 'Thumbnail', 'Version', 'IsActive', 'IsMandatory',
+              'CertificationValue', 'PassingScore', 'MaxAttempts', 'ValidityPeriod',
+              'Tags', 'EstimatedCost', 'AverageRating', 'TotalEnrollments', 'CompletionRate',
+              'LearningObjectives', 'TargetAudience', 'Created', 'Modified'
+            )
+            .filter(filterQuery)
+            .orderBy(filters?.sortBy || 'Title', filters?.sortOrder !== 'desc')
+            .top(100)();
+
+          return items.map(this.mapToCourse);
+        },
+        CacheDurations.MEDIUM
+      );
+    } catch (error) {
+      logger.error('TrainingService', 'Error getting courses', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get a single course by ID
+   */
+  async getCourseById(id: number): Promise<ITrainingCourse> {
+    try {
+      const cacheKey = `training_course_${id}`;
+
+      return await this.cache.getOrFetch(
+        cacheKey,
+        async () => {
+          const item = await this.sp.web.lists
+            .getByTitle(LISTS.COURSES)
+            .items
+            .getById(id)
+            .select(
+              'Id', 'Title', 'Description', 'CourseCode', 'CourseType', 'ContentFormat',
+              'ContentUrl', 'Duration', 'DifficultyLevel', 'CategoryId', 'SubCategory',
+              'Provider', 'Language', 'Thumbnail', 'Version', 'IsActive', 'IsMandatory',
+              'CertificationValue', 'PassingScore', 'MaxAttempts', 'ValidityPeriod',
+              'Tags', 'EstimatedCost', 'AverageRating', 'TotalEnrollments', 'CompletionRate',
+              'LearningObjectives', 'TargetAudience', 'Created', 'Modified'
+            )();
+
+          return this.mapToCourse(item);
+        },
+        CacheDurations.SHORT
+      );
+    } catch (error) {
+      logger.error('TrainingService', `Error getting course ${id}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a new course
+   */
+  async createCourse(course: ITrainingCourseForm): Promise<ITrainingCourse> {
+    try {
+      const result = await this.sp.web.lists
+        .getByTitle(LISTS.COURSES)
+        .items
+        .add({
+          Title: course.Title,
+          Description: course.Description,
+          CourseCode: course.CourseCode,
+          CourseType: course.CourseType,
+          ContentFormat: course.ContentFormat,
+          ContentUrl: course.ContentUrl,
+          Duration: course.Duration,
+          DifficultyLevel: course.DifficultyLevel,
+          CategoryId: course.CategoryId,
+          SubCategory: course.SubCategory,
+          Provider: course.Provider,
+          Language: course.Language,
+          Thumbnail: course.Thumbnail,
+          Version: course.Version || '1.0',
+          IsActive: course.IsActive,
+          IsMandatory: course.IsMandatory,
+          CertificationValue: course.CertificationValue,
+          PassingScore: course.PassingScore,
+          MaxAttempts: course.MaxAttempts,
+          ValidityPeriod: course.ValidityPeriod,
+          Tags: course.Tags ? JSON.stringify(course.Tags) : null,
+          EstimatedCost: course.EstimatedCost,
+          LearningObjectives: course.LearningObjectives ? JSON.stringify(course.LearningObjectives) : null,
+          TargetAudience: course.TargetAudience
+        });
+
+      // Invalidate cache
+      this.cache.invalidateByPrefix('training_courses');
+
+      logger.info('TrainingService', `Created course: ${course.Title}`);
+      return this.mapToCourse(result.data);
+    } catch (error) {
+      logger.error('TrainingService', 'Error creating course', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update an existing course
+   */
+  async updateCourse(id: number, updates: Partial<ITrainingCourse>): Promise<void> {
+    try {
+      const updateData: Record<string, unknown> = {};
+
+      if (updates.Title !== undefined) updateData.Title = updates.Title;
+      if (updates.Description !== undefined) updateData.Description = updates.Description;
+      if (updates.CourseType !== undefined) updateData.CourseType = updates.CourseType;
+      if (updates.Duration !== undefined) updateData.Duration = updates.Duration;
+      if (updates.DifficultyLevel !== undefined) updateData.DifficultyLevel = updates.DifficultyLevel;
+      if (updates.IsActive !== undefined) updateData.IsActive = updates.IsActive;
+      if (updates.IsMandatory !== undefined) updateData.IsMandatory = updates.IsMandatory;
+      if (updates.Tags !== undefined) updateData.Tags = JSON.stringify(updates.Tags);
+
+      await this.sp.web.lists
+        .getByTitle(LISTS.COURSES)
+        .items
+        .getById(id)
+        .update(updateData);
+
+      // Invalidate cache
+      this.cache.invalidateByPrefix('training_course');
+
+      logger.info('TrainingService', `Updated course: ${id}`);
+    } catch (error) {
+      logger.error('TrainingService', `Error updating course ${id}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Archive a course (soft delete)
+   */
+  async archiveCourse(id: number): Promise<void> {
+    try {
+      await this.sp.web.lists
+        .getByTitle(LISTS.COURSES)
+        .items
+        .getById(id)
+        .update({ IsActive: false });
+
+      this.cache.invalidateByPrefix('training_course');
+      logger.info('TrainingService', `Archived course: ${id}`);
+    } catch (error) {
+      logger.error('TrainingService', `Error archiving course ${id}`, error);
+      throw error;
+    }
+  }
+
+  // ============================================================================
+  // CATEGORY OPERATIONS
+  // ============================================================================
+
+  /**
+   * Get all training categories
+   */
+  async getCategories(): Promise<ITrainingCategory[]> {
+    try {
+      return await this.cache.getOrFetch(
+        'training_categories',
+        async () => {
+          const items = await this.sp.web.lists
+            .getByTitle(LISTS.CATEGORIES)
+            .items
+            .select('Id', 'Title', 'ParentCategoryId', 'Description', 'Icon', 'Color', 'SortOrder', 'IsActive')
+            .filter('IsActive eq 1')
+            .orderBy('SortOrder', true)();
+
+          return items.map(item => ({
+            Id: item.Id,
+            Title: item.Title,
+            ParentCategoryId: item.ParentCategoryId,
+            Description: item.Description,
+            Icon: item.Icon,
+            Color: item.Color,
+            SortOrder: item.SortOrder,
+            IsActive: item.IsActive
+          }));
+        },
+        CacheDurations.LONG
+      );
+    } catch (error) {
+      logger.error('TrainingService', 'Error getting categories', error);
+      throw error;
+    }
+  }
+
+  // ============================================================================
+  // LEARNING PATH OPERATIONS
+  // ============================================================================
+
+  /**
+   * Get all learning paths
+   */
+  async getLearningPaths(): Promise<ILearningPath[]> {
+    try {
+      return await this.cache.getOrFetch(
+        'training_learning_paths',
+        async () => {
+          const items = await this.sp.web.lists
+            .getByTitle(LISTS.PATHS)
+            .items
+            .select(
+              'Id', 'Title', 'Description', 'PathType', 'TargetRoles', 'TargetDepartments',
+              'Thumbnail', 'EstimatedDuration', 'Courses', 'Milestones', 'CompletionCriteria',
+              'IsActive', 'IsAutoAssigned', 'Version', 'TotalEnrollments', 'AverageCompletionTime',
+              'CompletionRate', 'Created', 'Modified'
+            )
+            .filter('IsActive eq 1')
+            .orderBy('Title', true)();
+
+          return items.map(this.mapToLearningPath);
+        },
+        CacheDurations.MEDIUM
+      );
+    } catch (error) {
+      logger.error('TrainingService', 'Error getting learning paths', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get a single learning path by ID
+   */
+  async getLearningPathById(id: number): Promise<ILearningPath> {
+    try {
+      const cacheKey = `training_path_${id}`;
+
+      return await this.cache.getOrFetch(
+        cacheKey,
+        async () => {
+          const item = await this.sp.web.lists
+            .getByTitle(LISTS.PATHS)
+            .items
+            .getById(id)
+            .select(
+              'Id', 'Title', 'Description', 'PathType', 'TargetRoles', 'TargetDepartments',
+              'Thumbnail', 'EstimatedDuration', 'Courses', 'Milestones', 'CompletionCriteria',
+              'IsActive', 'IsAutoAssigned', 'Version', 'Created', 'Modified'
+            )();
+
+          return this.mapToLearningPath(item);
+        },
+        CacheDurations.SHORT
+      );
+    } catch (error) {
+      logger.error('TrainingService', `Error getting learning path ${id}`, error);
+      throw error;
+    }
+  }
+
+  // ============================================================================
+  // ENROLLMENT OPERATIONS
+  // ============================================================================
+
+  /**
+   * Get enrollments for the current user
+   */
+  async getMyEnrollments(userId: number, status?: EnrollmentStatus[]): Promise<ITrainingEnrollment[]> {
+    try {
+      const cacheKey = `training_enrollments_${userId}_${status?.join('_') || 'all'}`;
+
+      return await this.cache.getOrFetch(
+        cacheKey,
+        async () => {
+          let filterQuery = `UserId eq ${userId}`;
+
+          if (status && status.length > 0) {
+            const statusFilters = status.map(s => `Status eq '${s}'`).join(' or ');
+            filterQuery += ` and (${statusFilters})`;
+          }
+
+          const items = await this.sp.web.lists
+            .getByTitle(LISTS.ENROLLMENTS)
+            .items
+            .select(
+              'Id', 'Title', 'UserId', 'UserEmail', 'CourseId', 'LearningPathId',
+              'ProcessId', 'TaskAssignmentId', 'AssignmentType', 'AssignedById',
+              'AssignedDate', 'DueDate', 'Status', 'Progress', 'StartedDate',
+              'CompletedDate', 'Score', 'AttemptCount', 'TimeSpent', 'LastAccessDate',
+              'CertificateUrl', 'Notes', 'ExpirationDate', 'RemindersSent'
+            )
+            .filter(filterQuery)
+            .orderBy('DueDate', true)();
+
+          return items.map(this.mapToEnrollment);
+        },
+        CacheDurations.SHORT
+      );
+    } catch (error) {
+      logger.error('TrainingService', `Error getting enrollments for user ${userId}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Enroll a user in a course
+   */
+  async enrollUser(userId: number, userEmail: string, courseId: number, options: IEnrollmentOptions): Promise<ITrainingEnrollment> {
+    try {
+      // Get course details first
+      const course = await this.getCourseById(courseId);
+
+      const result = await this.sp.web.lists
+        .getByTitle(LISTS.ENROLLMENTS)
+        .items
+        .add({
+          Title: course.Title,
+          UserId: userId,
+          UserEmail: userEmail,
+          CourseId: courseId,
+          LearningPathId: options.learningPathId,
+          ProcessId: options.processId,
+          TaskAssignmentId: options.taskAssignmentId,
+          AssignmentType: options.assignmentType,
+          AssignedById: options.assignedById,
+          AssignedDate: new Date().toISOString(),
+          DueDate: options.dueDate?.toISOString(),
+          Status: EnrollmentStatus.NotStarted,
+          Progress: 0,
+          AttemptCount: 0,
+          TimeSpent: 0,
+          RemindersSent: 0,
+          Notes: options.notes
+        });
+
+      // Invalidate cache
+      this.cache.invalidateByPrefix(`training_enrollments_${userId}`);
+
+      logger.info('TrainingService', `Enrolled user ${userId} in course ${courseId}`);
+      return this.mapToEnrollment(result.data);
+    } catch (error) {
+      logger.error('TrainingService', `Error enrolling user ${userId} in course ${courseId}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update enrollment progress
+   */
+  async updateProgress(enrollmentId: number, progress: number, timeSpent?: number): Promise<void> {
+    try {
+      const updates: Record<string, unknown> = {
+        Progress: progress,
+        LastAccessDate: new Date().toISOString()
+      };
+
+      if (progress > 0 && progress < 100) {
+        updates.Status = EnrollmentStatus.InProgress;
+      }
+
+      if (progress >= 100) {
+        updates.Status = EnrollmentStatus.Completed;
+        updates.CompletedDate = new Date().toISOString();
+      }
+
+      if (timeSpent !== undefined) {
+        updates.TimeSpent = timeSpent;
+      }
+
+      await this.sp.web.lists
+        .getByTitle(LISTS.ENROLLMENTS)
+        .items
+        .getById(enrollmentId)
+        .update(updates);
+
+      this.cache.invalidateByPrefix('training_enrollments');
+      logger.info('TrainingService', `Updated progress for enrollment ${enrollmentId}: ${progress}%`);
+    } catch (error) {
+      logger.error('TrainingService', `Error updating progress for enrollment ${enrollmentId}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Complete an enrollment
+   */
+  async completeEnrollment(enrollmentId: number, score?: number): Promise<void> {
+    try {
+      await this.sp.web.lists
+        .getByTitle(LISTS.ENROLLMENTS)
+        .items
+        .getById(enrollmentId)
+        .update({
+          Status: EnrollmentStatus.Completed,
+          Progress: 100,
+          CompletedDate: new Date().toISOString(),
+          Score: score
+        });
+
+      this.cache.invalidateByPrefix('training_enrollments');
+      logger.info('TrainingService', `Completed enrollment ${enrollmentId}`);
+    } catch (error) {
+      logger.error('TrainingService', `Error completing enrollment ${enrollmentId}`, error);
+      throw error;
+    }
+  }
+
+  // ============================================================================
+  // TRAINING REQUESTS
+  // ============================================================================
+
+  /**
+   * Submit a training request
+   */
+  async submitTrainingRequest(userId: number, userEmail: string, request: ITrainingRequestForm): Promise<ITrainingRequest> {
+    try {
+      const result = await this.sp.web.lists
+        .getByTitle(LISTS.REQUESTS)
+        .items
+        .add({
+          Title: request.ItemTitle,
+          RequesterId: userId,
+          RequesterEmail: userEmail,
+          RequestType: request.RequestType,
+          ItemId: request.ItemId,
+          ExternalUrl: request.ExternalUrl,
+          Description: request.Description,
+          BusinessJustification: request.BusinessJustification,
+          EstimatedCost: request.EstimatedCost,
+          RequestedStartDate: request.RequestedStartDate?.toISOString(),
+          RequestedEndDate: request.RequestedEndDate?.toISOString(),
+          Status: 'Submitted'
+        });
+
+      logger.info('TrainingService', `Submitted training request: ${request.ItemTitle}`);
+      return this.mapToRequest(result.data);
+    } catch (error) {
+      logger.error('TrainingService', 'Error submitting training request', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get pending approvals for a manager
+   */
+  async getPendingApprovals(managerId: number): Promise<ITrainingRequest[]> {
+    try {
+      const items = await this.sp.web.lists
+        .getByTitle(LISTS.REQUESTS)
+        .items
+        .select(
+          'Id', 'Title', 'RequesterId', 'RequesterEmail', 'RequestType', 'ItemId',
+          'Description', 'BusinessJustification', 'EstimatedCost', 'RequestedStartDate',
+          'Status', 'Created'
+        )
+        .filter(`ManagerId eq ${managerId} and Status eq 'Pending Manager Approval'`)
+        .orderBy('Created', true)();
+
+      return items.map(this.mapToRequest);
+    } catch (error) {
+      logger.error('TrainingService', `Error getting pending approvals for manager ${managerId}`, error);
+      throw error;
+    }
+  }
+
+  // ============================================================================
+  // DASHBOARD DATA
+  // ============================================================================
+
+  /**
+   * Get learner dashboard data
+   */
+  async getLearnerDashboard(userId: number, userEmail: string): Promise<Partial<ILearnerDashboard>> {
+    try {
+      const [enrollments, paths] = await Promise.all([
+        this.getMyEnrollments(userId),
+        this.getLearningPaths()
+      ]);
+
+      const currentEnrollments = enrollments.filter(e =>
+        e.Status === EnrollmentStatus.InProgress || e.Status === EnrollmentStatus.NotStarted
+      );
+
+      const completedRecently = enrollments.filter(e =>
+        e.Status === EnrollmentStatus.Completed &&
+        e.CompletedDate &&
+        new Date(e.CompletedDate) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+      );
+
+      const overdue = enrollments.filter(e =>
+        e.DueDate &&
+        new Date(e.DueDate) < new Date() &&
+        e.Status !== EnrollmentStatus.Completed
+      );
+
+      const upcomingDue = enrollments.filter(e =>
+        e.DueDate &&
+        new Date(e.DueDate) > new Date() &&
+        new Date(e.DueDate) < new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) &&
+        e.Status !== EnrollmentStatus.Completed
+      );
+
+      const totalTrainingHours = Math.round(
+        enrollments.reduce((acc, e) => acc + (e.TimeSpent || 0), 0) / 60
+      );
+
+      const completedThisYear = enrollments.filter(e =>
+        e.Status === EnrollmentStatus.Completed &&
+        e.CompletedDate &&
+        new Date(e.CompletedDate).getFullYear() === new Date().getFullYear()
+      ).length;
+
+      const completedWithScores = enrollments.filter(e => e.Score !== undefined && e.Score > 0);
+      const averageScore = completedWithScores.length > 0
+        ? Math.round(completedWithScores.reduce((acc, e) => acc + (e.Score || 0), 0) / completedWithScores.length)
+        : 0;
+
+      return {
+        currentEnrollments,
+        completedRecently,
+        upcomingDue,
+        overdue,
+        totalTrainingHours,
+        coursesCompletedThisYear: completedThisYear,
+        averageScore
+      };
+    } catch (error) {
+      logger.error('TrainingService', `Error getting learner dashboard for user ${userId}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get admin dashboard metrics
+   */
+  async getAdminDashboardMetrics(): Promise<IAdminDashboardMetrics> {
+    try {
+      const [courses, enrollments] = await Promise.all([
+        this.getCourses(),
+        this.getAllEnrollments()
+      ]);
+
+      const activeCourses = courses.filter(c => c.IsActive).length;
+      const activeEnrollments = enrollments.filter(e =>
+        e.Status === EnrollmentStatus.InProgress || e.Status === EnrollmentStatus.NotStarted
+      ).length;
+
+      const completed = enrollments.filter(e => e.Status === EnrollmentStatus.Completed);
+      const completedThisMonth = completed.filter(e =>
+        e.CompletedDate &&
+        new Date(e.CompletedDate) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+      ).length;
+
+      const overdue = enrollments.filter(e =>
+        e.DueDate &&
+        new Date(e.DueDate) < new Date() &&
+        e.Status !== EnrollmentStatus.Completed
+      ).length;
+
+      return {
+        totalCourses: courses.length,
+        activeCourses,
+        totalEnrollments: enrollments.length,
+        activeEnrollments,
+        completedThisMonth,
+        averageCompletionRate: completed.length > 0 ? Math.round((completed.length / enrollments.length) * 100) : 0,
+        overdueCount: overdue,
+        complianceRate: 0, // Calculate based on mandatory training
+        totalTrainingHours: Math.round(enrollments.reduce((acc, e) => acc + (e.TimeSpent || 0), 0) / 60),
+        averageRating: courses.reduce((acc, c) => acc + (c.AverageRating || 0), 0) / courses.length || 0,
+        certificationExpiringCount: 0,
+        pendingRequests: 0,
+        topCourses: [],
+        completionTrend: [],
+        departmentMetrics: [],
+        enrollmentsByType: []
+      };
+    } catch (error) {
+      logger.error('TrainingService', 'Error getting admin dashboard metrics', error);
+      throw error;
+    }
+  }
+
+  // ============================================================================
+  // PRIVATE HELPER METHODS
+  // ============================================================================
+
+  private async getAllEnrollments(): Promise<ITrainingEnrollment[]> {
+    try {
+      const items = await this.sp.web.lists
+        .getByTitle(LISTS.ENROLLMENTS)
+        .items
+        .select(
+          'Id', 'Title', 'UserId', 'UserEmail', 'CourseId', 'Status', 'Progress',
+          'CompletedDate', 'DueDate', 'TimeSpent', 'Score'
+        )
+        .top(5000)();
+
+      return items.map(this.mapToEnrollment);
+    } catch (error) {
+      logger.error('TrainingService', 'Error getting all enrollments', error);
+      throw error;
+    }
+  }
+
+  private mapToCourse(item: Record<string, unknown>): ITrainingCourse {
+    return {
+      Id: item.Id as number,
+      Title: item.Title as string,
+      Description: item.Description as string,
+      CourseCode: item.CourseCode as string,
+      CourseType: item.CourseType as CourseType,
+      ContentFormat: item.ContentFormat as any,
+      ContentUrl: item.ContentUrl as string,
+      Duration: item.Duration as number,
+      DifficultyLevel: item.DifficultyLevel as DifficultyLevel,
+      CategoryId: item.CategoryId as number,
+      SubCategory: item.SubCategory as string,
+      Provider: item.Provider as string,
+      Language: item.Language as string || 'English',
+      Thumbnail: item.Thumbnail as string,
+      Version: item.Version as string || '1.0',
+      IsActive: item.IsActive as boolean,
+      IsMandatory: item.IsMandatory as boolean,
+      CertificationValue: item.CertificationValue as number,
+      PassingScore: item.PassingScore as number,
+      MaxAttempts: item.MaxAttempts as number,
+      ValidityPeriod: item.ValidityPeriod as number,
+      Tags: item.Tags ? JSON.parse(item.Tags as string) : [],
+      EstimatedCost: item.EstimatedCost as number,
+      AverageRating: item.AverageRating as number,
+      TotalEnrollments: item.TotalEnrollments as number,
+      CompletionRate: item.CompletionRate as number,
+      LearningObjectives: item.LearningObjectives ? JSON.parse(item.LearningObjectives as string) : [],
+      TargetAudience: item.TargetAudience as string
+    };
+  }
+
+  private mapToLearningPath(item: Record<string, unknown>): ILearningPath {
+    return {
+      Id: item.Id as number,
+      Title: item.Title as string,
+      Description: item.Description as string,
+      PathType: item.PathType as any,
+      TargetRoles: item.TargetRoles ? JSON.parse(item.TargetRoles as string) : [],
+      TargetDepartments: item.TargetDepartments ? JSON.parse(item.TargetDepartments as string) : [],
+      Thumbnail: item.Thumbnail as string,
+      EstimatedDuration: item.EstimatedDuration as number,
+      Courses: item.Courses ? JSON.parse(item.Courses as string) : [],
+      Milestones: item.Milestones ? JSON.parse(item.Milestones as string) : [],
+      CompletionCriteria: item.CompletionCriteria ? JSON.parse(item.CompletionCriteria as string) : undefined,
+      IsActive: item.IsActive as boolean,
+      IsAutoAssigned: item.IsAutoAssigned as boolean,
+      Version: item.Version as number || 1,
+      TotalEnrollments: item.TotalEnrollments as number,
+      AverageCompletionTime: item.AverageCompletionTime as number,
+      CompletionRate: item.CompletionRate as number
+    };
+  }
+
+  private mapToEnrollment(item: Record<string, unknown>): ITrainingEnrollment {
+    const dueDate = item.DueDate ? new Date(item.DueDate as string) : undefined;
+    const now = new Date();
+
+    return {
+      Id: item.Id as number,
+      Title: item.Title as string,
+      UserId: item.UserId as number,
+      UserEmail: item.UserEmail as string,
+      UserDisplayName: item.UserDisplayName as string,
+      CourseId: item.CourseId as number,
+      LearningPathId: item.LearningPathId as number,
+      ProcessId: item.ProcessId as number,
+      TaskAssignmentId: item.TaskAssignmentId as number,
+      AssignmentType: item.AssignmentType as AssignmentType,
+      AssignedById: item.AssignedById as number,
+      AssignedDate: new Date(item.AssignedDate as string),
+      DueDate: dueDate,
+      Status: item.Status as EnrollmentStatus,
+      Progress: item.Progress as number || 0,
+      StartedDate: item.StartedDate ? new Date(item.StartedDate as string) : undefined,
+      CompletedDate: item.CompletedDate ? new Date(item.CompletedDate as string) : undefined,
+      Score: item.Score as number,
+      AttemptCount: item.AttemptCount as number || 0,
+      TimeSpent: item.TimeSpent as number || 0,
+      LastAccessDate: item.LastAccessDate ? new Date(item.LastAccessDate as string) : undefined,
+      CertificateUrl: item.CertificateUrl as string,
+      Notes: item.Notes as string,
+      ExpirationDate: item.ExpirationDate ? new Date(item.ExpirationDate as string) : undefined,
+      RemindersSent: item.RemindersSent as number || 0,
+      IsOverdue: dueDate ? dueDate < now && item.Status !== EnrollmentStatus.Completed : false,
+      DaysUntilDue: dueDate ? Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : undefined
+    };
+  }
+
+  private mapToRequest(item: Record<string, unknown>): ITrainingRequest {
+    return {
+      Id: item.Id as number,
+      Title: item.Title as string,
+      RequesterId: item.RequesterId as number,
+      RequesterEmail: item.RequesterEmail as string,
+      RequesterName: item.RequesterName as string,
+      RequestType: item.RequestType as any,
+      ItemTitle: item.Title as string,
+      ItemId: item.ItemId as number,
+      ExternalUrl: item.ExternalUrl as string,
+      Description: item.Description as string,
+      BusinessJustification: item.BusinessJustification as string,
+      EstimatedCost: item.EstimatedCost as number,
+      RequestedStartDate: item.RequestedStartDate ? new Date(item.RequestedStartDate as string) : undefined,
+      Status: item.Status as any,
+      HRApprovalRequired: item.HRApprovalRequired as boolean || false
+    };
+  }
+}

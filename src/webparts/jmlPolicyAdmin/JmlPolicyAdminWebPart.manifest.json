@@ -1,0 +1,27 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx/client-side-web-part-manifest.schema.json",
+  "id": "e1c016f7-7b87-4531-8590-e19b8911cde2",
+  "alias": "DwxPolicyAdminWebPart",
+  "componentType": "WebPart",
+
+  "version": "*",
+  "manifestVersion": 2,
+
+  "requiresCustomScript": false,
+  "supportedHosts": ["SharePointWebPart", "SharePointFullPage", "TeamsPersonalApp", "TeamsTab"],
+  "supportsThemeVariants": true,
+
+  "preconfiguredEntries": [{
+    "groupId": "e4b0a295-44e2-4fa4-8f15-4eac5edf4275",
+    "group": { "default": "DWx Policy Manager" },
+    "title": { "default": "DWx Policy Admin" },
+    "description": { "default": "Full policy lifecycle management with approve, publish, archive, and audit (Admin Role)" },
+    "officeFabricIconFontName": "Settings",
+    "properties": {
+      "title": "DWx Policy Admin",
+      "showAuditLog": true,
+      "enableBulkOperations": true
+    }
+  }],
+  "supportsFullBleed": true
+}

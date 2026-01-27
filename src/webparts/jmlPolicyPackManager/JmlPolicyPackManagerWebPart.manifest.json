@@ -1,0 +1,25 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx/client-side-web-part-manifest.schema.json",
+  "id": "292c2138-09aa-4796-a6ff-bba1410dea20",
+  "alias": "DwxPolicyPackManagerWebPart",
+  "componentType": "WebPart",
+
+  "version": "*",
+  "manifestVersion": 2,
+
+  "requiresCustomScript": false,
+  "supportedHosts": ["SharePointWebPart", "SharePointFullPage", "TeamsPersonalApp", "TeamsTab"],
+  "supportsThemeVariants": true,
+
+  "preconfiguredEntries": [{
+    "groupId": "e4b0a295-44e2-4fa4-8f15-4eac5edf4275",
+    "group": { "default": "DWx Policy Manager" },
+    "title": { "default": "DWx Policy Pack Manager" },
+    "description": { "default": "Create and manage policy packs for onboarding and bulk assignments (HR/Admin)" },
+    "officeFabricIconFontName": "BulletedList2",
+    "properties": {
+      "title": "DWx Policy Pack Manager"
+    }
+  }],
+  "supportsFullBleed": true
+}

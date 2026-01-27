@@ -1,0 +1,798 @@
+@import '~@fluentui/react/dist/sass/References.scss';
+@import '../../../styles/fluent-mixins';
+
+// Full-bleed container and SharePoint overrides come from fluent-mixins (via sharepoint-overrides.scss)
+// NOTE: The :global overrides for canvas and social bar hiding are now centralized in
+// sharepoint-overrides.scss to avoid aggressive selectors that hide SharePoint Fly-in Panels.
+
+.myPolicies {
+  @include full-bleed-container;
+  background-color: $ms-color-neutralLighter;
+
+  .title {
+    font-weight: 600;
+    color: $ms-color-themePrimary;
+    margin-bottom: 0;
+  }
+
+  // ============================================================================
+  // PROGRESS HEADER PANEL (My Tasks Style)
+  // ============================================================================
+  .progressHeader {
+    background: linear-gradient(135deg, $ms-color-themePrimary 0%, darken($ms-color-themePrimary, 15%) 100%);
+    border-radius: 12px;
+    padding: 24px 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: white;
+    box-shadow: 0 8px 32px rgba(0, 120, 212, 0.25);
+    margin-bottom: 24px;
+  }
+
+  .progressHeaderLeft {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+
+  // SVG Progress Ring
+  .progressRingContainer {
+    position: relative;
+    width: 100px;
+    height: 100px;
+  }
+
+  .progressRingSvg {
+    transform: rotate(-90deg);
+    width: 100px;
+    height: 100px;
+  }
+
+  .progressRingBg {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.2);
+    stroke-width: 8;
+  }
+
+  .progressRingFill {
+    fill: none;
+    stroke: white;
+    stroke-width: 8;
+    stroke-linecap: round;
+    stroke-dasharray: 264;
+    transition: stroke-dashoffset 0.5s ease;
+  }
+
+  .progressRingText {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+  }
+
+  .progressRingPercent {
+    font-size: 28px;
+    font-weight: 700;
+    color: white;
+    line-height: 1;
+  }
+
+  .progressRingLabel {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.9;
+    margin-top: 2px;
+  }
+
+  .progressHeaderInfo {
+    h3 {
+      font-size: 20px;
+      font-weight: 600;
+      color: white;
+      margin: 0 0 4px 0;
+    }
+
+    p {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.9);
+      margin: 0;
+    }
+  }
+
+  // Mini Stat Cards (Glassmorphism)
+  .miniStats {
+    display: flex;
+    gap: 12px;
+  }
+
+  .miniStat {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border-radius: 10px;
+    padding: 16px 18px;
+    text-align: center;
+    min-width: 90px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+    }
+
+    &.danger {
+      background: rgba(209, 52, 56, 0.35);
+      border-color: rgba(209, 52, 56, 0.5);
+    }
+
+    &.success {
+      background: rgba(16, 124, 16, 0.25);
+      border-color: rgba(16, 124, 16, 0.4);
+    }
+
+    &.warning {
+      background: rgba(245, 124, 0, 0.3);
+      border-color: rgba(245, 124, 0, 0.5);
+    }
+  }
+
+  .miniStatNumber {
+    font-size: 26px;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 2px;
+    line-height: 1;
+  }
+
+  .miniStatLabel {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  // Legacy Compliance Score Card (kept for backwards compatibility)
+  .complianceCard {
+    background: white;
+    padding: 24px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-left: 4px solid $ms-color-themePrimary;
+
+    .cardTitle {
+      font-weight: 600;
+      color: $ms-color-themePrimary;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      .titleIcon {
+        color: $ms-color-themePrimary;
+      }
+    }
+
+    .scoreCircle {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      border: 6px solid;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: white;
+    }
+  }
+
+  // Section titles
+  .sectionTitle {
+    font-weight: 600;
+    color: $ms-color-neutralPrimary;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+
+    .urgentIcon {
+      color: #D13438;
+      font-size: 20px;
+    }
+
+    .dueSoonIcon {
+      color: #FFA500;
+      font-size: 20px;
+    }
+
+    .packIcon {
+      color: $ms-color-themePrimary;
+      font-size: 20px;
+    }
+
+    .jmlIcon {
+      color: $ms-color-teal;
+      font-size: 20px;
+    }
+  }
+
+  // Urgent policies section
+  .urgentSection {
+    .urgentCard {
+      border-left-color: #D13438 !important;
+      background: #FFF9F9;
+      border: 1px solid #F8D7DA;
+
+      .clockIcon {
+        color: #D13438;
+        font-size: 24px;
+      }
+    }
+  }
+
+  // Policy cards
+  .policyCard {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    border-left: 4px solid $ms-color-themePrimary;
+    transition: all 0.2s ease;
+
+    &:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+      transform: translateY(-2px);
+    }
+
+    .policyTitle {
+      font-weight: 600;
+      color: $ms-color-themePrimary;
+      margin: 0;
+    }
+
+    .category {
+      color: $ms-color-neutralSecondary;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .icon {
+      color: $ms-color-neutralSecondary;
+      font-size: 14px;
+    }
+
+    .actions {
+      padding-top: 8px;
+      border-top: 1px solid $ms-color-neutralLight;
+      margin-top: 8px;
+    }
+  }
+
+  // Due soon section
+  .dueSoonSection {
+    .policyCard {
+      border-left-color: #FFA500;
+    }
+  }
+
+  // Policy packs section
+  .policyPacksSection {
+    .packCard {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+      border-left: 4px solid $ms-color-themePrimary;
+
+      .packTitle {
+        font-weight: 600;
+        color: $ms-color-themePrimary;
+        margin: 0;
+      }
+
+      .packStat {
+        font-weight: 600;
+        color: $ms-color-neutralPrimary;
+      }
+    }
+  }
+
+  // JML Integration section
+  .jmlSection {
+    .jmlCard {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+      border-left: 4px solid $ms-color-teal;
+    }
+  }
+
+  // Empty state
+  .emptyState {
+    background: white;
+    padding: 60px 40px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+
+    .emptyIcon {
+      font-size: 64px;
+      color: $ms-color-green;
+    }
+  }
+
+  // Common styles
+  .subText {
+    color: $ms-color-neutralSecondary;
+  }
+
+  // ============================================================================
+  // ENHANCED WIZARD STYLES
+  // ============================================================================
+
+  // Tab Navigation
+  .tabContainer {
+    background: white;
+    border-radius: 8px;
+    padding: 4px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    margin-bottom: 16px;
+    border-left: 4px solid $ms-color-themePrimary;
+
+    .tabButton {
+      background: transparent;
+      border: none;
+      padding: 12px 20px;
+      font-size: 14px;
+      font-weight: 500;
+      color: $ms-color-neutralSecondary;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: $ms-color-neutralLighter;
+        color: $ms-color-themePrimary;
+      }
+
+      &.activeTab {
+        background: $ms-color-themePrimary;
+        color: white;
+      }
+
+      .tabBadge {
+        background: $ms-color-sharedRed10;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        margin-left: 8px;
+      }
+    }
+  }
+
+  // View toggle (List/Card)
+  .viewToggle {
+    background: white;
+    border-radius: 6px;
+    padding: 2px;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+
+    .toggleButton {
+      background: transparent;
+      border: none;
+      padding: 8px 16px;
+      cursor: pointer;
+      border-radius: 4px;
+      color: $ms-color-neutralSecondary;
+
+      &.activeToggle {
+        background: $ms-color-themePrimary;
+        color: white;
+      }
+    }
+  }
+
+  // Policy List View
+  .policyListView {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+    .policyListItem {
+      display: flex;
+      align-items: center;
+      padding: 16px 20px;
+      border-bottom: 1px solid $ms-color-neutralLight;
+      cursor: pointer;
+      transition: background 0.2s ease;
+
+      &:hover {
+        background: $ms-color-neutralLighter;
+      }
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      &.urgentItem {
+        border-left: 4px solid #D13438;
+        background: #FFF9F9;
+      }
+
+      &.dueSoonItem {
+        border-left: 4px solid #FFA500;
+      }
+
+      .policyIcon {
+        width: 48px;
+        height: 48px;
+        border-radius: 8px;
+        background: $ms-color-neutralLighter;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 16px;
+        color: $ms-color-themePrimary;
+        font-size: 24px;
+      }
+
+      .policyInfo {
+        flex: 1;
+
+        .policyName {
+          font-weight: 600;
+          color: $ms-color-neutralPrimary;
+          margin-bottom: 4px;
+        }
+
+        .policyMeta {
+          font-size: 12px;
+          color: $ms-color-neutralSecondary;
+        }
+      }
+
+      .policyStatus {
+        text-align: right;
+
+        .dueDate {
+          font-size: 12px;
+          color: $ms-color-neutralSecondary;
+        }
+
+        .statusBadge {
+          display: inline-block;
+          padding: 4px 12px;
+          border-radius: 16px;
+          font-size: 12px;
+          font-weight: 500;
+
+          &.urgent {
+            background: #FDE7E9;
+            color: #D13438;
+          }
+
+          &.dueSoon {
+            background: #FFF4CE;
+            color: #9D5D00;
+          }
+
+          &.completed {
+            background: #DFF6DD;
+            color: #107C10;
+          }
+        }
+      }
+    }
+  }
+
+  // Policy Card Grid View
+  .policyCardGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+  }
+
+  // ============================================================================
+  // WIZARD PANEL STYLES
+  // ============================================================================
+
+  .wizardPanel {
+    .wizardHeader {
+      background: linear-gradient(135deg, $ms-color-themePrimary 0%, darken($ms-color-themePrimary, 15%) 100%);
+      color: white;
+      padding: 24px;
+      margin: -24px -24px 24px -24px;
+
+      .wizardTitle {
+        font-size: 20px;
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+
+      .wizardSubtitle {
+        opacity: 0.9;
+        font-size: 14px;
+      }
+    }
+
+    // Stepper
+    .wizardStepper {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 32px;
+      position: relative;
+
+      &::before {
+        content: '';
+        position: absolute;
+        top: 20px;
+        left: 40px;
+        right: 40px;
+        height: 2px;
+        background: $ms-color-neutralLight;
+        z-index: 0;
+      }
+
+      .stepItem {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        z-index: 1;
+
+        .stepCircle {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          background: white;
+          border: 2px solid $ms-color-neutralLight;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 600;
+          color: $ms-color-neutralSecondary;
+          margin-bottom: 8px;
+          transition: all 0.3s ease;
+        }
+
+        .stepLabel {
+          font-size: 12px;
+          color: $ms-color-neutralSecondary;
+          text-align: center;
+        }
+
+        &.activeStep {
+          .stepCircle {
+            background: $ms-color-themePrimary;
+            border-color: $ms-color-themePrimary;
+            color: white;
+          }
+
+          .stepLabel {
+            color: $ms-color-themePrimary;
+            font-weight: 600;
+          }
+        }
+
+        &.completedStep {
+          .stepCircle {
+            background: #107C10;
+            border-color: #107C10;
+            color: white;
+          }
+
+          .stepLabel {
+            color: #107C10;
+          }
+        }
+      }
+    }
+
+    // Policy Reader
+    .policyReader {
+      background: white;
+      border-radius: 8px;
+      border: 1px solid $ms-color-neutralLight;
+      overflow: hidden;
+
+      .readerToolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+        background: $ms-color-neutralLighter;
+        border-bottom: 1px solid $ms-color-neutralLight;
+      }
+
+      .readerContent {
+        padding: 24px;
+        max-height: 400px;
+        overflow-y: auto;
+        line-height: 1.6;
+
+        h1, h2, h3 {
+          color: $ms-color-themePrimary;
+          margin-top: 24px;
+          margin-bottom: 12px;
+        }
+
+        h1 { font-size: 24px; }
+        h2 { font-size: 20px; }
+        h3 { font-size: 16px; }
+
+        p {
+          margin-bottom: 16px;
+          color: $ms-color-neutralPrimary;
+        }
+
+        ul, ol {
+          margin-bottom: 16px;
+          padding-left: 24px;
+
+          li {
+            margin-bottom: 8px;
+          }
+        }
+      }
+
+      .readerProgress {
+        padding: 16px;
+        border-top: 1px solid $ms-color-neutralLight;
+        background: $ms-color-neutralLighterAlt;
+
+        .progressLabel {
+          font-size: 12px;
+          color: $ms-color-neutralSecondary;
+          margin-bottom: 8px;
+        }
+      }
+    }
+
+    // Acknowledgement Form
+    .acknowledgementForm {
+      background: white;
+      border-radius: 8px;
+      padding: 24px;
+      border: 1px solid $ms-color-neutralLight;
+
+      .acknowledgementCheckbox {
+        background: $ms-color-neutralLighterAlt;
+        padding: 16px;
+        border-radius: 8px;
+        border: 2px solid $ms-color-neutralLight;
+        margin-bottom: 20px;
+
+        &.checked {
+          border-color: $ms-color-themePrimary;
+          background: lighten($ms-color-themePrimary, 45%);
+        }
+      }
+
+      .ratingSection {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid $ms-color-neutralLight;
+
+        .ratingLabel {
+          font-weight: 600;
+          margin-bottom: 12px;
+        }
+
+        .starRating {
+          display: flex;
+          gap: 8px;
+
+          .star {
+            font-size: 28px;
+            color: $ms-color-neutralLight;
+            cursor: pointer;
+            transition: all 0.2s ease;
+
+            &:hover,
+            &.filled {
+              color: #FFB900;
+              transform: scale(1.1);
+            }
+          }
+        }
+      }
+    }
+
+    // Success Screen
+    .successScreen {
+      text-align: center;
+      padding: 40px;
+
+      .successIcon {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #107C10 0%, #0B5C0B 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 24px;
+        color: white;
+        font-size: 48px;
+        animation: successPulse 0.5s ease-out;
+      }
+
+      .successTitle {
+        font-size: 28px;
+        font-weight: 600;
+        color: #107C10;
+        margin-bottom: 12px;
+      }
+
+      .successMessage {
+        color: $ms-color-neutralSecondary;
+        margin-bottom: 24px;
+      }
+
+      .pointsEarned {
+        background: linear-gradient(135deg, #FFB900 0%, #FF8C00 100%);
+        color: white;
+        padding: 16px 32px;
+        border-radius: 24px;
+        font-size: 18px;
+        font-weight: 600;
+        display: inline-block;
+        margin-bottom: 24px;
+        animation: bounceIn 0.5s ease-out 0.3s both;
+      }
+
+      .certificate {
+        background: white;
+        border: 2px solid $ms-color-neutralLight;
+        border-radius: 8px;
+        padding: 24px;
+        margin-top: 24px;
+
+        .certificateTitle {
+          font-size: 18px;
+          font-weight: 600;
+          color: $ms-color-themePrimary;
+          margin-bottom: 8px;
+        }
+
+        .certificateDate {
+          font-size: 14px;
+          color: $ms-color-neutralSecondary;
+        }
+      }
+    }
+  }
+
+  // Animations
+  @keyframes successPulse {
+    0% {
+      transform: scale(0);
+      opacity: 0;
+    }
+    50% {
+      transform: scale(1.1);
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  @keyframes bounceIn {
+    0% {
+      transform: scale(0) translateY(20px);
+      opacity: 0;
+    }
+    60% {
+      transform: scale(1.1) translateY(-5px);
+    }
+    100% {
+      transform: scale(1) translateY(0);
+      opacity: 1;
+    }
+  }
+}

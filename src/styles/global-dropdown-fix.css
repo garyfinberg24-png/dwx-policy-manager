@@ -1,0 +1,227 @@
+/**
+ * Global Dropdown Fix - Solution-Wide
+ * Fixes floating dropdown items issue where options appear without background
+ *
+ * This file addresses dropdown styling for both:
+ * - Fluent UI v8 (@fluentui/react) - uses role="listbox", role="option"
+ * - Fluent UI v9 (@fluentui/react-components) - uses .fui-Listbox, .fui-Option
+ *
+ * Import this in your web part's main SCSS file or include globally
+ */
+
+/* ============================================
+   FLUENT UI V8 DROPDOWN FIXES (@fluentui/react)
+   ============================================ */
+
+/* Dropdown menu container (callout) */
+.ms-Dropdown-callout,
+.ms-Callout-main,
+[role="listbox"] {
+  background-color: #ffffff !important;
+  border: 1px solid #d1d1d1 !important;
+  box-shadow: 0 6.4px 14.4px 0 rgba(0, 0, 0, 0.132), 0 1.2px 3.6px 0 rgba(0, 0, 0, 0.108) !important;
+  border-radius: 2px !important;
+}
+
+/* Dropdown options */
+.ms-Dropdown-item,
+.ms-Dropdown-optionText,
+[role="option"] {
+  background-color: #ffffff !important;
+  color: #323130 !important;
+  font-family: "Segoe UI", "Segoe UI Web (West European)", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif !important;
+  font-size: 14px !important;
+  padding: 8px 12px !important;
+  cursor: pointer !important;
+  transition: background-color 0.1s ease !important;
+}
+
+/* Hover state for dropdown options */
+.ms-Dropdown-item:hover,
+[role="option"]:hover,
+.ms-Dropdown-item.is-highlighted,
+[role="option"][aria-selected="true"] {
+  background-color: #f3f2f1 !important;
+  color: #323130 !important;
+}
+
+/* Selected/Active dropdown option */
+.ms-Dropdown-item.is-selected,
+[role="option"][aria-checked="true"] {
+  background-color: #e3f2fd !important;
+  color: #0078d4 !important;
+  font-weight: 600 !important;
+}
+
+/* Dropdown items container */
+.ms-Dropdown-items {
+  background-color: #ffffff !important;
+  padding: 4px 0 !important;
+}
+
+/* Fix for dropdown header */
+.ms-Dropdown-header {
+  background-color: #f3f2f1 !important;
+  color: #605e5c !important;
+  font-weight: 600 !important;
+  padding: 8px 12px !important;
+  border-bottom: 1px solid #edebe9 !important;
+}
+
+/* Fix for dropdown divider */
+.ms-Dropdown-divider {
+  height: 1px !important;
+  background-color: #edebe9 !important;
+  margin: 4px 0 !important;
+}
+
+/* ============================================
+   FLUENT UI V9 DROPDOWN FIXES (@fluentui/react-components)
+   ============================================ */
+
+/* Listbox container (v9) */
+.fui-Listbox,
+.fui-Dropdown__listbox {
+  background-color: #ffffff !important;
+  border: 1px solid #d1d1d1 !important;
+  box-shadow: 0 6.4px 14.4px 0 rgba(0, 0, 0, 0.132), 0 1.2px 3.6px 0 rgba(0, 0, 0, 0.108) !important;
+  border-radius: 4px !important;
+  padding: 4px 0 !important;
+}
+
+/* Option items (v9) */
+.fui-Option,
+.fui-Listbox__option {
+  background-color: #ffffff !important;
+  color: #323130 !important;
+  font-family: "Segoe UI", "Segoe UI Web (West European)", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif !important;
+  font-size: 14px !important;
+  padding: 8px 12px !important;
+  cursor: pointer !important;
+  transition: background-color 0.1s ease !important;
+  min-height: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+/* Hover state for options (v9) */
+.fui-Option:hover,
+.fui-Listbox__option:hover,
+.fui-Option[data-fui-focus-visible] {
+  background-color: #f3f2f1 !important;
+  color: #323130 !important;
+}
+
+/* Selected option (v9) */
+.fui-Option[aria-selected="true"],
+.fui-Listbox__option[aria-selected="true"] {
+  background-color: #e3f2fd !important;
+  color: #0078d4 !important;
+  font-weight: 600 !important;
+}
+
+/* Active/pressed option (v9) */
+.fui-Option:active,
+.fui-Listbox__option:active {
+  background-color: #e3f2fd !important;
+  color: #0078d4 !important;
+}
+
+/* Dropdown portal/popup (v9) */
+.fui-Portal,
+.fui-Dropdown__popup {
+  z-index: 1000000 !important;
+}
+
+/* ============================================
+   COMBOBOX FIXES (Both v8 and v9)
+   ============================================ */
+
+/* Combobox button styling */
+button[role="combobox"],
+.ms-Dropdown .ms-Dropdown-title,
+.fui-Combobox__button {
+  background-color: #ffffff !important;
+  border: 1px solid #d1d1d1 !important;
+  color: #323130 !important;
+  min-height: 32px !important;
+}
+
+button[role="combobox"]:hover,
+.ms-Dropdown .ms-Dropdown-title:hover,
+.fui-Combobox__button:hover {
+  border-color: #a6a6a6 !important;
+  background-color: #ffffff !important;
+}
+
+button[role="combobox"]:focus,
+.ms-Dropdown .ms-Dropdown-title:focus,
+.fui-Combobox__button:focus {
+  border-color: #0078d4 !important;
+  box-shadow: 0 0 0 1px #0078d4 !important;
+  background-color: #ffffff !important;
+}
+
+/* ============================================
+   Z-INDEX FIXES FOR OVERLAPPING ISSUES
+   ============================================ */
+
+/* Ensure dropdown menus appear above all other content */
+.ms-Layer,
+.ms-Callout-container {
+  z-index: 1000000 !important;
+}
+
+/* ============================================
+   ADDITIONAL FIXES FOR EDGE CASES
+   ============================================ */
+
+/* Fix for disabled options */
+.ms-Dropdown-item.is-disabled,
+[role="option"][aria-disabled="true"],
+.fui-Option[aria-disabled="true"] {
+  background-color: #f3f2f1 !important;
+  color: #a6a6a6 !important;
+  cursor: not-allowed !important;
+  opacity: 0.6 !important;
+}
+
+/* Fix for multiselect checkboxes in dropdowns */
+.ms-Dropdown-item .ms-Checkbox,
+.fui-Option .fui-Checkbox {
+  background-color: transparent !important;
+}
+
+/* Fix for option icons */
+.ms-Dropdown-item .ms-Icon,
+.fui-Option .fui-Icon {
+  color: inherit !important;
+}
+
+/* Dark theme support (if applicable) */
+[data-theme="dark"] .ms-Dropdown-callout,
+[data-theme="dark"] [role="listbox"],
+[data-theme="dark"] .fui-Listbox {
+  background-color: #292827 !important;
+  border-color: #3b3a39 !important;
+}
+
+[data-theme="dark"] .ms-Dropdown-item,
+[data-theme="dark"] [role="option"],
+[data-theme="dark"] .fui-Option {
+  background-color: #292827 !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .ms-Dropdown-item:hover,
+[data-theme="dark"] [role="option"]:hover,
+[data-theme="dark"] .fui-Option:hover {
+  background-color: #3b3a39 !important;
+}
+
+[data-theme="dark"] .ms-Dropdown-item.is-selected,
+[data-theme="dark"] [role="option"][aria-selected="true"],
+[data-theme="dark"] .fui-Option[aria-selected="true"] {
+  background-color: #004578 !important;
+  color: #ffffff !important;
+}

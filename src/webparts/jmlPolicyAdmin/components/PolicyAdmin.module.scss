@@ -1,0 +1,190 @@
+@import '~@fluentui/react/dist/sass/References.scss';
+@import '../../../styles/fluent-mixins';
+
+// Full-bleed container and SharePoint overrides come from fluent-mixins (via sharepoint-overrides.scss)
+
+// SharePoint canvas and social bar overrides - REQUIRED for full-bleed and embedded mode
+:global {
+  // Enable full-bleed layouts
+  .CanvasZone,
+  [class*="CanvasZone"],
+  .CanvasSection,
+  [class*="CanvasSection"],
+  .ControlZone,
+  [class*="ControlZone"],
+  .CanvasZoneContainer,
+  [class*="CanvasZoneContainer"] {
+    overflow: visible !important;
+    max-width: none !important;
+  }
+
+  [data-sp-web-part],
+  .webPartContainer,
+  [class*="webPartContainer"] {
+    overflow: visible !important;
+  }
+
+  [class*="CanvasComponent"],
+  .CanvasComponent {
+    overflow: visible !important;
+  }
+
+  // Hide SharePoint social bar
+  [class*="pageReactions"],
+  [class*="PageReactions"],
+  [class*="pageLikes"],
+  [class*="PageLikes"],
+  [class*="socialBar"],
+  [class*="SocialBar"],
+  [class*="pageFooter"],
+  [class*="PageFooter"],
+  [data-automation-id="pageFooter"],
+  [data-automation-id="PageLikes"],
+  [data-automation-id="pageComments"],
+  .ms-CommentsWrapper,
+  [class*="CommentsWrapper"],
+  [class*="pageActions"],
+  [class*="PageActions"] {
+    display: none !important;
+  }
+}
+
+.policyAdmin {
+  @include full-bleed-container;
+  background-color: $ms-color-neutralLighter;
+
+  .title {
+    font-weight: 600;
+    color: $ms-color-themePrimary;
+  }
+
+  // Pivot Tab Styling - Ensure tabs don't get clipped
+  :global {
+    .ms-Pivot {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+      padding: 0 16px;
+      overflow-x: auto;
+      white-space: nowrap;
+
+      .ms-Pivot-link {
+        padding: 14px 20px;
+        font-size: 14px;
+        white-space: nowrap;
+        min-width: auto;
+
+        &.is-selected {
+          font-weight: 600;
+        }
+      }
+
+      .ms-Pivot-text {
+        overflow: visible;
+        text-overflow: clip;
+        white-space: nowrap;
+      }
+    }
+  }
+
+  .policiesList {
+    background: white;
+    padding: 24px;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+
+    .statusBadge {
+      color: white;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      display: inline-block;
+    }
+  }
+
+  // ============================================
+  // TAB PANEL - JML Official Standard
+  // Blue left accent, blue block active state with 4px radius
+  // ============================================
+  .moduleNav {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    background: #ffffff;
+    border: 1px solid #edebe9;
+    border-left: 4px solid #0078d4; // Blue accent
+    border-radius: 8px;
+    padding: 8px 12px 8px 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    gap: 4px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    max-width: 100%;
+    box-sizing: border-box;
+
+    // Hide scrollbar but allow scrolling
+    &::-webkit-scrollbar {
+      height: 0;
+      display: none;
+    }
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .moduleNavButton {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: $ms-color-neutralSecondary;
+    font-weight: 500;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    min-width: auto;
+    white-space: nowrap;
+    flex-shrink: 0;
+
+    &:hover {
+      color: $ms-color-themePrimary;
+      background: $ms-color-neutralLighter;
+    }
+
+    &:focus {
+      outline: 2px solid $ms-color-themePrimary;
+      outline-offset: 2px;
+    }
+
+    i {
+      font-size: 16px;
+    }
+  }
+
+  .moduleNavActive {
+    // Blue block highlighting with 4px border radius
+    background: #0078d4 !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    border-radius: 4px;
+
+    &:hover {
+      background: #106ebe !important;
+      color: #ffffff !important;
+    }
+
+    &:focus {
+      outline: 2px solid #ffffff;
+      outline-offset: 2px;
+    }
+
+    i {
+      color: #ffffff !important;
+    }
+  }
+}

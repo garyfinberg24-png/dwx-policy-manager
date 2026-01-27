@@ -1,0 +1,375 @@
+@import '~@fluentui/react/dist/sass/References.scss';
+
+/**
+ * JML App Layout - CLEAN VERSION
+ *
+ * IMPORTANT: Footer/Social hiding is handled by the JML Page Customizer
+ * Application Customizer (src/extensions/jmlPageCustomizer).
+ *
+ * This file contains ONLY:
+ * - Layout classes for JmlAppLayout component
+ * - Sticky footer support
+ * - Overflow prevention
+ *
+ * RULE: NO Panel/Dialog CSS here - they work naturally
+ * RULE: NO footer/social hiding here - handled by App Customizer
+ */
+
+// JML App Layout - Full page wrapper
+.jmlAppLayout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: #ffffff;
+  overflow-x: clip; // Use clip instead of hidden - prevents horizontal scroll while allowing content to render
+  max-width: 100vw;
+  box-sizing: border-box;
+  // Pull layout up to compensate for any SharePoint canvas padding
+  // FIX: Changed from -16px to 0 to prevent LAY-NAV header truncation at top
+  margin-top: 0;
+  margin-left: -16px;
+  margin-right: -16px;
+  width: calc(100% + 32px);
+}
+
+// Main content area
+.contentArea {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-x: visible;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.contentWrapper {
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 24px;
+  overflow-x: visible;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+}
+
+// Full width content option
+.fullWidth {
+  max-width: none;
+  padding: 0;
+}
+
+// ============================================
+// GLOBAL SHAREPOINT OVERRIDES - LAYOUT ONLY
+// ============================================
+
+:global {
+  // ==========================================
+  // 1. GLOBAL LAYOUT FOR STICKY FOOTER
+  // ==========================================
+  html {
+    height: 100%;
+    overflow-x: clip; // Use clip instead of hidden - allows dropdowns while preventing horizontal scroll
+    max-width: 100vw !important;
+  }
+
+  body {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow-x: clip; // Use clip instead of hidden - allows dropdowns while preventing horizontal scroll
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
+    margin: 0;
+    padding: 0;
+  }
+
+  // ==========================================
+  // 1B. REMOVE SHAREPOINT PAGE CHROME PADDING
+  // Makes JML header flush to top and full width
+  // ==========================================
+  // Remove padding from SharePoint canvas containers
+  [data-sp-web-part] {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .CanvasZone {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .CanvasSection {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .ControlZone {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  // Remove padding from full-width sections
+  [data-sp-canvascontrol] {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  // SPFx webpart container should have no padding
+  .webPartContainer {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  *, *::before, *::after {
+    box-sizing: inherit;
+  }
+
+  // SharePoint main content areas - flex layout for sticky footer
+  #spPageCanvasContent,
+  [class*="spPageCanvasContent"],
+  #s4-workspace,
+  .SPCanvas,
+  [class*="SPCanvas"],
+  .mainContent,
+  [class*="mainContent"] {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 !important;
+    min-height: 0 !important;
+  }
+
+  // ==========================================
+  // 2. JML FOOTER POSITIONING
+  // ==========================================
+  [data-jml-footer="true"] {
+    margin-top: auto !important;
+    flex-shrink: 0 !important;
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  // ==========================================
+  // 3. OVERFLOW PREVENTION (Modified to allow dropdowns)
+  // ==========================================
+  // NOTE: Using overflow-x: clip instead of hidden to prevent horizontal scroll
+  // while allowing dropdown menus to render outside container bounds.
+  // clip is supported in all modern browsers and doesn't create a scroll container.
+  [data-sp-web-part],
+  .webPartContainer,
+  .CanvasZone,
+  .ControlZone,
+  .CanvasSection,
+  .CanvasZoneContainer,
+  .CanvasComponent {
+    overflow-x: clip;
+    overflow-y: visible; // Allow dropdowns to render
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  #spPageCanvasContent,
+  .SPCanvas {
+    overflow-x: clip;
+    overflow-y: visible; // Allow dropdowns to render
+    max-width: 100vw !important;
+  }
+
+  // ==========================================
+  // 4. Z-INDEX FOR JML HEADER DROPDOWNS
+  // ==========================================
+  .CanvasZone,
+  .CanvasSection,
+  .ControlZone,
+  [data-sp-web-part] {
+    position: relative;
+    z-index: 1 !important;
+  }
+
+  // ==========================================
+  // 5. CANVAS ZONE SPACING
+  // ==========================================
+  .CanvasZone:last-child {
+    margin-bottom: 0;
+  }
+
+  // ==========================================
+  // 5B. REMOVE UNWANTED GREY LINES/BORDERS
+  // Hide any grey borders from SharePoint canvas containers
+  // ==========================================
+  .CanvasZone,
+  .CanvasSection,
+  .ControlZone,
+  .CanvasZoneContainer,
+  [data-sp-canvaszone],
+  [data-sp-web-part],
+  .CanvasComponent,
+  .webPartChrome,
+  [class*="webPartChrome"],
+  [class*="CanvasZone"],
+  [class*="CanvasSection"],
+  [class*="ControlZone"] {
+    border: none !important;
+    border-top: none !important;
+    border-bottom: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
+  // Remove column separator lines
+  [class*="columnSeparator"],
+  [class*="ColumnSeparator"],
+  .ms-Canvas-columnSeparator,
+  [data-sp-column-separator] {
+    display: none !important;
+  }
+
+  // Remove any hr or separator lines in page content
+  .mainContent hr,
+  [class*="mainContent"] hr,
+  .SPCanvas hr,
+  [class*="SPCanvas"] hr {
+    display: none !important;
+  }
+
+  // Remove grey lines from webpart borders
+  [class*="webPart"]:not([class*="webPartContainer"]) {
+    border: none !important;
+    outline: none !important;
+  }
+
+  // Remove potential grey lines from Fluent UI separators
+  .ms-Separator,
+  [class*="Separator"]:not([class*="breadcrumb"]) {
+    border-color: transparent !important;
+    background-color: transparent !important;
+  }
+
+  // ==========================================
+  // 5C. ADDITIONAL GREY LINE FIXES
+  // Comprehensive removal of any floating grey lines
+  // ==========================================
+
+  // Remove grey line from page canvas borders
+  #spPageCanvasContent,
+  [class*="spPageCanvasContent"],
+  .SPCanvas,
+  [class*="SPCanvas"] {
+    border: none !important;
+    border-top: none !important;
+    border-bottom: none !important;
+  }
+
+  // Remove grey lines from section dividers
+  [class*="sectionDivider"],
+  [class*="SectionDivider"],
+  [class*="zoneDivider"],
+  [class*="ZoneDivider"] {
+    display: none !important;
+    border: none !important;
+  }
+
+  // Remove grey lines from header/footer regions
+  [class*="regionHeader"]::after,
+  [class*="regionFooter"]::before,
+  [class*="pageRegion"]::after,
+  [class*="pageRegion"]::before {
+    display: none !important;
+  }
+
+  // Remove grey line pseudo-elements on containers
+  .webPartContainer::before,
+  .webPartContainer::after,
+  .CanvasZone::before,
+  .CanvasZone::after,
+  .CanvasSection::before,
+  .CanvasSection::after,
+  .ControlZone::before,
+  .ControlZone::after,
+  [data-sp-web-part]::before,
+  [data-sp-web-part]::after {
+    display: none !important;
+    content: none !important;
+    border: none !important;
+  }
+
+  // Remove grey divider lines in page content
+  [class*="dividerLine"],
+  [class*="DividerLine"],
+  [class*="pageDivider"],
+  [class*="PageDivider"],
+  [class*="horizontalRule"],
+  [class*="HorizontalRule"] {
+    display: none !important;
+  }
+
+  // Ensure no borders on main page wrapper elements
+  #pageWrapper,
+  .pageWrapper,
+  [class*="pageWrapper"],
+  #mainContent,
+  [class*="mainContent"] {
+    border: none !important;
+    border-top: none !important;
+    border-bottom: none !important;
+  }
+
+  // Remove any lingering border-bottom from SPFx chrome
+  [data-sp-feature-instance-id] {
+    border: none !important;
+    border-bottom: none !important;
+  }
+
+  // Remove grey line from canvas vertical section backgrounds
+  [class*="canvasVerticalSection"],
+  [class*="CanvasVerticalSection"] {
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  // Remove SharePoint section background separator lines
+  [class*="sectionBackground"]::before,
+  [class*="sectionBackground"]::after,
+  [class*="SectionBackground"]::before,
+  [class*="SectionBackground"]::after {
+    display: none !important;
+    content: none !important;
+  }
+
+  // Remove lines from webpart focus/hover states
+  [class*="webPart"]:focus,
+  [class*="webPart"]:hover {
+    outline: none !important;
+    border: none !important;
+  }
+
+  // ==========================================
+  // 6. SHAREPOINT FOOTER & SOCIAL HIDING
+  // IMPORTANT: Uses ONLY data-automation-id selectors
+  // These are stable and DON'T match Panels/Dialogs
+  // ==========================================
+
+  // Hide SharePoint default footer
+  [data-automation-id="SiteFooter"],
+  [data-automation-id="pageFooter"] {
+    display: none !important;
+  }
+
+  // Hide Social Bar (likes, comments, views)
+  [data-automation-id="socialBar"],
+  [data-automation-id="PageLikes"],
+  [data-automation-id="pageComments"],
+  [data-automation-id="SaveForLater"],
+  [data-automation-id="pageViews"] {
+    display: none !important;
+  }
+
+  // ==========================================
+  // END - Panels work naturally (no Panel CSS)
+  // ==========================================
+}

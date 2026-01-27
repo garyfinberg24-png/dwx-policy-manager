@@ -1,0 +1,29 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx/client-side-web-part-manifest.schema.json",
+  "id": "95aa7fd1-2f74-451f-9122-0199cc05d600",
+  "alias": "DwxPolicyDetailsWebPart",
+  "componentType": "WebPart",
+
+  "version": "*",
+  "manifestVersion": 2,
+
+  "requiresCustomScript": false,
+  "supportedHosts": ["SharePointWebPart", "SharePointFullPage", "TeamsPersonalApp", "TeamsTab"],
+  "supportsThemeVariants": true,
+
+  "preconfiguredEntries": [{
+    "groupId": "e4b0a295-44e2-4fa4-8f15-4eac5edf4275",
+    "group": { "default": "DWx Policy Manager" },
+    "title": { "default": "DWx Policy Details" },
+    "description": { "default": "Display policy details with acknowledgement workflow, comments, ratings, and quiz" },
+    "officeFabricIconFontName": "DocumentSearch",
+    "properties": {
+      "title": "DWx Policy Details",
+      "showRelatedDocuments": true,
+      "showComments": true,
+      "showRatings": true,
+      "enableQuiz": false
+    }
+  }],
+  "supportsFullBleed": true
+}

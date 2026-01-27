@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir:*)",
+      "Bash(if not exist \"c:\\\\Projects\\\\SPFx\\\\PolicyManager\\\\policy-manager\\\\docs\" mkdir \"c:\\\\Projects\\\\SPFx\\\\PolicyManager\\\\policy-manager\\\\docs\")",
+      "Bash(copy \"C:\\\\Users\\\\gfinb\\\\Downloads\\\\DWx-Splash-Logo2-DigitalBlocks.pdf\" \"c:\\\\Projects\\\\SPFx\\\\PolicyManager\\\\policy-manager\\\\docs\\\\DWx-Brand-Guide.pdf\")",
+      "Bash(copy:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(findstr:*)",
+      "Bash(npx gulp build:*)",
+      "Bash(gh repo create:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  }
+}

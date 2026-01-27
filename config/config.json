@@ -49,6 +49,14 @@
           "manifest": "./src/webparts/jmlMyPolicies/JmlMyPoliciesWebPart.manifest.json"
         }
       ]
+    },
+    "dwx-quiz-builder-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/dwxQuizBuilder/DwxQuizBuilderWebPart.js",
+          "manifest": "./src/webparts/dwxQuizBuilder/DwxQuizBuilderWebPart.manifest.json"
+        }
+      ]
     }
   },
   "externals": {},
@@ -59,6 +67,7 @@
     "JmlPolicyAdminWebPartStrings": "lib/webparts/jmlPolicyAdmin/loc/{locale}.js",
     "JmlPolicyPackManagerWebPartStrings": "lib/webparts/jmlPolicyPackManager/loc/{locale}.js",
     "JmlMyPoliciesWebPartStrings": "lib/webparts/jmlMyPolicies/loc/{locale}.js",
+    "DwxQuizBuilderWebPartStrings": "lib/webparts/dwxQuizBuilder/loc/{locale}.js",
     "ControlStrings": "node_modules/@pnp/spfx-controls-react/lib/loc/{locale}.js"
   }
 }

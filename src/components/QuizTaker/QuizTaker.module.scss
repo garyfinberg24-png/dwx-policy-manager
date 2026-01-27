@@ -1,0 +1,311 @@
+@import '~@fluentui/react/dist/sass/References.scss';
+
+.quizTaker {
+  padding: 24px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  max-width: 1400px;
+  margin: 0 auto;
+
+  .header {
+    padding-bottom: 24px;
+    border-bottom: 1px solid $ms-color-neutralLight;
+    margin-bottom: 24px;
+  }
+
+  .content {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 32px;
+
+    @media (max-width: 1024px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .mainContent {
+    min-height: 400px;
+  }
+
+  .sidebar {
+    @media (max-width: 1024px) {
+      order: -1;
+    }
+  }
+
+  // Timer
+  .timer {
+    padding: 12px 24px;
+    background: $ms-color-themeLighterAlt;
+    border-radius: 24px;
+    border: 2px solid $ms-color-themePrimary;
+
+    &.timerWarning {
+      background: #fde7e9;
+      border-color: #d13438;
+      animation: pulse 1s infinite;
+    }
+  }
+
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+
+  // Question Container
+  .questionContainer {
+    padding: 32px;
+    background: $ms-color-neutralLighterAlt;
+    border-radius: 8px;
+    margin-bottom: 24px;
+    min-height: 350px;
+  }
+
+  .questionNumber {
+    color: $ms-color-themePrimary;
+    font-weight: 600;
+  }
+
+  .questionText {
+    color: $ms-color-neutralPrimary;
+    line-height: 1.6;
+  }
+
+  .badge {
+    padding: 4px 12px;
+    background: $ms-color-themeLight;
+    border-radius: 12px;
+    color: $ms-color-themePrimary;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 11px;
+  }
+
+  .pointsBadge {
+    padding: 4px 12px;
+    background: $ms-color-greenLight;
+    border-radius: 12px;
+    color: $ms-color-green;
+    font-weight: 600;
+    font-size: 11px;
+  }
+
+  // Answer Options
+  .optionItem {
+    padding: 16px;
+    background: white;
+    border: 2px solid $ms-color-neutralLight;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      border-color: $ms-color-themePrimary;
+      transform: translateX(4px);
+    }
+
+    &.selected {
+      border-color: $ms-color-themePrimary;
+      background: $ms-color-themeLighterAlt;
+    }
+  }
+
+  // Navigation
+  .navigation {
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid $ms-color-neutralLight;
+  }
+
+  // Question Navigation
+  .questionNav {
+    background: $ms-color-neutralLighter;
+    padding: 20px;
+    border-radius: 8px;
+    position: sticky;
+    top: 20px;
+  }
+
+  .navTitle {
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: $ms-color-neutralPrimary;
+  }
+
+  .questionGrid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .questionNavButton {
+    padding: 12px;
+    border: 2px solid $ms-color-neutralLight;
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+
+    &:hover {
+      border-color: $ms-color-themePrimary;
+      transform: scale(1.05);
+    }
+
+    &.current {
+      border-color: $ms-color-themePrimary;
+      background: $ms-color-themePrimary;
+      color: white;
+    }
+
+    &.answered {
+      border-color: $ms-color-green;
+      background: $ms-color-greenLight;
+      color: $ms-color-green;
+    }
+  }
+
+  .navLegend {
+    padding-top: 16px;
+    border-top: 1px solid $ms-color-neutralLight;
+  }
+
+  .legendBox {
+    width: 16px;
+    height: 16px;
+    border: 2px solid $ms-color-neutralLight;
+    border-radius: 3px;
+    background: white;
+
+    &.current {
+      border-color: $ms-color-themePrimary;
+      background: $ms-color-themePrimary;
+    }
+
+    &.answered {
+      border-color: $ms-color-green;
+      background: $ms-color-greenLight;
+    }
+  }
+
+  // Results
+  .resultsContainer {
+    padding: 32px;
+  }
+
+  .scoreCard {
+    padding: 48px;
+    border-radius: 16px;
+    text-align: center;
+    border: 3px solid;
+
+    &.passed {
+      background: linear-gradient(135deg, #dff6dd 0%, #c8e6c9 100%);
+      border-color: #107c10;
+    }
+
+    &.failed {
+      background: linear-gradient(135deg, #fde7e9 0%, #f3d6d8 100%);
+      border-color: #d13438;
+    }
+  }
+
+  .resultIcon {
+    i {
+      font-size: 64px;
+      color: inherit;
+    }
+  }
+
+  .scoreText {
+    font-size: 72px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .scoreDetails {
+    color: $ms-color-neutralSecondary;
+  }
+
+  .pointsEarned {
+    padding: 12px 24px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 24px;
+    margin-top: 16px;
+  }
+
+  .answerReview {
+    margin-top: 32px;
+  }
+
+  .reviewTitle {
+    font-weight: 600;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid $ms-color-neutralLight;
+  }
+
+  .reviewItem {
+    padding: 24px;
+    background: $ms-color-neutralLighterAlt;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    border-left: 4px solid $ms-color-neutralLight;
+
+    &:has(.correctBadge) {
+      border-left-color: #107c10;
+    }
+
+    &:has(.incorrectBadge) {
+      border-left-color: #d13438;
+    }
+  }
+
+  .correctBadge {
+    padding: 4px 12px;
+    background: #dff6dd;
+    color: #107c10;
+    border-radius: 12px;
+    font-weight: 600;
+  }
+
+  .incorrectBadge {
+    padding: 4px 12px;
+    background: #fde7e9;
+    color: #d13438;
+    border-radius: 12px;
+    font-weight: 600;
+  }
+
+  .labelText {
+    color: #605e5c;
+  }
+
+  // ChoiceGroup styles for quiz options
+  .choiceGroup {
+    :global(.ms-ChoiceField) {
+      padding: 16px;
+      background: white;
+      border: 2px solid $ms-color-neutralLight;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      transition: all 0.2s ease;
+
+      &:hover {
+        border-color: $ms-color-themePrimary;
+        transform: translateX(4px);
+      }
+    }
+
+    :global(.ms-ChoiceField.is-checked) {
+      border-color: $ms-color-themePrimary;
+      background: $ms-color-themeLighterAlt;
+    }
+  }
+}

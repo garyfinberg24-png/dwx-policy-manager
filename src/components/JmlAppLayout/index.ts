@@ -1,2 +1,2 @@
-export { default as JmlAppLayout } from './JmlAppLayout';
+export { default as JmlAppLayout, DwxAppLayout } from './JmlAppLayout';
 export * from './IJmlAppLayoutProps';

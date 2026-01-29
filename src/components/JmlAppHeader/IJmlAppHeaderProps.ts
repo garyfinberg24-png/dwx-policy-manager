@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { WebPartContext } from '@microsoft/sp-webpart-base';
+import { PolicyManagerRole } from '../../services/PolicyRoleService';
 
 export interface INavItem {
   key: string;
@@ -65,6 +66,8 @@ export interface IJmlAppHeaderProps {
   availableRoles?: string[];
   /** Role change callback */
   onRoleChange?: (role: string) => void;
+  /** Policy Manager role for nav/visibility filtering */
+  policyRole?: PolicyManagerRole;
 }
 
 // Re-export types for backward compatibility

@@ -25,11 +25,12 @@ export const DwxAppHeader: React.FC<IJmlAppHeaderProps> = ({
   notificationCount = 0,
   onSearchClick,
   onNotificationsClick,
-  showSettings = false,
+  showSettings = true,
   onSettingsClick,
   userRole,
   availableRoles,
-  onRoleChange
+  onRoleChange,
+  policyRole
 }) => {
   // Get current user info from context if available
   const userName = context?.pageContext?.user?.displayName || 'User';
@@ -75,6 +76,7 @@ export const DwxAppHeader: React.FC<IJmlAppHeaderProps> = ({
       pageIcon={pageIcon}
       pageStats={stats}
       showPageHeader={false}
+      policyRole={policyRole}
     />
   );
 };

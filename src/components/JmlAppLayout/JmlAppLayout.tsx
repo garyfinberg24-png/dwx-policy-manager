@@ -4,6 +4,9 @@ import styles from './JmlAppLayout.module.scss';
 import { IJmlAppLayoutProps } from './IJmlAppLayoutProps';
 import JmlAppHeader from '../JmlAppHeader/JmlAppHeader';
 import JmlAppFooter from '../JmlAppFooter/JmlAppFooter';
+import { PolicyManagerRole } from '../../services/PolicyRoleService';
+import { RoleDetectionService } from '../../services/RoleDetectionService';
+import { getHighestPolicyRole } from '../../services/PolicyRoleService';
 /**
  * DWx App Layout Component
  * Provides a complete page layout with header, content area, and footer
@@ -45,6 +48,7 @@ const DwxAppLayout: React.FC<IJmlAppLayoutProps> = (props) => {
     userRole,
     availableRoles,
     onRoleChange,
+    policyManagerRole,
 
     // Footer
     version,
@@ -62,6 +66,34 @@ const DwxAppLayout: React.FC<IJmlAppLayoutProps> = (props) => {
     children,
 
   } = props;
+
+  // Auto-detect role if not explicitly provided
+  const [detectedRole, setDetectedRole] = React.useState<PolicyManagerRole>(PolicyManagerRole.Admin);
+
+  React.useEffect(() => {
+    if (!policyManagerRole && context) {
+      // Attempt auto-detection from SharePoint groups
+      try {
+        const sp = (context as any)._sp || null;
+        if (sp) {
+          const roleService = new RoleDetectionService(sp);
+          roleService.getCurrentUserRoles().then(userRoles => {
+            if (userRoles && userRoles.length > 0) {
+              setDetectedRole(getHighestPolicyRole(userRoles));
+            }
+          }).catch(() => {
+            // Default to Admin if detection fails (shows all nav items)
+            setDetectedRole(PolicyManagerRole.Admin);
+          });
+        }
+      } catch {
+        // Default to Admin
+        setDetectedRole(PolicyManagerRole.Admin);
+      }
+    }
+  }, [policyManagerRole, context]);
+
+  const effectiveRole = policyManagerRole || detectedRole;
 
   // Custom content wrapper style
   const contentWrapperStyle: React.CSSProperties = {
@@ -94,6 +126,7 @@ const DwxAppLayout: React.FC<IJmlAppLayoutProps> = (props) => {
           userRole={userRole}
           availableRoles={availableRoles}
           onRoleChange={onRoleChange}
+          policyRole={effectiveRole}
         />
       )}
 

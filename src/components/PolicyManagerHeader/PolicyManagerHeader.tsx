@@ -1,6 +1,7 @@
 // @ts-nocheck
 import * as React from 'react';
 import styles from './PolicyManagerHeader.module.scss';
+import { PolicyManagerRole, filterNavForRole, getHeaderVisibility } from '../../services/PolicyRoleService';
 
 export interface INavItem {
   key: string;
@@ -89,6 +90,8 @@ export interface IPolicyManagerHeaderProps {
   showPageHeader?: boolean;
   /** Login time for profile panel */
   loginTime?: string;
+  /** Policy Manager role for nav filtering */
+  policyRole?: PolicyManagerRole;
 }
 
 // Icon components for nav items
@@ -146,6 +149,20 @@ const NavIcons = {
     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
       <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  ),
+  distribution: (
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M22 2L11 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M22 2L15 22l-4-9-9-4 20-7z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  ),
+  manager: (
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M22 21v-2a4 4 0 00-3-3.87" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M16 3.13a4 4 0 010 7.75" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   ),
   dropdown: (
@@ -216,11 +233,55 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
   pageIcon,
   pageStats,
   showPageHeader = false,
-  loginTime
+  loginTime,
+  policyRole
 }) => {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [showProfileDropdown, setShowProfileDropdown] = React.useState(false);
   const [showNotificationDropdown, setShowNotificationDropdown] = React.useState(false);
+
+  // Request Policy Wizard State
+  const [showRequestWizard, setShowRequestWizard] = React.useState(false);
+  const [wizardStep, setWizardStep] = React.useState(0);
+  const [wizardSubmitted, setWizardSubmitted] = React.useState(false);
+  const [requestForm, setRequestForm] = React.useState({
+    policyTitle: '',
+    policyCategory: '',
+    policyType: 'New Policy',
+    priority: 'Medium',
+    targetAudience: '',
+    businessJustification: '',
+    regulatoryDriver: '',
+    desiredEffectiveDate: '',
+    readTimeframeDays: '7',
+    requiresAcknowledgement: true,
+    requiresQuiz: false,
+    additionalNotes: '',
+    notifyAuthors: true,
+    preferredAuthor: ''
+  });
+
+  const updateRequestForm = (field: string, value: string | boolean) => {
+    setRequestForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  const resetWizard = () => {
+    setWizardStep(0);
+    setWizardSubmitted(false);
+    setRequestForm({
+      policyTitle: '', policyCategory: '', policyType: 'New Policy', priority: 'Medium',
+      targetAudience: '', businessJustification: '', regulatoryDriver: '',
+      desiredEffectiveDate: '', readTimeframeDays: '7', requiresAcknowledgement: true,
+      requiresQuiz: false, additionalNotes: '', notifyAuthors: true, preferredAuthor: ''
+    });
+  };
+
+  const WIZARD_STEPS = [
+    { title: 'Policy Details', description: 'What policy do you need?' },
+    { title: 'Business Case', description: 'Why is this policy needed?' },
+    { title: 'Requirements', description: 'Audience, timeline & compliance' },
+    { title: 'Review & Submit', description: 'Confirm and submit your request' }
+  ];
 
   // Refs for click-outside detection
   const profileRef = React.useRef<HTMLDivElement>(null);
@@ -263,19 +324,23 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
 
   // Default nav items for Policy Manager with icons
   const defaultNavItems: INavItem[] = [
-    { key: 'create', text: 'Create Policy', icon: NavIcons.create, href: '/sites/PolicyManager/SitePages/PolicyAuthor.aspx' },
+    { key: 'create', text: 'Policy Builder', icon: NavIcons.create, href: '/sites/PolicyManager/SitePages/PolicyBuilder.aspx' },
+    { key: 'author', text: 'Policy Author', icon: NavIcons.authored, href: '/sites/PolicyManager/SitePages/PolicyAuthor.aspx' },
+    { key: 'manager', text: 'Manager View', icon: NavIcons.manager, href: '/sites/PolicyManager/SitePages/PolicyManagerView.aspx' },
     { key: 'browse', text: 'Browse Policies', icon: NavIcons.browse, href: '/sites/PolicyManager/SitePages/PolicyHub.aspx' },
     { key: 'my-policies', text: 'My Policies', icon: NavIcons.authored, href: '/sites/PolicyManager/SitePages/MyPolicies.aspx' },
-    { key: 'approvals', text: 'Approvals', icon: NavIcons.approvals, href: '/sites/PolicyManager/SitePages/PolicyAuthor.aspx?tab=approvals', badge: 2 },
-    { key: 'delegations', text: 'Delegations', icon: NavIcons.delegations, href: '/sites/PolicyManager/SitePages/PolicyAuthor.aspx?tab=delegations' },
-    { key: 'analytics', text: 'Analytics', icon: NavIcons.analytics, href: '/sites/PolicyManager/SitePages/PolicyAuthor.aspx?tab=analytics' },
-    { key: 'admin', text: 'Policy Admin', icon: NavIcons.admin, href: '/sites/PolicyManager/SitePages/PolicyAdmin.aspx' },
+    { key: 'distribution', text: 'Distribution', icon: NavIcons.distribution, href: '/sites/PolicyManager/SitePages/PolicyDistribution.aspx' },
+    { key: 'analytics', text: 'Analytics', icon: NavIcons.analytics, href: '/sites/PolicyManager/SitePages/PolicyAnalytics.aspx' },
     { key: 'details', text: 'Policy Details', icon: NavIcons.details, href: '/sites/PolicyManager/SitePages/PolicyDetails.aspx' },
     { key: 'packs', text: 'Policy Packs', icon: NavIcons.packs, href: '/sites/PolicyManager/SitePages/PolicyPacks.aspx' },
     { key: 'quiz', text: 'Quiz Builder', icon: NavIcons.quiz, href: '/sites/PolicyManager/SitePages/QuizBuilder.aspx' }
   ];
 
-  const displayNavItems = navItems.length > 0 ? navItems : defaultNavItems;
+  const allNavItems = navItems.length > 0 ? navItems : defaultNavItems;
+  const displayNavItems = policyRole ? filterNavForRole(allNavItems, policyRole) : allNavItems;
+
+  // Override header visibility based on role
+  const roleVisibility = policyRole ? getHeaderVisibility(policyRole) : null;
 
   // Get badge class based on color
   const getBadgeClass = (color?: string) => {
@@ -313,6 +378,7 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
   };
 
   return (
+    <>
     <header className={styles.headerContainer}>
       {/* Top Bar - Dark teal gradient */}
       <div className={styles.topBar}>
@@ -374,6 +440,47 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
             </svg>
           </button>
 
+          {/* Quick Action Buttons */}
+          <div className={styles.quickActionButtons}>
+            <button
+              className={`${styles.quickActionBtn} ${styles.quickActionBtnPrimary}`}
+              type="button"
+              title="New Contract"
+              aria-label="New Contract"
+              onClick={() => window.location.href = '/sites/PolicyManager/SitePages/PolicyBuilder.aspx'}
+            >
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              New Contract
+            </button>
+            <button
+              className={styles.quickActionBtn}
+              type="button"
+              title="Request Contract"
+              aria-label="Request Contract"
+              onClick={() => { resetWizard(); setShowRequestWizard(true); }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Request Contract
+            </button>
+            <button
+              className={styles.quickActionBtn}
+              type="button"
+              title="Recently Viewed"
+              aria-label="Recently Viewed"
+              onClick={() => window.location.href = '/sites/PolicyManager/SitePages/PolicyHub.aspx?view=recent'}
+            >
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
+                <path d="M12 6v6l4 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Recently Viewed
+            </button>
+          </div>
+
           {/* Search icon button */}
           <button
             className={styles.actionButton}
@@ -404,8 +511,8 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
             </button>
           )}
 
-          {/* Admin Settings (Cog) */}
-          {showSettings && (
+          {/* Admin Settings (Cog) — visible if explicitly enabled OR if role allows it */}
+          {(showSettings || (roleVisibility ? roleVisibility.showSettings : false)) && (
             <button
               className={styles.actionButton}
               onClick={() => {
@@ -633,7 +740,21 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
         )}
       </nav>
 
-      {/* Breadcrumbs - removed by design */}
+      {/* Breadcrumbs Bar */}
+      {breadcrumbs && breadcrumbs.length > 0 && (
+        <div className={styles.breadcrumbBar}>
+          {breadcrumbs.map((crumb, index) => (
+            <span key={index} className={styles.breadcrumbItem}>
+              {index > 0 && <span className={styles.breadcrumbSeparator}>/</span>}
+              {crumb.href ? (
+                <a href={crumb.href} className={styles.breadcrumbLink}>{crumb.text}</a>
+              ) : (
+                <span className={styles.breadcrumbCurrent}>{crumb.text}</span>
+              )}
+            </span>
+          ))}
+        </div>
+      )}
 
       {/* Page Header - Hidden by default */}
       {showPageHeader && pageTitle && (
@@ -661,6 +782,403 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
         </div>
       )}
     </header>
+
+    {/* ================================================================ */}
+    {/* REQUEST POLICY WIZARD — Full-screen overlay with stepped form     */}
+    {/* ================================================================ */}
+    {showRequestWizard && (
+      <div className={styles.wizardOverlay}>
+        <div className={styles.wizardModal}>
+          {/* Wizard Header */}
+          <div className={styles.wizardHeader}>
+            <div className={styles.wizardHeaderLeft}>
+              <div className={styles.wizardHeaderIcon}>
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 24, height: 24 }}>
+                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M14 2v6h6M12 18v-6M9 15h6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <div>
+                <div className={styles.wizardTitle}>Request a New Policy</div>
+                <div className={styles.wizardSubtitle}>Submit a request to the Policy Authoring team</div>
+              </div>
+            </div>
+            <button className={styles.wizardCloseBtn} onClick={() => setShowRequestWizard(false)} title="Close">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 20, height: 20 }}>
+                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          </div>
+
+          {/* Step Progress */}
+          {!wizardSubmitted && (
+            <div className={styles.wizardStepper}>
+              {WIZARD_STEPS.map((step, index) => (
+                <div key={index} className={styles.wizardStepItem}>
+                  <div className={`${styles.wizardStepCircle} ${index < wizardStep ? styles.wizardStepCompleted : ''} ${index === wizardStep ? styles.wizardStepActive : ''}`}>
+                    {index < wizardStep ? (
+                      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 14, height: 14 }}>
+                        <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    ) : (
+                      <span>{index + 1}</span>
+                    )}
+                  </div>
+                  <div className={styles.wizardStepLabel}>
+                    <div className={styles.wizardStepTitle}>{step.title}</div>
+                    <div className={styles.wizardStepDesc}>{step.description}</div>
+                  </div>
+                  {index < WIZARD_STEPS.length - 1 && <div className={`${styles.wizardStepConnector} ${index < wizardStep ? styles.wizardStepConnectorDone : ''}`} />}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Wizard Body */}
+          <div className={styles.wizardBody}>
+            {wizardSubmitted ? (
+              /* ===== SUCCESS STATE ===== */
+              <div className={styles.wizardSuccess}>
+                <div className={styles.wizardSuccessIcon}>
+                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 48, height: 48 }}>
+                    <path d="M22 11.08V12a10 10 0 11-5.93-9.14" stroke="#0d9488" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M22 4L12 14.01l-3-3" stroke="#0d9488" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+                <h2 style={{ color: '#0f172a', margin: '16px 0 8px' }}>Policy Request Submitted!</h2>
+                <p style={{ color: '#64748b', maxWidth: 400, margin: '0 auto 24px', lineHeight: 1.6 }}>
+                  Your request for "<strong>{requestForm.policyTitle}</strong>" has been submitted successfully.
+                  The Policy Authoring team will be notified and will review your request shortly.
+                </p>
+                <div style={{ background: '#f0fdfa', borderRadius: 12, padding: 20, maxWidth: 420, margin: '0 auto 24px', textAlign: 'left' as const }}>
+                  <div style={{ fontWeight: 600, marginBottom: 12, color: '#0d9488' }}>What happens next?</div>
+                  <div style={{ display: 'flex', gap: 12, marginBottom: 10 }}>
+                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#0d9488', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>1</div>
+                    <div style={{ fontSize: 13, color: '#334155' }}>A Policy Author will be assigned to your request</div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 12, marginBottom: 10 }}>
+                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#0d9488', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>2</div>
+                    <div style={{ fontSize: 13, color: '#334155' }}>They will draft the policy based on your requirements</div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 12 }}>
+                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#0d9488', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>3</div>
+                    <div style={{ fontSize: 13, color: '#334155' }}>You'll be notified when the draft is ready for review</div>
+                  </div>
+                </div>
+                <button
+                  className={styles.wizardBtnPrimary}
+                  onClick={() => { setShowRequestWizard(false); resetWizard(); }}
+                >
+                  Done
+                </button>
+              </div>
+            ) : (
+              <>
+                {/* ===== STEP 0: Policy Details ===== */}
+                {wizardStep === 0 && (
+                  <div className={styles.wizardFormGrid}>
+                    <div className={styles.wizardFieldFull}>
+                      <label className={styles.wizardLabel}>Policy Title <span className={styles.wizardRequired}>*</span></label>
+                      <input
+                        className={styles.wizardInput}
+                        type="text"
+                        placeholder="e.g. Data Retention Policy for Cloud Storage"
+                        value={requestForm.policyTitle}
+                        onChange={(e) => updateRequestForm('policyTitle', e.target.value)}
+                      />
+                    </div>
+                    <div className={styles.wizardField}>
+                      <label className={styles.wizardLabel}>Policy Category <span className={styles.wizardRequired}>*</span></label>
+                      <select
+                        className={styles.wizardSelect}
+                        value={requestForm.policyCategory}
+                        onChange={(e) => updateRequestForm('policyCategory', e.target.value)}
+                      >
+                        <option value="">Select category...</option>
+                        <option value="IT Security">IT Security</option>
+                        <option value="HR Policies">HR Policies</option>
+                        <option value="Compliance">Compliance</option>
+                        <option value="Health & Safety">Health & Safety</option>
+                        <option value="Financial">Financial</option>
+                        <option value="Legal">Legal</option>
+                        <option value="Environmental">Environmental</option>
+                        <option value="Operational">Operational</option>
+                        <option value="Data Privacy">Data Privacy</option>
+                        <option value="Quality Assurance">Quality Assurance</option>
+                      </select>
+                    </div>
+                    <div className={styles.wizardField}>
+                      <label className={styles.wizardLabel}>Request Type</label>
+                      <select
+                        className={styles.wizardSelect}
+                        value={requestForm.policyType}
+                        onChange={(e) => updateRequestForm('policyType', e.target.value)}
+                      >
+                        <option value="New Policy">New Policy</option>
+                        <option value="Policy Update">Policy Update / Revision</option>
+                        <option value="Policy Review">Policy Review</option>
+                        <option value="Policy Replacement">Policy Replacement</option>
+                      </select>
+                    </div>
+                    <div className={styles.wizardField}>
+                      <label className={styles.wizardLabel}>Priority</label>
+                      <select
+                        className={styles.wizardSelect}
+                        value={requestForm.priority}
+                        onChange={(e) => updateRequestForm('priority', e.target.value)}
+                      >
+                        <option value="Low">Low — No urgency</option>
+                        <option value="Medium">Medium — Standard timeline</option>
+                        <option value="High">High — Urgent requirement</option>
+                        <option value="Critical">Critical — Regulatory deadline</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                {/* ===== STEP 1: Business Case ===== */}
+                {wizardStep === 1 && (
+                  <div className={styles.wizardFormGrid}>
+                    <div className={styles.wizardFieldFull}>
+                      <label className={styles.wizardLabel}>Business Justification <span className={styles.wizardRequired}>*</span></label>
+                      <textarea
+                        className={styles.wizardTextarea}
+                        rows={5}
+                        placeholder="Explain why this policy is needed. Include business drivers, risks of not having this policy, and any relevant context..."
+                        value={requestForm.businessJustification}
+                        onChange={(e) => updateRequestForm('businessJustification', e.target.value)}
+                      />
+                    </div>
+                    <div className={styles.wizardFieldFull}>
+                      <label className={styles.wizardLabel}>Regulatory / Compliance Driver</label>
+                      <input
+                        className={styles.wizardInput}
+                        type="text"
+                        placeholder="e.g. GDPR Article 5, ISO 27001, Health & Safety Act"
+                        value={requestForm.regulatoryDriver}
+                        onChange={(e) => updateRequestForm('regulatoryDriver', e.target.value)}
+                      />
+                      <div className={styles.wizardHelpText}>If this policy is driven by a regulatory requirement, specify the regulation or standard</div>
+                    </div>
+                    <div className={styles.wizardFieldFull}>
+                      <label className={styles.wizardLabel}>Additional Notes</label>
+                      <textarea
+                        className={styles.wizardTextarea}
+                        rows={3}
+                        placeholder="Any additional context, reference documents, or specific requirements for the policy author..."
+                        value={requestForm.additionalNotes}
+                        onChange={(e) => updateRequestForm('additionalNotes', e.target.value)}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* ===== STEP 2: Requirements ===== */}
+                {wizardStep === 2 && (
+                  <div className={styles.wizardFormGrid}>
+                    <div className={styles.wizardFieldFull}>
+                      <label className={styles.wizardLabel}>Target Audience <span className={styles.wizardRequired}>*</span></label>
+                      <input
+                        className={styles.wizardInput}
+                        type="text"
+                        placeholder="e.g. All Employees, IT Department, Management, Contractors"
+                        value={requestForm.targetAudience}
+                        onChange={(e) => updateRequestForm('targetAudience', e.target.value)}
+                      />
+                    </div>
+                    <div className={styles.wizardField}>
+                      <label className={styles.wizardLabel}>Desired Effective Date</label>
+                      <input
+                        className={styles.wizardInput}
+                        type="date"
+                        value={requestForm.desiredEffectiveDate}
+                        onChange={(e) => updateRequestForm('desiredEffectiveDate', e.target.value)}
+                      />
+                    </div>
+                    <div className={styles.wizardField}>
+                      <label className={styles.wizardLabel}>Read Timeframe (days)</label>
+                      <select
+                        className={styles.wizardSelect}
+                        value={requestForm.readTimeframeDays}
+                        onChange={(e) => updateRequestForm('readTimeframeDays', e.target.value)}
+                      >
+                        <option value="7">7 days</option>
+                        <option value="14">14 days</option>
+                        <option value="30">30 days</option>
+                        <option value="60">60 days</option>
+                        <option value="90">90 days</option>
+                      </select>
+                    </div>
+                    <div className={styles.wizardFieldFull}>
+                      <div className={styles.wizardCheckboxGroup}>
+                        <label className={styles.wizardCheckbox}>
+                          <input
+                            type="checkbox"
+                            checked={requestForm.requiresAcknowledgement}
+                            onChange={(e) => updateRequestForm('requiresAcknowledgement', e.target.checked)}
+                          />
+                          <span>Require employee acknowledgement</span>
+                        </label>
+                        <label className={styles.wizardCheckbox}>
+                          <input
+                            type="checkbox"
+                            checked={requestForm.requiresQuiz}
+                            onChange={(e) => updateRequestForm('requiresQuiz', e.target.checked)}
+                          />
+                          <span>Require comprehension quiz</span>
+                        </label>
+                        <label className={styles.wizardCheckbox}>
+                          <input
+                            type="checkbox"
+                            checked={requestForm.notifyAuthors}
+                            onChange={(e) => updateRequestForm('notifyAuthors', e.target.checked)}
+                          />
+                          <span>Notify Policy Authors immediately</span>
+                        </label>
+                      </div>
+                    </div>
+                    <div className={styles.wizardFieldFull}>
+                      <label className={styles.wizardLabel}>Preferred Author (optional)</label>
+                      <input
+                        className={styles.wizardInput}
+                        type="text"
+                        placeholder="Leave blank to auto-assign, or enter a name"
+                        value={requestForm.preferredAuthor}
+                        onChange={(e) => updateRequestForm('preferredAuthor', e.target.value)}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* ===== STEP 3: Review & Submit ===== */}
+                {wizardStep === 3 && (
+                  <div className={styles.wizardReview}>
+                    <div className={styles.wizardReviewSection}>
+                      <div className={styles.wizardReviewTitle}>
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 16, height: 16 }}>
+                          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="#0d9488" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M14 2v6h6" stroke="#0d9488" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                        Policy Details
+                      </div>
+                      <div className={styles.wizardReviewGrid}>
+                        <div><span className={styles.wizardReviewLabel}>Title:</span> <strong>{requestForm.policyTitle}</strong></div>
+                        <div><span className={styles.wizardReviewLabel}>Category:</span> {requestForm.policyCategory}</div>
+                        <div><span className={styles.wizardReviewLabel}>Type:</span> {requestForm.policyType}</div>
+                        <div><span className={styles.wizardReviewLabel}>Priority:</span>
+                          <span style={{
+                            padding: '2px 10px', borderRadius: 10, fontSize: 12, fontWeight: 600, marginLeft: 6,
+                            background: requestForm.priority === 'Critical' ? '#fde7e9' : requestForm.priority === 'High' ? '#fff3e0' : requestForm.priority === 'Medium' ? '#fff8e1' : '#f1f5f9',
+                            color: requestForm.priority === 'Critical' ? '#d13438' : requestForm.priority === 'High' ? '#f97316' : requestForm.priority === 'Medium' ? '#f59e0b' : '#64748b'
+                          }}>
+                            {requestForm.priority}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className={styles.wizardReviewSection}>
+                      <div className={styles.wizardReviewTitle}>
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 16, height: 16 }}>
+                          <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke="#0d9488" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                        Business Case
+                      </div>
+                      <div style={{ fontSize: 13, lineHeight: 1.6, color: '#334155' }}>{requestForm.businessJustification}</div>
+                      {requestForm.regulatoryDriver && (
+                        <div style={{ marginTop: 8, fontSize: 12, color: '#ef4444' }}>
+                          <strong>Regulatory Driver:</strong> {requestForm.regulatoryDriver}
+                        </div>
+                      )}
+                      {requestForm.additionalNotes && (
+                        <div style={{ marginTop: 8, fontSize: 12, color: '#64748b', fontStyle: 'italic' }}>
+                          <strong>Notes:</strong> {requestForm.additionalNotes}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className={styles.wizardReviewSection}>
+                      <div className={styles.wizardReviewTitle}>
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 16, height: 16 }}>
+                          <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="#0d9488" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          <circle cx="9" cy="7" r="4" stroke="#0d9488" strokeWidth="2"/>
+                        </svg>
+                        Requirements
+                      </div>
+                      <div className={styles.wizardReviewGrid}>
+                        <div><span className={styles.wizardReviewLabel}>Audience:</span> {requestForm.targetAudience}</div>
+                        <div><span className={styles.wizardReviewLabel}>Effective Date:</span> {requestForm.desiredEffectiveDate ? new Date(requestForm.desiredEffectiveDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Not specified'}</div>
+                        <div><span className={styles.wizardReviewLabel}>Read Timeframe:</span> {requestForm.readTimeframeDays} days</div>
+                        <div><span className={styles.wizardReviewLabel}>Acknowledgement:</span> {requestForm.requiresAcknowledgement ? 'Yes' : 'No'}</div>
+                        <div><span className={styles.wizardReviewLabel}>Quiz:</span> {requestForm.requiresQuiz ? 'Yes' : 'No'}</div>
+                        {requestForm.preferredAuthor && <div><span className={styles.wizardReviewLabel}>Preferred Author:</span> {requestForm.preferredAuthor}</div>}
+                      </div>
+                    </div>
+
+                    <div style={{ background: '#fffbeb', borderRadius: 8, padding: 12, border: '1px solid #fde68a', display: 'flex', gap: 10, alignItems: 'flex-start', marginTop: 8 }}>
+                      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 20, height: 20, flexShrink: 0, marginTop: 1 }}>
+                        <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      <div style={{ fontSize: 12, color: '#92400e', lineHeight: 1.5 }}>
+                        <strong>Workflow notification:</strong> Upon submission, the Policy Authoring team will receive an email notification with your request details. You will be notified when an author is assigned and when the draft is ready for review.
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Wizard Footer */}
+          {!wizardSubmitted && (
+            <div className={styles.wizardFooter}>
+              <div>
+                {wizardStep > 0 && (
+                  <button className={styles.wizardBtnSecondary} onClick={() => setWizardStep(wizardStep - 1)}>
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 14, height: 14 }}>
+                      <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    Back
+                  </button>
+                )}
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button className={styles.wizardBtnOutline} onClick={() => setShowRequestWizard(false)}>
+                  Cancel
+                </button>
+                {wizardStep < WIZARD_STEPS.length - 1 ? (
+                  <button
+                    className={styles.wizardBtnPrimary}
+                    onClick={() => setWizardStep(wizardStep + 1)}
+                    disabled={
+                      (wizardStep === 0 && (!requestForm.policyTitle || !requestForm.policyCategory)) ||
+                      (wizardStep === 1 && !requestForm.businessJustification) ||
+                      (wizardStep === 2 && !requestForm.targetAudience)
+                    }
+                  >
+                    Next
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 14, height: 14 }}>
+                      <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
+                ) : (
+                  <button
+                    className={styles.wizardBtnSubmit}
+                    onClick={() => setWizardSubmitted(true)}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 14, height: 14 }}>
+                      <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    Submit Request
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    )}
+    </>
   );
 };
 

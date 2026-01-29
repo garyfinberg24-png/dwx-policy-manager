@@ -2,6 +2,7 @@
 import { WebPartContext } from '@microsoft/sp-webpart-base';
 import { IStatCard, IBreadcrumbItem, INavItem, IQuickLink } from '../JmlAppHeader/IJmlAppHeaderProps';
 import { UserRole } from '../../services/RoleDetectionService';
+import { PolicyManagerRole } from '../../services/PolicyRoleService';
 import { IFooterLinkGroup } from '../JmlAppFooter/IJmlAppFooterProps';
 
 /**
@@ -55,6 +56,8 @@ export interface IJmlAppLayoutProps {
   availableRoles?: UserRole[];
   /** Callback when role is changed via header badge dropdown */
   onRoleChange?: (role: UserRole) => void;
+  /** Policy Manager role for navigation and visibility filtering */
+  policyManagerRole?: PolicyManagerRole;
 
   // Footer Configuration
   /** Application version string */

@@ -167,6 +167,63 @@ $pm-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-se
   gap: 6px;
 }
 
+// Quick action buttons (New Contract, Request Contract, Recently Viewed)
+.quickActionButtons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: 8px;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+}
+
+.quickActionBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  color: $pm-white;
+  font-family: $pm-font-family;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  backdrop-filter: blur(4px);
+  line-height: 1;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.22);
+    border-color: rgba(255, 255, 255, 0.55);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
+}
+
+.quickActionBtnPrimary {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.32);
+    border-color: rgba(255, 255, 255, 0.7);
+  }
+}
+
 .actionButton {
   width: 36px;
   height: 36px;
@@ -912,4 +969,483 @@ $pm-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-se
     color: #d13438;
     flex-shrink: 0;
   }
+}
+
+// ============================================
+// BREADCRUMB BAR
+// ============================================
+.breadcrumbBar {
+  display: flex;
+  align-items: center;
+  padding: 8px 40px;
+  background: #f8fffe;
+  border-bottom: 1px solid #e6f7f5;
+  font-family: $pm-font-family;
+  font-size: 13px;
+  min-height: 36px;
+}
+
+.breadcrumbItem {
+  display: inline-flex;
+  align-items: center;
+}
+
+.breadcrumbSeparator {
+  margin: 0 8px;
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.breadcrumbLink {
+  color: #0d9488;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.15s;
+
+  &:hover {
+    color: #0f766e;
+    text-decoration: underline;
+  }
+}
+
+.breadcrumbCurrent {
+  color: #334155;
+  font-weight: 600;
+}
+
+// ============================================================================
+// REQUEST POLICY WIZARD — Full-screen overlay with stepped form
+// ============================================================================
+
+.wizardOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: wizardFadeIn 0.2s ease;
+}
+
+@keyframes wizardFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes wizardSlideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.wizardModal {
+  background: $pm-white;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 720px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
+  animation: wizardSlideUp 0.3s ease;
+  overflow: hidden;
+}
+
+.wizardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  background: $pm-gradient-header;
+  color: $pm-white;
+}
+
+.wizardHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.wizardHeaderIcon {
+  width: 44px;
+  height: 44px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+}
+
+.wizardTitle {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.wizardSubtitle {
+  font-size: 12px;
+  opacity: 0.8;
+  margin-top: 2px;
+}
+
+.wizardCloseBtn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 8px;
+  color: $pm-white;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.25);
+  }
+}
+
+// Step Progress Bar
+.wizardStepper {
+  display: flex;
+  align-items: flex-start;
+  padding: 20px 24px;
+  background: #f8fffe;
+  border-bottom: 1px solid #e2e8f0;
+  gap: 0;
+}
+
+.wizardStepItem {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.wizardStepCircle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  background: #e2e8f0;
+  color: #94a3b8;
+  flex-shrink: 0;
+  transition: all 0.2s;
+
+  &.wizardStepActive {
+    background: $pm-primary-teal;
+    color: $pm-white;
+    box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.15);
+  }
+
+  &.wizardStepCompleted {
+    background: $pm-primary-teal;
+    color: $pm-white;
+  }
+}
+
+.wizardStepLabel {
+  margin-left: 10px;
+  margin-right: 12px;
+  flex-shrink: 0;
+
+  @media (max-width: 600px) {
+    display: none;
+  }
+}
+
+.wizardStepTitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.wizardStepDesc {
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+.wizardStepConnector {
+  flex: 1;
+  height: 2px;
+  background: #e2e8f0;
+  margin: 0 4px;
+  border-radius: 2px;
+  min-width: 16px;
+
+  &.wizardStepConnectorDone {
+    background: $pm-primary-teal;
+  }
+}
+
+// Wizard Body
+.wizardBody {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.wizardFormGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.wizardField {
+  display: flex;
+  flex-direction: column;
+}
+
+.wizardFieldFull {
+  display: flex;
+  flex-direction: column;
+  grid-column: 1 / -1;
+}
+
+.wizardLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 6px;
+  font-family: $pm-font-family;
+}
+
+.wizardRequired {
+  color: #ef4444;
+}
+
+.wizardInput {
+  padding: 10px 14px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: $pm-font-family;
+  color: #0f172a;
+  transition: border-color 0.15s;
+  background: $pm-white;
+  outline: none;
+
+  &:focus {
+    border-color: $pm-primary-teal;
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);
+  }
+
+  &::placeholder {
+    color: #94a3b8;
+  }
+}
+
+.wizardSelect {
+  padding: 10px 14px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: $pm-font-family;
+  color: #0f172a;
+  transition: border-color 0.15s;
+  background: $pm-white;
+  outline: none;
+  cursor: pointer;
+  appearance: auto;
+
+  &:focus {
+    border-color: $pm-primary-teal;
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);
+  }
+}
+
+.wizardTextarea {
+  padding: 10px 14px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: $pm-font-family;
+  color: #0f172a;
+  transition: border-color 0.15s;
+  resize: vertical;
+  background: $pm-white;
+  outline: none;
+  line-height: 1.5;
+
+  &:focus {
+    border-color: $pm-primary-teal;
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);
+  }
+
+  &::placeholder {
+    color: #94a3b8;
+  }
+}
+
+.wizardHelpText {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 4px;
+}
+
+.wizardCheckboxGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: #f8fffe;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.wizardCheckbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #334155;
+
+  input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: $pm-primary-teal;
+    cursor: pointer;
+  }
+}
+
+// Review Step
+.wizardReview {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.wizardReviewSection {
+  background: #f8f9fa;
+  border-radius: 10px;
+  padding: 16px 18px;
+  border: 1px solid #e2e8f0;
+}
+
+.wizardReviewTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0d9488;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.wizardReviewGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  font-size: 13px;
+  color: #334155;
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.wizardReviewLabel {
+  color: #64748b;
+  font-size: 12px;
+}
+
+// Wizard Footer
+.wizardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-top: 1px solid #e2e8f0;
+  background: #fafafa;
+}
+
+.wizardBtnPrimary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 22px;
+  background: $pm-primary-teal;
+  color: $pm-white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: $pm-font-family;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover {
+    background: $pm-dark-teal;
+  }
+
+  &:disabled {
+    background: #cbd5e1;
+    cursor: not-allowed;
+  }
+}
+
+.wizardBtnSubmit {
+  @extend .wizardBtnPrimary;
+  background: linear-gradient(135deg, $pm-primary-teal, $pm-light-teal);
+
+  &:hover {
+    background: linear-gradient(135deg, $pm-dark-teal, $pm-primary-teal);
+  }
+}
+
+.wizardBtnSecondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  background: transparent;
+  color: #64748b;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: $pm-font-family;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    border-color: #cbd5e1;
+    color: #334155;
+  }
+}
+
+.wizardBtnOutline {
+  @extend .wizardBtnSecondary;
+}
+
+// Success State
+.wizardSuccess {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.wizardSuccessIcon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: #f0fdfa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
 }

@@ -48,7 +48,9 @@
       "Bash(powershell:*)",
       "Bash(if exist sharepointsolution*.sppkg del /q sharepointsolution*.sppkg)",
       "Bash(if exist dist rmdir /s /q dist)",
-      "Bash(if exist release rmdir /s /q release)"
+      "Bash(if exist release rmdir /s /q release)",
+      "Bash(git push:*)",
+      "Bash(cmd /c:*)"
     ]
   }
 }

@@ -73,6 +73,38 @@
           "manifest": "./src/webparts/jmlPolicyHelp/JmlPolicyHelpWebPart.manifest.json"
         }
       ]
+    },
+    "jml-policy-distribution-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/jmlPolicyDistribution/JmlPolicyDistributionWebPart.js",
+          "manifest": "./src/webparts/jmlPolicyDistribution/JmlPolicyDistributionWebPart.manifest.json"
+        }
+      ]
+    },
+    "jml-policy-analytics-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/jmlPolicyAnalytics/JmlPolicyAnalyticsWebPart.js",
+          "manifest": "./src/webparts/jmlPolicyAnalytics/JmlPolicyAnalyticsWebPart.manifest.json"
+        }
+      ]
+    },
+    "dwx-policy-author-view-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/dwxPolicyAuthorView/DwxPolicyAuthorViewWebPart.js",
+          "manifest": "./src/webparts/dwxPolicyAuthorView/DwxPolicyAuthorViewWebPart.manifest.json"
+        }
+      ]
+    },
+    "dwx-policy-manager-view-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/dwxPolicyManagerView/DwxPolicyManagerViewWebPart.js",
+          "manifest": "./src/webparts/dwxPolicyManagerView/DwxPolicyManagerViewWebPart.manifest.json"
+        }
+      ]
     }
   },
   "externals": {},
@@ -86,6 +118,10 @@
     "DwxQuizBuilderWebPartStrings": "lib/webparts/dwxQuizBuilder/loc/{locale}.js",
     "JmlPolicySearchWebPartStrings": "lib/webparts/jmlPolicySearch/loc/{locale}.js",
     "JmlPolicyHelpWebPartStrings": "lib/webparts/jmlPolicyHelp/loc/{locale}.js",
+    "JmlPolicyDistributionWebPartStrings": "lib/webparts/jmlPolicyDistribution/loc/{locale}.js",
+    "JmlPolicyAnalyticsWebPartStrings": "lib/webparts/jmlPolicyAnalytics/loc/{locale}.js",
+    "DwxPolicyAuthorViewWebPartStrings": "lib/webparts/dwxPolicyAuthorView/loc/{locale}.js",
+    "DwxPolicyManagerViewWebPartStrings": "lib/webparts/dwxPolicyManagerView/loc/{locale}.js",
     "ControlStrings": "node_modules/@pnp/spfx-controls-react/lib/loc/{locale}.js"
   }
 }

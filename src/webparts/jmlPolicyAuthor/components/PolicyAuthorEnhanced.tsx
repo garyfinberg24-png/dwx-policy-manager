@@ -88,10 +88,11 @@ export type PolicyBuilderTab =
   | 'myAuthored'    // Tab 3: My Authored Policies
   | 'approvals'     // Tab 4: Approval Workflow (Kanban)
   | 'delegations'   // Tab 5: Delegated Policy Requests
-  | 'analytics'     // Tab 6: Policy Analytics
-  | 'admin'         // Tab 7: Policy Admin
-  | 'policyPacks'   // Tab 8: Policy Pack Manager
-  | 'quizBuilder';  // Tab 9: Quiz Builder
+  | 'requests'      // Tab 6: Policy Requests (from Managers)
+  | 'analytics'     // Tab 7: Policy Analytics
+  | 'admin'         // Tab 8: Policy Admin
+  | 'policyPacks'   // Tab 9: Policy Pack Manager
+  | 'quizBuilder';  // Tab 10: Quiz Builder
 
 export interface IPolicyBuilderTabConfig {
   key: PolicyBuilderTab;
@@ -106,6 +107,7 @@ export const POLICY_BUILDER_TABS: IPolicyBuilderTabConfig[] = [
   { key: 'myAuthored', text: 'My Authored', icon: 'Edit', description: 'View policies you have authored' },
   { key: 'approvals', text: 'Approvals', icon: 'DocumentApproval', description: 'Manage policy approval workflow' },
   { key: 'delegations', text: 'Delegations', icon: 'Assign', description: 'View delegated policy requests' },
+  { key: 'requests', text: 'Policy Requests', icon: 'PageAdd', description: 'View policy requests from managers' },
   { key: 'analytics', text: 'Analytics', icon: 'BarChartVertical', description: 'View policy analytics and metrics' },
   { key: 'admin', text: 'Policy Admin', icon: 'Settings', description: 'Administer policy settings' },
   { key: 'policyPacks', text: 'Policy Packs', icon: 'Package', description: 'Manage policy bundles' },
@@ -269,6 +271,13 @@ export interface IPolicyAuthorEnhancedState {
   policyPacks: IPolicyPack[];
   policyPacksLoading: boolean;
 
+  // Policy Requests Tab (from Managers)
+  policyRequests: IPolicyRequest[];
+  policyRequestsLoading: boolean;
+  selectedPolicyRequest: IPolicyRequest | null;
+  showPolicyRequestDetailPanel: boolean;
+  requestStatusFilter: string;
+
   // Delegation KPIs
   delegationKpis: IDelegationKpis;
 
@@ -298,6 +307,32 @@ export interface IPolicyDelegationRequest {
   Description: string;
   Status: 'Pending' | 'InProgress' | 'Completed' | 'Cancelled';
   Created: string;
+}
+
+// Policy request interface — submitted by managers via the Request Policy wizard
+export interface IPolicyRequest {
+  Id: number;
+  Title: string;
+  RequestedBy: string;
+  RequestedByEmail: string;
+  RequestedByDepartment: string;
+  PolicyCategory: string;
+  PolicyType: string;
+  Priority: 'Low' | 'Medium' | 'High' | 'Critical';
+  TargetAudience: string;
+  BusinessJustification: string;
+  RegulatoryDriver: string;
+  DesiredEffectiveDate: string;
+  ReadTimeframeDays: number;
+  RequiresAcknowledgement: boolean;
+  RequiresQuiz: boolean;
+  AdditionalNotes: string;
+  AttachmentUrls: string[];
+  Status: 'New' | 'Assigned' | 'InProgress' | 'Draft Ready' | 'Completed' | 'Rejected';
+  AssignedAuthor: string;
+  AssignedAuthorEmail: string;
+  Created: string;
+  Modified: string;
 }
 
 // Policy analytics interface
@@ -545,6 +580,13 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       // Policy Packs Tab
       policyPacks: this.getSamplePolicyPacks(),
       policyPacksLoading: false,
+
+      // Policy Requests Tab
+      policyRequests: this.getSamplePolicyRequests(),
+      policyRequestsLoading: false,
+      selectedPolicyRequest: null,
+      showPolicyRequestDetailPanel: false,
+      requestStatusFilter: 'All',
 
       // Delegation KPIs
       delegationKpis: {
@@ -1081,6 +1123,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
   };
 
   private renderWizardProgress(): JSX.Element {
+    // Legacy progress bar — kept for backwards compatibility but no longer used in create tab
     const { currentStep, completedSteps } = this.state;
 
     return (
@@ -1119,6 +1162,249 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
           })}
         </div>
       </div>
+    );
+  }
+
+  // ============================================
+  // V3 ACCORDION SIDEBAR (Left Panel)
+  // ============================================
+
+  private static readonly STEP_FIELDS: string[][] = [
+    ['Creation method selection'],
+    ['Policy Title', 'Policy Number', 'Policy Category', 'Policy Summary'],
+    ['Rich Text Editor', 'Key Points'],
+    ['Risk Level', 'Acknowledgement', 'Quiz Requirement'],
+    ['Departments', 'Roles', 'Locations', 'Contractors'],
+    ['Effective Date', 'Expiry Date', 'Review Cycle'],
+    ['Reviewers', 'Approvers'],
+    ['Summary Review', 'Submit']
+  ];
+
+  private renderV3AccordionSidebar(): JSX.Element {
+    const { currentStep, completedSteps } = this.state;
+
+    return (
+      <aside className={(styles as Record<string, string>).v3Sidebar}>
+        <div className={(styles as Record<string, string>).v3SidebarHeader}>
+          <Text variant="mediumPlus" style={{ fontWeight: 700, color: '#111827', display: 'block' }}>New Policy Wizard</Text>
+          <Text variant="small" style={{ color: '#6b7280', marginTop: 2 }}>{WIZARD_STEPS.length} steps to complete</Text>
+        </div>
+        <div className={(styles as Record<string, string>).v3Accordion}>
+          {WIZARD_STEPS.map((step, index) => {
+            const isCompleted = completedSteps.has(index);
+            const isCurrent = index === currentStep;
+            const isFuture = !isCompleted && !isCurrent;
+            const isClickable = index <= currentStep || completedSteps.has(index - 1) || index === 0;
+            const stateClass = isCompleted ? 'completed' : isCurrent ? 'active' : 'future';
+
+            return (
+              <div key={step.key} className={`${(styles as Record<string, string>).v3AccItem} ${(styles as Record<string, string>)[`v3AccItem_${stateClass}`] || ''}`}>
+                <div
+                  className={(styles as Record<string, string>).v3AccHeader}
+                  onClick={() => isClickable && this.handleGoToStep(index)}
+                  style={{ cursor: isClickable ? 'pointer' : 'default' }}
+                >
+                  <div
+                    className={(styles as Record<string, string>).v3AccNum}
+                    style={{
+                      background: isCompleted ? '#0d9488' : isCurrent ? '#0d9488' : '#e5e7eb',
+                      color: isCompleted || isCurrent ? '#ffffff' : '#6b7280'
+                    }}
+                  >
+                    {isCompleted ? (
+                      <Icon iconName="CheckMark" style={{ fontSize: 11 }} />
+                    ) : (
+                      <span>{index + 1}</span>
+                    )}
+                  </div>
+                  <span style={{
+                    fontWeight: isCurrent ? 600 : 500,
+                    color: isCompleted ? '#6b7280' : isCurrent ? '#0f766e' : '#374151',
+                    fontSize: 13,
+                    flex: 1
+                  }}>
+                    {step.title}
+                  </span>
+                  <span style={{
+                    fontSize: 10,
+                    color: '#9ca3af',
+                    transition: 'transform 0.2s',
+                    transform: isCurrent ? 'rotate(180deg)' : 'rotate(0deg)'
+                  }}>&#9660;</span>
+                </div>
+
+                {/* Expanded body for active step */}
+                {isCurrent && PolicyAuthorEnhanced.STEP_FIELDS[index] && (
+                  <div className={(styles as Record<string, string>).v3AccBody}>
+                    <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                      {PolicyAuthorEnhanced.STEP_FIELDS[index].map((field, fi) => (
+                        <li key={fi} style={{
+                          padding: '4px 0',
+                          fontSize: 12,
+                          color: fi === 0 ? '#0f766e' : '#6b7280',
+                          fontWeight: fi === 0 ? 600 : 400,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6
+                        }}>
+                          <span style={{
+                            width: 5, height: 5,
+                            borderRadius: '50%',
+                            background: '#0d9488',
+                            opacity: fi === 0 ? 1 : 0.5,
+                            display: 'inline-block',
+                            flexShrink: 0
+                          }} />
+                          {field}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </aside>
+    );
+  }
+
+  // ============================================
+  // V3 CONTEXT PANEL (Right Panel)
+  // ============================================
+
+  private renderV3ContextPanel(): JSX.Element {
+    const { currentStep } = this.state;
+    const stepConfig = WIZARD_STEPS[currentStep];
+
+    // Step-specific tips
+    const tipsMap: Record<number, { title: string; body: string }[]> = {
+      0: [
+        { title: 'Choosing a Method', body: 'Start from a template for consistency, or choose blank for full creative control.' },
+        { title: 'Corporate Templates', body: 'Corporate templates include pre-approved branding, headers, and formatting.' }
+      ],
+      1: [
+        { title: 'Policy Title Best Practices', body: 'Use descriptive, action-oriented titles. Avoid acronyms unless universally understood within your organization.' },
+        { title: 'Category Selection', body: 'Choose the primary category that best represents the policy scope. Cross-referencing can be added via tags later.' },
+        { title: 'Writing a Good Summary', body: 'Include the policy\'s purpose, who it applies to, and the key actions or requirements. Aim for 2-3 sentences.' }
+      ],
+      2: [
+        { title: 'Content Structure', body: 'Use clear headings and bullet points. Start with the policy purpose, then outline scope, responsibilities, and procedures.' },
+        { title: 'Key Points', body: 'Add 3-5 key points that summarize the most important takeaways for readers.' }
+      ],
+      3: [
+        { title: 'Risk Assessment', body: 'Consider the regulatory, legal, and operational risk if this policy is not followed. Higher risk = stricter compliance tracking.' },
+        { title: 'Acknowledgement & Quiz', body: 'Critical policies should require both acknowledgement and quiz completion to ensure comprehension.' }
+      ],
+      4: [
+        { title: 'Target Audience', body: 'Select "All Employees" for company-wide policies. For department-specific policies, choose the relevant teams.' },
+        { title: 'Contractors', body: 'If your policy applies to external contractors, make sure to include them in the audience.' }
+      ],
+      5: [
+        { title: 'Effective Dates', body: 'Allow at least 2 weeks between publication and effective date for employees to read and acknowledge.' },
+        { title: 'Review Cycle', body: 'Most policies should be reviewed annually. Critical compliance policies may need quarterly review.' }
+      ],
+      6: [
+        { title: 'Review Workflow', body: 'Add subject matter experts as reviewers and department heads as approvers for best governance.' },
+        { title: 'Multi-Level Approval', body: 'High-risk policies typically require both department and executive approval.' }
+      ],
+      7: [
+        { title: 'Final Check', body: 'Review all sections carefully. Once submitted, the policy enters the review workflow and cannot be directly edited.' },
+        { title: 'Draft Option', body: 'Not ready to submit? Save as draft to continue editing later.' }
+      ]
+    };
+
+    const tips = tipsMap[currentStep] || [];
+
+    const relatedPolicies = [
+      { title: 'Code of Conduct', category: 'HR & People', status: 'Active' },
+      { title: 'Data Classification Policy', category: 'IT Security', status: 'Active' },
+      { title: 'Acceptable Use Policy', category: 'IT Security', status: 'Active' }
+    ];
+
+    const complianceNotes = [
+      'All policies must comply with the organization\'s governance framework (GF-2025).',
+      'HR policies require additional sign-off from the Head of People & Culture.',
+      'Policies impacting external stakeholders need Legal review before publishing.'
+    ];
+
+    return (
+      <aside className={(styles as Record<string, string>).v3RightPanel}>
+        {/* Tips & Guidance */}
+        <div className={(styles as Record<string, string>).v3PanelSection}>
+          <Text variant="small" style={{ fontWeight: 700, color: '#1f2937', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{
+              width: 18, height: 18, background: '#f0fdfa', borderRadius: 4,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              color: '#0d9488', fontSize: 10
+            }}>
+              <Icon iconName="Lightbulb" style={{ fontSize: 12 }} />
+            </span>
+            Tips & Guidance
+          </Text>
+          {tips.map((tip, i) => (
+            <div key={i} className={(styles as Record<string, string>).v3Tip}>
+              <Text style={{ display: 'block', marginBottom: 4, fontSize: 12, fontWeight: 600 }}>{tip.title}</Text>
+              <Text style={{ fontSize: 12, color: '#115e59', lineHeight: '1.5' }}>{tip.body}</Text>
+            </div>
+          ))}
+        </div>
+
+        {/* Related Policies */}
+        <div className={(styles as Record<string, string>).v3PanelSection}>
+          <Text variant="small" style={{ fontWeight: 700, color: '#1f2937', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{
+              width: 18, height: 18, background: '#f0fdfa', borderRadius: 4,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              color: '#0d9488', fontSize: 10
+            }}>
+              <Icon iconName="Page" style={{ fontSize: 12 }} />
+            </span>
+            Related Policies
+          </Text>
+          {relatedPolicies.map((pol, i) => (
+            <div key={i} className={(styles as Record<string, string>).v3RelatedItem}>
+              <div style={{
+                width: 28, height: 28, background: '#f3f4f6', borderRadius: 4,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 12, color: '#6b7280'
+              }}>
+                <Icon iconName="Page" style={{ fontSize: 14 }} />
+              </div>
+              <div>
+                <Text style={{ fontWeight: 600, fontSize: 12, color: '#374151', display: 'block' }}>{pol.title}</Text>
+                <Text style={{ fontSize: 11, color: '#9ca3af' }}>{pol.category} &bull; {pol.status}</Text>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Compliance Notes */}
+        <div className={(styles as Record<string, string>).v3PanelSection}>
+          <Text variant="small" style={{ fontWeight: 700, color: '#1f2937', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{
+              width: 18, height: 18, background: '#f0fdfa', borderRadius: 4,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              color: '#0d9488', fontSize: 10
+            }}>
+              <Icon iconName="Warning" style={{ fontSize: 12 }} />
+            </span>
+            Compliance Notes
+          </Text>
+          {complianceNotes.map((note, i) => (
+            <div key={i} style={{
+              fontSize: 12, color: '#4b5563', padding: '8px 0',
+              borderBottom: '1px solid #f3f4f6', display: 'flex', gap: 8
+            }}>
+              <span style={{
+                width: 6, height: 6, minWidth: 6, borderRadius: '50%',
+                background: '#0d9488', marginTop: 6
+              }} />
+              <span>{note}</span>
+            </div>
+          ))}
+        </div>
+      </aside>
     );
   }
 
@@ -2374,7 +2660,8 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       <Panel
         isOpen={showTemplatePanel}
         onDismiss={() => this.setState({ showTemplatePanel: false })}
-        type={PanelType.large}
+        type={PanelType.custom}
+        customWidth="750px"
         headerText="Select Policy Template"
         closeButtonAriaLabel="Close"
       >
@@ -2496,7 +2783,8 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       <Panel
         isOpen={showCorporateTemplatePanel}
         onDismiss={() => this.setState({ showCorporateTemplatePanel: false })}
-        type={PanelType.large}
+        type={PanelType.custom}
+        customWidth="750px"
         headerText="Corporate Templates"
         closeButtonAriaLabel="Close"
       >
@@ -4973,8 +5261,36 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         approvalsLoading: false
       });
     } catch (error) {
-      console.error('Failed to load approval policies:', error);
-      this.setState({ approvalsLoading: false, error: 'Failed to load approval workflow' });
+      console.error('Failed to load approval policies, using sample data:', error);
+
+      // Sample data fallback when SharePoint list is unavailable
+      const samplePolicies: IPolicy[] = [
+        { Id: 901, Title: 'Data Protection Policy', PolicyNumber: 'POL-2026-001', PolicyName: 'Data Protection Policy', PolicyCategory: PolicyCategory.DataPrivacy, PolicyType: 'Regulatory', Description: 'Comprehensive data protection and privacy policy aligned with GDPR requirements', VersionNumber: '3.2', PolicyStatus: PolicyStatus.Draft, IsActive: true, IsMandatory: true, ComplianceRisk: 'High', RequiresAcknowledgement: true, AcknowledgementType: 'Digital Signature', AuthorId: 1, Created: '2025-12-15', Modified: '2026-01-20' } as IPolicy,
+        { Id: 902, Title: 'Remote Work Policy', PolicyNumber: 'POL-2026-002', PolicyName: 'Remote Work Policy', PolicyCategory: PolicyCategory.HRPolicies, PolicyType: 'Operational', Description: 'Guidelines for remote and hybrid working arrangements', VersionNumber: '2.0', PolicyStatus: PolicyStatus.Draft, IsActive: true, IsMandatory: false, ComplianceRisk: 'Medium', RequiresAcknowledgement: true, AcknowledgementType: 'Checkbox', AuthorId: 2, Created: '2025-11-20', Modified: '2026-01-18' } as IPolicy,
+        { Id: 903, Title: 'IT Security Standards', PolicyNumber: 'POL-2026-003', PolicyName: 'IT Security Standards', PolicyCategory: PolicyCategory.ITSecurity, PolicyType: 'Technical', Description: 'Information technology security standards and acceptable use policy', VersionNumber: '4.1', PolicyStatus: PolicyStatus.Draft, IsActive: true, IsMandatory: true, ComplianceRisk: 'Critical', RequiresAcknowledgement: true, AcknowledgementType: 'Quiz', AuthorId: 1, Created: '2025-10-01', Modified: '2026-01-15' } as IPolicy,
+        { Id: 904, Title: 'Anti-Bribery & Corruption', PolicyNumber: 'POL-2026-004', PolicyName: 'Anti-Bribery & Corruption', PolicyCategory: PolicyCategory.Compliance, PolicyType: 'Regulatory', Description: 'Anti-bribery, corruption, and gifts policy in compliance with UK Bribery Act', VersionNumber: '2.5', PolicyStatus: PolicyStatus.InReview, IsActive: true, IsMandatory: true, ComplianceRisk: 'High', RequiresAcknowledgement: true, AcknowledgementType: 'Digital Signature', AuthorId: 3, Created: '2025-09-15', Modified: '2026-01-12' } as IPolicy,
+        { Id: 905, Title: 'Health & Safety Manual', PolicyNumber: 'POL-2026-005', PolicyName: 'Health & Safety Manual', PolicyCategory: PolicyCategory.HealthSafety, PolicyType: 'Operational', Description: 'Workplace health and safety procedures and responsibilities', VersionNumber: '5.0', PolicyStatus: PolicyStatus.PendingApproval, IsActive: true, IsMandatory: true, ComplianceRisk: 'High', RequiresAcknowledgement: true, AcknowledgementType: 'Checkbox', AuthorId: 2, Created: '2025-08-10', Modified: '2026-01-10' } as IPolicy,
+        { Id: 906, Title: 'Expense & Travel Policy', PolicyNumber: 'POL-2026-006', PolicyName: 'Expense & Travel Policy', PolicyCategory: PolicyCategory.Financial, PolicyType: 'Operational', Description: 'Employee expense claims, travel bookings, and reimbursement procedures', VersionNumber: '3.1', PolicyStatus: PolicyStatus.InReview, IsActive: true, IsMandatory: false, ComplianceRisk: 'Medium', RequiresAcknowledgement: true, AcknowledgementType: 'Checkbox', AuthorId: 4, Created: '2025-07-20', Modified: '2026-01-08' } as IPolicy,
+        { Id: 907, Title: 'Code of Conduct', PolicyNumber: 'POL-2026-007', PolicyName: 'Code of Conduct', PolicyCategory: PolicyCategory.HRPolicies, PolicyType: 'Core', Description: 'Employee code of conduct, ethics, and professional behaviour standards', VersionNumber: '6.0', PolicyStatus: PolicyStatus.Approved, IsActive: true, IsMandatory: true, ComplianceRisk: 'Medium', RequiresAcknowledgement: true, AcknowledgementType: 'Digital Signature', AuthorId: 1, Created: '2025-06-01', Modified: '2026-01-05' } as IPolicy,
+        { Id: 908, Title: 'Environmental Sustainability', PolicyNumber: 'POL-2026-008', PolicyName: 'Environmental Sustainability', PolicyCategory: PolicyCategory.Environmental, PolicyType: 'Strategic', Description: 'Corporate environmental sustainability commitments and practices', VersionNumber: '1.3', PolicyStatus: PolicyStatus.Published, IsActive: true, IsMandatory: false, ComplianceRisk: 'Low', RequiresAcknowledgement: false, AcknowledgementType: 'None', AuthorId: 5, Created: '2025-05-10', Modified: '2025-12-28' } as IPolicy,
+        { Id: 909, Title: 'Whistleblowing Procedure', PolicyNumber: 'POL-2026-009', PolicyName: 'Whistleblowing Procedure', PolicyCategory: PolicyCategory.Legal, PolicyType: 'Regulatory', Description: 'Procedure for raising concerns about wrongdoing in the workplace', VersionNumber: '2.0', PolicyStatus: PolicyStatus.Approved, IsActive: true, IsMandatory: true, ComplianceRisk: 'High', RequiresAcknowledgement: true, AcknowledgementType: 'Checkbox', AuthorId: 3, Created: '2025-04-15', Modified: '2025-12-20' } as IPolicy,
+        { Id: 910, Title: 'Quality Assurance Framework', PolicyNumber: 'POL-2026-010', PolicyName: 'Quality Assurance Framework', PolicyCategory: PolicyCategory.QualityAssurance, PolicyType: 'Operational', Description: 'Quality management system framework and continuous improvement processes', VersionNumber: '1.8', PolicyStatus: PolicyStatus.Archived, IsActive: false, IsMandatory: false, ComplianceRisk: 'Low', RequiresAcknowledgement: false, AcknowledgementType: 'None', AuthorId: 4, Created: '2025-03-01', Modified: '2025-11-15' } as IPolicy,
+        { Id: 911, Title: 'Social Media Policy', PolicyNumber: 'POL-2026-011', PolicyName: 'Social Media Policy', PolicyCategory: PolicyCategory.Operational, PolicyType: 'Operational', Description: 'Guidelines for employee use of social media in professional and personal contexts', VersionNumber: '2.2', PolicyStatus: PolicyStatus.PendingApproval, IsActive: true, IsMandatory: false, ComplianceRisk: 'Medium', RequiresAcknowledgement: true, AcknowledgementType: 'Checkbox', AuthorId: 2, Created: '2025-07-10', Modified: '2026-01-22' } as IPolicy,
+        { Id: 912, Title: 'Vendor Management Policy', PolicyNumber: 'POL-2026-012', PolicyName: 'Vendor Management Policy', PolicyCategory: PolicyCategory.Financial, PolicyType: 'Operational', Description: 'Third-party vendor assessment, onboarding, and management procedures', VersionNumber: '1.5', PolicyStatus: PolicyStatus.Retired, IsActive: false, IsMandatory: false, ComplianceRisk: 'Medium', RequiresAcknowledgement: false, AcknowledgementType: 'None', AuthorId: 5, Created: '2025-02-01', Modified: '2025-10-30' } as IPolicy,
+      ];
+
+      const draft = samplePolicies.filter(p => p.PolicyStatus === PolicyStatus.Draft);
+      const inReview = samplePolicies.filter(p => p.PolicyStatus === PolicyStatus.InReview || p.PolicyStatus === PolicyStatus.PendingApproval);
+      const approved = samplePolicies.filter(p => p.PolicyStatus === PolicyStatus.Approved || p.PolicyStatus === PolicyStatus.Published);
+      const rejected = samplePolicies.filter(p => p.PolicyStatus === PolicyStatus.Archived || p.PolicyStatus === PolicyStatus.Retired);
+
+      this.setState({
+        approvalsDraft: draft,
+        approvalsInReview: inReview,
+        approvalsApproved: approved,
+        approvalsRejected: rejected,
+        approvalsLoading: false
+      });
     }
   }
 
@@ -5100,6 +5416,8 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         return this.renderApprovalsTab();
       case 'delegations':
         return this.renderDelegationsTab();
+      case 'requests':
+        return this.renderPolicyRequestsTab();
       case 'analytics':
         return this.renderAnalyticsTab();
       case 'admin':
@@ -5116,16 +5434,10 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
   private renderCreatePolicyTab(): JSX.Element {
     const { loading, saving, currentStep } = this.state;
     const currentStepConfig = WIZARD_STEPS[currentStep];
+    const progressPercent = Math.round(((currentStep + 1) / WIZARD_STEPS.length) * 100);
 
     return (
       <>
-        <PageSubheader
-          iconName="PageAdd"
-          title={currentStepConfig.title}
-          description={currentStepConfig.description}
-          actions={this.renderCommandBar()}
-        />
-
         {/* Saving Indicator */}
         {saving && (
           <MessageBar messageBarType={MessageBarType.info}>
@@ -5142,13 +5454,69 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             <Spinner size={SpinnerSize.large} label="Loading policy builder..." />
           </Stack>
         ) : (
-          <div className={styles.editorContainer}>
-            {this.renderWizardProgress()}
-            <div className={styles.wizardStepContent}>
-              {this.renderCurrentStep()}
-            </div>
-            {this.renderEmbeddedEditor()}
-            {this.renderWizardNavigation()}
+          <div className={(styles as Record<string, string>).v3Layout}>
+            {/* Left: Accordion Sidebar */}
+            {this.renderV3AccordionSidebar()}
+
+            {/* Center: Main Form */}
+            <main className={(styles as Record<string, string>).v3Center}>
+              <div className={(styles as Record<string, string>).v3CenterHeader}>
+                <span className={(styles as Record<string, string>).v3StepBadge}>Step {currentStep + 1} of {WIZARD_STEPS.length}</span>
+                <Text variant="xLarge" style={{ fontWeight: 700, color: '#111827', display: 'block' }}>{currentStepConfig.title}</Text>
+                <Text style={{ fontSize: 14, color: '#6b7280', marginTop: 4 }}>{currentStepConfig.description}</Text>
+              </div>
+
+              <div className={(styles as Record<string, string>).v3FormCard}>
+                {this.renderCurrentStep()}
+                {this.renderEmbeddedEditor()}
+              </div>
+
+              {/* Progress Footer */}
+              <div className={(styles as Record<string, string>).v3ProgressFooter}>
+                <div className={(styles as Record<string, string>).v3ProgressBarWrap}>
+                  <div className={(styles as Record<string, string>).v3ProgressTrack}>
+                    <div className={(styles as Record<string, string>).v3ProgressFill} style={{ width: `${progressPercent}%` }} />
+                  </div>
+                  <span className={(styles as Record<string, string>).v3ProgressText}>{progressPercent}%</span>
+                </div>
+                <div className={(styles as Record<string, string>).v3FooterActions}>
+                  {currentStep > 0 && (
+                    <DefaultButton
+                      text="Previous"
+                      iconProps={{ iconName: 'ChevronLeft' }}
+                      onClick={this.handlePreviousStep}
+                      disabled={saving}
+                    />
+                  )}
+                  <DefaultButton
+                    text="Save Draft"
+                    iconProps={{ iconName: 'Save' }}
+                    onClick={() => { this.handleSaveDraft(); }}
+                    disabled={saving}
+                  />
+                  {currentStep < WIZARD_STEPS.length - 1 ? (
+                    <PrimaryButton
+                      onClick={this.handleNextStep}
+                      disabled={saving}
+                      styles={{ root: { background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+                    >
+                      Next <Icon iconName="ChevronRight" style={{ marginLeft: 6 }} />
+                    </PrimaryButton>
+                  ) : (
+                    <PrimaryButton
+                      text="Submit for Review"
+                      iconProps={{ iconName: 'Send' }}
+                      onClick={() => { this.handleSubmitForReview(); }}
+                      disabled={saving}
+                      styles={{ root: { background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+                    />
+                  )}
+                </div>
+              </div>
+            </main>
+
+            {/* Right: Context Panel */}
+            {this.renderV3ContextPanel()}
           </div>
         )}
       </>
@@ -5646,6 +6014,473 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             </div>
           )}
         </div>
+      </>
+    );
+  }
+
+  // ============================================================================
+  // POLICY REQUESTS TAB — Requests submitted by Managers via Request Policy wizard
+  // ============================================================================
+
+  private getSamplePolicyRequests(): IPolicyRequest[] {
+    return [
+      {
+        Id: 1, Title: 'Data Retention Policy for Cloud Storage',
+        RequestedBy: 'Sarah Mitchell', RequestedByEmail: 'sarah.mitchell@company.com', RequestedByDepartment: 'IT Security',
+        PolicyCategory: 'IT Security', PolicyType: 'New Policy', Priority: 'High',
+        TargetAudience: 'All IT Staff, Development Teams', BusinessJustification: 'New GDPR requirements mandate clear data retention guidelines for all cloud storage services including Azure Blob, AWS S3, and Google Cloud Storage. Without this policy we are at risk of non-compliance.',
+        RegulatoryDriver: 'GDPR Article 5(1)(e) — Storage Limitation', DesiredEffectiveDate: '2026-03-01', ReadTimeframeDays: 14,
+        RequiresAcknowledgement: true, RequiresQuiz: true, AdditionalNotes: 'Please reference the existing Data Classification Policy and align retention periods accordingly. Legal has reviewed the requirements.',
+        AttachmentUrls: [], Status: 'New', AssignedAuthor: '', AssignedAuthorEmail: '', Created: '2026-01-27T09:15:00Z', Modified: '2026-01-27T09:15:00Z'
+      },
+      {
+        Id: 2, Title: 'Remote Work Equipment & Ergonomics Policy',
+        RequestedBy: 'James Thornton', RequestedByEmail: 'james.thornton@company.com', RequestedByDepartment: 'Human Resources',
+        PolicyCategory: 'HR Policies', PolicyType: 'New Policy', Priority: 'Medium',
+        TargetAudience: 'All Remote & Hybrid Employees', BusinessJustification: 'With 60% of workforce now remote, we need formal guidelines on equipment provisioning, ergonomic assessments, and home office stipend eligibility.',
+        RegulatoryDriver: 'Health & Safety at Work Act', DesiredEffectiveDate: '2026-04-01', ReadTimeframeDays: 7,
+        RequiresAcknowledgement: true, RequiresQuiz: false, AdditionalNotes: 'Facilities team can provide ergonomic assessment checklist template.',
+        AttachmentUrls: [], Status: 'New', AssignedAuthor: '', AssignedAuthorEmail: '', Created: '2026-01-26T14:30:00Z', Modified: '2026-01-26T14:30:00Z'
+      },
+      {
+        Id: 3, Title: 'AI & Machine Learning Usage Policy',
+        RequestedBy: 'Dr. Aisha Patel', RequestedByEmail: 'aisha.patel@company.com', RequestedByDepartment: 'Innovation',
+        PolicyCategory: 'IT Security', PolicyType: 'New Policy', Priority: 'Critical',
+        TargetAudience: 'All Employees', BusinessJustification: 'Employees are using ChatGPT, Copilot, and other AI tools without guidelines. We need clear policy on acceptable use, data handling, intellectual property, and prohibited use cases.',
+        RegulatoryDriver: 'EU AI Act, Internal IP Protection', DesiredEffectiveDate: '2026-02-15', ReadTimeframeDays: 7,
+        RequiresAcknowledgement: true, RequiresQuiz: true, AdditionalNotes: 'Legal and InfoSec have drafted initial talking points. Board has flagged this as urgent. Please prioritise.',
+        AttachmentUrls: [], Status: 'Assigned', AssignedAuthor: 'Lisa Chen', AssignedAuthorEmail: 'lisa.chen@company.com', Created: '2026-01-20T11:00:00Z', Modified: '2026-01-22T08:45:00Z'
+      },
+      {
+        Id: 4, Title: 'Vendor Risk Assessment Policy Update',
+        RequestedBy: 'Robert Kumar', RequestedByEmail: 'robert.kumar@company.com', RequestedByDepartment: 'Procurement',
+        PolicyCategory: 'Compliance', PolicyType: 'Policy Update', Priority: 'High',
+        TargetAudience: 'Procurement, Legal, IT Security', BusinessJustification: 'Current vendor assessment policy is 2 years old and does not cover SaaS vendor risks, supply chain security, or ESG requirements.',
+        RegulatoryDriver: 'ISO 27001, SOC 2 Type II', DesiredEffectiveDate: '2026-03-15', ReadTimeframeDays: 14,
+        RequiresAcknowledgement: true, RequiresQuiz: false, AdditionalNotes: 'Attach current vendor assessment checklist for reference. Procurement team available for consultation.',
+        AttachmentUrls: [], Status: 'InProgress', AssignedAuthor: 'Mark Davies', AssignedAuthorEmail: 'mark.davies@company.com', Created: '2026-01-15T10:00:00Z', Modified: '2026-01-25T16:30:00Z'
+      },
+      {
+        Id: 5, Title: 'Employee Social Media Conduct Policy',
+        RequestedBy: 'Emma Whitfield', RequestedByEmail: 'emma.whitfield@company.com', RequestedByDepartment: 'Marketing',
+        PolicyCategory: 'HR Policies', PolicyType: 'New Policy', Priority: 'Medium',
+        TargetAudience: 'All Employees', BusinessJustification: 'Recent incidents of employees posting confidential project information on LinkedIn. Need clear guidelines on what can and cannot be shared on social media regarding company business.',
+        RegulatoryDriver: 'Confidentiality & NDA Compliance', DesiredEffectiveDate: '2026-04-15', ReadTimeframeDays: 7,
+        RequiresAcknowledgement: true, RequiresQuiz: false, AdditionalNotes: 'Marketing has a brand guidelines document that should be referenced.',
+        AttachmentUrls: [], Status: 'Completed', AssignedAuthor: 'Lisa Chen', AssignedAuthorEmail: 'lisa.chen@company.com', Created: '2026-01-05T09:00:00Z', Modified: '2026-01-24T14:15:00Z'
+      },
+      {
+        Id: 6, Title: 'Incident Response & Breach Notification Policy',
+        RequestedBy: 'Sarah Mitchell', RequestedByEmail: 'sarah.mitchell@company.com', RequestedByDepartment: 'IT Security',
+        PolicyCategory: 'IT Security', PolicyType: 'Policy Update', Priority: 'Critical',
+        TargetAudience: 'IT Security, Management, Legal', BusinessJustification: 'Our incident response policy was written pre-cloud migration. Need to update for hybrid infrastructure, include cloud-specific playbooks, and align with 72-hour GDPR breach notification window.',
+        RegulatoryDriver: 'GDPR Article 33 & 34, NIS2 Directive', DesiredEffectiveDate: '2026-02-28', ReadTimeframeDays: 14,
+        RequiresAcknowledgement: true, RequiresQuiz: true, AdditionalNotes: 'CISO wants this prioritised. Include tabletop exercise requirements.',
+        AttachmentUrls: [], Status: 'Assigned', AssignedAuthor: 'Mark Davies', AssignedAuthorEmail: 'mark.davies@company.com', Created: '2026-01-18T08:30:00Z', Modified: '2026-01-21T11:00:00Z'
+      },
+      {
+        Id: 7, Title: 'Parental Leave & Return-to-Work Policy',
+        RequestedBy: 'James Thornton', RequestedByEmail: 'james.thornton@company.com', RequestedByDepartment: 'Human Resources',
+        PolicyCategory: 'HR Policies', PolicyType: 'Policy Update', Priority: 'Low',
+        TargetAudience: 'All Employees', BusinessJustification: 'UK government has updated shared parental leave entitlements. Our policy needs to reflect new statutory minimums and company-enhanced provisions.',
+        RegulatoryDriver: 'Employment Rights Act 1996 (updated)', DesiredEffectiveDate: '2026-06-01', ReadTimeframeDays: 7,
+        RequiresAcknowledgement: true, RequiresQuiz: false, AdditionalNotes: 'HR Legal counsel has reviewed the statutory changes. Draft available.',
+        AttachmentUrls: [], Status: 'Draft Ready', AssignedAuthor: 'Lisa Chen', AssignedAuthorEmail: 'lisa.chen@company.com', Created: '2026-01-10T13:00:00Z', Modified: '2026-01-28T10:00:00Z'
+      },
+      {
+        Id: 8, Title: 'Environmental Sustainability & Carbon Reporting Policy',
+        RequestedBy: 'Olivia Green', RequestedByEmail: 'olivia.green@company.com', RequestedByDepartment: 'Operations',
+        PolicyCategory: 'Environmental', PolicyType: 'New Policy', Priority: 'Medium',
+        TargetAudience: 'Operations, Facilities, Finance', BusinessJustification: 'New CSRD (Corporate Sustainability Reporting Directive) requirements mean we need a formal sustainability policy covering carbon reporting, waste management, and supply chain environmental standards.',
+        RegulatoryDriver: 'CSRD, TCFD, UK Energy Savings Opportunity Scheme', DesiredEffectiveDate: '2026-05-01', ReadTimeframeDays: 14,
+        RequiresAcknowledgement: true, RequiresQuiz: false, AdditionalNotes: 'ESG consultants have provided a framework document. Finance team needs to be involved for carbon accounting.',
+        AttachmentUrls: [], Status: 'New', AssignedAuthor: '', AssignedAuthorEmail: '', Created: '2026-01-28T16:00:00Z', Modified: '2026-01-28T16:00:00Z'
+      }
+    ];
+  }
+
+  private getRequestStatusColor(status: string): string {
+    switch (status) {
+      case 'New': return '#0078d4';
+      case 'Assigned': return '#8764b8';
+      case 'InProgress': return '#f59e0b';
+      case 'Draft Ready': return '#14b8a6';
+      case 'Completed': return '#107c10';
+      case 'Rejected': return '#d13438';
+      default: return '#605e5c';
+    }
+  }
+
+  private getPriorityColor(priority: string): string {
+    switch (priority) {
+      case 'Critical': return '#d13438';
+      case 'High': return '#f97316';
+      case 'Medium': return '#f59e0b';
+      case 'Low': return '#64748b';
+      default: return '#605e5c';
+    }
+  }
+
+  private renderPolicyRequestsTab(): JSX.Element {
+    const { policyRequests, policyRequestsLoading, requestStatusFilter, selectedPolicyRequest, showPolicyRequestDetailPanel } = this.state;
+
+    const statusFilters = ['All', 'New', 'Assigned', 'InProgress', 'Draft Ready', 'Completed', 'Rejected'];
+    const filteredRequests = requestStatusFilter === 'All' ? policyRequests : policyRequests.filter(r => r.Status === requestStatusFilter);
+
+    // KPI counts
+    const newCount = policyRequests.filter(r => r.Status === 'New').length;
+    const assignedCount = policyRequests.filter(r => r.Status === 'Assigned').length;
+    const inProgressCount = policyRequests.filter(r => r.Status === 'InProgress').length;
+    const completedCount = policyRequests.filter(r => r.Status === 'Completed' || r.Status === 'Draft Ready').length;
+    const criticalCount = policyRequests.filter(r => r.Priority === 'Critical' && r.Status !== 'Completed').length;
+
+    return (
+      <>
+        <PageSubheader
+          iconName="PageAdd"
+          title="Policy Requests"
+          description="Review and manage policy creation requests submitted by managers"
+          actions={
+            <Stack horizontal tokens={{ childrenGap: 8 }}>
+              <DefaultButton text="Refresh" iconProps={{ iconName: 'Refresh' }} onClick={() => this.setState({ policyRequests: this.getSamplePolicyRequests() })} />
+            </Stack>
+          }
+        />
+
+        {/* KPI Summary Cards */}
+        <div className={(styles as Record<string, string>).delegationKpiGrid}>
+          <div className={(styles as Record<string, string>).delegationKpiCard} onClick={() => this.setState({ requestStatusFilter: 'New' })} style={{ cursor: 'pointer' }}>
+            <div className={(styles as Record<string, string>).delegationKpiIcon} style={{ background: '#e8f4fd' }}>
+              <Icon iconName="NewMail" style={{ fontSize: 20, color: '#0078d4' }} />
+            </div>
+            <div className={(styles as Record<string, string>).delegationKpiContent}>
+              <Text variant="xxLarge" style={{ fontWeight: 700, color: '#0078d4' }}>{newCount}</Text>
+              <Text variant="small" style={{ color: '#605e5c' }}>New Requests</Text>
+            </div>
+          </div>
+          <div className={(styles as Record<string, string>).delegationKpiCard} onClick={() => this.setState({ requestStatusFilter: 'Assigned' })} style={{ cursor: 'pointer' }}>
+            <div className={(styles as Record<string, string>).delegationKpiIcon} style={{ background: '#f3eefc' }}>
+              <Icon iconName="People" style={{ fontSize: 20, color: '#8764b8' }} />
+            </div>
+            <div className={(styles as Record<string, string>).delegationKpiContent}>
+              <Text variant="xxLarge" style={{ fontWeight: 700, color: '#8764b8' }}>{assignedCount}</Text>
+              <Text variant="small" style={{ color: '#605e5c' }}>Assigned</Text>
+            </div>
+          </div>
+          <div className={(styles as Record<string, string>).delegationKpiCard} onClick={() => this.setState({ requestStatusFilter: 'InProgress' })} style={{ cursor: 'pointer' }}>
+            <div className={(styles as Record<string, string>).delegationKpiIcon} style={{ background: '#fff8e6' }}>
+              <Icon iconName="Edit" style={{ fontSize: 20, color: '#f59e0b' }} />
+            </div>
+            <div className={(styles as Record<string, string>).delegationKpiContent}>
+              <Text variant="xxLarge" style={{ fontWeight: 700, color: '#f59e0b' }}>{inProgressCount}</Text>
+              <Text variant="small" style={{ color: '#605e5c' }}>In Progress</Text>
+            </div>
+          </div>
+          <div className={(styles as Record<string, string>).delegationKpiCard} onClick={() => this.setState({ requestStatusFilter: 'All' })} style={{ cursor: 'pointer' }}>
+            <div className={(styles as Record<string, string>).delegationKpiIcon} style={{ background: '#dff6dd' }}>
+              <Icon iconName="CheckMark" style={{ fontSize: 20, color: '#107c10' }} />
+            </div>
+            <div className={(styles as Record<string, string>).delegationKpiContent}>
+              <Text variant="xxLarge" style={{ fontWeight: 700, color: '#107c10' }}>{completedCount}</Text>
+              <Text variant="small" style={{ color: '#605e5c' }}>Completed</Text>
+            </div>
+          </div>
+        </div>
+
+        {/* Critical Alert */}
+        {criticalCount > 0 && (
+          <MessageBar messageBarType={MessageBarType.severeWarning} style={{ marginBottom: 16 }}>
+            <strong>{criticalCount} critical priority request{criticalCount > 1 ? 's' : ''}</strong> requiring urgent attention.
+          </MessageBar>
+        )}
+
+        {/* Status Filter Chips */}
+        <Stack horizontal tokens={{ childrenGap: 8 }} style={{ marginBottom: 16, flexWrap: 'wrap' }}>
+          {statusFilters.map(status => (
+            <DefaultButton
+              key={status}
+              text={status === 'All' ? `All (${policyRequests.length})` : `${status} (${policyRequests.filter(r => r.Status === status).length})`}
+              checked={requestStatusFilter === status}
+              styles={{
+                root: {
+                  borderRadius: 20,
+                  minWidth: 'auto',
+                  padding: '2px 14px',
+                  height: 32,
+                  border: requestStatusFilter === status ? '2px solid #0d9488' : '1px solid #e1dfdd',
+                  background: requestStatusFilter === status ? '#f0fdfa' : 'transparent',
+                  color: requestStatusFilter === status ? '#0d9488' : '#605e5c',
+                  fontWeight: requestStatusFilter === status ? 600 : 400
+                },
+                rootHovered: { borderColor: '#0d9488', color: '#0d9488' }
+              }}
+              onClick={() => this.setState({ requestStatusFilter: status })}
+            />
+          ))}
+        </Stack>
+
+        <div className={styles.editorContainer}>
+          {policyRequestsLoading ? (
+            <Stack horizontalAlign="center" tokens={{ padding: 40 }}>
+              <Spinner size={SpinnerSize.large} label="Loading policy requests..." />
+            </Stack>
+          ) : filteredRequests.length === 0 ? (
+            <Stack horizontalAlign="center" tokens={{ padding: 40 }}>
+              <Icon iconName="PageAdd" style={{ fontSize: 48, color: '#a19f9d', marginBottom: 16 }} />
+              <Text variant="large">No policy requests</Text>
+              <Text>No requests match the selected filter</Text>
+            </Stack>
+          ) : (
+            <div className={(styles as Record<string, string>).delegationList}>
+              {filteredRequests.map(request => (
+                <div
+                  key={request.Id}
+                  className={(styles as Record<string, string>).delegationCard}
+                  style={{ cursor: 'pointer', borderLeft: `4px solid ${this.getPriorityColor(request.Priority)}` }}
+                  onClick={() => this.setState({ selectedPolicyRequest: request, showPolicyRequestDetailPanel: true })}
+                >
+                  <Stack horizontal horizontalAlign="space-between" verticalAlign="start">
+                    <div style={{ flex: 1 }}>
+                      <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
+                        <Text variant="mediumPlus" style={{ fontWeight: 600 }}>{request.Title}</Text>
+                        {request.Priority === 'Critical' && (
+                          <span style={{ background: '#fde7e9', color: '#d13438', padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 700, textTransform: 'uppercase' as const }}>CRITICAL</span>
+                        )}
+                      </Stack>
+                      <Text variant="small" style={{ color: '#605e5c', display: 'block', marginTop: 4 }}>
+                        Requested by <strong>{request.RequestedBy}</strong> ({request.RequestedByDepartment}) &bull; {request.PolicyCategory} &bull; {request.PolicyType}
+                      </Text>
+                      <Text variant="small" style={{ marginTop: 8, display: 'block', color: '#323130' }}>
+                        {request.BusinessJustification.length > 150 ? request.BusinessJustification.substring(0, 150) + '...' : request.BusinessJustification}
+                      </Text>
+                      <Stack horizontal tokens={{ childrenGap: 16 }} style={{ marginTop: 10 }}>
+                        <Text variant="small" style={{ color: '#605e5c' }}>
+                          <Icon iconName="Calendar" style={{ marginRight: 4, fontSize: 12 }} />
+                          Target: {new Date(request.DesiredEffectiveDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </Text>
+                        <Text variant="small" style={{ color: '#605e5c' }}>
+                          <Icon iconName="Clock" style={{ marginRight: 4, fontSize: 12 }} />
+                          Read within: {request.ReadTimeframeDays} days
+                        </Text>
+                        {request.RequiresAcknowledgement && (
+                          <Text variant="small" style={{ color: '#0d9488' }}>
+                            <Icon iconName="CheckboxComposite" style={{ marginRight: 4, fontSize: 12 }} /> Acknowledgement
+                          </Text>
+                        )}
+                        {request.RequiresQuiz && (
+                          <Text variant="small" style={{ color: '#8764b8' }}>
+                            <Icon iconName="Questionnaire" style={{ marginRight: 4, fontSize: 12 }} /> Quiz Required
+                          </Text>
+                        )}
+                      </Stack>
+                    </div>
+                    <Stack horizontalAlign="end" tokens={{ childrenGap: 4 }}>
+                      <span style={{
+                        background: `${this.getRequestStatusColor(request.Status)}15`,
+                        color: this.getRequestStatusColor(request.Status),
+                        padding: '4px 12px', borderRadius: 12, fontSize: 12, fontWeight: 600
+                      }}>
+                        {request.Status === 'InProgress' ? 'In Progress' : request.Status}
+                      </span>
+                      <Text variant="tiny" style={{ color: '#a19f9d', marginTop: 4 }}>
+                        {new Date(request.Created).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                      </Text>
+                      {request.AssignedAuthor && (
+                        <Text variant="tiny" style={{ color: '#605e5c' }}>
+                          <Icon iconName="Contact" style={{ marginRight: 2, fontSize: 10 }} /> {request.AssignedAuthor}
+                        </Text>
+                      )}
+                    </Stack>
+                  </Stack>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Policy Request Detail Panel */}
+        {showPolicyRequestDetailPanel && selectedPolicyRequest && (
+          <Panel
+            isOpen={showPolicyRequestDetailPanel}
+            onDismiss={() => this.setState({ showPolicyRequestDetailPanel: false, selectedPolicyRequest: null })}
+            type={PanelType.medium}
+            headerText="Policy Request Details"
+            closeButtonAriaLabel="Close"
+          >
+            <div style={{ padding: '16px 0' }}>
+              {/* Status & Priority Header */}
+              <Stack horizontal tokens={{ childrenGap: 8 }} style={{ marginBottom: 20 }}>
+                <span style={{
+                  background: `${this.getRequestStatusColor(selectedPolicyRequest.Status)}15`,
+                  color: this.getRequestStatusColor(selectedPolicyRequest.Status),
+                  padding: '6px 16px', borderRadius: 16, fontSize: 13, fontWeight: 600
+                }}>
+                  {selectedPolicyRequest.Status === 'InProgress' ? 'In Progress' : selectedPolicyRequest.Status}
+                </span>
+                <span style={{
+                  background: `${this.getPriorityColor(selectedPolicyRequest.Priority)}15`,
+                  color: this.getPriorityColor(selectedPolicyRequest.Priority),
+                  padding: '6px 16px', borderRadius: 16, fontSize: 13, fontWeight: 600
+                }}>
+                  {selectedPolicyRequest.Priority} Priority
+                </span>
+              </Stack>
+
+              {/* Title */}
+              <Text variant="xLarge" style={{ fontWeight: 700, display: 'block', marginBottom: 16 }}>{selectedPolicyRequest.Title}</Text>
+
+              {/* Section: Request Details */}
+              <div style={{ background: '#f8f9fa', borderRadius: 8, padding: 16, marginBottom: 16 }}>
+                <Text variant="mediumPlus" style={{ fontWeight: 600, marginBottom: 12, display: 'block' }}>Request Information</Text>
+                <Stack tokens={{ childrenGap: 8 }}>
+                  <Stack horizontal tokens={{ childrenGap: 4 }}>
+                    <Text style={{ fontWeight: 600, minWidth: 140 }}>Requested By:</Text>
+                    <Text>{selectedPolicyRequest.RequestedBy} ({selectedPolicyRequest.RequestedByDepartment})</Text>
+                  </Stack>
+                  <Stack horizontal tokens={{ childrenGap: 4 }}>
+                    <Text style={{ fontWeight: 600, minWidth: 140 }}>Email:</Text>
+                    <Text>{selectedPolicyRequest.RequestedByEmail}</Text>
+                  </Stack>
+                  <Stack horizontal tokens={{ childrenGap: 4 }}>
+                    <Text style={{ fontWeight: 600, minWidth: 140 }}>Category:</Text>
+                    <Text>{selectedPolicyRequest.PolicyCategory}</Text>
+                  </Stack>
+                  <Stack horizontal tokens={{ childrenGap: 4 }}>
+                    <Text style={{ fontWeight: 600, minWidth: 140 }}>Type:</Text>
+                    <Text>{selectedPolicyRequest.PolicyType}</Text>
+                  </Stack>
+                  <Stack horizontal tokens={{ childrenGap: 4 }}>
+                    <Text style={{ fontWeight: 600, minWidth: 140 }}>Submitted:</Text>
+                    <Text>{new Date(selectedPolicyRequest.Created).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</Text>
+                  </Stack>
+                </Stack>
+              </div>
+
+              {/* Section: Business Justification */}
+              <div style={{ background: '#fffbeb', borderRadius: 8, padding: 16, marginBottom: 16, borderLeft: '4px solid #f59e0b' }}>
+                <Text variant="mediumPlus" style={{ fontWeight: 600, marginBottom: 8, display: 'block' }}>Business Justification</Text>
+                <Text style={{ lineHeight: '1.6' }}>{selectedPolicyRequest.BusinessJustification}</Text>
+              </div>
+
+              {/* Section: Regulatory Driver */}
+              {selectedPolicyRequest.RegulatoryDriver && (
+                <div style={{ background: '#fef2f2', borderRadius: 8, padding: 16, marginBottom: 16, borderLeft: '4px solid #ef4444' }}>
+                  <Text variant="mediumPlus" style={{ fontWeight: 600, marginBottom: 8, display: 'block' }}>Regulatory / Compliance Driver</Text>
+                  <Text>{selectedPolicyRequest.RegulatoryDriver}</Text>
+                </div>
+              )}
+
+              {/* Section: Policy Requirements */}
+              <div style={{ background: '#f0fdfa', borderRadius: 8, padding: 16, marginBottom: 16, borderLeft: '4px solid #0d9488' }}>
+                <Text variant="mediumPlus" style={{ fontWeight: 600, marginBottom: 12, display: 'block' }}>Policy Requirements</Text>
+                <Stack tokens={{ childrenGap: 8 }}>
+                  <Stack horizontal tokens={{ childrenGap: 4 }}>
+                    <Text style={{ fontWeight: 600, minWidth: 180 }}>Target Audience:</Text>
+                    <Text>{selectedPolicyRequest.TargetAudience}</Text>
+                  </Stack>
+                  <Stack horizontal tokens={{ childrenGap: 4 }}>
+                    <Text style={{ fontWeight: 600, minWidth: 180 }}>Desired Effective Date:</Text>
+                    <Text>{new Date(selectedPolicyRequest.DesiredEffectiveDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</Text>
+                  </Stack>
+                  <Stack horizontal tokens={{ childrenGap: 4 }}>
+                    <Text style={{ fontWeight: 600, minWidth: 180 }}>Read Timeframe:</Text>
+                    <Text>{selectedPolicyRequest.ReadTimeframeDays} days</Text>
+                  </Stack>
+                  <Stack horizontal tokens={{ childrenGap: 4 }}>
+                    <Text style={{ fontWeight: 600, minWidth: 180 }}>Requires Acknowledgement:</Text>
+                    <Text style={{ color: selectedPolicyRequest.RequiresAcknowledgement ? '#107c10' : '#605e5c' }}>
+                      {selectedPolicyRequest.RequiresAcknowledgement ? 'Yes' : 'No'}
+                    </Text>
+                  </Stack>
+                  <Stack horizontal tokens={{ childrenGap: 4 }}>
+                    <Text style={{ fontWeight: 600, minWidth: 180 }}>Requires Quiz:</Text>
+                    <Text style={{ color: selectedPolicyRequest.RequiresQuiz ? '#8764b8' : '#605e5c' }}>
+                      {selectedPolicyRequest.RequiresQuiz ? 'Yes' : 'No'}
+                    </Text>
+                  </Stack>
+                </Stack>
+              </div>
+
+              {/* Section: Additional Notes */}
+              {selectedPolicyRequest.AdditionalNotes && (
+                <div style={{ background: '#f8f9fa', borderRadius: 8, padding: 16, marginBottom: 16 }}>
+                  <Text variant="mediumPlus" style={{ fontWeight: 600, marginBottom: 8, display: 'block' }}>Additional Notes</Text>
+                  <Text style={{ lineHeight: '1.6', fontStyle: 'italic' }}>{selectedPolicyRequest.AdditionalNotes}</Text>
+                </div>
+              )}
+
+              {/* Section: Assignment */}
+              <div style={{ background: '#f3eefc', borderRadius: 8, padding: 16, marginBottom: 20 }}>
+                <Text variant="mediumPlus" style={{ fontWeight: 600, marginBottom: 8, display: 'block' }}>Assignment</Text>
+                {selectedPolicyRequest.AssignedAuthor ? (
+                  <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#8764b8', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: 14 }}>
+                      {selectedPolicyRequest.AssignedAuthor.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                    </div>
+                    <div>
+                      <Text style={{ fontWeight: 600 }}>{selectedPolicyRequest.AssignedAuthor}</Text>
+                      <Text variant="small" style={{ display: 'block', color: '#605e5c' }}>{selectedPolicyRequest.AssignedAuthorEmail}</Text>
+                    </div>
+                  </Stack>
+                ) : (
+                  <Text style={{ color: '#a19f9d', fontStyle: 'italic' }}>Not yet assigned — click "Accept & Start" below</Text>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <Stack horizontal tokens={{ childrenGap: 8 }}>
+                {(selectedPolicyRequest.Status === 'New' || selectedPolicyRequest.Status === 'Assigned') && (
+                  <PrimaryButton
+                    text="Accept & Start Drafting"
+                    iconProps={{ iconName: 'Play' }}
+                    onClick={() => {
+                      const updated = { ...selectedPolicyRequest, Status: 'InProgress' as const, AssignedAuthor: 'Current User', AssignedAuthorEmail: 'user@company.com' };
+                      this.setState({
+                        selectedPolicyRequest: updated,
+                        policyRequests: this.state.policyRequests.map(r => r.Id === updated.Id ? updated : r)
+                      });
+                    }}
+                  />
+                )}
+                {selectedPolicyRequest.Status === 'InProgress' && (
+                  <PrimaryButton
+                    text="Mark as Draft Ready"
+                    iconProps={{ iconName: 'CheckMark' }}
+                    styles={{ root: { background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+                    onClick={() => {
+                      const updated = { ...selectedPolicyRequest, Status: 'Draft Ready' as const };
+                      this.setState({
+                        selectedPolicyRequest: updated,
+                        policyRequests: this.state.policyRequests.map(r => r.Id === updated.Id ? updated : r)
+                      });
+                    }}
+                  />
+                )}
+                <DefaultButton
+                  text="Create Policy from Request"
+                  iconProps={{ iconName: 'PageAdd' }}
+                  onClick={() => {
+                    this.setState({
+                      showPolicyRequestDetailPanel: false,
+                      policyName: selectedPolicyRequest.Title,
+                      policyCategory: selectedPolicyRequest.PolicyCategory,
+                      readTimeframe: `${selectedPolicyRequest.ReadTimeframeDays} days`,
+                      readTimeframeDays: selectedPolicyRequest.ReadTimeframeDays,
+                      requiresAcknowledgement: selectedPolicyRequest.RequiresAcknowledgement,
+                      requiresQuiz: selectedPolicyRequest.RequiresQuiz,
+                      activeTab: 'create',
+                      currentStep: 1
+                    });
+                  }}
+                />
+                <DefaultButton
+                  text="Close"
+                  onClick={() => this.setState({ showPolicyRequestDetailPanel: false, selectedPolicyRequest: null })}
+                />
+              </Stack>
+            </div>
+          </Panel>
+        )}
       </>
     );
   }

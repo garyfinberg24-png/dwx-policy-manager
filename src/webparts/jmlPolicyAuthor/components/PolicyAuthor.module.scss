@@ -1437,4 +1437,217 @@
       visibility: visible;
     }
   }
+
+  // ============================================
+  // V3 ACCORDION + CONTEXT PANEL WIZARD LAYOUT
+  // ============================================
+
+  .v3Layout {
+    display: flex;
+    min-height: 600px;
+    background: #f9fafb;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  }
+
+  // --- Left: Accordion Sidebar ---
+  .v3Sidebar {
+    width: 240px;
+    min-width: 240px;
+    background: #ffffff;
+    border-right: 1px solid #e5e7eb;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .v3SidebarHeader {
+    padding: 20px 18px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .v3Accordion {
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .v3AccItem {
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .v3AccHeader {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 18px;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+
+    &:hover {
+      background: #f9fafb;
+    }
+  }
+
+  // Active accordion item
+  .v3AccItem_active {
+    .v3AccHeader {
+      background: #f0fdfa;
+      color: #0f766e;
+      border-left: 3px solid #0d9488;
+    }
+  }
+
+  // Completed accordion item
+  .v3AccItem_completed {
+    .v3AccHeader {
+      color: #6b7280;
+    }
+  }
+
+  .v3AccNum {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    min-width: 24px;
+  }
+
+  .v3AccBody {
+    padding: 0 18px 12px 52px;
+  }
+
+  // --- Center: Main Form ---
+  .v3Center {
+    flex: 1;
+    padding: 32px 36px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .v3CenterHeader {
+    margin-bottom: 28px;
+  }
+
+  .v3StepBadge {
+    display: inline-block;
+    padding: 3px 10px;
+    background: #f0fdfa;
+    color: #0f766e;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .v3FormCard {
+    background: #ffffff;
+    border-radius: 10px;
+    padding: 28px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+    flex: 1;
+    animation: v3FadeIn 0.35s ease;
+  }
+
+  @keyframes v3FadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  // --- Progress Footer ---
+  .v3ProgressFooter {
+    margin-top: 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .v3ProgressBarWrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .v3ProgressTrack {
+    flex: 1;
+    height: 6px;
+    background: #e5e7eb;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .v3ProgressFill {
+    height: 100%;
+    background: linear-gradient(90deg, #0d9488, #14b8a6);
+    border-radius: 3px;
+    transition: width 0.4s ease;
+  }
+
+  .v3ProgressText {
+    font-size: 12px;
+    font-weight: 700;
+    color: #0f766e;
+    min-width: 36px;
+  }
+
+  .v3FooterActions {
+    display: flex;
+    gap: 10px;
+  }
+
+  // --- Right: Context Panel ---
+  .v3RightPanel {
+    width: 300px;
+    min-width: 300px;
+    background: #ffffff;
+    border-left: 1px solid #e5e7eb;
+    padding: 24px 20px;
+    overflow-y: auto;
+  }
+
+  .v3PanelSection {
+    margin-bottom: 24px;
+  }
+
+  .v3Tip {
+    background: #f0fdfa;
+    border-radius: 6px;
+    padding: 12px;
+    font-size: 12px;
+    color: #115e59;
+    line-height: 1.5;
+    margin-bottom: 10px;
+    border-left: 3px solid #0d9488;
+  }
+
+  .v3RelatedItem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #4b5563;
+    transition: background 0.15s;
+    cursor: pointer;
+
+    &:hover {
+      background: #f9fafb;
+    }
+  }
 }

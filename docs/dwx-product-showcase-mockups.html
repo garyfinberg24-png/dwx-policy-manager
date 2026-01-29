@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DWx Product Showcase — 7 Variations</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f1f5f9; color: #1e293b; }
+
+  .page-header { background: #0f172a; color: #fff; padding: 40px 60px; text-align: center; }
+  .page-header h1 { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+  .page-header p { color: rgba(255,255,255,0.6); font-size: 14px; }
+
+  .variation { max-width: 1200px; margin: 40px auto; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+  .variation-header { padding: 24px 32px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; }
+  .variation-header h2 { font-size: 18px; font-weight: 700; }
+  .variation-header .badge { padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; background: #f0f9ff; color: #0284c7; }
+  .variation-body { padding: 32px; }
+
+  /* ============ VARIATION 1: SPLASH CARDS (matches PDF) ============ */
+  .v1-hero { background: linear-gradient(135deg, #1a5a8a, #2d7ab8); border-radius: 12px; padding: 28px 32px; color: #fff; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; }
+  .v1-hero h3 { font-size: 22px; font-weight: 700; }
+  .v1-hero p { color: rgba(255,255,255,0.8); font-size: 14px; margin-top: 4px; }
+  .v1-stats { display: flex; gap: 32px; }
+  .v1-stat { text-align: center; }
+  .v1-stat-num { font-size: 32px; font-weight: 700; }
+  .v1-stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.7; }
+
+  .v1-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .v1-card { border-radius: 12px; overflow: hidden; position: relative; transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; }
+  .v1-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+  .v1-card-splash { aspect-ratio: 16/10; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; padding: 24px; text-align: center; }
+  .v1-card-brand { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; opacity: 0.7; margin-bottom: 6px; }
+  .v1-card-dwx { font-size: 36px; font-weight: 800; line-height: 1; }
+  .v1-card-dwx span { font-weight: 300; }
+  .v1-card-name { font-size: 16px; font-weight: 600; margin-top: 12px; }
+  .v1-card-desc { font-size: 12px; opacity: 0.8; margin-top: 4px; }
+  .v1-card-version { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; color: #fff; }
+  .v1-card-badge { position: absolute; top: 10px; left: 10px; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+  .v1-badge-new { background: #e3008c; color: #fff; }
+  .v1-badge-core { background: #10b981; color: #fff; }
+  .v1-badge-current { background: #0d9488; color: #fff; }
+  .v1-card-icon { font-size: 48px; opacity: 0.3; position: absolute; top: 10px; right: 10px; }
+
+  /* ============ VARIATION 2: COMPACT LIST WITH GRADIENT ACCENTS ============ */
+  .v2-header { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+  .v2-header-icon { width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, #1a5a8a, #2d7ab8); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 20px; font-weight: 800; }
+  .v2-list { display: flex; flex-direction: column; gap: 8px; }
+  .v2-item { display: flex; align-items: center; gap: 16px; padding: 14px 18px; border: 1px solid #e2e8f0; border-radius: 10px; transition: all 0.15s; cursor: pointer; }
+  .v2-item:hover { border-color: #0d9488; background: #f0fdfa; }
+  .v2-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; color: #fff; flex-shrink: 0; }
+  .v2-info { flex: 1; }
+  .v2-name { font-size: 14px; font-weight: 600; }
+  .v2-desc { font-size: 12px; color: #64748b; }
+  .v2-meta { display: flex; align-items: center; gap: 8px; }
+  .v2-version { font-size: 11px; color: #94a3b8; font-weight: 500; }
+  .v2-tag { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 4px; }
+
+  /* ============ VARIATION 3: MAGAZINE / FEATURED LAYOUT ============ */
+  .v3-featured { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+  .v3-featured-card { border-radius: 12px; padding: 32px; color: #fff; display: flex; flex-direction: column; justify-content: flex-end; min-height: 200px; position: relative; }
+  .v3-featured-brand { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; opacity: 0.6; }
+  .v3-featured-name { font-size: 24px; font-weight: 700; margin-top: 4px; }
+  .v3-featured-desc { font-size: 13px; opacity: 0.85; margin-top: 8px; max-width: 300px; }
+  .v3-featured-btn { margin-top: 16px; padding: 8px 20px; border-radius: 8px; border: 2px solid rgba(255,255,255,0.5); background: transparent; color: #fff; font-weight: 600; font-size: 13px; cursor: pointer; width: fit-content; transition: all 0.15s; }
+  .v3-featured-btn:hover { background: rgba(255,255,255,0.15); border-color: #fff; }
+  .v3-rest { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .v3-mini { border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; text-align: center; transition: all 0.15s; cursor: pointer; }
+  .v3-mini:hover { border-color: #0d9488; box-shadow: 0 4px 12px rgba(13,148,136,0.1); }
+  .v3-mini-icon { width: 40px; height: 40px; border-radius: 10px; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px; font-weight: 700; }
+  .v3-mini-name { font-size: 13px; font-weight: 600; }
+  .v3-mini-desc { font-size: 11px; color: #64748b; margin-top: 2px; }
+
+  /* ============ VARIATION 4: DARK PREMIUM SHOWCASE ============ */
+  .v4-container { background: #0f172a; border-radius: 12px; padding: 32px; }
+  .v4-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+  .v4-title { color: #fff; font-size: 22px; font-weight: 700; }
+  .v4-subtitle { color: #94a3b8; font-size: 13px; }
+  .v4-view-all { padding: 8px 20px; border-radius: 8px; border: 1px solid #334155; background: transparent; color: #94a3b8; font-weight: 500; font-size: 13px; cursor: pointer; transition: all 0.15s; font-family: inherit; }
+  .v4-view-all:hover { border-color: #0d9488; color: #0d9488; }
+  .v4-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .v4-card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 20px; transition: all 0.2s; cursor: pointer; position: relative; overflow: hidden; }
+  .v4-card:hover { border-color: #0d9488; transform: translateY(-2px); }
+  .v4-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+  .v4-card-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; font-size: 20px; font-weight: 700; color: #fff; }
+  .v4-card-name { color: #f1f5f9; font-size: 15px; font-weight: 600; }
+  .v4-card-tagline { color: #64748b; font-size: 12px; margin-top: 2px; font-style: italic; }
+  .v4-card-desc { color: #94a3b8; font-size: 12px; margin-top: 8px; line-height: 1.5; }
+  .v4-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; padding-top: 12px; border-top: 1px solid #334155; }
+  .v4-card-version { color: #475569; font-size: 11px; font-weight: 500; }
+  .v4-card-action { color: #0d9488; font-size: 12px; font-weight: 500; cursor: pointer; }
+  .v4-card-action:hover { text-decoration: underline; }
+  .v4-badge { position: absolute; top: 12px; right: 12px; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+
+  /* ============ VARIATION 5: SIDE-BY-SIDE CATEGORIES ============ */
+  .v5-header { text-align: center; margin-bottom: 32px; }
+  .v5-header h3 { font-size: 22px; font-weight: 700; }
+  .v5-header p { color: #64748b; font-size: 14px; margin-top: 4px; }
+  .v5-categories { display: flex; flex-direction: column; gap: 28px; }
+  .v5-category-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0; }
+  .v5-category-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  .v5-tile { border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px 16px; text-align: center; transition: all 0.2s; cursor: pointer; position: relative; }
+  .v5-tile:hover { border-color: #0d9488; box-shadow: 0 4px 16px rgba(13,148,136,0.12); transform: translateY(-2px); }
+  .v5-tile-icon { width: 52px; height: 52px; border-radius: 14px; margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 700; color: #fff; }
+  .v5-tile-name { font-size: 13px; font-weight: 600; color: #0f172a; }
+  .v5-tile-tagline { font-size: 11px; color: #64748b; margin-top: 2px; }
+  .v5-tile-version { font-size: 10px; color: #94a3b8; margin-top: 6px; }
+  .v5-tile-badge { position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #fff; }
+
+  /* ============ VARIATION 6: LIGHT PREMIUM SHOWCASE (V4 with white bg) ============ */
+  .v6-container { background: #ffffff; border-radius: 12px; padding: 32px; }
+  .v6-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+  .v6-title { color: #0f172a; font-size: 22px; font-weight: 700; }
+  .v6-subtitle { color: #64748b; font-size: 13px; }
+  .v6-view-all { padding: 8px 20px; border-radius: 8px; border: 1px solid #e2e8f0; background: transparent; color: #64748b; font-weight: 500; font-size: 13px; cursor: pointer; transition: all 0.15s; font-family: inherit; }
+  .v6-view-all:hover { border-color: #0d9488; color: #0d9488; }
+  .v6-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .v6-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; transition: all 0.2s; cursor: pointer; position: relative; overflow: hidden; }
+  .v6-card:hover { border-color: #0d9488; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(13,148,136,0.1); }
+  .v6-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+  .v6-card-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; font-size: 20px; font-weight: 700; color: #fff; }
+  .v6-card-name { color: #0f172a; font-size: 15px; font-weight: 600; }
+  .v6-card-tagline { color: #94a3b8; font-size: 12px; margin-top: 2px; font-style: italic; }
+  .v6-card-desc { color: #64748b; font-size: 12px; margin-top: 8px; line-height: 1.5; }
+  .v6-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; padding-top: 12px; border-top: 1px solid #f1f5f9; }
+  .v6-card-version { color: #94a3b8; font-size: 11px; font-weight: 500; }
+  .v6-card-action { color: #0d9488; font-size: 12px; font-weight: 500; cursor: pointer; }
+  .v6-card-action:hover { text-decoration: underline; }
+  .v6-badge { position: absolute; top: 12px; right: 12px; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+  .v6-current-card { border-color: #99f6e4; background: #f0fdfa; }
+  .v6-current-card:hover { border-color: #0d9488; background: #f0fdfa; }
+
+  /* ============ VARIATION 7: TINTED CARD SHOWCASE (V6 with brand-color fills) ============ */
+  .v7-container { background: #ffffff; border-radius: 12px; padding: 32px; }
+  .v7-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+  .v7-title { color: #0f172a; font-size: 22px; font-weight: 700; }
+  .v7-subtitle { color: #64748b; font-size: 13px; }
+  .v7-view-all { padding: 8px 20px; border-radius: 8px; border: 1px solid #e2e8f0; background: transparent; color: #64748b; font-weight: 500; font-size: 13px; cursor: pointer; transition: all 0.15s; font-family: inherit; }
+  .v7-view-all:hover { border-color: #0d9488; color: #0d9488; }
+  .v7-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .v7-card { border: 1px solid; border-radius: 12px; padding: 20px; transition: all 0.2s; cursor: pointer; position: relative; overflow: hidden; }
+  .v7-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+  .v7-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+  .v7-card-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; font-size: 20px; font-weight: 700; color: #fff; }
+  .v7-card-name { font-size: 15px; font-weight: 600; }
+  .v7-card-tagline { font-size: 12px; margin-top: 2px; font-style: italic; opacity: 0.7; }
+  .v7-card-desc { font-size: 12px; margin-top: 8px; line-height: 1.5; }
+  .v7-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; padding-top: 12px; }
+  .v7-card-version { font-size: 11px; font-weight: 500; opacity: 0.6; }
+  .v7-card-action { font-size: 12px; font-weight: 500; cursor: pointer; }
+  .v7-card-action:hover { text-decoration: underline; }
+  .v7-badge { position: absolute; top: 12px; right: 12px; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+
+  /* CTA Footer shared */
+  .cta-footer { background: #f8fffe; border: 1px solid #99f6e4; border-radius: 12px; padding: 24px 32px; text-align: center; margin-top: 24px; }
+  .cta-footer h4 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+  .cta-footer p { color: #64748b; font-size: 13px; margin-bottom: 12px; }
+  .cta-buttons { display: flex; gap: 12px; justify-content: center; }
+  .btn-primary { padding: 10px 24px; border-radius: 8px; border: none; background: #0d9488; color: #fff; font-weight: 600; font-size: 13px; cursor: pointer; font-family: inherit; }
+  .btn-primary:hover { background: #0f766e; }
+  .btn-danger { padding: 10px 24px; border-radius: 8px; border: none; background: #ef4444; color: #fff; font-weight: 600; font-size: 13px; cursor: pointer; font-family: inherit; }
+  .btn-danger:hover { background: #dc2626; }
+  .cta-email { color: #94a3b8; font-size: 12px; margin-top: 10px; }
+  .cta-email span { color: #0d9488; font-weight: 500; }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>DWx Product Showcase — 7 Design Variations</h1>
+  <p>First Digital — Digital Workplace Excellence | Policy Manager Admin Panel</p>
+</div>
+
+<!-- ================================================================ -->
+<!-- VARIATION 1: SPLASH CARDS (Matches PDF brand guide splash screens) -->
+<!-- ================================================================ -->
+<div class="variation">
+  <div class="variation-header">
+    <h2>Variation 1: Splash Card Grid</h2>
+    <span class="badge">Matches DWx Brand Guide</span>
+  </div>
+  <div class="variation-body">
+    <div class="v1-hero">
+      <div>
+        <h3>DWx Product Suite</h3>
+        <p>Digital Workplace Excellence — complete enterprise platform</p>
+      </div>
+      <div class="v1-stats">
+        <div class="v1-stat"><div class="v1-stat-num">15</div><div class="v1-stat-label">Products</div></div>
+        <div class="v1-stat"><div class="v1-stat-num">1</div><div class="v1-stat-label">New</div></div>
+        <div class="v1-stat"><div class="v1-stat-num">6</div><div class="v1-stat-label">Popular</div></div>
+      </div>
+    </div>
+    <div class="v1-grid">
+      <div class="v1-card">
+        <div class="v1-card-splash" style="background: linear-gradient(135deg, #1a5a8a, #2d7ab8);">
+          <div class="v1-card-version">v2.1.0</div>
+          <div class="v1-card-brand">FIRST DIGITAL</div>
+          <div class="v1-card-dwx">DW<span>x</span></div>
+          <div class="v1-card-name">Asset Dashboard</div>
+          <div class="v1-card-desc">IT Asset Tracking & Management</div>
+        </div>
+      </div>
+      <div class="v1-card">
+        <div class="v1-card-splash" style="background: linear-gradient(135deg, #8764b8, #a78bfa);">
+          <div class="v1-card-version">v1.8.0</div>
+          <div class="v1-card-brand">FIRST DIGITAL</div>
+          <div class="v1-card-dwx">DW<span>x</span></div>
+          <div class="v1-card-name">CV Management</div>
+          <div class="v1-card-desc">Candidate Resume Repository</div>
+        </div>
+      </div>
+      <div class="v1-card">
+        <div class="v1-card-splash" style="background: linear-gradient(135deg, #0078d4, #3b82f6);">
+          <div class="v1-card-version">v3.0.0</div>
+          <span class="v1-card-badge v1-badge-core">Core</span>
+          <div class="v1-card-brand">FIRST DIGITAL</div>
+          <div class="v1-card-dwx">DW<span>x</span></div>
+          <div class="v1-card-name">Document Hub</div>
+          <div class="v1-card-desc">Enterprise Document Management</div>
+        </div>
+      </div>
+      <div class="v1-card">
+        <div class="v1-card-splash" style="background: linear-gradient(135deg, #e3008c, #f472b6);">
+          <div class="v1-card-version">v2.0.0</div>
+          <span class="v1-card-badge v1-badge-new">New</span>
+          <div class="v1-card-brand">FIRST DIGITAL</div>
+          <div class="v1-card-dwx">DW<span>x</span></div>
+          <div class="v1-card-name">Gamification</div>
+          <div class="v1-card-desc">Rewards & Recognition Platform</div>
+        </div>
+      </div>
+      <div class="v1-card">
+        <div class="v1-card-splash" style="background: linear-gradient(135deg, #d83b01, #f97316);">
+          <div class="v1-card-version">v2.2.0</div>
+          <div class="v1-card-brand">FIRST DIGITAL</div>
+          <div class="v1-card-dwx">DW<span>x</span></div>
+          <div class="v1-card-name">Procurement Manager</div>
+          <div class="v1-card-desc">Purchase Order Workflows</div>
+        </div>
+      </div>
+      <div class="v1-card">
+        <div class="v1-card-splash" style="background: linear-gradient(135deg, #0d9488, #14b8a6);">
+          <div class="v1-card-version">v1.2.0</div>
+          <span class="v1-card-badge v1-badge-current">Current App</span>
+          <div class="v1-card-brand">FIRST DIGITAL</div>
+          <div class="v1-card-dwx">DW<span>x</span></div>
+          <div class="v1-card-name">Policy Manager</div>
+          <div class="v1-card-desc">Policy Governance & Compliance</div>
+        </div>
+      </div>
+    </div>
+    <div class="cta-footer">
+      <h4>Ready to unlock more?</h4>
+      <p>Explore all 15 DWx products to supercharge your digital workplace</p>
+      <div class="cta-buttons">
+        <button class="btn-primary">Explore All</button>
+        <button class="btn-danger">Contact Sales</button>
+      </div>
+      <div class="cta-email">Questions? Contact our sales team at <span>gopremium@firsttech.digital</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- VARIATION 2: COMPACT LIST -->
+<!-- ================================================================ -->
+<div class="variation">
+  <div class="variation-header">
+    <h2>Variation 2: Compact List with Gradient Icons</h2>
+    <span class="badge">Best for sidebar / narrow panels</span>
+  </div>
+  <div class="variation-body">
+    <div class="v2-header">
+      <div class="v2-header-icon">DW</div>
+      <div>
+        <div style="font-size: 18px; font-weight: 700;">DWx Product Suite</div>
+        <div style="font-size: 13px; color: #64748b;">15 products, one platform</div>
+      </div>
+    </div>
+    <div class="v2-list">
+      <div class="v2-item">
+        <div class="v2-icon" style="background: linear-gradient(135deg, #1a5a8a, #2d7ab8);">AD</div>
+        <div class="v2-info"><div class="v2-name">Asset Dashboard</div><div class="v2-desc">IT Asset Tracking & Management</div></div>
+        <div class="v2-meta"><span class="v2-version">v2.1.0</span></div>
+      </div>
+      <div class="v2-item">
+        <div class="v2-icon" style="background: linear-gradient(135deg, #8764b8, #a78bfa);">CV</div>
+        <div class="v2-info"><div class="v2-name">CV Management</div><div class="v2-desc">Candidate Resume Repository</div></div>
+        <div class="v2-meta"><span class="v2-version">v1.8.0</span></div>
+      </div>
+      <div class="v2-item">
+        <div class="v2-icon" style="background: linear-gradient(135deg, #0078d4, #3b82f6);">DH</div>
+        <div class="v2-info"><div class="v2-name">Document Hub</div><div class="v2-desc">Enterprise Document Management</div></div>
+        <div class="v2-meta"><span class="v2-tag" style="background:#f0fdf4;color:#16a34a;">Core</span><span class="v2-version">v3.0.0</span></div>
+      </div>
+      <div class="v2-item">
+        <div class="v2-icon" style="background: linear-gradient(135deg, #e3008c, #f472b6);">GM</div>
+        <div class="v2-info"><div class="v2-name">Gamification</div><div class="v2-desc">Rewards & Recognition Platform</div></div>
+        <div class="v2-meta"><span class="v2-tag" style="background:#fce7f3;color:#e3008c;">New</span><span class="v2-version">v2.0.0</span></div>
+      </div>
+      <div class="v2-item">
+        <div class="v2-icon" style="background: linear-gradient(135deg, #d83b01, #f97316);">PM</div>
+        <div class="v2-info"><div class="v2-name">Procurement Manager</div><div class="v2-desc">Purchase Order Workflows</div></div>
+        <div class="v2-meta"><span class="v2-version">v2.2.0</span></div>
+      </div>
+      <div class="v2-item" style="border-color: #0d9488; background: #f0fdfa;">
+        <div class="v2-icon" style="background: linear-gradient(135deg, #0d9488, #14b8a6);">PM</div>
+        <div class="v2-info"><div class="v2-name">Policy Manager <span style="font-size:10px;color:#0d9488;font-weight:600;">(CURRENT)</span></div><div class="v2-desc">Policy Governance & Compliance</div></div>
+        <div class="v2-meta"><span class="v2-version">v1.2.0</span></div>
+      </div>
+      <div class="v2-item">
+        <div class="v2-icon" style="background: linear-gradient(135deg, #ca5010, #f59e0b);">QB</div>
+        <div class="v2-info"><div class="v2-name">Quiz Builder</div><div class="v2-desc">Create Engaging Assessments</div></div>
+        <div class="v2-meta"><span class="v2-version">v1.6.0</span></div>
+      </div>
+      <div class="v2-item">
+        <div class="v2-icon" style="background: linear-gradient(135deg, #004e8c, #3b82f6);">RB</div>
+        <div class="v2-info"><div class="v2-name">Reports Builder</div><div class="v2-desc">Dynamic Report Generation</div></div>
+        <div class="v2-meta"><span class="v2-version">v2.8.0</span></div>
+      </div>
+    </div>
+    <div class="cta-footer">
+      <h4>Explore the full DWx platform</h4>
+      <p>Unlock all 15 products for your digital workplace</p>
+      <div class="cta-buttons">
+        <button class="btn-primary">View All Products</button>
+        <button class="btn-danger">Contact Sales</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- VARIATION 3: MAGAZINE / FEATURED LAYOUT -->
+<!-- ================================================================ -->
+<div class="variation">
+  <div class="variation-header">
+    <h2>Variation 3: Magazine / Featured Layout</h2>
+    <span class="badge">Best for marketing emphasis</span>
+  </div>
+  <div class="variation-body">
+    <!-- Featured Products (2 large) -->
+    <div class="v3-featured">
+      <div class="v3-featured-card" style="background: linear-gradient(135deg, #0d9488, #14b8a6);">
+        <div class="v3-featured-brand">FIRST DIGITAL</div>
+        <div class="v3-featured-name">Policy Manager</div>
+        <div class="v3-featured-desc">Complete policy governance and compliance platform with analytics, SLA tracking, and audit capabilities</div>
+        <button class="v3-featured-btn">You Are Here</button>
+      </div>
+      <div class="v3-featured-card" style="background: linear-gradient(135deg, #e3008c, #f472b6);">
+        <div class="v3-featured-brand">NEW PRODUCT</div>
+        <div class="v3-featured-name">Gamification</div>
+        <div class="v3-featured-desc">Boost employee engagement with rewards, badges, and recognition programs across your organization</div>
+        <button class="v3-featured-btn">Learn More &rarr;</button>
+      </div>
+    </div>
+    <!-- Rest of products (smaller) -->
+    <div class="v3-rest">
+      <div class="v3-mini">
+        <div class="v3-mini-icon" style="background: linear-gradient(135deg, #1a5a8a, #2d7ab8);">AD</div>
+        <div class="v3-mini-name">Asset Dashboard</div>
+        <div class="v3-mini-desc">IT Asset Tracking</div>
+      </div>
+      <div class="v3-mini">
+        <div class="v3-mini-icon" style="background: linear-gradient(135deg, #8764b8, #a78bfa);">CV</div>
+        <div class="v3-mini-name">CV Management</div>
+        <div class="v3-mini-desc">Resume Repository</div>
+      </div>
+      <div class="v3-mini">
+        <div class="v3-mini-icon" style="background: linear-gradient(135deg, #0078d4, #3b82f6);">DH</div>
+        <div class="v3-mini-name">Document Hub</div>
+        <div class="v3-mini-desc">Document Management</div>
+      </div>
+      <div class="v3-mini">
+        <div class="v3-mini-icon" style="background: linear-gradient(135deg, #00ad56, #34d399);">ES</div>
+        <div class="v3-mini-name">External Sharing</div>
+        <div class="v3-mini-desc">Secure Collaboration</div>
+      </div>
+      <div class="v3-mini">
+        <div class="v3-mini-icon" style="background: linear-gradient(135deg, #107c10, #22c55e);">IH</div>
+        <div class="v3-mini-name">Integration Hub</div>
+        <div class="v3-mini-desc">Connect Systems</div>
+      </div>
+      <div class="v3-mini">
+        <div class="v3-mini-icon" style="background: linear-gradient(135deg, #5c2d91, #8b5cf6);">LM</div>
+        <div class="v3-mini-name">License Mgmt</div>
+        <div class="v3-mini-desc">License Tracking</div>
+      </div>
+      <div class="v3-mini">
+        <div class="v3-mini-icon" style="background: linear-gradient(135deg, #d83b01, #f97316);">PM</div>
+        <div class="v3-mini-name">Procurement</div>
+        <div class="v3-mini-desc">Purchase Workflows</div>
+      </div>
+      <div class="v3-mini">
+        <div class="v3-mini-icon" style="background: linear-gradient(135deg, #ca5010, #f59e0b);">QB</div>
+        <div class="v3-mini-name">Quiz Builder</div>
+        <div class="v3-mini-desc">Assessments</div>
+      </div>
+      <div class="v3-mini">
+        <div class="v3-mini-icon" style="background: linear-gradient(135deg, #004e8c, #3b82f6);">RB</div>
+        <div class="v3-mini-name">Reports Builder</div>
+        <div class="v3-mini-desc">Report Generation</div>
+      </div>
+      <div class="v3-mini">
+        <div class="v3-mini-icon" style="background: linear-gradient(135deg, #0078d4, #60a5fa);">SM</div>
+        <div class="v3-mini-name">Survey Manager</div>
+        <div class="v3-mini-desc">Employee Feedback</div>
+      </div>
+      <div class="v3-mini">
+        <div class="v3-mini-icon" style="background: linear-gradient(135deg, #038387, #14b8a6);">RM</div>
+        <div class="v3-mini-name">Recruitment</div>
+        <div class="v3-mini-desc">Talent Acquisition</div>
+      </div>
+      <div class="v3-mini">
+        <div class="v3-mini-icon" style="background: linear-gradient(135deg, #b4009e, #d946ef);">TS</div>
+        <div class="v3-mini-name">Training & Skills</div>
+        <div class="v3-mini-desc">Learning Mgmt</div>
+      </div>
+      <div class="v3-mini">
+        <div class="v3-mini-icon" style="background: linear-gradient(135deg, #1a5a8a, #2d7ab8);">CM</div>
+        <div class="v3-mini-name">Contract Manager</div>
+        <div class="v3-mini-desc">Contract Lifecycle</div>
+      </div>
+    </div>
+    <div class="cta-footer">
+      <h4>Ready to unlock more?</h4>
+      <p>Explore all 15 DWx products to supercharge your digital workplace</p>
+      <div class="cta-buttons">
+        <button class="btn-primary">Explore All</button>
+        <button class="btn-danger">Contact Sales</button>
+      </div>
+      <div class="cta-email">Questions? Contact us at <span>gopremium@firsttech.digital</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- VARIATION 4: DARK PREMIUM SHOWCASE -->
+<!-- ================================================================ -->
+<div class="variation">
+  <div class="variation-header">
+    <h2>Variation 4: Dark Premium Showcase</h2>
+    <span class="badge">Best for premium/upsell emphasis</span>
+  </div>
+  <div class="variation-body" style="padding: 0;">
+    <div class="v4-container">
+      <div class="v4-header">
+        <div>
+          <div class="v4-title">DWx Product Suite</div>
+          <div class="v4-subtitle">Unlock additional capabilities for your digital workplace</div>
+        </div>
+        <button class="v4-view-all">View all 15 products &rarr;</button>
+      </div>
+      <div class="v4-grid">
+        <div class="v4-card" style="--accent: #1a5a8a;">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(to right, #1a5a8a, #2d7ab8);"></div>
+          <div class="v4-card-icon" style="background: linear-gradient(135deg, #1a5a8a, #2d7ab8);">AD</div>
+          <div class="v4-card-name">Asset Dashboard</div>
+          <div class="v4-card-tagline">Track & manage</div>
+          <div class="v4-card-desc">IT Asset Tracking & Management with lifecycle monitoring</div>
+          <div class="v4-card-footer"><span class="v4-card-version">v2.1.0</span><span class="v4-card-action">Learn More &rarr;</span></div>
+        </div>
+        <div class="v4-card">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(to right, #e3008c, #f472b6);"></div>
+          <span class="v4-badge" style="background:#e3008c;color:#fff;">NEW</span>
+          <div class="v4-card-icon" style="background: linear-gradient(135deg, #e3008c, #f472b6);">GM</div>
+          <div class="v4-card-name">Gamification</div>
+          <div class="v4-card-tagline">Engage & reward</div>
+          <div class="v4-card-desc">Rewards & Recognition Platform for employee engagement</div>
+          <div class="v4-card-footer"><span class="v4-card-version">v2.0.0</span><span class="v4-card-action">Learn More &rarr;</span></div>
+        </div>
+        <div class="v4-card">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(to right, #0078d4, #3b82f6);"></div>
+          <div class="v4-card-icon" style="background: linear-gradient(135deg, #0078d4, #3b82f6);">DH</div>
+          <div class="v4-card-name">Document Hub</div>
+          <div class="v4-card-tagline">Organize everything</div>
+          <div class="v4-card-desc">Enterprise Document Management with version control</div>
+          <div class="v4-card-footer"><span class="v4-card-version">v3.0.0</span><span class="v4-card-action">Learn More &rarr;</span></div>
+        </div>
+        <div class="v4-card">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(to right, #d83b01, #f97316);"></div>
+          <div class="v4-card-icon" style="background: linear-gradient(135deg, #d83b01, #f97316);">PM</div>
+          <div class="v4-card-name">Procurement Manager</div>
+          <div class="v4-card-tagline">Purchase smarter</div>
+          <div class="v4-card-desc">Purchase Order Workflows with budget tracking</div>
+          <div class="v4-card-footer"><span class="v4-card-version">v2.2.0</span><span class="v4-card-action">Learn More &rarr;</span></div>
+        </div>
+        <div class="v4-card">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(to right, #004e8c, #3b82f6);"></div>
+          <div class="v4-card-icon" style="background: linear-gradient(135deg, #004e8c, #3b82f6);">RB</div>
+          <div class="v4-card-name">Reports Builder</div>
+          <div class="v4-card-tagline">Insight on demand</div>
+          <div class="v4-card-desc">Dynamic Report Generation with customizable templates</div>
+          <div class="v4-card-footer"><span class="v4-card-version">v2.8.0</span><span class="v4-card-action">Learn More &rarr;</span></div>
+        </div>
+        <div class="v4-card" style="border-color: #0d9488;">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(to right, #0d9488, #14b8a6);"></div>
+          <span class="v4-badge" style="background:#0d9488;color:#fff;">CURRENT</span>
+          <div class="v4-card-icon" style="background: linear-gradient(135deg, #0d9488, #14b8a6);">PM</div>
+          <div class="v4-card-name">Policy Manager</div>
+          <div class="v4-card-tagline">Govern with confidence</div>
+          <div class="v4-card-desc">Policy Governance & Compliance with full audit trail</div>
+          <div class="v4-card-footer"><span class="v4-card-version">v1.2.0</span><span class="v4-card-action" style="color:#14b8a6;">You Are Here</span></div>
+        </div>
+      </div>
+      <div style="text-align: center; margin-top: 24px; padding-top: 20px; border-top: 1px solid #334155;">
+        <div style="color: #94a3b8; font-size: 12px;">Questions? Contact our sales team at <span style="color: #0d9488; font-weight: 500;">gopremium@firsttech.digital</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- VARIATION 5: CATEGORIZED TILES -->
+<!-- ================================================================ -->
+<div class="variation">
+  <div class="variation-header">
+    <h2>Variation 5: Categorized Tile Grid</h2>
+    <span class="badge">Best for organized browsing</span>
+  </div>
+  <div class="variation-body">
+    <div class="v5-header">
+      <h3>DWx Digital Workplace Excellence</h3>
+      <p>15 products organized by category — one unified platform</p>
+    </div>
+    <div class="v5-categories">
+      <!-- HR & People -->
+      <div>
+        <div class="v5-category-label">HR & People Management</div>
+        <div class="v5-category-grid">
+          <div class="v5-tile">
+            <div class="v5-tile-icon" style="background: linear-gradient(135deg, #8764b8, #a78bfa);">CV</div>
+            <div class="v5-tile-name">CV Management</div>
+            <div class="v5-tile-tagline">Skills that scale</div>
+            <div class="v5-tile-version">v1.8.0</div>
+          </div>
+          <div class="v5-tile">
+            <div class="v5-tile-icon" style="background: linear-gradient(135deg, #038387, #14b8a6);">RM</div>
+            <div class="v5-tile-name">Recruitment</div>
+            <div class="v5-tile-tagline">Recruit smarter</div>
+            <div class="v5-tile-version">v2.3.0</div>
+          </div>
+          <div class="v5-tile">
+            <div class="v5-tile-icon" style="background: linear-gradient(135deg, #b4009e, #d946ef);">TS</div>
+            <div class="v5-tile-name">Training & Skills</div>
+            <div class="v5-tile-tagline">Grow talent</div>
+            <div class="v5-tile-version">v1.4.0</div>
+          </div>
+          <div class="v5-tile">
+            <div class="v5-tile-badge" style="background:#e3008c;">&#x2605;</div>
+            <div class="v5-tile-icon" style="background: linear-gradient(135deg, #e3008c, #f472b6);">GM</div>
+            <div class="v5-tile-name">Gamification</div>
+            <div class="v5-tile-tagline">Engage & reward</div>
+            <div class="v5-tile-version">v2.0.0</div>
+          </div>
+          <div class="v5-tile">
+            <div class="v5-tile-icon" style="background: linear-gradient(135deg, #0078d4, #60a5fa);">SM</div>
+            <div class="v5-tile-name">Survey Manager</div>
+            <div class="v5-tile-tagline">Listen & learn</div>
+            <div class="v5-tile-version">v1.7.0</div>
+          </div>
+        </div>
+      </div>
+      <!-- Governance & Compliance -->
+      <div>
+        <div class="v5-category-label">Governance & Compliance</div>
+        <div class="v5-category-grid">
+          <div class="v5-tile" style="border-color: #0d9488; background: #f0fdfa;">
+            <div class="v5-tile-badge" style="background:#0d9488;">&#x2713;</div>
+            <div class="v5-tile-icon" style="background: linear-gradient(135deg, #0d9488, #14b8a6);">PM</div>
+            <div class="v5-tile-name">Policy Manager</div>
+            <div class="v5-tile-tagline">Govern with confidence</div>
+            <div class="v5-tile-version">v1.2.0</div>
+          </div>
+          <div class="v5-tile">
+            <div class="v5-tile-icon" style="background: linear-gradient(135deg, #1a5a8a, #2d7ab8);">CM</div>
+            <div class="v5-tile-name">Contract Manager</div>
+            <div class="v5-tile-tagline">Control lifecycle</div>
+            <div class="v5-tile-version">v2.0.0</div>
+          </div>
+          <div class="v5-tile">
+            <div class="v5-tile-icon" style="background: linear-gradient(135deg, #ca5010, #f59e0b);">QB</div>
+            <div class="v5-tile-name">Quiz Builder</div>
+            <div class="v5-tile-tagline">Test knowledge</div>
+            <div class="v5-tile-version">v1.6.0</div>
+          </div>
+          <div class="v5-tile">
+            <div class="v5-tile-icon" style="background: linear-gradient(135deg, #5c2d91, #8b5cf6);">LM</div>
+            <div class="v5-tile-name">License Mgmt</div>
+            <div class="v5-tile-tagline">Stay compliant</div>
+            <div class="v5-tile-version">v1.9.0</div>
+          </div>
+        </div>
+      </div>
+      <!-- Documents & Operations -->
+      <div>
+        <div class="v5-category-label">Documents & Operations</div>
+        <div class="v5-category-grid">
+          <div class="v5-tile">
+            <div class="v5-tile-icon" style="background: linear-gradient(135deg, #0078d4, #3b82f6);">DH</div>
+            <div class="v5-tile-name">Document Hub</div>
+            <div class="v5-tile-tagline">Organize everything</div>
+            <div class="v5-tile-version">v3.0.0</div>
+          </div>
+          <div class="v5-tile">
+            <div class="v5-tile-icon" style="background: linear-gradient(135deg, #00ad56, #34d399);">ES</div>
+            <div class="v5-tile-name">External Sharing</div>
+            <div class="v5-tile-tagline">Share securely</div>
+            <div class="v5-tile-version">v1.5.0</div>
+          </div>
+          <div class="v5-tile">
+            <div class="v5-tile-icon" style="background: linear-gradient(135deg, #1a5a8a, #2d7ab8);">AD</div>
+            <div class="v5-tile-name">Asset Dashboard</div>
+            <div class="v5-tile-tagline">Track & manage</div>
+            <div class="v5-tile-version">v2.1.0</div>
+          </div>
+          <div class="v5-tile">
+            <div class="v5-tile-icon" style="background: linear-gradient(135deg, #d83b01, #f97316);">PR</div>
+            <div class="v5-tile-name">Procurement</div>
+            <div class="v5-tile-tagline">Purchase smarter</div>
+            <div class="v5-tile-version">v2.2.0</div>
+          </div>
+          <div class="v5-tile">
+            <div class="v5-tile-icon" style="background: linear-gradient(135deg, #004e8c, #3b82f6);">RB</div>
+            <div class="v5-tile-name">Reports Builder</div>
+            <div class="v5-tile-tagline">Insight on demand</div>
+            <div class="v5-tile-version">v2.8.0</div>
+          </div>
+        </div>
+      </div>
+      <!-- Integration -->
+      <div>
+        <div class="v5-category-label">Integration & Platform</div>
+        <div class="v5-category-grid">
+          <div class="v5-tile">
+            <div class="v5-tile-icon" style="background: linear-gradient(135deg, #107c10, #22c55e);">IH</div>
+            <div class="v5-tile-name">Integration Hub</div>
+            <div class="v5-tile-tagline">Connect systems</div>
+            <div class="v5-tile-version">v2.5.0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="cta-footer">
+      <h4>Explore the full DWx platform</h4>
+      <p>Contact our team to learn more about bundling products for your organization</p>
+      <div class="cta-buttons">
+        <button class="btn-primary">Explore All</button>
+        <button class="btn-danger">Contact Sales</button>
+      </div>
+      <div class="cta-email">Questions? Contact us at <span>gopremium@firsttech.digital</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- VARIATION 6: LIGHT PREMIUM SHOWCASE (V4 layout with white background) -->
+<!-- ================================================================ -->
+<div class="variation">
+  <div class="variation-header">
+    <h2>Variation 6: Light Premium Showcase</h2>
+    <span class="badge">V4 layout — white background</span>
+  </div>
+  <div class="variation-body" style="padding: 0;">
+    <div class="v6-container">
+      <div class="v6-header">
+        <div>
+          <div class="v6-title">DWx Product Suite</div>
+          <div class="v6-subtitle">Unlock additional capabilities for your digital workplace</div>
+        </div>
+        <button class="v6-view-all">View all 15 products &rarr;</button>
+      </div>
+      <div class="v6-grid">
+        <div class="v6-card">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(to right, #1a5a8a, #2d7ab8);"></div>
+          <div class="v6-card-icon" style="background: linear-gradient(135deg, #1a5a8a, #2d7ab8);">AD</div>
+          <div class="v6-card-name">Asset Dashboard</div>
+          <div class="v6-card-tagline">Track & manage</div>
+          <div class="v6-card-desc">IT Asset Tracking & Management with lifecycle monitoring</div>
+          <div class="v6-card-footer"><span class="v6-card-version">v2.1.0</span><span class="v6-card-action">Learn More &rarr;</span></div>
+        </div>
+        <div class="v6-card">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(to right, #e3008c, #f472b6);"></div>
+          <span class="v6-badge" style="background:#e3008c;color:#fff;">NEW</span>
+          <div class="v6-card-icon" style="background: linear-gradient(135deg, #e3008c, #f472b6);">GM</div>
+          <div class="v6-card-name">Gamification</div>
+          <div class="v6-card-tagline">Engage & reward</div>
+          <div class="v6-card-desc">Rewards & Recognition Platform for employee engagement</div>
+          <div class="v6-card-footer"><span class="v6-card-version">v2.0.0</span><span class="v6-card-action">Learn More &rarr;</span></div>
+        </div>
+        <div class="v6-card">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(to right, #0078d4, #3b82f6);"></div>
+          <div class="v6-card-icon" style="background: linear-gradient(135deg, #0078d4, #3b82f6);">DH</div>
+          <div class="v6-card-name">Document Hub</div>
+          <div class="v6-card-tagline">Organize everything</div>
+          <div class="v6-card-desc">Enterprise Document Management with version control</div>
+          <div class="v6-card-footer"><span class="v6-card-version">v3.0.0</span><span class="v6-card-action">Learn More &rarr;</span></div>
+        </div>
+        <div class="v6-card">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(to right, #d83b01, #f97316);"></div>
+          <div class="v6-card-icon" style="background: linear-gradient(135deg, #d83b01, #f97316);">PM</div>
+          <div class="v6-card-name">Procurement Manager</div>
+          <div class="v6-card-tagline">Purchase smarter</div>
+          <div class="v6-card-desc">Purchase Order Workflows with budget tracking</div>
+          <div class="v6-card-footer"><span class="v6-card-version">v2.2.0</span><span class="v6-card-action">Learn More &rarr;</span></div>
+        </div>
+        <div class="v6-card">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(to right, #004e8c, #3b82f6);"></div>
+          <div class="v6-card-icon" style="background: linear-gradient(135deg, #004e8c, #3b82f6);">RB</div>
+          <div class="v6-card-name">Reports Builder</div>
+          <div class="v6-card-tagline">Insight on demand</div>
+          <div class="v6-card-desc">Dynamic Report Generation with customizable templates</div>
+          <div class="v6-card-footer"><span class="v6-card-version">v2.8.0</span><span class="v6-card-action">Learn More &rarr;</span></div>
+        </div>
+        <div class="v6-card v6-current-card">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(to right, #0d9488, #14b8a6);"></div>
+          <span class="v6-badge" style="background:#0d9488;color:#fff;">CURRENT</span>
+          <div class="v6-card-icon" style="background: linear-gradient(135deg, #0d9488, #14b8a6);">PM</div>
+          <div class="v6-card-name">Policy Manager</div>
+          <div class="v6-card-tagline">Govern with confidence</div>
+          <div class="v6-card-desc">Policy Governance & Compliance with full audit trail</div>
+          <div class="v6-card-footer"><span class="v6-card-version">v1.2.0</span><span class="v6-card-action" style="color:#14b8a6;">You Are Here</span></div>
+        </div>
+        <div class="v6-card">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(to right, #8764b8, #a78bfa);"></div>
+          <div class="v6-card-icon" style="background: linear-gradient(135deg, #8764b8, #a78bfa);">CV</div>
+          <div class="v6-card-name">CV Management</div>
+          <div class="v6-card-tagline">Skills that scale</div>
+          <div class="v6-card-desc">Skills & Competency Profiling for workforce development</div>
+          <div class="v6-card-footer"><span class="v6-card-version">v1.8.0</span><span class="v6-card-action">Learn More &rarr;</span></div>
+        </div>
+        <div class="v6-card">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(to right, #038387, #14b8a6);"></div>
+          <div class="v6-card-icon" style="background: linear-gradient(135deg, #038387, #14b8a6);">RM</div>
+          <div class="v6-card-name">Recruitment Manager</div>
+          <div class="v6-card-tagline">Recruit smarter</div>
+          <div class="v6-card-desc">Recruitment & Onboarding Automation with interview scheduling</div>
+          <div class="v6-card-footer"><span class="v6-card-version">v2.3.0</span><span class="v6-card-action">Learn More &rarr;</span></div>
+        </div>
+        <div class="v6-card">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(to right, #b4009e, #d946ef);"></div>
+          <div class="v6-card-icon" style="background: linear-gradient(135deg, #b4009e, #d946ef);">TS</div>
+          <div class="v6-card-name">Training & Skills</div>
+          <div class="v6-card-tagline">Grow talent</div>
+          <div class="v6-card-desc">Learning Management & Skills Development with certifications</div>
+          <div class="v6-card-footer"><span class="v6-card-version">v1.4.0</span><span class="v6-card-action">Learn More &rarr;</span></div>
+        </div>
+        <div class="v6-card">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(to right, #107c10, #34d399);"></div>
+          <span class="v6-badge" style="background:#107c10;color:#fff;">CORE</span>
+          <div class="v6-card-icon" style="background: linear-gradient(135deg, #107c10, #34d399);">JM</div>
+          <div class="v6-card-name">JML Manager</div>
+          <div class="v6-card-tagline">Joiners, movers, leavers</div>
+          <div class="v6-card-desc">Employee Lifecycle Management from hire to retire</div>
+          <div class="v6-card-footer"><span class="v6-card-version">v4.0.0</span><span class="v6-card-action">Learn More &rarr;</span></div>
+        </div>
+        <div class="v6-card">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(to right, #00ad56, #34d399);"></div>
+          <div class="v6-card-icon" style="background: linear-gradient(135deg, #00ad56, #34d399);">ES</div>
+          <div class="v6-card-name">External Sharing</div>
+          <div class="v6-card-tagline">Share securely</div>
+          <div class="v6-card-desc">Secure External Document Sharing with expiry controls</div>
+          <div class="v6-card-footer"><span class="v6-card-version">v1.5.0</span><span class="v6-card-action">Learn More &rarr;</span></div>
+        </div>
+        <div class="v6-card">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(to right, #5c2d91, #8b5cf6);"></div>
+          <div class="v6-card-icon" style="background: linear-gradient(135deg, #5c2d91, #8b5cf6);">WB</div>
+          <div class="v6-card-name">Wellbeing</div>
+          <div class="v6-card-tagline">Thrive at work</div>
+          <div class="v6-card-desc">Employee Wellbeing & Mental Health support platform</div>
+          <div class="v6-card-footer"><span class="v6-card-version">v1.1.0</span><span class="v6-card-action">Learn More &rarr;</span></div>
+        </div>
+        <div class="v6-card">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(to right, #744da9, #a78bfa);"></div>
+          <div class="v6-card-icon" style="background: linear-gradient(135deg, #744da9, #a78bfa);">SA</div>
+          <div class="v6-card-name">Starter App</div>
+          <div class="v6-card-tagline">Launch fast</div>
+          <div class="v6-card-desc">Rapid SharePoint App Starter Kit with pre-built components</div>
+          <div class="v6-card-footer"><span class="v6-card-version">v2.5.0</span><span class="v6-card-action">Learn More &rarr;</span></div>
+        </div>
+        <div class="v6-card">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(to right, #c19c00, #facc15);"></div>
+          <div class="v6-card-icon" style="background: linear-gradient(135deg, #c19c00, #facc15);">CS</div>
+          <div class="v6-card-name">Compliance Suite</div>
+          <div class="v6-card-tagline">Stay compliant</div>
+          <div class="v6-card-desc">Regulatory Compliance Tracking with automated alerts</div>
+          <div class="v6-card-footer"><span class="v6-card-version">v1.9.0</span><span class="v6-card-action">Learn More &rarr;</span></div>
+        </div>
+        <div class="v6-card">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(to right, #0078d4, #60a5fa);"></div>
+          <span class="v6-badge" style="background:#0078d4;color:#fff;">NEW</span>
+          <div class="v6-card-icon" style="background: linear-gradient(135deg, #0078d4, #60a5fa);">SM</div>
+          <div class="v6-card-name">Service Management</div>
+          <div class="v6-card-tagline">Serve better</div>
+          <div class="v6-card-desc">IT Service Desk & Request Management with SLA tracking</div>
+          <div class="v6-card-footer"><span class="v6-card-version">v1.0.0</span><span class="v6-card-action">Learn More &rarr;</span></div>
+        </div>
+      </div>
+      <div style="text-align: center; margin-top: 24px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+        <div style="color: #64748b; font-size: 12px;">Questions? Contact our sales team at <span style="color: #0d9488; font-weight: 500;">gopremium@firsttech.digital</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- VARIATION 7: TINTED CARD SHOWCASE (V6 layout with subtle brand-color fills) -->
+<!-- ================================================================ -->
+<div class="variation">
+  <div class="variation-header">
+    <h2>Variation 7: Tinted Card Showcase</h2>
+    <span class="badge">V6 + subtle brand fills</span>
+  </div>
+  <div class="variation-body" style="padding: 0;">
+    <div class="v7-container">
+      <div class="v7-header">
+        <div>
+          <div class="v7-title">DWx Product Suite</div>
+          <div class="v7-subtitle">Unlock additional capabilities for your digital workplace</div>
+        </div>
+        <button class="v7-view-all">View all 15 products &rarr;</button>
+      </div>
+      <div class="v7-grid">
+        <!-- Asset Dashboard — blue tint -->
+        <div class="v7-card" style="background: rgba(26,90,138,0.05); border-color: rgba(26,90,138,0.15);">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(to right, #1a5a8a, #2d7ab8);"></div>
+          <div class="v7-card-icon" style="background: linear-gradient(135deg, #1a5a8a, #2d7ab8);">AD</div>
+          <div class="v7-card-name" style="color: #1a5a8a;">Asset Dashboard</div>
+          <div class="v7-card-tagline" style="color: #1a5a8a;">Track & manage</div>
+          <div class="v7-card-desc" style="color: #3d6f99;">IT Asset Tracking & Management with lifecycle monitoring</div>
+          <div class="v7-card-footer" style="border-top: 1px solid rgba(26,90,138,0.1);"><span class="v7-card-version" style="color: #1a5a8a;">v2.1.0</span><span class="v7-card-action" style="color: #1a5a8a;">Learn More &rarr;</span></div>
+        </div>
+        <!-- Gamification — pink tint -->
+        <div class="v7-card" style="background: rgba(227,0,140,0.04); border-color: rgba(227,0,140,0.15);">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(to right, #e3008c, #f472b6);"></div>
+          <span class="v7-badge" style="background:#e3008c;color:#fff;">NEW</span>
+          <div class="v7-card-icon" style="background: linear-gradient(135deg, #e3008c, #f472b6);">GM</div>
+          <div class="v7-card-name" style="color: #c4007a;">Gamification</div>
+          <div class="v7-card-tagline" style="color: #c4007a;">Engage & reward</div>
+          <div class="v7-card-desc" style="color: #9b3d78;">Rewards & Recognition Platform for employee engagement</div>
+          <div class="v7-card-footer" style="border-top: 1px solid rgba(227,0,140,0.1);"><span class="v7-card-version" style="color: #c4007a;">v2.0.0</span><span class="v7-card-action" style="color: #e3008c;">Learn More &rarr;</span></div>
+        </div>
+        <!-- Document Hub — M365 blue tint -->
+        <div class="v7-card" style="background: rgba(0,120,212,0.04); border-color: rgba(0,120,212,0.15);">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(to right, #0078d4, #3b82f6);"></div>
+          <span class="v7-badge" style="background:#10b981;color:#fff;">CORE</span>
+          <div class="v7-card-icon" style="background: linear-gradient(135deg, #0078d4, #3b82f6);">DH</div>
+          <div class="v7-card-name" style="color: #0068ba;">Document Hub</div>
+          <div class="v7-card-tagline" style="color: #0068ba;">Organize everything</div>
+          <div class="v7-card-desc" style="color: #3a7bc0;">Enterprise Document Management with version control</div>
+          <div class="v7-card-footer" style="border-top: 1px solid rgba(0,120,212,0.1);"><span class="v7-card-version" style="color: #0068ba;">v3.0.0</span><span class="v7-card-action" style="color: #0078d4;">Learn More &rarr;</span></div>
+        </div>
+        <!-- Procurement — orange tint -->
+        <div class="v7-card" style="background: rgba(216,59,1,0.04); border-color: rgba(216,59,1,0.15);">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(to right, #d83b01, #f97316);"></div>
+          <div class="v7-card-icon" style="background: linear-gradient(135deg, #d83b01, #f97316);">PM</div>
+          <div class="v7-card-name" style="color: #c03501;">Procurement Manager</div>
+          <div class="v7-card-tagline" style="color: #c03501;">Purchase smarter</div>
+          <div class="v7-card-desc" style="color: #a85a2a;">Purchase Order Workflows with budget tracking</div>
+          <div class="v7-card-footer" style="border-top: 1px solid rgba(216,59,1,0.1);"><span class="v7-card-version" style="color: #c03501;">v2.2.0</span><span class="v7-card-action" style="color: #d83b01;">Learn More &rarr;</span></div>
+        </div>
+        <!-- Reports Builder — navy tint -->
+        <div class="v7-card" style="background: rgba(0,78,140,0.04); border-color: rgba(0,78,140,0.15);">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(to right, #004e8c, #3b82f6);"></div>
+          <div class="v7-card-icon" style="background: linear-gradient(135deg, #004e8c, #3b82f6);">RB</div>
+          <div class="v7-card-name" style="color: #004e8c;">Reports Builder</div>
+          <div class="v7-card-tagline" style="color: #004e8c;">Insight on demand</div>
+          <div class="v7-card-desc" style="color: #2a6396;">Dynamic Report Generation with customizable templates</div>
+          <div class="v7-card-footer" style="border-top: 1px solid rgba(0,78,140,0.1);"><span class="v7-card-version" style="color: #004e8c;">v2.8.0</span><span class="v7-card-action" style="color: #004e8c;">Learn More &rarr;</span></div>
+        </div>
+        <!-- Policy Manager — teal tint (current) -->
+        <div class="v7-card" style="background: rgba(13,148,136,0.06); border-color: rgba(13,148,136,0.25);">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(to right, #0d9488, #14b8a6);"></div>
+          <span class="v7-badge" style="background:#0d9488;color:#fff;">CURRENT</span>
+          <div class="v7-card-icon" style="background: linear-gradient(135deg, #0d9488, #14b8a6);">PM</div>
+          <div class="v7-card-name" style="color: #0d9488;">Policy Manager</div>
+          <div class="v7-card-tagline" style="color: #0d9488;">Govern with confidence</div>
+          <div class="v7-card-desc" style="color: #2a7d76;">Policy Governance & Compliance with full audit trail</div>
+          <div class="v7-card-footer" style="border-top: 1px solid rgba(13,148,136,0.15);"><span class="v7-card-version" style="color: #0d9488;">v1.2.0</span><span class="v7-card-action" style="color:#14b8a6; font-weight:600;">You Are Here</span></div>
+        </div>
+        <!-- CV Management — purple tint -->
+        <div class="v7-card" style="background: rgba(135,100,184,0.04); border-color: rgba(135,100,184,0.15);">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(to right, #8764b8, #a78bfa);"></div>
+          <div class="v7-card-icon" style="background: linear-gradient(135deg, #8764b8, #a78bfa);">CV</div>
+          <div class="v7-card-name" style="color: #7855a5;">CV Management</div>
+          <div class="v7-card-tagline" style="color: #7855a5;">Skills that scale</div>
+          <div class="v7-card-desc" style="color: #7a6899;">Skills & Competency Profiling for workforce development</div>
+          <div class="v7-card-footer" style="border-top: 1px solid rgba(135,100,184,0.1);"><span class="v7-card-version" style="color: #7855a5;">v1.8.0</span><span class="v7-card-action" style="color: #8764b8;">Learn More &rarr;</span></div>
+        </div>
+        <!-- Recruitment — teal-dark tint -->
+        <div class="v7-card" style="background: rgba(3,131,135,0.04); border-color: rgba(3,131,135,0.15);">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(to right, #038387, #14b8a6);"></div>
+          <div class="v7-card-icon" style="background: linear-gradient(135deg, #038387, #14b8a6);">RM</div>
+          <div class="v7-card-name" style="color: #038387;">Recruitment Manager</div>
+          <div class="v7-card-tagline" style="color: #038387;">Recruit smarter</div>
+          <div class="v7-card-desc" style="color: #2a7577;">Recruitment & Onboarding Automation with interview scheduling</div>
+          <div class="v7-card-footer" style="border-top: 1px solid rgba(3,131,135,0.1);"><span class="v7-card-version" style="color: #038387;">v2.3.0</span><span class="v7-card-action" style="color: #038387;">Learn More &rarr;</span></div>
+        </div>
+        <!-- Training — magenta tint -->
+        <div class="v7-card" style="background: rgba(180,0,158,0.04); border-color: rgba(180,0,158,0.12);">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(to right, #b4009e, #d946ef);"></div>
+          <div class="v7-card-icon" style="background: linear-gradient(135deg, #b4009e, #d946ef);">TS</div>
+          <div class="v7-card-name" style="color: #9c008a;">Training & Skills</div>
+          <div class="v7-card-tagline" style="color: #9c008a;">Grow talent</div>
+          <div class="v7-card-desc" style="color: #8b3d80;">Learning Management & Skills Development with certifications</div>
+          <div class="v7-card-footer" style="border-top: 1px solid rgba(180,0,158,0.1);"><span class="v7-card-version" style="color: #9c008a;">v1.4.0</span><span class="v7-card-action" style="color: #b4009e;">Learn More &rarr;</span></div>
+        </div>
+        <!-- JML Manager — green tint -->
+        <div class="v7-card" style="background: rgba(16,124,16,0.04); border-color: rgba(16,124,16,0.15);">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(to right, #107c10, #34d399);"></div>
+          <span class="v7-badge" style="background:#107c10;color:#fff;">CORE</span>
+          <div class="v7-card-icon" style="background: linear-gradient(135deg, #107c10, #34d399);">JM</div>
+          <div class="v7-card-name" style="color: #0e6c0e;">JML Manager</div>
+          <div class="v7-card-tagline" style="color: #0e6c0e;">Joiners, movers, leavers</div>
+          <div class="v7-card-desc" style="color: #3a7a3a;">Employee Lifecycle Management from hire to retire</div>
+          <div class="v7-card-footer" style="border-top: 1px solid rgba(16,124,16,0.1);"><span class="v7-card-version" style="color: #0e6c0e;">v4.0.0</span><span class="v7-card-action" style="color: #107c10;">Learn More &rarr;</span></div>
+        </div>
+        <!-- External Sharing — emerald tint -->
+        <div class="v7-card" style="background: rgba(0,173,86,0.04); border-color: rgba(0,173,86,0.15);">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(to right, #00ad56, #34d399);"></div>
+          <span class="v7-badge" style="background:#10b981;color:#fff;">CORE</span>
+          <div class="v7-card-icon" style="background: linear-gradient(135deg, #00ad56, #34d399);">ES</div>
+          <div class="v7-card-name" style="color: #009a4d;">External Sharing</div>
+          <div class="v7-card-tagline" style="color: #009a4d;">Share securely</div>
+          <div class="v7-card-desc" style="color: #3a8a5a;">Secure External Document Sharing with expiry controls</div>
+          <div class="v7-card-footer" style="border-top: 1px solid rgba(0,173,86,0.1);"><span class="v7-card-version" style="color: #009a4d;">v1.5.0</span><span class="v7-card-action" style="color: #00ad56;">Learn More &rarr;</span></div>
+        </div>
+        <!-- Wellbeing — deep purple tint -->
+        <div class="v7-card" style="background: rgba(92,45,145,0.04); border-color: rgba(92,45,145,0.12);">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(to right, #5c2d91, #8b5cf6);"></div>
+          <div class="v7-card-icon" style="background: linear-gradient(135deg, #5c2d91, #8b5cf6);">WB</div>
+          <div class="v7-card-name" style="color: #5c2d91;">Wellbeing</div>
+          <div class="v7-card-tagline" style="color: #5c2d91;">Thrive at work</div>
+          <div class="v7-card-desc" style="color: #6e4a8f;">Employee Wellbeing & Mental Health support platform</div>
+          <div class="v7-card-footer" style="border-top: 1px solid rgba(92,45,145,0.1);"><span class="v7-card-version" style="color: #5c2d91;">v1.1.0</span><span class="v7-card-action" style="color: #5c2d91;">Learn More &rarr;</span></div>
+        </div>
+        <!-- Starter App — mid purple tint -->
+        <div class="v7-card" style="background: rgba(116,77,169,0.04); border-color: rgba(116,77,169,0.12);">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(to right, #744da9, #a78bfa);"></div>
+          <div class="v7-card-icon" style="background: linear-gradient(135deg, #744da9, #a78bfa);">SA</div>
+          <div class="v7-card-name" style="color: #744da9;">Starter App</div>
+          <div class="v7-card-tagline" style="color: #744da9;">Launch fast</div>
+          <div class="v7-card-desc" style="color: #7a5fa0;">Rapid SharePoint App Starter Kit with pre-built components</div>
+          <div class="v7-card-footer" style="border-top: 1px solid rgba(116,77,169,0.1);"><span class="v7-card-version" style="color: #744da9;">v2.5.0</span><span class="v7-card-action" style="color: #744da9;">Learn More &rarr;</span></div>
+        </div>
+        <!-- Compliance Suite — gold tint -->
+        <div class="v7-card" style="background: rgba(193,156,0,0.04); border-color: rgba(193,156,0,0.15);">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(to right, #c19c00, #facc15);"></div>
+          <div class="v7-card-icon" style="background: linear-gradient(135deg, #c19c00, #facc15);">CS</div>
+          <div class="v7-card-name" style="color: #a38400;">Compliance Suite</div>
+          <div class="v7-card-tagline" style="color: #a38400;">Stay compliant</div>
+          <div class="v7-card-desc" style="color: #8a7530;">Regulatory Compliance Tracking with automated alerts</div>
+          <div class="v7-card-footer" style="border-top: 1px solid rgba(193,156,0,0.1);"><span class="v7-card-version" style="color: #a38400;">v1.9.0</span><span class="v7-card-action" style="color: #c19c00;">Learn More &rarr;</span></div>
+        </div>
+        <!-- Service Management — blue tint -->
+        <div class="v7-card" style="background: rgba(0,120,212,0.04); border-color: rgba(0,120,212,0.15);">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(to right, #0078d4, #60a5fa);"></div>
+          <span class="v7-badge" style="background:#0078d4;color:#fff;">NEW</span>
+          <div class="v7-card-icon" style="background: linear-gradient(135deg, #0078d4, #60a5fa);">SM</div>
+          <div class="v7-card-name" style="color: #0068ba;">Service Management</div>
+          <div class="v7-card-tagline" style="color: #0068ba;">Serve better</div>
+          <div class="v7-card-desc" style="color: #3a7bc0;">IT Service Desk & Request Management with SLA tracking</div>
+          <div class="v7-card-footer" style="border-top: 1px solid rgba(0,120,212,0.1);"><span class="v7-card-version" style="color: #0068ba;">v1.0.0</span><span class="v7-card-action" style="color: #0078d4;">Learn More &rarr;</span></div>
+        </div>
+      </div>
+      <div style="text-align: center; margin-top: 24px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+        <div style="color: #64748b; font-size: 12px;">Questions? Contact our sales team at <span style="color: #0d9488; font-weight: 500;">gopremium@firsttech.digital</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="text-align: center; padding: 40px; color: #94a3b8; font-size: 12px;">
+  DWx Product Showcase Mockups &mdash; First Digital &mdash; Digital Workplace Excellence
+</div>
+
+</body>
+</html>

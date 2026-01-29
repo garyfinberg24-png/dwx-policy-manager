@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Policy Hub Cards — 5 Variations</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f1f5f9; color: #1e293b; }
+
+  .page-header { background: linear-gradient(135deg, #0f766e, #0d9488); color: #fff; padding: 40px 60px; text-align: center; }
+  .page-header h1 { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+  .page-header p { font-size: 14px; opacity: 0.85; }
+
+  .variation { margin: 32px 40px; }
+  .variation-header { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+  .variation-header h2 { font-size: 20px; font-weight: 700; color: #0f172a; }
+  .badge { padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; background: #f0fdfa; color: #0d9488; border: 1px solid #99f6e4; }
+  .variation-body { background: #ffffff; border-radius: 12px; padding: 32px; border: 1px solid #e2e8f0; }
+
+  /* Shared risk colors */
+  .risk-critical { background: #fef2f2; color: #dc2626; }
+  .risk-high { background: #fff7ed; color: #ea580c; }
+  .risk-medium { background: #fffbeb; color: #d97706; }
+  .risk-low { background: #f0fdf4; color: #16a34a; }
+
+  /* ============ VARIATION 1: CLEAN MINIMAL ============ */
+  .v1-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
+  .v1-card {
+    background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 0;
+    transition: all 0.2s; cursor: pointer; overflow: hidden;
+  }
+  .v1-card:hover { border-color: #0d9488; box-shadow: 0 8px 24px rgba(13,148,136,0.1); transform: translateY(-2px); }
+  .v1-card-top { padding: 20px 20px 0; }
+  .v1-card-header { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 14px; }
+  .v1-card-icon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .v1-card-title { font-size: 15px; font-weight: 600; color: #0f172a; line-height: 1.3; margin-bottom: 2px; }
+  .v1-card-number { font-size: 11px; color: #94a3b8; font-weight: 500; }
+  .v1-card-bookmark { width: 30px; height: 30px; border: none; background: none; cursor: pointer; color: #cbd5e1; font-size: 16px; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-left: auto; }
+  .v1-card-bookmark:hover { color: #f59e0b; background: #fef3c7; }
+  .v1-card-bookmark.active { color: #f59e0b; }
+  .v1-card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .v1-tag { padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 500; }
+  .v1-tag-category { background: #f1f5f9; color: #475569; }
+  .v1-tag-status { background: #f0fdf4; color: #16a34a; }
+  .v1-tag-mandatory { background: #fef2f2; color: #dc2626; }
+  .v1-card-desc { font-size: 13px; color: #64748b; line-height: 1.6; margin-bottom: 14px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .v1-card-meta { display: flex; gap: 16px; font-size: 11px; color: #94a3b8; margin-bottom: 16px; }
+  .v1-card-meta span { display: flex; align-items: center; gap: 4px; }
+  .v1-card-footer { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-top: 1px solid #f1f5f9; background: #fafafa; }
+  .v1-card-date { font-size: 11px; color: #94a3b8; }
+  .v1-card-btn { padding: 6px 18px; border-radius: 8px; border: none; background: #0d9488; color: #fff; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.15s; }
+  .v1-card-btn:hover { background: #0f766e; }
+  .v1-card-badges { position: absolute; top: 14px; right: 14px; display: flex; gap: 4px; }
+  .v1-badge-new { padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; background: #10b981; color: #fff; text-transform: uppercase; }
+  .v1-badge-updated { padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; background: #3b82f6; color: #fff; text-transform: uppercase; }
+
+  /* ============ VARIATION 2: LEFT ACCENT BAR ============ */
+  .v2-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 14px; }
+  .v2-card {
+    background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0;
+    display: flex; overflow: hidden; transition: all 0.2s; cursor: pointer; position: relative;
+  }
+  .v2-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.08); transform: translateY(-1px); }
+  .v2-accent { width: 5px; flex-shrink: 0; border-radius: 10px 0 0 10px; }
+  .v2-accent-critical { background: linear-gradient(180deg, #dc2626, #f87171); }
+  .v2-accent-high { background: linear-gradient(180deg, #ea580c, #fb923c); }
+  .v2-accent-medium { background: linear-gradient(180deg, #d97706, #fbbf24); }
+  .v2-accent-low { background: linear-gradient(180deg, #16a34a, #4ade80); }
+  .v2-content { flex: 1; padding: 18px 20px; }
+  .v2-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
+  .v2-title { font-size: 15px; font-weight: 600; color: #0f172a; margin-bottom: 3px; }
+  .v2-number { font-size: 11px; color: #94a3b8; font-weight: 500; font-family: 'SF Mono', monospace; }
+  .v2-risk { padding: 3px 10px; border-radius: 6px; font-size: 10px; font-weight: 700; text-transform: uppercase; flex-shrink: 0; }
+  .v2-tags { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+  .v2-tag { padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+  .v2-tag-cat { background: #f0f9ff; color: #0369a1; }
+  .v2-tag-status { background: #f0fdf4; color: #15803d; }
+  .v2-tag-mandatory { background: #fef2f2; color: #b91c1c; }
+  .v2-desc { font-size: 12px; color: #64748b; line-height: 1.5; margin-bottom: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .v2-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 12px; border-top: 1px solid #f1f5f9; }
+  .v2-meta { display: flex; gap: 14px; font-size: 11px; color: #94a3b8; }
+  .v2-meta span { display: flex; align-items: center; gap: 3px; }
+  .v2-btn { padding: 5px 14px; border-radius: 6px; border: 1px solid #0d9488; background: transparent; color: #0d9488; font-size: 11px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+  .v2-btn:hover { background: #0d9488; color: #fff; }
+  .v2-badge { position: absolute; top: 0; right: 16px; padding: 4px 10px; font-size: 10px; font-weight: 700; color: #fff; border-radius: 0 0 6px 6px; text-transform: uppercase; }
+
+  /* ============ VARIATION 3: COMPACT GRID WITH TOP STRIPE ============ */
+  .v3-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+  .v3-card {
+    background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden;
+    transition: all 0.2s; cursor: pointer; position: relative;
+  }
+  .v3-card:hover { box-shadow: 0 6px 20px rgba(13,148,136,0.1); border-color: #99f6e4; }
+  .v3-stripe { height: 4px; }
+  .v3-body { padding: 16px 18px; }
+  .v3-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .v3-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+  .v3-title-group { flex: 1; min-width: 0; }
+  .v3-title { font-size: 14px; font-weight: 600; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .v3-number { font-size: 10px; color: #94a3b8; }
+  .v3-bookmark { width: 28px; height: 28px; border: none; background: none; cursor: pointer; color: #cbd5e1; font-size: 14px; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .v3-bookmark:hover { color: #f59e0b; background: #fef3c7; }
+  .v3-tags { display: flex; gap: 5px; margin-bottom: 8px; flex-wrap: wrap; }
+  .v3-tag { padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+  .v3-desc { font-size: 12px; color: #64748b; line-height: 1.5; margin-bottom: 10px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .v3-bottom { display: flex; align-items: center; justify-content: space-between; padding-top: 10px; border-top: 1px solid #f1f5f9; }
+  .v3-info { display: flex; gap: 12px; font-size: 10px; color: #94a3b8; }
+  .v3-info span { display: flex; align-items: center; gap: 3px; }
+  .v3-view { font-size: 11px; font-weight: 600; color: #0d9488; cursor: pointer; text-decoration: none; }
+  .v3-view:hover { text-decoration: underline; }
+  .v3-badge { position: absolute; top: 10px; right: 10px; padding: 2px 8px; border-radius: 10px; font-size: 9px; font-weight: 700; color: #fff; text-transform: uppercase; }
+
+  /* ============ VARIATION 4: HORIZONTAL LIST CARD ============ */
+  .v4-list { display: flex; flex-direction: column; gap: 10px; }
+  .v4-card {
+    background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px 20px;
+    display: flex; align-items: center; gap: 16px; transition: all 0.15s; cursor: pointer; position: relative;
+  }
+  .v4-card:hover { border-color: #0d9488; box-shadow: 0 4px 12px rgba(13,148,136,0.08); }
+  .v4-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .v4-main { flex: 1; min-width: 0; }
+  .v4-row1 { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+  .v4-title { font-size: 14px; font-weight: 600; color: #0f172a; }
+  .v4-number { font-size: 11px; color: #94a3b8; font-weight: 500; font-family: 'SF Mono', monospace; }
+  .v4-tags { display: flex; gap: 6px; }
+  .v4-tag { padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+  .v4-row2 { font-size: 12px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .v4-stats { display: flex; gap: 20px; align-items: center; flex-shrink: 0; }
+  .v4-stat { text-align: center; }
+  .v4-stat-val { display: block; font-size: 14px; font-weight: 700; color: #0f172a; }
+  .v4-stat-label { font-size: 9px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+  .v4-risk-pill { padding: 4px 12px; border-radius: 6px; font-size: 10px; font-weight: 700; text-transform: uppercase; flex-shrink: 0; }
+  .v4-actions { display: flex; gap: 8px; flex-shrink: 0; }
+  .v4-btn-primary { padding: 7px 18px; border-radius: 8px; border: none; background: #0d9488; color: #fff; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .v4-btn-primary:hover { background: #0f766e; }
+  .v4-btn-ghost { padding: 7px 12px; border-radius: 8px; border: 1px solid #e2e8f0; background: transparent; color: #64748b; font-size: 12px; cursor: pointer; font-family: inherit; }
+  .v4-btn-ghost:hover { border-color: #94a3b8; color: #0f172a; }
+  .v4-badge-new { position: absolute; top: -1px; left: 20px; padding: 2px 8px; font-size: 9px; font-weight: 700; color: #fff; border-radius: 0 0 4px 4px; background: #10b981; text-transform: uppercase; }
+
+  /* ============ VARIATION 5: MODERN ELEVATED CARD ============ */
+  .v5-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+  .v5-card {
+    background: #ffffff; border-radius: 14px; overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    transition: all 0.25s; cursor: pointer; position: relative;
+  }
+  .v5-card:hover { box-shadow: 0 12px 32px rgba(13,148,136,0.12), 0 4px 8px rgba(0,0,0,0.04); transform: translateY(-3px); }
+  .v5-card-header { padding: 20px 20px 0; display: flex; align-items: flex-start; gap: 14px; }
+  .v5-icon-wrap { position: relative; }
+  .v5-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+  .v5-risk-dot { position: absolute; top: -3px; right: -3px; width: 14px; height: 14px; border-radius: 50%; border: 2px solid #fff; }
+  .v5-title-area { flex: 1; min-width: 0; }
+  .v5-title { font-size: 15px; font-weight: 700; color: #0f172a; margin-bottom: 2px; line-height: 1.3; }
+  .v5-subtitle { font-size: 11px; color: #94a3b8; display: flex; align-items: center; gap: 6px; }
+  .v5-dot { width: 3px; height: 3px; border-radius: 50%; background: #cbd5e1; }
+  .v5-bookmark { width: 32px; height: 32px; border: none; background: #f8fafc; cursor: pointer; color: #cbd5e1; font-size: 16px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; }
+  .v5-bookmark:hover { color: #f59e0b; background: #fef3c7; }
+  .v5-card-body { padding: 14px 20px; }
+  .v5-tags { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+  .v5-tag { padding: 4px 10px; border-radius: 8px; font-size: 10px; font-weight: 600; }
+  .v5-tag-cat { background: #f0f9ff; color: #0284c7; border: 1px solid #bae6fd; }
+  .v5-tag-status { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+  .v5-tag-mandatory { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+  .v5-tag-timeline { background: #faf5ff; color: #7c3aed; border: 1px solid #ddd6fe; }
+  .v5-desc { font-size: 13px; color: #64748b; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .v5-card-footer { padding: 14px 20px; background: linear-gradient(180deg, #fafafa, #f8fafc); display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #f1f5f9; }
+  .v5-footer-meta { display: flex; gap: 16px; }
+  .v5-meta-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #94a3b8; }
+  .v5-meta-icon { font-size: 13px; color: #cbd5e1; }
+  .v5-btn { padding: 7px 20px; border-radius: 8px; border: none; background: linear-gradient(135deg, #0d9488, #14b8a6); color: #fff; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s; box-shadow: 0 2px 4px rgba(13,148,136,0.25); }
+  .v5-btn:hover { box-shadow: 0 4px 8px rgba(13,148,136,0.35); }
+  .v5-badge { position: absolute; top: 14px; right: 14px; padding: 3px 10px; border-radius: 8px; font-size: 10px; font-weight: 700; color: #fff; text-transform: uppercase; letter-spacing: 0.3px; }
+  .v5-progress { padding: 0 20px 4px; }
+  .v5-progress-bar { height: 3px; border-radius: 2px; background: #f1f5f9; overflow: hidden; }
+  .v5-progress-fill { height: 100%; border-radius: 2px; }
+
+  /* Shared icon colors (used as inline styles) */
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>Policy Hub Cards — 5 Design Variations</h1>
+  <p>First Digital — Digital Workplace Excellence | Policy Manager — Browse Policies Grid</p>
+</div>
+
+<!-- ================================================================ -->
+<!-- VARIATION 1: CLEAN MINIMAL — White cards, clear hierarchy, teal accents -->
+<!-- ================================================================ -->
+<div class="variation">
+  <div class="variation-header">
+    <h2>Variation 1: Clean Minimal</h2>
+    <span class="badge">White cards, clear hierarchy, teal accents</span>
+  </div>
+  <div class="variation-body">
+    <div class="v1-grid">
+      <!-- Card 1 -->
+      <div class="v1-card" style="position:relative;">
+        <div style="position:absolute;top:14px;right:14px;display:flex;gap:4px;">
+          <span class="v1-badge-new">New</span>
+        </div>
+        <div class="v1-card-top">
+          <div class="v1-card-header">
+            <div class="v1-card-icon" style="background: linear-gradient(135deg, #7c3aed, #a78bfa); color: #fff;">&#128274;</div>
+            <div style="flex:1;min-width:0;">
+              <div class="v1-card-title">Data Protection Policy</div>
+              <div class="v1-card-number">POL-2026-001</div>
+            </div>
+            <button class="v1-card-bookmark">&#9734;</button>
+          </div>
+          <div class="v1-card-tags">
+            <span class="v1-tag v1-tag-category">Data Privacy</span>
+            <span class="v1-tag v1-tag-status">Published</span>
+            <span class="v1-tag v1-tag-mandatory">Mandatory</span>
+          </div>
+          <div class="v1-card-desc">Comprehensive data protection and privacy policy aligned with GDPR requirements covering personal data handling, processing, and storage.</div>
+          <div class="v1-card-meta">
+            <span>&#128337; 12 min read</span>
+            <span>&#128065; 2,847 views</span>
+            <span style="color:#ea580c;">&#9888; High Risk</span>
+          </div>
+        </div>
+        <div class="v1-card-footer">
+          <span class="v1-card-date">Updated: 20 Jan 2026</span>
+          <button class="v1-card-btn">View Policy</button>
+        </div>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="v1-card" style="position:relative;">
+        <div class="v1-card-top">
+          <div class="v1-card-header">
+            <div class="v1-card-icon" style="background: linear-gradient(135deg, #0284c7, #38bdf8); color: #fff;">&#128187;</div>
+            <div style="flex:1;min-width:0;">
+              <div class="v1-card-title">IT Security Standards</div>
+              <div class="v1-card-number">POL-2026-003</div>
+            </div>
+            <button class="v1-card-bookmark">&#9734;</button>
+          </div>
+          <div class="v1-card-tags">
+            <span class="v1-tag v1-tag-category">IT Security</span>
+            <span class="v1-tag v1-tag-status">Published</span>
+            <span class="v1-tag v1-tag-mandatory">Mandatory</span>
+          </div>
+          <div class="v1-card-desc">Information technology security standards and acceptable use policy covering network security, access controls, and incident response.</div>
+          <div class="v1-card-meta">
+            <span>&#128337; 18 min read</span>
+            <span>&#128065; 1,543 views</span>
+            <span style="color:#dc2626;">&#9888; Critical Risk</span>
+          </div>
+        </div>
+        <div class="v1-card-footer">
+          <span class="v1-card-date">Updated: 15 Jan 2026</span>
+          <button class="v1-card-btn">View Policy</button>
+        </div>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="v1-card" style="position:relative;">
+        <div style="position:absolute;top:14px;right:14px;display:flex;gap:4px;">
+          <span class="v1-badge-updated">Updated</span>
+        </div>
+        <div class="v1-card-top">
+          <div class="v1-card-header">
+            <div class="v1-card-icon" style="background: linear-gradient(135deg, #0d9488, #14b8a6); color: #fff;">&#129309;</div>
+            <div style="flex:1;min-width:0;">
+              <div class="v1-card-title">Remote Work Policy</div>
+              <div class="v1-card-number">POL-2026-002</div>
+            </div>
+            <button class="v1-card-bookmark active">&#9733;</button>
+          </div>
+          <div class="v1-card-tags">
+            <span class="v1-tag v1-tag-category">HR Policies</span>
+            <span class="v1-tag v1-tag-status">Published</span>
+          </div>
+          <div class="v1-card-desc">Guidelines for remote and hybrid working arrangements including equipment, schedules, communication expectations, and performance management.</div>
+          <div class="v1-card-meta">
+            <span>&#128337; 8 min read</span>
+            <span>&#128065; 3,210 views</span>
+            <span style="color:#d97706;">&#9888; Medium Risk</span>
+          </div>
+        </div>
+        <div class="v1-card-footer">
+          <span class="v1-card-date">Updated: 18 Jan 2026</span>
+          <button class="v1-card-btn">View Policy</button>
+        </div>
+      </div>
+
+      <!-- Card 4 -->
+      <div class="v1-card" style="position:relative;">
+        <div class="v1-card-top">
+          <div class="v1-card-header">
+            <div class="v1-card-icon" style="background: linear-gradient(135deg, #dc2626, #f87171); color: #fff;">&#9878;</div>
+            <div style="flex:1;min-width:0;">
+              <div class="v1-card-title">Anti-Bribery &amp; Corruption</div>
+              <div class="v1-card-number">POL-2026-004</div>
+            </div>
+            <button class="v1-card-bookmark">&#9734;</button>
+          </div>
+          <div class="v1-card-tags">
+            <span class="v1-tag v1-tag-category">Compliance</span>
+            <span class="v1-tag" style="background:#fffbeb;color:#d97706;">In Review</span>
+            <span class="v1-tag v1-tag-mandatory">Mandatory</span>
+          </div>
+          <div class="v1-card-desc">Anti-bribery, corruption, and gifts policy in compliance with UK Bribery Act and international standards for ethical business conduct.</div>
+          <div class="v1-card-meta">
+            <span>&#128337; 15 min read</span>
+            <span>&#128065; 892 views</span>
+            <span style="color:#ea580c;">&#9888; High Risk</span>
+          </div>
+        </div>
+        <div class="v1-card-footer">
+          <span class="v1-card-date">Updated: 12 Jan 2026</span>
+          <button class="v1-card-btn">View Policy</button>
+        </div>
+      </div>
+
+      <!-- Card 5 -->
+      <div class="v1-card" style="position:relative;">
+        <div class="v1-card-top">
+          <div class="v1-card-header">
+            <div class="v1-card-icon" style="background: linear-gradient(135deg, #16a34a, #4ade80); color: #fff;">&#129657;</div>
+            <div style="flex:1;min-width:0;">
+              <div class="v1-card-title">Health &amp; Safety Manual</div>
+              <div class="v1-card-number">POL-2026-005</div>
+            </div>
+            <button class="v1-card-bookmark">&#9734;</button>
+          </div>
+          <div class="v1-card-tags">
+            <span class="v1-tag v1-tag-category">Health &amp; Safety</span>
+            <span class="v1-tag v1-tag-status">Published</span>
+            <span class="v1-tag v1-tag-mandatory">Mandatory</span>
+          </div>
+          <div class="v1-card-desc">Workplace health and safety procedures and responsibilities covering risk assessments, fire safety, first aid, and incident reporting.</div>
+          <div class="v1-card-meta">
+            <span>&#128337; 22 min read</span>
+            <span>&#128065; 4,120 views</span>
+            <span style="color:#ea580c;">&#9888; High Risk</span>
+          </div>
+        </div>
+        <div class="v1-card-footer">
+          <span class="v1-card-date">Updated: 10 Jan 2026</span>
+          <button class="v1-card-btn">View Policy</button>
+        </div>
+      </div>
+
+      <!-- Card 6 -->
+      <div class="v1-card" style="position:relative;">
+        <div class="v1-card-top">
+          <div class="v1-card-header">
+            <div class="v1-card-icon" style="background: linear-gradient(135deg, #d97706, #fbbf24); color: #fff;">&#128176;</div>
+            <div style="flex:1;min-width:0;">
+              <div class="v1-card-title">Expense &amp; Travel Policy</div>
+              <div class="v1-card-number">POL-2026-006</div>
+            </div>
+            <button class="v1-card-bookmark">&#9734;</button>
+          </div>
+          <div class="v1-card-tags">
+            <span class="v1-tag v1-tag-category">Financial</span>
+            <span class="v1-tag v1-tag-status">Published</span>
+          </div>
+          <div class="v1-card-desc">Employee expense claims, travel bookings, and reimbursement procedures including per diem rates, approval thresholds, and reporting.</div>
+          <div class="v1-card-meta">
+            <span>&#128337; 10 min read</span>
+            <span>&#128065; 5,643 views</span>
+            <span style="color:#16a34a;">&#9888; Low Risk</span>
+          </div>
+        </div>
+        <div class="v1-card-footer">
+          <span class="v1-card-date">Updated: 08 Jan 2026</span>
+          <button class="v1-card-btn">View Policy</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- VARIATION 2: LEFT ACCENT BAR — Risk-coloured left edge, structured layout -->
+<!-- ================================================================ -->
+<div class="variation">
+  <div class="variation-header">
+    <h2>Variation 2: Left Accent Bar</h2>
+    <span class="badge">Risk-coloured left edge, structured layout</span>
+  </div>
+  <div class="variation-body">
+    <div class="v2-grid">
+      <div class="v2-card">
+        <div class="v2-accent v2-accent-high"></div>
+        <div class="v2-content">
+          <div class="v2-top">
+            <div>
+              <div class="v2-title">Data Protection Policy</div>
+              <div class="v2-number">POL-2026-001</div>
+            </div>
+            <span class="v2-risk risk-high">High</span>
+          </div>
+          <div class="v2-tags">
+            <span class="v2-tag v2-tag-cat">Data Privacy</span>
+            <span class="v2-tag v2-tag-status">Published</span>
+            <span class="v2-tag v2-tag-mandatory">Mandatory</span>
+          </div>
+          <div class="v2-desc">Comprehensive data protection and privacy policy aligned with GDPR requirements covering personal data handling.</div>
+          <div class="v2-footer">
+            <div class="v2-meta">
+              <span>&#128337; 12 min</span>
+              <span>&#128065; 2,847</span>
+              <span>&#128197; 20 Jan 2026</span>
+            </div>
+            <button class="v2-btn">View &rarr;</button>
+          </div>
+        </div>
+        <div class="v2-badge" style="background:#10b981;">New</div>
+      </div>
+
+      <div class="v2-card">
+        <div class="v2-accent v2-accent-critical"></div>
+        <div class="v2-content">
+          <div class="v2-top">
+            <div>
+              <div class="v2-title">IT Security Standards</div>
+              <div class="v2-number">POL-2026-003</div>
+            </div>
+            <span class="v2-risk risk-critical">Critical</span>
+          </div>
+          <div class="v2-tags">
+            <span class="v2-tag v2-tag-cat">IT Security</span>
+            <span class="v2-tag v2-tag-status">Published</span>
+            <span class="v2-tag v2-tag-mandatory">Mandatory</span>
+          </div>
+          <div class="v2-desc">Information technology security standards and acceptable use policy covering network security, access controls.</div>
+          <div class="v2-footer">
+            <div class="v2-meta">
+              <span>&#128337; 18 min</span>
+              <span>&#128065; 1,543</span>
+              <span>&#128197; 15 Jan 2026</span>
+            </div>
+            <button class="v2-btn">View &rarr;</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="v2-card">
+        <div class="v2-accent v2-accent-medium"></div>
+        <div class="v2-content">
+          <div class="v2-top">
+            <div>
+              <div class="v2-title">Remote Work Policy</div>
+              <div class="v2-number">POL-2026-002</div>
+            </div>
+            <span class="v2-risk risk-medium">Medium</span>
+          </div>
+          <div class="v2-tags">
+            <span class="v2-tag v2-tag-cat">HR Policies</span>
+            <span class="v2-tag v2-tag-status">Published</span>
+          </div>
+          <div class="v2-desc">Guidelines for remote and hybrid working arrangements including equipment, schedules, communication expectations.</div>
+          <div class="v2-footer">
+            <div class="v2-meta">
+              <span>&#128337; 8 min</span>
+              <span>&#128065; 3,210</span>
+              <span>&#128197; 18 Jan 2026</span>
+            </div>
+            <button class="v2-btn">View &rarr;</button>
+          </div>
+        </div>
+        <div class="v2-badge" style="background:#3b82f6;">Updated</div>
+      </div>
+
+      <div class="v2-card">
+        <div class="v2-accent v2-accent-high"></div>
+        <div class="v2-content">
+          <div class="v2-top">
+            <div>
+              <div class="v2-title">Anti-Bribery &amp; Corruption</div>
+              <div class="v2-number">POL-2026-004</div>
+            </div>
+            <span class="v2-risk risk-high">High</span>
+          </div>
+          <div class="v2-tags">
+            <span class="v2-tag v2-tag-cat">Compliance</span>
+            <span class="v2-tag" style="background:#fffbeb;color:#d97706;">In Review</span>
+            <span class="v2-tag v2-tag-mandatory">Mandatory</span>
+          </div>
+          <div class="v2-desc">Anti-bribery, corruption, and gifts policy in compliance with UK Bribery Act and international standards.</div>
+          <div class="v2-footer">
+            <div class="v2-meta">
+              <span>&#128337; 15 min</span>
+              <span>&#128065; 892</span>
+              <span>&#128197; 12 Jan 2026</span>
+            </div>
+            <button class="v2-btn">View &rarr;</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="v2-card">
+        <div class="v2-accent v2-accent-low"></div>
+        <div class="v2-content">
+          <div class="v2-top">
+            <div>
+              <div class="v2-title">Expense &amp; Travel Policy</div>
+              <div class="v2-number">POL-2026-006</div>
+            </div>
+            <span class="v2-risk risk-low">Low</span>
+          </div>
+          <div class="v2-tags">
+            <span class="v2-tag v2-tag-cat">Financial</span>
+            <span class="v2-tag v2-tag-status">Published</span>
+          </div>
+          <div class="v2-desc">Employee expense claims, travel bookings, and reimbursement procedures including per diem rates and approval thresholds.</div>
+          <div class="v2-footer">
+            <div class="v2-meta">
+              <span>&#128337; 10 min</span>
+              <span>&#128065; 5,643</span>
+              <span>&#128197; 08 Jan 2026</span>
+            </div>
+            <button class="v2-btn">View &rarr;</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="v2-card">
+        <div class="v2-accent v2-accent-high"></div>
+        <div class="v2-content">
+          <div class="v2-top">
+            <div>
+              <div class="v2-title">Health &amp; Safety Manual</div>
+              <div class="v2-number">POL-2026-005</div>
+            </div>
+            <span class="v2-risk risk-high">High</span>
+          </div>
+          <div class="v2-tags">
+            <span class="v2-tag v2-tag-cat">Health &amp; Safety</span>
+            <span class="v2-tag v2-tag-status">Published</span>
+            <span class="v2-tag v2-tag-mandatory">Mandatory</span>
+          </div>
+          <div class="v2-desc">Workplace health and safety procedures and responsibilities covering risk assessments, fire safety, first aid.</div>
+          <div class="v2-footer">
+            <div class="v2-meta">
+              <span>&#128337; 22 min</span>
+              <span>&#128065; 4,120</span>
+              <span>&#128197; 10 Jan 2026</span>
+            </div>
+            <button class="v2-btn">View &rarr;</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- VARIATION 3: COMPACT WITH TOP STRIPE — Space-efficient, colour-coded -->
+<!-- ================================================================ -->
+<div class="variation">
+  <div class="variation-header">
+    <h2>Variation 3: Compact Top Stripe</h2>
+    <span class="badge">Space-efficient, category colour stripe</span>
+  </div>
+  <div class="variation-body">
+    <div class="v3-grid">
+      <div class="v3-card">
+        <div class="v3-stripe" style="background: linear-gradient(to right, #7c3aed, #a78bfa);"></div>
+        <span class="v3-badge" style="background:#10b981;">New</span>
+        <div class="v3-body">
+          <div class="v3-header">
+            <div class="v3-icon" style="background:#f5f3ff; color:#7c3aed;">&#128274;</div>
+            <div class="v3-title-group">
+              <div class="v3-title">Data Protection Policy</div>
+              <div class="v3-number">POL-2026-001 &bull; Data Privacy</div>
+            </div>
+            <button class="v3-bookmark">&#9734;</button>
+          </div>
+          <div class="v3-tags">
+            <span class="v3-tag" style="background:#f0fdf4;color:#15803d;">Published</span>
+            <span class="v3-tag" style="background:#fef2f2;color:#dc2626;">Mandatory</span>
+            <span class="v3-tag risk-high">High Risk</span>
+          </div>
+          <div class="v3-desc">Comprehensive data protection and privacy policy aligned with GDPR requirements covering personal data handling.</div>
+          <div class="v3-bottom">
+            <div class="v3-info">
+              <span>&#128337; 12 min</span>
+              <span>&#128065; 2,847</span>
+              <span>&#128197; 20 Jan</span>
+            </div>
+            <a class="v3-view" href="#">View &rarr;</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="v3-card">
+        <div class="v3-stripe" style="background: linear-gradient(to right, #0284c7, #38bdf8);"></div>
+        <div class="v3-body">
+          <div class="v3-header">
+            <div class="v3-icon" style="background:#eff6ff; color:#0284c7;">&#128187;</div>
+            <div class="v3-title-group">
+              <div class="v3-title">IT Security Standards</div>
+              <div class="v3-number">POL-2026-003 &bull; IT Security</div>
+            </div>
+            <button class="v3-bookmark">&#9734;</button>
+          </div>
+          <div class="v3-tags">
+            <span class="v3-tag" style="background:#f0fdf4;color:#15803d;">Published</span>
+            <span class="v3-tag" style="background:#fef2f2;color:#dc2626;">Mandatory</span>
+            <span class="v3-tag risk-critical">Critical</span>
+          </div>
+          <div class="v3-desc">Information technology security standards and acceptable use policy covering network security and access controls.</div>
+          <div class="v3-bottom">
+            <div class="v3-info">
+              <span>&#128337; 18 min</span>
+              <span>&#128065; 1,543</span>
+              <span>&#128197; 15 Jan</span>
+            </div>
+            <a class="v3-view" href="#">View &rarr;</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="v3-card">
+        <div class="v3-stripe" style="background: linear-gradient(to right, #0d9488, #14b8a6);"></div>
+        <span class="v3-badge" style="background:#3b82f6;">Updated</span>
+        <div class="v3-body">
+          <div class="v3-header">
+            <div class="v3-icon" style="background:#f0fdfa; color:#0d9488;">&#129309;</div>
+            <div class="v3-title-group">
+              <div class="v3-title">Remote Work Policy</div>
+              <div class="v3-number">POL-2026-002 &bull; HR Policies</div>
+            </div>
+            <button class="v3-bookmark" style="color:#f59e0b;">&#9733;</button>
+          </div>
+          <div class="v3-tags">
+            <span class="v3-tag" style="background:#f0fdf4;color:#15803d;">Published</span>
+            <span class="v3-tag risk-medium">Medium Risk</span>
+          </div>
+          <div class="v3-desc">Guidelines for remote and hybrid working arrangements including equipment, schedules, and communication.</div>
+          <div class="v3-bottom">
+            <div class="v3-info">
+              <span>&#128337; 8 min</span>
+              <span>&#128065; 3,210</span>
+              <span>&#128197; 18 Jan</span>
+            </div>
+            <a class="v3-view" href="#">View &rarr;</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="v3-card">
+        <div class="v3-stripe" style="background: linear-gradient(to right, #dc2626, #f87171);"></div>
+        <div class="v3-body">
+          <div class="v3-header">
+            <div class="v3-icon" style="background:#fef2f2; color:#dc2626;">&#9878;</div>
+            <div class="v3-title-group">
+              <div class="v3-title">Anti-Bribery &amp; Corruption</div>
+              <div class="v3-number">POL-2026-004 &bull; Compliance</div>
+            </div>
+            <button class="v3-bookmark">&#9734;</button>
+          </div>
+          <div class="v3-tags">
+            <span class="v3-tag" style="background:#fffbeb;color:#d97706;">In Review</span>
+            <span class="v3-tag" style="background:#fef2f2;color:#dc2626;">Mandatory</span>
+            <span class="v3-tag risk-high">High Risk</span>
+          </div>
+          <div class="v3-desc">Anti-bribery, corruption, and gifts policy in compliance with UK Bribery Act and international standards.</div>
+          <div class="v3-bottom">
+            <div class="v3-info">
+              <span>&#128337; 15 min</span>
+              <span>&#128065; 892</span>
+              <span>&#128197; 12 Jan</span>
+            </div>
+            <a class="v3-view" href="#">View &rarr;</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="v3-card">
+        <div class="v3-stripe" style="background: linear-gradient(to right, #16a34a, #4ade80);"></div>
+        <div class="v3-body">
+          <div class="v3-header">
+            <div class="v3-icon" style="background:#f0fdf4; color:#16a34a;">&#129657;</div>
+            <div class="v3-title-group">
+              <div class="v3-title">Health &amp; Safety Manual</div>
+              <div class="v3-number">POL-2026-005 &bull; Health &amp; Safety</div>
+            </div>
+            <button class="v3-bookmark">&#9734;</button>
+          </div>
+          <div class="v3-tags">
+            <span class="v3-tag" style="background:#f0fdf4;color:#15803d;">Published</span>
+            <span class="v3-tag" style="background:#fef2f2;color:#dc2626;">Mandatory</span>
+            <span class="v3-tag risk-high">High Risk</span>
+          </div>
+          <div class="v3-desc">Workplace health and safety procedures covering risk assessments, fire safety, first aid, and reporting.</div>
+          <div class="v3-bottom">
+            <div class="v3-info">
+              <span>&#128337; 22 min</span>
+              <span>&#128065; 4,120</span>
+              <span>&#128197; 10 Jan</span>
+            </div>
+            <a class="v3-view" href="#">View &rarr;</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="v3-card">
+        <div class="v3-stripe" style="background: linear-gradient(to right, #d97706, #fbbf24);"></div>
+        <div class="v3-body">
+          <div class="v3-header">
+            <div class="v3-icon" style="background:#fffbeb; color:#d97706;">&#128176;</div>
+            <div class="v3-title-group">
+              <div class="v3-title">Expense &amp; Travel Policy</div>
+              <div class="v3-number">POL-2026-006 &bull; Financial</div>
+            </div>
+            <button class="v3-bookmark">&#9734;</button>
+          </div>
+          <div class="v3-tags">
+            <span class="v3-tag" style="background:#f0fdf4;color:#15803d;">Published</span>
+            <span class="v3-tag risk-low">Low Risk</span>
+          </div>
+          <div class="v3-desc">Employee expense claims, travel bookings, and reimbursement procedures including per diem rates.</div>
+          <div class="v3-bottom">
+            <div class="v3-info">
+              <span>&#128337; 10 min</span>
+              <span>&#128065; 5,643</span>
+              <span>&#128197; 08 Jan</span>
+            </div>
+            <a class="v3-view" href="#">View &rarr;</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- VARIATION 4: HORIZONTAL LIST CARDS — Row-based, data-dense -->
+<!-- ================================================================ -->
+<div class="variation">
+  <div class="variation-header">
+    <h2>Variation 4: Horizontal List Cards</h2>
+    <span class="badge">Row-based layout, data-dense, great for scanning</span>
+  </div>
+  <div class="variation-body">
+    <div class="v4-list">
+      <div class="v4-card">
+        <div class="v4-badge-new">New</div>
+        <div class="v4-icon" style="background: linear-gradient(135deg, #7c3aed, #a78bfa); color: #fff;">&#128274;</div>
+        <div class="v4-main">
+          <div class="v4-row1">
+            <span class="v4-title">Data Protection Policy</span>
+            <span class="v4-number">POL-2026-001</span>
+            <div class="v4-tags">
+              <span class="v4-tag" style="background:#f5f3ff;color:#7c3aed;">Data Privacy</span>
+              <span class="v4-tag" style="background:#f0fdf4;color:#15803d;">Published</span>
+              <span class="v4-tag" style="background:#fef2f2;color:#dc2626;">Mandatory</span>
+            </div>
+          </div>
+          <div class="v4-row2">Comprehensive data protection and privacy policy aligned with GDPR requirements covering personal data handling, processing, and storage.</div>
+        </div>
+        <div class="v4-stats">
+          <div class="v4-stat"><span class="v4-stat-val">12</span><span class="v4-stat-label">min read</span></div>
+          <div class="v4-stat"><span class="v4-stat-val">2.8k</span><span class="v4-stat-label">views</span></div>
+        </div>
+        <span class="v4-risk-pill risk-high">High</span>
+        <div class="v4-actions">
+          <button class="v4-btn-primary">View</button>
+          <button class="v4-btn-ghost">&#9734;</button>
+        </div>
+      </div>
+
+      <div class="v4-card">
+        <div class="v4-icon" style="background: linear-gradient(135deg, #0284c7, #38bdf8); color: #fff;">&#128187;</div>
+        <div class="v4-main">
+          <div class="v4-row1">
+            <span class="v4-title">IT Security Standards</span>
+            <span class="v4-number">POL-2026-003</span>
+            <div class="v4-tags">
+              <span class="v4-tag" style="background:#eff6ff;color:#0284c7;">IT Security</span>
+              <span class="v4-tag" style="background:#f0fdf4;color:#15803d;">Published</span>
+              <span class="v4-tag" style="background:#fef2f2;color:#dc2626;">Mandatory</span>
+            </div>
+          </div>
+          <div class="v4-row2">Information technology security standards and acceptable use policy covering network security, access controls, and incident response procedures.</div>
+        </div>
+        <div class="v4-stats">
+          <div class="v4-stat"><span class="v4-stat-val">18</span><span class="v4-stat-label">min read</span></div>
+          <div class="v4-stat"><span class="v4-stat-val">1.5k</span><span class="v4-stat-label">views</span></div>
+        </div>
+        <span class="v4-risk-pill risk-critical">Critical</span>
+        <div class="v4-actions">
+          <button class="v4-btn-primary">View</button>
+          <button class="v4-btn-ghost">&#9734;</button>
+        </div>
+      </div>
+
+      <div class="v4-card">
+        <div class="v4-icon" style="background: linear-gradient(135deg, #0d9488, #14b8a6); color: #fff;">&#129309;</div>
+        <div class="v4-main">
+          <div class="v4-row1">
+            <span class="v4-title">Remote Work Policy</span>
+            <span class="v4-number">POL-2026-002</span>
+            <div class="v4-tags">
+              <span class="v4-tag" style="background:#f0fdfa;color:#0d9488;">HR Policies</span>
+              <span class="v4-tag" style="background:#f0fdf4;color:#15803d;">Published</span>
+            </div>
+          </div>
+          <div class="v4-row2">Guidelines for remote and hybrid working arrangements including equipment, schedules, communication expectations, and performance management.</div>
+        </div>
+        <div class="v4-stats">
+          <div class="v4-stat"><span class="v4-stat-val">8</span><span class="v4-stat-label">min read</span></div>
+          <div class="v4-stat"><span class="v4-stat-val">3.2k</span><span class="v4-stat-label">views</span></div>
+        </div>
+        <span class="v4-risk-pill risk-medium">Medium</span>
+        <div class="v4-actions">
+          <button class="v4-btn-primary">View</button>
+          <button class="v4-btn-ghost" style="color:#f59e0b;border-color:#fde68a;">&#9733;</button>
+        </div>
+      </div>
+
+      <div class="v4-card">
+        <div class="v4-icon" style="background: linear-gradient(135deg, #dc2626, #f87171); color: #fff;">&#9878;</div>
+        <div class="v4-main">
+          <div class="v4-row1">
+            <span class="v4-title">Anti-Bribery &amp; Corruption</span>
+            <span class="v4-number">POL-2026-004</span>
+            <div class="v4-tags">
+              <span class="v4-tag" style="background:#fef2f2;color:#dc2626;">Compliance</span>
+              <span class="v4-tag" style="background:#fffbeb;color:#d97706;">In Review</span>
+              <span class="v4-tag" style="background:#fef2f2;color:#dc2626;">Mandatory</span>
+            </div>
+          </div>
+          <div class="v4-row2">Anti-bribery, corruption, and gifts policy in compliance with UK Bribery Act and international standards for ethical business conduct.</div>
+        </div>
+        <div class="v4-stats">
+          <div class="v4-stat"><span class="v4-stat-val">15</span><span class="v4-stat-label">min read</span></div>
+          <div class="v4-stat"><span class="v4-stat-val">892</span><span class="v4-stat-label">views</span></div>
+        </div>
+        <span class="v4-risk-pill risk-high">High</span>
+        <div class="v4-actions">
+          <button class="v4-btn-primary">View</button>
+          <button class="v4-btn-ghost">&#9734;</button>
+        </div>
+      </div>
+
+      <div class="v4-card">
+        <div class="v4-icon" style="background: linear-gradient(135deg, #16a34a, #4ade80); color: #fff;">&#129657;</div>
+        <div class="v4-main">
+          <div class="v4-row1">
+            <span class="v4-title">Health &amp; Safety Manual</span>
+            <span class="v4-number">POL-2026-005</span>
+            <div class="v4-tags">
+              <span class="v4-tag" style="background:#f0fdf4;color:#15803d;">Health &amp; Safety</span>
+              <span class="v4-tag" style="background:#f0fdf4;color:#15803d;">Published</span>
+              <span class="v4-tag" style="background:#fef2f2;color:#dc2626;">Mandatory</span>
+            </div>
+          </div>
+          <div class="v4-row2">Workplace health and safety procedures and responsibilities covering risk assessments, fire safety, first aid, and incident reporting.</div>
+        </div>
+        <div class="v4-stats">
+          <div class="v4-stat"><span class="v4-stat-val">22</span><span class="v4-stat-label">min read</span></div>
+          <div class="v4-stat"><span class="v4-stat-val">4.1k</span><span class="v4-stat-label">views</span></div>
+        </div>
+        <span class="v4-risk-pill risk-high">High</span>
+        <div class="v4-actions">
+          <button class="v4-btn-primary">View</button>
+          <button class="v4-btn-ghost">&#9734;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- VARIATION 5: MODERN ELEVATED — Soft shadows, gradient accents, progress -->
+<!-- ================================================================ -->
+<div class="variation">
+  <div class="variation-header">
+    <h2>Variation 5: Modern Elevated</h2>
+    <span class="badge">Soft shadows, gradient CTA, acknowledgement progress</span>
+  </div>
+  <div class="variation-body">
+    <div class="v5-grid">
+      <div class="v5-card">
+        <span class="v5-badge" style="background: linear-gradient(135deg, #10b981, #34d399);">New</span>
+        <div class="v5-card-header">
+          <div class="v5-icon-wrap">
+            <div class="v5-icon" style="background: linear-gradient(135deg, #7c3aed, #a78bfa); color: #fff;">&#128274;</div>
+            <div class="v5-risk-dot" style="background: #ea580c;"></div>
+          </div>
+          <div class="v5-title-area">
+            <div class="v5-title">Data Protection Policy</div>
+            <div class="v5-subtitle">POL-2026-001 <span class="v5-dot"></span> Data Privacy</div>
+          </div>
+          <button class="v5-bookmark">&#9734;</button>
+        </div>
+        <div class="v5-card-body">
+          <div class="v5-tags">
+            <span class="v5-tag v5-tag-status">Published</span>
+            <span class="v5-tag v5-tag-mandatory">Mandatory</span>
+            <span class="v5-tag v5-tag-timeline">14 days to read</span>
+          </div>
+          <div class="v5-desc">Comprehensive data protection and privacy policy aligned with GDPR requirements covering personal data handling, processing, and storage.</div>
+        </div>
+        <div class="v5-progress">
+          <div class="v5-progress-bar"><div class="v5-progress-fill" style="width: 78%; background: linear-gradient(to right, #0d9488, #14b8a6);"></div></div>
+        </div>
+        <div class="v5-card-footer">
+          <div class="v5-footer-meta">
+            <span class="v5-meta-item"><span class="v5-meta-icon">&#128337;</span> 12 min</span>
+            <span class="v5-meta-item"><span class="v5-meta-icon">&#128065;</span> 2,847</span>
+            <span class="v5-meta-item"><span class="v5-meta-icon">&#128197;</span> 20 Jan</span>
+          </div>
+          <button class="v5-btn">View Policy</button>
+        </div>
+      </div>
+
+      <div class="v5-card">
+        <div class="v5-card-header">
+          <div class="v5-icon-wrap">
+            <div class="v5-icon" style="background: linear-gradient(135deg, #0284c7, #38bdf8); color: #fff;">&#128187;</div>
+            <div class="v5-risk-dot" style="background: #dc2626;"></div>
+          </div>
+          <div class="v5-title-area">
+            <div class="v5-title">IT Security Standards</div>
+            <div class="v5-subtitle">POL-2026-003 <span class="v5-dot"></span> IT Security</div>
+          </div>
+          <button class="v5-bookmark">&#9734;</button>
+        </div>
+        <div class="v5-card-body">
+          <div class="v5-tags">
+            <span class="v5-tag v5-tag-status">Published</span>
+            <span class="v5-tag v5-tag-mandatory">Mandatory</span>
+            <span class="v5-tag v5-tag-timeline">7 days to read</span>
+          </div>
+          <div class="v5-desc">Information technology security standards and acceptable use policy covering network security, access controls, and incident response.</div>
+        </div>
+        <div class="v5-progress">
+          <div class="v5-progress-bar"><div class="v5-progress-fill" style="width: 45%; background: linear-gradient(to right, #d97706, #fbbf24);"></div></div>
+        </div>
+        <div class="v5-card-footer">
+          <div class="v5-footer-meta">
+            <span class="v5-meta-item"><span class="v5-meta-icon">&#128337;</span> 18 min</span>
+            <span class="v5-meta-item"><span class="v5-meta-icon">&#128065;</span> 1,543</span>
+            <span class="v5-meta-item"><span class="v5-meta-icon">&#128197;</span> 15 Jan</span>
+          </div>
+          <button class="v5-btn">View Policy</button>
+        </div>
+      </div>
+
+      <div class="v5-card">
+        <span class="v5-badge" style="background: linear-gradient(135deg, #3b82f6, #60a5fa);">Updated</span>
+        <div class="v5-card-header">
+          <div class="v5-icon-wrap">
+            <div class="v5-icon" style="background: linear-gradient(135deg, #0d9488, #14b8a6); color: #fff;">&#129309;</div>
+            <div class="v5-risk-dot" style="background: #d97706;"></div>
+          </div>
+          <div class="v5-title-area">
+            <div class="v5-title">Remote Work Policy</div>
+            <div class="v5-subtitle">POL-2026-002 <span class="v5-dot"></span> HR Policies</div>
+          </div>
+          <button class="v5-bookmark" style="color:#f59e0b;background:#fef3c7;">&#9733;</button>
+        </div>
+        <div class="v5-card-body">
+          <div class="v5-tags">
+            <span class="v5-tag v5-tag-status">Published</span>
+            <span class="v5-tag v5-tag-timeline">30 days to read</span>
+          </div>
+          <div class="v5-desc">Guidelines for remote and hybrid working arrangements including equipment, schedules, communication expectations, and performance.</div>
+        </div>
+        <div class="v5-progress">
+          <div class="v5-progress-bar"><div class="v5-progress-fill" style="width: 92%; background: linear-gradient(to right, #10b981, #34d399);"></div></div>
+        </div>
+        <div class="v5-card-footer">
+          <div class="v5-footer-meta">
+            <span class="v5-meta-item"><span class="v5-meta-icon">&#128337;</span> 8 min</span>
+            <span class="v5-meta-item"><span class="v5-meta-icon">&#128065;</span> 3,210</span>
+            <span class="v5-meta-item"><span class="v5-meta-icon">&#128197;</span> 18 Jan</span>
+          </div>
+          <button class="v5-btn">View Policy</button>
+        </div>
+      </div>
+
+      <div class="v5-card">
+        <div class="v5-card-header">
+          <div class="v5-icon-wrap">
+            <div class="v5-icon" style="background: linear-gradient(135deg, #dc2626, #f87171); color: #fff;">&#9878;</div>
+            <div class="v5-risk-dot" style="background: #ea580c;"></div>
+          </div>
+          <div class="v5-title-area">
+            <div class="v5-title">Anti-Bribery &amp; Corruption</div>
+            <div class="v5-subtitle">POL-2026-004 <span class="v5-dot"></span> Compliance</div>
+          </div>
+          <button class="v5-bookmark">&#9734;</button>
+        </div>
+        <div class="v5-card-body">
+          <div class="v5-tags">
+            <span class="v5-tag" style="background:#fffbeb;color:#d97706;border:1px solid #fde68a;">In Review</span>
+            <span class="v5-tag v5-tag-mandatory">Mandatory</span>
+            <span class="v5-tag v5-tag-timeline">14 days to read</span>
+          </div>
+          <div class="v5-desc">Anti-bribery, corruption, and gifts policy in compliance with UK Bribery Act and international standards for ethical business conduct.</div>
+        </div>
+        <div class="v5-progress">
+          <div class="v5-progress-bar"><div class="v5-progress-fill" style="width: 22%; background: linear-gradient(to right, #dc2626, #f87171);"></div></div>
+        </div>
+        <div class="v5-card-footer">
+          <div class="v5-footer-meta">
+            <span class="v5-meta-item"><span class="v5-meta-icon">&#128337;</span> 15 min</span>
+            <span class="v5-meta-item"><span class="v5-meta-icon">&#128065;</span> 892</span>
+            <span class="v5-meta-item"><span class="v5-meta-icon">&#128197;</span> 12 Jan</span>
+          </div>
+          <button class="v5-btn">View Policy</button>
+        </div>
+      </div>
+
+      <div class="v5-card">
+        <div class="v5-card-header">
+          <div class="v5-icon-wrap">
+            <div class="v5-icon" style="background: linear-gradient(135deg, #16a34a, #4ade80); color: #fff;">&#129657;</div>
+            <div class="v5-risk-dot" style="background: #ea580c;"></div>
+          </div>
+          <div class="v5-title-area">
+            <div class="v5-title">Health &amp; Safety Manual</div>
+            <div class="v5-subtitle">POL-2026-005 <span class="v5-dot"></span> Health &amp; Safety</div>
+          </div>
+          <button class="v5-bookmark">&#9734;</button>
+        </div>
+        <div class="v5-card-body">
+          <div class="v5-tags">
+            <span class="v5-tag v5-tag-status">Published</span>
+            <span class="v5-tag v5-tag-mandatory">Mandatory</span>
+          </div>
+          <div class="v5-desc">Workplace health and safety procedures and responsibilities covering risk assessments, fire safety, first aid, and incident reporting.</div>
+        </div>
+        <div class="v5-progress">
+          <div class="v5-progress-bar"><div class="v5-progress-fill" style="width: 65%; background: linear-gradient(to right, #0d9488, #14b8a6);"></div></div>
+        </div>
+        <div class="v5-card-footer">
+          <div class="v5-footer-meta">
+            <span class="v5-meta-item"><span class="v5-meta-icon">&#128337;</span> 22 min</span>
+            <span class="v5-meta-item"><span class="v5-meta-icon">&#128065;</span> 4,120</span>
+            <span class="v5-meta-item"><span class="v5-meta-icon">&#128197;</span> 10 Jan</span>
+          </div>
+          <button class="v5-btn">View Policy</button>
+        </div>
+      </div>
+
+      <div class="v5-card">
+        <div class="v5-card-header">
+          <div class="v5-icon-wrap">
+            <div class="v5-icon" style="background: linear-gradient(135deg, #d97706, #fbbf24); color: #fff;">&#128176;</div>
+            <div class="v5-risk-dot" style="background: #16a34a;"></div>
+          </div>
+          <div class="v5-title-area">
+            <div class="v5-title">Expense &amp; Travel Policy</div>
+            <div class="v5-subtitle">POL-2026-006 <span class="v5-dot"></span> Financial</div>
+          </div>
+          <button class="v5-bookmark">&#9734;</button>
+        </div>
+        <div class="v5-card-body">
+          <div class="v5-tags">
+            <span class="v5-tag v5-tag-status">Published</span>
+          </div>
+          <div class="v5-desc">Employee expense claims, travel bookings, and reimbursement procedures including per diem rates, approval thresholds, and reporting.</div>
+        </div>
+        <div class="v5-progress">
+          <div class="v5-progress-bar"><div class="v5-progress-fill" style="width: 100%; background: linear-gradient(to right, #10b981, #34d399);"></div></div>
+        </div>
+        <div class="v5-card-footer">
+          <div class="v5-footer-meta">
+            <span class="v5-meta-item"><span class="v5-meta-icon">&#128337;</span> 10 min</span>
+            <span class="v5-meta-item"><span class="v5-meta-icon">&#128065;</span> 5,643</span>
+            <span class="v5-meta-item"><span class="v5-meta-icon">&#128197;</span> 08 Jan</span>
+          </div>
+          <button class="v5-btn">View Policy</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="text-align: center; padding: 40px; color: #94a3b8; font-size: 12px;">
+  Policy Hub Card Mockups &mdash; First Digital &mdash; Digital Workplace Excellence
+</div>
+
+</body>
+</html>

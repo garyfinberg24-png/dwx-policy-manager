@@ -1,0 +1,25 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx/client-side-web-part-manifest.schema.json",
+  "id": "d8a3f5b2-4c9e-41a7-b2d8-e1f3a6c5b9d4",
+  "alias": "DwxPolicyManagerViewWebPart",
+  "componentType": "WebPart",
+
+  "version": "*",
+  "manifestVersion": 2,
+
+  "requiresCustomScript": false,
+  "supportedHosts": ["SharePointWebPart", "SharePointFullPage", "TeamsPersonalApp", "TeamsTab"],
+  "supportsThemeVariants": true,
+
+  "preconfiguredEntries": [{
+    "groupId": "e4b0a295-44e2-4fa4-8f15-4eac5edf4275",
+    "group": { "default": "DWx Policy Manager" },
+    "title": { "default": "DWx Policy Manager View" },
+    "description": { "default": "Manager dashboard for team policy compliance, approvals, delegations, and acknowledgement tracking" },
+    "officeFabricIconFontName": "ManagerSelfService",
+    "properties": {
+      "title": "DWx Policy Manager View"
+    }
+  }],
+  "supportsFullBleed": true
+}

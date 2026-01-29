@@ -554,7 +554,7 @@ export enum RequestStatus {
 export const PERSONAL_DATA_FIELDS: IPersonalDataField[] = [
   // Process fields
   {
-    listName: 'JML_Processes',
+    listName: 'PM_Processes',
     fieldName: 'EmployeeName',
     dataType: PersonalDataType.Name,
     isSensitive: true,
@@ -563,7 +563,7 @@ export const PERSONAL_DATA_FIELDS: IPersonalDataField[] = [
     anonymizationMethod: AnonymizationMethod.Replace
   },
   {
-    listName: 'JML_Processes',
+    listName: 'PM_Processes',
     fieldName: 'EmployeeEmail',
     dataType: PersonalDataType.Email,
     isSensitive: true,
@@ -572,7 +572,7 @@ export const PERSONAL_DATA_FIELDS: IPersonalDataField[] = [
     anonymizationMethod: AnonymizationMethod.Replace
   },
   {
-    listName: 'JML_Processes',
+    listName: 'PM_Processes',
     fieldName: 'EmployeeId',
     dataType: PersonalDataType.Identifier,
     isSensitive: false,
@@ -582,7 +582,7 @@ export const PERSONAL_DATA_FIELDS: IPersonalDataField[] = [
   },
   // User preferences
   {
-    listName: 'JML_UserPreferences',
+    listName: 'PM_UserPreferences',
     fieldName: 'UserEmail',
     dataType: PersonalDataType.Email,
     isSensitive: true,
@@ -591,7 +591,7 @@ export const PERSONAL_DATA_FIELDS: IPersonalDataField[] = [
     anonymizationMethod: AnonymizationMethod.Replace
   },
   {
-    listName: 'JML_UserPreferences',
+    listName: 'PM_UserPreferences',
     fieldName: 'DisplayName',
     dataType: PersonalDataType.Name,
     isSensitive: true,
@@ -601,7 +601,7 @@ export const PERSONAL_DATA_FIELDS: IPersonalDataField[] = [
   },
   // User activity
   {
-    listName: 'JML_UserActivity',
+    listName: 'PM_UserActivity',
     fieldName: 'UserEmail',
     dataType: PersonalDataType.Email,
     isSensitive: true,
@@ -610,7 +610,7 @@ export const PERSONAL_DATA_FIELDS: IPersonalDataField[] = [
     anonymizationMethod: AnonymizationMethod.Replace
   },
   {
-    listName: 'JML_UserActivity',
+    listName: 'PM_UserActivity',
     fieldName: 'IPAddress',
     dataType: PersonalDataType.OnlineIdentifier,
     isSensitive: true,

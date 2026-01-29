@@ -137,11 +137,11 @@ interface IDefaultTaskConfig {
 // ============================================================================
 
 const LIST_NAMES = {
-  PROCESSES: 'JML_Processes',
-  TASKS: 'JML_Tasks',
-  TASK_ASSIGNMENTS: 'JML_TaskAssignments',
-  CHECKLIST_TEMPLATES: 'JML_ChecklistTemplates',
-  TEMPLATE_TASK_MAPPINGS: 'JML_TemplateTaskMappings'
+  PROCESSES: 'PM_Processes',
+  TASKS: 'PM_Tasks',
+  TASK_ASSIGNMENTS: 'PM_TaskAssignments',
+  CHECKLIST_TEMPLATES: 'PM_ChecklistTemplates',
+  TEMPLATE_TASK_MAPPINGS: 'PM_TemplateTaskMappings'
 };
 
 const DEFAULT_TASK_CONFIG: IDefaultTaskConfig[] = [
@@ -901,7 +901,7 @@ export class ProcessCreationService {
     const result = await retryWithDLQ<void>(
       async () => {
         const workflowInstances = await this.sp.web.lists
-          .getByTitle('JML_WorkflowInstances')
+          .getByTitle('PM_WorkflowInstances')
           .items
           .filter(`ProcessId eq ${processId} and (Status eq 'Running' or Status eq 'Paused' or Status eq 'Waiting for Task' or Status eq 'Waiting for Approval')`)
           .select('Id', 'Status')
@@ -916,7 +916,7 @@ export class ProcessCreationService {
 
         // Update workflow instance status
         await this.sp.web.lists
-          .getByTitle('JML_WorkflowInstances')
+          .getByTitle('PM_WorkflowInstances')
           .items
           .getById(instanceId)
           .update({
@@ -971,7 +971,7 @@ export class ProcessCreationService {
 
     if (process.WorkflowInstanceId) {
       const workflow = await this.sp.web.lists
-        .getByTitle('JML_WorkflowInstances')
+        .getByTitle('PM_WorkflowInstances')
         .items
         .getById(process.WorkflowInstanceId)
         .select('Id', 'Status')() as { Id: number; Status: string };
@@ -1072,7 +1072,7 @@ export class ProcessCreationService {
   }): Promise<void> {
     try {
       await this.sp.web.lists
-        .getByTitle('JML_Notifications')
+        .getByTitle('PM_Notifications')
         .items
         .add({
           Title: params.title,
@@ -1104,7 +1104,7 @@ export class ProcessCreationService {
   ): Promise<void> {
     try {
       await this.sp.web.lists
-        .getByTitle('JML_AuditLog')
+        .getByTitle('PM_AuditLog')
         .items
         .add({
           Title: `Process Created: ${processId}`,
@@ -1158,7 +1158,7 @@ export class ProcessCreationService {
 
     // Get workflow instance (if any)
     const workflowInstances = await this.sp.web.lists
-      .getByTitle('JML_WorkflowInstances')
+      .getByTitle('PM_WorkflowInstances')
       .items
       .filter(`ProcessId eq ${processId}`)
       .select('Id')

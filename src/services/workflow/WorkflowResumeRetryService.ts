@@ -88,7 +88,7 @@ export class WorkflowResumeRetryService {
   private config: IResumeRetryConfig;
   private retryTimer: ReturnType<typeof setInterval> | null = null;
   private isProcessing: boolean = false;
-  private readonly LIST_NAME = 'JML_WorkflowResumeRetry';
+  private readonly LIST_NAME = 'PM_WorkflowResumeRetry';
 
   constructor(
     sp: SPFI,

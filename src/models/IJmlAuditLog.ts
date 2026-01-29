@@ -1,4 +1,4 @@
-// JML_AuditLog List Model
+// PM_AuditLog List Model
 
 import { IBaseListItem, IUser } from './ICommon';
 

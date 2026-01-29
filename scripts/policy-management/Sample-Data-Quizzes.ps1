@@ -5,7 +5,7 @@
 
 param(
     [Parameter(Mandatory=$false)]
-    [string]$SiteUrl = "https://mf7m.sharepoint.com/sites/JML"
+    [string]$SiteUrl = "https://mf7m.sharepoint.com/sites/PolicyManager"
 )
 
 $clientId = "d91b5b78-de72-424e-898b-8b5c9512ebd9"
@@ -32,11 +32,11 @@ function ConvertTo-OptionsJson {
 }
 
 # ============================================================================
-# STEP 1: Get Policy IDs from JML_Policies list
+# STEP 1: Get Policy IDs from PM_Policies list
 # ============================================================================
-Write-Host "`nFetching policy IDs from JML_Policies..." -ForegroundColor Yellow
+Write-Host "`nFetching policy IDs from PM_Policies..." -ForegroundColor Yellow
 
-$policyItems = Get-PnPListItem -List "JML_Policies" -Fields "ID","PolicyNumber","PolicyName","RequiresQuiz" |
+$policyItems = Get-PnPListItem -List "PM_Policies" -Fields "ID","PolicyNumber","PolicyName","RequiresQuiz" |
     Where-Object { $_["RequiresQuiz"] -eq $true }
 
 $policyIdMap = @{}
@@ -1188,7 +1188,7 @@ foreach ($quiz in $quizzes) {
         "IsActive" = $quiz.IsActive
     }
 
-    $newQuiz = Add-PnPListItem -List "JML_PolicyQuizzes" -Values $quizValues
+    $newQuiz = Add-PnPListItem -List "PM_PolicyQuizzes" -Values $quizValues
     $quizId = $newQuiz.Id
     $quizCounter++
 
@@ -1211,7 +1211,7 @@ foreach ($quiz in $quizzes) {
             "IsMandatory" = $question.IsMandatory
         }
 
-        $null = Add-PnPListItem -List "JML_PolicyQuizQuestions" -Values $questionValues
+        $null = Add-PnPListItem -List "PM_PolicyQuizQuestions" -Values $questionValues
         $questionCounter++
     }
 

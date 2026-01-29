@@ -45,7 +45,7 @@ export class ScheduledReportService {
         filterQuery = ValidationUtils.buildFilter('CreatedBy', 'eq', userId);
       }
 
-      let query = this.sp.web.lists.getByTitle('JML_ScheduledReports').items
+      let query = this.sp.web.lists.getByTitle('PM_ScheduledReports').items
         .select('*')
         .orderBy('NextRun', true);
 
@@ -88,7 +88,7 @@ export class ScheduledReportService {
     try {
       const nextRun = this.calculateNextRun(report.frequency);
 
-      await this.sp.web.lists.getByTitle('JML_ScheduledReports').items.add({
+      await this.sp.web.lists.getByTitle('PM_ScheduledReports').items.add({
         Title: report.reportName,
         ReportId: report.id,
         ReportType: report.reportType,
@@ -118,7 +118,7 @@ export class ScheduledReportService {
       // Build secure filter
       const filter = ValidationUtils.buildFilter('ReportId', 'eq', report.id.substring(0, 100));
 
-      const items = await this.sp.web.lists.getByTitle('JML_ScheduledReports').items
+      const items = await this.sp.web.lists.getByTitle('PM_ScheduledReports').items
         .filter(filter)
         .top(1)();
 
@@ -126,7 +126,7 @@ export class ScheduledReportService {
         throw new Error('Scheduled report not found');
       }
 
-      await this.sp.web.lists.getByTitle('JML_ScheduledReports').items.getById(items[0].Id).update({
+      await this.sp.web.lists.getByTitle('PM_ScheduledReports').items.getById(items[0].Id).update({
         Title: report.reportName,
         ReportType: report.reportType,
         Frequency: report.frequency,
@@ -154,12 +154,12 @@ export class ScheduledReportService {
       // Build secure filter
       const filter = ValidationUtils.buildFilter('ReportId', 'eq', reportId.substring(0, 100));
 
-      const items = await this.sp.web.lists.getByTitle('JML_ScheduledReports').items
+      const items = await this.sp.web.lists.getByTitle('PM_ScheduledReports').items
         .filter(filter)
         .top(1)();
 
       if (items.length > 0) {
-        await this.sp.web.lists.getByTitle('JML_ScheduledReports').items.getById(items[0].Id).delete();
+        await this.sp.web.lists.getByTitle('PM_ScheduledReports').items.getById(items[0].Id).delete();
       }
     } catch (error) {
       logger.error('ScheduledReportService', 'Failed to delete scheduled report:', error);
@@ -352,7 +352,7 @@ export class ScheduledReportService {
       // Build secure filter
       const filter = ValidationUtils.buildFilter('ReportId', 'eq', report.id.substring(0, 100));
 
-      const items = await this.sp.web.lists.getByTitle('JML_ScheduledReports').items
+      const items = await this.sp.web.lists.getByTitle('PM_ScheduledReports').items
         .filter(filter)
         .top(1)();
 
@@ -363,7 +363,7 @@ export class ScheduledReportService {
       const now = new Date();
       const nextRun = this.calculateNextRun(report.frequency);
 
-      await this.sp.web.lists.getByTitle('JML_ScheduledReports').items.getById(items[0].Id).update({
+      await this.sp.web.lists.getByTitle('PM_ScheduledReports').items.getById(items[0].Id).update({
         LastRun: now.toISOString(),
         NextRun: nextRun.toISOString()
       });

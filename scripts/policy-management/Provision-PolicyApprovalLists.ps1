@@ -18,11 +18,11 @@ if ($WhatIf) {
 }
 
 # ============================================================================
-# LIST 1: JML_Policy_ApprovalTemplates
+# LIST 1: PM_Policy_ApprovalTemplates
 # Stores reusable workflow templates
 # ============================================================================
 
-$listName = "JML_Policy_ApprovalTemplates"
+$listName = "PM_Policy_ApprovalTemplates"
 Write-Host "Creating list: $listName..." -ForegroundColor White
 
 $existingList = Get-PnPList -Identity $listName -ErrorAction SilentlyContinue
@@ -85,11 +85,11 @@ foreach ($col in $templateColumns) {
 Write-Host "  Completed: $listName`n" -ForegroundColor Green
 
 # ============================================================================
-# LIST 2: JML_Policy_ApprovalWorkflows
+# LIST 2: PM_Policy_ApprovalWorkflows
 # Stores active workflow instances
 # ============================================================================
 
-$listName = "JML_Policy_ApprovalWorkflows"
+$listName = "PM_Policy_ApprovalWorkflows"
 Write-Host "Creating list: $listName..." -ForegroundColor White
 
 $existingList = Get-PnPList -Identity $listName -ErrorAction SilentlyContinue
@@ -168,11 +168,11 @@ foreach ($col in $workflowColumns) {
 Write-Host "  Completed: $listName`n" -ForegroundColor Green
 
 # ============================================================================
-# LIST 3: JML_Policy_ApprovalDecisions
+# LIST 3: PM_Policy_ApprovalDecisions
 # Stores individual approval decisions
 # ============================================================================
 
-$listName = "JML_Policy_ApprovalDecisions"
+$listName = "PM_Policy_ApprovalDecisions"
 Write-Host "Creating list: $listName..." -ForegroundColor White
 
 $existingList = Get-PnPList -Identity $listName -ErrorAction SilentlyContinue
@@ -255,11 +255,11 @@ foreach ($col in $decisionColumns) {
 Write-Host "  Completed: $listName`n" -ForegroundColor Green
 
 # ============================================================================
-# LIST 4: JML_Policy_ApprovalDelegations
+# LIST 4: PM_Policy_ApprovalDelegations
 # Stores delegation assignments
 # ============================================================================
 
-$listName = "JML_Policy_ApprovalDelegations"
+$listName = "PM_Policy_ApprovalDelegations"
 Write-Host "Creating list: $listName..." -ForegroundColor White
 
 $existingList = Get-PnPList -Identity $listName -ErrorAction SilentlyContinue
@@ -338,11 +338,11 @@ foreach ($col in $delegationColumns) {
 Write-Host "  Completed: $listName`n" -ForegroundColor Green
 
 # ============================================================================
-# LIST 5: JML_Policy_EscalationRules
+# LIST 5: PM_Policy_EscalationRules
 # Stores escalation rule configurations
 # ============================================================================
 
-$listName = "JML_Policy_EscalationRules"
+$listName = "PM_Policy_EscalationRules"
 Write-Host "Creating list: $listName..." -ForegroundColor White
 
 $existingList = Get-PnPList -Identity $listName -ErrorAction SilentlyContinue
@@ -427,11 +427,11 @@ Write-Host "Provisioning Complete!" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 
 Write-Host "`nLists created:" -ForegroundColor White
-Write-Host "  1. JML_Policy_ApprovalTemplates   - Workflow templates" -ForegroundColor Gray
-Write-Host "  2. JML_Policy_ApprovalWorkflows   - Active workflow instances" -ForegroundColor Gray
-Write-Host "  3. JML_Policy_ApprovalDecisions   - Individual decisions" -ForegroundColor Gray
-Write-Host "  4. JML_Policy_ApprovalDelegations - Delegation assignments" -ForegroundColor Gray
-Write-Host "  5. JML_Policy_EscalationRules     - Escalation configurations" -ForegroundColor Gray
+Write-Host "  1. PM_Policy_ApprovalTemplates   - Workflow templates" -ForegroundColor Gray
+Write-Host "  2. PM_Policy_ApprovalWorkflows   - Active workflow instances" -ForegroundColor Gray
+Write-Host "  3. PM_Policy_ApprovalDecisions   - Individual decisions" -ForegroundColor Gray
+Write-Host "  4. PM_Policy_ApprovalDelegations - Delegation assignments" -ForegroundColor Gray
+Write-Host "  5. PM_Policy_EscalationRules     - Escalation configurations" -ForegroundColor Gray
 
 Write-Host "`nNext steps:" -ForegroundColor Yellow
 Write-Host "  1. Configure default escalation rules" -ForegroundColor Gray

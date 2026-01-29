@@ -22,7 +22,7 @@ import { logger } from './LoggingService';
 
 export class DocumentService {
   private sp: SPFI;
-  private readonly DOCUMENT_LIBRARY = 'JML_Documents';
+  private readonly DOCUMENT_LIBRARY = 'PM_Documents';
   private readonly CHUNK_SIZE = 10485760; // 10MB chunks for large files
 
   constructor(sp: SPFI) {

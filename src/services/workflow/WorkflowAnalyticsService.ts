@@ -282,11 +282,11 @@ export class WorkflowAnalyticsService {
   private readonly cache: Map<string, ICacheEntry<unknown>>;
 
   /** List name for workflow instances */
-  private readonly instanceListName = 'JML_WorkflowInstances';
+  private readonly instanceListName = 'PM_WorkflowInstances';
   /** List name for workflow step status */
-  private readonly stepStatusListName = 'JML_WorkflowStepStatus';
+  private readonly stepStatusListName = 'PM_WorkflowStepStatus';
   /** List name for workflow logs */
-  private readonly logsListName = 'JML_WorkflowLogs';
+  private readonly logsListName = 'PM_WorkflowLogs';
 
   /**
    * Creates an instance of WorkflowAnalyticsService
@@ -608,7 +608,7 @@ export class WorkflowAnalyticsService {
         new Date(Date.now() - this.config.historicalDaysLookback * 24 * 60 * 60 * 1000);
       const endDateTime = endDate || new Date();
 
-      // Filter by StartedDate (the actual column name in JML_WorkflowInstances)
+      // Filter by StartedDate (the actual column name in PM_WorkflowInstances)
       const filter = `StartedDate ge datetime'${lookbackDate.toISOString()}' and StartedDate le datetime'${endDateTime.toISOString()}'`;
 
       const items = await this.sp.web.lists

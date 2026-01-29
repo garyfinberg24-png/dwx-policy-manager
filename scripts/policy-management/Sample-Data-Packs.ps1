@@ -5,7 +5,7 @@
 
 param(
     [Parameter(Mandatory=$false)]
-    [string]$SiteUrl = "https://mf7m.sharepoint.com/sites/JML"
+    [string]$SiteUrl = "https://mf7m.sharepoint.com/sites/PolicyManager"
 )
 
 $clientId = "d91b5b78-de72-424e-898b-8b5c9512ebd9"
@@ -66,7 +66,7 @@ Write-Host "`n[1/1] Creating policy packs..." -ForegroundColor Yellow
 
 foreach ($pack in $policyPacks) {
     try {
-        Add-PnPListItem -List "JML_PolicyPacks" -Values $pack | Out-Null
+        Add-PnPListItem -List "PM_PolicyPacks" -Values $pack | Out-Null
         Write-Host "  Created: $($pack.Title)" -ForegroundColor Green
     }
     catch {

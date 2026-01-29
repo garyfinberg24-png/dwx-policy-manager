@@ -20,7 +20,7 @@ import { logger } from './LoggingService';
 
 export class PayrollService {
   private sp: SPFI;
-  private readonly PAYROLL_LIST = 'JML_PayrollSummary';
+  private readonly PAYROLL_LIST = 'PM_PayrollSummary';
 
   constructor(sp: SPFI) {
     this.sp = sp;

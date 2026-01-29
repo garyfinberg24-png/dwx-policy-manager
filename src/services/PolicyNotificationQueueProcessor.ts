@@ -69,7 +69,7 @@ export enum NotificationQueueStatus {
 }
 
 /**
- * Notification queue item from JML_NotificationQueue
+ * Notification queue item from PM_NotificationQueue
  */
 export interface IPolicyNotificationQueueItem {
   Id: number;
@@ -149,7 +149,8 @@ export class PolicyNotificationQueueProcessor {
   }
 
   /**
-   * Start the notification processor
+   * Start the notification processor.
+   * Verifies required lists exist before starting; silently disables if missing.
    */
   public start(): void {
     if (!this.config.enabled) {
@@ -162,19 +163,43 @@ export class PolicyNotificationQueueProcessor {
       return;
     }
 
-    logger.info('PolicyNotificationQueueProcessor', `Starting processor (interval: ${this.config.intervalMs}ms)`);
+    // Verify required lists exist before starting the polling loop
+    this.verifyListsExist().then(listsExist => {
+      if (!listsExist) {
+        logger.warn('PolicyNotificationQueueProcessor',
+          `Required list '${this.QUEUE_LIST_NAME}' not found. ` +
+          'Notification processing disabled until list is provisioned.');
+        return;
+      }
 
-    // Run immediately once
-    this.processQueue().catch(err => {
-      logger.error('PolicyNotificationQueueProcessor', 'Error in initial processing run', err);
-    });
+      logger.info('PolicyNotificationQueueProcessor', `Starting processor (interval: ${this.config.intervalMs}ms)`);
 
-    // Then schedule periodic runs
-    this.intervalHandle = setInterval(() => {
+      // Run immediately once
       this.processQueue().catch(err => {
-        logger.error('PolicyNotificationQueueProcessor', 'Error in scheduled processing run', err);
+        logger.error('PolicyNotificationQueueProcessor', 'Error in initial processing run', err);
       });
-    }, this.config.intervalMs);
+
+      // Then schedule periodic runs
+      this.intervalHandle = setInterval(() => {
+        this.processQueue().catch(err => {
+          logger.error('PolicyNotificationQueueProcessor', 'Error in scheduled processing run', err);
+        });
+      }, this.config.intervalMs);
+    }).catch(err => {
+      logger.warn('PolicyNotificationQueueProcessor', 'Failed to verify notification lists, processor disabled', err);
+    });
+  }
+
+  /**
+   * Check if the notification queue list exists
+   */
+  private async verifyListsExist(): Promise<boolean> {
+    try {
+      await this.sp.web.lists.getByTitle(this.QUEUE_LIST_NAME)();
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   /**
@@ -464,7 +489,7 @@ export class PolicyNotificationQueueProcessor {
   }
 
   /**
-   * Send in-app notification by creating item in JML_Notifications
+   * Send in-app notification by creating item in PM_Notifications
    */
   private async sendInAppNotification(notification: IPolicyNotificationQueueItem): Promise<{ success: boolean; error?: string }> {
     try {
@@ -556,7 +581,7 @@ export class PolicyNotificationQueueProcessor {
         <a href="${policyUrl}" class="button">View Policy</a>
       </div>
       <div class="footer">
-        This is an automated notification from the JML Policy Management System.
+        This is an automated notification from the DWx Policy Management System.
       </div>
     </div>
   </div>

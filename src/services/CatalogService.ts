@@ -31,7 +31,7 @@ export interface ICatalogFilter {
 
 export class CatalogService {
   private sp: SPFI;
-  private readonly CATALOG_LIST = 'JML_CatalogItems';
+  private readonly CATALOG_LIST = 'PM_CatalogItems';
 
   constructor(sp: SPFI) {
     this.sp = sp;

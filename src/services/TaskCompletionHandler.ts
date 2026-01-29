@@ -214,7 +214,7 @@ export class TaskCompletionHandler {
         await this.taskDependencyService.onTaskCompleted(options.taskAssignmentId);
 
         // Get the list of tasks that were unblocked
-        const dependentTasks = await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+        const dependentTasks = await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
           .filter(`DependsOnTaskId eq ${options.taskAssignmentId} and IsBlocked eq false`)
           .select('Id', 'Title', 'AssignedToId')();
 
@@ -428,7 +428,7 @@ export class TaskCompletionHandler {
         await this.taskDependencyService.onTaskCompleted(taskAssignmentId);
 
         // Get the list of tasks that were unblocked
-        const dependentTasks = await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+        const dependentTasks = await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
           .filter(`DependsOnTaskId eq ${taskAssignmentId} and IsBlocked eq false`)
           .select('Id', 'Title', 'AssignedToId')();
 
@@ -559,7 +559,7 @@ export class TaskCompletionHandler {
    */
   private async getTaskAssignment(taskId: number): Promise<IJmlTaskAssignment | null> {
     try {
-      const item = await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+      const item = await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
         .getById(taskId)
         .select(
           'Id', 'Title', 'ProcessID', 'TaskID', 'Status', 'Priority',
@@ -579,7 +579,7 @@ export class TaskCompletionHandler {
     taskId: number,
     updates: Partial<IJmlTaskAssignment>
   ): Promise<void> {
-    await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+    await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
       .getById(taskId)
       .update(updates);
   }
@@ -614,7 +614,7 @@ export class TaskCompletionHandler {
     const recipientId = process.ProcessOwnerId || process.ManagerId;
     if (!recipientId) return;
 
-    await this.sp.web.lists.getByTitle('JML_Notifications').items.add({
+    await this.sp.web.lists.getByTitle('PM_Notifications').items.add({
       Title: `Task Completed: ${task.Title}`,
       NotificationType: 'TaskCompleted',
       MessageBody: `Task "${task.Title}" has been completed by ${completedByName}.`,
@@ -634,7 +634,7 @@ export class TaskCompletionHandler {
     managerId: number,
     reason: string
   ): Promise<void> {
-    await this.sp.web.lists.getByTitle('JML_Notifications').items.add({
+    await this.sp.web.lists.getByTitle('PM_Notifications').items.add({
       Title: `Task Blocked: ${task.Title}`,
       NotificationType: 'TaskBlocked',
       MessageBody: `Task "${task.Title}" has been blocked. Reason: ${reason}`,
@@ -657,8 +657,8 @@ export class TaskCompletionHandler {
     completedBlockingTaskTitle: string,
     processId: number | undefined
   ): Promise<void> {
-    // Create in-app notification in JML_Notifications list
-    await this.sp.web.lists.getByTitle('JML_Notifications').items.add({
+    // Create in-app notification in PM_Notifications list
+    await this.sp.web.lists.getByTitle('PM_Notifications').items.add({
       Title: 'Task Now Available',
       NotificationType: 'TaskUnblocked',
       MessageBody: `Your task "${taskTitle}" is now available. The prerequisite task "${completedBlockingTaskTitle}" has been completed.`,
@@ -711,7 +711,7 @@ export class TaskCompletionHandler {
 
     const process = await this.processService.getById(processId);
 
-    await this.sp.web.lists.getByTitle('JML_Approvals').items.add({
+    await this.sp.web.lists.getByTitle('PM_Approvals').items.add({
       Title: `Approval Required: ${task.Title}`,
       ApprovalType: 'TaskCompletion',
       Status: 'Pending',
@@ -733,7 +733,7 @@ export class TaskCompletionHandler {
     try {
       const processId = extractProcessId(task.ProcessID);
 
-      await this.sp.web.lists.getByTitle('JML_AuditLogs').items.add({
+      await this.sp.web.lists.getByTitle('PM_AuditLogs').items.add({
         Title: `Task Completed: ${task.Title}`,
         EventType: 'TaskCompleted',
         EntityType: 'TaskAssignment',

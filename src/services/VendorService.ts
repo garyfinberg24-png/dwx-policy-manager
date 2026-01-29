@@ -27,11 +27,11 @@ import { logger } from './LoggingService';
 
 export class VendorService {
   private sp: SPFI;
-  private readonly VENDORS_LIST = 'JML_Vendors';
-  private readonly VENDOR_CONTACTS_LIST = 'JML_VendorContacts';
-  private readonly VENDOR_DOCUMENTS_LIST = 'JML_VendorDocuments';
-  private readonly VENDOR_PERFORMANCE_LIST = 'JML_VendorPerformance';
-  private readonly VENDOR_ISSUES_LIST = 'JML_VendorIssues';
+  private readonly VENDORS_LIST = 'PM_Vendors';
+  private readonly VENDOR_CONTACTS_LIST = 'PM_VendorContacts';
+  private readonly VENDOR_DOCUMENTS_LIST = 'PM_VendorDocuments';
+  private readonly VENDOR_PERFORMANCE_LIST = 'PM_VendorPerformance';
+  private readonly VENDOR_ISSUES_LIST = 'PM_VendorIssues';
 
   constructor(sp: SPFI) {
     this.sp = sp;

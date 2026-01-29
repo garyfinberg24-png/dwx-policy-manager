@@ -19,7 +19,7 @@ import { logger } from './LoggingService';
 
 export class TaskAttachmentsService {
   private sp: SPFI;
-  private libraryTitle = 'JML_TaskAttachments';
+  private libraryTitle = 'PM_TaskAttachments';
   private listExists: boolean | null = null;
 
   constructor(sp: SPFI) {

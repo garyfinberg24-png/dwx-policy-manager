@@ -197,7 +197,7 @@ export interface IPolicy extends IBaseListItem {
   Approvers?: IUser[];
 
   // Status & Lifecycle
-  Status: PolicyStatus;
+  PolicyStatus: PolicyStatus;
   EffectiveDate?: Date;
   ExpiryDate?: Date;
   NextReviewDate?: Date;
@@ -318,7 +318,7 @@ export interface IPolicyAcknowledgement extends IBaseListItem {
   PolicyVersionNumber: string;
 
   // User Information
-  UserId: number;
+  AckUserId: number;
   User?: IUser;
   UserEmail: string;
   UserDepartment?: string;
@@ -326,7 +326,7 @@ export interface IPolicyAcknowledgement extends IBaseListItem {
   UserLocation?: string;
 
   // Status & Tracking
-  Status: AcknowledgementStatus;
+  AckStatus: AcknowledgementStatus;
   AssignedDate: Date;
   DueDate?: Date;
   FirstOpenedDate?: Date;
@@ -1263,7 +1263,7 @@ export interface IPolicyPackAssignment extends IBaseListItem {
   AssignmentReason: string; // JML Process, Manager Request, etc.
 
   // JML Integration
-  JMLProcessId?: number; // Link to JML_Processes
+  JMLProcessId?: number; // Link to PM_Processes
   JMLProcessType?: 'Joiner' | 'Mover' | 'Leaver';
   OnboardingStage?: 'Pre-Start' | 'Day 1' | 'Week 1' | 'Month 1' | 'Month 3';
 

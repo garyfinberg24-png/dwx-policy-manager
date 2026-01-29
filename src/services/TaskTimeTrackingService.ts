@@ -18,7 +18,7 @@ import { logger } from './LoggingService';
 
 export class TaskTimeTrackingService {
   private sp: SPFI;
-  private listTitle = 'JML_TaskTimeEntries';
+  private listTitle = 'PM_TaskTimeEntries';
 
   constructor(sp: SPFI) {
     this.sp = sp;

@@ -378,7 +378,7 @@ describe('PolicyService', () => {
 
       const result = await service.createPolicy(policyData);
 
-      expect(mockSP.web.lists.getByTitle).toHaveBeenCalledWith('JML_Policies');
+      expect(mockSP.web.lists.getByTitle).toHaveBeenCalledWith('PM_Policies');
       expect(mockSP._mockList.items.add).toHaveBeenCalled();
       // Note: auditService.logEvent is called internally - tested via successful creation
     });

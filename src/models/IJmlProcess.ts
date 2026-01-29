@@ -1,4 +1,4 @@
-// JML_Processes List Model
+// PM_Processes List Model
 
 import { IBaseListItem, ProcessType, ProcessStatus, Priority, IUser } from './ICommon';
 

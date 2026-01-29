@@ -29,10 +29,10 @@ import { logger } from './LoggingService';
 export class DocumentRegistryService {
   private sp: SPFI;
 
-  private readonly REGISTRY_LIST = 'JML_DocumentRegistry';
-  private readonly ACTIVITY_LIST = 'JML_DocumentActivity';
-  private readonly SHARING_LIST = 'JML_DocumentSharing';
-  private readonly SAVED_SEARCHES_LIST = 'JML_SavedSearches';
+  private readonly REGISTRY_LIST = 'PM_DocumentRegistry';
+  private readonly ACTIVITY_LIST = 'PM_DocumentActivity';
+  private readonly SHARING_LIST = 'PM_DocumentSharing';
+  private readonly SAVED_SEARCHES_LIST = 'PM_SavedSearches';
 
   constructor(sp: SPFI) {
     this.sp = sp;

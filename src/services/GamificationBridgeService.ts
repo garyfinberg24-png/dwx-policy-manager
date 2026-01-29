@@ -187,12 +187,12 @@ export class GamificationBridgeService {
 
   // List names
   private readonly LISTS = {
-    LEDGER: 'JML_GamificationLedger',
-    PROFILES: 'JML_GamificationProfiles',
-    ONBOARDING_PROGRESS: 'JML_OnboardingProgress',
-    ACHIEVEMENTS: 'JML_Achievements',
-    USER_ACHIEVEMENTS: 'JML_UserAchievements',
-    ACHIEVEMENT_MAPPINGS: 'JML_AchievementMappings'
+    LEDGER: 'PM_GamificationLedger',
+    PROFILES: 'PM_GamificationProfiles',
+    ONBOARDING_PROGRESS: 'PM_OnboardingProgress',
+    ACHIEVEMENTS: 'PM_Achievements',
+    USER_ACHIEVEMENTS: 'PM_UserAchievements',
+    ACHIEVEMENT_MAPPINGS: 'PM_AchievementMappings'
   };
 
   // Level thresholds (unified across systems)
@@ -962,7 +962,7 @@ export class GamificationBridgeService {
   private async getEnterpriseLeaderboard(top: number): Promise<IEnterpriseLeaderboardData[]> {
     try {
       const items = await this.sp.web.lists
-        .getByTitle('JML_Leaderboard')
+        .getByTitle('PM_Leaderboard')
         .items.filter("IsCurrent eq true")
         .orderBy('LeaderboardRank', true)
         .top(top)();

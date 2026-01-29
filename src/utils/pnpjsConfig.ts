@@ -6,6 +6,7 @@ import '@pnp/sp/lists';
 import '@pnp/sp/items';
 import '@pnp/sp/fields';
 import '@pnp/sp/batching';
+import '@pnp/sp/site-users/web';
 
 let _sp: SPFI | null = null;
 let _graph: GraphFI | null = null;

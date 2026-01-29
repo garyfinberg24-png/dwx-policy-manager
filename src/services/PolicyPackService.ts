@@ -16,7 +16,6 @@ import {
   IPolicyPackDeploymentResult,
   IPolicy,
   IPolicyAcknowledgement,
-  IJMLPolicyIntegration,
   IPersonalPolicyView,
   ReadTimeframe,
   AcknowledgementStatus
@@ -30,8 +29,6 @@ export class PolicyPackService {
   private readonly POLICY_PACK_ASSIGNMENTS_LIST = PolicyPackLists.POLICY_PACK_ASSIGNMENTS;
   private readonly POLICIES_LIST = PolicyLists.POLICIES;
   private readonly POLICY_ACKNOWLEDGEMENTS_LIST = PolicyLists.POLICY_ACKNOWLEDGEMENTS;
-  // Note: JML_Processes is not part of Policy Manager - this integration will be optional
-  private readonly JML_PROCESSES_LIST = 'JML_Processes';
   private currentUserId: number = 0;
   private currentUserEmail: string = '';
 
@@ -226,8 +223,6 @@ export class PolicyPackService {
           const assignmentId = await this.assignPackToUser(
             request.packId,
             userId,
-            request.jmlProcessId,
-            request.onboardingStage,
             request.dueDate,
             request.assignmentReason,
             pack
@@ -269,8 +264,6 @@ export class PolicyPackService {
   private async assignPackToUser(
     packId: number,
     userId: number,
-    jmlProcessId: number | undefined,
-    onboardingStage: string | undefined,
     dueDate: Date | undefined,
     assignmentReason: string,
     pack: IPolicyPack
@@ -294,8 +287,6 @@ export class PolicyPackService {
       AssignedDate: new Date().toISOString(),
       AssignedById: this.currentUserId,
       AssignmentReason: assignmentReason,
-      JMLProcessId: jmlProcessId,
-      OnboardingStage: onboardingStage,
       DueDate: calculatedDueDate?.toISOString(),
       ReadTimeframe: pack.ReadTimeframe,
       TotalPolicies: pack.PolicyCount,
@@ -315,7 +306,7 @@ export class PolicyPackService {
       .items.add(assignmentData);
 
     // Create individual policy acknowledgements
-    await this.createAcknowledgementsForPack(pack, userId, jmlProcessId);
+    await this.createAcknowledgementsForPack(pack, userId);
 
     return result.data.Id;
   }
@@ -325,8 +316,7 @@ export class PolicyPackService {
    */
   private async createAcknowledgementsForPack(
     pack: IPolicyPack,
-    userId: number,
-    jmlProcessId?: number
+    userId: number
   ): Promise<void> {
     const policyIds = JSON.parse(pack.PolicyIds as any);
     const user = await this.sp.web.siteUsers.getById(userId)();
@@ -344,9 +334,9 @@ export class PolicyPackService {
         Title: `${policy.PolicyName} - ${user.Title}`,
         PolicyId: policyId,
         PolicyVersionNumber: policy.VersionNumber,
-        UserId: userId,
+        AckUserId: userId,
         UserEmail: user.Email,
-        Status: AcknowledgementStatus.Sent,
+        AckStatus: AcknowledgementStatus.Sent,
         AssignedDate: new Date().toISOString(),
         DueDate: dueDate?.toISOString(),
         QuizRequired: policy.RequiresQuiz,
@@ -355,14 +345,13 @@ export class PolicyPackService {
         IsDelegated: false,
         RemindersSent: 0,
         IsExempted: false,
-        IsCompliant: false,
-        JMLProcessId: jmlProcessId
+        IsCompliant: false
       };
 
       // Check if acknowledgement already exists
       const existing = await this.sp.web.lists
         .getByTitle(this.POLICY_ACKNOWLEDGEMENTS_LIST)
-        .items.filter(`PolicyId eq ${policyId} and UserId eq ${userId}`)
+        .items.filter(`PolicyId eq ${policyId} and AckUserId eq ${userId}`)
         .top(1)();
 
       if (existing.length === 0) {
@@ -394,7 +383,7 @@ export class PolicyPackService {
         policyIds.map(async (policyId: number) => {
           const items = await this.sp.web.lists
             .getByTitle(this.POLICY_ACKNOWLEDGEMENTS_LIST)
-            .items.filter(`PolicyId eq ${policyId} and UserId eq ${assignment.UserId}`)
+            .items.filter(`PolicyId eq ${policyId} and AckUserId eq ${assignment.UserId}`)
             .top(1)();
           return items.length > 0 ? items[0] as IPolicyAcknowledgement : null;
         })
@@ -418,13 +407,13 @@ export class PolicyPackService {
         const now = new Date();
         const daysSinceAssigned = Math.floor((now.getTime() - assignedDate.getTime()) / (1000 * 60 * 60 * 24));
         const dueDate = ack.DueDate ? new Date(ack.DueDate) : undefined;
-        const isOverdue = dueDate ? now > dueDate && ack.Status !== AcknowledgementStatus.Acknowledged : false;
+        const isOverdue = dueDate ? now > dueDate && ack.AckStatus !== AcknowledgementStatus.Acknowledged : false;
 
         return {
           policyId: policy.Id!,
           policyName: policy.PolicyName,
           readTimeframe: policy.ReadTimeframe || ReadTimeframe.Month1,
-          status: ack.Status,
+          status: ack.AckStatus,
           dueDate,
           acknowledgedDate: ack.AcknowledgedDate ? new Date(ack.AcknowledgedDate) : undefined,
           isOverdue,
@@ -497,7 +486,7 @@ export class PolicyPackService {
         // Now get the items
         allAcks = await this.sp.web.lists
           .getByTitle(this.POLICY_ACKNOWLEDGEMENTS_LIST)
-          .items.filter(`UserId eq ${targetUserId}`)
+          .items.filter(`AckUserId eq ${targetUserId}`)
           .top(1000)() as IPolicyAcknowledgement[];
       } catch (listError: any) {
         const errorMsg = listError?.message || String(listError);
@@ -509,22 +498,22 @@ export class PolicyPackService {
       }
 
       const pending = allAcks.filter(a =>
-        a.Status === AcknowledgementStatus.Sent || a.Status === AcknowledgementStatus.Opened
+        a.AckStatus === AcknowledgementStatus.Sent || a.AckStatus === AcknowledgementStatus.Opened
       );
-      const overdue = allAcks.filter(a => a.Status === AcknowledgementStatus.Overdue);
-      const completed = allAcks.filter(a => a.Status === AcknowledgementStatus.Acknowledged);
+      const overdue = allAcks.filter(a => a.AckStatus === AcknowledgementStatus.Overdue);
+      const completed = allAcks.filter(a => a.AckStatus === AcknowledgementStatus.Acknowledged);
 
       // Categorize policies
       const now = new Date();
       const urgent = allAcks.filter(a => {
-        if (!a.DueDate || a.Status === AcknowledgementStatus.Acknowledged) return false;
+        if (!a.DueDate || a.AckStatus === AcknowledgementStatus.Acknowledged) return false;
         const due = new Date(a.DueDate);
         const hoursUntilDue = (due.getTime() - now.getTime()) / (1000 * 60 * 60);
         return hoursUntilDue <= 24 && hoursUntilDue > 0;
       });
 
       const dueSoon = allAcks.filter(a => {
-        if (!a.DueDate || a.Status === AcknowledgementStatus.Acknowledged) return false;
+        if (!a.DueDate || a.AckStatus === AcknowledgementStatus.Acknowledged) return false;
         const due = new Date(a.DueDate);
         const daysUntilDue = (due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
         return daysUntilDue <= 7 && daysUntilDue > 1;
@@ -578,19 +567,6 @@ export class PolicyPackService {
         // Continue with empty arrays - this is a non-critical feature
       }
 
-      // JML Integration - wrapped in try/catch since JML processes list may not have expected structure
-      let jmlIntegration: IJMLPolicyIntegration | undefined;
-      let jmlProcesses: any[] = [];
-      try {
-        jmlProcesses = await this.getJMLProcessesForUser(targetUserId);
-      } catch (jmlError) {
-        logger.warn('PolicyPackService', 'Failed to get JML processes:', jmlError);
-        // Continue without JML integration - this is optional
-      }
-      if (jmlProcesses.length > 0) {
-        jmlIntegration = await this.buildJMLIntegration(jmlProcesses[0], allAcks, packAssignments);
-      }
-
       // Get followed policies (need to fetch full policy data)
       let followedPolicies: IPolicy[] = [];
       try {
@@ -605,7 +581,7 @@ export class PolicyPackService {
           const policies = await this.sp.web.lists
             .getByTitle(this.POLICIES_LIST)
             .items.filter(followedFilter)
-            .select('Id', 'Title', 'PolicyName', 'PolicyCategory', 'ComplianceRisk', 'Status')
+            .select('Id', 'Title', 'PolicyName', 'PolicyCategory', 'ComplianceRisk', 'PolicyStatus')
             .top(50)();
           followedPolicies = policies as IPolicy[];
         }
@@ -651,7 +627,7 @@ export class PolicyPackService {
         // Get policies for user's department that haven't been assigned
         const deptPolicies = await this.sp.web.lists
           .getByTitle(this.POLICIES_LIST)
-          .items.filter(`Status eq 'Published' and (TargetDepartments eq '${userDept}' or TargetDepartments eq 'All')`)
+          .items.filter(`PolicyStatus eq 'Published' and (TargetDepartments eq '${userDept}' or TargetDepartments eq 'All')`)
           .select('Id', 'Title', 'PolicyName', 'PolicyCategory', 'ComplianceRisk')
           .top(10)();
 
@@ -673,7 +649,7 @@ export class PolicyPackService {
           const categoryFilter = assignedCategories.map(c => `PolicyCategory eq '${c}'`).join(' or ');
           const catPolicies = await this.sp.web.lists
             .getByTitle(this.POLICIES_LIST)
-            .items.filter(`Status eq 'Published' and (${categoryFilter})`)
+            .items.filter(`PolicyStatus eq 'Published' and (${categoryFilter})`)
             .select('Id', 'Title', 'PolicyName', 'PolicyCategory', 'ComplianceRisk')
             .top(10)();
 
@@ -705,8 +681,7 @@ export class PolicyPackService {
         followedPolicies,
         recentUpdates,
         recommendedPolicies,
-        relatedPolicies,
-        jmlIntegration
+        relatedPolicies
       };
     } catch (error) {
       logger.error('PolicyPackService', 'Failed to get personal policy view:', error);
@@ -734,7 +709,7 @@ export class PolicyPackService {
         .getByTitle(this.POLICY_ACKNOWLEDGEMENTS_LIST)
         .items.getById(acknowledgementId)
         .update({
-          Status: AcknowledgementStatus.Acknowledged,
+          AckStatus: AcknowledgementStatus.Acknowledged,
           AcknowledgedDate: data.acknowledgedDate.toISOString(),
           ReadDuration: data.readDuration,
           Comments: data.comments || ''
@@ -764,77 +739,6 @@ export class PolicyPackService {
       logger.error('PolicyPackService', 'Failed to rate policy:', error);
       // Don't throw - rating is optional
     }
-  }
-
-  // ============================================================================
-  // JML INTEGRATION
-  // ============================================================================
-
-  /**
-   * Get JML processes for user
-   */
-  private async getJMLProcessesForUser(userId: number): Promise<any[]> {
-    try {
-      const processes = await this.sp.web.lists
-        .getByTitle(this.JML_PROCESSES_LIST)
-        .items.filter(`EmployeeId eq ${userId} and Status ne 'Completed'`)
-        .top(10)();
-      return processes;
-    } catch (error) {
-      return [];
-    }
-  }
-
-  /**
-   * Build JML integration object
-   */
-  private async buildJMLIntegration(
-    jmlProcess: any,
-    acknowledgements: IPolicyAcknowledgement[],
-    packAssignments: IPolicyPackAssignment[]
-  ): Promise<IJMLPolicyIntegration> {
-    const jmlAcks = acknowledgements.filter(a => a.JMLProcessId === jmlProcess.Id);
-    const jmlPacks = packAssignments.filter(a => a.JMLProcessId === jmlProcess.Id);
-
-    const acknowledged = jmlAcks.filter(a => a.Status === AcknowledgementStatus.Acknowledged);
-    const pending = jmlAcks.filter(a => a.Status !== AcknowledgementStatus.Acknowledged);
-    const overdue = jmlAcks.filter(a => a.Status === AcknowledgementStatus.Overdue);
-
-    // Calculate stage compliance
-    const stageAcks = (stage: string) => jmlAcks.filter(a => a.OnboardingStage === stage);
-    const stageCompliance = (stage: string) => {
-      const acks = stageAcks(stage);
-      if (acks.length === 0) return 100;
-      const completed = acks.filter(a => a.Status === AcknowledgementStatus.Acknowledged).length;
-      return (completed / acks.length) * 100;
-    };
-
-    return {
-      jmlProcessId: jmlProcess.Id,
-      processType: jmlProcess.ProcessType,
-      employeeId: jmlProcess.EmployeeId,
-      employeeEmail: jmlProcess.EmployeeEmail,
-      employeeName: jmlProcess.EmployeeName,
-      department: jmlProcess.Department,
-      role: jmlProcess.Role,
-      location: jmlProcess.Location,
-      startDate: new Date(jmlProcess.StartDate),
-      assignedPacks: jmlPacks,
-      assignedPolicies: jmlAcks,
-      totalPolicies: jmlAcks.length,
-      acknowledgedPolicies: acknowledged.length,
-      pendingPolicies: pending.length,
-      overduePolicies: overdue.length,
-      overallComplianceRate: jmlAcks.length > 0 ? (acknowledged.length / jmlAcks.length) * 100 : 100,
-      preStartCompliance: stageCompliance('Pre-Start'),
-      day1Compliance: stageCompliance('Day 1'),
-      week1Compliance: stageCompliance('Week 1'),
-      month1Compliance: stageCompliance('Month 1'),
-      hasBlockingPolicies: jmlAcks.some(a => a.IsMandatory && a.Status !== AcknowledgementStatus.Acknowledged),
-      blockingPolicyNames: jmlAcks
-        .filter(a => a.IsMandatory && a.Status !== AcknowledgementStatus.Acknowledged)
-        .map(a => a.PolicyName || `Policy ${a.PolicyId}`)
-    };
   }
 
   // ============================================================================
@@ -870,7 +774,7 @@ export class PolicyPackService {
    */
   private generatePersonalViewURL(userId: number): string {
     // TODO: Generate actual URL to personal policy view page
-    return `/sites/JML/SitePages/MyPolicies.aspx?userId=${userId}`;
+    return `/sites/PolicyManager/SitePages/MyPolicies.aspx?userId=${userId}`;
   }
 
   /**
@@ -972,7 +876,7 @@ export class PolicyPackService {
       if (userEmail) {
         // Create notification record for email queue
         await this.sp.web.lists
-          .getByTitle('JML_NotificationQueue')
+          .getByTitle('PM_NotificationQueue')
           .items.add({
             Title: `Policy Pack Assignment: ${packName}`,
             RecipientEmail: userEmail,
@@ -985,7 +889,7 @@ export class PolicyPackService {
               ${packDescription ? `<p>${packDescription}</p>` : ''}
               <p>Please review and acknowledge the policies in this pack.</p>
               <p><a href="${viewUrl}">View Your Policies</a></p>
-              <p>Best regards,<br/>JML Policy Team</p>
+              <p>Best regards,<br/>Policy Management Team</p>
             `,
             Status: 'Pending',
             Priority: 'Normal'
@@ -1037,7 +941,7 @@ export class PolicyPackService {
       if (userEmail) {
         // Create Teams notification record (to be processed by Power Automate or Graph API)
         await this.sp.web.lists
-          .getByTitle('JML_NotificationQueue')
+          .getByTitle('PM_NotificationQueue')
           .items.add({
             Title: `Teams: Policy Pack - ${packName}`,
             RecipientEmail: userEmail,

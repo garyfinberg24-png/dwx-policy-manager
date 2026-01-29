@@ -88,7 +88,7 @@ export enum LicenseStatus {
 }
 
 /**
- * License stored in SharePoint list (JML_Licenses)
+ * License stored in SharePoint list (PM_Licenses)
  */
 export interface ILicense extends IBaseListItem {
   /** Unique license key (e.g., "JML-ENT-2024-XXXX-XXXX") */

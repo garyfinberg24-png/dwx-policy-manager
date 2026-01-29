@@ -57,10 +57,10 @@ describe('IntegrationService', () => {
   describe('Initialization', () => {
     test('should initialize and verify required lists', async () => {
       const requiredLists = [
-        'JML_IntegrationConfigs',
-        'JML_IntegrationLogs',
-        'JML_IntegrationMappings',
-        'JML_WebhookConfigs'
+        'PM_IntegrationConfigs',
+        'PM_IntegrationLogs',
+        'PM_IntegrationMappings',
+        'PM_WebhookConfigs'
       ];
 
       await service.initialize();
@@ -171,7 +171,7 @@ describe('IntegrationService', () => {
 
       await service.syncWithAD('john.smith@company.com');
 
-      expect(mockSp.web.lists.getByTitle).toHaveBeenCalledWith('JML_IntegrationLogs');
+      expect(mockSp.web.lists.getByTitle).toHaveBeenCalledWith('PM_IntegrationLogs');
       expect(mockSp.web.lists.getByTitle().items.add).toHaveBeenCalledWith(
         expect.objectContaining({
           IntegrationType: IntegrationType.EntraID,
@@ -524,7 +524,7 @@ describe('IntegrationService', () => {
         recordsProcessed: 1
       });
 
-      expect(mockSp.web.lists.getByTitle).toHaveBeenCalledWith('JML_IntegrationLogs');
+      expect(mockSp.web.lists.getByTitle).toHaveBeenCalledWith('PM_IntegrationLogs');
       expect(mockSp.web.lists.getByTitle().items.add).toHaveBeenCalledWith(
         expect.objectContaining({
           IntegrationType: IntegrationType.EntraID,

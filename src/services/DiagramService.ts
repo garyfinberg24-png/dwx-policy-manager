@@ -24,8 +24,8 @@ import { CacheService, CacheDurations } from './CacheService';
 export class DiagramService {
   private sp: SPFI;
   private cache: CacheService;
-  private readonly DIAGRAM_LIST = 'JML_Diagrams';
-  private readonly DIAGRAM_LIBRARY = 'JML_DiagramImages';
+  private readonly DIAGRAM_LIST = 'PM_Diagrams';
+  private readonly DIAGRAM_LIBRARY = 'PM_DiagramImages';
 
   constructor(sp: SPFI) {
     this.sp = sp;

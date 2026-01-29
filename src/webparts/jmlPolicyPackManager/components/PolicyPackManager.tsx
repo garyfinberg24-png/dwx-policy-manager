@@ -25,6 +25,7 @@ import {
 } from '@fluentui/react';
 import { injectPortalStyles } from '../../../utils/injectPortalStyles';
 import { JmlAppLayout } from '../../../components/JmlAppLayout';
+import { PageSubheader } from '../../../components/PageSubheader';
 import { PolicyPackService } from '../../../services/PolicyPackService';
 import { PolicyService } from '../../../services/PolicyService';
 import { createDialogManager } from '../../../hooks/useDialog';
@@ -111,7 +112,7 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
 
       const packs = await this.packService.getPolicyPacks();
       const allPolicies = await this.policyService.getAllPolicies();
-      const policies = allPolicies.filter((p: IPolicy) => p.Status === PolicyStatus.Published);
+      const policies = allPolicies.filter((p: IPolicy) => p.PolicyStatus === PolicyStatus.Published);
 
       this.setState({
         policyPacks: packs,
@@ -697,7 +698,7 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
         pageTitle="Policy Builder"
         pageDescription="Create and manage policy packs with bundled documents and templates"
         pageIcon="Edit"
-        breadcrumbs={[{ text: 'JML Portal', url: '/sites/JML' }, { text: 'Policy Builder' }]}
+        breadcrumbs={[{ text: 'Policy Manager', url: '/sites/PolicyManager' }, { text: 'Policy Builder' }]}
         activeNavKey="policies"
         showQuickLinks={true}
         showSearch={true}
@@ -705,8 +706,13 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
         compactFooter={true}
       >
         <section className={styles.policyPackManager}>
+          <PageSubheader
+            iconName="Edit"
+            title="Policy Builder"
+            description="Create and manage policy packs with bundled documents and templates"
+          />
           <Stack tokens={{ childrenGap: 24 }}>
-            {this.renderModuleNav()}
+            {/* Module nav removed - now in global header */}
             {this.renderCommandBar()}
 
             {loading && (

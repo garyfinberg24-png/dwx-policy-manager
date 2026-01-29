@@ -427,7 +427,7 @@ export class PolicyAuditService {
       PolicyId: policy.Id,
       PolicyNumber: policy.PolicyNumber,
       PolicyName: policy.PolicyName,
-      TargetUserId: acknowledgement.UserId,
+      TargetUserId: acknowledgement.AckUserId,
       TargetUserEmail: acknowledgement.UserEmail,
       ActionDescription: `User acknowledged policy "${policy.PolicyName}" (${policy.PolicyNumber})`,
       ComplianceRelevant: true,

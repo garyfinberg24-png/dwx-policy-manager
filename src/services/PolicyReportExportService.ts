@@ -503,9 +503,9 @@ export class PolicyReportExportService {
 
         const group = groupedData.get(groupKey)!;
         group.totalPolicies.add(ack.PolicyId);
-        group.totalUsers.add(ack.UserEmail || ack.UserId?.toString());
+        group.totalUsers.add(ack.UserEmail || ack.AckUserId?.toString());
 
-        if (ack.Status === 'Acknowledged') {
+        if (ack.AckStatus === 'Acknowledged') {
           group.acknowledged++;
           if (ack.AssignedDate && ack.AcknowledgedDate) {
             const assigned = new Date(ack.AssignedDate);
@@ -514,7 +514,7 @@ export class PolicyReportExportService {
             group.totalDaysToAcknowledge += days;
             group.acknowledgedCount++;
           }
-        } else if (ack.Status === 'Overdue' || (ack.OverdueDays && ack.OverdueDays > 0)) {
+        } else if (ack.AckStatus === 'Overdue' || (ack.OverdueDays && ack.OverdueDays > 0)) {
           group.overdue++;
         }
 
@@ -604,7 +604,7 @@ export class PolicyReportExportService {
           'OverdueDays', 'User/Title', 'User/EMail'
         )
         .expand('User')
-        .filter("Status eq 'Overdue' or Status eq 'Sent' or Status eq 'InProgress'")
+        .filter("AckStatus eq 'Overdue' or AckStatus eq 'Sent' or AckStatus eq 'InProgress'")
         .top(5000)();
 
       // Filter to only include truly overdue items
@@ -614,7 +614,7 @@ export class PolicyReportExportService {
           const dueDate = new Date(ack.DueDate);
           return dueDate < now;
         }
-        return ack.Status === 'Overdue';
+        return ack.AckStatus === 'Overdue';
       });
 
       // Fetch policies for compliance risk
@@ -867,8 +867,8 @@ export class PolicyReportExportService {
       }).length;
 
       const totalAcknowledgements = acknowledgements.length;
-      const acknowledgedCount = acknowledgements.filter((a: any) => a.Status === 'Acknowledged').length;
-      const overdueCount = acknowledgements.filter((a: any) => a.Status === 'Overdue' || a.OverdueDays > 0).length;
+      const acknowledgedCount = acknowledgements.filter((a: any) => a.AckStatus === 'Acknowledged').length;
+      const overdueCount = acknowledgements.filter((a: any) => a.AckStatus === 'Overdue' || a.OverdueDays > 0).length;
       const overallCompliance = totalAcknowledgements > 0
         ? ((acknowledgedCount / totalAcknowledgements) * 100)
         : 0;

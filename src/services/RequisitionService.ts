@@ -28,8 +28,8 @@ import { logger } from './LoggingService';
 
 export class RequisitionService {
   private sp: SPFI;
-  private readonly REQUISITIONS_LIST = 'JML_PurchaseRequisitions';
-  private readonly LINE_ITEMS_LIST = 'JML_RequisitionLineItems';
+  private readonly REQUISITIONS_LIST = 'PM_PurchaseRequisitions';
+  private readonly LINE_ITEMS_LIST = 'PM_RequisitionLineItems';
 
   constructor(sp: SPFI) {
     this.sp = sp;

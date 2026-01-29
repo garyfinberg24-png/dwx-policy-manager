@@ -34,7 +34,7 @@ export interface IListFieldDefinition {
  * SharePoint list definition for a module
  */
 export interface IListDefinition {
-  /** Internal list name (e.g., "JML_ReportDefinitions") */
+  /** Internal list name (e.g., "PM_ReportDefinitions") */
   name: string;
   /** Display title */
   title: string;
@@ -168,30 +168,30 @@ export const ModuleRegistry: Record<PremiumModule, IModuleDefinition> = {
     isNew: true,
     requiredLists: [
       {
-        name: 'JML_ReportDefinitions',
+        name: 'PM_ReportDefinitions',
         title: 'Report Definitions',
         description: 'Stores custom report definitions and layouts',
-        provisioningScript: 'Create-JML_ReportDefinitions-List.ps1',
+        provisioningScript: 'Create-PM_ReportDefinitions-List.ps1',
         views: ['All Items', 'My Reports', 'Public Reports', 'Report Templates']
       },
       {
-        name: 'JML_ReportSchedules',
+        name: 'PM_ReportSchedules',
         title: 'Report Schedules',
         description: 'Scheduled report execution configuration',
-        provisioningScript: 'Create-JML_ReportSchedules-List.ps1',
+        provisioningScript: 'Create-PM_ReportSchedules-List.ps1',
         views: ['All Items', 'Active Schedules', 'My Schedules']
       },
       {
-        name: 'JML_ReportExecutionLog',
+        name: 'PM_ReportExecutionLog',
         title: 'Report Execution Log',
         description: 'Audit log of report generation runs',
-        provisioningScript: 'Create-JML_ReportExecutionLog-List.ps1'
+        provisioningScript: 'Create-PM_ReportExecutionLog-List.ps1'
       },
       {
-        name: 'JML_NarrativeTemplates',
+        name: 'PM_NarrativeTemplates',
         title: 'Narrative Templates',
         description: 'AI narrative templates for reports',
-        provisioningScript: 'Create-JML_NarrativeTemplates-Library.ps1',
+        provisioningScript: 'Create-PM_NarrativeTemplates-Library.ps1',
         isDocumentLibrary: true
       }
     ]
@@ -212,22 +212,22 @@ export const ModuleRegistry: Record<PremiumModule, IModuleDefinition> = {
     category: 'hr',
     requiredLists: [
       {
-        name: 'JML_Surveys',
+        name: 'PM_Surveys',
         title: 'Surveys',
         description: 'Survey definitions and questions',
-        provisioningScript: 'Create-JML_Surveys-List.ps1'
+        provisioningScript: 'Create-PM_Surveys-List.ps1'
       },
       {
-        name: 'JML_SurveyResponses',
+        name: 'PM_SurveyResponses',
         title: 'Survey Responses',
         description: 'Individual survey responses',
-        provisioningScript: 'Create-JML_SurveyResponses-List.ps1'
+        provisioningScript: 'Create-PM_SurveyResponses-List.ps1'
       },
       {
-        name: 'JML_SurveyTemplates',
+        name: 'PM_SurveyTemplates',
         title: 'Survey Templates',
         description: 'Reusable survey templates',
-        provisioningScript: 'Create-JML_SurveyTemplates-List.ps1'
+        provisioningScript: 'Create-PM_SurveyTemplates-List.ps1'
       }
     ]
   },
@@ -243,22 +243,22 @@ export const ModuleRegistry: Record<PremiumModule, IModuleDefinition> = {
     category: 'hr',
     requiredLists: [
       {
-        name: 'JML_CVDatabase',
+        name: 'PM_CVDatabase',
         title: 'CV Database',
         description: 'Employee CV and profile information',
-        provisioningScript: 'Create-JML_CVDatabase-List.ps1'
+        provisioningScript: 'Create-PM_CVDatabase-List.ps1'
       },
       {
-        name: 'JML_Skills',
+        name: 'PM_Skills',
         title: 'Skills Catalog',
         description: 'Master list of skills',
-        provisioningScript: 'Create-JML_Skills-List.ps1'
+        provisioningScript: 'Create-PM_Skills-List.ps1'
       },
       {
-        name: 'JML_UserSkills',
+        name: 'PM_UserSkills',
         title: 'User Skills',
         description: 'Employee skill assignments and proficiency levels',
-        provisioningScript: 'Create-JML_UserSkills-List.ps1'
+        provisioningScript: 'Create-PM_UserSkills-List.ps1'
       }
     ]
   },
@@ -274,28 +274,28 @@ export const ModuleRegistry: Record<PremiumModule, IModuleDefinition> = {
     category: 'hr',
     requiredLists: [
       {
-        name: 'JML_Candidates',
+        name: 'PM_Candidates',
         title: 'Candidates',
         description: 'Candidate profiles and applications',
-        provisioningScript: 'Create-JML_Candidates-List.ps1'
+        provisioningScript: 'Create-PM_Candidates-List.ps1'
       },
       {
-        name: 'JML_JobRequisitions',
+        name: 'PM_JobRequisitions',
         title: 'Job Requisitions',
         description: 'Open positions and job postings',
-        provisioningScript: 'Create-JML_JobRequisitions-List.ps1'
+        provisioningScript: 'Create-PM_JobRequisitions-List.ps1'
       },
       {
-        name: 'JML_Interviews',
+        name: 'PM_Interviews',
         title: 'Interviews',
         description: 'Interview scheduling and tracking',
-        provisioningScript: 'Create-JML_Interviews-List.ps1'
+        provisioningScript: 'Create-PM_Interviews-List.ps1'
       },
       {
-        name: 'JML_JobOffers',
+        name: 'PM_JobOffers',
         title: 'Job Offers',
         description: 'Offer letters and acceptance tracking',
-        provisioningScript: 'Create-JML_JobOffers-List.ps1'
+        provisioningScript: 'Create-PM_JobOffers-List.ps1'
       }
     ]
   },
@@ -312,34 +312,34 @@ export const ModuleRegistry: Record<PremiumModule, IModuleDefinition> = {
     isNew: true,
     requiredLists: [
       {
-        name: 'JML_TrainingCatalog',
+        name: 'PM_TrainingCatalog',
         title: 'Training Catalog',
         description: 'Available training courses and programs',
-        provisioningScript: 'Create-JML_TrainingCatalog-List.ps1'
+        provisioningScript: 'Create-PM_TrainingCatalog-List.ps1'
       },
       {
-        name: 'JML_LearningPaths',
+        name: 'PM_LearningPaths',
         title: 'Learning Paths',
         description: 'Structured learning journeys',
-        provisioningScript: 'Create-JML_LearningPaths-List.ps1'
+        provisioningScript: 'Create-PM_LearningPaths-List.ps1'
       },
       {
-        name: 'JML_TrainingEnrollments',
+        name: 'PM_TrainingEnrollments',
         title: 'Training Enrollments',
         description: 'Employee course enrollments and progress',
-        provisioningScript: 'Create-JML_TrainingEnrollments-List.ps1'
+        provisioningScript: 'Create-PM_TrainingEnrollments-List.ps1'
       },
       {
-        name: 'JML_Certifications',
+        name: 'PM_Certifications',
         title: 'Certifications',
         description: 'Certification definitions',
-        provisioningScript: 'Create-JML_Certifications-List.ps1'
+        provisioningScript: 'Create-PM_Certifications-List.ps1'
       },
       {
-        name: 'JML_UserCertifications',
+        name: 'PM_UserCertifications',
         title: 'User Certifications',
         description: 'Employee certification records',
-        provisioningScript: 'Create-JML_UserCertifications-List.ps1'
+        provisioningScript: 'Create-PM_UserCertifications-List.ps1'
       }
     ],
     dependencies: [
@@ -362,17 +362,17 @@ export const ModuleRegistry: Record<PremiumModule, IModuleDefinition> = {
     category: 'operations',
     requiredLists: [
       {
-        name: 'JML_DocumentTemplates',
+        name: 'PM_DocumentTemplates',
         title: 'Document Templates',
         description: 'Document generation templates',
-        provisioningScript: 'Create-JML_DocumentTemplates-Library.ps1',
+        provisioningScript: 'Create-PM_DocumentTemplates-Library.ps1',
         isDocumentLibrary: true
       },
       {
-        name: 'JML_SignatureRequests',
+        name: 'PM_SignatureRequests',
         title: 'Signature Requests',
         description: 'Digital signature workflow tracking',
-        provisioningScript: 'Create-JML_SignatureRequests-List.ps1'
+        provisioningScript: 'Create-PM_SignatureRequests-List.ps1'
       }
     ]
   },
@@ -387,12 +387,12 @@ export const ModuleRegistry: Record<PremiumModule, IModuleDefinition> = {
     color: '#5c2d91',
     category: 'operations',
     requiredLists: [
-      // Uses core JML_Assets and JML_AssetCheckouts lists
+      // Uses core PM_Assets and PM_AssetCheckouts lists
       {
-        name: 'JML_Asset_Configuration',
+        name: 'PM_Asset_Configuration',
         title: 'Asset Configuration',
         description: 'Asset module settings and categories',
-        provisioningScript: 'Create-JML_Asset_Configuration-List.ps1'
+        provisioningScript: 'Create-PM_Asset_Configuration-List.ps1'
       }
     ]
   },
@@ -409,22 +409,22 @@ export const ModuleRegistry: Record<PremiumModule, IModuleDefinition> = {
     isNew: true,
     requiredLists: [
       {
-        name: 'JML_Vendors',
+        name: 'PM_Vendors',
         title: 'Vendors',
         description: 'Vendor/supplier directory',
-        provisioningScript: 'Create-JML_Vendors-List.ps1'
+        provisioningScript: 'Create-PM_Vendors-List.ps1'
       },
       {
-        name: 'JML_Requisitions',
+        name: 'PM_Requisitions',
         title: 'Requisitions',
         description: 'Purchase requisitions',
-        provisioningScript: 'Create-JML_Requisitions-List.ps1'
+        provisioningScript: 'Create-PM_Requisitions-List.ps1'
       },
       {
-        name: 'JML_PurchaseOrders',
+        name: 'PM_PurchaseOrders',
         title: 'Purchase Orders',
         description: 'Approved purchase orders',
-        provisioningScript: 'Create-JML_PurchaseOrders-List.ps1'
+        provisioningScript: 'Create-PM_PurchaseOrders-List.ps1'
       }
     ],
     dependencies: [
@@ -443,16 +443,16 @@ export const ModuleRegistry: Record<PremiumModule, IModuleDefinition> = {
     category: 'operations',
     requiredLists: [
       {
-        name: 'JML_SLADefinitions',
+        name: 'PM_SLADefinitions',
         title: 'SLA Definitions',
         description: 'SLA rules and thresholds',
-        provisioningScript: 'Create-JML_SLADefinitions-List.ps1'
+        provisioningScript: 'Create-PM_SLADefinitions-List.ps1'
       },
       {
-        name: 'JML_EscalationRules',
+        name: 'PM_EscalationRules',
         title: 'Escalation Rules',
         description: 'Automated escalation configuration',
-        provisioningScript: 'Create-JML_EscalationRules-List.ps1'
+        provisioningScript: 'Create-PM_EscalationRules-List.ps1'
       }
     ]
   },
@@ -470,62 +470,62 @@ export const ModuleRegistry: Record<PremiumModule, IModuleDefinition> = {
     isPopular: true,
     requiredLists: [
       {
-        name: 'JML_Contracts',
+        name: 'PM_Contracts',
         title: 'Contracts',
         description: 'Contract records and metadata',
         provisioningScript: 'Deploy-ContractManager-Lists.ps1'
       },
       {
-        name: 'JML_ContractParties',
+        name: 'PM_ContractParties',
         title: 'Contract Parties',
         description: 'Parties involved in contracts',
         provisioningScript: 'Deploy-ContractManager-Lists.ps1'
       },
       {
-        name: 'JML_ContractClauses',
+        name: 'PM_ContractClauses',
         title: 'Contract Clauses',
         description: 'Clauses assigned to contracts',
         provisioningScript: 'Deploy-ContractManager-Lists.ps1'
       },
       {
-        name: 'JML_ClauseLibrary',
+        name: 'PM_ClauseLibrary',
         title: 'Clause Library',
         description: 'Master clause library (200+ standard clauses)',
         provisioningScript: 'Deploy-ContractManager-Lists.ps1'
       },
       {
-        name: 'JML_ContractObligations',
+        name: 'PM_ContractObligations',
         title: 'Contract Obligations',
         description: 'Trackable obligations and deadlines',
         provisioningScript: 'Deploy-ContractManager-Lists.ps1'
       },
       {
-        name: 'JML_ContractApprovals',
+        name: 'PM_ContractApprovals',
         title: 'Contract Approvals',
         description: 'Approval workflow records',
         provisioningScript: 'Deploy-ContractManager-Lists.ps1'
       },
       {
-        name: 'JML_ContractVersions',
+        name: 'PM_ContractVersions',
         title: 'Contract Versions',
         description: 'Contract version history',
         provisioningScript: 'Deploy-ContractManager-Lists.ps1'
       },
       {
-        name: 'JML_ContractDocuments',
+        name: 'PM_ContractDocuments',
         title: 'Contract Documents',
         description: 'Document library for contract attachments',
         provisioningScript: 'Deploy-ContractManager-Lists.ps1',
         isDocumentLibrary: true
       },
       {
-        name: 'JML_ContractAuditLog',
+        name: 'PM_ContractAuditLog',
         title: 'Contract Audit Log',
         description: 'Complete audit trail of all contract activities',
         provisioningScript: 'Deploy-ContractManager-Lists.ps1'
       },
       {
-        name: 'JML_ContractTemplates',
+        name: 'PM_ContractTemplates',
         title: 'Contract Templates',
         description: '70+ pre-built contract templates',
         provisioningScript: 'Deploy-ContractManager-Lists.ps1'
@@ -547,16 +547,16 @@ export const ModuleRegistry: Record<PremiumModule, IModuleDefinition> = {
     category: 'operations',
     requiredLists: [
       {
-        name: 'JML_EmailTemplates',
+        name: 'PM_EmailTemplates',
         title: 'Email Templates',
         description: 'Email template definitions',
-        provisioningScript: 'Create-JML_EmailTemplates-List.ps1'
+        provisioningScript: 'Create-PM_EmailTemplates-List.ps1'
       },
       {
-        name: 'JML_EmailQueue',
+        name: 'PM_EmailQueue',
         title: 'Email Queue',
         description: 'Outbound email queue',
-        provisioningScript: 'Create-JML_EmailQueue-List.ps1'
+        provisioningScript: 'Create-PM_EmailQueue-List.ps1'
       }
     ]
   },
@@ -576,28 +576,28 @@ export const ModuleRegistry: Record<PremiumModule, IModuleDefinition> = {
     category: 'integration',
     requiredLists: [
       {
-        name: 'JML_IntegrationConfigs',
+        name: 'PM_IntegrationConfigs',
         title: 'Integration Configs',
         description: 'Integration connection settings',
-        provisioningScript: 'Create-JML_IntegrationConfigs-List.ps1'
+        provisioningScript: 'Create-PM_IntegrationConfigs-List.ps1'
       },
       {
-        name: 'JML_IntegrationLogs',
+        name: 'PM_IntegrationLogs',
         title: 'Integration Logs',
         description: 'Integration operation audit trail',
-        provisioningScript: 'Create-JML_IntegrationLogs-List.ps1'
+        provisioningScript: 'Create-PM_IntegrationLogs-List.ps1'
       },
       {
-        name: 'JML_IntegrationMappings',
+        name: 'PM_IntegrationMappings',
         title: 'Integration Mappings',
         description: 'Field and data mappings between systems',
-        provisioningScript: 'Create-JML_IntegrationMappings-List.ps1'
+        provisioningScript: 'Create-PM_IntegrationMappings-List.ps1'
       },
       {
-        name: 'JML_WebhookConfigs',
+        name: 'PM_WebhookConfigs',
         title: 'Webhook Configs',
         description: 'Webhook endpoint configuration',
-        provisioningScript: 'Create-JML_WebhookConfigs-List.ps1'
+        provisioningScript: 'Create-PM_WebhookConfigs-List.ps1'
       }
     ]
   },
@@ -617,22 +617,22 @@ export const ModuleRegistry: Record<PremiumModule, IModuleDefinition> = {
     category: 'compliance',
     requiredLists: [
       {
-        name: 'JML_DataRetentionPolicies',
+        name: 'PM_DataRetentionPolicies',
         title: 'Data Retention Policies',
         description: 'Data retention rules and schedules',
-        provisioningScript: 'Create-JML_DataRetentionPolicies-List.ps1'
+        provisioningScript: 'Create-PM_DataRetentionPolicies-List.ps1'
       },
       {
-        name: 'JML_ConsentRecords',
+        name: 'PM_ConsentRecords',
         title: 'Consent Records',
         description: 'GDPR consent tracking',
-        provisioningScript: 'Create-JML_ConsentRecords-List.ps1'
+        provisioningScript: 'Create-PM_ConsentRecords-List.ps1'
       },
       {
-        name: 'JML_DataSubjectRequests',
+        name: 'PM_DataSubjectRequests',
         title: 'Data Subject Requests',
         description: 'DSAR tracking (access, deletion, portability)',
-        provisioningScript: 'Create-JML_DataSubjectRequests-List.ps1'
+        provisioningScript: 'Create-PM_DataSubjectRequests-List.ps1'
       }
     ]
   },
@@ -654,16 +654,16 @@ export const ModuleRegistry: Record<PremiumModule, IModuleDefinition> = {
     isPopular: true,
     requiredLists: [
       {
-        name: 'JML_AIUsageLogs',
+        name: 'PM_AIUsageLogs',
         title: 'AI Usage Logs',
         description: 'AI feature usage and token tracking',
-        provisioningScript: 'Create-JML_AIUsageLogs-List.ps1'
+        provisioningScript: 'Create-PM_AIUsageLogs-List.ps1'
       },
       {
-        name: 'JML_AI_Configs',
+        name: 'PM_AI_Configs',
         title: 'AI Configurations',
         description: 'AI model settings and prompts',
-        provisioningScript: 'Create-JML_AI_Configs-List.ps1'
+        provisioningScript: 'Create-PM_AI_Configs-List.ps1'
       }
     ]
   },
@@ -679,10 +679,10 @@ export const ModuleRegistry: Record<PremiumModule, IModuleDefinition> = {
     category: 'advanced',
     requiredLists: [
       {
-        name: 'JML_DepartmentBranding',
+        name: 'PM_DepartmentBranding',
         title: 'Department Branding',
         description: 'Department-specific theme overrides',
-        provisioningScript: 'Create-JML_DepartmentBranding-List.ps1'
+        provisioningScript: 'Create-PM_DepartmentBranding-List.ps1'
       }
     ]
   },
@@ -720,31 +720,31 @@ export const ModuleRegistry: Record<PremiumModule, IModuleDefinition> = {
     isPopular: true,
     requiredLists: [
       {
-        name: 'JML_Policies',
+        name: 'PM_Policies',
         title: 'Policies',
         description: 'Policy definitions and metadata',
         provisioningScript: 'Deploy-PolicyManagement-Lists.ps1'
       },
       {
-        name: 'JML_PolicyVersions',
+        name: 'PM_PolicyVersions',
         title: 'Policy Versions',
         description: 'Version history for policies',
         provisioningScript: 'Deploy-PolicyManagement-Lists.ps1'
       },
       {
-        name: 'JML_PolicyAcknowledgements',
+        name: 'PM_PolicyAcknowledgements',
         title: 'Policy Acknowledgements',
         description: 'Employee policy acknowledgement records',
         provisioningScript: 'Deploy-PolicyManagement-Lists.ps1'
       },
       {
-        name: 'JML_PolicyPacks',
+        name: 'PM_PolicyPacks',
         title: 'Policy Packs',
         description: 'Grouped policy bundles',
         provisioningScript: 'Deploy-PolicyManagement-Lists.ps1'
       },
       {
-        name: 'JML_PolicyCategories',
+        name: 'PM_PolicyCategories',
         title: 'Policy Categories',
         description: 'Policy category taxonomy',
         provisioningScript: 'Deploy-PolicyManagement-Lists.ps1'
@@ -767,16 +767,16 @@ export const ModuleRegistry: Record<PremiumModule, IModuleDefinition> = {
     category: 'operations',
     requiredLists: [
       {
-        name: 'JML_SignatureRequests',
+        name: 'PM_SignatureRequests',
         title: 'Signature Requests',
         description: 'Digital signature request tracking',
-        provisioningScript: 'Create-JML_SignatureRequests-List.ps1'
+        provisioningScript: 'Create-PM_SignatureRequests-List.ps1'
       },
       {
-        name: 'JML_SignatureAuditLog',
+        name: 'PM_SignatureAuditLog',
         title: 'Signature Audit Log',
         description: 'Complete audit trail for all signing activities',
-        provisioningScript: 'Create-JML_SignatureAuditLog-List.ps1'
+        provisioningScript: 'Create-PM_SignatureAuditLog-List.ps1'
       }
     ]
   },
@@ -796,16 +796,16 @@ export const ModuleRegistry: Record<PremiumModule, IModuleDefinition> = {
     category: 'operations',
     requiredLists: [
       {
-        name: 'JML_SoftwareLicenses',
+        name: 'PM_SoftwareLicenses',
         title: 'Software Licenses',
         description: 'Software license inventory',
-        provisioningScript: 'Create-JML_SoftwareLicenses-List.ps1'
+        provisioningScript: 'Create-PM_SoftwareLicenses-List.ps1'
       },
       {
-        name: 'JML_LicenseAssignments',
+        name: 'PM_LicenseAssignments',
         title: 'License Assignments',
         description: 'User license assignments',
-        provisioningScript: 'Create-JML_LicenseAssignments-List.ps1'
+        provisioningScript: 'Create-PM_LicenseAssignments-List.ps1'
       }
     ]
   },
@@ -827,28 +827,28 @@ export const ModuleRegistry: Record<PremiumModule, IModuleDefinition> = {
     isPopular: true,
     requiredLists: [
       {
-        name: 'JML_GamificationPoints',
+        name: 'PM_GamificationPoints',
         title: 'Gamification Points',
         description: 'User points and scores',
-        provisioningScript: 'Create-JML_Gamification-Lists.ps1'
+        provisioningScript: 'Create-PM_Gamification-Lists.ps1'
       },
       {
-        name: 'JML_GamificationBadges',
+        name: 'PM_GamificationBadges',
         title: 'Gamification Badges',
         description: 'Badge definitions',
-        provisioningScript: 'Create-JML_Gamification-Lists.ps1'
+        provisioningScript: 'Create-PM_Gamification-Lists.ps1'
       },
       {
-        name: 'JML_GamificationAchievements',
+        name: 'PM_GamificationAchievements',
         title: 'Gamification Achievements',
         description: 'User badge awards and achievements',
-        provisioningScript: 'Create-JML_Gamification-Lists.ps1'
+        provisioningScript: 'Create-PM_Gamification-Lists.ps1'
       },
       {
-        name: 'JML_GamificationLeaderboards',
+        name: 'PM_GamificationLeaderboards',
         title: 'Gamification Leaderboards',
         description: 'Leaderboard configurations',
-        provisioningScript: 'Create-JML_Gamification-Lists.ps1'
+        provisioningScript: 'Create-PM_Gamification-Lists.ps1'
       }
     ]
   },
@@ -869,22 +869,22 @@ export const ModuleRegistry: Record<PremiumModule, IModuleDefinition> = {
     isNew: true,
     requiredLists: [
       {
-        name: 'JML_Quizzes',
+        name: 'PM_Quizzes',
         title: 'Quizzes',
         description: 'Quiz definitions',
-        provisioningScript: 'Create-JML_Quizzes-List.ps1'
+        provisioningScript: 'Create-PM_Quizzes-List.ps1'
       },
       {
-        name: 'JML_QuizQuestions',
+        name: 'PM_QuizQuestions',
         title: 'Quiz Questions',
         description: 'Quiz question bank',
-        provisioningScript: 'Create-JML_QuizQuestions-List.ps1'
+        provisioningScript: 'Create-PM_QuizQuestions-List.ps1'
       },
       {
-        name: 'JML_QuizAttempts',
+        name: 'PM_QuizAttempts',
         title: 'Quiz Attempts',
         description: 'User quiz attempts and scores',
-        provisioningScript: 'Create-JML_QuizAttempts-List.ps1'
+        provisioningScript: 'Create-PM_QuizAttempts-List.ps1'
       }
     ],
     dependencies: [
@@ -908,19 +908,19 @@ export const ModuleRegistry: Record<PremiumModule, IModuleDefinition> = {
     isNew: true,
     requiredLists: [
       {
-        name: 'JML_Budgets',
+        name: 'PM_Budgets',
         title: 'Budgets',
         description: 'Department and project budgets',
         provisioningScript: 'Create-FinanceLists.ps1'
       },
       {
-        name: 'JML_Expenses',
+        name: 'PM_Expenses',
         title: 'Expenses',
         description: 'Expense tracking',
         provisioningScript: 'Create-FinanceLists-Expenses.ps1'
       },
       {
-        name: 'JML_PayrollSummary',
+        name: 'PM_PayrollSummary',
         title: 'Payroll Summary',
         description: 'Payroll integration data',
         provisioningScript: 'Create-FinanceLists-PayrollSummary.ps1'
@@ -944,17 +944,17 @@ export const ModuleRegistry: Record<PremiumModule, IModuleDefinition> = {
     isNew: true,
     requiredLists: [
       {
-        name: 'JML_Documents',
+        name: 'PM_Documents',
         title: 'Documents',
         description: 'Central document library',
-        provisioningScript: 'Create-JML_Documents-Library.ps1',
+        provisioningScript: 'Create-PM_Documents-Library.ps1',
         isDocumentLibrary: true
       },
       {
-        name: 'JML_DocumentCategories',
+        name: 'PM_DocumentCategories',
         title: 'Document Categories',
         description: 'Document category taxonomy',
-        provisioningScript: 'Create-JML_DocumentCategories-List.ps1'
+        provisioningScript: 'Create-PM_DocumentCategories-List.ps1'
       }
     ]
   },
@@ -971,22 +971,22 @@ export const ModuleRegistry: Record<PremiumModule, IModuleDefinition> = {
     isNew: true,
     requiredLists: [
       {
-        name: 'JML_ExternalShares',
+        name: 'PM_ExternalShares',
         title: 'External Shares',
         description: 'Tracking of external sharing activities',
-        provisioningScript: 'Create-JML_ExternalShares-List.ps1'
+        provisioningScript: 'Create-PM_ExternalShares-List.ps1'
       },
       {
-        name: 'JML_GuestUsers',
+        name: 'PM_GuestUsers',
         title: 'Guest Users',
         description: 'Guest user directory',
-        provisioningScript: 'Create-JML_GuestUsers-List.ps1'
+        provisioningScript: 'Create-PM_GuestUsers-List.ps1'
       },
       {
-        name: 'JML_TrustedOrganizations',
+        name: 'PM_TrustedOrganizations',
         title: 'Trusted Organizations',
         description: 'Cross-tenant trust relationships',
-        provisioningScript: 'Create-JML_TrustedOrganizations-List.ps1'
+        provisioningScript: 'Create-PM_TrustedOrganizations-List.ps1'
       }
     ]
   },
@@ -1003,16 +1003,16 @@ export const ModuleRegistry: Record<PremiumModule, IModuleDefinition> = {
     isNew: true,
     requiredLists: [
       {
-        name: 'JML_WorkflowInstances',
+        name: 'PM_WorkflowInstances',
         title: 'Workflow Instances',
         description: 'Active workflow instance tracking',
-        provisioningScript: 'Create-JML_WorkflowInstances-List.ps1'
+        provisioningScript: 'Create-PM_WorkflowInstances-List.ps1'
       },
       {
-        name: 'JML_WorkflowSteps',
+        name: 'PM_WorkflowSteps',
         title: 'Workflow Steps',
         description: 'Workflow step execution log',
-        provisioningScript: 'Create-JML_WorkflowSteps-List.ps1'
+        provisioningScript: 'Create-PM_WorkflowSteps-List.ps1'
       }
     ]
   }

@@ -26,7 +26,7 @@ export class DocumentTemplateService {
 
   constructor(sp: SPFI, templateLibraryUrl?: string) {
     this.sp = sp;
-    this.templateLibrary = templateLibraryUrl || 'JML_DocumentTemplates';
+    this.templateLibrary = templateLibraryUrl || 'PM_DocumentTemplates';
     this.docxProcessor = new DocxTemplateProcessor();
   }
 

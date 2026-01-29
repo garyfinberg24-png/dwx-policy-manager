@@ -21,7 +21,7 @@ import { logger } from './LoggingService';
 
 export class ExpenseService {
   private sp: SPFI;
-  private readonly EXPENSES_LIST = 'JML_Expenses';
+  private readonly EXPENSES_LIST = 'PM_Expenses';
 
   constructor(sp: SPFI) {
     this.sp = sp;

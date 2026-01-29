@@ -236,7 +236,7 @@ export class ListActionHandler {
         ...additionalUpdates
       };
 
-      await this.sp.web.lists.getByTitle('JML_Processes').items
+      await this.sp.web.lists.getByTitle('PM_Processes').items
         .getById(processId)
         .update(updateData);
 
@@ -270,7 +270,7 @@ export class ListActionHandler {
     try {
       const progressPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
-      await this.sp.web.lists.getByTitle('JML_Processes').items
+      await this.sp.web.lists.getByTitle('PM_Processes').items
         .getById(processId)
         .update({
           CompletedTasks: completedTasks,

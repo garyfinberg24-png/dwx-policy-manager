@@ -4,7 +4,7 @@
 
 param(
     [Parameter(Mandatory=$false)]
-    [string]$SiteUrl = "https://mf7m.sharepoint.com/sites/JML"
+    [string]$SiteUrl = "https://mf7m.sharepoint.com/sites/PolicyManager"
 )
 
 $clientId = "d91b5b78-de72-424e-898b-8b5c9512ebd9"
@@ -46,7 +46,7 @@ Write-Host "`n[1/2] Creating policy templates..." -ForegroundColor Yellow
 
 foreach ($template in $templates) {
     try {
-        Add-PnPListItem -List "JML_PolicyTemplates" -Values $template | Out-Null
+        Add-PnPListItem -List "PM_PolicyTemplates" -Values $template | Out-Null
         Write-Host "  Created: $($template.TemplateName)" -ForegroundColor Green
     }
     catch {
@@ -115,7 +115,7 @@ $quizQuestionsList = @(
 foreach ($quiz in $quizPolicies) {
     try {
         # Create quiz
-        $quizItem = Add-PnPListItem -List "JML_PolicyQuizzes" -Values @{
+        $quizItem = Add-PnPListItem -List "PM_PolicyQuizzes" -Values @{
             Title = $quiz.Title
             PolicyId = $quiz.PolicyId
             QuizTitle = $quiz.Title
@@ -133,7 +133,7 @@ foreach ($quiz in $quizPolicies) {
         $policyQuestions = $quizQuestionsList | Where-Object { $_.PolicyId -eq $quiz.PolicyId }
         $order = 1
         foreach ($q in $policyQuestions) {
-            Add-PnPListItem -List "JML_PolicyQuizQuestions" -Values @{
+            Add-PnPListItem -List "PM_PolicyQuizQuestions" -Values @{
                 Title = "Q$order - $($quiz.Title)"
                 QuizId = $quizItem.Id
                 QuestionText = $q.Q

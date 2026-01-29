@@ -236,9 +236,9 @@ export class GamificationService {
   private currentUserId: number = 0;
 
   // List names
-  private readonly REWARDS_LIST = 'JML_GamificationRewards';
-  private readonly REDEMPTIONS_LIST = 'JML_GamificationRedemptions';
-  private readonly RECOGNITIONS_LIST = 'JML_GamificationRecognitions';
+  private readonly REWARDS_LIST = 'PM_GamificationRewards';
+  private readonly REDEMPTIONS_LIST = 'PM_GamificationRedemptions';
+  private readonly RECOGNITIONS_LIST = 'PM_GamificationRecognitions';
 
   // Level thresholds (expanded for Gamification Hub)
   private readonly LEVEL_THRESHOLDS = [
@@ -327,9 +327,9 @@ export class GamificationService {
     try {
       const userEmail = this.currentUserEmail || await this.getCurrentUserEmail();
 
-      // Try to get existing profile from JML_GamificationProfiles
+      // Try to get existing profile from PM_GamificationProfiles
       const profiles = await this.sp.web.lists
-        .getByTitle("JML_GamificationProfiles")
+        .getByTitle("PM_GamificationProfiles")
         .items.filter(`UserEmail eq '${userEmail}'`)
         .top(1)();
 
@@ -380,13 +380,13 @@ export class GamificationService {
 
       // Get all achievements
       const allAchievements = await this.sp.web.lists
-        .getByTitle("JML_Achievements")
+        .getByTitle("PM_Achievements")
         .items.filter("IsActive eq true")
         .orderBy("DisplayOrder", true)();
 
       // Get user's unlocked achievements
       const userAchievements = await this.sp.web.lists
-        .getByTitle("JML_UserAchievements")
+        .getByTitle("PM_UserAchievements")
         .items.filter(`UserEmail eq '${userEmail}'`)();
 
       const unlockedCodes = userAchievements.map((ua: any) => ua.AchievementCode);
@@ -419,7 +419,7 @@ export class GamificationService {
       const userEmail = this.currentUserEmail || await this.getCurrentUserEmail();
 
       const leaderboardItems = await this.sp.web.lists
-        .getByTitle("JML_Leaderboard")
+        .getByTitle("PM_Leaderboard")
         .items.filter("IsCurrent eq true and LeaderboardType eq 'Global'")
         .orderBy("LeaderboardRank", true)
         .top(top)();
@@ -452,13 +452,13 @@ export class GamificationService {
       const today = new Date().toISOString();
 
       const challenges = await this.sp.web.lists
-        .getByTitle("JML_Challenges")
+        .getByTitle("PM_Challenges")
         .items.filter(`ChallengeStatus eq 'Active' and EndDate ge datetime'${today}'`)
         .orderBy("EndDate", true)();
 
       // Get user's challenge participation
       const participations = await this.sp.web.lists
-        .getByTitle("JML_ChallengeParticipants")
+        .getByTitle("PM_ChallengeParticipants")
         .items.filter(`UserEmail eq '${userEmail}'`)();
 
       const joinedCodes = participations.map((p: any) => p.ChallengeCode);
@@ -503,7 +503,7 @@ export class GamificationService {
       const tier = this.calculateTier(profile.totalPoints);
 
       const rewards = await this.sp.web.lists
-        .getByTitle("JML_RewardsCatalog")
+        .getByTitle("PM_RewardsCatalog")
         .items.filter("IsAvailable eq true and StockLevel gt 0")
         .orderBy("IsFeatured", false)
         .orderBy("PointsCost", true)();
@@ -541,7 +541,7 @@ export class GamificationService {
   public async getActivityFeed(top: number = 10): Promise<IActivityFeedItem[]> {
     try {
       const activities = await this.sp.web.lists
-        .getByTitle("JML_ActivityFeed")
+        .getByTitle("PM_ActivityFeed")
         .items.filter("IsActive eq true and Visibility eq 'Public'")
         .orderBy("ActivityDate", false)
         .top(top)();
@@ -573,7 +573,7 @@ export class GamificationService {
       const userEmail = this.currentUserEmail || await this.getCurrentUserEmail();
 
       const streaks = await this.sp.web.lists
-        .getByTitle("JML_Streaks")
+        .getByTitle("PM_Streaks")
         .items.filter(`UserEmail eq '${userEmail}' and IsActive eq true`)();
 
       return streaks.map((s: any) => ({
@@ -598,7 +598,7 @@ export class GamificationService {
   public async getRecentRecognitions(top: number = 5): Promise<IRecognition[]> {
     try {
       const recognitions = await this.sp.web.lists
-        .getByTitle("JML_Recognition")
+        .getByTitle("PM_Recognition")
         .items.filter("IsPublic eq true and RecognitionStatus eq 'Active'")
         .orderBy("GivenDate", false)
         .top(top)();
@@ -845,7 +845,7 @@ export class GamificationService {
   public async getUserPoints(userId: number): Promise<IUserPoints> {
     try {
       const existingPoints = await this.sp.web.lists
-        .getByTitle("JML_UserPoints")
+        .getByTitle("PM_UserPoints")
         .items.filter(`UserIdId eq ${userId}`)
         .top(1)
         .expand("UserId")();
@@ -856,7 +856,7 @@ export class GamificationService {
 
       // Create new user points record
       const result = await this.sp.web.lists
-        .getByTitle("JML_UserPoints")
+        .getByTitle("PM_UserPoints")
         .items.add({
           Title: `User ${userId} Points`,
           UserIdId: userId,
@@ -938,7 +938,7 @@ export class GamificationService {
 
       // Update user points
       await this.sp.web.lists
-        .getByTitle("JML_UserPoints")
+        .getByTitle("PM_UserPoints")
         .items.getById(userPoints.Id)
         .update(updates);
 
@@ -1077,7 +1077,7 @@ export class GamificationService {
   ): Promise<void> {
     try {
       await this.sp.web.lists
-        .getByTitle("JML_PointTransactions")
+        .getByTitle("PM_PointTransactions")
         .items.add({
           Title: `${transactionType} - ${points} points`,
           UserIdId: userId,
@@ -1100,7 +1100,7 @@ export class GamificationService {
   public async getUserTransactions(userId: number, top: number = 20): Promise<IPointTransaction[]> {
     try {
       const transactions = await this.sp.web.lists
-        .getByTitle("JML_PointTransactions")
+        .getByTitle("PM_PointTransactions")
         .items.filter(`UserIdId eq ${userId}`)
         .orderBy("TransactionDate", false)
         .top(top)
@@ -1123,7 +1123,7 @@ export class GamificationService {
   public async getLegacyAllAchievements(): Promise<ILegacyAchievement[]> {
     try {
       const achievements = await this.sp.web.lists
-        .getByTitle("JML_Achievements")
+        .getByTitle("PM_Achievements")
         .items.filter("IsActive eq true")
         .orderBy("DisplayOrder", true)();
 
@@ -1140,7 +1140,7 @@ export class GamificationService {
   public async getLegacyUserAchievements(userId: number): Promise<ILegacyUserAchievement[]> {
     try {
       const achievements = await this.sp.web.lists
-        .getByTitle("JML_UserAchievements")
+        .getByTitle("PM_UserAchievements")
         .items.filter(`UserIdId eq ${userId}`)
         .orderBy("EarnedDate", false)
         .expand("UserId")();
@@ -1159,7 +1159,7 @@ export class GamificationService {
     try {
       // Check if already awarded
       const existing = await this.sp.web.lists
-        .getByTitle("JML_UserAchievements")
+        .getByTitle("PM_UserAchievements")
         .items.filter(`UserIdId eq ${userId} and AchievementId eq ${achievementId}`)();
 
       if (existing.length > 0) {
@@ -1168,12 +1168,12 @@ export class GamificationService {
 
       // Get achievement details
       const achievement = await this.sp.web.lists
-        .getByTitle("JML_Achievements")
+        .getByTitle("PM_Achievements")
         .items.getById(achievementId)();
 
       // Award achievement
       await this.sp.web.lists
-        .getByTitle("JML_UserAchievements")
+        .getByTitle("PM_UserAchievements")
         .items.add({
           Title: achievement.AchievementName,
           UserIdId: userId,
@@ -1256,7 +1256,7 @@ export class GamificationService {
   public async getLegacyLeaderboard(top: number = 10): Promise<ILegacyLeaderboardEntry[]> {
     try {
       const allUsers = await this.sp.web.lists
-        .getByTitle("JML_UserPoints")
+        .getByTitle("PM_UserPoints")
         .items.orderBy("TotalPoints", false)
         .top(top)
         .expand("UserId")();
@@ -1288,7 +1288,7 @@ export class GamificationService {
     try {
       const userPoints = await this.getUserPoints(userId);
       const higherRanked = await this.sp.web.lists
-        .getByTitle("JML_UserPoints")
+        .getByTitle("PM_UserPoints")
         .items.filter(`TotalPoints gt ${userPoints.TotalPoints}`)();
 
       return higherRanked.length + 1;

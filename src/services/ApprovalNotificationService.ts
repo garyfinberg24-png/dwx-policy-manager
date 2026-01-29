@@ -238,11 +238,11 @@ export class ApprovalNotificationService {
   }
 
   /**
-   * Send in-app notification to JML_Notifications list
+   * Send in-app notification to PM_Notifications list
    * INTEGRATION FIX P1: Separate in-app notification delivery
    */
   private async sendInAppNotification(notification: IApprovalNotification, recipientId: number): Promise<void> {
-    await this.sp.web.lists.getByTitle('JML_Notifications').items.add({
+    await this.sp.web.lists.getByTitle('PM_Notifications').items.add({
       Title: notification.subject,
       Message: notification.body.replace(/<[^>]*>/g, '').substring(0, 500), // Strip HTML, limit length
       RecipientId: recipientId,

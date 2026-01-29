@@ -16,8 +16,8 @@
 import { WebPartContext } from '@microsoft/sp-webpart-base';
 import { injectJmlAppShell, IAppShellOptions } from './JmlAppShellInjector';
 
-const JML_STYLES_ID = 'jml-global-overrides';
-const JML_EMBEDDED_STYLES_ID = 'jml-embedded-mode';
+const PM_STYLES_ID = 'jml-global-overrides';
+const PM_EMBEDDED_STYLES_ID = 'jml-embedded-mode';
 
 /**
  * Options for injectSharePointOverrides
@@ -32,7 +32,7 @@ export interface ISharePointOverridesOptions {
 /**
  * Global CSS styles for full-bleed layouts and social bar hiding.
  */
-const JML_GLOBAL_STYLES = `
+const PM_GLOBAL_STYLES = `
 /* =============================================================================
    JML GLOBAL OVERRIDES - Injected by SharePointOverrides utility
    ============================================================================= */
@@ -160,7 +160,7 @@ button[aria-label="Save for later"]:not(.ms-Panel *) {
 /**
  * CSS styles for embedded mode - hides all SharePoint chrome
  */
-const JML_EMBEDDED_STYLES = `
+const PM_EMBEDDED_STYLES = `
 /* EMBEDDED MODE - Hide all SharePoint chrome */
 #SuiteNavPlaceHolder,
 [class*="SuiteNav"],
@@ -259,22 +259,22 @@ export function injectSharePointOverrides(
   if (typeof document === 'undefined') return;
 
   // Inject global overrides (full-bleed + social bar hiding)
-  if (!document.getElementById(JML_STYLES_ID)) {
+  if (!document.getElementById(PM_STYLES_ID)) {
     const styleElement = document.createElement('style');
-    styleElement.id = JML_STYLES_ID;
+    styleElement.id = PM_STYLES_ID;
     styleElement.type = 'text/css';
-    styleElement.textContent = JML_GLOBAL_STYLES;
+    styleElement.textContent = PM_GLOBAL_STYLES;
     document.head.appendChild(styleElement);
     console.log('[JML] Injected global SharePoint overrides');
   }
 
   // ALWAYS inject embedded mode styles UNLESS ?env=full is specified
   // This gives an app-like experience by default
-  if (!shouldShowSharePointChrome() && !document.getElementById(JML_EMBEDDED_STYLES_ID)) {
+  if (!shouldShowSharePointChrome() && !document.getElementById(PM_EMBEDDED_STYLES_ID)) {
     const embeddedStyleElement = document.createElement('style');
-    embeddedStyleElement.id = JML_EMBEDDED_STYLES_ID;
+    embeddedStyleElement.id = PM_EMBEDDED_STYLES_ID;
     embeddedStyleElement.type = 'text/css';
-    embeddedStyleElement.textContent = JML_EMBEDDED_STYLES;
+    embeddedStyleElement.textContent = PM_EMBEDDED_STYLES;
     document.head.appendChild(embeddedStyleElement);
     console.log('[JML] Injected app-mode styles (hiding SharePoint chrome)');
   }
@@ -293,12 +293,12 @@ export function injectSharePointOverrides(
 export function removeSharePointOverrides(): void {
   if (typeof document === 'undefined') return;
 
-  const globalStyles = document.getElementById(JML_STYLES_ID);
+  const globalStyles = document.getElementById(PM_STYLES_ID);
   if (globalStyles) {
     globalStyles.remove();
   }
 
-  const embeddedStyles = document.getElementById(JML_EMBEDDED_STYLES_ID);
+  const embeddedStyles = document.getElementById(PM_EMBEDDED_STYLES_ID);
   if (embeddedStyles) {
     embeddedStyles.remove();
   }

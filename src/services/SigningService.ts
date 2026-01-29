@@ -67,13 +67,13 @@ export class SigningService {
   private currentUserEmail: string = '';
 
   // SharePoint List Names
-  private readonly REQUESTS_LIST = 'JML_SigningRequests';
-  private readonly CHAINS_LIST = 'JML_SigningChains';
-  private readonly SIGNERS_LIST = 'JML_Signers';
-  private readonly TEMPLATES_LIST = 'JML_SigningTemplates';
-  private readonly AUDIT_LIST = 'JML_SigningAuditLog';
-  private readonly CONFIG_LIST = 'JML_SignatureConfig';
-  private readonly DOCUMENTS_LIBRARY = 'JML_SigningDocuments';
+  private readonly REQUESTS_LIST = 'PM_SigningRequests';
+  private readonly CHAINS_LIST = 'PM_SigningChains';
+  private readonly SIGNERS_LIST = 'PM_Signers';
+  private readonly TEMPLATES_LIST = 'PM_SigningTemplates';
+  private readonly AUDIT_LIST = 'PM_SigningAuditLog';
+  private readonly CONFIG_LIST = 'PM_SignatureConfig';
+  private readonly DOCUMENTS_LIBRARY = 'PM_SigningDocuments';
 
   private listsVerified: boolean = false;
   private listsExist: boolean = false;

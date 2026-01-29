@@ -45,6 +45,7 @@ import {
 } from '@fluentui/react';
 import { injectPortalStyles } from '../../../utils/injectPortalStyles';
 import { JmlAppLayout } from '../../../components/JmlAppLayout';
+import { PageSubheader } from '../../../components/PageSubheader';
 import { PolicyHubService } from '../../../services/PolicyHubService';
 import { PolicyNotificationQueueProcessor } from '../../../services/PolicyNotificationQueueProcessor';
 import {
@@ -201,6 +202,7 @@ export interface IPolicyHubState {
   showFeaturedSection: boolean;
   showRecentSection: boolean;
   totalResults: number;
+  expandedPolicyId: number | null;
 }
 
 export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyHubState> {
@@ -264,7 +266,8 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
       bookmarkedPolicyIds: new Set<number>(),
       showFeaturedSection: true,
       showRecentSection: true,
-      totalResults: 0
+      totalResults: 0,
+      expandedPolicyId: null
     };
     this.hubService = new PolicyHubService(props.sp);
 
@@ -962,7 +965,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
       { key: 'number', name: 'Policy #', fieldName: 'PolicyNumber', minWidth: 80, maxWidth: 100 },
       { key: 'name', name: 'Policy Name', fieldName: 'PolicyName', minWidth: 200 },
       { key: 'category', name: 'Category', fieldName: 'PolicyCategory', minWidth: 120 },
-      { key: 'status', name: 'Status', fieldName: 'Status', minWidth: 100 },
+      { key: 'status', name: 'Status', fieldName: 'PolicyStatus', minWidth: 100 },
       { key: 'version', name: 'Version', fieldName: 'VersionNumber', minWidth: 60 },
       { key: 'modified', name: 'Last Modified', fieldName: 'Modified', minWidth: 120,
         onRender: (item: IPolicy) => new Date(item.Modified || '').toLocaleDateString()
@@ -990,14 +993,14 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
             <div className={styles.summaryCard}>
               <Icon iconName="Send" className={styles.summaryIcon} style={{ color: '#FFA500' }} />
               <Text variant="xxLarge" className={styles.summaryNumber}>
-                {authoredPolicies.filter(p => p.Status === PolicyStatus.InReview).length}
+                {authoredPolicies.filter(p => p.PolicyStatus === PolicyStatus.InReview).length}
               </Text>
               <Text variant="medium">Pending Review</Text>
             </div>
             <div className={styles.summaryCard}>
               <Icon iconName="Checkmark" className={styles.summaryIcon} style={{ color: '#107C10' }} />
               <Text variant="xxLarge" className={styles.summaryNumber}>
-                {authoredPolicies.filter(p => p.Status === 'Published').length}
+                {authoredPolicies.filter(p => p.PolicyStatus === 'Published').length}
               </Text>
               <Text variant="medium">Published</Text>
             </div>
@@ -1486,8 +1489,15 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
   /**
    * Render the Filter Bar with all dropdown filters
    */
-  private renderFilterBar(): JSX.Element {
-    const { selectedCategory, selectedStatus, selectedDepartment, selectedTimeline, selectedRisk, selectedReadTime, groupBy } = this.state;
+  /**
+   * Render consolidated toolbar — Variation 2: Two Rows in One Panel
+   * Row 1: Filter dropdowns
+   * Row 2: Results count | Sort | Active filters | Export/Print icons
+   */
+  private renderConsolidatedToolbar(): JSX.Element {
+    const { selectedCategory, selectedStatus, selectedDepartment, selectedTimeline, selectedRisk, selectedReadTime, groupBy, searchResults, sortOption, activeFilters, viewMode } = this.state;
+    const totalCount = searchResults?.totalCount || 0;
+    const displayedCount = searchResults?.policies?.length || 0;
 
     const categoryOptions: IDropdownOption[] = [
       { key: '', text: 'All Categories' },
@@ -1540,99 +1550,6 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
       { key: 'risk', text: 'Group By: Risk Level' }
     ];
 
-    return (
-      <div className={styles.filterBar}>
-        <Dropdown
-          options={categoryOptions}
-          selectedKey={selectedCategory}
-          onChange={(e, option) => {
-            this.handleFilterChange('selectedCategory', option?.key as string);
-            this.updateActiveFilter('category', 'Category', option?.text || '');
-          }}
-          className={styles.filterDropdown}
-        />
-        <Dropdown
-          options={statusOptions}
-          selectedKey={selectedStatus}
-          onChange={(e, option) => {
-            this.handleFilterChange('selectedStatus', option?.key as string);
-            this.updateActiveFilter('status', 'Status', option?.text || '');
-          }}
-          className={styles.filterDropdown}
-        />
-        <Dropdown
-          options={departmentOptions}
-          selectedKey={selectedDepartment}
-          onChange={(e, option) => {
-            this.handleFilterChange('selectedDepartment', option?.key as string);
-            this.updateActiveFilter('department', 'Department', option?.text || '');
-          }}
-          className={styles.filterDropdown}
-        />
-        <Dropdown
-          options={timelineOptions}
-          selectedKey={selectedTimeline}
-          onChange={(e, option) => this.handleTimelineFilterChange(option?.key as TimelineOption)}
-          className={styles.filterDropdown}
-        />
-        <Dropdown
-          options={riskOptions}
-          selectedKey={selectedRisk}
-          onChange={(e, option) => {
-            this.handleFilterChange('selectedRisk', option?.key as string);
-            this.updateActiveFilter('risk', 'Risk', option?.text || '');
-          }}
-          className={styles.filterDropdown}
-        />
-        <Dropdown
-          options={readTimeOptions}
-          selectedKey={selectedReadTime}
-          onChange={(e, option) => this.handleReadTimeFilterChange(option?.key as ReadTimeOption)}
-          className={styles.filterDropdown}
-        />
-        <Dropdown
-          options={groupByOptions}
-          selectedKey={groupBy}
-          onChange={(e, option) => this.handleGroupByChange(option?.key as GroupByOption)}
-          className={`${styles.filterDropdown} ${styles.filterGroupBy}`}
-        />
-      </div>
-    );
-  }
-
-  /**
-   * Render the Active Filter Pills
-   */
-  private renderActiveFilterPills(): JSX.Element | null {
-    const { activeFilters } = this.state;
-    if (activeFilters.length === 0) return null;
-
-    return (
-      <div className={styles.activeFilters}>
-        <Text className={styles.activeFiltersLabel}>Active Filters:</Text>
-        {activeFilters.map(filter => (
-          <span key={filter.key} className={styles.filterPill}>
-            {filter.value}
-            <IconButton
-              iconProps={{ iconName: 'Cancel' }}
-              className={styles.filterPillRemove}
-              onClick={() => this.handleRemoveFilter(filter.key)}
-              title="Remove filter"
-            />
-          </span>
-        ))}
-      </div>
-    );
-  }
-
-  /**
-   * Render the Results Bar with sort, count, active filters, export, print - all in single row
-   */
-  private renderResultsBar(): JSX.Element {
-    const { searchResults, sortOption, activeFilters } = this.state;
-    const totalCount = searchResults?.totalCount || 0;
-    const displayedCount = searchResults?.policies?.length || 0;
-
     const sortOptions: IDropdownOption[] = [
       { key: 'name-asc', text: 'Sort: Name A-Z' },
       { key: 'name-desc', text: 'Sort: Name Z-A' },
@@ -1644,68 +1561,149 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
     ];
 
     return (
-      <div className={styles.resultsBar}>
-        {/* Results count */}
-        <Text className={styles.resultsCount}>
-          Showing <strong>{displayedCount}</strong> of <strong>{totalCount}</strong> policies
-        </Text>
-
-        {/* Divider */}
-        <span className={styles.resultsDivider} />
-
-        {/* Sort dropdown */}
-        <Dropdown
-          options={sortOptions}
-          selectedKey={sortOption}
-          onChange={(e, option) => this.handleSortOptionChange(option?.key as SortOption)}
-          className={styles.sortDropdown}
-        />
-
-        {/* Clear filters button (only shown when filters are active) */}
-        {activeFilters.length > 0 && (
-          <DefaultButton
-            text="Clear All"
-            iconProps={{ iconName: 'ClearFilter' }}
-            onClick={this.handleClearFilters}
-            className={styles.btnClearFilters}
+      <div className={styles.consolidatedToolbar}>
+        {/* Row 1: Filter Dropdowns */}
+        <div className={styles.toolbarFilterRow}>
+          <Dropdown
+            options={categoryOptions}
+            selectedKey={selectedCategory}
+            onChange={(e, option) => {
+              this.handleFilterChange('selectedCategory', option?.key as string);
+              this.updateActiveFilter('category', 'Category', option?.text || '');
+            }}
+            className={styles.filterDropdown}
           />
-        )}
+          <Dropdown
+            options={statusOptions}
+            selectedKey={selectedStatus}
+            onChange={(e, option) => {
+              this.handleFilterChange('selectedStatus', option?.key as string);
+              this.updateActiveFilter('status', 'Status', option?.text || '');
+            }}
+            className={styles.filterDropdown}
+          />
+          <Dropdown
+            options={departmentOptions}
+            selectedKey={selectedDepartment}
+            onChange={(e, option) => {
+              this.handleFilterChange('selectedDepartment', option?.key as string);
+              this.updateActiveFilter('department', 'Department', option?.text || '');
+            }}
+            className={styles.filterDropdown}
+          />
+          <Dropdown
+            options={timelineOptions}
+            selectedKey={selectedTimeline}
+            onChange={(e, option) => this.handleTimelineFilterChange(option?.key as TimelineOption)}
+            className={styles.filterDropdown}
+          />
+          <Dropdown
+            options={riskOptions}
+            selectedKey={selectedRisk}
+            onChange={(e, option) => {
+              this.handleFilterChange('selectedRisk', option?.key as string);
+              this.updateActiveFilter('risk', 'Risk', option?.text || '');
+            }}
+            className={styles.filterDropdown}
+          />
+          <Dropdown
+            options={readTimeOptions}
+            selectedKey={selectedReadTime}
+            onChange={(e, option) => this.handleReadTimeFilterChange(option?.key as ReadTimeOption)}
+            className={styles.filterDropdown}
+          />
+          <Dropdown
+            options={groupByOptions}
+            selectedKey={groupBy}
+            onChange={(e, option) => this.handleGroupByChange(option?.key as GroupByOption)}
+            className={`${styles.filterDropdown} ${styles.filterGroupBy}`}
+          />
+        </div>
 
-        {/* Divider before active filters (only if filters exist) */}
-        {activeFilters.length > 0 && <span className={styles.resultsDivider} />}
+        {/* Row 2: Results count | Sort | Active filters | Actions */}
+        <div className={styles.toolbarResultsRow}>
+          {/* Results count */}
+          <Text className={styles.resultsCount}>
+            Showing <strong>{displayedCount}</strong> of <strong>{totalCount}</strong> policies
+          </Text>
 
-        {/* Active filter pills inline */}
-        {activeFilters.length > 0 && (
-          <div className={styles.activeFilters}>
-            <Text className={styles.activeFiltersLabel}>Active Filters:</Text>
-            {activeFilters.map(filter => (
-              <span key={filter.key} className={styles.filterPill}>
-                {filter.value}
-                <IconButton
-                  iconProps={{ iconName: 'Cancel' }}
-                  className={styles.filterPillRemove}
-                  onClick={() => this.handleRemoveFilter(filter.key)}
-                  title="Remove filter"
-                />
-              </span>
-            ))}
+          {/* Divider */}
+          <span className={styles.resultsDivider} />
+
+          {/* Sort dropdown */}
+          <Dropdown
+            options={sortOptions}
+            selectedKey={sortOption}
+            onChange={(e, option) => this.handleSortOptionChange(option?.key as SortOption)}
+            className={styles.sortDropdown}
+          />
+
+          {/* Clear filters button (only shown when filters are active) */}
+          {activeFilters.length > 0 && (
+            <DefaultButton
+              text="Clear All"
+              iconProps={{ iconName: 'ClearFilter' }}
+              onClick={this.handleClearFilters}
+              className={styles.btnClearFilters}
+            />
+          )}
+
+          {/* Active filter pills inline */}
+          {activeFilters.length > 0 && (
+            <>
+              <span className={styles.resultsDivider} />
+              <div className={styles.activeFilters}>
+                {activeFilters.map(filter => (
+                  <span key={filter.key} className={styles.filterPill}>
+                    {filter.value}
+                    <IconButton
+                      iconProps={{ iconName: 'Cancel' }}
+                      className={styles.filterPillRemove}
+                      onClick={() => this.handleRemoveFilter(filter.key)}
+                      title="Remove filter"
+                    />
+                  </span>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* View toggle */}
+          <span className={styles.resultsDivider} />
+          <div className={styles.viewToggle}>
+            <button
+              className={`${styles.viewToggleBtn} ${viewMode === 'grid' ? styles.viewToggleActive : ''}`}
+              onClick={() => this.setState({ viewMode: 'grid' })}
+              type="button"
+            >
+              <Icon iconName="GridViewMedium" />
+              Cards
+            </button>
+            <button
+              className={`${styles.viewToggleBtn} ${viewMode === 'list' ? styles.viewToggleActive : ''}`}
+              onClick={() => this.setState({ viewMode: 'list' })}
+              type="button"
+            >
+              <Icon iconName="List" />
+              List
+            </button>
           </div>
-        )}
 
-        {/* Action buttons - aligned to right */}
-        <div className={styles.resultsActions}>
-          <DefaultButton
-            text="Export"
-            iconProps={{ iconName: 'ExcelDocument' }}
-            onClick={this.handleExport}
-            className={styles.btnAction}
-          />
-          <DefaultButton
-            text="Print"
-            iconProps={{ iconName: 'Print' }}
-            onClick={this.handlePrint}
-            className={styles.btnAction}
-          />
+          {/* Action icon buttons - aligned to right */}
+          <div className={styles.resultsActions}>
+            <IconButton
+              iconProps={{ iconName: 'ExcelDocument' }}
+              onClick={this.handleExport}
+              title="Export to Excel"
+              className={styles.btnActionIcon}
+            />
+            <IconButton
+              iconProps={{ iconName: 'Print' }}
+              onClick={this.handlePrint}
+              title="Print"
+              className={styles.btnActionIcon}
+            />
+          </div>
         </div>
       </div>
     );
@@ -1762,8 +1760,8 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
         {/* Meta badges */}
         <div className={styles.policyMeta}>
           <span className={`${styles.policyBadge} ${styles.badgeCategory}`}>{policy.PolicyCategory}</span>
-          <span className={`${styles.policyBadge} ${policy.Status === 'Published' ? styles.badgeActive : styles.badgePending}`}>
-            {policy.Status}
+          <span className={`${styles.policyBadge} ${policy.PolicyStatus === 'Published' ? styles.badgeActive : styles.badgePending}`}>
+            {policy.PolicyStatus}
           </span>
           {policy.IsMandatory && <span className={`${styles.policyBadge} ${styles.badgeMandatory}`}>Mandatory</span>}
           {policy.ReadTimeframe && <span className={`${styles.policyBadge} ${styles.badgeTimeline}`}>{policy.ReadTimeframe}</span>}
@@ -1799,7 +1797,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
           <div className={styles.policyActions}>
             <PrimaryButton
               text="View Policy"
-              href={`?policyId=${policy.Id}`}
+              href={`/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${policy.Id}`}
               className={styles.btnView}
             />
           </div>
@@ -1829,25 +1827,28 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
    * Render enhanced list view with additional columns
    */
   private renderEnhancedListView(): JSX.Element {
-    const { searchResults, bookmarkedPolicyIds } = this.state;
+    const { searchResults, bookmarkedPolicyIds, expandedPolicyId } = this.state;
     if (!searchResults || searchResults.policies.length === 0) {
       return this.renderEmptyState();
     }
+
+    const riskColors: Record<string, string> = {
+      'Critical': '#a4262c', 'High': '#d83b01', 'Medium': '#ffaa44', 'Low': '#107c10'
+    };
 
     return (
       <div className={styles.policiesListView}>
         <table className={styles.policyTable}>
           <thead>
             <tr>
+              <th style={{ width: '32px' }}></th>
               <th style={{ width: '40px' }}></th>
               <th>Policy #</th>
               <th>Policy Name</th>
               <th>Category</th>
               <th>Status</th>
-              <th>Timeline</th>
+              <th>Risk</th>
               <th>Read Time</th>
-              <th>Reading Status</th>
-              <th>Last Read</th>
               <th>Updated</th>
               <th>Actions</th>
             </tr>
@@ -1855,6 +1856,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
           <tbody>
             {searchResults.policies.map(policy => {
               const isBookmarked = bookmarkedPolicyIds.has(policy.Id);
+              const isExpanded = expandedPolicyId === policy.Id;
               const modifiedDate = policy.Modified ? new Date(policy.Modified) : null;
               const publishedDate = policy.PublishedDate ? new Date(policy.PublishedDate) : null;
               const twoWeeksAgo = new Date();
@@ -1864,32 +1866,156 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
               const readTime = policy.EstimatedReadTimeMinutes || Math.floor(Math.random() * 20) + 5;
 
               return (
-                <tr key={policy.Id}>
-                  <td>
-                    <IconButton
-                      iconProps={{ iconName: isBookmarked ? 'SingleBookmarkSolid' : 'SingleBookmark' }}
-                      className={`${styles.tableBookmark} ${isBookmarked ? styles.bookmarkActive : ''}`}
-                      onClick={() => this.handleToggleBookmark(policy.Id)}
-                      title={isBookmarked ? 'Remove bookmark' : 'Add bookmark'}
-                    />
-                  </td>
-                  <td className={styles.policyNumberCell}>{policy.PolicyNumber}</td>
-                  <td className={styles.policyNameCell}>
-                    {policy.PolicyName}
-                    {isNew && <span className={styles.tableBadgeNew}>NEW</span>}
-                    {isUpdated && <span className={styles.tableBadgeUpdated}>UPD</span>}
-                  </td>
-                  <td><span className={`${styles.policyBadge} ${styles.badgeCategory}`}>{policy.PolicyCategory}</span></td>
-                  <td><span className={`${styles.policyBadge} ${policy.Status === 'Published' ? styles.badgeActive : styles.badgePending}`}>{policy.Status}</span></td>
-                  <td>{policy.ReadTimeframe && <span className={`${styles.policyBadge} ${styles.badgeTimeline}`}>{policy.ReadTimeframe}</span>}</td>
-                  <td>{readTime} min</td>
-                  <td><span className={`${styles.readingStatus} ${styles.statusUnread}`}>Not Read</span></td>
-                  <td>—</td>
-                  <td>{modifiedDate ? modifiedDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}</td>
-                  <td>
-                    <PrimaryButton text="View" href={`?policyId=${policy.Id}`} className={styles.btnViewSmall} />
-                  </td>
-                </tr>
+                <React.Fragment key={policy.Id}>
+                  <tr className={isExpanded ? styles.expandedTableRow : ''}>
+                    <td>
+                      <IconButton
+                        iconProps={{ iconName: isExpanded ? 'ChevronDown' : 'ChevronRight' }}
+                        title={isExpanded ? 'Collapse' : 'Expand'}
+                        onClick={() => this.setState({ expandedPolicyId: isExpanded ? null : policy.Id })}
+                        styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 12 } }}
+                      />
+                    </td>
+                    <td>
+                      <IconButton
+                        iconProps={{ iconName: isBookmarked ? 'SingleBookmarkSolid' : 'SingleBookmark' }}
+                        className={`${styles.tableBookmark} ${isBookmarked ? styles.bookmarkActive : ''}`}
+                        onClick={() => this.handleToggleBookmark(policy.Id)}
+                        title={isBookmarked ? 'Remove bookmark' : 'Add bookmark'}
+                      />
+                    </td>
+                    <td className={styles.policyNumberCell}>{policy.PolicyNumber}</td>
+                    <td className={styles.policyNameCell}>
+                      {policy.PolicyName}
+                      {isNew && <span className={styles.tableBadgeNew}>NEW</span>}
+                      {isUpdated && <span className={styles.tableBadgeUpdated}>UPD</span>}
+                    </td>
+                    <td><span className={`${styles.policyBadge} ${styles.badgeCategory}`}>{policy.PolicyCategory}</span></td>
+                    <td><span className={`${styles.policyBadge} ${policy.PolicyStatus === 'Published' ? styles.badgeActive : styles.badgePending}`}>{policy.PolicyStatus}</span></td>
+                    <td>
+                      {policy.ComplianceRisk && (
+                        <span style={{
+                          display: 'inline-block', padding: '2px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 600,
+                          backgroundColor: riskColors[policy.ComplianceRisk] || '#8a8886', color: 'white'
+                        }}>
+                          {policy.ComplianceRisk}
+                        </span>
+                      )}
+                    </td>
+                    <td>{readTime} min</td>
+                    <td>{modifiedDate ? modifiedDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}</td>
+                    <td>
+                      <PrimaryButton text="View" href={`/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${policy.Id}`} className={styles.btnViewSmall} />
+                    </td>
+                  </tr>
+                  {isExpanded && (
+                    <tr className={styles.expandedDetailRow}>
+                      <td colSpan={10} style={{ padding: 0 }}>
+                        <div className={styles.expandedRow}>
+                          <div className={styles.expandedGrid}>
+                            {/* Policy Details Card */}
+                            <div className={styles.expandedCard}>
+                              <div className={styles.expandedCardHeader}>
+                                <Icon iconName="Document" className={styles.expandedCardIcon} />
+                                <Text className={styles.expandedCardTitle}>Policy Details</Text>
+                              </div>
+                              <div className={styles.expandedCardBody}>
+                                {policy.Description && (
+                                  <Text variant="small" className={styles.expandedDescription}>
+                                    {policy.Description.length > 150 ? `${policy.Description.substring(0, 150)}...` : policy.Description}
+                                  </Text>
+                                )}
+                                <div className={styles.expandedField}>
+                                  <Text variant="small" className={styles.expandedLabel}>Type</Text>
+                                  <Text variant="small">{policy.PolicyType || 'N/A'}</Text>
+                                </div>
+                                <div className={styles.expandedField}>
+                                  <Text variant="small" className={styles.expandedLabel}>Owner</Text>
+                                  <Text variant="small">{policy.PolicyOwner?.Title || 'N/A'}</Text>
+                                </div>
+                                <div className={styles.expandedField}>
+                                  <Text variant="small" className={styles.expandedLabel}>Version</Text>
+                                  <Text variant="small">{policy.VersionNumber || 'N/A'}</Text>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Compliance Card */}
+                            <div className={styles.expandedCard}>
+                              <div className={styles.expandedCardHeader}>
+                                <Icon iconName="Shield" className={styles.expandedCardIcon} />
+                                <Text className={styles.expandedCardTitle}>Compliance</Text>
+                              </div>
+                              <div className={styles.expandedCardBody}>
+                                <div className={styles.expandedField}>
+                                  <Text variant="small" className={styles.expandedLabel}>Risk Level</Text>
+                                  <span style={{
+                                    display: 'inline-block', padding: '2px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 600,
+                                    backgroundColor: riskColors[policy.ComplianceRisk] || '#8a8886', color: 'white'
+                                  }}>
+                                    {policy.ComplianceRisk || 'N/A'}
+                                  </span>
+                                </div>
+                                <div className={styles.expandedField}>
+                                  <Text variant="small" className={styles.expandedLabel}>Scope</Text>
+                                  <Text variant="small">{policy.DistributionScope || 'N/A'}</Text>
+                                </div>
+                                <div className={styles.expandedField}>
+                                  <Text variant="small" className={styles.expandedLabel}>Mandatory</Text>
+                                  <Text variant="small">{policy.IsMandatory ? 'Yes' : 'No'}</Text>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Timeline Card */}
+                            <div className={styles.expandedCard}>
+                              <div className={styles.expandedCardHeader}>
+                                <Icon iconName="Calendar" className={styles.expandedCardIcon} />
+                                <Text className={styles.expandedCardTitle}>Timeline</Text>
+                              </div>
+                              <div className={styles.expandedCardBody}>
+                                <div className={styles.expandedField}>
+                                  <Text variant="small" className={styles.expandedLabel}>Effective</Text>
+                                  <Text variant="small">{policy.EffectiveDate ? new Date(policy.EffectiveDate).toLocaleDateString() : 'N/A'}</Text>
+                                </div>
+                                <div className={styles.expandedField}>
+                                  <Text variant="small" className={styles.expandedLabel}>Expires</Text>
+                                  <Text variant="small">{policy.ExpiryDate ? new Date(policy.ExpiryDate).toLocaleDateString() : 'N/A'}</Text>
+                                </div>
+                                <div className={styles.expandedField}>
+                                  <Text variant="small" className={styles.expandedLabel}>Next Review</Text>
+                                  <Text variant="small">{policy.NextReviewDate ? new Date(policy.NextReviewDate).toLocaleDateString() : 'N/A'}</Text>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Actions Card */}
+                            <div className={styles.expandedCard}>
+                              <div className={styles.expandedCardHeader}>
+                                <Icon iconName="CheckMark" className={styles.expandedCardIcon} />
+                                <Text className={styles.expandedCardTitle}>Actions</Text>
+                              </div>
+                              <div className={styles.expandedCardBody} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <PrimaryButton
+                                  text="View Details"
+                                  iconProps={{ iconName: 'View' }}
+                                  href={`/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${policy.Id}`}
+                                  styles={{ root: { width: '100%' } }}
+                                />
+                                <DefaultButton
+                                  text={isBookmarked ? 'Remove Bookmark' : 'Add Bookmark'}
+                                  iconProps={{ iconName: isBookmarked ? 'SingleBookmarkSolid' : 'SingleBookmark' }}
+                                  onClick={() => this.handleToggleBookmark(policy.Id)}
+                                  styles={{ root: { width: '100%' } }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
               );
             })}
           </tbody>
@@ -2065,9 +2191,9 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
               {policy.PolicyNumber}
             </Text>
             <div className={styles.statusBadge} style={{
-              backgroundColor: policy.Status === 'Published' ? '#107C10' : '#FFA500'
+              backgroundColor: policy.PolicyStatus === 'Published' ? '#107C10' : '#FFA500'
             }}>
-              {policy.Status}
+              {policy.PolicyStatus}
             </div>
           </Stack>
 
@@ -2107,7 +2233,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
             <DefaultButton
               text="View Details"
               iconProps={{ iconName: 'View' }}
-              href={`?policyId=${policy.Id}`}
+              href={`/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${policy.Id}`}
             />
           </Stack>
         </Stack>
@@ -2116,20 +2242,36 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
   }
 
   private renderPolicyListItem(policy: IPolicy): JSX.Element {
+    const isExpanded = this.state.expandedPolicyId === policy.Id;
+    const riskColors: Record<string, string> = {
+      'Critical': '#a4262c',
+      'High': '#d83b01',
+      'Medium': '#ffaa44',
+      'Low': '#107c10'
+    };
+
     return (
-      <div key={policy.Id} className={styles.policyListItem}>
+      <div key={policy.Id} className={`${styles.policyListItem} ${isExpanded ? styles.policyListItemExpanded : ''}`}>
         <Stack horizontal horizontalAlign="space-between" verticalAlign="center" tokens={{ childrenGap: 16 }}>
-          <Stack tokens={{ childrenGap: 4 }} styles={{ root: { flex: 1 } }}>
-            <Stack horizontal tokens={{ childrenGap: 12 }} verticalAlign="center">
-              <Text variant="large" className={styles.policyTitle}>
-                {policy.PolicyNumber}
-              </Text>
-              <Text variant="medium">{policy.PolicyName}</Text>
-            </Stack>
-            <Stack horizontal tokens={{ childrenGap: 16 }}>
-              <Text variant="small" className={styles.category}>{policy.PolicyCategory}</Text>
-              <Text variant="small">Version {policy.VersionNumber}</Text>
-              <Text variant="small">Effective: {policy.EffectiveDate ? new Date(policy.EffectiveDate).toLocaleDateString() : 'N/A'}</Text>
+          <Stack horizontal tokens={{ childrenGap: 12 }} verticalAlign="center" styles={{ root: { flex: 1 } }}>
+            <IconButton
+              iconProps={{ iconName: isExpanded ? 'ChevronDown' : 'ChevronRight' }}
+              title={isExpanded ? 'Collapse' : 'Expand'}
+              onClick={() => this.setState({ expandedPolicyId: isExpanded ? null : policy.Id })}
+              styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 12 } }}
+            />
+            <Stack tokens={{ childrenGap: 4 }} styles={{ root: { flex: 1 } }}>
+              <Stack horizontal tokens={{ childrenGap: 12 }} verticalAlign="center">
+                <Text variant="large" className={styles.policyTitle}>
+                  {policy.PolicyNumber}
+                </Text>
+                <Text variant="medium">{policy.PolicyName}</Text>
+              </Stack>
+              <Stack horizontal tokens={{ childrenGap: 16 }}>
+                <Text variant="small" className={styles.category}>{policy.PolicyCategory}</Text>
+                <Text variant="small">Version {policy.VersionNumber}</Text>
+                <Text variant="small">Effective: {policy.EffectiveDate ? new Date(policy.EffectiveDate).toLocaleDateString() : 'N/A'}</Text>
+              </Stack>
             </Stack>
           </Stack>
 
@@ -2141,17 +2283,144 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
               </Stack>
             )}
             <div className={styles.statusBadge} style={{
-              backgroundColor: policy.Status === 'Published' ? '#107C10' : '#FFA500'
+              backgroundColor: policy.PolicyStatus === 'Published' ? '#107C10' : '#FFA500'
             }}>
-              {policy.Status}
+              {policy.PolicyStatus}
             </div>
             <DefaultButton
               text="View"
               iconProps={{ iconName: 'View' }}
-              href={`?policyId=${policy.Id}`}
+              href={`/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${policy.Id}`}
             />
           </Stack>
         </Stack>
+
+        {isExpanded && (
+          <div className={styles.expandedRow}>
+            <div className={styles.expandedGrid}>
+              {/* Policy Details Card */}
+              <div className={styles.expandedCard}>
+                <div className={styles.expandedCardHeader}>
+                  <Icon iconName="Document" className={styles.expandedCardIcon} />
+                  <Text className={styles.expandedCardTitle}>Policy Details</Text>
+                </div>
+                <div className={styles.expandedCardBody}>
+                  {policy.Description && (
+                    <Text variant="small" className={styles.expandedDescription}>
+                      {policy.Description.length > 150 ? `${policy.Description.substring(0, 150)}...` : policy.Description}
+                    </Text>
+                  )}
+                  <div className={styles.expandedField}>
+                    <Text variant="small" className={styles.expandedLabel}>Type</Text>
+                    <Text variant="small">{policy.PolicyType || 'N/A'}</Text>
+                  </div>
+                  <div className={styles.expandedField}>
+                    <Text variant="small" className={styles.expandedLabel}>Owner</Text>
+                    <Text variant="small">{policy.PolicyOwner?.Title || 'N/A'}</Text>
+                  </div>
+                  {policy.Tags && policy.Tags.length > 0 && (
+                    <div className={styles.expandedTags}>
+                      {policy.Tags.slice(0, 3).map((tag, i) => (
+                        <span key={i} className={styles.expandedTag}>{tag}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Compliance Card */}
+              <div className={styles.expandedCard}>
+                <div className={styles.expandedCardHeader}>
+                  <Icon iconName="Shield" className={styles.expandedCardIcon} />
+                  <Text className={styles.expandedCardTitle}>Compliance</Text>
+                </div>
+                <div className={styles.expandedCardBody}>
+                  <div className={styles.expandedField}>
+                    <Text variant="small" className={styles.expandedLabel}>Risk Level</Text>
+                    <span className={styles.expandedRiskBadge} style={{
+                      backgroundColor: riskColors[policy.ComplianceRisk] || '#8a8886',
+                      color: 'white'
+                    }}>
+                      {policy.ComplianceRisk || 'N/A'}
+                    </span>
+                  </div>
+                  <div className={styles.expandedField}>
+                    <Text variant="small" className={styles.expandedLabel}>Scope</Text>
+                    <Text variant="small">{policy.DistributionScope || 'N/A'}</Text>
+                  </div>
+                  <div className={styles.expandedField}>
+                    <Text variant="small" className={styles.expandedLabel}>Mandatory</Text>
+                    <Text variant="small">{policy.IsMandatory ? 'Yes' : 'No'}</Text>
+                  </div>
+                  {policy.CompliancePercentage !== undefined && (
+                    <div className={styles.expandedField}>
+                      <Text variant="small" className={styles.expandedLabel}>Compliance</Text>
+                      <Text variant="small" style={{ fontWeight: 600, color: policy.CompliancePercentage >= 80 ? '#107c10' : '#d83b01' }}>
+                        {policy.CompliancePercentage}%
+                      </Text>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Timeline Card */}
+              <div className={styles.expandedCard}>
+                <div className={styles.expandedCardHeader}>
+                  <Icon iconName="Calendar" className={styles.expandedCardIcon} />
+                  <Text className={styles.expandedCardTitle}>Timeline</Text>
+                </div>
+                <div className={styles.expandedCardBody}>
+                  <div className={styles.expandedField}>
+                    <Text variant="small" className={styles.expandedLabel}>Effective</Text>
+                    <Text variant="small">{policy.EffectiveDate ? new Date(policy.EffectiveDate).toLocaleDateString() : 'N/A'}</Text>
+                  </div>
+                  <div className={styles.expandedField}>
+                    <Text variant="small" className={styles.expandedLabel}>Expires</Text>
+                    <Text variant="small">{policy.ExpiryDate ? new Date(policy.ExpiryDate).toLocaleDateString() : 'N/A'}</Text>
+                  </div>
+                  <div className={styles.expandedField}>
+                    <Text variant="small" className={styles.expandedLabel}>Next Review</Text>
+                    <Text variant="small">{policy.NextReviewDate ? new Date(policy.NextReviewDate).toLocaleDateString() : 'N/A'}</Text>
+                  </div>
+                  <div className={styles.expandedField}>
+                    <Text variant="small" className={styles.expandedLabel}>Published</Text>
+                    <Text variant="small">{policy.PublishedDate ? new Date(policy.PublishedDate).toLocaleDateString() : 'N/A'}</Text>
+                  </div>
+                </div>
+              </div>
+
+              {/* Acknowledgement Card */}
+              <div className={styles.expandedCard}>
+                <div className={styles.expandedCardHeader}>
+                  <Icon iconName="CheckMark" className={styles.expandedCardIcon} />
+                  <Text className={styles.expandedCardTitle}>Acknowledgement</Text>
+                </div>
+                <div className={styles.expandedCardBody}>
+                  <div className={styles.expandedField}>
+                    <Text variant="small" className={styles.expandedLabel}>Requires Ack.</Text>
+                    <Text variant="small">{policy.RequiresAcknowledgement ? 'Yes' : 'No'}</Text>
+                  </div>
+                  <div className={styles.expandedField}>
+                    <Text variant="small" className={styles.expandedLabel}>Quiz Required</Text>
+                    <Text variant="small">{policy.RequiresQuiz ? 'Yes' : 'No'}</Text>
+                  </div>
+                  {policy.TotalDistributed !== undefined && (
+                    <div className={styles.expandedField}>
+                      <Text variant="small" className={styles.expandedLabel}>Distributed</Text>
+                      <Text variant="small">{policy.TotalDistributed}</Text>
+                    </div>
+                  )}
+                  {policy.TotalAcknowledged !== undefined && (
+                    <div className={styles.expandedField}>
+                      <Text variant="small" className={styles.expandedLabel}>Acknowledged</Text>
+                      <Text variant="small" style={{ fontWeight: 600, color: '#107c10' }}>{policy.TotalAcknowledged}</Text>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -2309,11 +2578,8 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
       default:
         return (
           <div className={styles.browseView}>
-            {/* Filter Bar */}
-            {this.renderFilterBar()}
-
-            {/* Results Bar (includes active filter pills inline) */}
-            {this.renderResultsBar()}
+            {/* Consolidated Filter + Results Toolbar */}
+            {this.renderConsolidatedToolbar()}
 
             {/* Featured Policies */}
             {this.renderFeaturedPolicies()}
@@ -2371,7 +2637,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
         pageDescription={viewDescriptions[currentView]}
         pageIcon={currentView === 'analytics' ? 'BarChartVertical' : 'Library'}
         breadcrumbs={[
-          { text: 'JML Portal', url: '/sites/JML' },
+          { text: 'Policy Manager', url: '/sites/PolicyManager' },
           { text: 'Policy Hub', url: currentView !== 'browse' ? '/SitePages/PolicyHub.aspx' : undefined },
           ...(currentView !== 'browse' ? [{ text: viewTitles[currentView] }] : [])
         ]}
@@ -2382,9 +2648,13 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
         compactFooter={true}
       >
         <section className={styles.policyHub}>
+          <PageSubheader
+            iconName="Library"
+            title="Policy Hub"
+            description="Browse, search and filter organisational policies"
+          />
           <Stack tokens={{ childrenGap: 0 }}>
-            {/* Navigation tabs with integrated search - full width panel */}
-            {this.renderModuleNav()}
+            {/* Module nav removed - now in global header */}
 
             {loading && (
               <Stack horizontalAlign="center" tokens={{ padding: 40 }}>

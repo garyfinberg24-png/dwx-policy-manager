@@ -32,9 +32,9 @@ export class SigningWorkflowEngine {
   private signingService: SigningService;
   private notificationService: SigningNotificationService;
 
-  private readonly REQUESTS_LIST = 'JML_SigningRequests';
-  private readonly SIGNERS_LIST = 'JML_Signers';
-  private readonly CHAINS_LIST = 'JML_SigningChains';
+  private readonly REQUESTS_LIST = 'PM_SigningRequests';
+  private readonly SIGNERS_LIST = 'PM_Signers';
+  private readonly CHAINS_LIST = 'PM_SigningChains';
 
   constructor(sp: SPFI) {
     this.sp = sp;

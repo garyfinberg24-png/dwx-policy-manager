@@ -16,7 +16,7 @@ import { logger } from './LoggingService';
 
 export class TaskCommentsService {
   private sp: SPFI;
-  private listTitle = 'JML_TaskComments';
+  private listTitle = 'PM_TaskComments';
 
   constructor(sp: SPFI) {
     this.sp = sp;

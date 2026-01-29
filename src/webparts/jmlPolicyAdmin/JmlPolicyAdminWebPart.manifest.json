@@ -15,7 +15,7 @@
     "groupId": "e4b0a295-44e2-4fa4-8f15-4eac5edf4275",
     "group": { "default": "DWx Policy Manager" },
     "title": { "default": "DWx Policy Admin" },
-    "description": { "default": "Full policy lifecycle management with approve, publish, archive, and audit (Admin Role)" },
+    "description": { "default": "Manage policy settings, templates, and configurations (Admin Role)" },
     "officeFabricIconFontName": "Settings",
     "properties": {
       "title": "DWx Policy Admin",

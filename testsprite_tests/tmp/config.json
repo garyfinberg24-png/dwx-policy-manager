@@ -1,7 +1,18 @@
 {
-  "status": "init",
-  "scope": "codebase",
+  "status": "commited",
   "type": "frontend",
-  "localEndpoint": "http://localhost:4321/",
-  "serverPort": 8067
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:4321",
+  "loginUser": "gf_admin@mf7m.onmicrosoft.com",
+  "loginPassword": "K1ll3rL00pB1G)(*&",
+  "executionArgs": {
+    "projectName": "policy-manager",
+    "projectPath": "c:\\Projects\\SPFx\\PolicyManager\\policy-manager",
+    "testIds": [],
+    "additionalInstruction": "This is an SPFx application. After the tunnel connects to localhost:4321, navigate to the SharePoint Workbench URL: https://mf7m.sharepoint.com/sites/PolicyManager/_layouts/15/workbench.aspx?debug=true&noredir=true&debugManifestsFile=https://localhost:4321/temp/manifests.js - You will need to login with Microsoft 365 credentials: username gf_admin@mf7m.onmicrosoft.com",
+    "envs": {
+      "API_KEY": "sk-user-5SlTZlL1ruYyMEOwQip4kI1zigKhBlUFyqpkRIvv5TBgm5KLzz1bqTil1_4KPTNol49wKoTmOdeiy1swjIRDj1jKoNNNN0BFvlkf34Yp34R4QlNwxndK4wIlr8ty5JPQiFA"
+    }
+  },
+  "proxy": "http://4cc86bfd-3b3f-41ab-968f-d9d5a6e2070f:9GKEgvxwItmpTDc17al3caRH746VxoeM@tun.testsprite.com:8080"
 }

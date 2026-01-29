@@ -355,7 +355,7 @@ export class ExternalTrainingService {
       }
 
       const items = await this._sp.web.lists
-        .getByTitle('JML_TrainingCourses')
+        .getByTitle('PM_TrainingCourses')
         .items
         .filter(filterQuery)
         .select(
@@ -431,7 +431,7 @@ export class ExternalTrainingService {
   public async getCourseById(id: number): Promise<IExternalCourse | null> {
     try {
       const item = await this._sp.web.lists
-        .getByTitle('JML_TrainingCourses')
+        .getByTitle('PM_TrainingCourses')
         .items
         .getById(id)
         .select(
@@ -461,7 +461,7 @@ export class ExternalTrainingService {
   public async getPopularCourses(limit: number = 10): Promise<IExternalCourse[]> {
     try {
       const items = await this._sp.web.lists
-        .getByTitle('JML_TrainingCourses')
+        .getByTitle('PM_TrainingCourses')
         .items
         .filter("IsActive eq 1")
         .select(

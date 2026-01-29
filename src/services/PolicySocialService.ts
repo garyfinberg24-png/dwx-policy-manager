@@ -835,7 +835,7 @@ export class PolicySocialService {
     try {
       const acknowledgements = await this.sp.web.lists
         .getByTitle(PolicyLists.POLICY_ACKNOWLEDGEMENTS)
-        .items.filter(`PolicyId eq ${policyId} and UserId eq ${userId} and Status eq 'Acknowledged'`)
+        .items.filter(`PolicyId eq ${policyId} and AckUserId eq ${userId} and AckStatus eq 'Acknowledged'`)
         .top(1)();
 
       return acknowledgements.length > 0;

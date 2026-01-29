@@ -1,0 +1,25 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx/client-side-web-part-manifest.schema.json",
+  "id": "a3f72c91-4e8b-4d5a-b9c1-7e2f8d3a6b5c",
+  "alias": "DwxPolicySearchWebPart",
+  "componentType": "WebPart",
+
+  "version": "*",
+  "manifestVersion": 2,
+
+  "requiresCustomScript": false,
+  "supportedHosts": ["SharePointWebPart", "SharePointFullPage", "TeamsPersonalApp", "TeamsTab"],
+  "supportsThemeVariants": true,
+
+  "preconfiguredEntries": [{
+    "groupId": "e4b0a295-44e2-4fa4-8f15-4eac5edf4275",
+    "group": { "default": "DWx Policy Manager" },
+    "title": { "default": "DWx Policy Search" },
+    "description": { "default": "Search Center for finding policies, templates, and compliance documents" },
+    "officeFabricIconFontName": "Search",
+    "properties": {
+      "title": "DWx Policy Search"
+    }
+  }],
+  "supportsFullBleed": true
+}

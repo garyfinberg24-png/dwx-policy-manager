@@ -52,7 +52,7 @@
 
 .policyHub {
   @include full-bleed-container;
-  background-color: $ms-color-neutralLighter;
+  background-color: #ffffff;
 
   .title {
     font-weight: 600;
@@ -235,6 +235,106 @@
         text-transform: uppercase;
       }
     }
+
+    .policyListItemExpanded {
+      background-color: #fafafa;
+      border-left: 3px solid #107c10;
+    }
+
+    .expandedRow {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid #edebe9;
+    }
+
+    .expandedGrid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+
+      @media (max-width: 1024px) {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      @media (max-width: 640px) {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .expandedCard {
+      background: white;
+      border: 1px solid #edebe9;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .expandedCardHeader {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      background: #f3f2f1;
+      border-bottom: 1px solid #edebe9;
+    }
+
+    .expandedCardIcon {
+      font-size: 14px;
+      color: #107c10;
+    }
+
+    .expandedCardTitle {
+      font-size: 13px;
+      font-weight: 600;
+      color: #323130;
+    }
+
+    .expandedCardBody {
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .expandedDescription {
+      color: #605e5c;
+      line-height: 1.4;
+      margin-bottom: 4px;
+    }
+
+    .expandedField {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .expandedLabel {
+      color: #8a8886;
+      font-weight: 500;
+    }
+
+    .expandedTags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 4px;
+    }
+
+    .expandedTag {
+      background: #e8f5e9;
+      color: #1b5e20;
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .expandedRiskBadge {
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
   }
 
   // Documents grid
@@ -309,7 +409,7 @@
     justify-content: space-between;
     background: #ffffff;
     border: 1px solid #edebe9;
-    border-left: 4px solid #0078d4; // Blue accent
+    border-left: 4px solid #107c10; // Green accent
     border-radius: 8px;
     padding: 8px 16px;
     margin-bottom: 16px;
@@ -743,20 +843,159 @@
   margin-bottom: 16px;
 }
 
+// Expanded table row styles
+.expandedTableRow {
+  background: #f5f5f5;
+}
+
+.expandedDetailRow {
+  td {
+    background: #f8fffe;
+    border-bottom: 2px solid #0d9488;
+    padding: 0 !important;
+  }
+
+  .expandedRow {
+    padding: 20px 24px;
+    border-top: 1px solid #e6f7f5;
+  }
+
+  .expandedGrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+
+    @media (max-width: 1024px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @media (max-width: 640px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .expandedCard {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    transition: box-shadow 0.2s ease;
+
+    &:hover {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+  }
+
+  .expandedCardHeader {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%);
+    border-bottom: 1px solid #d1fae5;
+  }
+
+  .expandedCardIcon {
+    font-size: 15px;
+    color: #0d9488;
+  }
+
+  .expandedCardTitle {
+    font-size: 13px;
+    font-weight: 600;
+    color: #134e4a;
+    letter-spacing: 0.2px;
+  }
+
+  .expandedCardBody {
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .expandedDescription {
+    color: #605e5c;
+    line-height: 1.5;
+    margin-bottom: 4px;
+    font-size: 12px;
+  }
+
+  .expandedField {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+    border-bottom: 1px solid #f5f5f4;
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  .expandedLabel {
+    color: #6b7280;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .expandedTags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 4px;
+  }
+
+  .expandedTag {
+    background: #ccfbf1;
+    color: #0d9488;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .expandedRiskBadge {
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+}
+
 // ============================================
-// FILTER BAR
+// CONSOLIDATED TOOLBAR (Variation 2: Two Rows / One Panel)
 // ============================================
 
-.filterBar {
+.consolidatedToolbar {
+  background: #ffffff;
+  border-radius: 8px;
+  border-left: 4px solid #107c10;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+// Row 1: Filter dropdowns
+.toolbarFilterRow {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  background: #ffffff;
-  border-radius: 8px;
-  border-left: 4px solid #0078d4;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   flex-wrap: wrap;
+  border-bottom: 1px solid #f3f2f1;
+}
+
+// Row 2: Results count, sort, active filters, actions
+.toolbarResultsRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  flex-wrap: wrap;
+  background: #faf9f8;
 }
 
 .filterDropdown {
@@ -779,22 +1018,6 @@
   }
 }
 
-// ============================================
-// RESULTS BAR
-// ============================================
-
-.resultsBar {
-  display: flex;
-  align-items: center;
-  padding: 12px 16px;
-  background: #ffffff;
-  border-radius: 8px;
-  border-left: 4px solid #0078d4;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
 .resultsDivider {
   width: 1px;
   height: 20px;
@@ -805,20 +1028,13 @@
 .resultsActions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
   flex-shrink: 0;
   margin-left: auto;
 }
 
-.resultsLeft {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
 .resultsCount {
-  font-size: 14px;
+  font-size: 13px;
   color: #605e5c;
 }
 
@@ -844,21 +1060,18 @@
   }
 }
 
-.resultsRight {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.btnAction {
+.btnActionIcon {
   :global(.ms-Button) {
-    border-color: #edebe9;
+    width: 32px;
+    height: 32px;
+    border: 1px solid #edebe9;
+    border-radius: 4px;
     color: #605e5c;
 
     &:hover {
       background: #f3f2f1;
-      color: #0078d4;
-      border-color: #0078d4;
+      color: #107c10;
+      border-color: #107c10;
     }
   }
 }
@@ -923,7 +1136,7 @@
   background: linear-gradient(135deg, #faf9f8 0%, #f3f2f1 100%);
   border-radius: 8px;
   border: 1px solid #edebe9;
-  border-left: 4px solid #0078d4;
+  border-left: 4px solid #107c10;
   margin-bottom: 16px;
 }
 
@@ -1014,7 +1227,7 @@
   background: linear-gradient(135deg, #faf9f8 0%, #f3f2f1 100%);
   border-radius: 8px;
   border: 1px solid #edebe9;
-  border-left: 4px solid #0078d4;
+  border-left: 4px solid #107c10;
   margin-bottom: 16px;
 }
 

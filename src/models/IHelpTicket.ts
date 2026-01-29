@@ -1,4 +1,4 @@
-// JML_HelpTickets List Model
+// PM_HelpTickets List Model
 // Support ticket tracking and management
 
 import { IBaseListItem, IUser, Priority } from './ICommon';

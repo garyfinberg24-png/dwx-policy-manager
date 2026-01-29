@@ -28,11 +28,11 @@ export interface IUserPreference {
 
 /**
  * Service for managing user preferences in SharePoint
- * Uses a SharePoint list called "JML_UserPreferences" to store preferences
+ * Uses a SharePoint list called "PM_UserPreferences" to store preferences
  */
 export class UserPreferenceService {
   private sp: SPFI;
-  private listName: string = 'JML_UserPreferences';
+  private listName: string = 'PM_UserPreferences';
   private currentUserLoginName: string;
   private cache: Map<string, string> = new Map();
 

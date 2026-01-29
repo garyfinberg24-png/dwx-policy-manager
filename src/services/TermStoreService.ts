@@ -35,15 +35,15 @@ export interface ITermSetConfig {
 /**
  * Default JML Term Store Configuration
  */
-export const JML_TERM_GROUP = 'JML Managed Metadata';
+export const PM_TERM_GROUP = 'JML Managed Metadata';
 
 export const CV_TERM_SETS: Record<string, ITermSetConfig> = {
-  SKILLS: { groupName: JML_TERM_GROUP, termSetName: 'CV Skills' },
-  DEPARTMENTS: { groupName: JML_TERM_GROUP, termSetName: 'CV Departments' },
-  POSITIONS: { groupName: JML_TERM_GROUP, termSetName: 'CV Positions' },
-  EXPERIENCE_LEVELS: { groupName: JML_TERM_GROUP, termSetName: 'CV Experience Levels' },
-  EDUCATION_LEVELS: { groupName: JML_TERM_GROUP, termSetName: 'CV Education Levels' },
-  SOURCES: { groupName: JML_TERM_GROUP, termSetName: 'CV Sources' }
+  SKILLS: { groupName: PM_TERM_GROUP, termSetName: 'CV Skills' },
+  DEPARTMENTS: { groupName: PM_TERM_GROUP, termSetName: 'CV Departments' },
+  POSITIONS: { groupName: PM_TERM_GROUP, termSetName: 'CV Positions' },
+  EXPERIENCE_LEVELS: { groupName: PM_TERM_GROUP, termSetName: 'CV Experience Levels' },
+  EDUCATION_LEVELS: { groupName: PM_TERM_GROUP, termSetName: 'CV Education Levels' },
+  SOURCES: { groupName: PM_TERM_GROUP, termSetName: 'CV Sources' }
 };
 
 /**

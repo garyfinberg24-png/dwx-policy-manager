@@ -185,13 +185,13 @@ export class WorkflowActionDispatcher {
       // Asset & Equipment Actions
       case ActionType.CreateEquipmentRequest:
         return await this.listHandler.createItem({
-          listName: 'JML_EquipmentRequests',
+          listName: 'PM_EquipmentRequests',
           ...actionConfig
         }, context);
 
       case ActionType.CreateAssetReturnRequest:
         return await this.listHandler.createItem({
-          listName: 'JML_AssetReturns',
+          listName: 'PM_AssetReturns',
           ...actionConfig
         }, context);
 

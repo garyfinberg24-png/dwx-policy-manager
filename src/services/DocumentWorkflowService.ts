@@ -27,8 +27,8 @@ export class DocumentWorkflowService {
   private sp: SPFI;
   private registryService: DocumentRegistryService;
 
-  private readonly WORKFLOWS_LIST = 'JML_DocumentWorkflows';
-  private readonly STAGES_LIST = 'JML_WorkflowStages';
+  private readonly WORKFLOWS_LIST = 'PM_DocumentWorkflows';
+  private readonly STAGES_LIST = 'PM_WorkflowStages';
 
   constructor(sp: SPFI) {
     this.sp = sp;

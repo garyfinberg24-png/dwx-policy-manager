@@ -1,4 +1,4 @@
-// JML_ChecklistTemplates List Model
+// PM_ChecklistTemplates List Model
 
 import { IBaseListItem, ProcessType } from './ICommon';
 

@@ -1,11 +1,11 @@
-// JML_TemplateTaskMapping List Model
+// PM_TemplateTaskMapping List Model
 
 import { IBaseListItem, IUser } from './ICommon';
 
 export interface IJmlTemplateTaskMapping extends IBaseListItem {
   // References
-  TemplateIDId?: number; // Lookup to JML_ChecklistTemplates
-  TaskIDId?: number; // Lookup to JML_Tasks
+  TemplateIDId?: number; // Lookup to PM_ChecklistTemplates
+  TaskIDId?: number; // Lookup to PM_Tasks
 
   // Sequencing
   SequenceOrder: number; // Order in which tasks should be executed

@@ -106,7 +106,7 @@ export class ApprovalActionHandler {
         CanEscalate: true
       };
 
-      const result = await this.sp.web.lists.getByTitle('JML_Approvals').items.add(approvalData);
+      const result = await this.sp.web.lists.getByTitle('PM_Approvals').items.add(approvalData);
 
       logger.info('ApprovalActionHandler', `Created approval request: ${result.data.Id}`);
 
@@ -175,7 +175,7 @@ export class ApprovalActionHandler {
     comments?: string;
   }> {
     try {
-      const approval = await this.sp.web.lists.getByTitle('JML_Approvals').items
+      const approval = await this.sp.web.lists.getByTitle('PM_Approvals').items
         .getById(approvalId)
         .select('Status', 'Comments', 'ApproverComments')();
 
@@ -203,7 +203,7 @@ export class ApprovalActionHandler {
   ): Promise<IApprovalProgressionResult | void> {
     try {
       // Get the approval details first (needed for notifications and multi-level handling)
-      const approval = await this.sp.web.lists.getByTitle('JML_Approvals').items
+      const approval = await this.sp.web.lists.getByTitle('PM_Approvals').items
         .getById(approvalId)
         .select(
           'Id', 'Title', 'ProcessId', 'Status', 'ApproverId', 'RequestedById',
@@ -212,7 +212,7 @@ export class ApprovalActionHandler {
         )();
 
       // Update the approval status
-      await this.sp.web.lists.getByTitle('JML_Approvals').items
+      await this.sp.web.lists.getByTitle('PM_Approvals').items
         .getById(approvalId)
         .update({
           Status: approved ? ApprovalStatus.Approved : ApprovalStatus.Rejected,
@@ -302,7 +302,7 @@ export class ApprovalActionHandler {
       Comments: `Multi-level approval (${nextLevel} of ${totalLevels})`
     };
 
-    const result = await this.sp.web.lists.getByTitle('JML_Approvals').items.add(nextApprovalData);
+    const result = await this.sp.web.lists.getByTitle('PM_Approvals').items.add(nextApprovalData);
     const newApprovalId = result.data.Id;
 
     logger.info('ApprovalActionHandler', `Created next level approval: ${newApprovalId} (Level ${nextLevel})`);
@@ -334,7 +334,7 @@ export class ApprovalActionHandler {
     }
 
     // Create in-app notification
-    await this.sp.web.lists.getByTitle('JML_Notifications').items.add({
+    await this.sp.web.lists.getByTitle('PM_Notifications').items.add({
       Title: 'Multi-Level Approval Required',
       Message: `Level ${nextLevel} of ${totalLevels}: ${currentApproval.Title}`,
       Type: 'Approval',
@@ -388,7 +388,7 @@ export class ApprovalActionHandler {
         Comments: `Multi-level approval (1 of ${approverIds.length})`
       };
 
-      const result = await this.sp.web.lists.getByTitle('JML_Approvals').items.add(firstApprovalData);
+      const result = await this.sp.web.lists.getByTitle('PM_Approvals').items.add(firstApprovalData);
       createdApprovalIds.push(result.data.Id);
 
       // Store pending approvers for subsequent levels
@@ -424,12 +424,12 @@ export class ApprovalActionHandler {
    */
   public async escalateApproval(approvalId: number, escalateToId: number): Promise<void> {
     try {
-      const approval = await this.sp.web.lists.getByTitle('JML_Approvals').items
+      const approval = await this.sp.web.lists.getByTitle('PM_Approvals').items
         .getById(approvalId)
         .select('Id', 'Title', 'ApproverId', 'ProcessId', 'ApprovalLevel', 'DueDate', 'RequestedDate', 'EscalationLevel')();
 
       // Update current approval
-      await this.sp.web.lists.getByTitle('JML_Approvals').items
+      await this.sp.web.lists.getByTitle('PM_Approvals').items
         .getById(approvalId)
         .update({
           Status: ApprovalStatus.Escalated,
@@ -439,7 +439,7 @@ export class ApprovalActionHandler {
 
       // Create new approval for escalation target
       const newEscalationLevel = (approval.EscalationLevel || 0) + 1;
-      const escalatedApproval = await this.sp.web.lists.getByTitle('JML_Approvals').items.add({
+      const escalatedApproval = await this.sp.web.lists.getByTitle('PM_Approvals').items.add({
         Title: `[ESCALATED] ${approval.Title}`,
         ApproverId: escalateToId,
         ProcessId: approval.ProcessId,
@@ -481,7 +481,7 @@ export class ApprovalActionHandler {
       }
 
       // Create in-app notification for escalation target
-      await this.sp.web.lists.getByTitle('JML_Notifications').items.add({
+      await this.sp.web.lists.getByTitle('PM_Notifications').items.add({
         Title: 'Escalated Approval Requires Your Attention',
         Message: `An approval has been escalated to you: ${approval.Title}`,
         Type: 'Approval',
@@ -522,7 +522,7 @@ export class ApprovalActionHandler {
         notificationData.RecipientEntraId = approverId;
       }
 
-      await this.sp.web.lists.getByTitle('JML_Notifications').items.add(notificationData);
+      await this.sp.web.lists.getByTitle('PM_Notifications').items.add(notificationData);
     } catch (error) {
       // Non-critical - just log warning
       logger.warn('ApprovalActionHandler', 'Failed to create approval notification', error);

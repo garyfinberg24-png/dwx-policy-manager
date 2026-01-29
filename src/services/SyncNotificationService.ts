@@ -277,7 +277,7 @@ export class SyncNotificationService {
       <div class="footer">
         <p>${settings.template.footerText}</p>
         <p>
-          <a href="${this.context.pageContext.web.absoluteUrl}/Lists/JML_Sync_Log" style="color: #0078d4;">
+          <a href="${this.context.pageContext.web.absoluteUrl}/Lists/PM_Sync_Log" style="color: #0078d4;">
             View Full Sync History
           </a>
         </p>

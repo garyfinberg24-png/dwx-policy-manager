@@ -19,7 +19,7 @@ import { logger } from './LoggingService';
  */
 export class TalentJMLIntegrationService {
   private sp: SPFI;
-  private readonly JML_PROCESSES_LIST = 'JML Processes';
+  private readonly PM_PROCESSES_LIST = 'JML Processes';
   private readonly M365_LICENSES_LIST = 'M365 Licenses';
   private readonly ASSET_ASSIGNMENTS_LIST = 'Asset Assignments';
   private readonly JOB_OFFERS_LIST = 'Offers';
@@ -76,7 +76,7 @@ export class TalentJMLIntegrationService {
         CreatedDate: new Date()
       };
 
-      const result = await this.sp.web.lists.getByTitle(this.JML_PROCESSES_LIST).items.add(processData);
+      const result = await this.sp.web.lists.getByTitle(this.PM_PROCESSES_LIST).items.add(processData);
       const processId = result.data.Id;
 
       logger.debug('TalentJMLIntegrationService', `JML Process created with ID: ${processId}`);
@@ -261,7 +261,7 @@ export class TalentJMLIntegrationService {
           `- Years of Experience: ${candidate.YearsOfExperience || 'N/A'}`
       };
 
-      await this.sp.web.lists.getByTitle(this.JML_PROCESSES_LIST).items.getById(processId).update(updateData);
+      await this.sp.web.lists.getByTitle(this.PM_PROCESSES_LIST).items.getById(processId).update(updateData);
 
       logger.debug('TalentJMLIntegrationService', `Candidate data synced to JML process ${processId}`);
     } catch (error) {
@@ -302,7 +302,7 @@ export class TalentJMLIntegrationService {
       const processId = offers[0].OnboardingProcessId;
 
       // Get JML process details
-      const process = await this.sp.web.lists.getByTitle(this.JML_PROCESSES_LIST).items
+      const process = await this.sp.web.lists.getByTitle(this.PM_PROCESSES_LIST).items
         .getById(processId)
         .select('Status', 'StartDate', 'CompletedTasks', 'TotalTasks')();
 
@@ -449,7 +449,7 @@ export class TalentJMLIntegrationService {
   }> {
     try {
       // Get all JML processes created from talent management
-      const processes = await this.sp.web.lists.getByTitle(this.JML_PROCESSES_LIST).items
+      const processes = await this.sp.web.lists.getByTitle(this.PM_PROCESSES_LIST).items
         .filter("ProcessType eq 'Joiner' and Title ne null")
         .select('Id', 'Status', 'StartDate', 'Created', 'Modified')
         .top(5000)();

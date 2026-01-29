@@ -1,4 +1,4 @@
-// JML_Cheatsheets List Model
+// PM_Cheatsheets List Model
 // Quick reference guides and shortcuts
 
 import { IBaseListItem, IUser } from './ICommon';

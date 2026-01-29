@@ -79,7 +79,7 @@ export class DocumentApprovalService {
 
   constructor(sp: SPFI, approvalListName?: string) {
     this.sp = sp;
-    this.approvalListName = approvalListName || 'JML_DocumentApprovals';
+    this.approvalListName = approvalListName || 'PM_DocumentApprovals';
   }
 
   /**

@@ -4,11 +4,14 @@ import styles from './JmlAppLayout.module.scss';
 import { IJmlAppLayoutProps } from './IJmlAppLayoutProps';
 import JmlAppHeader from '../JmlAppHeader/JmlAppHeader';
 import JmlAppFooter from '../JmlAppFooter/JmlAppFooter';
-
 /**
  * DWx App Layout Component
  * Provides a complete page layout with header, content area, and footer
  * Use this to wrap your webpart content for consistent full-page styling
+ *
+ * Features:
+ * - Consistent header with navigation
+ * - Branded footer
  *
  * Note: Component files retain Jml naming for import compatibility,
  * but the exported component can be referenced as DwxAppLayout
@@ -56,7 +59,8 @@ const DwxAppLayout: React.FC<IJmlAppLayoutProps> = (props) => {
     showFooter = true, // Default true - show DWx branded footer
     maxContentWidth = '1400px',
     contentPadding = '24px',
-    children
+    children,
+
   } = props;
 
   // Custom content wrapper style

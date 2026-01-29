@@ -83,13 +83,13 @@ describe('DataPrivacyService', () => {
 
   describe('Security - SQL Injection Prevention', () => {
     test('CRITICAL: should sanitize user IDs in filter queries', async () => {
-      const maliciousUserId = "'; DROP TABLE JML_Processes; --";
+      const maliciousUserId = "'; DROP TABLE PM_Processes; --";
 
       await service.initialize();
 
       // Should not execute the malicious SQL
       await expect(async () => {
-        await service.getUserDataItems('JML_Processes', maliciousUserId);
+        await service.getUserDataItems('PM_Processes', maliciousUserId);
       }).not.toThrow();
 
       // Verify filter was called with sanitized input
@@ -113,7 +113,7 @@ describe('DataPrivacyService', () => {
     });
 
     test('CRITICAL: should validate entity types to prevent injection', async () => {
-      const maliciousEntityType = "Process'; DELETE FROM JML_AuditLog; --" as EntityType;
+      const maliciousEntityType = "Process'; DELETE FROM PM_AuditLog; --" as EntityType;
 
       await service.initialize();
 
@@ -168,14 +168,14 @@ describe('DataPrivacyService', () => {
   describe('Initialization', () => {
     test('should verify all required lists exist', async () => {
       const requiredLists = [
-        'JML_DataRetentionPolicies',
-        'JML_DataDeletionRequests',
-        'JML_DataExportRequests',
-        'JML_ConsentRecords',
-        'JML_PrivacyImpactAssessments',
-        'JML_AnonymizationJobs',
-        'JML_AuditLog',
-        'JML_DataSubjectRequests'
+        'PM_DataRetentionPolicies',
+        'PM_DataDeletionRequests',
+        'PM_DataExportRequests',
+        'PM_ConsentRecords',
+        'PM_PrivacyImpactAssessments',
+        'PM_AnonymizationJobs',
+        'PM_AuditLog',
+        'PM_DataSubjectRequests'
       ];
 
       await service.initialize();
@@ -212,7 +212,7 @@ describe('DataPrivacyService', () => {
       const policies = await service.getRetentionPolicies();
 
       expect(policies).toHaveLength(2);
-      expect(mockSp.web.lists.getByTitle).toHaveBeenCalledWith('JML_DataRetentionPolicies');
+      expect(mockSp.web.lists.getByTitle).toHaveBeenCalledWith('PM_DataRetentionPolicies');
       expect(mockSp.web.lists.getByTitle().items.filter).toHaveBeenCalledWith('IsActive eq true');
     });
 
@@ -271,7 +271,7 @@ describe('DataPrivacyService', () => {
 
   describe('Data Anonymization', () => {
     test('should anonymize item with HASH method', async () => {
-      const result = await service.anonymizeItem('JML_Processes', 1, EntityType.Process);
+      const result = await service.anonymizeItem('PM_Processes', 1, EntityType.Process);
 
       expect(result).toBe(true);
       expect(mockSp.web.lists.getByTitle().items.getById).toHaveBeenCalledWith(1);
@@ -330,7 +330,7 @@ describe('DataPrivacyService', () => {
       );
 
       expect(jobId).toBe(1);
-      expect(mockSp.web.lists.getByTitle).toHaveBeenCalledWith('JML_AnonymizationJobs');
+      expect(mockSp.web.lists.getByTitle).toHaveBeenCalledWith('PM_AnonymizationJobs');
       expect(mockSp.web.lists.getByTitle().items.add).toHaveBeenCalled();
     });
   });
@@ -349,7 +349,7 @@ describe('DataPrivacyService', () => {
       );
 
       expect(requestId).toBe(1);
-      expect(mockSp.web.lists.getByTitle).toHaveBeenCalledWith('JML_DataDeletionRequests');
+      expect(mockSp.web.lists.getByTitle).toHaveBeenCalledWith('PM_DataDeletionRequests');
 
       const addCall = (mockSp.web.lists.getByTitle().items.add as jest.Mock).mock.calls[0][0];
       expect(addCall.RequestType).toBe(DeletionRequestType.FullDeletion);
@@ -433,7 +433,7 @@ describe('DataPrivacyService', () => {
       );
 
       expect(requestId).toBe(1);
-      expect(mockSp.web.lists.getByTitle).toHaveBeenCalledWith('JML_DataExportRequests');
+      expect(mockSp.web.lists.getByTitle).toHaveBeenCalledWith('PM_DataExportRequests');
 
       const addCall = (mockSp.web.lists.getByTitle().items.add as jest.Mock).mock.calls[0][0];
       expect(addCall.ExportFormat).toBe(ExportFormat.JSON);
@@ -601,7 +601,7 @@ describe('DataPrivacyService', () => {
         Success: true
       });
 
-      expect(mockSp.web.lists.getByTitle).toHaveBeenCalledWith('JML_AuditLog');
+      expect(mockSp.web.lists.getByTitle).toHaveBeenCalledWith('PM_AuditLog');
 
       const addCall = (mockSp.web.lists.getByTitle().items.add as jest.Mock).mock.calls[0][0];
       expect(addCall.Action).toBe(AuditAction.DataDeleted);

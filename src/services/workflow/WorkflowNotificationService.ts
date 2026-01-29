@@ -141,7 +141,7 @@ export interface IWorkflowNotificationServiceConfig {
 export class WorkflowNotificationService {
   private sp: SPFI;
   private context: WebPartContext | undefined;
-  private notificationsListTitle = 'JML_Notifications';
+  private notificationsListTitle = 'PM_Notifications';
   private siteUrl: string;
   private emailMode: EmailSendMode;
   private forceQueueMode: boolean;

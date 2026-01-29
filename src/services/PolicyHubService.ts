@@ -136,7 +136,7 @@ export class PolicyHubService {
 
     // Status filters
     if (filters.statuses && filters.statuses.length > 0) {
-      const statusFilter = filters.statuses.map(s => `Status eq '${s}'`).join(' or ');
+      const statusFilter = filters.statuses.map(s => `PolicyStatus eq '${s}'`).join(' or ');
       conditions.push(`(${statusFilter})`);
     }
 
@@ -283,8 +283,8 @@ export class PolicyHubService {
       }
 
       // Status
-      if (policy.Status) {
-        statusCounts.set(policy.Status, (statusCounts.get(policy.Status) || 0) + 1);
+      if (policy.PolicyStatus) {
+        statusCounts.set(policy.PolicyStatus, (statusCounts.get(policy.PolicyStatus) || 0) + 1);
       }
 
       // Read timeframes
@@ -409,7 +409,7 @@ export class PolicyHubService {
       const assignedDate = new Date(ack.AssignedDate);
       const deadlineDate = new Date(assignedDate.getTime() + timeframeDays * 24 * 60 * 60 * 1000);
 
-      if (ack.Status === AcknowledgementStatus.Acknowledged && ack.AcknowledgedDate) {
+      if (ack.AckStatus === AcknowledgementStatus.Acknowledged && ack.AcknowledgedDate) {
         const acknowledgedDate = new Date(ack.AcknowledgedDate);
         const daysToRead = (acknowledgedDate.getTime() - assignedDate.getTime()) / (1000 * 60 * 60 * 24);
         readTimes.push(daysToRead);
@@ -489,7 +489,7 @@ export class PolicyHubService {
         const assignedDate = new Date(ack.AssignedDate);
         const deadlineDate = new Date(assignedDate.getTime() + timeframeDays * 24 * 60 * 60 * 1000);
 
-        if (ack.Status === AcknowledgementStatus.Acknowledged && ack.AcknowledgedDate) {
+        if (ack.AckStatus === AcknowledgementStatus.Acknowledged && ack.AcknowledgedDate) {
           const acknowledgedDate = new Date(ack.AcknowledgedDate);
           if (acknowledgedDate <= deadlineDate) {
             readOnTime++;
@@ -560,7 +560,7 @@ export class PolicyHubService {
         .items.filter('IsActive eq true')
         .top(5000)() as IPolicy[];
 
-      const activePolicies = allPolicies.filter(p => p.Status === PolicyStatus.Published);
+      const activePolicies = allPolicies.filter(p => p.PolicyStatus === PolicyStatus.Published);
 
       // Group by category
       const categoryCounts = new Map<string, number>();
@@ -615,11 +615,11 @@ export class PolicyHubService {
       if (targetUserId) {
         const userAcks = await this.sp.web.lists
           .getByTitle(this.POLICY_ACKNOWLEDGEMENTS_LIST)
-          .items.filter(`UserId eq ${targetUserId} and Status ne '${AcknowledgementStatus.Acknowledged}'`)
+          .items.filter(`AckUserId eq ${targetUserId} and AckStatus ne '${AcknowledgementStatus.Acknowledged}'`)
           .top(100)() as IPolicyAcknowledgement[];
 
-        const pendingPolicyIds = userAcks.filter(a => a.Status === AcknowledgementStatus.Sent || a.Status === AcknowledgementStatus.Opened).map(a => a.PolicyId);
-        const overduePolicyIds = userAcks.filter(a => a.Status === AcknowledgementStatus.Overdue).map(a => a.PolicyId);
+        const pendingPolicyIds = userAcks.filter(a => a.AckStatus === AcknowledgementStatus.Sent || a.AckStatus === AcknowledgementStatus.Opened).map(a => a.PolicyId);
+        const overduePolicyIds = userAcks.filter(a => a.AckStatus === AcknowledgementStatus.Overdue).map(a => a.PolicyId);
 
         myPendingPolicies = allPolicies.filter(p => pendingPolicyIds.includes(p.Id!));
         myOverduePolicies = allPolicies.filter(p => overduePolicyIds.includes(p.Id!));
@@ -689,7 +689,7 @@ export class PolicyHubService {
       for (const policy of criticalPolicies) {
         const acks = await this.sp.web.lists
           .getByTitle(this.POLICY_ACKNOWLEDGEMENTS_LIST)
-          .items.filter(`PolicyId eq ${policy.Id} and Status eq '${AcknowledgementStatus.Overdue}'`)
+          .items.filter(`PolicyId eq ${policy.Id} and AckStatus eq '${AcknowledgementStatus.Overdue}'`)
           .top(1)();
 
         if (acks.length > 0) {
@@ -760,7 +760,7 @@ export class PolicyHubService {
       // Get all acknowledgements for this user
       const acknowledgements = await this.sp.web.lists
         .getByTitle(this.POLICY_ACKNOWLEDGEMENTS_LIST)
-        .items.filter(`UserId eq ${userId}`)
+        .items.filter(`AckUserId eq ${userId}`)
         .top(500)() as IPolicyAcknowledgement[];
 
       // Get all related policies
@@ -795,7 +795,7 @@ export class PolicyHubService {
           ReadDeadline: ack.DueDate
         };
 
-        switch (ack.Status) {
+        switch (ack.AckStatus) {
           case AcknowledgementStatus.Acknowledged:
             completedPolicies.push(policyWithDeadline);
             break;
@@ -887,7 +887,7 @@ export class PolicyHubService {
     try {
       const policies = await this.sp.web.lists
         .getByTitle(this.POLICIES_LIST)
-        .items.filter(`Status eq 'Under Review'`)
+        .items.filter(`PolicyStatus eq 'Under Review'`)
         .orderBy('Modified', false)
         .top(100)() as IPolicy[];
 
@@ -940,7 +940,7 @@ export class PolicyHubService {
         .getByTitle(this.POLICIES_LIST)
         .items.getById(policyId)
         .update({
-          Status: PolicyStatus.Published,
+          PolicyStatus: PolicyStatus.Published,
           ApprovedById: approverId,
           ApprovedDate: new Date().toISOString(),
           PublishedDate: new Date().toISOString()
@@ -960,7 +960,7 @@ export class PolicyHubService {
         .getByTitle(this.POLICIES_LIST)
         .items.getById(policyId)
         .update({
-          Status: PolicyStatus.Draft,
+          PolicyStatus: PolicyStatus.Draft,
           RejectedById: approverId,
           RejectedDate: new Date().toISOString(),
           RejectionReason: reason
@@ -992,8 +992,8 @@ export class PolicyHubService {
 
       // Calculate metrics
       const totalPolicies = policies.length;
-      const publishedPolicies = policies.filter(p => p.Status === PolicyStatus.Published).length;
-      const draftPolicies = policies.filter(p => p.Status === PolicyStatus.Draft).length;
+      const publishedPolicies = policies.filter(p => p.PolicyStatus === PolicyStatus.Published).length;
+      const draftPolicies = policies.filter(p => p.PolicyStatus === PolicyStatus.Draft).length;
 
       // Get expiring policies (within 30 days)
       const thirtyDaysFromNow = new Date();
@@ -1016,7 +1016,7 @@ export class PolicyHubService {
       // Get recent acknowledgements
       const recentAcknowledgements = await this.sp.web.lists
         .getByTitle(this.POLICY_ACKNOWLEDGEMENTS_LIST)
-        .items.filter(`Status eq '${AcknowledgementStatus.Acknowledged}'`)
+        .items.filter(`AckStatus eq '${AcknowledgementStatus.Acknowledged}'`)
         .orderBy('AcknowledgedDate', false)
         .top(20)() as IPolicyAcknowledgement[];
 
@@ -1027,7 +1027,7 @@ export class PolicyHubService {
 
       // Calculate overall compliance rate
       const totalAcks = allAcknowledgements.length;
-      const completedAcks = allAcknowledgements.filter(a => a.Status === AcknowledgementStatus.Acknowledged).length;
+      const completedAcks = allAcknowledgements.filter(a => a.AckStatus === AcknowledgementStatus.Acknowledged).length;
       const overallComplianceRate = totalAcks > 0 ? (completedAcks / totalAcks) * 100 : 100;
 
       // Calculate compliance by department
@@ -1039,7 +1039,7 @@ export class PolicyHubService {
         }
         const data = deptMap.get(dept)!;
         data.total++;
-        if (ack.Status === AcknowledgementStatus.Acknowledged) {
+        if (ack.AckStatus === AcknowledgementStatus.Acknowledged) {
           data.completed++;
         }
       });

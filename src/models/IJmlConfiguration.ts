@@ -1,4 +1,4 @@
-// JML_Configuration List Model
+// PM_Configuration List Model
 
 import { IBaseListItem } from './ICommon';
 

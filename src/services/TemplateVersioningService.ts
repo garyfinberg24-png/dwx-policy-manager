@@ -81,8 +81,8 @@ export class TemplateVersioningService {
 
   constructor(sp: SPFI, templateLibraryUrl?: string) {
     this.sp = sp;
-    this.templateLibrary = templateLibraryUrl || 'JML_DocumentTemplates';
-    this.versionHistoryList = 'JML_TemplateVersionHistory';
+    this.templateLibrary = templateLibraryUrl || 'PM_DocumentTemplates';
+    this.versionHistoryList = 'PM_TemplateVersionHistory';
   }
 
   /**

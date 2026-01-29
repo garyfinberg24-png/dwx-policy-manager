@@ -1,0 +1,25 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx/client-side-web-part-manifest.schema.json",
+  "id": "b4e83d02-5f9c-4e6b-a0d2-8f3a9e4b7c6d",
+  "alias": "DwxPolicyHelpWebPart",
+  "componentType": "WebPart",
+
+  "version": "*",
+  "manifestVersion": 2,
+
+  "requiresCustomScript": false,
+  "supportedHosts": ["SharePointWebPart", "SharePointFullPage", "TeamsPersonalApp", "TeamsTab"],
+  "supportsThemeVariants": true,
+
+  "preconfiguredEntries": [{
+    "groupId": "e4b0a295-44e2-4fa4-8f15-4eac5edf4275",
+    "group": { "default": "DWx Policy Manager" },
+    "title": { "default": "DWx Policy Help Center" },
+    "description": { "default": "Help Center with articles, FAQs, shortcuts, videos, and support for Policy Manager" },
+    "officeFabricIconFontName": "Help",
+    "properties": {
+      "title": "DWx Policy Help Center"
+    }
+  }],
+  "supportsFullBleed": true
+}

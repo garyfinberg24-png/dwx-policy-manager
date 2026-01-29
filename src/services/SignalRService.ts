@@ -29,9 +29,9 @@ class SignalRServiceClass {
   private lastNotificationCheck: Date = new Date();
 
   // Local storage keys for cross-tab communication
-  private readonly PRESENCE_KEY = 'jml_user_presence';
-  private readonly NOTIFICATION_KEY = 'jml_notifications';
-  private readonly ACTIVITY_KEY = 'jml_activity';
+  private readonly PRESENCE_KEY = 'PM_user_presence';
+  private readonly NOTIFICATION_KEY = 'PM_notifications';
+  private readonly ACTIVITY_KEY = 'PM_activity';
 
   /**
    * Initialize and connect to real-time service

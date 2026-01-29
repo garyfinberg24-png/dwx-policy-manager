@@ -212,8 +212,8 @@ export interface IUserPendingApproval {
 
 export class TaskDependencyService {
   private sp: SPFI;
-  private readonly TASK_ASSIGNMENTS_LIST = 'JML_TaskAssignments';
-  private readonly TASK_DEPENDENCIES_LIST = 'JML_TaskDependencies';
+  private readonly TASK_ASSIGNMENTS_LIST = 'PM_TaskAssignments';
+  private readonly TASK_DEPENDENCIES_LIST = 'PM_TaskDependencies';
 
   constructor(sp: SPFI) {
     this.sp = sp;
@@ -471,7 +471,7 @@ export class TaskDependencyService {
    */
   private async notifyTaskUnblocked(task: { Id: number; Title: string; AssignedToId: number }): Promise<void> {
     try {
-      await this.sp.web.lists.getByTitle('JML_Notifications').items.add({
+      await this.sp.web.lists.getByTitle('PM_Notifications').items.add({
         Title: 'Task Ready to Start',
         RecipientId: task.AssignedToId,
         Message: `Your task "${task.Title}" is now unblocked and ready to start.`,
@@ -493,8 +493,8 @@ export class TaskDependencyService {
 
 export class MultiLevelApprovalService {
   private sp: SPFI;
-  private readonly APPROVAL_CHAINS_LIST = 'JML_ApprovalChains';
-  private readonly APPROVALS_LIST = 'JML_Approvals';
+  private readonly APPROVAL_CHAINS_LIST = 'PM_ApprovalChains';
+  private readonly APPROVALS_LIST = 'PM_Approvals';
 
   constructor(sp: SPFI) {
     this.sp = sp;
@@ -721,7 +721,7 @@ export class MultiLevelApprovalService {
   ): Promise<void> {
     try {
       for (const approverId of approverIds) {
-        await this.sp.web.lists.getByTitle('JML_Notifications').items.add({
+        await this.sp.web.lists.getByTitle('PM_Notifications').items.add({
           Title: 'Approval Required',
           RecipientId: approverId,
           Message: `Your approval is required (Level ${level}). Please review and approve or reject.`,
@@ -874,7 +874,7 @@ export class MultiLevelApprovalService {
   ): Promise<void> {
     try {
       for (const approverId of approverIds) {
-        await this.sp.web.lists.getByTitle('JML_Notifications').items.add({
+        await this.sp.web.lists.getByTitle('PM_Notifications').items.add({
           Title: 'Escalated Approval Required',
           RecipientId: approverId,
           Message: `An approval request "${chainName}" (Level ${level}) has been escalated to you after ${daysWaiting} days without response. Please review and take action urgently.`,
@@ -901,7 +901,7 @@ export class MultiLevelApprovalService {
   ): Promise<void> {
     try {
       for (const approverId of originalApproverIds) {
-        await this.sp.web.lists.getByTitle('JML_Notifications').items.add({
+        await this.sp.web.lists.getByTitle('PM_Notifications').items.add({
           Title: 'Approval Request Escalated',
           RecipientId: approverId,
           Message: `An approval request assigned to you (Level ${level}) has been escalated due to timeout. The request has been routed to escalation contacts.`,
@@ -1007,11 +1007,11 @@ export class MultiLevelApprovalService {
         .select('ProcessID', 'ChainName')();
 
       // Get process owner/initiator
-      const process = await this.sp.web.lists.getByTitle('JML_Processes')
+      const process = await this.sp.web.lists.getByTitle('PM_Processes')
         .items.getById(chain.ProcessID)
         .select('CreatedById')();
 
-      await this.sp.web.lists.getByTitle('JML_Notifications').items.add({
+      await this.sp.web.lists.getByTitle('PM_Notifications').items.add({
         Title: approved ? 'Approval Complete' : 'Approval Rejected',
         RecipientId: process.CreatedById,
         Message: approved
@@ -1036,8 +1036,8 @@ export class MultiLevelApprovalService {
 
 export class ScheduledNotificationService {
   private sp: SPFI;
-  private readonly SCHEDULED_NOTIFICATIONS_LIST = 'JML_ScheduledNotifications';
-  private readonly NOTIFICATIONS_LIST = 'JML_Notifications';
+  private readonly SCHEDULED_NOTIFICATIONS_LIST = 'PM_ScheduledNotifications';
+  private readonly NOTIFICATIONS_LIST = 'PM_Notifications';
 
   constructor(sp: SPFI) {
     this.sp = sp;
@@ -1256,8 +1256,8 @@ export class ScheduledNotificationService {
 
 export class ParallelStepService {
   private sp: SPFI;
-  private readonly PARALLEL_CONTEXTS_LIST = 'JML_ParallelExecutions';
-  private readonly WORKFLOW_INSTANCES_LIST = 'JML_WorkflowInstances';
+  private readonly PARALLEL_CONTEXTS_LIST = 'PM_ParallelExecutions';
+  private readonly WORKFLOW_INSTANCES_LIST = 'PM_WorkflowInstances';
 
   constructor(sp: SPFI) {
     this.sp = sp;
@@ -1576,7 +1576,7 @@ export class WorkflowAdvancedService {
     if (!context) return null;
 
     // Get the stored item ID
-    const items = await this.sp.web.lists.getByTitle('JML_ParallelExecutions')
+    const items = await this.sp.web.lists.getByTitle('PM_ParallelExecutions')
       .items
       .filter(`WorkflowInstanceId eq ${workflowInstanceId} and ParallelStepId eq '${parallelStepId}'`)
       .select('Id')

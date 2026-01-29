@@ -129,7 +129,7 @@ export class PolicyJMLIntegrationService {
   ): Promise<number> {
     try {
       const result = await this.sp.web.lists
-        .getByTitle('JML_TaskAssignments')
+        .getByTitle('PM_TaskAssignments')
         .items.add({
           Title: taskDetails.title,
           ProcessIDId: processId,
@@ -178,10 +178,10 @@ export class PolicyJMLIntegrationService {
     jobTitle: string
   ): Promise<IMandatoryPolicy[]> {
     try {
-      // Query JML_Policies list for mandatory policies
+      // Query PM_Policies list for mandatory policies
       // Filter by target audience (department/role)
       const policies = await this.sp.web.lists
-        .getByTitle('JML_Policies')
+        .getByTitle('PM_Policies')
         .items.select(
           'Id',
           'Title',
@@ -244,7 +244,7 @@ export class PolicyJMLIntegrationService {
           : `POL-QUIZ-${policyId}`;
 
       const tasks = await this.sp.web.lists
-        .getByTitle('JML_TaskAssignments')
+        .getByTitle('PM_TaskAssignments')
         .items.filter(
           `ProcessIDId eq ${processId} and TaskCode eq '${taskCode}' and AssignedToId eq ${userId}`
         )
@@ -269,7 +269,7 @@ export class PolicyJMLIntegrationService {
       }
 
       await this.sp.web.lists
-        .getByTitle('JML_TaskAssignments')
+        .getByTitle('PM_TaskAssignments')
         .items.getById(task.Id)
         .update(updates);
 
@@ -293,14 +293,14 @@ export class PolicyJMLIntegrationService {
   ): Promise<void> {
     try {
       const dependentTasks = await this.sp.web.lists
-        .getByTitle('JML_TaskAssignments')
+        .getByTitle('PM_TaskAssignments')
         .items.filter(
           `ProcessIDId eq ${processId} and DependsOn eq '${completedTaskCode}' and IsBlocked eq true`
         )();
 
       for (const task of dependentTasks) {
         await this.sp.web.lists
-          .getByTitle('JML_TaskAssignments')
+          .getByTitle('PM_TaskAssignments')
           .items.getById(task.Id)
           .update({
             IsBlocked: false,
@@ -319,7 +319,7 @@ export class PolicyJMLIntegrationService {
     try {
       // Get all tasks for the process
       const tasks = await this.sp.web.lists
-        .getByTitle('JML_TaskAssignments')
+        .getByTitle('PM_TaskAssignments')
         .items.filter(`ProcessIDId eq ${processId}`)
         .select('Id', 'Status', 'PercentComplete')();
 
@@ -329,7 +329,7 @@ export class PolicyJMLIntegrationService {
 
       // Update process
       await this.sp.web.lists
-        .getByTitle('JML_Processes')
+        .getByTitle('PM_Processes')
         .items.getById(processId)
         .update({
           TotalTasks: totalTasks,
@@ -359,7 +359,7 @@ export class PolicyJMLIntegrationService {
       }
 
       const tasks = await this.sp.web.lists
-        .getByTitle('JML_TaskAssignments')
+        .getByTitle('PM_TaskAssignments')
         .items.filter(filter)
         .select(
           'Id',
@@ -409,7 +409,7 @@ export class PolicyJMLIntegrationService {
     try {
       // Get all processes for the department
       const processes = await this.sp.web.lists
-        .getByTitle('JML_Processes')
+        .getByTitle('PM_Processes')
         .items.filter(`Department eq '${department}'`)
         .select('Id', 'EmployeeEmail', 'EmployeeName')();
 
@@ -466,7 +466,7 @@ export class PolicyJMLIntegrationService {
   ): Promise<{ totalPolicies: number; completedPolicies: number; complianceRate: number }> {
     try {
       const tasks = await this.sp.web.lists
-        .getByTitle('JML_TaskAssignments')
+        .getByTitle('PM_TaskAssignments')
         .items.filter(`ProcessIDId eq ${processId} and Category eq 'Policy Compliance'`)
         .select('Id', 'Status')();
 
@@ -490,7 +490,7 @@ export class PolicyJMLIntegrationService {
   ): Promise<IPolicyTaskDisplay[]> {
     try {
       const tasks = await this.sp.web.lists
-        .getByTitle('JML_TaskAssignments')
+        .getByTitle('PM_TaskAssignments')
         .items.filter(
           `ProcessIDId eq ${processId} and AssignedToId eq ${userId} and Category eq 'Policy Compliance'`
         )
@@ -543,7 +543,7 @@ export class PolicyJMLIntegrationService {
     try {
       // Get overdue policy tasks
       const tasks = await this.sp.web.lists
-        .getByTitle('JML_TaskAssignments')
+        .getByTitle('PM_TaskAssignments')
         .items.filter(
           `ProcessIDId eq ${processId} and Category eq 'Policy Compliance' and Status ne 'Completed'`
         )
@@ -573,7 +573,7 @@ export class PolicyJMLIntegrationService {
 
           // Check if violation already exists
           const existing = await this.sp.web.lists
-            .getByTitle('JML_ComplianceViolations')
+            .getByTitle('PM_ComplianceViolations')
             .items.filter(
               `PolicyId eq ${task.PolicyId} and UserEmail eq '${task.AssignedTo.EMail}' and Status ne 'Resolved'`
             )
@@ -581,7 +581,7 @@ export class PolicyJMLIntegrationService {
 
           if (existing.length === 0) {
             // Create new violation
-            await this.sp.web.lists.getByTitle('JML_ComplianceViolations').items.add({
+            await this.sp.web.lists.getByTitle('PM_ComplianceViolations').items.add({
               Title: `${task.PolicyTaskType} - ${task.PolicyTitle}`,
               UserName: task.AssignedTo.Title,
               UserEmail: task.AssignedTo.EMail,

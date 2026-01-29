@@ -490,7 +490,7 @@ export class StakeholderNotificationService {
     eventData: INotificationEventData
   ): Promise<void> {
     // Queue email via EmailQueueService pattern
-    await this.sp.web.lists.getByTitle('JML_EmailQueue').items.add({
+    await this.sp.web.lists.getByTitle('PM_EmailQueue').items.add({
       Title: eventData.eventTitle,
       RecipientEmail: stakeholder.email,
       RecipientName: stakeholder.name,
@@ -512,7 +512,7 @@ export class StakeholderNotificationService {
     eventData: INotificationEventData
   ): Promise<void> {
     // Queue for Teams delivery (typically handled by Power Automate)
-    await this.sp.web.lists.getByTitle('JML_Notifications').items.add({
+    await this.sp.web.lists.getByTitle('PM_Notifications').items.add({
       Title: eventData.eventTitle,
       NotificationType: eventData.eventType,
       MessageBody: eventData.eventMessage,
@@ -534,7 +534,7 @@ export class StakeholderNotificationService {
     stakeholder: IStakeholder,
     eventData: INotificationEventData
   ): Promise<void> {
-    await this.sp.web.lists.getByTitle('JML_Notifications').items.add({
+    await this.sp.web.lists.getByTitle('PM_Notifications').items.add({
       Title: eventData.eventTitle,
       NotificationType: eventData.eventType,
       MessageBody: eventData.eventMessage,
@@ -734,7 +734,7 @@ export class StakeholderNotificationService {
       const confirmationUrl = `${this.siteUrl}/SitePages/ConfirmITAction.aspx?token=${confirmationToken}&processId=${context.processId}`;
 
       // Create notification with confirmation tracking
-      const notificationItem = await this.sp.web.lists.getByTitle('JML_Notifications').items.add({
+      const notificationItem = await this.sp.web.lists.getByTitle('PM_Notifications').items.add({
         Title: `IT Action Required: ${actionRequired}`,
         NotificationType: 'ITProvisioning',
         MessageBody: this.formatITAdminNotificationBody(context, actionRequired, taskDescription, confirmationUrl),
@@ -780,7 +780,7 @@ export class StakeholderNotificationService {
   ): Promise<{ success: boolean; processId?: number; error?: string }> {
     try {
       // Find notification by token
-      const items = await this.sp.web.lists.getByTitle('JML_Notifications').items
+      const items = await this.sp.web.lists.getByTitle('PM_Notifications').items
         .filter(`ConfirmationToken eq '${confirmationToken}'`)
         .select('Id', 'ProcessId', 'ConfirmationStatus', 'ConfirmationExpiresAt')
         .top(1)();
@@ -798,14 +798,14 @@ export class StakeholderNotificationService {
 
       // Check if expired
       if (notification.ConfirmationExpiresAt && new Date(notification.ConfirmationExpiresAt) < new Date()) {
-        await this.sp.web.lists.getByTitle('JML_Notifications').items.getById(notification.Id).update({
+        await this.sp.web.lists.getByTitle('PM_Notifications').items.getById(notification.Id).update({
           ConfirmationStatus: NotificationConfirmationStatus.Expired
         });
         return { success: false, error: 'Confirmation token has expired' };
       }
 
       // Mark as confirmed
-      await this.sp.web.lists.getByTitle('JML_Notifications').items.getById(notification.Id).update({
+      await this.sp.web.lists.getByTitle('PM_Notifications').items.getById(notification.Id).update({
         ConfirmationStatus: NotificationConfirmationStatus.Confirmed,
         ConfirmedAt: new Date(),
         ConfirmedById: confirmedById,
@@ -842,7 +842,7 @@ export class StakeholderNotificationService {
     itAdminEmail: string;
   }>> {
     try {
-      const items = await this.sp.web.lists.getByTitle('JML_Notifications').items
+      const items = await this.sp.web.lists.getByTitle('PM_Notifications').items
         .filter(`ProcessId eq '${processId}' and RequiresConfirmation eq 1 and ConfirmationStatus eq 'Pending'`)
         .select('Id', 'Title', 'Created', 'ConfirmationExpiresAt', 'RecipientEmail')
         .orderBy('Created', false)();

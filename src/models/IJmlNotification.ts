@@ -1,4 +1,4 @@
-// JML_Notifications List Model
+// PM_Notifications List Model
 
 import { IBaseListItem, NotificationType, NotificationStatus, Priority, IUser } from './ICommon';
 

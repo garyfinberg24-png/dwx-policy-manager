@@ -28,6 +28,14 @@ export const PolicyLists = {
   POLICY_ANALYTICS: 'PM_PolicyAnalytics',
   /** Policy documents/attachments */
   POLICY_DOCUMENTS: 'PM_PolicyDocuments',
+  /** Metadata profiles for policies */
+  POLICY_METADATA_PROFILES: 'PM_PolicyMetadataProfiles',
+  /** Policy reviewer assignments */
+  POLICY_REVIEWERS: 'PM_PolicyReviewers',
+  /** Read receipt tracking */
+  POLICY_READ_RECEIPTS: 'PM_PolicyReadReceipts',
+  /** Policy categorization */
+  POLICY_CATEGORIES: 'PM_PolicyCategories',
 } as const;
 
 /**
@@ -171,6 +179,8 @@ export const TemplateLibraryLists = {
   TEMPLATE_USAGE: 'PM_TemplateUsage',
   /** User preferences for templates */
   USER_PREFERENCES: 'PM_UserPreferences',
+  /** Corporate document templates */
+  CORPORATE_TEMPLATES: 'PM_CorporateTemplates',
 } as const;
 
 /**
@@ -275,6 +285,11 @@ export const LegacyListMapping: Record<string, string> = {
   // System Lists
   'JML_FileConversionQueue': PM_LISTS.FILE_CONVERSION_QUEUE,
   'JML_PolicySourceDocuments': PM_LISTS.POLICY_SOURCE_DOCUMENTS,
+  // Additional Policy Lists
+  'JML_PolicyMetadataProfiles': PM_LISTS.POLICY_METADATA_PROFILES,
+  'JML_PolicyReviewers': PM_LISTS.POLICY_REVIEWERS,
+  'JML_PolicyReadReceipts': PM_LISTS.POLICY_READ_RECEIPTS,
+  'JML_PolicyCategories': PM_LISTS.POLICY_CATEGORIES,
 };
 
 // Type exports for TypeScript

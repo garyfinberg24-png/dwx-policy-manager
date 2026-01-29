@@ -27,7 +27,7 @@ export class HelpCenterService {
    */
   public async getArticles(category?: HelpArticleCategory): Promise<IHelpArticle[]> {
     try {
-      let query = this._sp.web.lists.getByTitle("JML_HelpArticles").items
+      let query = this._sp.web.lists.getByTitle("PM_HelpArticles").items
         .select(
           "Id", "Title", "Category", "ArticleType", "Summary", "Content",
           "Keywords", "ThumbnailUrl", "VideoUrl", "ParentArticleId", "SortOrder",
@@ -61,7 +61,7 @@ export class HelpCenterService {
    */
   public async getFeaturedArticles(): Promise<IHelpArticle[]> {
     try {
-      const items = await this._sp.web.lists.getByTitle("JML_HelpArticles").items
+      const items = await this._sp.web.lists.getByTitle("PM_HelpArticles").items
         .select(
           "Id", "Title", "Category", "ArticleType", "Summary", "Content",
           "Keywords", "ThumbnailUrl", "ViewCount", "HelpfulCount", "NotHelpfulCount",
@@ -83,7 +83,7 @@ export class HelpCenterService {
    */
   public async getPopularArticles(limit: number = 10): Promise<IHelpArticle[]> {
     try {
-      const items = await this._sp.web.lists.getByTitle("JML_HelpArticles").items
+      const items = await this._sp.web.lists.getByTitle("PM_HelpArticles").items
         .select(
           "Id", "Title", "Category", "ArticleType", "Summary",
           "ViewCount", "HelpfulCount", "ThumbnailUrl"
@@ -104,7 +104,7 @@ export class HelpCenterService {
    */
   public async getArticleById(articleId: number): Promise<IHelpArticle> {
     try {
-      const item = await this._sp.web.lists.getByTitle("JML_HelpArticles").items
+      const item = await this._sp.web.lists.getByTitle("PM_HelpArticles").items
         .getById(articleId)
         .select(
           "Id", "Title", "Category", "ArticleType", "Summary", "Content",
@@ -144,7 +144,7 @@ export class HelpCenterService {
         filter += ` and ArticleType eq '${articleType}'`;
       }
 
-      const items = await this._sp.web.lists.getByTitle("JML_HelpArticles").items
+      const items = await this._sp.web.lists.getByTitle("PM_HelpArticles").items
         .select(
           "Id", "Title", "Category", "ArticleType", "Summary", "Content",
           "Keywords", "ThumbnailUrl", "ViewCount", "HelpfulCount"
@@ -176,13 +176,13 @@ export class HelpCenterService {
    */
   public async incrementArticleViewCount(articleId: number): Promise<void> {
     try {
-      const item = await this._sp.web.lists.getByTitle("JML_HelpArticles").items
+      const item = await this._sp.web.lists.getByTitle("PM_HelpArticles").items
         .getById(articleId)
         .select("ViewCount")();
 
       const currentCount = item.ViewCount || 0;
 
-      await this._sp.web.lists.getByTitle("JML_HelpArticles").items
+      await this._sp.web.lists.getByTitle("PM_HelpArticles").items
         .getById(articleId)
         .update({
           ViewCount: currentCount + 1
@@ -198,7 +198,7 @@ export class HelpCenterService {
    */
   public async submitArticleFeedback(articleId: number, isHelpful: boolean): Promise<void> {
     try {
-      const item = await this._sp.web.lists.getByTitle("JML_HelpArticles").items
+      const item = await this._sp.web.lists.getByTitle("PM_HelpArticles").items
         .getById(articleId)
         .select("HelpfulCount", "NotHelpfulCount")();
 
@@ -210,7 +210,7 @@ export class HelpCenterService {
         update.NotHelpfulCount = (item.NotHelpfulCount || 0) + 1;
       }
 
-      await this._sp.web.lists.getByTitle("JML_HelpArticles").items
+      await this._sp.web.lists.getByTitle("PM_HelpArticles").items
         .getById(articleId)
         .update(update);
 
@@ -230,7 +230,7 @@ export class HelpCenterService {
    */
   public async getCheatsheets(category?: CheatsheetCategory): Promise<ICheatsheet[]> {
     try {
-      let query = this._sp.web.lists.getByTitle("JML_Cheatsheets").items
+      let query = this._sp.web.lists.getByTitle("PM_Cheatsheets").items
         .select(
           "Id", "Title", "Category", "Description", "ItemsJSON",
           "DisplayFormat", "IconName", "ColorTheme", "SortOrder",
@@ -262,7 +262,7 @@ export class HelpCenterService {
    */
   public async getCheatsheetById(cheatsheetId: number): Promise<ICheatsheet> {
     try {
-      const item = await this._sp.web.lists.getByTitle("JML_Cheatsheets").items
+      const item = await this._sp.web.lists.getByTitle("PM_Cheatsheets").items
         .getById(cheatsheetId)
         .select(
           "Id", "Title", "Category", "Description", "ItemsJSON",
@@ -288,13 +288,13 @@ export class HelpCenterService {
    */
   public async incrementCheatsheetViewCount(cheatsheetId: number): Promise<void> {
     try {
-      const item = await this._sp.web.lists.getByTitle("JML_Cheatsheets").items
+      const item = await this._sp.web.lists.getByTitle("PM_Cheatsheets").items
         .getById(cheatsheetId)
         .select("ViewCount")();
 
       const currentCount = item.ViewCount || 0;
 
-      await this._sp.web.lists.getByTitle("JML_Cheatsheets").items
+      await this._sp.web.lists.getByTitle("PM_Cheatsheets").items
         .getById(cheatsheetId)
         .update({
           ViewCount: currentCount + 1
@@ -342,7 +342,7 @@ export class HelpCenterService {
         ticketData.SubmittedById = ticket.SubmittedById;
       }
 
-      const result = await this._sp.web.lists.getByTitle("JML_HelpTickets").items.add(ticketData);
+      const result = await this._sp.web.lists.getByTitle("PM_HelpTickets").items.add(ticketData);
 
       logger.info("HelpCenterService", `Ticket created: ${ticketNumber} (ID: ${result.data.Id})`);
 
@@ -358,7 +358,7 @@ export class HelpCenterService {
    */
   public async getMyTickets(userId: number): Promise<IHelpTicket[]> {
     try {
-      const items = await this._sp.web.lists.getByTitle("JML_HelpTickets").items
+      const items = await this._sp.web.lists.getByTitle("PM_HelpTickets").items
         .select(
           "Id", "Title", "TicketNumber", "Category", "Status", "Priority", "Severity",
           "Description", "SubmittedDate", "ResolvedDate", "SatisfactionRating",
@@ -382,7 +382,7 @@ export class HelpCenterService {
    */
   public async getTicketById(ticketId: number): Promise<IHelpTicket> {
     try {
-      const item = await this._sp.web.lists.getByTitle("JML_HelpTickets").items
+      const item = await this._sp.web.lists.getByTitle("PM_HelpTickets").items
         .getById(ticketId)
         .select(
           "Id", "Title", "TicketNumber", "Category", "Status", "Priority", "Severity",
@@ -586,7 +586,7 @@ export class HelpCenterService {
 
     try {
       // Get count of tickets this year
-      const items = await this._sp.web.lists.getByTitle("JML_HelpTickets").items
+      const items = await this._sp.web.lists.getByTitle("PM_HelpTickets").items
         .select("Id")
         .filter(`startswith(TicketNumber, '${prefix}')`)
         .top(5000)();

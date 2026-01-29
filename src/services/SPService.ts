@@ -32,7 +32,7 @@ export class SPService {
   }
 
   // ===================================================================
-  // JML_Processes Operations
+  // PM_Processes Operations
   // ===================================================================
 
   /**
@@ -40,7 +40,7 @@ export class SPService {
    */
   public async getProcesses(filter?: string, orderBy?: string, top?: number): Promise<IJmlProcess[]> {
     try {
-      let query = this.sp.web.lists.getByTitle('JML_Processes').items
+      let query = this.sp.web.lists.getByTitle('PM_Processes').items
         .select(
           'Id', 'Title', 'ProcessType', 'ProcessStatus', 'EmployeeName', 'EmployeeEmail',
           'Department', 'JobTitle', 'Location', 'StartDate', 'TargetCompletionDate',
@@ -78,7 +78,7 @@ export class SPService {
    */
   public async getProcessById(id: number): Promise<IJmlProcess> {
     try {
-      const item = await this.sp.web.lists.getByTitle('JML_Processes').items
+      const item = await this.sp.web.lists.getByTitle('PM_Processes').items
         .getById(id)
         .select(
           'Id', 'Title', 'ProcessType', 'ProcessStatus', 'EmployeeName', 'EmployeeEmail',
@@ -105,7 +105,7 @@ export class SPService {
    */
   public async createProcess(process: Partial<IJmlProcess>): Promise<IJmlProcess> {
     try {
-      const result = await this.sp.web.lists.getByTitle('JML_Processes').items.add({
+      const result = await this.sp.web.lists.getByTitle('PM_Processes').items.add({
         Title: process.Title,
         ProcessType: process.ProcessType,
         ProcessStatus: process.ProcessStatus || 'Draft',
@@ -143,7 +143,7 @@ export class SPService {
    */
   public async updateProcess(id: number, updates: Partial<IJmlProcess>): Promise<void> {
     try {
-      await this.sp.web.lists.getByTitle('JML_Processes').items
+      await this.sp.web.lists.getByTitle('PM_Processes').items
         .getById(id)
         .update(updates);
     } catch (error) {
@@ -157,7 +157,7 @@ export class SPService {
    */
   public async deleteProcess(id: number): Promise<void> {
     try {
-      await this.sp.web.lists.getByTitle('JML_Processes').items
+      await this.sp.web.lists.getByTitle('PM_Processes').items
         .getById(id)
         .delete();
     } catch (error) {
@@ -167,9 +167,9 @@ export class SPService {
   }
 
   // ===================================================================
-  // JML_ProcessChecklistTemplates Operations
+  // PM_ProcessChecklistTemplates Operations
   // ===================================================================
-  // Note: This list is separate from JML_ChecklistTemplates which is used for task mapping relationships
+  // Note: This list is separate from PM_ChecklistTemplates which is used for task mapping relationships
 
   /**
    * Get all active templates for Process Wizard
@@ -184,7 +184,7 @@ export class SPService {
         filter = `${filter} and ${processTypeFilter}`;
       }
 
-      const items = await this.sp.web.lists.getByTitle('JML_ProcessChecklistTemplates').items
+      const items = await this.sp.web.lists.getByTitle('PM_ProcessChecklistTemplates').items
         .select('Id', 'Title', 'TemplateCode', 'ProcessType', 'Description',
                 'JobRole', 'EstimatedDuration', 'TaskCount', 'IsActive', 'Version')
         .filter(filter)();
@@ -201,7 +201,7 @@ export class SPService {
    */
   public async getTemplateById(id: number): Promise<IJmlChecklistTemplate> {
     try {
-      const item = await this.sp.web.lists.getByTitle('JML_ProcessChecklistTemplates').items
+      const item = await this.sp.web.lists.getByTitle('PM_ProcessChecklistTemplates').items
         .getById(id)();
       return item as IJmlChecklistTemplate;
     } catch (error) {
@@ -215,7 +215,7 @@ export class SPService {
    */
   public async updateTemplate(id: number, updates: Partial<IJmlChecklistTemplate>): Promise<void> {
     try {
-      await this.sp.web.lists.getByTitle('JML_ProcessChecklistTemplates').items
+      await this.sp.web.lists.getByTitle('PM_ProcessChecklistTemplates').items
         .getById(id)
         .update(updates);
     } catch (error) {
@@ -229,7 +229,7 @@ export class SPService {
    */
   public async createTemplate(template: Partial<IJmlChecklistTemplate>): Promise<IJmlChecklistTemplate> {
     try {
-      const result = await this.sp.web.lists.getByTitle('JML_ProcessChecklistTemplates').items
+      const result = await this.sp.web.lists.getByTitle('PM_ProcessChecklistTemplates').items
         .add(template);
       return result as unknown as IJmlChecklistTemplate;
     } catch (error) {
@@ -239,7 +239,7 @@ export class SPService {
   }
 
   // ===================================================================
-  // JML_Tasks Operations
+  // PM_Tasks Operations
   // ===================================================================
 
   /**
@@ -255,7 +255,7 @@ export class SPService {
         filter = `${filter} and ${categoryFilter}`;
       }
 
-      const items = await this.sp.web.lists.getByTitle('JML_Tasks').items
+      const items = await this.sp.web.lists.getByTitle('PM_Tasks').items
         .select('Id', 'Title', 'TaskCode', 'Category', 'Description', 'Instructions',
                 'Department', 'SLAHours', 'EstimatedHours', 'RequiresApproval',
                 'Priority', 'IsActive', 'DefaultAssignee/Id', 'DefaultAssignee/Title')
@@ -270,7 +270,7 @@ export class SPService {
   }
 
   // ===================================================================
-  // JML_TaskAssignments Operations
+  // PM_TaskAssignments Operations
   // ===================================================================
 
   /**
@@ -285,7 +285,7 @@ export class SPService {
       // For now, query as Text field until Script 09 is executed
       const filter = `ProcessID eq '${validProcessId}'`;
 
-      const items = await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+      const items = await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
         .select(
           'Id', 'Title', 'Status', 'Priority', 'DueDate', 'StartDate', 'ActualCompletionDate',
           'PercentComplete', 'ActualHours', 'Notes', 'RequiresApproval', 'BlockedReason',
@@ -319,7 +319,7 @@ export class SPService {
       // Query essential columns - simplified to avoid User field expansion issues
       // Note: Removed AssignedTo expansion which can cause "Invalid Request" in some SharePoint tenants
       // Note: Removed Department and Category which may not exist on all list configurations
-      const items = await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+      const items = await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
         .select(
           'Id', 'Title', 'Status', 'Priority', 'DueDate', 'PercentComplete',
           'Notes', 'BlockedReason', 'AssignedToId', 'ProcessID', 'AssignedDate'
@@ -343,7 +343,7 @@ export class SPService {
    */
   public async createTaskAssignment(assignment: Partial<IJmlTaskAssignment>): Promise<IJmlTaskAssignment> {
     try {
-      const result = await this.sp.web.lists.getByTitle('JML_TaskAssignments').items.add({
+      const result = await this.sp.web.lists.getByTitle('PM_TaskAssignments').items.add({
         Title: assignment.Title,
         ProcessIDId: assignment.ProcessIDId,
         TaskIDId: assignment.TaskIDId,
@@ -355,7 +355,7 @@ export class SPService {
         Notes: assignment.Notes
       });
 
-      const item = await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+      const item = await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
         .getById(result.data.Id)();
       return item as IJmlTaskAssignment;
     } catch (error) {
@@ -369,7 +369,7 @@ export class SPService {
    */
   public async updateTaskAssignment(id: number, updates: Partial<IJmlTaskAssignment>): Promise<void> {
     try {
-      await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+      await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
         .getById(id)
         .update(updates);
     } catch (error) {
@@ -383,7 +383,7 @@ export class SPService {
    */
   public async updateTaskStatus(id: number, status: TaskStatus): Promise<void> {
     try {
-      await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+      await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
         .getById(id)
         .update({ Status: status });
     } catch (error) {
@@ -393,7 +393,7 @@ export class SPService {
   }
 
   // ===================================================================
-  // JML_Configuration Operations
+  // PM_Configuration Operations
   // ===================================================================
 
   /**
@@ -410,7 +410,7 @@ export class SPService {
       // Build secure filter
       const filter = `ConfigKey eq '${sanitizedKey}' and IsActive eq 1`;
 
-      const items = await this.sp.web.lists.getByTitle('JML_Configuration').items
+      const items = await this.sp.web.lists.getByTitle('PM_Configuration').items
         .select('ConfigValue')
         .filter(filter)
         .top(1)();
@@ -427,7 +427,7 @@ export class SPService {
    */
   public async getAllConfigurations(): Promise<IJmlConfiguration[]> {
     try {
-      const items = await this.sp.web.lists.getByTitle('JML_Configuration').items
+      const items = await this.sp.web.lists.getByTitle('PM_Configuration').items
         .select('Id', 'Title', 'ConfigKey', 'ConfigValue', 'Category', 'Description', 'IsActive')
         .filter('IsActive eq 1')();
 
@@ -439,7 +439,7 @@ export class SPService {
   }
 
   // ===================================================================
-  // JML_AuditLog Operations
+  // PM_AuditLog Operations
   // ===================================================================
 
   /**
@@ -447,7 +447,7 @@ export class SPService {
    */
   public async createAuditLog(log: Partial<IJmlAuditLog>): Promise<void> {
     try {
-      await this.sp.web.lists.getByTitle('JML_AuditLog').items.add({
+      await this.sp.web.lists.getByTitle('PM_AuditLog').items.add({
         Title: log.Title || log.EventType,
         EventType: log.EventType,
         EntityType: log.EntityType,
@@ -470,7 +470,7 @@ export class SPService {
   }
 
   // ===================================================================
-  // JML_TemplateTaskMapping Operations
+  // PM_TemplateTaskMapping Operations
   // ===================================================================
 
   /**
@@ -485,7 +485,7 @@ export class SPService {
       const templateFilter = ValidationUtils.buildFilter('TemplateID/Id', 'eq', validTemplateId);
       const filter = `${templateFilter} and IsActive eq 1`;
 
-      const items = await this.sp.web.lists.getByTitle('JML_TemplateTaskMapping').items
+      const items = await this.sp.web.lists.getByTitle('PM_TemplateTaskMapping').items
         .select(
           'Id', 'Title', 'SequenceOrder', 'IsMandatory', 'OffsetDays', 'DependsOnTaskID',
           'CustomInstructions', 'OverrideSLAHours', 'IsActive',
@@ -557,7 +557,7 @@ export class SPService {
     taskTitle: string
   ): Promise<void> {
     try {
-      await this.sp.web.lists.getByTitle('JML_Notifications').items.add({
+      await this.sp.web.lists.getByTitle('PM_Notifications').items.add({
         Title: `New task assigned: ${taskTitle}`,
         NotificationType: 'TaskAssigned',
         MessageBody: `You have been assigned a task "${taskTitle}" in process "${processTitle}".`,
@@ -583,7 +583,7 @@ export class SPService {
     completedBy: string
   ): Promise<void> {
     try {
-      await this.sp.web.lists.getByTitle('JML_Notifications').items.add({
+      await this.sp.web.lists.getByTitle('PM_Notifications').items.add({
         Title: `Task completed: ${taskTitle}`,
         NotificationType: 'TaskCompleted',
         MessageBody: `${completedBy} completed task "${taskTitle}" in process "${processTitle}".`,
@@ -607,7 +607,7 @@ export class SPService {
     processTitle: string
   ): Promise<void> {
     try {
-      await this.sp.web.lists.getByTitle('JML_Notifications').items.add({
+      await this.sp.web.lists.getByTitle('PM_Notifications').items.add({
         Title: `Process completed: ${processTitle}`,
         NotificationType: 'ProcessCompleted',
         MessageBody: `The process "${processTitle}" has been completed.`,
@@ -633,7 +633,7 @@ export class SPService {
   ): Promise<void> {
     try {
       const daysUntilDue = Math.ceil((dueDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-      await this.sp.web.lists.getByTitle('JML_Notifications').items.add({
+      await this.sp.web.lists.getByTitle('PM_Notifications').items.add({
         Title: `Due date approaching: ${taskTitle}`,
         NotificationType: 'DueDateApproaching',
         MessageBody: `Task "${taskTitle}" is due in ${daysUntilDue} day(s).`,
@@ -664,7 +664,7 @@ export class SPService {
         filter = `${filter} and Status eq 'Pending'`;
       }
 
-      const items = await this.sp.web.lists.getByTitle('JML_Notifications').items
+      const items = await this.sp.web.lists.getByTitle('PM_Notifications').items
         .select('Id', 'Title', 'NotificationType', 'MessageBody', 'Priority', 'Status', 'Created', 'ProcessId', 'TaskId')
         .filter(filter)
         .orderBy('Created', false)
@@ -682,7 +682,7 @@ export class SPService {
    */
   private async markNotificationAsReadLegacy(userId: number, unreadOnly: boolean): Promise<any[]> {
     try {
-      let query = this.sp.web.lists.getByTitle('JML_Notifications').items
+      let query = this.sp.web.lists.getByTitle('PM_Notifications').items
         .select('Id', 'Title', 'NotificationType', 'MessageBody', 'Priority', 'Status', 'Created', 'ProcessId', 'TaskId')
         .filter(`RecipientId eq ${userId}`)
         .orderBy('Created', false)
@@ -704,7 +704,7 @@ export class SPService {
    */
   public async markNotificationAsRead(notificationId: number): Promise<void> {
     try {
-      await this.sp.web.lists.getByTitle('JML_Notifications').items
+      await this.sp.web.lists.getByTitle('PM_Notifications').items
         .getById(notificationId)
         .update({
           Status: 'Sent'
@@ -741,18 +741,18 @@ export class SPService {
 
       // Check if preset exists with secure filter
       const filter = ValidationUtils.buildFilter('PresetId', 'eq', preset.id.substring(0, 100));
-      const existingPresets = await this.sp.web.lists.getByTitle('JML_FilterPresets').items
+      const existingPresets = await this.sp.web.lists.getByTitle('PM_FilterPresets').items
         .filter(filter)
         .top(1)();
 
       if (existingPresets.length > 0) {
         // Update existing preset
-        await this.sp.web.lists.getByTitle('JML_FilterPresets').items
+        await this.sp.web.lists.getByTitle('PM_FilterPresets').items
           .getById(existingPresets[0].Id)
           .update(presetData);
       } else {
         // Create new preset
-        await this.sp.web.lists.getByTitle('JML_FilterPresets').items.add({
+        await this.sp.web.lists.getByTitle('PM_FilterPresets').items.add({
           ...presetData,
           PresetId: preset.id.substring(0, 100)
         });
@@ -770,10 +770,10 @@ export class SPService {
     try {
       // Check if list exists first
       const lists = await this.sp.web.lists();
-      const filterPresetsList = lists.find(l => l.Title === 'JML_FilterPresets');
+      const filterPresetsList = lists.find(l => l.Title === 'PM_FilterPresets');
 
       if (!filterPresetsList) {
-        logger.warn('SPService', 'JML_FilterPresets list does not exist. Returning empty array.');
+        logger.warn('SPService', 'PM_FilterPresets list does not exist. Returning empty array.');
         return [];
       }
 
@@ -787,7 +787,7 @@ export class SPService {
         filter = `(${userFilter}) or (IsShared eq 1)`;
       }
 
-      const items = await this.sp.web.lists.getByTitle('JML_FilterPresets').items
+      const items = await this.sp.web.lists.getByTitle('PM_FilterPresets').items
         .filter(filter)
         .orderBy('IsDefault', false)
         .orderBy('Modified', false)();
@@ -823,12 +823,12 @@ export class SPService {
       // Build secure filter
       const filter = ValidationUtils.buildFilter('PresetId', 'eq', presetId.substring(0, 100));
 
-      const items = await this.sp.web.lists.getByTitle('JML_FilterPresets').items
+      const items = await this.sp.web.lists.getByTitle('PM_FilterPresets').items
         .filter(filter)
         .top(1)();
 
       if (items.length > 0) {
-        await this.sp.web.lists.getByTitle('JML_FilterPresets').items
+        await this.sp.web.lists.getByTitle('PM_FilterPresets').items
           .getById(items[0].Id)
           .delete();
       }
@@ -851,23 +851,23 @@ export class SPService {
 
       // First, unset all defaults for this user with secure filter
       const userFilter = ValidationUtils.buildFilter('UserId', 'eq', validUserId);
-      const allPresets = await this.sp.web.lists.getByTitle('JML_FilterPresets').items
+      const allPresets = await this.sp.web.lists.getByTitle('PM_FilterPresets').items
         .filter(`${userFilter} and IsDefault eq 1`)();
 
       for (let i = 0; i < allPresets.length; i++) {
-        await this.sp.web.lists.getByTitle('JML_FilterPresets').items
+        await this.sp.web.lists.getByTitle('PM_FilterPresets').items
           .getById(allPresets[i].Id)
           .update({ IsDefault: false });
       }
 
       // Set the new default with secure filter
       const presetFilter = ValidationUtils.buildFilter('PresetId', 'eq', presetId.substring(0, 100));
-      const targetPresets = await this.sp.web.lists.getByTitle('JML_FilterPresets').items
+      const targetPresets = await this.sp.web.lists.getByTitle('PM_FilterPresets').items
         .filter(presetFilter)
         .top(1)();
 
       if (targetPresets.length > 0) {
-        await this.sp.web.lists.getByTitle('JML_FilterPresets').items
+        await this.sp.web.lists.getByTitle('PM_FilterPresets').items
           .getById(targetPresets[0].Id)
           .update({ IsDefault: true });
       }
@@ -890,14 +890,14 @@ export class SPService {
       // Build secure filter
       const filter = ValidationUtils.buildFilter('PresetId', 'eq', presetId.substring(0, 100));
 
-      const items = await this.sp.web.lists.getByTitle('JML_FilterPresets').items
+      const items = await this.sp.web.lists.getByTitle('PM_FilterPresets').items
         .filter(filter)
         .select('Id', 'UseCount')
         .top(1)();
 
       if (items.length > 0) {
         const currentCount = items[0].UseCount || 0;
-        await this.sp.web.lists.getByTitle('JML_FilterPresets').items
+        await this.sp.web.lists.getByTitle('PM_FilterPresets').items
           .getById(items[0].Id)
           .update({ UseCount: currentCount + 1 });
       }
@@ -907,7 +907,7 @@ export class SPService {
   }
 
   // ===================================================================
-  // JML_Assets Operations
+  // PM_Assets Operations
   // ===================================================================
 
   /**
@@ -915,7 +915,7 @@ export class SPService {
    */
   public async getAssets(filter?: string, orderBy?: string, top?: number): Promise<any[]> {
     try {
-      let query = this.sp.web.lists.getByTitle('JML_Assets').items
+      let query = this.sp.web.lists.getByTitle('PM_Assets').items
         .select(
           'Id', 'Title', 'AssetTag', 'AssetType', 'Manufacturer', 'Model',
           'SerialNumber', 'PurchaseDate', 'PurchaseCost', 'WarrantyExpiry',
@@ -952,7 +952,7 @@ export class SPService {
    */
   public async getAssetById(id: number): Promise<any> {
     try {
-      const item = await this.sp.web.lists.getByTitle('JML_Assets').items
+      const item = await this.sp.web.lists.getByTitle('PM_Assets').items
         .getById(id)
         .select(
           'Id', 'Title', 'AssetTag', 'AssetType', 'Manufacturer', 'Model',
@@ -980,7 +980,7 @@ export class SPService {
       const sanitizedTag = ValidationUtils.sanitizeForOData(assetTag);
       const filter = ValidationUtils.buildFilter('AssetTag', 'eq', sanitizedTag);
 
-      const items = await this.sp.web.lists.getByTitle('JML_Assets').items
+      const items = await this.sp.web.lists.getByTitle('PM_Assets').items
         .select(
           'Id', 'Title', 'AssetTag', 'AssetType', 'AssetStatus',
           'CurrentOwner/Id', 'CurrentOwner/Title', 'CurrentOwner/EMail'
@@ -1001,7 +1001,7 @@ export class SPService {
    */
   public async createAsset(asset: any): Promise<any> {
     try {
-      const result = await this.sp.web.lists.getByTitle('JML_Assets').items.add({
+      const result = await this.sp.web.lists.getByTitle('PM_Assets').items.add({
         Title: asset.Title,
         AssetTag: asset.AssetTag,
         AssetType: asset.AssetType,
@@ -1037,7 +1037,7 @@ export class SPService {
    */
   public async updateAsset(id: number, updates: any): Promise<void> {
     try {
-      await this.sp.web.lists.getByTitle('JML_Assets').items
+      await this.sp.web.lists.getByTitle('PM_Assets').items
         .getById(id)
         .update(updates);
     } catch (error) {
@@ -1051,7 +1051,7 @@ export class SPService {
    */
   public async deleteAsset(id: number): Promise<void> {
     try {
-      await this.sp.web.lists.getByTitle('JML_Assets').items
+      await this.sp.web.lists.getByTitle('PM_Assets').items
         .getById(id)
         .update({ IsActive: false });
     } catch (error) {
@@ -1061,7 +1061,7 @@ export class SPService {
   }
 
   // ===================================================================
-  // JML_AssetCheckouts Operations
+  // PM_AssetCheckouts Operations
   // ===================================================================
 
   /**
@@ -1069,7 +1069,7 @@ export class SPService {
    */
   public async getAssetCheckouts(filter?: string, orderBy?: string, top?: number): Promise<any[]> {
     try {
-      let query = this.sp.web.lists.getByTitle('JML_AssetCheckouts').items
+      let query = this.sp.web.lists.getByTitle('PM_AssetCheckouts').items
         .select(
           'Id', 'Title', 'AssetTag', 'EmployeeName', 'EmployeeEmail',
           'CheckedOutDate', 'ExpectedReturnDate', 'ActualReturnDate',
@@ -1108,7 +1108,7 @@ export class SPService {
    */
   public async getAssetCheckoutById(id: number): Promise<any> {
     try {
-      const item = await this.sp.web.lists.getByTitle('JML_AssetCheckouts').items
+      const item = await this.sp.web.lists.getByTitle('PM_AssetCheckouts').items
         .getById(id)
         .select(
           'Id', 'Title', 'AssetTag', 'EmployeeName', 'EmployeeEmail',
@@ -1136,7 +1136,7 @@ export class SPService {
       const sanitizedTag = ValidationUtils.sanitizeForOData(assetTag);
       const filter = `AssetTag eq '${sanitizedTag}' and CheckoutStatus eq 'Active'`;
 
-      const items = await this.sp.web.lists.getByTitle('JML_AssetCheckouts').items
+      const items = await this.sp.web.lists.getByTitle('PM_AssetCheckouts').items
         .select(
           'Id', 'Title', 'EmployeeName', 'CheckedOutDate', 'ExpectedReturnDate',
           'CheckedOutBy/Title'
@@ -1156,7 +1156,7 @@ export class SPService {
    */
   public async createAssetCheckout(checkout: any): Promise<any> {
     try {
-      const result = await this.sp.web.lists.getByTitle('JML_AssetCheckouts').items.add({
+      const result = await this.sp.web.lists.getByTitle('PM_AssetCheckouts').items.add({
         Title: checkout.Title,
         AssetTag: checkout.AssetTag,
         EmployeeName: checkout.EmployeeName,
@@ -1191,7 +1191,7 @@ export class SPService {
    */
   public async returnAsset(checkoutId: number, returnData: any): Promise<void> {
     try {
-      await this.sp.web.lists.getByTitle('JML_AssetCheckouts').items
+      await this.sp.web.lists.getByTitle('PM_AssetCheckouts').items
         .getById(checkoutId)
         .update({
           ActualReturnDate: returnData.ActualReturnDate || new Date(),
@@ -1220,7 +1220,7 @@ export class SPService {
    */
   public async updateAssetCheckout(id: number, updates: any): Promise<void> {
     try {
-      await this.sp.web.lists.getByTitle('JML_AssetCheckouts').items
+      await this.sp.web.lists.getByTitle('PM_AssetCheckouts').items
         .getById(id)
         .update(updates);
     } catch (error) {
@@ -1230,7 +1230,7 @@ export class SPService {
   }
 
   // ===================================================================
-  // JML_M365Licenses Operations
+  // PM_M365Licenses Operations
   // ===================================================================
 
   /**
@@ -1238,7 +1238,7 @@ export class SPService {
    */
   public async getM365Licenses(filter?: string, orderBy?: string, top?: number): Promise<any[]> {
     try {
-      let query = this.sp.web.lists.getByTitle('JML_M365Licenses').items
+      let query = this.sp.web.lists.getByTitle('PM_M365Licenses').items
         .select(
           'Id', 'Title', 'LicenseType', 'EmployeeName', 'EmployeeEmail',
           'AssignmentDate', 'RemovalDate', 'CostPerMonth', 'AnnualCost',
@@ -1276,7 +1276,7 @@ export class SPService {
    */
   public async getM365LicenseById(id: number): Promise<any> {
     try {
-      const item = await this.sp.web.lists.getByTitle('JML_M365Licenses').items
+      const item = await this.sp.web.lists.getByTitle('PM_M365Licenses').items
         .getById(id)
         .select(
           'Id', 'Title', 'LicenseType', 'EmployeeName', 'EmployeeEmail',
@@ -1303,7 +1303,7 @@ export class SPService {
       const validUserId = ValidationUtils.validateInteger(userId, 'userId', 1);
       const filter = `AssignedToId eq ${validUserId} and LicenseStatus eq 'Active'`;
 
-      const items = await this.sp.web.lists.getByTitle('JML_M365Licenses').items
+      const items = await this.sp.web.lists.getByTitle('PM_M365Licenses').items
         .select(
           'Id', 'Title', 'LicenseType', 'AssignmentDate', 'CostPerMonth',
           'AssignedTo/Title'
@@ -1323,7 +1323,7 @@ export class SPService {
    */
   public async assignM365License(license: any): Promise<any> {
     try {
-      const result = await this.sp.web.lists.getByTitle('JML_M365Licenses').items.add({
+      const result = await this.sp.web.lists.getByTitle('PM_M365Licenses').items.add({
         Title: license.Title,
         LicenseType: license.LicenseType,
         EmployeeName: license.EmployeeName,
@@ -1351,7 +1351,7 @@ export class SPService {
    */
   public async removeM365License(licenseId: number, removalNotes?: string): Promise<void> {
     try {
-      await this.sp.web.lists.getByTitle('JML_M365Licenses').items
+      await this.sp.web.lists.getByTitle('PM_M365Licenses').items
         .getById(licenseId)
         .update({
           RemovalDate: new Date(),
@@ -1369,7 +1369,7 @@ export class SPService {
    */
   public async updateM365License(id: number, updates: any): Promise<void> {
     try {
-      await this.sp.web.lists.getByTitle('JML_M365Licenses').items
+      await this.sp.web.lists.getByTitle('PM_M365Licenses').items
         .getById(id)
         .update(updates);
     } catch (error) {
@@ -1383,7 +1383,7 @@ export class SPService {
    */
   public async getLicenseCostSummary(): Promise<any[]> {
     try {
-      const items = await this.sp.web.lists.getByTitle('JML_M365Licenses').items
+      const items = await this.sp.web.lists.getByTitle('PM_M365Licenses').items
         .select('LicenseType', 'LicenseStatus', 'CostPerMonth', 'AnnualCost')
         .filter('LicenseStatus eq \'Active\'')();
 

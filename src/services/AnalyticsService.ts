@@ -589,7 +589,7 @@ export class AnalyticsService {
 
   private async getFilteredProcesses(filters?: IAnalyticsFilters): Promise<IJmlProcess[]> {
     try {
-      let query = this.sp.web.lists.getByTitle('JML_Processes').items
+      let query = this.sp.web.lists.getByTitle('PM_Processes').items
         .select('*', 'Manager/Title', 'Manager/EMail')
         .expand('Manager')
         .top(5000);
@@ -637,7 +637,7 @@ export class AnalyticsService {
 
   private async getAllTasks(filters?: IAnalyticsFilters): Promise<IJmlTaskAssignment[]> {
     try {
-      const items = await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+      const items = await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
         .select('*', 'Task/Title')
         .expand('Task')
         .top(5000)();

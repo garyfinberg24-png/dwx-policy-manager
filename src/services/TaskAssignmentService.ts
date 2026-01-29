@@ -70,7 +70,7 @@ export interface ITaskUpdateData {
 export class TaskAssignmentService {
   private sp: SPFI;
   private context?: WebPartContext;
-  private tasksListTitle = 'JML_TaskAssignments';
+  private tasksListTitle = 'PM_TaskAssignments';
 
   constructor(sp: SPFI, context?: WebPartContext) {
     this.sp = sp;
@@ -497,7 +497,7 @@ export class TaskAssignmentService {
     try {
       // Check if there's a training enrollment linked to this task
       const enrollments = await this.sp.web.lists
-        .getByTitle('JML_TrainingEnrollments')
+        .getByTitle('PM_TrainingEnrollments')
         .items.filter(`TaskAssignmentId eq ${taskId}`)
         .select('Id', 'CourseId', 'Status', 'UserId', 'Score', 'Progress')
         .top(1)();
@@ -511,7 +511,7 @@ export class TaskAssignmentService {
 
       // Update enrollment to completed
       await this.sp.web.lists
-        .getByTitle('JML_TrainingEnrollments')
+        .getByTitle('PM_TrainingEnrollments')
         .items.getById(enrollment.Id)
         .update({
           Status: 'Completed',
@@ -545,7 +545,7 @@ export class TaskAssignmentService {
     try {
       // Get the course to find associated skills
       const courses = await this.sp.web.lists
-        .getByTitle('JML_TrainingCourses')
+        .getByTitle('PM_TrainingCourses')
         .items.filter(`Id eq ${courseId}`)
         .select('Id', 'RelatedSkillIds', 'Tags')
         .top(1)();
@@ -591,7 +591,7 @@ export class TaskAssignmentService {
     try {
       // Check if user already has this skill
       const existingSkills = await this.sp.web.lists
-        .getByTitle('JML_UserSkills')
+        .getByTitle('PM_UserSkills')
         .items.filter(`UserId eq ${userId} and SkillId eq ${skillId}`)
         .select('Id', 'SelfRating', 'VerifiedRating')
         .top(1)();
@@ -608,7 +608,7 @@ export class TaskAssignmentService {
         );
 
         await this.sp.web.lists
-          .getByTitle('JML_UserSkills')
+          .getByTitle('PM_UserSkills')
           .items.getById(existing.Id)
           .update({
             VerifiedRating: newVerifiedRating,
@@ -619,7 +619,7 @@ export class TaskAssignmentService {
       } else {
         // Create new skill record
         await this.sp.web.lists
-          .getByTitle('JML_UserSkills')
+          .getByTitle('PM_UserSkills')
           .items.add({
             Title: `Skill ${skillId} - User ${userId}`,
             UserId: userId,

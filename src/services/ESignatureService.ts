@@ -18,7 +18,7 @@ import { logger } from './LoggingService';
 
 export class ESignatureService {
   private sp: SPFI;
-  private readonly SIGNATURE_CONFIG_LIST = 'JML_SignatureConfig';
+  private readonly SIGNATURE_CONFIG_LIST = 'PM_SignatureConfig';
 
   constructor(sp: SPFI) {
     this.sp = sp;
@@ -185,7 +185,7 @@ export class ESignatureService {
     try {
       // Create signature request record
       const signatureRequest = await this.sp.web.lists
-        .getByTitle('JML_SignatureRequests')
+        .getByTitle('PM_SignatureRequests')
         .items.add({
           DocumentId: request.documentId,
           ProcessId: request.processId,
@@ -243,7 +243,7 @@ export class ESignatureService {
   public async processWebhookEvent(event: ISignatureWebhookEvent): Promise<void> {
     try {
       await this.sp.web.lists
-        .getByTitle('JML_Documents')
+        .getByTitle('PM_Documents')
         .items.getById(event.documentId)
         .update({
           SignatureStatus: event.status,
@@ -307,7 +307,7 @@ export class ESignatureService {
 
   private async getDocumentBase64(documentId: number): Promise<string> {
     const item = await this.sp.web.lists
-      .getByTitle('JML_Documents')
+      .getByTitle('PM_Documents')
       .items.getById(documentId)
       .select('File/ServerRelativeUrl')
       .expand('File')();
@@ -406,7 +406,7 @@ export class ESignatureService {
     provider: SignatureProvider
   ): Promise<void> {
     await this.sp.web.lists
-      .getByTitle('JML_Documents')
+      .getByTitle('PM_Documents')
       .items.getById(documentId)
       .update({
         SignatureEnvelopeId: envelopeId,
@@ -457,7 +457,7 @@ export class ESignatureService {
 
   private async getInternalSignatureStatus(requestId: number): Promise<SignatureStatus> {
     const item = await this.sp.web.lists
-      .getByTitle('JML_SignatureRequests')
+      .getByTitle('PM_SignatureRequests')
       .items.getById(requestId)
       .select('Status')();
 
@@ -506,7 +506,7 @@ export class ESignatureService {
 
   private async voidInternalSignatureRequest(requestId: number, reason: string): Promise<void> {
     await this.sp.web.lists
-      .getByTitle('JML_SignatureRequests')
+      .getByTitle('PM_SignatureRequests')
       .items.getById(requestId)
       .update({
         Status: SignatureStatus.Voided,

@@ -141,8 +141,8 @@ const DEFAULT_VALIDATION_RULES: Omit<IValidationRule, 'validate'>[] = [
 export class TaskCompletionValidationService {
   private sp: SPFI;
   private rules: Map<string, IValidationRule> = new Map();
-  private readonly tasksListTitle = 'JML_TaskAssignments';
-  private readonly dependenciesListTitle = 'JML_TaskDependencies';
+  private readonly tasksListTitle = 'PM_TaskAssignments';
+  private readonly dependenciesListTitle = 'PM_TaskDependencies';
 
   constructor(sp: SPFI) {
     this.sp = sp;

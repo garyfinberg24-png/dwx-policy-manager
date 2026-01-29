@@ -206,7 +206,7 @@ export enum SharingPolicyType {
 // ============================================
 
 /**
- * Trusted Organization - JML_TrustedOrganizations list
+ * Trusted Organization - PM_TrustedOrganizations list
  */
 export interface ITrustedOrganization extends IBaseListItem {
   TenantId: string;
@@ -233,7 +233,7 @@ export interface ITrustedOrganization extends IBaseListItem {
 }
 
 /**
- * External Guest User - JML_ExternalGuestUsers list
+ * External Guest User - PM_ExternalGuestUsers list
  */
 export interface IExternalGuestUser extends IBaseListItem {
   Email: string;
@@ -262,7 +262,7 @@ export interface IExternalGuestUser extends IBaseListItem {
 }
 
 /**
- * Shared Resource - JML_ExternalSharedResources list
+ * Shared Resource - PM_ExternalSharedResources list
  */
 export interface ISharedResource extends IBaseListItem {
   ResourceType: ResourceType;
@@ -289,7 +289,7 @@ export interface ISharedResource extends IBaseListItem {
 }
 
 /**
- * Audit Log Entry for External Sharing - JML_ExternalSharingAuditLog list
+ * Audit Log Entry for External Sharing - PM_ExternalSharingAuditLog list
  * Note: Named differently to avoid conflict with IAuditLogEntry from ICommon
  */
 export interface IExternalSharingAuditLog extends IBaseListItem {
@@ -315,7 +315,7 @@ export interface IExternalSharingAuditLog extends IBaseListItem {
 export type IAuditLogEntryExternal = IExternalSharingAuditLog;
 
 /**
- * Sharing Policy - JML_ExternalSharingPolicies list
+ * Sharing Policy - PM_ExternalSharingPolicies list
  */
 export interface ISharingPolicy extends IBaseListItem {
   PolicyType: SharingPolicyType;
@@ -344,7 +344,7 @@ export interface ISharingPolicy extends IBaseListItem {
 }
 
 /**
- * Access Review - JML_ExternalAccessReviews list
+ * Access Review - PM_ExternalAccessReviews list
  */
 export interface IAccessReview extends IBaseListItem {
   ReviewType: AccessReviewType;

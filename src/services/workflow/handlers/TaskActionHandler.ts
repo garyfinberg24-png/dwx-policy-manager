@@ -138,7 +138,7 @@ export class TaskActionHandler {
         Comments: `Auto-created by workflow step: ${context.currentStep.name}`
       };
 
-      const result = await this.sp.web.lists.getByTitle('JML_TaskAssignments').items.add(taskData);
+      const result = await this.sp.web.lists.getByTitle('PM_TaskAssignments').items.add(taskData);
 
       logger.info('TaskActionHandler', `Created task: ${result.data.Id} - ${title}`);
 
@@ -201,7 +201,7 @@ export class TaskActionHandler {
       }
 
       // Get template tasks
-      const templateTasks = await this.sp.web.lists.getByTitle('JML_TemplateTaskMappings').items
+      const templateTasks = await this.sp.web.lists.getByTitle('PM_TemplateTaskMappings').items
         .filter(`ChecklistTemplateId eq ${templateId}`)
         .select('Id', 'TaskId', 'Order', 'DefaultDaysOffset', 'AssigneeRole', 'Category')
         .orderBy('Order', true)();
@@ -229,7 +229,7 @@ export class TaskActionHandler {
 
       for (const templateTask of templateTasks) {
         // Get task definition
-        const taskDef = await this.sp.web.lists.getByTitle('JML_Tasks').items
+        const taskDef = await this.sp.web.lists.getByTitle('PM_Tasks').items
           .getById(templateTask.TaskId)
           .select('Id', 'Title', 'Description', 'Category', 'EstimatedDuration', 'Priority')();
 
@@ -258,7 +258,7 @@ export class TaskActionHandler {
           Order: templateTask.Order
         };
 
-        const result = await this.sp.web.lists.getByTitle('JML_TaskAssignments').items.add(assignmentData);
+        const result = await this.sp.web.lists.getByTitle('PM_TaskAssignments').items.add(assignmentData);
         createdTaskIds.push(result.data.Id);
       }
 
@@ -310,10 +310,10 @@ export class TaskActionHandler {
         // FIXED: Unresolved role should be a failure - this is a configuration issue
         const allowUnresolvedRole = config.allowUnresolvedRole === true;
         if (!allowUnresolvedRole) {
-          logger.error('TaskActionHandler', `Could not resolve role "${assigneeRole}" to a user - check JML_RoleAssignments`);
+          logger.error('TaskActionHandler', `Could not resolve role "${assigneeRole}" to a user - check PM_RoleAssignments`);
           return {
             success: false,
-            error: `Could not find a user assigned to role "${assigneeRole}". Please configure this role in the JML_RoleAssignments list or ensure the process has the required role field populated.`
+            error: `Could not find a user assigned to role "${assigneeRole}". Please configure this role in the PM_RoleAssignments list or ensure the process has the required role field populated.`
           };
         }
         logger.warn('TaskActionHandler', `Role "${assigneeRole}" not resolved but allowUnresolvedRole is true - skipping task creation`);
@@ -351,7 +351,7 @@ export class TaskActionHandler {
         Comments: `Auto-created by workflow step: ${stepName}`
       };
 
-      const result = await this.sp.web.lists.getByTitle('JML_TaskAssignments').items.add(taskData);
+      const result = await this.sp.web.lists.getByTitle('PM_TaskAssignments').items.add(taskData);
 
       logger.info('TaskActionHandler', `Created role-based task: ${result.data.Id} - ${taskTitle} for ${assigneeRole}`);
 
@@ -383,7 +383,7 @@ export class TaskActionHandler {
       const waitCondition = config.waitCondition || 'all';
 
       // Get tasks created by this workflow instance
-      const tasks = await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+      const tasks = await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
         .filter(`WorkflowInstanceId eq ${context.workflowInstance.Id}`)
         .select('Id', 'Status', 'WorkflowStepId')();
 
@@ -445,7 +445,7 @@ export class TaskActionHandler {
         return { success: false, error: 'Task ID not specified' };
       }
 
-      await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+      await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
         .getById(taskId)
         .update({
           Status: newStatus,
@@ -498,7 +498,7 @@ export class TaskActionHandler {
 
   /**
    * Resolve role name to user ID (async version with SharePoint lookup)
-   * First checks context, then falls back to JML_RoleAssignments list
+   * First checks context, then falls back to PM_RoleAssignments list
    * Supports department-specific assignments with priority ordering
    */
   private async resolveRoleToUserIdAsync(role: string, context: IActionContext): Promise<number | undefined> {
@@ -519,7 +519,7 @@ export class TaskActionHandler {
         filter = `Role eq '${role}' and IsActive eq 1 and (Department eq '${department}' or Department eq null or Department eq '')`;
       }
 
-      const roleAssignments = await this.sp.web.lists.getByTitle('JML_RoleAssignments').items
+      const roleAssignments = await this.sp.web.lists.getByTitle('PM_RoleAssignments').items
         .filter(filter)
         .select('Id', 'Role', 'AssignedUserId', 'AssignedUserEmail', 'AssignedUser/Id', 'Department', 'IsActive', 'Priority')
         .expand('AssignedUser')
@@ -563,7 +563,7 @@ export class TaskActionHandler {
       for (const [key, aliases] of Object.entries(roleAliases)) {
         if (normalizedRole === key || aliases.includes(normalizedRole)) {
           // Try to find by primary role name
-          const altAssignments = await this.sp.web.lists.getByTitle('JML_RoleAssignments').items
+          const altAssignments = await this.sp.web.lists.getByTitle('PM_RoleAssignments').items
             .filter(`Role eq '${key}' and IsActive eq 1`)
             .select('AssignedUserId', 'AssignedUser/Id')
             .expand('AssignedUser')
@@ -596,7 +596,7 @@ export class TaskActionHandler {
   public async validateTaskDependencies(taskId: number): Promise<ITaskDependencyValidation> {
     try {
       // Get the task with dependency info
-      const task = await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+      const task = await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
         .getById(taskId)
         .select('Id', 'Title', 'Status', 'IsDependentTask', 'DependsOnTaskId', 'IsBlocked', 'ProcessId')() as {
           Id: number;
@@ -618,7 +618,7 @@ export class TaskActionHandler {
       }
 
       // Get the blocking task(s)
-      const blockingTask = await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+      const blockingTask = await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
         .getById(task.DependsOnTaskId)
         .select('Id', 'Title', 'Status')() as { Id: number; Title: string; Status: string };
 
@@ -665,7 +665,7 @@ export class TaskActionHandler {
 
     try {
       // Get all tasks for the process with dependency info
-      const tasks = await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+      const tasks = await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
         .filter(`ProcessId eq '${processId}' and IsDeleted ne true`)
         .select('Id', 'Title', 'Status', 'IsDependentTask', 'DependsOnTaskId', 'IsBlocked')() as Array<{
           Id: number;
@@ -733,12 +733,12 @@ export class TaskActionHandler {
 
     try {
       // Get the completed task to know its process
-      const completedTask = await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+      const completedTask = await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
         .getById(completedTaskId)
         .select('Id', 'Title', 'ProcessId')() as { Id: number; Title: string; ProcessId: string };
 
       // Find all tasks that depend on this completed task
-      const dependentTasks = await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+      const dependentTasks = await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
         .filter(`DependsOnTaskId eq ${completedTaskId} and IsDeleted ne true`)
         .select('Id', 'Title', 'Status', 'IsBlocked')() as Array<{
           Id: number;
@@ -759,7 +759,7 @@ export class TaskActionHandler {
             dependentTask.Status !== TaskStatus.Completed &&
             dependentTask.Status !== TaskStatus.Skipped) {
           try {
-            await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+            await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
               .getById(dependentTask.Id)
               .update({
                 IsBlocked: false,
@@ -799,7 +799,7 @@ export class TaskActionHandler {
   private async notifyTaskUnblocked(taskId: number, completedTaskTitle: string): Promise<void> {
     try {
       // Get task details including assignee
-      const task = await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+      const task = await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
         .getById(taskId)
         .select('Id', 'Title', 'AssignedToId', 'ProcessId')() as {
           Id: number;
@@ -813,7 +813,7 @@ export class TaskActionHandler {
       }
 
       // Create notification
-      await this.sp.web.lists.getByTitle('JML_Notifications').items.add({
+      await this.sp.web.lists.getByTitle('PM_Notifications').items.add({
         Title: 'Task Now Available',
         Message: `Your task "${task.Title}" is now available. The prerequisite task "${completedTaskTitle}" has been completed.`,
         RecipientId: task.AssignedToId,
@@ -846,7 +846,7 @@ export class TaskActionHandler {
       }
 
       // Dependencies met - update task status to InProgress
-      await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+      await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
         .getById(taskId)
         .update({
           Status: TaskStatus.InProgress,
@@ -890,7 +890,7 @@ export class TaskActionHandler {
 
       if (this.taskNotificationService) {
         try {
-          const fetchedTask = await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+          const fetchedTask = await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
             .getById(taskId)
             .select('Id', 'Title', 'AssignedToId', 'ProcessId', 'Priority', 'DueDate')();
 
@@ -905,7 +905,7 @@ export class TaskActionHandler {
           // Try to get process title for notification context
           if (fetchedTask.ProcessId) {
             try {
-              const process = await this.sp.web.lists.getByTitle('JML_Processes').items
+              const process = await this.sp.web.lists.getByTitle('PM_Processes').items
                 .getById(parseInt(fetchedTask.ProcessId, 10))
                 .select('Title')();
               processTitle = process.Title;
@@ -919,7 +919,7 @@ export class TaskActionHandler {
       }
 
       // Update task to completed
-      await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+      await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
         .getById(taskId)
         .update({
           Status: TaskStatus.Completed,
@@ -1042,7 +1042,7 @@ export class TaskActionHandler {
 
     try {
       // Get all tasks for the process
-      const tasks = await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+      const tasks = await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
         .filter(`ProcessId eq '${processId}' and IsDeleted ne true`)
         .select('Id', 'Title', 'Status', 'IsDependentTask', 'DependsOnTaskId', 'IsBlocked')() as Array<{
           Id: number;
@@ -1072,7 +1072,7 @@ export class TaskActionHandler {
         if (!task.IsDependentTask || !task.DependsOnTaskId) {
           if (task.IsBlocked) {
             try {
-              await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+              await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
                 .getById(task.Id)
                 .update({ IsBlocked: false, BlockedReason: null });
               unblocked++;
@@ -1092,7 +1092,7 @@ export class TaskActionHandler {
         if (shouldBeBlocked && !task.IsBlocked) {
           // Should be blocked but isn't
           try {
-            await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+            await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
               .getById(task.Id)
               .update({
                 IsBlocked: true,
@@ -1105,7 +1105,7 @@ export class TaskActionHandler {
         } else if (!shouldBeBlocked && task.IsBlocked) {
           // Shouldn't be blocked but is
           try {
-            await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+            await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
               .getById(task.Id)
               .update({ IsBlocked: false, BlockedReason: null });
             unblocked++;

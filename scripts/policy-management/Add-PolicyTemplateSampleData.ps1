@@ -474,7 +474,7 @@ $templates = @(
 $templateCount = 0
 foreach ($template in $templates) {
     try {
-        Add-PnPListItem -List "JML_PolicyTemplates" -Values $template | Out-Null
+        Add-PnPListItem -List "PM_PolicyTemplates" -Values $template | Out-Null
         $templateCount++
         Write-Host "  ✓ Added: $($template.Title)" -ForegroundColor Green
     }
@@ -557,7 +557,7 @@ $metadataProfiles = @(
 $profileCount = 0
 foreach ($profile in $metadataProfiles) {
     try {
-        Add-PnPListItem -List "JML_PolicyMetadataProfiles" -Values $profile | Out-Null
+        Add-PnPListItem -List "PM_PolicyMetadataProfiles" -Values $profile | Out-Null
         $profileCount++
         Write-Host "  ✓ Added: $($profile.ProfileName)" -ForegroundColor Green
     }

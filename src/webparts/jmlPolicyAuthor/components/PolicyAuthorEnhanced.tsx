@@ -38,6 +38,7 @@ import { PeoplePicker, PrincipalType } from "@pnp/spfx-controls-react/lib/People
 import { FilePicker, IFilePickerResult } from "@pnp/spfx-controls-react/lib/FilePicker";
 import { injectPortalStyles } from '../../../utils/injectPortalStyles';
 import { JmlAppLayout } from '../../../components/JmlAppLayout';
+import { PageSubheader } from '../../../components/PageSubheader';
 import { PolicyService } from '../../../services/PolicyService';
 import { createDialogManager } from '../../../hooks/useDialog';
 import {
@@ -48,6 +49,7 @@ import {
   ReadTimeframe
 } from '../../../models/IPolicy';
 import styles from './PolicyAuthor.module.scss';
+import { PM_LISTS } from '../../../constants/SharePointListNames';
 
 export interface IPolicyTemplate {
   Id: number;
@@ -413,6 +415,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
     const urlParams = new URLSearchParams(window.location.search);
     const policyId = urlParams.get('editPolicyId');
+    const tabParam = urlParams.get('tab') as PolicyBuilderTab | null;
 
     this.state = {
       loading: !!policyId,
@@ -486,8 +489,8 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       supersedesPolicy: '',
       policyOwner: [],
 
-      // Embedded Tab System
-      activeTab: 'create',
+      // Embedded Tab System - use URL ?tab= param if provided
+      activeTab: tabParam && POLICY_BUILDER_TABS.some(t => t.key === tabParam) ? tabParam : 'create',
 
       // Browse Policies Tab
       browseSearchQuery: '',
@@ -620,7 +623,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
   private async loadTemplates(): Promise<void> {
     try {
       const items = await this.props.sp.web.lists
-        .getByTitle('JML_PolicyTemplates')
+        .getByTitle(PM_LISTS.POLICY_TEMPLATES)
         .items.filter('IsActive eq true')
         .orderBy('UsageCount', false)
         .top(100)();
@@ -634,7 +637,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
   private async loadMetadataProfiles(): Promise<void> {
     try {
       const items = await this.props.sp.web.lists
-        .getByTitle('JML_PolicyMetadataProfiles')
+        .getByTitle(PM_LISTS.POLICY_METADATA_PROFILES)
         .items.filter('IsActive eq true')
         .top(50)();
 
@@ -708,7 +711,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
     // Increment usage count
     this.props.sp.web.lists
-      .getByTitle('JML_PolicyTemplates')
+      .getByTitle(PM_LISTS.POLICY_TEMPLATES)
       .items.getById(template.Id)
       .update({ UsageCount: (template.UsageCount || 0) + 1 })
       .catch(err => console.error('Failed to update template usage:', err));
@@ -740,7 +743,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
       // Upload to Policy Source Documents library
       const uploadResult = await this.props.sp.web.lists
-        .getByTitle('JML_PolicySourceDocuments')
+        .getByTitle(PM_LISTS.POLICY_SOURCE_DOCUMENTS)
         .rootFolder.files.addUsingPath(
           file.fileName,
           file.fileAbsoluteUrl ? await fetch(file.fileAbsoluteUrl).then(r => r.blob()) : new Blob(),
@@ -885,7 +888,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       for (let i = 0; i < reviewers.length; i++) {
         const userId = parseInt(reviewers[i], 10);
         await this.props.sp.web.lists
-          .getByTitle('JML_PolicyReviewers')
+          .getByTitle(PM_LISTS.POLICY_REVIEWERS)
           .items.add({
             Title: `Policy ${policyId} - Reviewer ${i + 1}`,
             PolicyId: policyId,
@@ -903,7 +906,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       for (let i = 0; i < approvers.length; i++) {
         const userId = parseInt(approvers[i], 10);
         await this.props.sp.web.lists
-          .getByTitle('JML_PolicyReviewers')
+          .getByTitle(PM_LISTS.POLICY_REVIEWERS)
           .items.add({
             Title: `Policy ${policyId} - Approver ${i + 1}`,
             PolicyId: policyId,
@@ -1949,7 +1952,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       }
 
       // Create Office document in Policy Source Documents library
-      const libraryName = 'JML_PolicySourceDocuments';
+      const libraryName = PM_LISTS.POLICY_SOURCE_DOCUMENTS;
       const siteUrl = this.props.context.pageContext.web.absoluteUrl;
 
       const templateBlob = await this.getBlankDocumentTemplate(docType);
@@ -1989,7 +1992,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
   private async getBlankDocumentTemplate(docType: 'word' | 'excel' | 'powerpoint'): Promise<Blob> {
     try {
-      const templateLibrary = 'JML_CorporateTemplates';
+      const templateLibrary = PM_LISTS.CORPORATE_TEMPLATES;
       const templateFileName = docType === 'word' ? 'BlankPolicy.docx' :
                                docType === 'excel' ? 'BlankPolicy.xlsx' : 'BlankPolicy.pptx';
 
@@ -2241,7 +2244,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
   private async loadCorporateTemplates(): Promise<void> {
     try {
       const items = await this.props.sp.web.lists
-        .getByTitle('JML_CorporateTemplates')
+        .getByTitle(PM_LISTS.CORPORATE_TEMPLATES)
         .items.filter('IsActive eq true')
         .select('Id', 'Title', 'TemplateType', 'FileRef', 'Description', 'Category', 'IsDefault')
         .orderBy('Title', true)
@@ -2272,7 +2275,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       const ext = template.TemplateUrl.split('.').pop() || 'docx';
       const fileName = `${policyName}.${ext}`;
 
-      const libraryName = 'JML_PolicySourceDocuments';
+      const libraryName = PM_LISTS.POLICY_SOURCE_DOCUMENTS;
       const siteUrl = this.props.context.pageContext.web.absoluteUrl;
 
       const templateBlob = await this.props.sp.web
@@ -2510,7 +2513,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
           {corporateTemplates.length === 0 ? (
             <MessageBar messageBarType={MessageBarType.warning}>
-              No corporate templates available. Contact your administrator to add templates to the JML_CorporateTemplates library.
+              No corporate templates available. Contact your administrator to add templates to the PM_CorporateTemplates library.
             </MessageBar>
           ) : (
             <Stack tokens={{ childrenGap: 12 }}>
@@ -2754,7 +2757,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       this.setState({ saving: true });
 
       // Create delegation request in SharePoint list
-      await this.props.sp.web.lists.getByTitle('JML_PolicyDelegations').items.add({
+      await this.props.sp.web.lists.getByTitle(PM_LISTS.DELEGATIONS).items.add({
         Title: delegation.Title,
         RequestedBy: this.props.context?.pageContext?.user?.displayName || '',
         RequestedByEmail: this.props.context?.pageContext?.user?.email || '',
@@ -2793,7 +2796,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     try {
       this.setState({ saving: true });
 
-      await this.props.sp.web.lists.getByTitle('JML_PolicyPacks').items.add({
+      await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_PACKS).items.add({
         Title: pack.Title,
         Description: pack.Description,
         TargetAudience: pack.TargetAudience,
@@ -2838,7 +2841,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     if (!confirmed) return;
 
     try {
-      await this.props.sp.web.lists.getByTitle('JML_PolicyPacks').items.getById(packId).delete();
+      await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_PACKS).items.getById(packId).delete();
       void this.dialogManager.showAlert('The policy pack has been deleted.', { title: 'Pack Deleted', variant: 'success' });
       await this.loadPolicyPacksData();
     } catch (error) {
@@ -2855,7 +2858,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     try {
       this.setState({ saving: true });
 
-      await this.props.sp.web.lists.getByTitle('JML_PolicyQuizzes').items.add({
+      await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_QUIZZES).items.add({
         Title: quiz.Title,
         LinkedPolicy: quiz.LinkedPolicy,
         Questions: 0,
@@ -2900,7 +2903,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
   private loadQuizQuestions = async (quizId: number): Promise<void> => {
     try {
       const items = await this.props.sp.web.lists
-        .getByTitle('JML_QuizQuestions')
+        .getByTitle(PM_LISTS.POLICY_QUIZ_QUESTIONS)
         .items
         .filter(`QuizId eq ${quizId}`)
         .orderBy('OrderIndex', true)
@@ -2980,7 +2983,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     if (!confirmed) return;
 
     try {
-      await this.props.sp.web.lists.getByTitle('JML_PolicyQuizzes').items.getById(quizId).delete();
+      await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_QUIZZES).items.getById(quizId).delete();
       void this.dialogManager.showAlert('The quiz has been deleted.', { title: 'Quiz Deleted', variant: 'success' });
       await this.loadQuizzesData();
     } catch (error) {
@@ -3088,10 +3091,10 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       };
 
       if (editingQuestion) {
-        await this.props.sp.web.lists.getByTitle('JML_QuizQuestions').items.getById(editingQuestion.Id).update(questionData);
+        await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_QUIZ_QUESTIONS).items.getById(editingQuestion.Id).update(questionData);
         void this.dialogManager.showAlert('Question updated successfully.', { title: 'Question Updated', variant: 'success' });
       } else {
-        await this.props.sp.web.lists.getByTitle('JML_QuizQuestions').items.add(questionData);
+        await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_QUIZ_QUESTIONS).items.add(questionData);
         void this.dialogManager.showAlert('Question added successfully.', { title: 'Question Added', variant: 'success' });
       }
 
@@ -3139,7 +3142,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     if (!confirmed) return;
 
     try {
-      await this.props.sp.web.lists.getByTitle('JML_QuizQuestions').items.getById(questionId).delete();
+      await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_QUIZ_QUESTIONS).items.getById(questionId).delete();
       void this.dialogManager.showAlert('Question deleted.', { variant: 'success' });
       if (this.state.editingQuiz) {
         await this.loadQuizQuestions(this.state.editingQuiz.Id);
@@ -3328,10 +3331,10 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       const allPolicies = await this.policyService.getAllPolicies();
 
       this.setState({
-        approvalsDraft: allPolicies.filter(p => p.Status === PolicyStatus.Draft),
-        approvalsInReview: allPolicies.filter(p => p.Status === PolicyStatus.PendingApproval),
-        approvalsApproved: allPolicies.filter(p => p.Status === PolicyStatus.Published),
-        approvalsRejected: allPolicies.filter(p => p.Status === PolicyStatus.Rejected),
+        approvalsDraft: allPolicies.filter(p => p.PolicyStatus === PolicyStatus.Draft),
+        approvalsInReview: allPolicies.filter(p => p.PolicyStatus === PolicyStatus.PendingApproval),
+        approvalsApproved: allPolicies.filter(p => p.PolicyStatus === PolicyStatus.Published),
+        approvalsRejected: allPolicies.filter(p => p.PolicyStatus === PolicyStatus.Rejected),
         approvalsLoading: false
       });
     } catch (error) {
@@ -3344,7 +3347,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     this.setState({ delegationsLoading: true });
     try {
       const items = await this.props.sp.web.lists
-        .getByTitle('JML_PolicyDelegations')
+        .getByTitle(PM_LISTS.DELEGATIONS)
         .items
         .select('*')
         .orderBy('Created', false)
@@ -3389,7 +3392,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     this.setState({ policyPacksLoading: true });
     try {
       const items = await this.props.sp.web.lists
-        .getByTitle('JML_PolicyPacks')
+        .getByTitle(PM_LISTS.POLICY_PACKS)
         .items
         .select('*')
         .orderBy('Created', false)
@@ -3417,7 +3420,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     this.setState({ quizzesLoading: true });
     try {
       const items = await this.props.sp.web.lists
-        .getByTitle('JML_PolicyQuizzes')
+        .getByTitle(PM_LISTS.POLICY_QUIZZES)
         .items
         .select('*')
         .orderBy('Created', false)
@@ -4563,7 +4566,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     this.setState({ uploadingFiles: true, bulkImportProgress: 0 });
 
     try {
-      const libraryName = 'JML_PolicySourceDocuments';
+      const libraryName = PM_LISTS.POLICY_SOURCE_DOCUMENTS;
       const total = files.length;
       let completed = 0;
 
@@ -4900,7 +4903,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       }
 
       const items = await this.props.sp.web.lists
-        .getByTitle('JML_Policies')
+        .getByTitle(PM_LISTS.POLICIES)
         .items
         .filter(filter)
         .orderBy('Title', true)
@@ -4931,7 +4934,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       const currentUser = this.props.context?.pageContext?.user?.email || '';
 
       const items = await this.props.sp.web.lists
-        .getByTitle('JML_Policies')
+        .getByTitle(PM_LISTS.POLICIES)
         .items
         .filter(`Author/EMail eq '${currentUser}'`)
         .orderBy('Modified', false)
@@ -4948,7 +4951,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     this.setState({ approvalsLoading: true });
     try {
       const items = await this.props.sp.web.lists
-        .getByTitle('JML_Policies')
+        .getByTitle(PM_LISTS.POLICIES)
         .items
         .filter("Status ne 'Archived'")
         .orderBy('Modified', false)
@@ -4957,10 +4960,10 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       const policies = items as IPolicy[];
 
       // Categorize by status for Kanban
-      const draft = policies.filter(p => p.Status === PolicyStatus.Draft);
-      const inReview = policies.filter(p => p.Status === PolicyStatus.InReview || p.Status === PolicyStatus.PendingApproval);
-      const approved = policies.filter(p => p.Status === PolicyStatus.Approved || p.Status === PolicyStatus.Published);
-      const rejected = policies.filter(p => p.Status === PolicyStatus.Archived || p.Status === PolicyStatus.Retired);
+      const draft = policies.filter(p => p.PolicyStatus === PolicyStatus.Draft);
+      const inReview = policies.filter(p => p.PolicyStatus === PolicyStatus.InReview || p.PolicyStatus === PolicyStatus.PendingApproval);
+      const approved = policies.filter(p => p.PolicyStatus === PolicyStatus.Approved || p.PolicyStatus === PolicyStatus.Published);
+      const rejected = policies.filter(p => p.PolicyStatus === PolicyStatus.Archived || p.PolicyStatus === PolicyStatus.Retired);
 
       this.setState({
         approvalsDraft: draft,
@@ -4983,7 +4986,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       // Try to load from delegation list, or create sample data
       try {
         const items = await this.props.sp.web.lists
-          .getByTitle('JML_PolicyDelegations')
+          .getByTitle(PM_LISTS.DELEGATIONS)
           .items
           .filter(`AssignedToEmail eq '${currentUser}'`)
           .orderBy('DueDate', true)
@@ -5005,7 +5008,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     try {
       // Load all policies for analytics
       const items = await this.props.sp.web.lists
-        .getByTitle('JML_Policies')
+        .getByTitle(PM_LISTS.POLICIES)
         .items
         .top(500)();
 
@@ -5013,9 +5016,9 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
       // Calculate analytics
       const totalPolicies = policies.length;
-      const publishedPolicies = policies.filter(p => p.Status === PolicyStatus.Published).length;
-      const draftPolicies = policies.filter(p => p.Status === PolicyStatus.Draft).length;
-      const pendingApproval = policies.filter(p => p.Status === PolicyStatus.InReview || p.Status === PolicyStatus.PendingApproval).length;
+      const publishedPolicies = policies.filter(p => p.PolicyStatus === PolicyStatus.Published).length;
+      const draftPolicies = policies.filter(p => p.PolicyStatus === PolicyStatus.Draft).length;
+      const pendingApproval = policies.filter(p => p.PolicyStatus === PolicyStatus.InReview || p.PolicyStatus === PolicyStatus.PendingApproval).length;
 
       // Expiring soon (next 30 days)
       const now = new Date();
@@ -5116,14 +5119,12 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
     return (
       <>
-        {/* Tab Subheader */}
-        <div className={(styles as Record<string, string>).tabSubheader}>
-          <div className={(styles as Record<string, string>).tabSubheaderContent}>
-            <Text className={(styles as Record<string, string>).tabSubheaderTitle}>{currentStepConfig.title}</Text>
-            <Text className={(styles as Record<string, string>).tabSubheaderSubtitle}>{currentStepConfig.description}</Text>
-          </div>
-          {this.renderCommandBar()}
-        </div>
+        <PageSubheader
+          iconName="PageAdd"
+          title={currentStepConfig.title}
+          description={currentStepConfig.description}
+          actions={this.renderCommandBar()}
+        />
 
         {/* Saving Indicator */}
         {saving && (
@@ -5169,16 +5170,11 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
     return (
       <>
-        {/* Tab Subheader */}
-        <div className={(styles as Record<string, string>).tabSubheader}>
-          <div className={(styles as Record<string, string>).tabSubheaderContent}>
-            <Icon iconName="Library" style={{ fontSize: 24, marginRight: 12, color: '#0078d4' }} />
-            <div>
-              <Text className={(styles as Record<string, string>).tabSubheaderTitle}>Browse Policies</Text>
-              <Text className={(styles as Record<string, string>).tabSubheaderSubtitle}>Browse all published policies in the organization</Text>
-            </div>
-          </div>
-        </div>
+        <PageSubheader
+          iconName="Library"
+          title="Browse Policies"
+          description="Browse all published policies in the organization"
+        />
 
         {/* Command Panel */}
         <div className={(styles as Record<string, string>).commandPanel}>
@@ -5303,16 +5299,11 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
     return (
       <>
-        {/* Tab Subheader */}
-        <div className={(styles as Record<string, string>).tabSubheader}>
-          <div className={(styles as Record<string, string>).tabSubheaderContent}>
-            <Icon iconName="Edit" style={{ fontSize: 24, marginRight: 12, color: '#0078d4' }} />
-            <div>
-              <Text className={(styles as Record<string, string>).tabSubheaderTitle}>My Authored Policies</Text>
-              <Text className={(styles as Record<string, string>).tabSubheaderSubtitle}>View and manage policies you have created</Text>
-            </div>
-          </div>
-        </div>
+        <PageSubheader
+          iconName="Edit"
+          title="My Authored Policies"
+          description="View and manage policies you have created"
+        />
 
         <div className={styles.editorContainer}>
           {authoredLoading ? (
@@ -5376,16 +5367,11 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
     return (
       <>
-        {/* Tab Subheader */}
-        <div className={(styles as Record<string, string>).tabSubheader}>
-          <div className={(styles as Record<string, string>).tabSubheaderContent}>
-            <Icon iconName="DocumentApproval" style={{ fontSize: 24, marginRight: 12, color: '#0078d4' }} />
-            <div>
-              <Text className={(styles as Record<string, string>).tabSubheaderTitle}>Policy Approvals</Text>
-              <Text className={(styles as Record<string, string>).tabSubheaderSubtitle}>Kanban view of policy approval workflow</Text>
-            </div>
-          </div>
-        </div>
+        <PageSubheader
+          iconName="DocumentApproval"
+          title="Policy Approvals"
+          description="Kanban view of policy approval workflow"
+        />
 
         <div className={styles.editorContainer}>
           {approvalsLoading ? (
@@ -5553,21 +5539,18 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
     return (
       <>
-        {/* Tab Subheader */}
-        <div className={(styles as Record<string, string>).tabSubheader}>
-          <div className={(styles as Record<string, string>).tabSubheaderContent}>
-            <Icon iconName="Assign" style={{ fontSize: 24, marginRight: 12, color: '#0078d4' }} />
-            <div>
-              <Text className={(styles as Record<string, string>).tabSubheaderTitle}>Policy Delegations</Text>
-              <Text className={(styles as Record<string, string>).tabSubheaderSubtitle}>Policies delegated to you for creation</Text>
-            </div>
-          </div>
-          <PrimaryButton
-            text="New Delegation"
-            iconProps={{ iconName: 'Add' }}
-            onClick={() => this.setState({ showNewDelegationPanel: true })}
-          />
-        </div>
+        <PageSubheader
+          iconName="Assign"
+          title="Policy Delegations"
+          description="Policies delegated to you for creation"
+          actions={
+            <PrimaryButton
+              text="New Delegation"
+              iconProps={{ iconName: 'Add' }}
+              onClick={() => this.setState({ showNewDelegationPanel: true })}
+            />
+          }
+        />
 
         {/* KPI Summary Cards */}
         <div className={(styles as Record<string, string>).delegationKpiGrid}>
@@ -5672,42 +5655,39 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
     return (
       <>
-        {/* Tab Subheader with Action Buttons */}
-        <div className={(styles as Record<string, string>).tabSubheader}>
-          <div className={(styles as Record<string, string>).tabSubheaderContent}>
-            <Icon iconName="BarChartVertical" style={{ fontSize: 24, marginRight: 12, color: '#0078d4' }} />
-            <div>
-              <Text className={(styles as Record<string, string>).tabSubheaderTitle}>Policy Analytics</Text>
-              <Text className={(styles as Record<string, string>).tabSubheaderSubtitle}>Insights and metrics for your policy library</Text>
-            </div>
-          </div>
-          <Stack horizontal tokens={{ childrenGap: 8 }}>
-            <DefaultButton
-              text="Date Range"
-              iconProps={{ iconName: 'Calendar' }}
-              menuProps={{
-                items: [
-                  { key: 'last7', text: 'Last 7 Days', onClick: () => { void this.handleDateRangeChange(7); } },
-                  { key: 'last30', text: 'Last 30 Days', onClick: () => { void this.handleDateRangeChange(30); } },
-                  { key: 'last90', text: 'Last 90 Days', onClick: () => { void this.handleDateRangeChange(90); } },
-                  { key: 'thisYear', text: 'This Year', onClick: () => { void this.handleDateRangeChange(365); } },
-                  { key: 'allTime', text: 'All Time', onClick: () => { void this.handleDateRangeChange(0); } }
-                ]
-              }}
-            />
-            <PrimaryButton
-              text="Export Report"
-              iconProps={{ iconName: 'Download' }}
-              menuProps={{
-                items: [
-                  { key: 'csv', text: 'Export as CSV', iconProps: { iconName: 'ExcelDocument' }, onClick: () => { void this.handleExportAnalytics('csv'); } },
-                  { key: 'pdf', text: 'Export as PDF', iconProps: { iconName: 'PDF' }, onClick: () => { void this.handleExportAnalytics('pdf'); } },
-                  { key: 'json', text: 'Export as JSON', iconProps: { iconName: 'Code' }, onClick: () => { void this.handleExportAnalytics('json'); } }
-                ]
-              }}
-            />
-          </Stack>
-        </div>
+        <PageSubheader
+          iconName="BarChartVertical"
+          title="Policy Analytics"
+          description="Insights and metrics for your policy library"
+          actions={
+            <Stack horizontal tokens={{ childrenGap: 8 }}>
+              <DefaultButton
+                text="Date Range"
+                iconProps={{ iconName: 'Calendar' }}
+                menuProps={{
+                  items: [
+                    { key: 'last7', text: 'Last 7 Days', onClick: () => { void this.handleDateRangeChange(7); } },
+                    { key: 'last30', text: 'Last 30 Days', onClick: () => { void this.handleDateRangeChange(30); } },
+                    { key: 'last90', text: 'Last 90 Days', onClick: () => { void this.handleDateRangeChange(90); } },
+                    { key: 'thisYear', text: 'This Year', onClick: () => { void this.handleDateRangeChange(365); } },
+                    { key: 'allTime', text: 'All Time', onClick: () => { void this.handleDateRangeChange(0); } }
+                  ]
+                }}
+              />
+              <PrimaryButton
+                text="Export Report"
+                iconProps={{ iconName: 'Download' }}
+                menuProps={{
+                  items: [
+                    { key: 'csv', text: 'Export as CSV', iconProps: { iconName: 'ExcelDocument' }, onClick: () => { void this.handleExportAnalytics('csv'); } },
+                    { key: 'pdf', text: 'Export as PDF', iconProps: { iconName: 'PDF' }, onClick: () => { void this.handleExportAnalytics('pdf'); } },
+                    { key: 'json', text: 'Export as JSON', iconProps: { iconName: 'Code' }, onClick: () => { void this.handleExportAnalytics('json'); } }
+                  ]
+                }}
+              />
+            </Stack>
+          }
+        />
 
         <div className={styles.editorContainer}>
           {analyticsLoading ? (
@@ -5986,16 +5966,11 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
   private renderAdminTab(): JSX.Element {
     return (
       <>
-        {/* Tab Subheader */}
-        <div className={(styles as Record<string, string>).tabSubheader}>
-          <div className={(styles as Record<string, string>).tabSubheaderContent}>
-            <Icon iconName="Settings" style={{ fontSize: 24, marginRight: 12, color: '#0078d4' }} />
-            <div>
-              <Text className={(styles as Record<string, string>).tabSubheaderTitle}>Policy Administration</Text>
-              <Text className={(styles as Record<string, string>).tabSubheaderSubtitle}>Manage policy settings, templates, and configurations</Text>
-            </div>
-          </div>
-        </div>
+        <PageSubheader
+          iconName="Settings"
+          title="Policy Administration"
+          description="Manage policy settings, templates, and configurations"
+        />
 
         <div className={styles.editorContainer}>
           <div className={(styles as Record<string, string>).adminGrid}>
@@ -6040,21 +6015,18 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
     return (
       <>
-        {/* Tab Subheader */}
-        <div className={(styles as Record<string, string>).tabSubheader}>
-          <div className={(styles as Record<string, string>).tabSubheaderContent}>
-            <Icon iconName="Package" style={{ fontSize: 24, marginRight: 12, color: '#0078d4' }} />
-            <div>
-              <Text className={(styles as Record<string, string>).tabSubheaderTitle}>Policy Packs</Text>
-              <Text className={(styles as Record<string, string>).tabSubheaderSubtitle}>Manage bundled policy collections</Text>
-            </div>
-          </div>
-          <PrimaryButton
-            text="Create New Pack"
-            iconProps={{ iconName: 'Add' }}
-            onClick={() => this.setState({ showCreatePackPanel: true })}
-          />
-        </div>
+        <PageSubheader
+          iconName="Package"
+          title="Policy Packs"
+          description="Manage bundled policy collections"
+          actions={
+            <PrimaryButton
+              text="Create New Pack"
+              iconProps={{ iconName: 'Add' }}
+              onClick={() => this.setState({ showCreatePackPanel: true })}
+            />
+          }
+        />
 
         <div className={styles.editorContainer}>
           {policyPacksLoading ? (
@@ -6188,21 +6160,18 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
     return (
       <>
-        {/* Tab Subheader */}
-        <div className={(styles as Record<string, string>).tabSubheader}>
-          <div className={(styles as Record<string, string>).tabSubheaderContent}>
-            <Icon iconName="Questionnaire" style={{ fontSize: 24, marginRight: 12, color: '#0078d4' }} />
-            <div>
-              <Text className={(styles as Record<string, string>).tabSubheaderTitle}>Quiz Builder</Text>
-              <Text className={(styles as Record<string, string>).tabSubheaderSubtitle}>Create quizzes to verify policy understanding</Text>
-            </div>
-          </div>
-          <PrimaryButton
-            text="Create New Quiz"
-            iconProps={{ iconName: 'Add' }}
-            onClick={() => this.setState({ showCreateQuizPanel: true })}
-          />
-        </div>
+        <PageSubheader
+          iconName="Questionnaire"
+          title="Quiz Builder"
+          description="Create quizzes to verify policy understanding"
+          actions={
+            <PrimaryButton
+              text="Create New Quiz"
+              iconProps={{ iconName: 'Add' }}
+              onClick={() => this.setState({ showCreateQuizPanel: true })}
+            />
+          }
+        />
 
         <div className={styles.editorContainer}>
           {quizzesLoading ? (
@@ -6349,8 +6318,8 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         pageDescription={currentTabConfig.description}
         pageIcon="Edit"
         breadcrumbs={[
-          { text: 'JML Portal', url: '/sites/JML' },
-          { text: 'Policy Hub', url: '/sites/JML/SitePages/PolicyHub.aspx' },
+          { text: 'Policy Manager', url: '/sites/PolicyManager' },
+          { text: 'Policy Hub', url: '/sites/PolicyManager/SitePages/PolicyHub.aspx' },
           { text: 'Policy Builder' }
         ]}
         activeNavKey="policies"
@@ -6361,8 +6330,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       >
         <section className={styles.policyAuthor}>
           <Stack tokens={{ childrenGap: 16 }}>
-            {/* Module Navigation - Embedded Tab System */}
-            {this.renderModuleNav()}
+            {/* Module nav removed - now in global header */}
 
             {/* Error Messages */}
             {error && (

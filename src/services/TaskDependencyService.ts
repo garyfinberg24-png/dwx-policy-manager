@@ -51,7 +51,7 @@ export class TaskDependencyService {
 
     try {
       // Try to get field to check if it exists
-      await this.sp.web.lists.getByTitle('JML_TaskAssignments').fields
+      await this.sp.web.lists.getByTitle('PM_TaskAssignments').fields
         .getByInternalNameOrTitle('DependsOnTaskId')
         .select('InternalName')();
       this.dependencyColumnsExist = true;
@@ -74,7 +74,7 @@ export class TaskDependencyService {
       // If columns don't exist, return a default response
       if (!columnsExist) {
         try {
-          const basicTask = await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+          const basicTask = await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
             .getById(taskId)
             .select('Id', 'Title', 'Status', 'DueDate', 'PercentComplete')();
 
@@ -103,7 +103,7 @@ export class TaskDependencyService {
         }
       }
 
-      const task = await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+      const task = await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
         .getById(taskId)
         .select(
           'Id', 'Title', 'Status', 'DueDate', 'PercentComplete',
@@ -113,7 +113,7 @@ export class TaskDependencyService {
       // Get tasks this task depends on
       const dependsOnTasks: ITaskDependencyLink[] = [];
       if (task.DependsOnTaskId) {
-        const dependsOnTask = await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+        const dependsOnTask = await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
           .getById(task.DependsOnTaskId)
           .select('Id', 'Title', 'Status', 'DueDate', 'PercentComplete')();
 
@@ -127,7 +127,7 @@ export class TaskDependencyService {
       }
 
       // Get tasks that depend on this task
-      const blockingTasks = await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+      const blockingTasks = await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
         .filter(`DependsOnTaskId eq ${taskId}`)
         .select('Id', 'Title', 'Status', 'DueDate', 'PercentComplete')();
 
@@ -183,7 +183,7 @@ export class TaskDependencyService {
       }
 
       // Update the task with the dependency
-      await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+      await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
         .getById(taskId)
         .update({
           DependsOnTaskId: dependsOnTaskId,
@@ -205,7 +205,7 @@ export class TaskDependencyService {
    */
   public async removeDependency(taskId: number): Promise<void> {
     try {
-      await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+      await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
         .getById(taskId)
         .update({
           DependsOnTaskId: null,
@@ -277,7 +277,7 @@ export class TaskDependencyService {
         visited.add(currentTaskId);
 
         // Get tasks that currentTask depends on
-        const currentTask = await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+        const currentTask = await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
           .getById(currentTaskId)
           .select('DependsOnTaskId')();
 
@@ -298,7 +298,7 @@ export class TaskDependencyService {
    */
   public async updateBlockedStatus(taskId: number): Promise<void> {
     try {
-      const task = await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+      const task = await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
         .getById(taskId)
         .select('Id', 'DependsOnTaskId', 'Status')();
 
@@ -307,14 +307,14 @@ export class TaskDependencyService {
       }
 
       // Check if dependency is completed
-      const dependsOnTask = await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+      const dependsOnTask = await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
         .getById(task.DependsOnTaskId)
         .select('Id', 'Title', 'Status')();
 
       const isBlocked = dependsOnTask.Status !== TaskStatus.Completed;
       const blockedReason = isBlocked ? `Waiting for "${dependsOnTask.Title}" to be completed` : null;
 
-      await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+      await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
         .getById(taskId)
         .update({
           IsBlocked: isBlocked,
@@ -332,7 +332,7 @@ export class TaskDependencyService {
   public async onTaskCompleted(taskId: number): Promise<void> {
     try {
       // Find all tasks that depend on this task
-      const dependentTasks = await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+      const dependentTasks = await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
         .filter(`DependsOnTaskId eq ${taskId}`)
         .select('Id')();
 
@@ -353,7 +353,7 @@ export class TaskDependencyService {
    */
   public async getProcessTasksWithDependencies(processId: number): Promise<ITaskDependencyInfo[]> {
     try {
-      const tasks = await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+      const tasks = await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
         .filter(`ProcessID eq '${processId}'`)
         .select('Id', 'Title', 'Status', 'DueDate', 'PercentComplete', 'DependsOnTaskId', 'IsBlocked')
         .orderBy('DueDate', true)();
@@ -429,7 +429,7 @@ export class TaskDependencyService {
   public async getAvailableDependencies(taskId: number, processId: number): Promise<IJmlTaskAssignment[]> {
     try {
       // Get all tasks in the process
-      const allTasks = await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+      const allTasks = await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
         .filter(`ProcessID eq '${processId}'`)
         .select('Id', 'Title', 'Status', 'DueDate', 'PercentComplete')
         .orderBy('DueDate', true)();

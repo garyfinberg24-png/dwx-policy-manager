@@ -280,7 +280,7 @@ export class PredictiveAnalyticsService {
       twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
 
       const processes = await this.sp.web.lists
-        .getByTitle('JML_Processes')
+        .getByTitle('PM_Processes')
         .items.filter(`Created ge datetime'${twelveMonthsAgo.toISOString()}'`)
         .select('Id', 'Created')
         .orderBy('Created', true)();

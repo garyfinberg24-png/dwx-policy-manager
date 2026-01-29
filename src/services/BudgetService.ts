@@ -32,7 +32,7 @@ export interface IBudgetFilter {
 
 export class BudgetService {
   private sp: SPFI;
-  private readonly BUDGETS_LIST = 'JML_Budgets';
+  private readonly BUDGETS_LIST = 'PM_Budgets';
 
   constructor(sp: SPFI) {
     this.sp = sp;

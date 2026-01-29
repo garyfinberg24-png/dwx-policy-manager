@@ -51,7 +51,7 @@ export class AIService {
     try {
       // Load AI configurations from SharePoint
       const configs = await this.sp.web.lists
-        .getByTitle('JML_AIConfigs')
+        .getByTitle('PM_AIConfigs')
         .items
         .select('Id', 'Title', 'FeatureType', 'IsEnabled', 'Endpoint', 'ApiKey', 'DeploymentName', 'Configuration', 'SystemPrompt', 'Temperature', 'MaxTokens')
         .filter('IsEnabled eq true')();
@@ -86,7 +86,7 @@ export class AIService {
     try {
       // Get all available tasks
       const allTasks = await this.sp.web.lists
-        .getByTitle('JML_Tasks')
+        .getByTitle('PM_Tasks')
         .items
         .select('Id', 'Title', 'TaskCode', 'Category', 'Department', 'Description', 'EstimatedHours', 'RequiresApproval', 'Priority')
         .filter('IsActive eq true')();
@@ -154,7 +154,7 @@ export class AIService {
 
       // Get process details
       const process = await this.sp.web.lists
-        .getByTitle('JML_Processes')
+        .getByTitle('PM_Processes')
         .items
         .getById(validatedProcessId)
         .select('Id', 'ProcessType', 'Priority', 'TotalTasks', 'CompletedTasks', 'StartDate', 'TargetCompletionDate', 'Department')();
@@ -162,7 +162,7 @@ export class AIService {
       // Get process tasks with secure filter
       const filter = ValidationUtils.buildFilter('ProcessIDId', 'eq', validatedProcessId);
       const tasks = await this.sp.web.lists
-        .getByTitle('JML_ProcessTasks')
+        .getByTitle('PM_ProcessTasks')
         .items
         .select('TaskTitle', 'Status', 'EstimatedHours', 'ActualHours', 'AssignedToId')
         .filter(filter)();
@@ -956,7 +956,7 @@ Always respond in a friendly, professional tone.`;
       const filter = `${jobFilter} or ${deptFilter}`;
 
       const processes = await this.sp.web.lists
-        .getByTitle('JML_Processes')
+        .getByTitle('PM_Processes')
         .items
         .select('Id', 'ProcessType', 'JobTitle', 'Department', 'TotalTasks', 'CompletedTasks', 'ActualCompletionDate')
         .filter(filter)
@@ -988,7 +988,7 @@ Always respond in a friendly, professional tone.`;
       const filter = `${typeFilter} and ${deptFilter} and ActualCompletionDate ne null`;
 
       const processes = await this.sp.web.lists
-        .getByTitle('JML_Processes')
+        .getByTitle('PM_Processes')
         .items
         .select('ProcessType', 'Department', 'StartDate', 'ActualCompletionDate', 'TotalTasks', 'Priority')
         .filter(filter)
@@ -1033,7 +1033,7 @@ Always respond in a friendly, professional tone.`;
   }): Promise<void> {
     try {
       await this.sp.web.lists
-        .getByTitle('JML_AIUsageLogs')
+        .getByTitle('PM_AIUsageLogs')
         .items
         .add({
           Title: `${log.featureType} - ${new Date().toISOString()}`,

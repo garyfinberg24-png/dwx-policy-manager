@@ -27,8 +27,8 @@ import { logger } from './LoggingService';
 export class SharedResourceService {
   private sp: SPFI;
 
-  private readonly SHARED_RESOURCES_LIST = 'JML_ExternalSharedResources';
-  private readonly AUDIT_LOG_LIST = 'JML_ExternalSharingAuditLog';
+  private readonly SHARED_RESOURCES_LIST = 'PM_ExternalSharedResources';
+  private readonly AUDIT_LOG_LIST = 'PM_ExternalSharingAuditLog';
 
   private currentUserId: number = 0;
   private currentUserEmail: string = '';

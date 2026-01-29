@@ -289,7 +289,7 @@ export default class PolicyAuthor extends React.Component<IPolicyAuthorProps, IP
       { key: 'browse', text: 'Browse Policies', icon: 'Library', url: '/SitePages/PolicyHub.aspx', isActive: false },
       { key: 'admin', text: 'Policy Admin', icon: 'Settings', url: '/SitePages/PolicyAdmin.aspx', isActive: false },
       { key: 'author', text: 'Create Policy', icon: 'Edit', url: '', isActive: true },
-      { key: 'packs', text: 'Policy Packs', icon: 'Package', url: '/SitePages/PolicyPackManager.aspx', isActive: false },
+      { key: 'packs', text: 'Policy Packs', icon: 'Package', url: '/SitePages/PolicyPacks.aspx', isActive: false },
       { key: 'quiz', text: 'Quiz Builder', icon: 'Questionnaire', url: '/SitePages/QuizBuilder.aspx', isActive: false }
     ];
 
@@ -560,7 +560,7 @@ export default class PolicyAuthor extends React.Component<IPolicyAuthorProps, IP
         pageTitle="Policy Builder"
         pageDescription="Create, edit and manage policy documents and templates"
         pageIcon="Edit"
-        breadcrumbs={[{ text: 'JML Portal', url: '/sites/JML' }, { text: 'Policy Builder' }]}
+        breadcrumbs={[{ text: 'Policy Manager', url: '/sites/PolicyManager' }, { text: 'Policy Builder' }]}
         activeNavKey="policies"
         showQuickLinks={true}
         showSearch={true}
@@ -569,7 +569,7 @@ export default class PolicyAuthor extends React.Component<IPolicyAuthorProps, IP
       >
         <section className={styles.policyAuthor}>
           <Stack tokens={{ childrenGap: 24 }}>
-            {this.renderModuleNav()}
+            {/* Module nav removed - now in global header */}
             {this.renderCommandBar()}
 
             {loading && (

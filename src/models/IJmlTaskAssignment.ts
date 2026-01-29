@@ -1,4 +1,4 @@
-// JML_TaskAssignments List Model
+// PM_TaskAssignments List Model
 
 import { IBaseListItem, TaskStatus, Priority, IUser } from './ICommon';
 import { ApprovalStatus } from './IJmlApproval';

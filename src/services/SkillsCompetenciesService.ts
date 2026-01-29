@@ -29,7 +29,7 @@ import { logger } from './LoggingService';
 // LIST INTERFACES - Matching SharePoint List Schema
 // ============================================================================
 
-/** SharePoint list item for JML_SkillCategories */
+/** SharePoint list item for PM_SkillCategories */
 export interface ISkillCategoryListItem {
   Id: number;
   Title: string;
@@ -39,7 +39,7 @@ export interface ISkillCategoryListItem {
   ParentCategoryId?: number;
 }
 
-/** SharePoint list item for JML_Skills */
+/** SharePoint list item for PM_Skills */
 export interface ISkillListItem {
   Id: number;
   Title: string;
@@ -52,7 +52,7 @@ export interface ISkillListItem {
   Tags?: string;
 }
 
-/** SharePoint list item for JML_UserSkills */
+/** SharePoint list item for PM_UserSkills */
 export interface IUserSkillListItem {
   Id: number;
   Title: string;
@@ -70,7 +70,7 @@ export interface IUserSkillListItem {
   Notes?: string;
 }
 
-/** SharePoint list item for JML_RoleCompetencies */
+/** SharePoint list item for PM_RoleCompetencies */
 export interface IRoleCompetencyListItem {
   Id: number;
   Title: string;
@@ -83,7 +83,7 @@ export interface IRoleCompetencyListItem {
   SuccessionPath?: string;
 }
 
-/** SharePoint list item for JML_SkillsAssessments */
+/** SharePoint list item for PM_SkillsAssessments */
 export interface ISkillsAssessmentListItem {
   Id: number;
   Title: string;
@@ -98,7 +98,7 @@ export interface ISkillsAssessmentListItem {
   Comments?: string;
 }
 
-/** SharePoint list item for JML_SkillTests */
+/** SharePoint list item for PM_SkillTests */
 export interface ISkillTestListItem {
   Id: number;
   Title: string;
@@ -112,7 +112,7 @@ export interface ISkillTestListItem {
   TestStatus: string;
 }
 
-/** SharePoint list item for JML_SkillTestAttempts */
+/** SharePoint list item for PM_SkillTestAttempts */
 export interface ISkillTestAttemptListItem {
   Id: number;
   Title: string;
@@ -135,13 +135,13 @@ export class SkillsCompetenciesService {
   private sp: SPFI;
 
   // List names
-  private readonly SKILL_CATEGORIES_LIST = 'JML_SkillCategories';
-  private readonly SKILLS_LIST = 'JML_Skills';
-  private readonly USER_SKILLS_LIST = 'JML_UserSkills';
-  private readonly ROLE_COMPETENCIES_LIST = 'JML_RoleCompetencies';
-  private readonly SKILLS_ASSESSMENTS_LIST = 'JML_SkillsAssessments';
-  private readonly SKILL_TESTS_LIST = 'JML_SkillTests';
-  private readonly SKILL_TEST_ATTEMPTS_LIST = 'JML_SkillTestAttempts';
+  private readonly SKILL_CATEGORIES_LIST = 'PM_SkillCategories';
+  private readonly SKILLS_LIST = 'PM_Skills';
+  private readonly USER_SKILLS_LIST = 'PM_UserSkills';
+  private readonly ROLE_COMPETENCIES_LIST = 'PM_RoleCompetencies';
+  private readonly SKILLS_ASSESSMENTS_LIST = 'PM_SkillsAssessments';
+  private readonly SKILL_TESTS_LIST = 'PM_SkillTests';
+  private readonly SKILL_TEST_ATTEMPTS_LIST = 'PM_SkillTestAttempts';
 
   constructor(sp: SPFI) {
     this.sp = sp;

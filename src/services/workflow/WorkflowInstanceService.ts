@@ -27,9 +27,9 @@ import { ProcessType, ProcessStatus } from '../../models/ICommon';
 import { logger } from '../LoggingService';
 
 // List name constants
-const INSTANCES_LIST = 'JML_WorkflowInstances';
-const STEP_STATUS_LIST = 'JML_WorkflowStepStatus';
-const LOGS_LIST = 'JML_WorkflowLogs';
+const INSTANCES_LIST = 'PM_WorkflowInstances';
+const STEP_STATUS_LIST = 'PM_WorkflowStepStatus';
+const LOGS_LIST = 'PM_WorkflowLogs';
 
 // Select fields for instances
 const INSTANCE_SELECT = [
@@ -367,7 +367,7 @@ export class WorkflowInstanceService {
           processUpdates.ProgressPercentage = 100;
         }
 
-        await this.sp.web.lists.getByTitle('JML_Processes').items
+        await this.sp.web.lists.getByTitle('PM_Processes').items
           .getById(processId)
           .update(processUpdates);
 

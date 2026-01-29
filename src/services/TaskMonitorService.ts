@@ -4,7 +4,7 @@
  *
  * Service for retrieving task monitoring data from SharePoint.
  * Calculates KPIs, escalations, department performance, and workload metrics
- * from JML_TaskAssignments and JML_Processes lists.
+ * from PM_TaskAssignments and PM_Processes lists.
  *
  * @author JML Team
  * @version 1.0.0
@@ -30,11 +30,11 @@ const logger = LoggingService.getInstance();
 /**
  * Notification list name for in-app notifications
  */
-const NOTIFICATIONS_LIST = 'JML_Notifications';
+const NOTIFICATIONS_LIST = 'PM_Notifications';
 
 /**
  * Raw task assignment from SharePoint
- * Note: ProcessID is a Text field in JML_TaskAssignments, not a lookup
+ * Note: ProcessID is a Text field in PM_TaskAssignments, not a lookup
  */
 interface ITaskAssignmentItem {
   Id: number;
@@ -120,8 +120,8 @@ const DEPARTMENT_CONFIG: Record<string, { icon: string; iconBg: string }> = {
  */
 export class TaskMonitorService {
   private readonly sp: SPFI;
-  private readonly taskAssignmentsListName = 'JML_TaskAssignments';
-  private readonly processesListName = 'JML_Processes';
+  private readonly taskAssignmentsListName = 'PM_TaskAssignments';
+  private readonly processesListName = 'PM_Processes';
 
   constructor(sp: SPFI) {
     this.sp = sp;
@@ -692,7 +692,7 @@ export class TaskMonitorService {
     try {
       // In a real implementation, this would:
       // 1. Get task details
-      // 2. Create notification records in JML_Notifications
+      // 2. Create notification records in PM_Notifications
       // 3. Trigger Power Automate flow for email
       logger.error('TaskMonitorService', `Sending reminders for ${taskIds.length} tasks`);
 
@@ -737,7 +737,7 @@ export class TaskMonitorService {
       // Get all task assignments
       const tasks = await this.getTaskAssignments();
 
-      // Get escalation rules from JML_TaskEscalationRules
+      // Get escalation rules from PM_TaskEscalationRules
       const rules = await this.getEscalationRules();
 
       if (rules.length === 0) {
@@ -887,7 +887,7 @@ export class TaskMonitorService {
   private async getEscalationRules(): Promise<IEscalationRule[]> {
     try {
       const items = await this.sp.web.lists
-        .getByTitle('JML_TaskEscalationRules')
+        .getByTitle('PM_TaskEscalationRules')
         .items
         .filter("IsActive eq 1")
         .select(
@@ -941,7 +941,7 @@ export class TaskMonitorService {
   }
 
   /**
-   * Send escalation notification to JML_Notifications list
+   * Send escalation notification to PM_Notifications list
    */
   private async sendEscalationNotification(
     task: ITaskAssignmentItem,
@@ -1002,7 +1002,7 @@ export class TaskMonitorService {
 }
 
 /**
- * Escalation rule from JML_TaskEscalationRules
+ * Escalation rule from PM_TaskEscalationRules
  */
 interface IEscalationRule {
   Id: number;

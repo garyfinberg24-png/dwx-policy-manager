@@ -10,7 +10,11 @@
     "build": "gulp bundle",
     "clean": "gulp clean",
     "test": "gulp test",
-    "ship": "gulp bundle --ship && gulp package-solution --ship"
+    "ship": "gulp bundle --ship && gulp package-solution --ship",
+    "test:e2e": "npx playwright test",
+    "test:e2e:ui": "npx playwright test --ui",
+    "test:e2e:headed": "npx playwright test --headed",
+    "test:e2e:debug": "npx playwright test --debug"
   },
   "dependencies": {
     "@fluentui/react": "^8.106.4",
@@ -39,6 +43,7 @@
     "@microsoft/rush-stack-compiler-4.7": "0.1.0",
     "@microsoft/sp-build-web": "1.20.2",
     "@microsoft/sp-module-interfaces": "1.20.2",
+    "@playwright/test": "^1.58.0",
     "@rushstack/eslint-config": "4.0.1",
     "@types/react": "17.0.45",
     "@types/react-dom": "17.0.17",

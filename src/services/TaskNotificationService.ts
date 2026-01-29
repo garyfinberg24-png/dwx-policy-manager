@@ -66,10 +66,10 @@ export class TaskNotificationService {
   private context?: WebPartContext;
   private graphClient?: MSGraphClientV3;
   private preferencesService: NotificationPreferencesService;
-  private rulesListTitle = 'JML_TaskEscalationRules';
-  private logListTitle = 'JML_TaskEscalationLog';
-  private tasksListTitle = 'JML_TaskAssignments';
-  private notificationsListTitle = 'JML_Notifications';
+  private rulesListTitle = 'PM_TaskEscalationRules';
+  private logListTitle = 'PM_TaskEscalationLog';
+  private tasksListTitle = 'PM_TaskAssignments';
+  private notificationsListTitle = 'PM_Notifications';
 
   constructor(sp: SPFI, context?: WebPartContext) {
     this.sp = sp;
@@ -412,10 +412,10 @@ export class TaskNotificationService {
       case 'ProcessOwner':
         // Add process owner
         if (task.ProcessIDId) {
-          // Get process owner from JML_ProcessInstances
+          // Get process owner from PM_ProcessInstances
           try {
             const process = await this.sp.web.lists
-              .getByTitle('JML_ProcessInstances')
+              .getByTitle('PM_ProcessInstances')
               .items.getById(task.ProcessIDId)
               .select('EmployeeId')();
             if (process.EmployeeId) {
@@ -862,7 +862,7 @@ export class TaskNotificationService {
   }
 
   /**
-   * Send in-app notifications to JML_Notifications list
+   * Send in-app notifications to PM_Notifications list
    */
   private async sendInAppNotifications(notification: ITaskNotificationQueueItem): Promise<void> {
     for (const recipientId of notification.Recipients) {

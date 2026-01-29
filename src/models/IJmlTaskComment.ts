@@ -1,4 +1,4 @@
-// JML_TaskComments List Model
+// PM_TaskComments List Model
 // Provides collaboration and discussion threads on task assignments
 
 import { IBaseListItem, IUser } from './ICommon';

@@ -1,0 +1,915 @@
+@import '~@fluentui/react/dist/sass/References.scss';
+
+/**
+ * Policy Manager Header/NavBar Styles
+ * Based on DWx Brand Guide - Forest Teal theme
+ * Nav bar styled like Contract Manager (white bg, icons, badges)
+ *
+ * Color Palette:
+ * - Primary Teal: #0d9488
+ * - Dark Teal: #0f766e
+ * - Light Teal: #14b8a6
+ * - Accent: #2dd4bf
+ */
+
+// DWx Brand Colors - Forest Teal Theme
+$pm-primary-teal: #0d9488;
+$pm-dark-teal: #0f766e;
+$pm-light-teal: #14b8a6;
+$pm-accent-teal: #2dd4bf;
+$pm-dark-gray: #333333;
+$pm-mid-gray: #6c757d;
+$pm-light-gray: #f8f9fa;
+$pm-border-gray: #e9ecef;
+$pm-white: #ffffff;
+
+// Gradients
+$pm-gradient-header: linear-gradient(135deg, $pm-dark-teal 0%, $pm-primary-teal 100%);
+
+// Font
+$pm-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+// Header container
+.headerContainer {
+  width: 100%;
+  font-family: $pm-font-family;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+// Top bar with logo, search, and user actions - Dark teal gradient
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  background: $pm-gradient-header;
+  min-height: 84px;
+
+  @media (max-width: 768px) {
+    padding: 14px 16px;
+  }
+}
+
+// Logo section
+.logoSection {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logoIcon {
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+
+  svg {
+    width: 24px;
+    height: 24px;
+    color: $pm-white;
+  }
+}
+
+.logoText {
+  display: flex;
+  flex-direction: column;
+  color: $pm-white;
+}
+
+.brandLabel {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.appName {
+  font-size: 20px;
+  font-weight: 400;
+  letter-spacing: -0.3px;
+  line-height: 1.2;
+}
+
+.appSubtitle {
+  font-size: 11px;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: 0.8;
+  margin-top: 2px;
+}
+
+// Quick action buttons in top bar (Recent, New Request, New Contract style)
+.topBarActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  @media (max-width: 1024px) {
+    display: none;
+  }
+}
+
+.topBarButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  border-radius: 6px;
+  color: $pm-white;
+  font-family: $pm-font-family;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  white-space: nowrap;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.25);
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  &.primary {
+    background: #22c55e; // Green for primary action
+
+    &:hover {
+      background: #16a34a;
+    }
+  }
+
+  &.accent {
+    background: $pm-accent-teal;
+
+    &:hover {
+      background: darken($pm-accent-teal, 10%);
+    }
+  }
+}
+
+// Actions Section (search, settings, help, notifications, user)
+.actionsSection {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.actionButton {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: $pm-white;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  position: relative;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.notificationBadge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  background: #ef4444;
+  border-radius: 50%;
+  border: 2px solid $pm-dark-teal;
+}
+
+.userAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: $pm-white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  transition: border-color 0.2s ease;
+  overflow: hidden;
+  margin-left: 4px;
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+// Search bar in top section
+.searchSection {
+  flex: 1;
+  max-width: 300px;
+  margin: 0 24px;
+
+  @media (max-width: 1200px) {
+    display: none;
+  }
+}
+
+.searchInput {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  padding: 8px 12px;
+  transition: background 0.2s ease;
+
+  &:focus-within {
+    background: rgba(255, 255, 255, 0.25);
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-right: 8px;
+    flex-shrink: 0;
+  }
+
+  input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: $pm-white;
+    font-family: $pm-font-family;
+    font-size: 13px;
+    font-weight: 400;
+    outline: none;
+
+    &::placeholder {
+      color: rgba(255, 255, 255, 0.6);
+    }
+  }
+}
+
+// =============================================
+// NAVIGATION BAR - White background like Contract Manager
+// =============================================
+.navBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  background: $pm-white;
+  border-bottom: 1px solid $pm-border-gray;
+
+  @media (max-width: 768px) {
+    padding: 0 16px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+}
+
+.navItems {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  color: $pm-mid-gray;
+  font-size: 13px;
+  font-weight: 400;
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px; // Overlap with container border
+  transition: color 0.2s ease, border-color 0.2s ease;
+  white-space: nowrap;
+  cursor: pointer;
+  background: transparent;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  font-family: $pm-font-family;
+  position: relative;
+
+  &:hover {
+    color: $pm-dark-gray;
+  }
+
+  &.active {
+    color: $pm-primary-teal;
+    border-bottom-color: $pm-primary-teal;
+
+    svg {
+      color: $pm-primary-teal;
+    }
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
+    color: $pm-mid-gray;
+    transition: color 0.2s ease;
+  }
+}
+
+// Badge for nav items (notification counts)
+.navBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: #ef4444;
+  color: $pm-white;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 9px;
+  margin-left: 4px;
+}
+
+.navBadgeGreen {
+  background: #22c55e;
+}
+
+.navBadgeOrange {
+  background: #f97316;
+}
+
+// Dropdown indicator for nav items
+.navDropdown {
+  display: flex;
+  align-items: center;
+
+  svg.dropdownIcon {
+    width: 12px;
+    height: 12px;
+    margin-left: 4px;
+    opacity: 0.6;
+  }
+}
+
+// Quick actions on the right side of nav bar
+.quickActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+}
+
+.quickActionButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: $pm-primary-teal;
+  border: none;
+  border-radius: 6px;
+  color: $pm-white;
+  font-family: $pm-font-family;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+
+  &:hover {
+    background: $pm-dark-teal;
+  }
+
+  &.secondary {
+    background: $pm-light-gray;
+    color: $pm-dark-gray;
+
+    &:hover {
+      background: darken($pm-light-gray, 5%);
+    }
+  }
+
+  &.primary {
+    background: $pm-primary-teal;
+    color: $pm-white;
+
+    &:hover {
+      background: $pm-dark-teal;
+    }
+  }
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+// Mobile menu button
+.mobileMenuButton {
+  display: none;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: $pm-white;
+  cursor: pointer;
+
+  @media (max-width: 768px) {
+    display: flex;
+  }
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+// Breadcrumbs (optional)
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 24px;
+  background: $pm-light-gray;
+  font-size: 12px;
+  color: $pm-mid-gray;
+  border-bottom: 1px solid $pm-border-gray;
+
+  @media (max-width: 768px) {
+    padding: 8px 16px;
+    overflow-x: auto;
+  }
+}
+
+.breadcrumbItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  font-weight: 400;
+
+  a {
+    color: $pm-mid-gray;
+    text-decoration: none;
+    font-weight: 400;
+
+    &:hover {
+      color: $pm-primary-teal;
+      text-decoration: underline;
+    }
+  }
+
+  &.current {
+    color: $pm-dark-gray;
+    font-weight: 400;
+  }
+}
+
+.breadcrumbSeparator {
+  color: $pm-border-gray;
+}
+
+// Page header section (title area below nav) - kept for optional use
+.pageHeader {
+  background: $pm-light-gray;
+  padding: 16px 24px;
+  border-bottom: 1px solid $pm-border-gray;
+
+  @media (max-width: 768px) {
+    padding: 12px 16px;
+  }
+}
+
+.pageHeaderContent {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.pageTitleSection {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pageIcon {
+  width: 40px;
+  height: 40px;
+  background: $pm-primary-teal;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: $pm-white;
+
+  svg {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+.pageTitle {
+  color: $pm-dark-gray;
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.pageDescription {
+  color: $pm-mid-gray;
+  font-size: 13px;
+  font-weight: 400;
+  margin: 4px 0 0 0;
+}
+
+// Stats pills in page header
+.pageStats {
+  display: flex;
+  gap: 12px;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+.pageStat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: $pm-white;
+  border: 1px solid $pm-border-gray;
+  border-radius: 16px;
+  color: $pm-dark-gray;
+}
+
+.pageStatValue {
+  font-size: 14px;
+  font-weight: 700;
+  color: $pm-primary-teal;
+}
+
+.pageStatLabel {
+  font-size: 12px;
+  font-weight: 400;
+  color: $pm-mid-gray;
+}
+
+// =============================================
+// DROPDOWN PANELS (Notifications & Profile)
+// =============================================
+
+.dropdownContainer {
+  position: relative;
+  z-index: 1000000;
+}
+
+.dropdownPanel {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  min-width: 320px;
+  background: $pm-white;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  z-index: 1000001;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  animation: dropdownSlideIn 0.15s ease-out;
+}
+
+@keyframes dropdownSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdownArrow {
+  position: absolute;
+  top: -6px;
+  right: 14px;
+  width: 12px;
+  height: 12px;
+  background: $pm-dark-teal;
+  transform: rotate(45deg);
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  border-left: 1px solid rgba(0, 0, 0, 0.1);
+  z-index: 1;
+}
+
+.dropdownPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, $pm-dark-teal 0%, $pm-primary-teal 100%);
+  color: $pm-white;
+}
+
+.dropdownPanelTitle {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.dropdownPanelBadge {
+  font-size: 11px;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 2px 10px;
+  border-radius: 10px;
+}
+
+.dropdownPanelBody {
+  max-height: 340px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.dropdownPanelFooter {
+  padding: 12px 16px;
+  border-top: 1px solid $pm-border-gray;
+  background: $pm-light-gray;
+  display: flex;
+  justify-content: center;
+}
+
+.dropdownFooterLink {
+  color: $pm-primary-teal;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+    color: $pm-dark-teal;
+  }
+}
+
+.dropdownEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 32px 16px;
+  color: #a19f9d;
+  font-size: 13px;
+}
+
+// =============================================
+// NOTIFICATION BADGE (Count)
+// =============================================
+
+.notificationBadgeCount {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: #ef4444;
+  border-radius: 9px;
+  font-size: 10px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: $pm-white;
+  border: 2px solid $pm-dark-teal;
+  line-height: 1;
+}
+
+// =============================================
+// NOTIFICATION ITEMS
+// =============================================
+
+.notificationItem {
+  display: flex;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #f3f2f1;
+  cursor: pointer;
+  transition: background 0.15s;
+  align-items: flex-start;
+
+  &:hover {
+    background: #faf9f8;
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.notificationUnread {
+  background: #f0f9ff;
+
+  &:hover {
+    background: #e6f4ff;
+  }
+}
+
+.notificationItemIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: $pm-white;
+  flex-shrink: 0;
+}
+
+.notificationItemContent {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.notificationItemTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: $pm-dark-gray;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notificationItemMessage {
+  font-size: 12px;
+  color: $pm-mid-gray;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notificationItemTime {
+  font-size: 11px;
+  color: #a19f9d;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+// =============================================
+// PROFILE DROPDOWN
+// =============================================
+
+.profileHeader {
+  padding: 24px 20px;
+  background: linear-gradient(135deg, $pm-dark-teal 0%, $pm-primary-teal 100%);
+  color: $pm-white;
+  text-align: center;
+}
+
+.profileAvatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 500;
+  margin: 0 auto 12px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.profileName {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.profileEmail {
+  font-size: 12px;
+  opacity: 0.8;
+  margin-bottom: 8px;
+}
+
+.profileLoginTime {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+.profileActions {
+  padding: 8px 0;
+}
+
+.profileActionItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: $pm-dark-gray;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover {
+    background: #f3f2f1;
+    color: $pm-primary-teal;
+  }
+
+  svg {
+    color: $pm-mid-gray;
+    flex-shrink: 0;
+  }
+}
+
+.profileFooter {
+  padding: 8px 0;
+  border-top: 1px solid $pm-border-gray;
+}
+
+.profileSignOut {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 20px;
+  background: none;
+  border: none;
+  font-family: $pm-font-family;
+  font-size: 13px;
+  font-weight: 500;
+  color: #d13438;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover {
+    background: #fde7e9;
+  }
+
+  svg {
+    color: #d13438;
+    flex-shrink: 0;
+  }
+}

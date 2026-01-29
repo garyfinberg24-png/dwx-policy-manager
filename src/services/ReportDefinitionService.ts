@@ -9,7 +9,7 @@ import { logger } from './LoggingService';
 
 export class ReportDefinitionService {
   private sp: SPFI;
-  private listName: string = 'JML_ReportDefinitions';
+  private listName: string = 'PM_ReportDefinitions';
 
   constructor(sp: SPFI) {
     this.sp = sp;

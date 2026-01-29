@@ -61,20 +61,20 @@ import { logger } from './LoggingService';
 // ==================== LIST NAMES ====================
 
 const LISTS = {
-  CONTRACTS: 'JML_ContractRecords',
-  PARTIES: 'JML_ContractParties',
-  VERSIONS: 'JML_ContractVersions',
-  CLAUSES: 'JML_ContractClauses',
-  CLAUSE_INSTANCES: 'JML_ContractClauseInstances',
-  CLAUSE_CATEGORIES: 'JML_ClauseCategories',
-  TEMPLATES: 'JML_ContractTemplates',
-  APPROVALS: 'JML_ContractApprovals',
-  APPROVAL_RULES: 'JML_ContractApprovalRules',
-  SIGNATURES: 'JML_ContractSignatures',
-  OBLIGATIONS: 'JML_ContractObligations',
-  AUDIT_LOG: 'JML_ContractAuditLog',
-  COMMENTS: 'JML_ContractComments',
-  DOCUMENTS: 'JML_ContractDocuments'
+  CONTRACTS: 'PM_ContractRecords',
+  PARTIES: 'PM_ContractParties',
+  VERSIONS: 'PM_ContractVersions',
+  CLAUSES: 'PM_ContractClauses',
+  CLAUSE_INSTANCES: 'PM_ContractClauseInstances',
+  CLAUSE_CATEGORIES: 'PM_ClauseCategories',
+  TEMPLATES: 'PM_ContractTemplates',
+  APPROVALS: 'PM_ContractApprovals',
+  APPROVAL_RULES: 'PM_ContractApprovalRules',
+  SIGNATURES: 'PM_ContractSignatures',
+  OBLIGATIONS: 'PM_ContractObligations',
+  AUDIT_LOG: 'PM_ContractAuditLog',
+  COMMENTS: 'PM_ContractComments',
+  DOCUMENTS: 'PM_ContractDocuments'
 };
 
 // ==================== MAIN SERVICE CLASS ====================

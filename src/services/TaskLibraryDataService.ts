@@ -1,5 +1,5 @@
 // @ts-nocheck
-// TaskLibraryDataService - SharePoint-backed service for managing JML_Tasks list
+// TaskLibraryDataService - SharePoint-backed service for managing PM_Tasks list
 // This service provides CRUD operations for task library templates
 
 import { SPFI } from '@pnp/sp';
@@ -18,7 +18,7 @@ export class TaskLibraryDataService {
   }
 
   /**
-   * Get all tasks from the JML_Tasks list
+   * Get all tasks from the PM_Tasks list
    */
   public async getAllTasks(): Promise<IJmlTask[]> {
     try {
@@ -26,9 +26,9 @@ export class TaskLibraryDataService {
       // Query only the core fields that are guaranteed to exist
       // NOTE: Author/Editor may be text fields or Person lookups depending on list config
       // Do NOT use expand() as it will fail if they are text fields
-      // Note: Dependencies field removed - does not exist in JML_Tasks list
+      // Note: Dependencies field removed - does not exist in PM_Tasks list
       // If task dependencies are needed, add the column to the SharePoint list first
-      const items = await this.sp.web.lists.getByTitle('JML_Tasks').items
+      const items = await this.sp.web.lists.getByTitle('PM_Tasks').items
         .select(
           'Id', 'Title', 'TaskCode', 'Category', 'Description', 'Instructions',
           'Department', 'SLAHours', 'RequiresApproval',
@@ -54,7 +54,7 @@ export class TaskLibraryDataService {
    */
   public async getActiveTasks(): Promise<IJmlTask[]> {
     try {
-      const items = await this.sp.web.lists.getByTitle('JML_Tasks').items
+      const items = await this.sp.web.lists.getByTitle('PM_Tasks').items
         .filter('IsActive eq true')
         .select(
           'Id', 'Title', 'TaskCode', 'Category', 'Description', 'Instructions',
@@ -77,8 +77,8 @@ export class TaskLibraryDataService {
   public async getTaskById(id: number): Promise<IJmlTask> {
     try {
       // Note: ApprovalRole field may not exist in all environments
-      // Note: Dependencies field removed - does not exist in JML_Tasks list
-      const item: any = await this.sp.web.lists.getByTitle('JML_Tasks').items
+      // Note: Dependencies field removed - does not exist in PM_Tasks list
+      const item: any = await this.sp.web.lists.getByTitle('PM_Tasks').items
         .getById(id)
         .select(
           'Id', 'Title', 'TaskCode', 'Category', 'Description', 'Instructions',
@@ -102,7 +102,7 @@ export class TaskLibraryDataService {
    */
   public async createTask(task: Partial<IJmlTask>): Promise<IJmlTask> {
     try {
-      const result = await this.sp.web.lists.getByTitle('JML_Tasks').items.add({
+      const result = await this.sp.web.lists.getByTitle('PM_Tasks').items.add({
         Title: task.Title,
         TaskCode: task.TaskCode,
         Category: task.Category,
@@ -156,7 +156,7 @@ export class TaskLibraryDataService {
       if (updates.RelatedLinks !== undefined) updateData.RelatedLinks = updates.RelatedLinks;
       if (updates.AutomationAvailable !== undefined) updateData.AutomationAvailable = updates.AutomationAvailable;
 
-      await this.sp.web.lists.getByTitle('JML_Tasks').items
+      await this.sp.web.lists.getByTitle('PM_Tasks').items
         .getById(id)
         .update(updateData);
 
@@ -172,7 +172,7 @@ export class TaskLibraryDataService {
    */
   public async deleteTask(id: number): Promise<void> {
     try {
-      await this.sp.web.lists.getByTitle('JML_Tasks').items
+      await this.sp.web.lists.getByTitle('PM_Tasks').items
         .getById(id)
         .delete();
 
@@ -188,7 +188,7 @@ export class TaskLibraryDataService {
    */
   public async getTasksByCategory(category: string): Promise<IJmlTask[]> {
     try {
-      const items = await this.sp.web.lists.getByTitle('JML_Tasks').items
+      const items = await this.sp.web.lists.getByTitle('PM_Tasks').items
         .filter(`Category eq '${category}'`)
         .select(
           'Id', 'Title', 'TaskCode', 'Category', 'Description',
@@ -208,7 +208,7 @@ export class TaskLibraryDataService {
    */
   public async getTasksByDepartment(department: string): Promise<IJmlTask[]> {
     try {
-      const items = await this.sp.web.lists.getByTitle('JML_Tasks').items
+      const items = await this.sp.web.lists.getByTitle('PM_Tasks').items
         .filter(`Department eq '${department}'`)
         .select(
           'Id', 'Title', 'TaskCode', 'Category', 'Description',
@@ -250,7 +250,7 @@ export class TaskLibraryDataService {
    */
   public async toggleTaskActive(id: number, isActive: boolean): Promise<void> {
     try {
-      await this.sp.web.lists.getByTitle('JML_Tasks').items
+      await this.sp.web.lists.getByTitle('PM_Tasks').items
         .getById(id)
         .update({ IsActive: isActive });
 

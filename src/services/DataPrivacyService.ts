@@ -129,14 +129,14 @@ export class DataPrivacyService {
     try {
       // Verify required lists exist
       const lists = [
-        'JML_DataRetentionPolicies',
-        'JML_DataDeletionRequests',
-        'JML_DataExportRequests',
-        'JML_ConsentRecords',
-        'JML_PrivacyImpactAssessments',
-        'JML_AnonymizationJobs',
-        'JML_AuditLog',
-        'JML_DataSubjectRequests'
+        'PM_DataRetentionPolicies',
+        'PM_DataDeletionRequests',
+        'PM_DataExportRequests',
+        'PM_ConsentRecords',
+        'PM_PrivacyImpactAssessments',
+        'PM_AnonymizationJobs',
+        'PM_AuditLog',
+        'PM_DataSubjectRequests'
       ];
 
       for (const listTitle of lists) {
@@ -160,7 +160,7 @@ export class DataPrivacyService {
   public async getRetentionPolicies(): Promise<IDataRetentionPolicy[]> {
     try {
       const items = await this.sp.web.lists
-        .getByTitle('JML_DataRetentionPolicies')
+        .getByTitle('PM_DataRetentionPolicies')
         .items.filter('IsActive eq true')
         .orderBy('EntityType')();
 
@@ -183,7 +183,7 @@ export class DataPrivacyService {
       const filter = `${ValidationUtils.buildFilter('EntityType', 'eq', entityType)} and IsActive eq true`;
 
       const items = await this.sp.web.lists
-        .getByTitle('JML_DataRetentionPolicies')
+        .getByTitle('PM_DataRetentionPolicies')
         .items.filter(filter)
         .top(1)();
 
@@ -213,7 +213,7 @@ export class DataPrivacyService {
 
         // Update policy execution tracking
         await this.sp.web.lists
-          .getByTitle('JML_DataRetentionPolicies')
+          .getByTitle('PM_DataRetentionPolicies')
           .items.getById(policy.Id!)
           .update({
             LastExecuted: new Date().toISOString(),
@@ -441,7 +441,7 @@ export class DataPrivacyService {
       };
 
       const result = await this.sp.web.lists
-        .getByTitle('JML_AnonymizationJobs')
+        .getByTitle('PM_AnonymizationJobs')
         .items.add(this.serializeAnonymizationJob(job));
 
       return result.data.Id;
@@ -489,7 +489,7 @@ export class DataPrivacyService {
       };
 
       const result = await this.sp.web.lists
-        .getByTitle('JML_DataDeletionRequests')
+        .getByTitle('PM_DataDeletionRequests')
         .items.add(this.serializeDeletionRequest(request));
 
       await this.logAuditEntry({
@@ -531,7 +531,7 @@ export class DataPrivacyService {
 
       if (!approved) {
         await this.sp.web.lists
-          .getByTitle('JML_DataDeletionRequests')
+          .getByTitle('PM_DataDeletionRequests')
           .items.getById(requestId)
           .update({
             Status: DeletionRequestStatus.Rejected,
@@ -547,7 +547,7 @@ export class DataPrivacyService {
 
       // Update status to In Progress
       await this.sp.web.lists
-        .getByTitle('JML_DataDeletionRequests')
+        .getByTitle('PM_DataDeletionRequests')
         .items.getById(requestId)
         .update({
           Status: DeletionRequestStatus.InProgress,
@@ -600,7 +600,7 @@ export class DataPrivacyService {
 
       // Update request status
       await this.sp.web.lists
-        .getByTitle('JML_DataDeletionRequests')
+        .getByTitle('PM_DataDeletionRequests')
         .items.getById(requestId)
         .update({
           Status: result.success ? DeletionRequestStatus.Completed : DeletionRequestStatus.PartiallyCompleted,
@@ -631,7 +631,7 @@ export class DataPrivacyService {
   public async getDeletionRequest(requestId: number): Promise<IDataDeletionRequest | null> {
     try {
       const item = await this.sp.web.lists
-        .getByTitle('JML_DataDeletionRequests')
+        .getByTitle('PM_DataDeletionRequests')
         .items.getById(requestId)();
 
       return this.deserializeDeletionRequest(item);
@@ -681,7 +681,7 @@ export class DataPrivacyService {
       };
 
       const result = await this.sp.web.lists
-        .getByTitle('JML_DataExportRequests')
+        .getByTitle('PM_DataExportRequests')
         .items.add(this.serializeExportRequest(request));
 
       await this.logAuditEntry({
@@ -713,14 +713,14 @@ export class DataPrivacyService {
 
     try {
       const item = await this.sp.web.lists
-        .getByTitle('JML_DataExportRequests')
+        .getByTitle('PM_DataExportRequests')
         .items.getById(requestId)();
 
       const request = this.deserializeExportRequest(item);
 
       // Update status to Processing
       await this.sp.web.lists
-        .getByTitle('JML_DataExportRequests')
+        .getByTitle('PM_DataExportRequests')
         .items.getById(requestId)
         .update({ Status: ExportRequestStatus.Processing });
 
@@ -749,7 +749,7 @@ export class DataPrivacyService {
       expiryDate.setDate(expiryDate.getDate() + 30);
 
       await this.sp.web.lists
-        .getByTitle('JML_DataExportRequests')
+        .getByTitle('PM_DataExportRequests')
         .items.getById(requestId)
         .update({
           Status: ExportRequestStatus.Completed,
@@ -768,7 +768,7 @@ export class DataPrivacyService {
       return result;
     } catch (error) {
       await this.sp.web.lists
-        .getByTitle('JML_DataExportRequests')
+        .getByTitle('PM_DataExportRequests')
         .items.getById(requestId)
         .update({ Status: ExportRequestStatus.Failed });
 
@@ -885,7 +885,7 @@ export class DataPrivacyService {
       };
 
       const result = await this.sp.web.lists
-        .getByTitle('JML_ConsentRecords')
+        .getByTitle('PM_ConsentRecords')
         .items.add(this.serializeConsentRecord(consent));
 
       await this.logAuditEntry({
@@ -912,7 +912,7 @@ export class DataPrivacyService {
   ): Promise<void> {
     try {
       await this.sp.web.lists
-        .getByTitle('JML_ConsentRecords')
+        .getByTitle('PM_ConsentRecords')
         .items.getById(consentId)
         .update({
           IsActive: false,
@@ -947,7 +947,7 @@ export class DataPrivacyService {
       const filter = ValidationUtils.buildFilter('UserEmail', 'eq', userEmail);
 
       const items = await this.sp.web.lists
-        .getByTitle('JML_ConsentRecords')
+        .getByTitle('PM_ConsentRecords')
         .items.filter(filter)
         .orderBy('ConsentDate', false)();
 
@@ -990,7 +990,7 @@ export class DataPrivacyService {
       };
 
       const result = await this.sp.web.lists
-        .getByTitle('JML_PrivacyImpactAssessments')
+        .getByTitle('PM_PrivacyImpactAssessments')
         .items.add(this.serializePIA(newPIA));
 
       await this.logAuditEntry({
@@ -1031,17 +1031,17 @@ export class DataPrivacyService {
    */
   private getListNameForEntityType(entityType: EntityType): string | null {
     const mapping: { [key in EntityType]?: string } = {
-      [EntityType.Process]: 'JML_Processes',
-      [EntityType.Task]: 'JML_Tasks',
-      [EntityType.Approval]: 'JML_Approvals',
-      [EntityType.ApprovalHistory]: 'JML_ApprovalHistory',
-      [EntityType.IntegrationLog]: 'JML_IntegrationLogs',
-      [EntityType.AIUsageLog]: 'JML_AIUsageLogs',
-      [EntityType.UserActivity]: 'JML_UserActivity',
-      [EntityType.AuditLog]: 'JML_AuditLog',
-      [EntityType.Notification]: 'JML_Notifications',
-      [EntityType.Comment]: 'JML_Comments',
-      [EntityType.Attachment]: 'JML_Attachments'
+      [EntityType.Process]: 'PM_Processes',
+      [EntityType.Task]: 'PM_Tasks',
+      [EntityType.Approval]: 'PM_Approvals',
+      [EntityType.ApprovalHistory]: 'PM_ApprovalHistory',
+      [EntityType.IntegrationLog]: 'PM_IntegrationLogs',
+      [EntityType.AIUsageLog]: 'PM_AIUsageLogs',
+      [EntityType.UserActivity]: 'PM_UserActivity',
+      [EntityType.AuditLog]: 'PM_AuditLog',
+      [EntityType.Notification]: 'PM_Notifications',
+      [EntityType.Comment]: 'PM_Comments',
+      [EntityType.Attachment]: 'PM_Attachments'
     };
 
     return mapping[entityType] || null;
@@ -1097,7 +1097,7 @@ export class DataPrivacyService {
       };
 
       await this.sp.web.lists
-        .getByTitle('JML_AuditLog')
+        .getByTitle('PM_AuditLog')
         .items.add(this.serializeAuditEntry(auditEntry));
     } catch (error) {
       logger.error('DataPrivacyService', 'Error logging audit entry:', error);
@@ -1303,7 +1303,7 @@ export class DataPrivacyService {
       };
 
       const result = await this.sp.web.lists
-        .getByTitle('JML_POPIAComplianceRecords')
+        .getByTitle('PM_POPIAComplianceRecords')
         .items.add(recordData);
 
       await this.logAuditEntry({
@@ -1381,7 +1381,7 @@ export class DataPrivacyService {
       };
 
       const result = await this.sp.web.lists
-        .getByTitle('JML_POPIADataBreaches')
+        .getByTitle('PM_POPIADataBreaches')
         .items.add(breachData);
 
       // Create critical audit log entry
@@ -1443,7 +1443,7 @@ export class DataPrivacyService {
       };
 
       const result = await this.sp.web.lists
-        .getByTitle('JML_POPIAInformationOfficers')
+        .getByTitle('PM_POPIAInformationOfficers')
         .items.add(officerData);
 
       await this.logAuditEntry({
@@ -1505,7 +1505,7 @@ export class DataPrivacyService {
       };
 
       const result = await this.sp.web.lists
-        .getByTitle('JML_POPIAProcessingRegister')
+        .getByTitle('PM_POPIAProcessingRegister')
         .items.add(entryData);
 
       await this.logAuditEntry({
@@ -1564,7 +1564,7 @@ export class DataPrivacyService {
 
       // Update with POPIA-specific fields
       await this.sp.web.lists
-        .getByTitle('JML_ConsentRecords')
+        .getByTitle('PM_ConsentRecords')
         .items.getById(consentId)
         .update({
           Regulation: PrivacyRegulation.POPIA,
@@ -1626,7 +1626,7 @@ export class DataPrivacyService {
       };
 
       const result = await this.sp.web.lists
-        .getByTitle('JML_DataSubjectRequests')
+        .getByTitle('PM_DataSubjectRequests')
         .items.add(requestData);
 
       const requestId = result.data.Id;
@@ -1635,7 +1635,7 @@ export class DataPrivacyService {
       // Update with additional fee-related fields if provided
       if (request.FeeRequired || request.FeeAmount) {
         await this.sp.web.lists
-          .getByTitle('JML_DataSubjectRequests')
+          .getByTitle('PM_DataSubjectRequests')
           .items.getById(requestId)
           .update({
             FeeRequired: request.FeeRequired || false,
@@ -1702,7 +1702,7 @@ export class DataPrivacyService {
       };
 
       const result = await this.sp.web.lists
-        .getByTitle('JML_POPIACrossBorderTransfers')
+        .getByTitle('PM_POPIACrossBorderTransfers')
         .items.add(transferData);
 
       await this.logAuditEntry({

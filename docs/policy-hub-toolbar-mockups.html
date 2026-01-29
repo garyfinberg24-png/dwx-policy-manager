@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Policy Hub — Consolidated Toolbar Mockups (5 Variations)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; padding: 32px; color: #323130; }
+  h1 { font-size: 24px; margin-bottom: 8px; color: #0078d4; }
+  h2 { font-size: 18px; margin: 32px 0 6px; color: #323130; }
+  .subtitle { font-size: 14px; color: #605e5c; margin-bottom: 32px; }
+  .variation-desc { font-size: 13px; color: #605e5c; margin-bottom: 12px; font-style: italic; }
+  .mockup { background: #faf9f8; padding: 24px; border-radius: 12px; margin-bottom: 40px; border: 1px solid #e1dfdd; }
+
+  /* Shared toolbar styles */
+  .toolbar { background: #fff; border: 1px solid #edebe9; border-left: 4px solid #107c10; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+  /* Dropdown stub */
+  select { padding: 7px 28px 7px 10px; border: 1px solid #edebe9; border-radius: 4px; font-size: 13px; color: #323130; background: #fff; cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23605e5c' stroke-width='1.5' fill='none'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; }
+  select:hover { border-color: #0078d4; }
+  select:focus { outline: 2px solid #0078d4; outline-offset: -1px; }
+
+  /* Icon button */
+  .icon-btn { width: 32px; height: 32px; border: 1px solid #edebe9; border-radius: 4px; background: #fff; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; color: #605e5c; font-size: 14px; transition: all 0.15s ease; }
+  .icon-btn:hover { background: #f0f6fc; border-color: #0078d4; color: #0078d4; }
+  .icon-btn.active { background: #107c10; color: #fff; border-color: #107c10; }
+
+  /* Text button */
+  .text-btn { padding: 6px 12px; border: 1px solid #edebe9; border-radius: 4px; background: #fff; cursor: pointer; font-size: 13px; color: #605e5c; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s ease; }
+  .text-btn:hover { background: #f0f6fc; border-color: #0078d4; color: #0078d4; }
+
+  /* Results count */
+  .results-count { font-size: 13px; color: #605e5c; white-space: nowrap; }
+  .results-count strong { color: #323130; }
+
+  /* Divider */
+  .divider { width: 1px; height: 24px; background: #edebe9; flex-shrink: 0; }
+
+  /* Filter pill */
+  .pill { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; background: #dff6dd; border-radius: 12px; font-size: 11px; color: #107c10; }
+  .pill .remove { width: 14px; height: 14px; border: none; background: transparent; cursor: pointer; color: #107c10; font-size: 10px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; }
+  .pill .remove:hover { background: #107c10; color: #fff; }
+
+  /* View toggle */
+  .view-toggle { display: flex; gap: 2px; }
+  .view-toggle .icon-btn.active { background: #107c10; border-color: #107c10; }
+
+  /* Winner badge */
+  .winner { display: inline-block; background: #107c10; color: white; font-size: 10px; padding: 2px 8px; border-radius: 10px; text-transform: uppercase; font-weight: 600; margin-left: 8px; vertical-align: middle; }
+
+  /* SVG icons inline */
+  .ico { width: 16px; height: 16px; display: inline-block; vertical-align: middle; }
+</style>
+</head>
+<body>
+
+<h1>Policy Hub — Consolidated Toolbar Mockups</h1>
+<p class="subtitle">5 variations for merging the Filter Bar + Results/Sort/Export bar into a single unified panel. All use green accent borders to match app colour scheme.</p>
+
+<!-- ============================================================ -->
+<!-- VARIATION 1: Single Row — Filters Left, Actions Right -->
+<!-- ============================================================ -->
+<h2>Variation 1: Single Row — Filters Left, Actions Right</h2>
+<p class="variation-desc">Everything on one line. Filters flow left, count + sort + icons align right. Most compact but may wrap on smaller screens.</p>
+
+<div class="mockup">
+  <div class="toolbar" style="display: flex; align-items: center; flex-wrap: wrap; padding: 10px 16px; gap: 10px;">
+    <!-- Filters -->
+    <select><option>All Categories</option></select>
+    <select><option>All Status</option></select>
+    <select><option>All Departments</option></select>
+    <select><option>All Timelines</option></select>
+    <select><option>All Risk Levels</option></select>
+    <select><option>All Read Times</option></select>
+    <select style="background-color: #f3f2f1; font-weight: 500;"><option>Group By: None</option></select>
+
+    <!-- Spacer -->
+    <div style="flex: 1; min-width: 20px;"></div>
+
+    <!-- Results + Sort + Actions -->
+    <span class="results-count">Showing <strong>20</strong> of <strong>21</strong></span>
+    <span class="divider"></span>
+    <select style="min-width: 150px;"><option>Sort: Name A-Z</option></select>
+    <span class="divider"></span>
+
+    <!-- View toggle -->
+    <div class="view-toggle">
+      <button class="icon-btn active" title="Card View">▦</button>
+      <button class="icon-btn" title="List View">☰</button>
+    </div>
+    <span class="divider"></span>
+    <button class="icon-btn" title="Export to Excel">⬇</button>
+    <button class="icon-btn" title="Print">🖨</button>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- VARIATION 2: Two Rows in One Panel — Filters Top, Results Bottom  -->
+<!-- ============================================================ -->
+<h2>Variation 2: Two Rows in One Panel — Filters Top, Results Bottom <span class="winner">Recommended</span></h2>
+<p class="variation-desc">Keeps the two-row layout but within a single bordered panel. Top row = filters. Bottom row = count + sort + filter pills + icons. Clean separation with a subtle divider line.</p>
+
+<div class="mockup">
+  <div class="toolbar" style="overflow: hidden;">
+    <!-- Row 1: Filters -->
+    <div style="display: flex; align-items: center; flex-wrap: wrap; padding: 10px 16px; gap: 10px;">
+      <select><option>All Categories</option></select>
+      <select><option>All Status</option></select>
+      <select><option>All Departments</option></select>
+      <select><option>All Timelines</option></select>
+      <select><option>All Risk Levels</option></select>
+      <select><option>All Read Times</option></select>
+      <select style="background-color: #f3f2f1; font-weight: 500;"><option>Group By: None</option></select>
+    </div>
+
+    <!-- Subtle divider -->
+    <div style="height: 1px; background: #edebe9; margin: 0 16px;"></div>
+
+    <!-- Row 2: Results + Sort + Filters + Actions -->
+    <div style="display: flex; align-items: center; flex-wrap: wrap; padding: 10px 16px; gap: 10px;">
+      <span class="results-count">Showing <strong>20</strong> of <strong>21</strong></span>
+      <span class="divider"></span>
+      <select style="min-width: 150px;"><option>Sort: Name A-Z</option></select>
+
+      <!-- Active filter pills -->
+      <span class="divider"></span>
+      <span style="font-size: 12px; color: #605e5c; font-weight: 500;">Active:</span>
+      <span class="pill">IT & Security <button class="remove">✕</button></span>
+      <span class="pill">Published <button class="remove">✕</button></span>
+      <button class="text-btn" style="font-size: 12px;">✕ Clear All</button>
+
+      <!-- Spacer -->
+      <div style="flex: 1; min-width: 20px;"></div>
+
+      <!-- View toggle + Actions -->
+      <div class="view-toggle">
+        <button class="icon-btn active" title="Card View">▦</button>
+        <button class="icon-btn" title="List View">☰</button>
+      </div>
+      <span class="divider"></span>
+      <button class="icon-btn" title="Export to Excel">⬇</button>
+      <button class="icon-btn" title="Print">🖨</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- VARIATION 3: Collapsible Filters — Compact by Default -->
+<!-- ============================================================ -->
+<h2>Variation 3: Collapsible Filters — Compact by Default</h2>
+<p class="variation-desc">Results bar is always visible. Filters hide behind a "Filters" toggle button. When expanded, filters slide down within the same panel. Saves space when filters aren't needed.</p>
+
+<div class="mockup">
+  <!-- Collapsed state -->
+  <p style="font-size: 12px; color: #605e5c; margin-bottom: 8px;">▸ Collapsed state (default):</p>
+  <div class="toolbar" style="display: flex; align-items: center; flex-wrap: wrap; padding: 10px 16px; gap: 10px; margin-bottom: 16px;">
+    <button class="text-btn" style="font-weight: 600; color: #107c10; border-color: #107c10;">
+      <span style="font-size: 12px;">▾</span> Filters
+    </button>
+    <span class="divider"></span>
+    <span class="results-count">Showing <strong>20</strong> of <strong>21</strong> policies</span>
+    <span class="divider"></span>
+    <select style="min-width: 150px;"><option>Sort: Name A-Z</option></select>
+
+    <div style="flex: 1;"></div>
+
+    <div class="view-toggle">
+      <button class="icon-btn active" title="Card View">▦</button>
+      <button class="icon-btn" title="List View">☰</button>
+    </div>
+    <span class="divider"></span>
+    <button class="icon-btn" title="Export">⬇</button>
+    <button class="icon-btn" title="Print">🖨</button>
+  </div>
+
+  <!-- Expanded state -->
+  <p style="font-size: 12px; color: #605e5c; margin-bottom: 8px;">▾ Expanded state (after clicking "Filters"):</p>
+  <div class="toolbar" style="overflow: hidden;">
+    <div style="display: flex; align-items: center; flex-wrap: wrap; padding: 10px 16px; gap: 10px;">
+      <button class="text-btn" style="font-weight: 600; color: #107c10; border-color: #107c10;">
+        <span style="font-size: 12px;">▴</span> Filters
+      </button>
+      <span class="divider"></span>
+      <span class="results-count">Showing <strong>20</strong> of <strong>21</strong> policies</span>
+      <span class="divider"></span>
+      <select style="min-width: 150px;"><option>Sort: Name A-Z</option></select>
+
+      <div style="flex: 1;"></div>
+
+      <div class="view-toggle">
+        <button class="icon-btn active" title="Card View">▦</button>
+        <button class="icon-btn" title="List View">☰</button>
+      </div>
+      <span class="divider"></span>
+      <button class="icon-btn" title="Export">⬇</button>
+      <button class="icon-btn" title="Print">🖨</button>
+    </div>
+    <div style="height: 1px; background: #edebe9; margin: 0 16px;"></div>
+    <div style="display: flex; align-items: center; flex-wrap: wrap; padding: 10px 16px; gap: 10px; background: #faf9f8;">
+      <select><option>All Categories</option></select>
+      <select><option>All Status</option></select>
+      <select><option>All Departments</option></select>
+      <select><option>All Timelines</option></select>
+      <select><option>All Risk Levels</option></select>
+      <select><option>All Read Times</option></select>
+      <select style="background-color: #e8e6e4; font-weight: 500;"><option>Group By: None</option></select>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- VARIATION 4: Segmented — Filters | Count+Sort | Actions -->
+<!-- ============================================================ -->
+<h2>Variation 4: Segmented Sections — Filters | Count+Sort | Actions</h2>
+<p class="variation-desc">Single row with visually distinct segments separated by thicker dividers. Each segment has a clear purpose: filtering, results info, and actions. Structured and scannable.</p>
+
+<div class="mockup">
+  <div class="toolbar" style="display: flex; align-items: center; padding: 0; overflow: hidden;">
+    <!-- Segment 1: Filters -->
+    <div style="display: flex; align-items: center; flex-wrap: wrap; padding: 10px 16px; gap: 8px; flex: 1;">
+      <select style="font-size: 12px; padding: 5px 24px 5px 8px;"><option>All Categories</option></select>
+      <select style="font-size: 12px; padding: 5px 24px 5px 8px;"><option>All Status</option></select>
+      <select style="font-size: 12px; padding: 5px 24px 5px 8px;"><option>All Depts</option></select>
+      <select style="font-size: 12px; padding: 5px 24px 5px 8px;"><option>All Timelines</option></select>
+      <select style="font-size: 12px; padding: 5px 24px 5px 8px;"><option>All Risk</option></select>
+      <select style="font-size: 12px; padding: 5px 24px 5px 8px;"><option>All Read Times</option></select>
+      <select style="font-size: 12px; padding: 5px 24px 5px 8px; background-color: #f3f2f1; font-weight: 500;"><option>Group: None</option></select>
+    </div>
+
+    <!-- Segment divider -->
+    <div style="width: 2px; height: 40px; background: #edebe9; flex-shrink: 0;"></div>
+
+    <!-- Segment 2: Results + Sort -->
+    <div style="display: flex; align-items: center; padding: 10px 16px; gap: 10px; white-space: nowrap;">
+      <span class="results-count" style="font-size: 12px;"><strong>20</strong>/<strong>21</strong></span>
+      <select style="min-width: 130px; font-size: 12px; padding: 5px 24px 5px 8px;"><option>Sort: Name A-Z</option></select>
+    </div>
+
+    <!-- Segment divider -->
+    <div style="width: 2px; height: 40px; background: #edebe9; flex-shrink: 0;"></div>
+
+    <!-- Segment 3: View Toggle + Actions -->
+    <div style="display: flex; align-items: center; padding: 10px 16px; gap: 6px;">
+      <div class="view-toggle">
+        <button class="icon-btn active" title="Cards" style="width: 28px; height: 28px;">▦</button>
+        <button class="icon-btn" title="List" style="width: 28px; height: 28px;">☰</button>
+      </div>
+      <button class="icon-btn" title="Export" style="width: 28px; height: 28px;">⬇</button>
+      <button class="icon-btn" title="Print" style="width: 28px; height: 28px;">🖨</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- VARIATION 5: Minimal — Icon Filters with Tooltip Labels -->
+<!-- ============================================================ -->
+<h2>Variation 5: Minimal — Compact Dropdowns with Icon Actions</h2>
+<p class="variation-desc">Ultra-compact single row. Smaller filter dropdowns with shorter labels. All action buttons are icon-only with tooltips. View toggle integrated. Maximum information density.</p>
+
+<div class="mockup">
+  <div class="toolbar" style="display: flex; align-items: center; flex-wrap: wrap; padding: 8px 12px; gap: 6px;">
+    <!-- Compact filters -->
+    <select style="font-size: 12px; padding: 5px 22px 5px 6px; min-width: 0;"><option>Category ▾</option></select>
+    <select style="font-size: 12px; padding: 5px 22px 5px 6px; min-width: 0;"><option>Status ▾</option></select>
+    <select style="font-size: 12px; padding: 5px 22px 5px 6px; min-width: 0;"><option>Department ▾</option></select>
+    <select style="font-size: 12px; padding: 5px 22px 5px 6px; min-width: 0;"><option>Timeline ▾</option></select>
+    <select style="font-size: 12px; padding: 5px 22px 5px 6px; min-width: 0;"><option>Risk ▾</option></select>
+    <select style="font-size: 12px; padding: 5px 22px 5px 6px; min-width: 0;"><option>Read Time ▾</option></select>
+
+    <span class="divider" style="height: 20px;"></span>
+
+    <!-- Sort -->
+    <select style="font-size: 12px; padding: 5px 22px 5px 6px; min-width: 110px;"><option>Name A-Z</option></select>
+
+    <!-- Group By -->
+    <select style="font-size: 12px; padding: 5px 22px 5px 6px; background: #f3f2f1; font-weight: 500;"><option>Group: None</option></select>
+
+    <!-- Results count -->
+    <span class="results-count" style="font-size: 11px; margin-left: 4px;"><strong>20</strong> of <strong>21</strong></span>
+
+    <!-- Spacer -->
+    <div style="flex: 1; min-width: 10px;"></div>
+
+    <!-- Active filter pills (compact) -->
+    <span class="pill" style="font-size: 10px; padding: 2px 8px;">IT & Security <button class="remove" style="width: 12px; height: 12px; font-size: 8px;">✕</button></span>
+
+    <span class="divider" style="height: 20px;"></span>
+
+    <!-- All icons: view + export + print -->
+    <div style="display: flex; gap: 4px;">
+      <button class="icon-btn active" title="Card View" style="width: 28px; height: 28px; font-size: 12px;">▦</button>
+      <button class="icon-btn" title="List View" style="width: 28px; height: 28px; font-size: 12px;">☰</button>
+      <button class="icon-btn" title="Export to Excel" style="width: 28px; height: 28px; font-size: 12px;">⬇</button>
+      <button class="icon-btn" title="Print" style="width: 28px; height: 28px; font-size: 12px;">🖨</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- COMPARISON TABLE -->
+<!-- ============================================================ -->
+<h2 style="margin-top: 48px;">Comparison</h2>
+<table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 12px;">
+  <tr style="background: #f3f2f1;">
+    <th style="padding: 10px; text-align: left; border: 1px solid #edebe9;">Variation</th>
+    <th style="padding: 10px; text-align: left; border: 1px solid #edebe9;">Height</th>
+    <th style="padding: 10px; text-align: left; border: 1px solid #edebe9;">Density</th>
+    <th style="padding: 10px; text-align: left; border: 1px solid #edebe9;">Best For</th>
+    <th style="padding: 10px; text-align: left; border: 1px solid #edebe9;">Trade-offs</th>
+  </tr>
+  <tr>
+    <td style="padding: 10px; border: 1px solid #edebe9;"><strong>1. Single Row</strong></td>
+    <td style="padding: 10px; border: 1px solid #edebe9;">~48px</td>
+    <td style="padding: 10px; border: 1px solid #edebe9;">Maximum</td>
+    <td style="padding: 10px; border: 1px solid #edebe9;">Wide screens, power users</td>
+    <td style="padding: 10px; border: 1px solid #edebe9;">Wraps on narrow screens, crowded feel</td>
+  </tr>
+  <tr style="background: #dff6dd;">
+    <td style="padding: 10px; border: 1px solid #edebe9;"><strong>2. Two Rows / One Panel ★</strong></td>
+    <td style="padding: 10px; border: 1px solid #edebe9;">~88px</td>
+    <td style="padding: 10px; border: 1px solid #edebe9;">High</td>
+    <td style="padding: 10px; border: 1px solid #edebe9;">All screen sizes, clear layout</td>
+    <td style="padding: 10px; border: 1px solid #edebe9;">Slightly taller but most balanced</td>
+  </tr>
+  <tr>
+    <td style="padding: 10px; border: 1px solid #edebe9;"><strong>3. Collapsible Filters</strong></td>
+    <td style="padding: 10px; border: 1px solid #edebe9;">~48px collapsed</td>
+    <td style="padding: 10px; border: 1px solid #edebe9;">Adaptive</td>
+    <td style="padding: 10px; border: 1px solid #edebe9;">Browsing-first UX, occasional filtering</td>
+    <td style="padding: 10px; border: 1px solid #edebe9;">Extra click to reach filters, state management</td>
+  </tr>
+  <tr>
+    <td style="padding: 10px; border: 1px solid #edebe9;"><strong>4. Segmented</strong></td>
+    <td style="padding: 10px; border: 1px solid #edebe9;">~48px</td>
+    <td style="padding: 10px; border: 1px solid #edebe9;">High</td>
+    <td style="padding: 10px; border: 1px solid #edebe9;">Users who need clear visual zones</td>
+    <td style="padding: 10px; border: 1px solid #edebe9;">Smaller dropdowns, abbreviations needed</td>
+  </tr>
+  <tr>
+    <td style="padding: 10px; border: 1px solid #edebe9;"><strong>5. Minimal</strong></td>
+    <td style="padding: 10px; border: 1px solid #edebe9;">~40px</td>
+    <td style="padding: 10px; border: 1px solid #edebe9;">Ultra-compact</td>
+    <td style="padding: 10px; border: 1px solid #edebe9;">Dense dashboards, expert users</td>
+    <td style="padding: 10px; border: 1px solid #edebe9;">Harder to scan, labels truncated</td>
+  </tr>
+</table>
+
+<p style="margin-top: 24px; font-size: 13px; color: #605e5c;">
+  <strong>Recommendation:</strong> Variation 2 (Two Rows / One Panel) provides the best balance of information density, clarity, and responsiveness.
+  It consolidates both bars into a single green-accented panel while maintaining clear visual hierarchy — filters on top, results + actions on bottom.
+  The Export and Print buttons become icon-only buttons to save space, with tooltips for discoverability.
+</p>
+
+</body>
+</html>

@@ -57,6 +57,22 @@
           "manifest": "./src/webparts/dwxQuizBuilder/DwxQuizBuilderWebPart.manifest.json"
         }
       ]
+    },
+    "jml-policy-search-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/jmlPolicySearch/JmlPolicySearchWebPart.js",
+          "manifest": "./src/webparts/jmlPolicySearch/JmlPolicySearchWebPart.manifest.json"
+        }
+      ]
+    },
+    "jml-policy-help-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/jmlPolicyHelp/JmlPolicyHelpWebPart.js",
+          "manifest": "./src/webparts/jmlPolicyHelp/JmlPolicyHelpWebPart.manifest.json"
+        }
+      ]
     }
   },
   "externals": {},
@@ -68,6 +84,8 @@
     "JmlPolicyPackManagerWebPartStrings": "lib/webparts/jmlPolicyPackManager/loc/{locale}.js",
     "JmlMyPoliciesWebPartStrings": "lib/webparts/jmlMyPolicies/loc/{locale}.js",
     "DwxQuizBuilderWebPartStrings": "lib/webparts/dwxQuizBuilder/loc/{locale}.js",
+    "JmlPolicySearchWebPartStrings": "lib/webparts/jmlPolicySearch/loc/{locale}.js",
+    "JmlPolicyHelpWebPartStrings": "lib/webparts/jmlPolicyHelp/loc/{locale}.js",
     "ControlStrings": "node_modules/@pnp/spfx-controls-react/lib/loc/{locale}.js"
   }
 }

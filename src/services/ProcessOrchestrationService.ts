@@ -152,7 +152,7 @@ export class ProcessOrchestrationService {
   private approvalService: ApprovalService;
 
   // List name for process-workflow mapping
-  private readonly PROCESS_WORKFLOW_MAP_LIST = 'JML_ProcessWorkflowMap';
+  private readonly PROCESS_WORKFLOW_MAP_LIST = 'PM_ProcessWorkflowMap';
 
   constructor(sp: SPFI, context: WebPartContext) {
     this.sp = sp;
@@ -712,7 +712,7 @@ export class ProcessOrchestrationService {
 
     for (const task of tasks) {
       try {
-        await this.sp.web.lists.getByTitle('JML_TaskAssignments').items.add({
+        await this.sp.web.lists.getByTitle('PM_TaskAssignments').items.add({
           Title: task.title,
           ProcessID: processId.toString(),
           AssignedToId: task.assigneeId,
@@ -815,7 +815,7 @@ export class ProcessOrchestrationService {
    */
   private async getTaskAssignment(taskId: number): Promise<IJmlTaskAssignment | null> {
     try {
-      const item = await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+      const item = await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
         .getById(taskId)
         .select('Id', 'Title', 'ProcessID', 'Status', 'AssignedToId')();
       return item as IJmlTaskAssignment;
@@ -882,7 +882,7 @@ export class ProcessOrchestrationService {
     try {
       // Notify manager if required
       if (options.notifyStakeholders && options.managerId) {
-        await this.sp.web.lists.getByTitle('JML_Notifications').items.add({
+        await this.sp.web.lists.getByTitle('PM_Notifications').items.add({
           Title: `New ${options.processType} Process: ${options.employeeName}`,
           NotificationType: 'ProcessStarted',
           MessageBody: `A new ${options.processType} process has been started for ${options.employeeName}.`,

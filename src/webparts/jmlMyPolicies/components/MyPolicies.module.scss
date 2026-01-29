@@ -7,11 +7,11 @@
 
 .myPolicies {
   @include full-bleed-container;
-  background-color: $ms-color-neutralLighter;
+  background-color: #ffffff;
 
   .title {
     font-weight: 600;
-    color: $ms-color-themePrimary;
+    color: #0d9488;
     margin-bottom: 0;
   }
 
@@ -19,14 +19,14 @@
   // PROGRESS HEADER PANEL (My Tasks Style)
   // ============================================================================
   .progressHeader {
-    background: linear-gradient(135deg, $ms-color-themePrimary 0%, darken($ms-color-themePrimary, 15%) 100%);
+    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
     border-radius: 12px;
     padding: 24px 28px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     color: white;
-    box-shadow: 0 8px 32px rgba(0, 120, 212, 0.25);
+    box-shadow: 0 8px 32px rgba(13, 148, 136, 0.25);
     margin-bottom: 24px;
   }
 
@@ -160,17 +160,17 @@
     padding: 24px;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    border-left: 4px solid $ms-color-themePrimary;
+    border-left: 4px solid #0d9488;
 
     .cardTitle {
       font-weight: 600;
-      color: $ms-color-themePrimary;
+      color: #0d9488;
       display: flex;
       align-items: center;
       gap: 8px;
 
       .titleIcon {
-        color: $ms-color-themePrimary;
+        color: #0d9488;
       }
     }
 
@@ -206,7 +206,7 @@
     }
 
     .packIcon {
-      color: $ms-color-themePrimary;
+      color: #0d9488;
       font-size: 20px;
     }
 
@@ -236,7 +236,7 @@
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-    border-left: 4px solid $ms-color-themePrimary;
+    border-left: 4px solid #0d9488;
     transition: all 0.2s ease;
 
     &:hover {
@@ -246,7 +246,7 @@
 
     .policyTitle {
       font-weight: 600;
-      color: $ms-color-themePrimary;
+      color: #0d9488;
       margin: 0;
     }
 
@@ -283,11 +283,11 @@
       padding: 20px;
       border-radius: 8px;
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-      border-left: 4px solid $ms-color-themePrimary;
+      border-left: 4px solid #0d9488;
 
       .packTitle {
         font-weight: 600;
-        color: $ms-color-themePrimary;
+        color: #0d9488;
         margin: 0;
       }
 
@@ -339,7 +339,7 @@
     padding: 4px;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
     margin-bottom: 16px;
-    border-left: 4px solid $ms-color-themePrimary;
+    border-left: 4px solid #0d9488;
 
     .tabButton {
       background: transparent;
@@ -354,11 +354,11 @@
 
       &:hover {
         background: $ms-color-neutralLighter;
-        color: $ms-color-themePrimary;
+        color: #0d9488;
       }
 
       &.activeTab {
-        background: $ms-color-themePrimary;
+        background: #0d9488;
         color: white;
       }
 
@@ -389,7 +389,7 @@
       color: $ms-color-neutralSecondary;
 
       &.activeToggle {
-        background: $ms-color-themePrimary;
+        background: #0d9488;
         color: white;
       }
     }
@@ -436,7 +436,7 @@
         align-items: center;
         justify-content: center;
         margin-right: 16px;
-        color: $ms-color-themePrimary;
+        color: #0d9488;
         font-size: 24px;
       }
 
@@ -502,7 +502,7 @@
 
   .wizardPanel {
     .wizardHeader {
-      background: linear-gradient(135deg, $ms-color-themePrimary 0%, darken($ms-color-themePrimary, 15%) 100%);
+      background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
       color: white;
       padding: 24px;
       margin: -24px -24px 24px -24px;
@@ -567,13 +567,13 @@
 
         &.activeStep {
           .stepCircle {
-            background: $ms-color-themePrimary;
-            border-color: $ms-color-themePrimary;
+            background: #0d9488;
+            border-color: #0d9488;
             color: white;
           }
 
           .stepLabel {
-            color: $ms-color-themePrimary;
+            color: #0d9488;
             font-weight: 600;
           }
         }
@@ -615,7 +615,7 @@
         line-height: 1.6;
 
         h1, h2, h3 {
-          color: $ms-color-themePrimary;
+          color: #0d9488;
           margin-top: 24px;
           margin-bottom: 12px;
         }
@@ -667,8 +667,8 @@
         margin-bottom: 20px;
 
         &.checked {
-          border-color: $ms-color-themePrimary;
-          background: lighten($ms-color-themePrimary, 45%);
+          border-color: #0d9488;
+          background: #ccfbf1;
         }
       }
 
@@ -755,7 +755,7 @@
         .certificateTitle {
           font-size: 18px;
           font-weight: 600;
-          color: $ms-color-themePrimary;
+          color: #0d9488;
           margin-bottom: 8px;
         }
 

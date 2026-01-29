@@ -249,7 +249,7 @@ export class StatusSyncService {
     const changes: IChangeEvent[] = [];
 
     try {
-      const items = await this.sp.web.lists.getByTitle('JML_TaskAssignments')
+      const items = await this.sp.web.lists.getByTitle('PM_TaskAssignments')
         .items
         .filter(`Modified gt datetime'${this.lastPollTime.toISOString()}'`)
         .select('Id', 'Title', 'Status', 'Modified', 'EditorId')
@@ -308,7 +308,7 @@ export class StatusSyncService {
     const changes: IChangeEvent[] = [];
 
     try {
-      const items = await this.sp.web.lists.getByTitle('JML_WorkflowInstances')
+      const items = await this.sp.web.lists.getByTitle('PM_WorkflowInstances')
         .items
         .filter(`Modified gt datetime'${this.lastPollTime.toISOString()}'`)
         .select('Id', 'Title', 'Status', 'CurrentStepId', 'CurrentStepName', 'Modified', 'EditorId')
@@ -375,7 +375,7 @@ export class StatusSyncService {
     const changes: IChangeEvent[] = [];
 
     try {
-      const items = await this.sp.web.lists.getByTitle('JML_Approvals')
+      const items = await this.sp.web.lists.getByTitle('PM_Approvals')
         .items
         .filter(`Modified gt datetime'${this.lastPollTime.toISOString()}'`)
         .select('Id', 'Title', 'Status', 'Modified', 'EditorId')
@@ -429,7 +429,7 @@ export class StatusSyncService {
    * Snapshot tasks for initial state
    */
   private async snapshotTasks(): Promise<void> {
-    const items = await this.sp.web.lists.getByTitle('JML_TaskAssignments')
+    const items = await this.sp.web.lists.getByTitle('PM_TaskAssignments')
       .items
       .select('Id', 'Title', 'Status', 'Modified')
       .top(500)();
@@ -449,7 +449,7 @@ export class StatusSyncService {
    * Snapshot workflows for initial state
    */
   private async snapshotWorkflows(): Promise<void> {
-    const items = await this.sp.web.lists.getByTitle('JML_WorkflowInstances')
+    const items = await this.sp.web.lists.getByTitle('PM_WorkflowInstances')
       .items
       .select('Id', 'Title', 'Status', 'CurrentStepId', 'CurrentStepName', 'Modified')
       .top(500)();
@@ -474,7 +474,7 @@ export class StatusSyncService {
    * Snapshot approvals for initial state
    */
   private async snapshotApprovals(): Promise<void> {
-    const items = await this.sp.web.lists.getByTitle('JML_Approvals')
+    const items = await this.sp.web.lists.getByTitle('PM_Approvals')
       .items
       .select('Id', 'Title', 'Status', 'Modified')
       .top(500)();

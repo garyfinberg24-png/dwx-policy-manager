@@ -63,7 +63,7 @@ export class IntegrationService {
     try {
       // Load integration configurations from SharePoint list
       const configs = await this.sp.web.lists
-        .getByTitle('JML_IntegrationConfigs')
+        .getByTitle('PM_IntegrationConfigs')
         .items
         .select('Id', 'Title', 'IntegrationType', 'Status', 'IsEnabled', 'Configuration')
         .filter('IsEnabled eq true')();
@@ -162,7 +162,7 @@ export class IntegrationService {
     try {
       // Get process details
       const process = await this.sp.web.lists
-        .getByTitle('JML_Processes')
+        .getByTitle('PM_Processes')
         .items
         .getById(processId)
         .select('Id', 'Title', 'EmployeeName', 'ProcessType', 'Department')();
@@ -202,7 +202,7 @@ export class IntegrationService {
 
       // Update process with channel link
       await this.sp.web.lists
-        .getByTitle('JML_Processes')
+        .getByTitle('PM_Processes')
         .items
         .getById(processId)
         .update({
@@ -284,7 +284,7 @@ export class IntegrationService {
 
             // Update JML task with Planner task ID
             await this.sp.web.lists
-              .getByTitle('JML_Tasks')
+              .getByTitle('PM_Tasks')
               .items
               .getById(task.Id)
               .update({
@@ -365,7 +365,7 @@ export class IntegrationService {
       const payload = {
         ...data,
         timestamp: new Date().toISOString(),
-        source: 'JML_SPFx'
+        source: 'PM_SPFx'
       };
 
       // Trigger the flow via HTTP POST
@@ -444,7 +444,7 @@ export class IntegrationService {
       const config = this.integrationConfigs.get(log.integrationType);
 
       await this.sp.web.lists
-        .getByTitle('JML_IntegrationLogs')
+        .getByTitle('PM_IntegrationLogs')
         .items
         .add({
           Title: `${log.integrationType} - ${log.action}`,

@@ -372,7 +372,7 @@ export class PolicyValidationService {
 
     switch (operation) {
       case PolicyOperation.Submit:
-        if (policy.Status !== PolicyStatus.Draft) {
+        if (policy.PolicyStatus !== PolicyStatus.Draft) {
           errors.push({
             code: 'INVALID_STATUS_TRANSITION',
             message: 'Only draft policies can be submitted for review',
@@ -382,7 +382,7 @@ export class PolicyValidationService {
         break;
 
       case PolicyOperation.Approve:
-        if (policy.Status !== PolicyStatus.InReview && policy.Status !== PolicyStatus.PendingApproval) {
+        if (policy.PolicyStatus !== PolicyStatus.InReview && policy.PolicyStatus !== PolicyStatus.PendingApproval) {
           errors.push({
             code: 'INVALID_STATUS_TRANSITION',
             message: 'Only policies in review or pending approval can be approved',
@@ -392,7 +392,7 @@ export class PolicyValidationService {
         break;
 
       case PolicyOperation.Reject:
-        if (policy.Status !== PolicyStatus.InReview && policy.Status !== PolicyStatus.PendingApproval) {
+        if (policy.PolicyStatus !== PolicyStatus.InReview && policy.PolicyStatus !== PolicyStatus.PendingApproval) {
           errors.push({
             code: 'INVALID_STATUS_TRANSITION',
             message: 'Only policies in review or pending approval can be rejected',
@@ -402,7 +402,7 @@ export class PolicyValidationService {
         break;
 
       case PolicyOperation.Publish:
-        if (policy.Status !== PolicyStatus.Approved) {
+        if (policy.PolicyStatus !== PolicyStatus.Approved) {
           errors.push({
             code: 'INVALID_STATUS_TRANSITION',
             message: 'Only approved policies can be published',
@@ -420,7 +420,7 @@ export class PolicyValidationService {
         break;
 
       case PolicyOperation.Archive:
-        if (policy.Status !== PolicyStatus.Published && policy.Status !== PolicyStatus.Expired) {
+        if (policy.PolicyStatus !== PolicyStatus.Published && policy.PolicyStatus !== PolicyStatus.Expired) {
           errors.push({
             code: 'INVALID_STATUS_TRANSITION',
             message: 'Only published or expired policies can be archived',
@@ -430,7 +430,7 @@ export class PolicyValidationService {
         // Check for pending acknowledgements
         const pendingAcks = await this.sp.web.lists
           .getByTitle(this.ACKNOWLEDGEMENTS_LIST)
-          .items.filter(`PolicyId eq ${policy.Id} and Status ne '${AcknowledgementStatus.Acknowledged}'`)
+          .items.filter(`PolicyId eq ${policy.Id} and AckStatus ne '${AcknowledgementStatus.Acknowledged}'`)
           .top(1)();
         if (pendingAcks.length > 0) {
           warnings.push({
@@ -442,7 +442,7 @@ export class PolicyValidationService {
         break;
 
       case PolicyOperation.Delete:
-        if (policy.Status === PolicyStatus.Published) {
+        if (policy.PolicyStatus === PolicyStatus.Published) {
           errors.push({
             code: 'CANNOT_DELETE_PUBLISHED',
             message: 'Published policies cannot be deleted. Archive first.',
@@ -452,7 +452,7 @@ export class PolicyValidationService {
         break;
 
       case PolicyOperation.Update:
-        if (policy.Status === PolicyStatus.Archived || policy.Status === PolicyStatus.Retired) {
+        if (policy.PolicyStatus === PolicyStatus.Archived || policy.PolicyStatus === PolicyStatus.Retired) {
           errors.push({
             code: 'CANNOT_UPDATE_ARCHIVED',
             message: 'Archived or retired policies cannot be updated',
@@ -597,7 +597,7 @@ export class PolicyValidationService {
         .items.getById(acknowledgementId)() as IPolicyAcknowledgement;
 
       // Verify user owns this acknowledgement
-      if (ack.UserId !== targetUserId) {
+      if (ack.AckUserId !== targetUserId) {
         // Check if delegated
         if (!ack.IsDelegated || ack.DelegatedById !== targetUserId) {
           errors.push({
@@ -609,7 +609,7 @@ export class PolicyValidationService {
       }
 
       // Check if already acknowledged
-      if (ack.Status === AcknowledgementStatus.Acknowledged) {
+      if (ack.AckStatus === AcknowledgementStatus.Acknowledged) {
         errors.push({
           code: 'ALREADY_ACKNOWLEDGED',
           message: 'Policy has already been acknowledged',
@@ -640,8 +640,8 @@ export class PolicyValidationService {
         .getByTitle(this.POLICIES_LIST)
         .items.getById(ack.PolicyId)() as IPolicy;
 
-      if (!policy.IsActive || policy.Status === PolicyStatus.Archived ||
-          policy.Status === PolicyStatus.Retired) {
+      if (!policy.IsActive || policy.PolicyStatus === PolicyStatus.Archived ||
+          policy.PolicyStatus === PolicyStatus.Retired) {
         errors.push({
           code: 'POLICY_INACTIVE',
           message: 'Policy is no longer active',

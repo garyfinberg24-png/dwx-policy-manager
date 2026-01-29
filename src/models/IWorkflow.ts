@@ -263,7 +263,7 @@ export interface IWorkflowStep {
  */
 export interface IStepConfig {
   // For AssignTasks / CreateTask
-  taskTemplateId?: number;      // Reference to JML_Tasks
+  taskTemplateId?: number;      // Reference to PM_Tasks
   taskTitle?: string;
   assigneeField?: string;       // Field name to get assignee (e.g., "ManagerId")
   assigneeId?: number | string; // Fixed assignee (ID or Entra ID)
@@ -589,7 +589,7 @@ export interface IWorkflowInstance extends IBaseListItem {
   // References
   WorkflowDefinitionId: number;
   WorkflowDefinition?: IWorkflowDefinition;
-  ProcessId: number;            // Link to JML_Processes
+  ProcessId: number;            // Link to PM_Processes
   ProcessType?: ProcessType;    // Cached from process for notifications
 
   // Status

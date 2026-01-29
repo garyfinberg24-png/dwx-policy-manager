@@ -23,7 +23,7 @@ import { logger } from './LoggingService';
 
 export class InvoiceService {
   private sp: SPFI;
-  private readonly INVOICES_LIST = 'JML_Invoices';
+  private readonly INVOICES_LIST = 'PM_Invoices';
 
   constructor(sp: SPFI) {
     this.sp = sp;

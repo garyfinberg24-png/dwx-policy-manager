@@ -13,8 +13,8 @@ import { TaskStatus, Priority } from '../models/ICommon';
 import { logger } from './LoggingService';
 
 export class SavedViewsService {
-  private storageKey = 'jml_saved_views';
-  private activeViewKey = 'jml_active_view';
+  private storageKey = 'PM_saved_views';
+  private activeViewKey = 'PM_active_view';
   private userId: number;
 
   constructor(userId: number) {

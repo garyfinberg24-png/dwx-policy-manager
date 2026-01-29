@@ -1,0 +1,323 @@
+// Policy Help Center Styles
+// Teal theme matching Policy Manager branding
+
+$pm-primary-teal: #0d9488;
+$pm-dark-teal: #0f766e;
+$pm-light-teal: #14b8a6;
+
+.policyHelp {
+  background: #ffffff;
+  min-height: 100vh;
+}
+
+.contentWrapper {
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 24px;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+}
+
+// Hero Section
+.heroSection {
+  background: linear-gradient(135deg, $pm-dark-teal 0%, $pm-primary-teal 50%, $pm-light-teal 100%);
+  border-radius: 12px;
+  padding: 48px 40px;
+  margin-bottom: 32px;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(13, 148, 136, 0.15);
+}
+
+.heroHeader {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.heroIcon {
+  font-size: 48px;
+  opacity: 0.9;
+}
+
+.heroTitle {
+  margin: 0 0 8px 0;
+  font-size: 32px;
+  font-weight: 500;
+}
+
+.heroSubtitle {
+  margin: 0;
+  font-size: 16px;
+  opacity: 0.95;
+}
+
+// Sections
+.section {
+  margin-bottom: 32px;
+}
+
+.sectionTitle {
+  font-size: 20px;
+  font-weight: 500;
+  color: #323130;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+// Card Grid
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid #edebe9;
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+    border-color: $pm-primary-teal;
+  }
+}
+
+.cardIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  font-size: 24px;
+  color: #ffffff;
+}
+
+.cardTitle {
+  font-size: 16px;
+  font-weight: 500;
+  color: #323130;
+  margin-bottom: 8px;
+}
+
+.cardSummary {
+  font-size: 14px;
+  color: #605e5c;
+  line-height: 1.5;
+}
+
+.cardCategory {
+  margin-top: 12px;
+  font-size: 12px;
+  color: #a19f9d;
+}
+
+// Quick Links
+.quickLinks {
+  display: flex;
+  gap: 16px;
+  margin-top: 32px;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+  }
+}
+
+.quickLink {
+  flex: 1;
+  padding: 24px;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+
+  &:hover {
+    transform: scale(1.02);
+  }
+}
+
+.quickLinkIcon {
+  font-size: 32px;
+  margin-bottom: 12px;
+}
+
+.quickLinkTitle {
+  font-size: 18px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.quickLinkText {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+// FAQ
+.faqItem {
+  background-color: #ffffff;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  border: 1px solid #edebe9;
+  overflow: hidden;
+}
+
+.faqQuestion {
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 500;
+  color: #323130;
+
+  &:hover {
+    background-color: #f3f2f1;
+  }
+}
+
+.faqAnswer {
+  padding: 0 20px 16px;
+  color: #605e5c;
+  line-height: 1.6;
+}
+
+// Shortcuts Table
+.shortcutTable {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.shortcutRow {
+  border-bottom: 1px solid #edebe9;
+
+  &:hover {
+    background-color: #f3f2f1;
+  }
+}
+
+.shortcutCell {
+  padding: 12px 16px;
+  text-align: left;
+}
+
+.shortcutKeys {
+  display: flex;
+  gap: 4px;
+}
+
+.keyBadge {
+  background-color: #f3f2f1;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: monospace;
+  font-weight: 500;
+  border: 1px solid #e1dfdd;
+}
+
+// Video Cards
+.videoCard {
+  background-color: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+}
+
+.videoThumbnail {
+  height: 160px;
+  background: linear-gradient(135deg, $pm-dark-teal 0%, $pm-primary-teal 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 48px;
+}
+
+.videoInfo {
+  padding: 16px;
+}
+
+.videoTitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: #323130;
+  margin-bottom: 4px;
+}
+
+.videoDuration {
+  font-size: 12px;
+  color: #605e5c;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+// Support Form
+.supportForm {
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+}
+
+.formField {
+  margin-bottom: 16px;
+}
+
+.formButtons {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+// Article Detail
+.backButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  cursor: pointer;
+  color: $pm-primary-teal;
+  font-weight: 500;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: 14px;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.articleContent {
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 32px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  line-height: 1.8;
+}

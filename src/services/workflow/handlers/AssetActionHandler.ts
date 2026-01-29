@@ -7,9 +7,9 @@
  * - Track license reclamation
  *
  * Uses SharePoint lists:
- * - JML_EquipmentRequests: Equipment provisioning requests
- * - JML_AssetReturns: Asset return tracking for leavers
- * - JML_LicenseReclamation: Software license recovery tracking
+ * - PM_EquipmentRequests: Equipment provisioning requests
+ * - PM_AssetReturns: Asset return tracking for leavers
+ * - PM_LicenseReclamation: Software license recovery tracking
  */
 
 import { SPFI } from '@pnp/sp';
@@ -135,9 +135,9 @@ export class AssetActionHandler {
   private siteUrl: string;
 
   // List names
-  private readonly equipmentRequestsListName = 'JML_EquipmentRequests';
-  private readonly assetReturnsListName = 'JML_AssetReturns';
-  private readonly licenseReclamationListName = 'JML_LicenseReclamation';
+  private readonly equipmentRequestsListName = 'PM_EquipmentRequests';
+  private readonly assetReturnsListName = 'PM_AssetReturns';
+  private readonly licenseReclamationListName = 'PM_LicenseReclamation';
 
   constructor(sp: SPFI, siteUrl: string) {
     this.sp = sp;
@@ -285,7 +285,7 @@ export class AssetActionHandler {
         return { success: false, error: 'Employee name and email are required' };
       }
 
-      // Get employee's assigned assets (from a hypothetical JML_AssignedAssets list)
+      // Get employee's assigned assets (from a hypothetical PM_AssignedAssets list)
       const assignedAssets = await this.getEmployeeAssignedAssets(employeeEmail);
       const createdIds: number[] = [];
       const errors: string[] = [];
@@ -635,9 +635,9 @@ export class AssetActionHandler {
     description: string;
   }>> {
     try {
-      // Try to get from JML_AssignedAssets list
+      // Try to get from PM_AssignedAssets list
       const assets = await this.sp.web.lists
-        .getByTitle('JML_AssignedAssets')
+        .getByTitle('PM_AssignedAssets')
         .items
         .filter(`AssignedToEmail eq '${employeeEmail}'`)
         .select('AssetTag', 'Category', 'Description')();
@@ -656,9 +656,9 @@ export class AssetActionHandler {
 
   private async getEmployeeLicenses(employeeEmail: string): Promise<string[]> {
     try {
-      // Try to get from JML_LicenseAssignments list
+      // Try to get from PM_LicenseAssignments list
       const licenses = await this.sp.web.lists
-        .getByTitle('JML_LicenseAssignments')
+        .getByTitle('PM_LicenseAssignments')
         .items
         .filter(`AssignedToEmail eq '${employeeEmail}'`)
         .select('LicenseType')();

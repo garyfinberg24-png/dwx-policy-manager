@@ -113,7 +113,7 @@ export class WorkflowResumeService {
   ): Promise<IWorkflowResumeResult | null> {
     try {
       // Get the task with workflow reference
-      const task = await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+      const task = await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
         .getById(taskId)
         .select(
           'Id', 'Title', 'Status', 'WorkflowInstanceId', 'WorkflowStepId',
@@ -182,7 +182,7 @@ export class WorkflowResumeService {
   ): Promise<IWorkflowResumeResult | null> {
     try {
       // Get the approval with workflow reference
-      const approval = await this.sp.web.lists.getByTitle('JML_Approvals').items
+      const approval = await this.sp.web.lists.getByTitle('PM_Approvals').items
         .getById(approvalId)
         .select(
           'Id', 'Title', 'Status', 'WorkflowInstanceId', 'WorkflowStepId',
@@ -290,7 +290,7 @@ export class WorkflowResumeService {
       const waitCondition = stepResult.waitCondition || 'all';
 
       // Get all tasks for this workflow step
-      const tasks = await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+      const tasks = await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
         .filter(`WorkflowInstanceId eq ${workflowInstanceId} and WorkflowStepId eq '${workflowStepId}'`)
         .select('Id', 'Status')();
 
@@ -350,7 +350,7 @@ export class WorkflowResumeService {
   ): Promise<boolean> {
     try {
       // Get all approvals for this workflow step
-      const approvals = await this.sp.web.lists.getByTitle('JML_Approvals').items
+      const approvals = await this.sp.web.lists.getByTitle('PM_Approvals').items
         .filter(`WorkflowInstanceId eq ${workflowInstanceId} and WorkflowStepId eq '${workflowStepId}'`)
         .select('Id', 'Status', 'ApprovalLevel', 'TotalLevels')
         .orderBy('ApprovalLevel', true)();
@@ -580,14 +580,14 @@ export class WorkflowResumeService {
 
     try {
       // Get workflows in WaitingForTask status
-      const waitingInstances = await this.sp.web.lists.getByTitle('JML_WorkflowInstances').items
+      const waitingInstances = await this.sp.web.lists.getByTitle('PM_WorkflowInstances').items
         .filter(`Status eq '${WorkflowInstanceStatus.WaitingForTask}'`)
         .select('Id', 'CurrentStepId', 'ProcessId')
         .top(50)();
 
       for (const instance of waitingInstances) {
         // Get completed tasks for this workflow
-        const completedTasks = await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+        const completedTasks = await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
           .filter(`WorkflowInstanceId eq ${instance.Id} and (Status eq '${TaskStatus.Completed}' or Status eq '${TaskStatus.Skipped}')`)
           .select('Id', 'Title', 'Status', 'WorkflowStepId', 'ActualCompletionDate')
           .top(10)();
@@ -630,14 +630,14 @@ export class WorkflowResumeService {
 
     try {
       // Get workflows in WaitingForApproval status
-      const waitingInstances = await this.sp.web.lists.getByTitle('JML_WorkflowInstances').items
+      const waitingInstances = await this.sp.web.lists.getByTitle('PM_WorkflowInstances').items
         .filter(`Status eq '${WorkflowInstanceStatus.WaitingForApproval}'`)
         .select('Id', 'CurrentStepId', 'ProcessId')
         .top(50)();
 
       for (const instance of waitingInstances) {
         // Get completed approvals for this workflow
-        const completedApprovals = await this.sp.web.lists.getByTitle('JML_Approvals').items
+        const completedApprovals = await this.sp.web.lists.getByTitle('PM_Approvals').items
           .filter(`WorkflowInstanceId eq ${instance.Id} and WorkflowStepId eq '${instance.CurrentStepId}' and (Status eq '${ApprovalStatus.Approved}' or Status eq '${ApprovalStatus.Rejected}')`)
           .select('Id', 'Title', 'Status', 'WorkflowStepId', 'ResponseDate', 'ApproverComments')
           .top(10)();
@@ -687,15 +687,15 @@ export class WorkflowResumeService {
     total: number;
   }> {
     try {
-      const [taskCount] = await this.sp.web.lists.getByTitle('JML_WorkflowInstances').items
+      const [taskCount] = await this.sp.web.lists.getByTitle('PM_WorkflowInstances').items
         .filter(`Status eq '${WorkflowInstanceStatus.WaitingForTask}'`)
         .select('Id')();
 
-      const [approvalCount] = await this.sp.web.lists.getByTitle('JML_WorkflowInstances').items
+      const [approvalCount] = await this.sp.web.lists.getByTitle('PM_WorkflowInstances').items
         .filter(`Status eq '${WorkflowInstanceStatus.WaitingForApproval}'`)
         .select('Id')();
 
-      const [inputCount] = await this.sp.web.lists.getByTitle('JML_WorkflowInstances').items
+      const [inputCount] = await this.sp.web.lists.getByTitle('PM_WorkflowInstances').items
         .filter(`Status eq '${WorkflowInstanceStatus.WaitingForInput}'`)
         .select('Id')();
 
@@ -765,7 +765,7 @@ export class WorkflowResumeService {
         case WorkflowInstanceStatus.WaitingForTask:
           waitingFor = 'tasks';
           // Get pending tasks
-          const tasks = await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+          const tasks = await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
             .filter(`WorkflowInstanceId eq ${instanceId}`)
             .select('Id', 'Title', 'Status')();
 
@@ -785,7 +785,7 @@ export class WorkflowResumeService {
         case WorkflowInstanceStatus.WaitingForApproval:
           waitingFor = 'approvals';
           // Get pending approvals
-          const approvals = await this.sp.web.lists.getByTitle('JML_Approvals').items
+          const approvals = await this.sp.web.lists.getByTitle('PM_Approvals').items
             .filter(`WorkflowInstanceId eq ${instanceId}`)
             .select('Id', 'Title', 'Status')();
 

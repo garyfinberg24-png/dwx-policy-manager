@@ -513,7 +513,7 @@ Respond with valid JSON:
   public async trackSearch(analytics: ISearchAnalytics): Promise<void> {
     try {
       await this.sp.web.lists
-        .getByTitle('JML_SearchAnalytics')
+        .getByTitle('PM_SearchAnalytics')
         .items
         .add({
           Title: analytics.query.substring(0, 255),
@@ -541,7 +541,7 @@ Respond with valid JSON:
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
       const searches = await this.sp.web.lists
-        .getByTitle('JML_SearchAnalytics')
+        .getByTitle('PM_SearchAnalytics')
         .items
         .select('Query', 'SearchTimestamp', 'ResultCount')
         .filter(`SearchTimestamp ge datetime'${sevenDaysAgo.toISOString()}'`)

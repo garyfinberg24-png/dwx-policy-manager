@@ -29,8 +29,8 @@ export interface ISupportTicket extends IBaseListItem {
   ClosedDate?: Date;
 
   // Related Items
-  RelatedProcessId?: number; // Link to JML_Process
-  RelatedTaskId?: number; // Link to JML_Task
+  RelatedProcessId?: number; // Link to PM_Process
+  RelatedTaskId?: number; // Link to PM_Task
   Attachments?: string[]; // File URLs
 
   // Metrics

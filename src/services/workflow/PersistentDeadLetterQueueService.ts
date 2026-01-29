@@ -44,7 +44,7 @@ export interface IDLQRetryResult {
 export class PersistentDeadLetterQueueService {
   private sp: SPFI;
   private inMemoryDLQ: DeadLetterQueue;
-  private readonly LIST_NAME = 'JML_DeadLetterQueue';
+  private readonly LIST_NAME = 'PM_DeadLetterQueue';
   private initialized: boolean = false;
 
   constructor(sp: SPFI, inMemoryDLQ?: DeadLetterQueue) {

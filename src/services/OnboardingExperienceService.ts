@@ -36,17 +36,17 @@ import {
 
 // SharePoint List Names
 const LIST_NAMES = {
-  PROGRESS: 'JML_OnboardingProgress',
-  QUEST_STAGES: 'JML_OnboardingQuestStages',
-  TEAM_MEMBERS: 'JML_OnboardingTeamMembers',
-  FLOOR_PLANS: 'JML_OnboardingFloorPlans',
-  SURVIVAL_KIT: 'JML_OnboardingSurvivalKit',
-  WELCOME_WALL: 'JML_OnboardingWelcomeWall',
-  JARGON: 'JML_OnboardingJargon',
-  INTEREST_GROUPS: 'JML_OnboardingInterestGroups',
-  BINGO: 'JML_OnboardingBingo',
-  BADGES: 'JML_OnboardingBadges',
-  COFFEE_LESSONS: 'JML_OnboardingCoffeeLessons'
+  PROGRESS: 'PM_OnboardingProgress',
+  QUEST_STAGES: 'PM_OnboardingQuestStages',
+  TEAM_MEMBERS: 'PM_OnboardingTeamMembers',
+  FLOOR_PLANS: 'PM_OnboardingFloorPlans',
+  SURVIVAL_KIT: 'PM_OnboardingSurvivalKit',
+  WELCOME_WALL: 'PM_OnboardingWelcomeWall',
+  JARGON: 'PM_OnboardingJargon',
+  INTEREST_GROUPS: 'PM_OnboardingInterestGroups',
+  BINGO: 'PM_OnboardingBingo',
+  BADGES: 'PM_OnboardingBadges',
+  COFFEE_LESSONS: 'PM_OnboardingCoffeeLessons'
 };
 
 export interface IOnboardingExperienceService {

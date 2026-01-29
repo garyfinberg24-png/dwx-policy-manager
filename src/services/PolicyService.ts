@@ -194,7 +194,7 @@ export class PolicyService {
         VersionType: VersionType.Draft,
         MajorVersion: 0,
         MinorVersion: 1,
-        Status: PolicyStatus.Draft,
+        PolicyStatus: PolicyStatus.Draft,
         PolicyOwnerId: policy.PolicyOwnerId || this.currentUserId,
         DocumentFormat: policy.DocumentFormat,
         RequiresAcknowledgement: policy.RequiresAcknowledgement ?? true,
@@ -341,7 +341,7 @@ export class PolicyService {
   public async deletePolicy(policyId: number): Promise<void> {
     try {
       await this.updatePolicy(policyId, {
-        Status: PolicyStatus.Archived,
+        PolicyStatus: PolicyStatus.Archived,
         IsActive: false
       });
 
@@ -397,7 +397,7 @@ export class PolicyService {
       // Apply filters
       const filterConditions: string[] = [];
       if (filters?.status) {
-        filterConditions.push(`Status eq '${filters.status}'`);
+        filterConditions.push(`PolicyStatus eq '${filters.status}'`);
       }
       if (filters?.category) {
         filterConditions.push(`PolicyCategory eq '${filters.category}'`);
@@ -529,7 +529,7 @@ export class PolicyService {
   public async submitForReview(policyId: number, reviewerIds: number[]): Promise<IPolicy> {
     try {
       await this.updatePolicy(policyId, {
-        Status: PolicyStatus.InReview,
+        PolicyStatus: PolicyStatus.InReview,
         ReviewerIds: reviewerIds,
         SubmittedForReviewDate: new Date()
       });
@@ -598,7 +598,7 @@ export class PolicyService {
       const currentPolicy = await this.getPolicyById(policyId);
 
       await this.updatePolicy(policyId, {
-        Status: PolicyStatus.Draft, // Return to draft for revision
+        PolicyStatus: PolicyStatus.Draft, // Return to draft for revision
         RejectionReason: rejectionReason,
         RejectedDate: new Date()
       });
@@ -632,7 +632,7 @@ export class PolicyService {
   public async archivePolicy(policyId: number, archiveReason?: string): Promise<IPolicy> {
     try {
       await this.updatePolicy(policyId, {
-        Status: PolicyStatus.Archived,
+        PolicyStatus: PolicyStatus.Archived,
         IsActive: false,
         ArchivedDate: new Date()
       });
@@ -685,12 +685,12 @@ export class PolicyService {
 
       // Get current policy to validate status transition
       const currentPolicy = await this.getPolicyById(policyId);
-      if (currentPolicy.Status !== PolicyStatus.InReview) {
-        throw new Error(`Cannot approve policy in ${currentPolicy.Status} status. Policy must be In Review.`);
+      if (currentPolicy.PolicyStatus !== PolicyStatus.InReview) {
+        throw new Error(`Cannot approve policy in ${currentPolicy.PolicyStatus} status. Policy must be In Review.`);
       }
 
       await this.updatePolicy(policyId, {
-        Status: PolicyStatus.Approved,
+        PolicyStatus: PolicyStatus.Approved,
         ApprovedDate: new Date()
       });
 
@@ -726,7 +726,7 @@ export class PolicyService {
 
       // Update policy status
       await this.updatePolicy(request.policyId, {
-        Status: PolicyStatus.Published,
+        PolicyStatus: PolicyStatus.Published,
         IsActive: true,
         PublishedDate: new Date(),
         EffectiveDate: request.effectiveDate || new Date()
@@ -881,7 +881,7 @@ export class PolicyService {
           // Check if acknowledgement already exists
           const existing = await this.sp.web.lists
             .getByTitle(this.POLICY_ACKNOWLEDGEMENTS_LIST)
-            .items.filter(`PolicyId eq ${policyId} and UserId eq ${userId} and PolicyVersionNumber eq '${versionNumber}'`)
+            .items.filter(`PolicyId eq ${policyId} and AckUserId eq ${userId} and PolicyVersionNumber eq '${versionNumber}'`)
             .top(1)();
 
           if (existing.length === 0) {
@@ -889,9 +889,9 @@ export class PolicyService {
               Title: `${policy.PolicyName} - User ${userId}`,
               PolicyId: policyId,
               PolicyVersionNumber: versionNumber,
-              UserId: userId,
+              AckUserId: userId,
               UserEmail: '', // TODO: Fetch from user profile
-              Status: AcknowledgementStatus.Sent,
+              AckStatus: AcknowledgementStatus.Sent,
               AssignedDate: new Date().toISOString(),
               DueDate: dueDate?.toISOString(),
               QuizRequired: policy.RequiresQuiz,
@@ -924,7 +924,7 @@ export class PolicyService {
     try {
       const items = await this.sp.web.lists
         .getByTitle(this.POLICY_ACKNOWLEDGEMENTS_LIST)
-        .items.filter(`PolicyId eq ${policyId} and UserId eq ${userId}`)
+        .items.filter(`PolicyId eq ${policyId} and AckUserId eq ${userId}`)
         .orderBy('Created', false)
         .top(1)();
 
@@ -973,7 +973,7 @@ export class PolicyService {
       }
 
       // Verify acknowledgement is for the current user
-      if (existingAck.UserId !== this.currentUserId && !existingAck.IsDelegated) {
+      if (existingAck.AckUserId !== this.currentUserId && !existingAck.IsDelegated) {
         throw new Error('Cannot acknowledge policy on behalf of another user without delegation');
       }
 
@@ -988,7 +988,7 @@ export class PolicyService {
       retentionExpiryDate.setDate(retentionExpiryDate.getDate() + retentionDays);
 
       const updateData = {
-        Status: AcknowledgementStatus.Acknowledged,
+        AckStatus: AcknowledgementStatus.Acknowledged,
         AcknowledgedDate: request.acknowledgedDate.toISOString(),
         DigitalSignature: request.digitalSignature,
         IsCompliant: true,
@@ -1048,7 +1048,7 @@ export class PolicyService {
 
       if (!ack.FirstOpenedDate) {
         updateData.FirstOpenedDate = new Date().toISOString();
-        updateData.Status = AcknowledgementStatus.Opened;
+        updateData.AckStatus = AcknowledgementStatus.Opened;
       }
 
       await this.sp.web.lists
@@ -1134,7 +1134,7 @@ export class PolicyService {
           .update({
             IsExempted: true,
             ExemptionId: exemptionId,
-            Status: AcknowledgementStatus.Exempted
+            AckStatus: AcknowledgementStatus.Exempted
           });
       }
 
@@ -1168,18 +1168,18 @@ export class PolicyService {
     try {
       const allAcknowledgements = await this.sp.web.lists
         .getByTitle(this.POLICY_ACKNOWLEDGEMENTS_LIST)
-        .items.filter(`UserId eq ${userId}`)
+        .items.filter(`AckUserId eq ${userId}`)
         .select('*')
         .top(1000)();
 
       const acks = allAcknowledgements as IPolicyAcknowledgement[];
 
       const pending = acks.filter(a =>
-        a.Status === AcknowledgementStatus.Sent ||
-        a.Status === AcknowledgementStatus.Opened
+        a.AckStatus === AcknowledgementStatus.Sent ||
+        a.AckStatus === AcknowledgementStatus.Opened
       );
-      const overdue = acks.filter(a => a.Status === AcknowledgementStatus.Overdue);
-      const completed = acks.filter(a => a.Status === AcknowledgementStatus.Acknowledged);
+      const overdue = acks.filter(a => a.AckStatus === AcknowledgementStatus.Overdue);
+      const completed = acks.filter(a => a.AckStatus === AcknowledgementStatus.Acknowledged);
 
       return {
         userId,
@@ -1209,9 +1209,9 @@ export class PolicyService {
         .top(5000)();
 
       const acks = acknowledgements as IPolicyAcknowledgement[];
-      const acknowledged = acks.filter(a => a.Status === AcknowledgementStatus.Acknowledged);
-      const overdue = acks.filter(a => a.Status === AcknowledgementStatus.Overdue);
-      const exempted = acks.filter(a => a.Status === AcknowledgementStatus.Exempted);
+      const acknowledged = acks.filter(a => a.AckStatus === AcknowledgementStatus.Acknowledged);
+      const overdue = acks.filter(a => a.AckStatus === AcknowledgementStatus.Overdue);
+      const exempted = acks.filter(a => a.AckStatus === AcknowledgementStatus.Exempted);
 
       // Calculate average time to acknowledge
       const acknowledgedTimes = acknowledged
@@ -1250,7 +1250,7 @@ export class PolicyService {
     try {
       const policies = await this.getPolicies();
       const activePolicies = policies.filter(p => p.IsActive);
-      const draftPolicies = policies.filter(p => p.Status === PolicyStatus.Draft);
+      const draftPolicies = policies.filter(p => p.PolicyStatus === PolicyStatus.Draft);
 
       // Policies expiring in next 30 days
       const thirtyDaysFromNow = new Date();
@@ -1264,8 +1264,8 @@ export class PolicyService {
         .items.top(5000)();
 
       const acks = allAcknowledgements as IPolicyAcknowledgement[];
-      const acknowledged = acks.filter(a => a.Status === AcknowledgementStatus.Acknowledged);
-      const overdue = acks.filter(a => a.Status === AcknowledgementStatus.Overdue);
+      const acknowledged = acks.filter(a => a.AckStatus === AcknowledgementStatus.Acknowledged);
+      const overdue = acks.filter(a => a.AckStatus === AcknowledgementStatus.Overdue);
 
       const criticalRisk = policies.filter(p => p.ComplianceRisk === 'Critical');
 
@@ -1345,12 +1345,12 @@ export class PolicyService {
           break;
 
         case DistributionScope.Department:
-          // Filter users by department from JML_Employees list
+          // Filter users by department from PM_Employees list
           if (departments && departments.length > 0) {
             try {
               const deptFilter = departments.map(d => `Department eq '${d}'`).join(' or ');
               const deptEmployees = await this.sp.web.lists
-                .getByTitle('JML_Employees')
+                .getByTitle('PM_Employees')
                 .items
                 .filter(deptFilter)
                 .select('UserId')();
@@ -1364,12 +1364,12 @@ export class PolicyService {
           break;
 
         case DistributionScope.Location:
-          // Filter users by location from JML_Employees list
+          // Filter users by location from PM_Employees list
           if (locations && locations.length > 0) {
             try {
               const locFilter = locations.map(l => `Location eq '${l}'`).join(' or ');
               const locEmployees = await this.sp.web.lists
-                .getByTitle('JML_Employees')
+                .getByTitle('PM_Employees')
                 .items
                 .filter(locFilter)
                 .select('UserId')();
@@ -1383,12 +1383,12 @@ export class PolicyService {
           break;
 
         case DistributionScope.Role:
-          // Filter users by role/job title from JML_Employees list
+          // Filter users by role/job title from PM_Employees list
           if (roles && roles.length > 0) {
             try {
               const roleFilter = roles.map(r => `JobTitle eq '${r}'`).join(' or ');
               const roleEmployees = await this.sp.web.lists
-                .getByTitle('JML_Employees')
+                .getByTitle('PM_Employees')
                 .items
                 .filter(roleFilter)
                 .select('UserId')();
@@ -1402,18 +1402,18 @@ export class PolicyService {
           break;
 
         case DistributionScope.NewHiresOnly:
-          // Get new hires from JML_Employees (hired in last 90 days)
+          // Get new hires from PM_Employees (hired in last 90 days)
           try {
             const ninetyDaysAgo = new Date();
             ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
             const newHires = await this.sp.web.lists
-              .getByTitle('JML_Employees')
+              .getByTitle('PM_Employees')
               .items
               .filter(`HireDate ge datetime'${ninetyDaysAgo.toISOString()}'`)
               .select('UserId')();
             targetUsers = newHires.map((e: Record<string, unknown>) => e.UserId as number).filter(Boolean);
           } catch {
-            // Fall back to provided userIds if JML_Employees doesn't exist
+            // Fall back to provided userIds if PM_Employees doesn't exist
             targetUsers = userIds || [];
           }
           break;

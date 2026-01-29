@@ -3,7 +3,7 @@
  * EmailQueueService
  * Queue-based email service for background operations
  *
- * This service queues emails to a SharePoint list (JML_EmailQueue) which can be
+ * This service queues emails to a SharePoint list (PM_EmailQueue) which can be
  * processed by:
  * 1. Power Automate flow (recommended for production)
  * 2. A scheduled Azure Function
@@ -95,7 +95,7 @@ export interface IBatchQueueResult {
 
 export class EmailQueueService {
   private sp: SPFI;
-  private readonly listName = 'JML_EmailQueue';
+  private readonly listName = 'PM_EmailQueue';
   private readonly sourceSystem = 'JML-Workflow';
 
   constructor(sp: SPFI) {

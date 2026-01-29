@@ -1073,10 +1073,10 @@ export class PolicyAnalyticsService {
   }
 
   private getSessionId(): string {
-    let sessionId = sessionStorage.getItem("jml_session_id");
+    let sessionId = sessionStorage.getItem("PM_session_id");
     if (!sessionId) {
       sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      sessionStorage.setItem("jml_session_id", sessionId);
+      sessionStorage.setItem("PM_session_id", sessionId);
     }
     return sessionId;
   }

@@ -5,7 +5,7 @@
 
 param(
     [Parameter(Mandatory=$false)]
-    [string]$SiteUrl = "https://mf7m.sharepoint.com/sites/JML"
+    [string]$SiteUrl = "https://mf7m.sharepoint.com/sites/PolicyManager"
 )
 
 $clientId = "d91b5b78-de72-424e-898b-8b5c9512ebd9"
@@ -522,7 +522,7 @@ $policies = @(
 Write-Host "`n[1/1] Creating sample policies..." -ForegroundColor Yellow
 Write-Host "------------------------------------------------------------" -ForegroundColor Gray
 
-$listName = "JML_Policies"
+$listName = "PM_Policies"
 $createdCount = 0
 $today = Get-Date
 

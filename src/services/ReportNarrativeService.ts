@@ -258,7 +258,7 @@ Respond in the following JSON format:
   "sentiment": "positive" | "neutral" | "cautionary" | "negative",
   "citations": [
     {
-      "dataSource": "JML_Processes",
+      "dataSource": "PM_Processes",
       "metric": "Total Processes",
       "value": 247
     }
@@ -431,7 +431,7 @@ Respond in the following JSON format:
   }): Promise<void> {
     try {
       await this.sp.web.lists
-        .getByTitle('JML_AIUsageLogs')
+        .getByTitle('PM_AIUsageLogs')
         .items
         .add({
           Title: `Report Narrative - ${new Date().toISOString()}`,

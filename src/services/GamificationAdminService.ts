@@ -103,10 +103,10 @@ export class GamificationAdminService {
   public async getStats(): Promise<IAdminStats> {
     try {
       const [rewards, challenges, redemptions, profiles] = await Promise.all([
-        this.sp.web.lists.getByTitle("JML_RewardsCatalog").items.select("Id")(),
-        this.sp.web.lists.getByTitle("JML_Challenges").items.filter("ChallengeStatus eq 'Active'").select("Id")(),
-        this.sp.web.lists.getByTitle("JML_RewardRedemptions").items.filter("RedemptionStatus eq 'Pending'").select("Id")(),
-        this.sp.web.lists.getByTitle("JML_GamificationProfiles").items.select("Id")()
+        this.sp.web.lists.getByTitle("PM_RewardsCatalog").items.select("Id")(),
+        this.sp.web.lists.getByTitle("PM_Challenges").items.filter("ChallengeStatus eq 'Active'").select("Id")(),
+        this.sp.web.lists.getByTitle("PM_RewardRedemptions").items.filter("RedemptionStatus eq 'Pending'").select("Id")(),
+        this.sp.web.lists.getByTitle("PM_GamificationProfiles").items.select("Id")()
       ]);
       return { totalRewards: rewards.length, activeChallenges: challenges.length, pendingRedemptions: redemptions.length, totalUsers: profiles.length };
     } catch { return { totalRewards: 12, activeChallenges: 5, pendingRedemptions: 8, totalUsers: 156 }; }
@@ -114,7 +114,7 @@ export class GamificationAdminService {
 
   public async getRewards(): Promise<IAdminReward[]> {
     try {
-      const items = await this.sp.web.lists.getByTitle("JML_RewardsCatalog").items.orderBy("Title", true)();
+      const items = await this.sp.web.lists.getByTitle("PM_RewardsCatalog").items.orderBy("Title", true)();
       return items.map((item: any) => ({
         id: item.Id, code: item.RewardCode || '', name: item.RewardName || item.Title || '', description: item.RewardDescription || '',
         category: item.RewardCategory || 'General', pointsCost: item.PointsCost || 0, icon: item.RewardIcon || 'Gift',
@@ -124,7 +124,7 @@ export class GamificationAdminService {
   }
 
   public async createReward(reward: IAdminReward): Promise<IAdminReward> {
-    const result = await this.sp.web.lists.getByTitle("JML_RewardsCatalog").items.add({
+    const result = await this.sp.web.lists.getByTitle("PM_RewardsCatalog").items.add({
       Title: reward.name, RewardCode: reward.code || `RWD_${Date.now()}`, RewardName: reward.name, RewardDescription: reward.description,
       RewardCategory: reward.category, PointsCost: reward.pointsCost, RewardIcon: reward.icon, StockLevel: reward.stockLevel, IsAvailable: reward.isAvailable, IsFeatured: reward.isFeatured
     });
@@ -132,19 +132,19 @@ export class GamificationAdminService {
   }
 
   public async updateReward(reward: IAdminReward): Promise<void> {
-    await this.sp.web.lists.getByTitle("JML_RewardsCatalog").items.getById(reward.id).update({
+    await this.sp.web.lists.getByTitle("PM_RewardsCatalog").items.getById(reward.id).update({
       Title: reward.name, RewardCode: reward.code, RewardName: reward.name, RewardDescription: reward.description,
       RewardCategory: reward.category, PointsCost: reward.pointsCost, RewardIcon: reward.icon, StockLevel: reward.stockLevel, IsAvailable: reward.isAvailable, IsFeatured: reward.isFeatured
     });
   }
 
   public async deleteReward(id: number): Promise<void> {
-    await this.sp.web.lists.getByTitle("JML_RewardsCatalog").items.getById(id).delete();
+    await this.sp.web.lists.getByTitle("PM_RewardsCatalog").items.getById(id).delete();
   }
 
   public async getChallenges(): Promise<IAdminChallenge[]> {
     try {
-      const items = await this.sp.web.lists.getByTitle("JML_Challenges").items.orderBy("Created", false)();
+      const items = await this.sp.web.lists.getByTitle("PM_Challenges").items.orderBy("Created", false)();
       return items.map((item: any) => ({
         id: item.Id, code: item.ChallengeCode || '', name: item.ChallengeName || item.Title || '', description: item.ChallengeDescription || '',
         type: item.ChallengeType || 'Individual', category: item.ChallengeCategory || 'General', status: item.ChallengeStatus || 'Draft',
@@ -154,7 +154,7 @@ export class GamificationAdminService {
   }
 
   public async createChallenge(challenge: IAdminChallenge): Promise<IAdminChallenge> {
-    const result = await this.sp.web.lists.getByTitle("JML_Challenges").items.add({
+    const result = await this.sp.web.lists.getByTitle("PM_Challenges").items.add({
       Title: challenge.name, ChallengeCode: challenge.code || `CHL_${Date.now()}`, ChallengeName: challenge.name, ChallengeDescription: challenge.description,
       ChallengeType: challenge.type, ChallengeCategory: challenge.category, ChallengeStatus: challenge.status, StartDate: challenge.startDate, EndDate: challenge.endDate,
       GoalTarget: challenge.goalTarget, PointsForCompletion: challenge.rewardPoints, TotalParticipants: 0
@@ -163,7 +163,7 @@ export class GamificationAdminService {
   }
 
   public async updateChallenge(challenge: IAdminChallenge): Promise<void> {
-    await this.sp.web.lists.getByTitle("JML_Challenges").items.getById(challenge.id).update({
+    await this.sp.web.lists.getByTitle("PM_Challenges").items.getById(challenge.id).update({
       Title: challenge.name, ChallengeCode: challenge.code, ChallengeName: challenge.name, ChallengeDescription: challenge.description,
       ChallengeType: challenge.type, ChallengeCategory: challenge.category, ChallengeStatus: challenge.status, StartDate: challenge.startDate, EndDate: challenge.endDate,
       GoalTarget: challenge.goalTarget, PointsForCompletion: challenge.rewardPoints
@@ -171,12 +171,12 @@ export class GamificationAdminService {
   }
 
   public async deleteChallenge(id: number): Promise<void> {
-    await this.sp.web.lists.getByTitle("JML_Challenges").items.getById(id).delete();
+    await this.sp.web.lists.getByTitle("PM_Challenges").items.getById(id).delete();
   }
 
   public async getAchievements(): Promise<IAdminAchievement[]> {
     try {
-      const items = await this.sp.web.lists.getByTitle("JML_Achievements").items.orderBy("DisplayOrder", true)();
+      const items = await this.sp.web.lists.getByTitle("PM_Achievements").items.orderBy("DisplayOrder", true)();
       return items.map((item: any) => ({
         id: item.Id, code: item.AchievementCode || '', name: item.AchievementName || item.Title || '', description: item.AchievementDescription || '',
         category: item.AchievementCategory || 'General', rarity: item.Rarity || 'Common', points: item.PointsReward || 0, icon: item.IconName || 'Medal',
@@ -186,7 +186,7 @@ export class GamificationAdminService {
   }
 
   public async createAchievement(achievement: IAdminAchievement): Promise<IAdminAchievement> {
-    const result = await this.sp.web.lists.getByTitle("JML_Achievements").items.add({
+    const result = await this.sp.web.lists.getByTitle("PM_Achievements").items.add({
       Title: achievement.name, AchievementCode: achievement.code || `ACH_${Date.now()}`, AchievementName: achievement.name, AchievementDescription: achievement.description,
       AchievementCategory: achievement.category, Rarity: achievement.rarity, PointsReward: achievement.points, IconName: achievement.icon,
       RequirementType: achievement.requirementType, RequirementValue: achievement.requirementValue, IsActive: achievement.isActive, DisplayOrder: 100
@@ -195,7 +195,7 @@ export class GamificationAdminService {
   }
 
   public async updateAchievement(achievement: IAdminAchievement): Promise<void> {
-    await this.sp.web.lists.getByTitle("JML_Achievements").items.getById(achievement.id).update({
+    await this.sp.web.lists.getByTitle("PM_Achievements").items.getById(achievement.id).update({
       Title: achievement.name, AchievementCode: achievement.code, AchievementName: achievement.name, AchievementDescription: achievement.description,
       AchievementCategory: achievement.category, Rarity: achievement.rarity, PointsReward: achievement.points, IconName: achievement.icon,
       RequirementType: achievement.requirementType, RequirementValue: achievement.requirementValue, IsActive: achievement.isActive
@@ -203,12 +203,12 @@ export class GamificationAdminService {
   }
 
   public async deleteAchievement(id: number): Promise<void> {
-    await this.sp.web.lists.getByTitle("JML_Achievements").items.getById(id).delete();
+    await this.sp.web.lists.getByTitle("PM_Achievements").items.getById(id).delete();
   }
 
   public async getPendingRedemptions(): Promise<IRedemptionRequest[]> {
     try {
-      const items = await this.sp.web.lists.getByTitle("JML_RewardRedemptions").items.filter("RedemptionStatus eq 'Pending' or RedemptionStatus eq 'Approved'").orderBy("RedemptionDate", false).expand("RedeemedBy")();
+      const items = await this.sp.web.lists.getByTitle("PM_RewardRedemptions").items.filter("RedemptionStatus eq 'Pending' or RedemptionStatus eq 'Approved'").orderBy("RedemptionDate", false).expand("RedeemedBy")();
       return items.map((item: any) => ({
         id: item.Id, rewardId: item.RewardItemId || 0, rewardName: item.RewardName || '', rewardCode: item.RewardCode || '',
         userId: item.RedeemedById || 0, userName: item.RedeemedBy?.Title || 'Unknown', userEmail: item.RedeemedBy?.EMail || item.UserEmail || '',
@@ -219,14 +219,14 @@ export class GamificationAdminService {
 
   public async processRedemption(id: number, action: 'approve' | 'reject' | 'fulfill'): Promise<void> {
     const statusMap = { approve: 'Approved', reject: 'Rejected', fulfill: 'Fulfilled' };
-    await this.sp.web.lists.getByTitle("JML_RewardRedemptions").items.getById(id).update({
+    await this.sp.web.lists.getByTitle("PM_RewardRedemptions").items.getById(id).update({
       RedemptionStatus: statusMap[action], ProcessedDate: new Date().toISOString(), ProcessedBy: this.context.pageContext.user.displayName
     });
   }
 
   public async getTiers(): Promise<ITierConfig[]> {
     try {
-      const items = await this.sp.web.lists.getByTitle("JML_LoyaltyTiers").items.orderBy("MinimumPoints", true)();
+      const items = await this.sp.web.lists.getByTitle("PM_LoyaltyTiers").items.orderBy("MinimumPoints", true)();
       return items.map((item: any) => ({
         id: item.Id, name: item.TierName || item.Title || '', displayName: item.TierDisplayName || item.TierName || item.Title || '',
         minPoints: item.MinimumPoints || 0, multiplier: item.PointsMultiplier || 1, discount: item.RewardDiscount || 0, color: item.TierColor || '#808080', icon: item.TierIcon || 'FavoriteStarFill'
@@ -235,14 +235,14 @@ export class GamificationAdminService {
   }
 
   public async updateTier(tier: ITierConfig): Promise<void> {
-    await this.sp.web.lists.getByTitle("JML_LoyaltyTiers").items.getById(tier.id).update({
+    await this.sp.web.lists.getByTitle("PM_LoyaltyTiers").items.getById(tier.id).update({
       TierName: tier.name, TierDisplayName: tier.displayName, MinimumPoints: tier.minPoints, PointsMultiplier: tier.multiplier, RewardDiscount: tier.discount, TierColor: tier.color, TierIcon: tier.icon
     });
   }
 
   public async getPointRules(): Promise<IPointRule[]> {
     try {
-      const items = await this.sp.web.lists.getByTitle("JML_PointRules").items.orderBy("RuleCategory", true)();
+      const items = await this.sp.web.lists.getByTitle("PM_PointRules").items.orderBy("RuleCategory", true)();
       return items.map((item: any) => ({
         id: item.Id, code: item.RuleCode || '', name: item.RuleName || item.Title || '', description: item.RuleDescription || '',
         points: item.PointsAwarded || 0, isActive: item.IsActive !== false, category: item.RuleCategory || 'General'
@@ -251,7 +251,7 @@ export class GamificationAdminService {
   }
 
   public async updatePointRule(rule: IPointRule): Promise<void> {
-    await this.sp.web.lists.getByTitle("JML_PointRules").items.getById(rule.id).update({ RuleName: rule.name, RuleDescription: rule.description, PointsAwarded: rule.points, IsActive: rule.isActive });
+    await this.sp.web.lists.getByTitle("PM_PointRules").items.getById(rule.id).update({ RuleName: rule.name, RuleDescription: rule.description, PointsAwarded: rule.points, IsActive: rule.isActive });
   }
 
   private getMockRewards(): IAdminReward[] {

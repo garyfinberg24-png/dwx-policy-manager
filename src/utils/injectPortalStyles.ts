@@ -265,7 +265,7 @@ function injectFallbackCSS(): void {
 
   const css = `
     /* ===========================================
-       JML Portal Styles - Modern Fluent Design
+       Policy Manager Styles - Modern Fluent Design
        Fixes floating/transparent backgrounds
        =========================================== */
 

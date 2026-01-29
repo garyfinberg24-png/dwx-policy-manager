@@ -28,13 +28,13 @@ export class DocumentHubService {
   private sp: SPFI;
 
   // List names
-  private readonly CONFIG_LIST = 'JML_DocumentHub_Config';
-  private readonly TAXONOMY_LIST = 'JML_DocumentTaxonomy';
-  private readonly RETENTION_LIST = 'JML_RetentionPolicies';
-  private readonly LEGAL_HOLDS_LIST = 'JML_LegalHolds';
-  private readonly REGISTRY_LIST = 'JML_DocumentRegistry';
-  private readonly WORKFLOWS_LIST = 'JML_DocumentWorkflows';
-  private readonly ACTIVITY_LIST = 'JML_DocumentActivity';
+  private readonly CONFIG_LIST = 'PM_DocumentHub_Config';
+  private readonly TAXONOMY_LIST = 'PM_DocumentTaxonomy';
+  private readonly RETENTION_LIST = 'PM_RetentionPolicies';
+  private readonly LEGAL_HOLDS_LIST = 'PM_LegalHolds';
+  private readonly REGISTRY_LIST = 'PM_DocumentRegistry';
+  private readonly WORKFLOWS_LIST = 'PM_DocumentWorkflows';
+  private readonly ACTIVITY_LIST = 'PM_DocumentActivity';
 
   constructor(sp: SPFI) {
     this.sp = sp;

@@ -28,6 +28,7 @@ import {
 } from '@fluentui/react';
 import { injectPortalStyles } from '../../../utils/injectPortalStyles';
 import { JmlAppLayout } from '../../../components/JmlAppLayout';
+import { PageSubheader } from '../../../components/PageSubheader';
 import { PolicyService } from '../../../services/PolicyService';
 import { PolicySocialService } from '../../../services/PolicySocialService';
 import { createDialogManager } from '../../../hooks/useDialog';
@@ -39,6 +40,7 @@ import {
   IPolicyAcknowledgeRequest
 } from '../../../models/IPolicy';
 import styles from './PolicyDetails.module.scss';
+import { PM_LISTS } from '../../../constants/SharePointListNames';
 
 // Read flow steps
 export type ReadFlowStep = 'reading' | 'quiz' | 'acknowledge' | 'complete';
@@ -224,7 +226,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
       });
 
       // Track policy opened
-      if (acknowledgement && acknowledgement.Status !== 'Acknowledged') {
+      if (acknowledgement && acknowledgement.AckStatus !== 'Acknowledged') {
         await this.policyService.trackPolicyOpen(acknowledgement.Id);
       }
     } catch (error) {
@@ -591,7 +593,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
 
   private saveReadReceipt = async (receipt: IReadReceipt): Promise<void> => {
     try {
-      await this.props.sp.web.lists.getByTitle('JML_PolicyReadReceipts').items.add({
+      await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_READ_RECEIPTS).items.add({
         Title: receipt.ReceiptNumber,
         UserId: receipt.UserId,
         UserEmail: receipt.UserEmail,
@@ -665,7 +667,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
       <body style="font-family: 'Segoe UI', Tahoma, Geneva, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="background: linear-gradient(135deg, #004578, #0078d4); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
           <h1 style="color: white; margin: 0;">Policy Read Receipt</h1>
-          <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0;">First Digital - JML Portal</p>
+          <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0;">First Digital - Policy Manager</p>
         </div>
         <div style="background: white; padding: 30px; border: 1px solid #e1e1e1;">
           <div style="text-align: center; margin-bottom: 20px;">
@@ -690,7 +692,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
           </div>
         </div>
         <div style="background: #f5f5f5; padding: 15px; text-align: center; font-size: 12px; color: #666; border-radius: 0 0 8px 8px;">
-          <p style="margin: 0;">This is an automated receipt from the JML Portal. Please retain for your records.</p>
+          <p style="margin: 0;">This is an automated receipt from Policy Manager. Please retain for your records.</p>
         </div>
       </body>
       </html>
@@ -724,8 +726,8 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
     const { policy, acknowledgement, isFollowing } = this.state;
     if (!policy) return null;
 
-    const statusColor = acknowledgement?.Status === 'Acknowledged' ? '#107C10' :
-                       acknowledgement?.Status === 'Overdue' ? '#D13438' : '#FFA500';
+    const statusColor = acknowledgement?.AckStatus === 'Acknowledged' ? '#107C10' :
+                       acknowledgement?.AckStatus === 'Overdue' ? '#D13438' : '#FFA500';
 
     return (
       <div className={styles.policyHeader}>
@@ -820,7 +822,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
 
   private renderAcknowledgement(): JSX.Element | null {
     const { policy, acknowledgement } = this.state;
-    if (!policy || !acknowledgement || acknowledgement.Status === 'Acknowledged') return null;
+    if (!policy || !acknowledgement || acknowledgement.AckStatus === 'Acknowledged') return null;
 
     return (
       <div className={styles.acknowledgementSection}>
@@ -1347,7 +1349,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
     const { currentFlowStep, hasReadPolicy, acknowledgement } = this.state;
 
     // Don't show if already acknowledged
-    if (acknowledgement?.Status === 'Acknowledged') return null;
+    if (acknowledgement?.AckStatus === 'Acknowledged') return null;
     if (currentFlowStep === 'complete') return null;
 
     return (
@@ -1403,7 +1405,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
         pageTitle="Policy Details"
         pageDescription="View policy content, version history and acknowledgements"
         pageIcon="Document"
-        breadcrumbs={[{ text: 'JML Portal', url: '/sites/JML' }, { text: 'Policies', url: '/sites/JML/SitePages/PolicyHub.aspx' }, { text: 'Policy Details' }]}
+        breadcrumbs={[{ text: 'Policy Manager', url: '/sites/PolicyManager' }, { text: 'Policies', url: '/sites/PolicyManager/SitePages/PolicyHub.aspx' }, { text: 'Policy Details' }]}
         activeNavKey="policies"
         showQuickLinks={true}
         showSearch={true}
@@ -1411,6 +1413,11 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
         compactFooter={true}
       >
         <section className={styles.policyDetails}>
+          <PageSubheader
+            iconName="DocumentSearch"
+            title="Policy Details"
+            description="View policy content, version history and acknowledgements"
+          />
           <Stack tokens={{ childrenGap: 24 }}>
             {loading && (
               <Stack horizontalAlign="center" tokens={{ padding: 40 }}>
@@ -1427,7 +1434,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
             {!loading && !error && policy && (
               <>
                 {/* Read Flow Progress - shows current step in the flow */}
-                {acknowledgement && acknowledgement.Status !== 'Acknowledged' && this.renderReadFlowProgress()}
+                {acknowledgement && acknowledgement.AckStatus !== 'Acknowledged' && this.renderReadFlowProgress()}
 
                 {this.renderPolicyHeader()}
                 {this.renderPolicyContent()}

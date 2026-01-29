@@ -30,9 +30,9 @@ import { NotificationActionHandler } from './handlers/NotificationActionHandler'
 import { logger } from '../LoggingService';
 
 // List name constants
-const SCHEDULE_LIST = 'JML_WorkflowSchedule';
-const INSTANCES_LIST = 'JML_WorkflowInstances';
-const STEP_STATUS_LIST = 'JML_WorkflowStepStatus';
+const SCHEDULE_LIST = 'PM_WorkflowSchedule';
+const INSTANCES_LIST = 'PM_WorkflowInstances';
+const STEP_STATUS_LIST = 'PM_WorkflowStepStatus';
 
 export interface ISchedulerResult {
   processed: number;
@@ -340,7 +340,7 @@ export class WorkflowSchedulerService {
     }
 
     // Create reminder notification
-    await this.sp.web.lists.getByTitle('JML_Notifications').items.add({
+    await this.sp.web.lists.getByTitle('PM_Notifications').items.add({
       Title: 'Workflow Reminder',
       Message: message,
       RecipientId: recipientId,
@@ -452,7 +452,7 @@ export class WorkflowSchedulerService {
 
     // Create escalation notification
     if (escalateToId) {
-      await this.sp.web.lists.getByTitle('JML_Notifications').items.add({
+      await this.sp.web.lists.getByTitle('PM_Notifications').items.add({
         Title: 'Workflow Escalation',
         Message: `A workflow task has been escalated to you. Please review.`,
         RecipientId: escalateToId,
@@ -565,7 +565,7 @@ export class WorkflowSchedulerService {
    */
   private async checkTasksComplete(instanceId: number): Promise<boolean> {
     try {
-      const tasks = await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+      const tasks = await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
         .filter(`WorkflowInstanceId eq ${instanceId}`)
         .select('Id', 'Status')();
 
@@ -587,7 +587,7 @@ export class WorkflowSchedulerService {
    */
   private async checkApprovalComplete(instanceId: number): Promise<boolean> {
     try {
-      const approvals = await this.sp.web.lists.getByTitle('JML_Approvals').items
+      const approvals = await this.sp.web.lists.getByTitle('PM_Approvals').items
         .filter(`WorkflowInstanceId eq ${instanceId} and Status eq 'Pending'`)
         .select('Id')
         .top(1)();

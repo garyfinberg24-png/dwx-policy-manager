@@ -223,7 +223,7 @@ export class TaskEscalationScheduler {
     try {
       // Get pending approvals
       const pendingApprovals = await this.sp.web.lists
-        .getByTitle('JML_Approvals')
+        .getByTitle('PM_Approvals')
         .items
         .filter(`Status eq '${ApprovalStatus.Pending}'`)
         .select(
@@ -282,7 +282,7 @@ export class TaskEscalationScheduler {
             notificationsSent++;
 
             // Update last reminder sent date
-            await this.sp.web.lists.getByTitle('JML_Approvals').items
+            await this.sp.web.lists.getByTitle('PM_Approvals').items
               .getById(approvalItem.Id)
               .update({
                 LastReminderSent: now.toISOString()
@@ -322,7 +322,7 @@ export class TaskEscalationScheduler {
 
       // Get active tasks with due dates approaching
       const activeTasks = await this.sp.web.lists
-        .getByTitle('JML_TaskAssignments')
+        .getByTitle('PM_TaskAssignments')
         .items
         .filter(`Status ne '${TaskStatus.Completed}' and Status ne '${TaskStatus.Cancelled}'`)
         .select(
@@ -373,7 +373,7 @@ export class TaskEscalationScheduler {
             remindersSent++;
 
             // Update last reminder sent date on the task
-            await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+            await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
               .getById(taskItem.Id)
               .update({
                 ReminderSent: true,
@@ -414,8 +414,8 @@ export class TaskEscalationScheduler {
     dueDateReminders: number = 0
   ): Promise<void> {
     try {
-      // Try to log to JML_SystemLogs if it exists
-      await this.sp.web.lists.getByTitle('JML_SystemLogs').items.add({
+      // Try to log to PM_SystemLogs if it exists
+      await this.sp.web.lists.getByTitle('PM_SystemLogs').items.add({
         Title: `Escalation Run: ${runId}`,
         LogType: 'EscalationRun',
         LogLevel: errors.length > 0 ? 'Warning' : 'Info',
@@ -431,8 +431,8 @@ export class TaskEscalationScheduler {
         Created: new Date()
       });
     } catch {
-      // JML_SystemLogs might not exist - that's OK, just log locally
-      logger.debug('TaskEscalationScheduler', 'Could not log escalation run to SharePoint (JML_SystemLogs list may not exist)');
+      // PM_SystemLogs might not exist - that's OK, just log locally
+      logger.debug('TaskEscalationScheduler', 'Could not log escalation run to SharePoint (PM_SystemLogs list may not exist)');
     }
   }
 

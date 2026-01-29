@@ -66,7 +66,7 @@ export class UserPreferencesService {
       // Try to get existing preferences with secure filter
       const filter = ValidationUtils.buildFilter('UserId', 'eq', targetUserId);
       const items = await this.sp.web.lists
-        .getByTitle('JML_UserPreferences')
+        .getByTitle('PM_UserPreferences')
         .items
         .filter(filter)
         .top(1)();
@@ -101,7 +101,7 @@ export class UserPreferencesService {
       // Check if preferences exist with secure filter
       const filter = ValidationUtils.buildFilter('UserId', 'eq', prefs.UserId);
       const existing = await this.sp.web.lists
-        .getByTitle('JML_UserPreferences')
+        .getByTitle('PM_UserPreferences')
         .items
         .filter(filter)
         .top(1)();
@@ -109,7 +109,7 @@ export class UserPreferencesService {
       if (existing.length > 0) {
         // Update existing preferences
         await this.sp.web.lists
-          .getByTitle('JML_UserPreferences')
+          .getByTitle('PM_UserPreferences')
           .items
           .getById(existing[0].Id)
           .update(serializedPrefs);
@@ -118,7 +118,7 @@ export class UserPreferencesService {
       } else {
         // Create new preferences
         const result = await this.sp.web.lists
-          .getByTitle('JML_UserPreferences')
+          .getByTitle('PM_UserPreferences')
           .items
           .add(serializedPrefs);
 
@@ -334,7 +334,7 @@ export class UserPreferencesService {
       const filter = `${ValidationUtils.buildFilter('Department', 'eq', department)} and IsEnabled eq true`;
 
       const items = await this.sp.web.lists
-        .getByTitle('JML_DepartmentBranding')
+        .getByTitle('PM_DepartmentBranding')
         .items
         .filter(filter)
         .top(1)();
@@ -363,7 +363,7 @@ export class UserPreferencesService {
       // Get favorite processes
       if (prefs.FavoriteProcesses && prefs.FavoriteProcesses.length > 0) {
         const processes = await this.sp.web.lists
-          .getByTitle('JML_Processes')
+          .getByTitle('PM_Processes')
           .items
           .filter(`Id in (${prefs.FavoriteProcesses.join(',')})`)
           .select('Id', 'Title', 'ProcessType', 'Created')();
@@ -382,7 +382,7 @@ export class UserPreferencesService {
       // Get favorite templates
       if (prefs.FavoriteTemplates && prefs.FavoriteTemplates.length > 0) {
         const templates = await this.sp.web.lists
-          .getByTitle('JML_ProcessChecklistTemplates')
+          .getByTitle('PM_ProcessChecklistTemplates')
           .items
           .filter(`Id in (${prefs.FavoriteTemplates.join(',')})`)
           .select('Id', 'Title', 'ProcessType', 'Created')();
@@ -450,7 +450,7 @@ export class UserPreferencesService {
       const filter = `${userFilter} and ${dateFilter}`;
 
       const activities = await this.sp.web.lists
-        .getByTitle('JML_UserActivity')
+        .getByTitle('PM_UserActivity')
         .items
         .filter(filter)
         .orderBy('Created', false)
@@ -586,7 +586,7 @@ export class UserPreferencesService {
   private async logActivity(activityType: ActivityType, metadata?: any): Promise<void> {
     try {
       await this.sp.web.lists
-        .getByTitle('JML_UserActivity')
+        .getByTitle('PM_UserActivity')
         .items
         .add({
           Title: `${activityType} - ${new Date().toISOString()}`,

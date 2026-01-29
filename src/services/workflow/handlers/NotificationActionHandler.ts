@@ -114,7 +114,7 @@ export class NotificationActionHandler {
           WorkflowStepId: context.currentStep.id
         };
 
-        const result = await this.sp.web.lists.getByTitle('JML_Notifications').items.add(notificationData);
+        const result = await this.sp.web.lists.getByTitle('PM_Notifications').items.add(notificationData);
         createdItemIds.push(result.data.Id);
         logger.info('NotificationActionHandler', `Created in-app notification: ${result.data.Id}`);
       }
@@ -377,7 +377,7 @@ export class NotificationActionHandler {
                       <tr>
                         <td style="border-radius: 6px; background-color: ${branding.primaryColor};">
                           <a href="${branding.portalUrl}" target="_blank" class="button-link" style="display: inline-block; padding: 14px 32px; color: #ffffff; font-size: 15px; font-weight: 600; text-decoration: none; text-align: center;">
-                            Open JML Portal &rarr;
+                            Open Policy Manager &rarr;
                           </a>
                         </td>
                       </tr>
@@ -662,7 +662,7 @@ export class NotificationActionHandler {
           WorkflowInstanceId: context.workflowInstance.Id
         };
 
-        const result = await this.sp.web.lists.getByTitle('JML_Notifications').items.add(notificationData);
+        const result = await this.sp.web.lists.getByTitle('PM_Notifications').items.add(notificationData);
         createdIds.push(result.data.Id);
       }
 
@@ -988,7 +988,7 @@ export class NotificationActionHandler {
           SentDate: new Date().toISOString()
         };
 
-        const addResult = await this.sp.web.lists.getByTitle('JML_Notifications').items.add(notificationData);
+        const addResult = await this.sp.web.lists.getByTitle('PM_Notifications').items.add(notificationData);
         return addResult.data.Id;
       },
       'notification-inapp',
@@ -1179,7 +1179,7 @@ export class NotificationActionHandler {
    */
   private async updateDeliveryStatus(notificationId: number, status: string): Promise<void> {
     try {
-      await this.sp.web.lists.getByTitle('JML_Notifications').items
+      await this.sp.web.lists.getByTitle('PM_Notifications').items
         .getById(notificationId)
         .update({
           DeliveryStatus: status,
@@ -1196,7 +1196,7 @@ export class NotificationActionHandler {
 
   /**
    * Company branding configuration for email templates
-   * Can be extended to fetch from SharePoint list JML_Config_Settings
+   * Can be extended to fetch from SharePoint list PM_Config_Settings
    */
   private getBrandingConfig(): {
     companyName: string;
@@ -1206,7 +1206,7 @@ export class NotificationActionHandler {
     supportEmail: string;
     portalUrl: string;
   } {
-    // TODO: In production, fetch from JML_Config_Settings list
+    // TODO: In production, fetch from PM_Config_Settings list
     return {
       companyName: 'JML Employee Lifecycle',
       primaryColor: '#03787C',  // JML Teal
@@ -1360,7 +1360,7 @@ export class NotificationActionHandler {
           });
         } else if (item.operationType === 'notification-inapp' && payload.recipientId) {
           const notification = payload.notification as { title: string; message: string; type: string };
-          await this.sp.web.lists.getByTitle('JML_Notifications').items.add({
+          await this.sp.web.lists.getByTitle('PM_Notifications').items.add({
             Title: notification.title,
             Message: notification.message,
             RecipientId: payload.recipientId,

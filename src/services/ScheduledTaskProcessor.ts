@@ -79,9 +79,9 @@ export class ScheduledTaskProcessor {
   private sp: SPFI;
   private context: WebPartContext;
   private taskNotificationService: TaskNotificationService;
-  private tasksListTitle = 'JML_TaskAssignments';
-  private notificationsListTitle = 'JML_Notifications';
-  private slaLogListTitle = 'JML_SLALog';
+  private tasksListTitle = 'PM_TaskAssignments';
+  private notificationsListTitle = 'PM_Notifications';
+  private slaLogListTitle = 'PM_SLALog';
 
   constructor(sp: SPFI, context: WebPartContext) {
     this.sp = sp;
@@ -549,7 +549,7 @@ export class ScheduledTaskProcessor {
     for (const notification of notifications) {
       try {
         await this.sp.web.lists
-          .getByTitle('JML_NotificationQueue')
+          .getByTitle('PM_NotificationQueue')
           .items.add({
             Title: `Task ${notification.TaskAssignmentId}: ${notification.NotificationType}`,
             TaskAssignmentId: notification.TaskAssignmentId,
@@ -583,7 +583,7 @@ export class ScheduledTaskProcessor {
     try {
       // Get unprocessed notifications
       const queueItems = await this.sp.web.lists
-        .getByTitle('JML_NotificationQueue')
+        .getByTitle('PM_NotificationQueue')
         .items.filter('IsProcessed eq false')
         .select('Id', 'TaskAssignmentId', 'NotificationType', 'Priority', 'Recipients', 'Message')
         .top(50)();
@@ -618,7 +618,7 @@ export class ScheduledTaskProcessor {
 
           // Mark as processed
           await this.sp.web.lists
-            .getByTitle('JML_NotificationQueue')
+            .getByTitle('PM_NotificationQueue')
             .items.getById(item.Id)
             .update({
               IsProcessed: true,
@@ -774,7 +774,7 @@ export class ScheduledTaskProcessor {
   private async logProcessingRun(result: IScheduledProcessingResult): Promise<void> {
     try {
       await this.sp.web.lists
-        .getByTitle('JML_ScheduledProcessingLog')
+        .getByTitle('PM_ScheduledProcessingLog')
         .items.add({
           Title: `Processing Run - ${result.processedAt.toISOString()}`,
           ProcessedAt: result.processedAt.toISOString(),

@@ -5,7 +5,7 @@
 
 param(
     [Parameter(Mandatory=$false)]
-    [string]$SiteUrl = "https://mf7m.sharepoint.com/sites/JML"
+    [string]$SiteUrl = "https://mf7m.sharepoint.com/sites/PolicyManager"
 )
 
 $clientId = "d91b5b78-de72-424e-898b-8b5c9512ebd9"
@@ -62,7 +62,7 @@ $today = Get-Date
 foreach ($rating in $ratings) {
     try {
         $ratingDate = $today.AddDays(-([int](Get-Random -Minimum 1 -Maximum 180)))
-        Add-PnPListItem -List "JML_PolicyRatings" -Values @{
+        Add-PnPListItem -List "PM_PolicyRatings" -Values @{
             Title = "Rating for Policy $($rating.PolicyId)"
             PolicyId = $rating.PolicyId
             Rating = $rating.Rating
@@ -136,7 +136,7 @@ foreach ($comment in $comments) {
             $values.ParentCommentId = $commentIds[$comment.ParentIdx]
         }
 
-        $item = Add-PnPListItem -List "JML_PolicyComments" -Values $values
+        $item = Add-PnPListItem -List "PM_PolicyComments" -Values $values
         $commentIds[$idx] = $item.Id
         $idx++
     }
@@ -187,7 +187,7 @@ foreach ($fb in $feedback) {
             $values.ResolvedDate = $submitDate.AddDays((Get-Random -Minimum 2 -Maximum 14))
         }
 
-        Add-PnPListItem -List "JML_PolicyFeedback" -Values $values | Out-Null
+        Add-PnPListItem -List "PM_PolicyFeedback" -Values $values | Out-Null
     }
     catch {
         Write-Host "  Failed feedback: $_" -ForegroundColor Red

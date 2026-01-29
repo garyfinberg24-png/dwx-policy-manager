@@ -1,4 +1,3 @@
 // @ts-nocheck
-export { JmlAppHeader } from './JmlAppHeader';
-export type { IJmlAppHeaderProps } from './JmlAppHeader';
-export { default } from './JmlAppHeader';
+export { JmlAppHeader, DwxAppHeader, default } from './JmlAppHeader';
+export type { IJmlAppHeaderProps, INavItem, IBreadcrumb, IPageStat } from './IJmlAppHeaderProps';

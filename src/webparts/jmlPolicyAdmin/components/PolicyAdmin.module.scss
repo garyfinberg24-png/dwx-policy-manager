@@ -1,11 +1,8 @@
 @import '~@fluentui/react/dist/sass/References.scss';
 @import '../../../styles/fluent-mixins';
 
-// Full-bleed container and SharePoint overrides come from fluent-mixins (via sharepoint-overrides.scss)
-
 // SharePoint canvas and social bar overrides - REQUIRED for full-bleed and embedded mode
 :global {
-  // Enable full-bleed layouts
   .CanvasZone,
   [class*="CanvasZone"],
   .CanvasSection,
@@ -51,140 +48,267 @@
 
 .policyAdmin {
   @include full-bleed-container;
-  background-color: $ms-color-neutralLighter;
-
-  .title {
-    font-weight: 600;
-    color: $ms-color-themePrimary;
-  }
-
-  // Pivot Tab Styling - Ensure tabs don't get clipped
-  :global {
-    .ms-Pivot {
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-      padding: 0 16px;
-      overflow-x: auto;
-      white-space: nowrap;
-
-      .ms-Pivot-link {
-        padding: 14px 20px;
-        font-size: 14px;
-        white-space: nowrap;
-        min-width: auto;
-
-        &.is-selected {
-          font-weight: 600;
-        }
-      }
-
-      .ms-Pivot-text {
-        overflow: visible;
-        text-overflow: clip;
-        white-space: nowrap;
-      }
-    }
-  }
-
-  .policiesList {
-    background: white;
-    padding: 24px;
-    border-radius: 8px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-
-    .statusBadge {
-      color: white;
-      padding: 4px 12px;
-      border-radius: 4px;
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      display: inline-block;
-    }
-  }
+  background-color: #ffffff;
 
   // ============================================
-  // TAB PANEL - JML Official Standard
-  // Blue left accent, blue block active state with 4px radius
+  // ADMIN LAYOUT - Sidebar + Content
   // ============================================
-  .moduleNav {
+  .adminLayout {
     display: flex;
-    align-items: center;
-    flex-wrap: wrap;
+    min-height: calc(100vh - 200px);
     background: #ffffff;
-    border: 1px solid #edebe9;
-    border-left: 4px solid #0078d4; // Blue accent
-    border-radius: 8px;
-    padding: 8px 12px 8px 16px;
-    margin-bottom: 16px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-    gap: 4px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    max-width: 100%;
-    box-sizing: border-box;
-
-    // Hide scrollbar but allow scrolling
-    &::-webkit-scrollbar {
-      height: 0;
-      display: none;
-    }
-    -ms-overflow-style: none;
-    scrollbar-width: none;
   }
 
-  .moduleNavButton {
+  // ============================================
+  // LEFT SIDEBAR
+  // ============================================
+  .sidebar {
+    width: 280px;
+    min-width: 280px;
+    background-color: #f1f5f9;
+    border-right: 2px solid #cbd5e1;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow-y: auto;
+  }
+
+  .sidebarHeader {
+    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+    padding: 24px 20px;
+    color: #ffffff;
+  }
+
+  .sidebarTitle {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 10px 16px;
+    gap: 12px;
+    font-size: 20px;
+    font-weight: 600;
+    color: #ffffff;
+    margin: 0;
+  }
+
+  .sidebarSubtitle {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.9);
+    margin-top: 4px;
+  }
+
+  // ============================================
+  // NAVIGATION
+  // ============================================
+  .navSections {
+    padding: 16px 0;
+    flex: 1;
+  }
+
+  .navGroup {
+    margin-bottom: 4px;
+  }
+
+  .navCategoryHeader {
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 12px 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     background: transparent;
     border: none;
-    border-radius: 4px;
-    color: $ms-color-neutralSecondary;
-    font-weight: 500;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    min-width: auto;
-    white-space: nowrap;
-    flex-shrink: 0;
+    width: 100%;
+    text-align: left;
+    transition: all 0.2s;
 
     &:hover {
-      color: $ms-color-themePrimary;
-      background: $ms-color-neutralLighter;
+      background-color: rgba(100, 116, 139, 0.08);
+      color: #475569;
     }
+  }
 
-    &:focus {
-      outline: 2px solid $ms-color-themePrimary;
-      outline-offset: 2px;
+  .navItem {
+    padding: 12px 20px 12px 32px;
+    cursor: pointer;
+    border-left: 3px solid transparent;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    color: #334155;
+    transition: all 0.2s;
+    background: transparent;
+    border-top: none;
+    border-right: none;
+    border-bottom: none;
+    width: 100%;
+    text-align: left;
+
+    &:hover {
+      background-color: #e2e8f0;
+      color: #0d9488;
     }
 
     i {
       font-size: 16px;
+      width: 20px;
+      text-align: center;
     }
   }
 
-  .moduleNavActive {
-    // Blue block highlighting with 4px border radius
-    background: #0078d4 !important;
-    color: #ffffff !important;
-    font-weight: 600 !important;
-    border-radius: 4px;
+  .navItemActive {
+    background-color: #ccfbf1;
+    border-left: 3px solid #0d9488;
+    color: #0d9488;
+    font-weight: 600;
 
     &:hover {
-      background: #106ebe !important;
-      color: #ffffff !important;
-    }
-
-    &:focus {
-      outline: 2px solid #ffffff;
-      outline-offset: 2px;
+      background-color: #ccfbf1;
+      color: #0d9488;
     }
 
     i {
-      color: #ffffff !important;
+      color: #0d9488;
+    }
+  }
+
+  // ============================================
+  // RIGHT CONTENT AREA
+  // ============================================
+  .mainContent {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    min-width: 0;
+  }
+
+  .contentHeader {
+    padding: 24px 40px;
+    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .contentHeaderIcon {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .contentHeaderText {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .contentHeaderTitle {
+    font-size: 22px;
+    font-weight: 600;
+    color: #ffffff;
+  }
+
+  .contentHeaderDesc {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .contentBody {
+    padding: 32px 40px;
+    flex: 1;
+  }
+
+  // ============================================
+  // SECTION CONTENT
+  // ============================================
+  .sectionContent {
+    background: #ffffff;
+    border: 1px solid #edebe9;
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  }
+
+  .section {
+    margin-bottom: 24px;
+    padding: 16px;
+    background: #faf9f8;
+    border-radius: 8px;
+    border: 1px solid #edebe9;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  // ============================================
+  // ADMIN CARDS (Naming Rules, SLA, Lifecycle, Nav)
+  // ============================================
+  .adminCard {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px 20px;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+
+    &:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      border-color: #cbd5e1;
+    }
+  }
+
+  .adminCardGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+  }
+
+  // ============================================
+  // SAVE BAR
+  // ============================================
+  .saveBar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid #edebe9;
+  }
+
+  // ============================================
+  // RESPONSIVE
+  // ============================================
+  @media (max-width: 768px) {
+    .adminLayout {
+      flex-direction: column;
+    }
+
+    .sidebar {
+      width: 100%;
+      min-width: 100%;
+      border-right: none;
+      border-bottom: 2px solid #cbd5e1;
+      max-height: 300px;
+    }
+
+    .contentHeader {
+      padding: 20px 24px;
+    }
+
+    .contentBody {
+      padding: 24px;
     }
   }
 }

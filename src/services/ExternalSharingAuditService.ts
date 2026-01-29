@@ -40,8 +40,8 @@ export interface IAuditActionInput {
 export class ExternalSharingAuditService {
   private sp: SPFI;
 
-  private readonly AUDIT_LOG_LIST = 'JML_ExternalSharingAuditLog';
-  private readonly SECURITY_ALERTS_LIST = 'JML_ExternalSecurityAlerts';
+  private readonly AUDIT_LOG_LIST = 'PM_ExternalSharingAuditLog';
+  private readonly SECURITY_ALERTS_LIST = 'PM_ExternalSecurityAlerts';
 
   private currentUserId: number = 0;
   private currentUserEmail: string = '';

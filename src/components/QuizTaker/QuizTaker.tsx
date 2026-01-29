@@ -21,7 +21,6 @@ import {
   mergeStyleSets
 } from '@fluentui/react';
 import { QuizService, IQuiz, IQuizQuestion, IQuizAnswer, IQuizResult } from '../../services/QuizService';
-import { GamificationService } from '../../services/GamificationService';
 import { SPFI } from '@pnp/sp';
 
 export interface IQuizTakerProps {
@@ -49,15 +48,12 @@ export interface IQuizTakerState {
 
 export class QuizTaker extends React.Component<IQuizTakerProps, IQuizTakerState> {
   private quizService: QuizService;
-  private gamificationService: GamificationService;
   private timerInterval: any;
 
   constructor(props: IQuizTakerProps) {
     super(props);
 
     this.quizService = new QuizService(props.sp);
-    this.gamificationService = new GamificationService(props.sp);
-
     this.state = {
       quiz: null,
       questions: [],
@@ -229,14 +225,6 @@ export class QuizTaker extends React.Component<IQuizTakerProps, IQuizTakerState>
       if (this.timerInterval) {
         clearInterval(this.timerInterval);
       }
-
-      // Record in gamification system
-      await this.gamificationService.recordQuizCompletion(
-        this.props.userId.Id,
-        this.props.quizId,
-        result.passed,
-        result.percentage
-      );
 
       this.setState({
         result,

@@ -45,12 +45,12 @@ export class ExternalSharingService {
   private graph: GraphFI;
 
   // SharePoint list names
-  private readonly TRUSTED_ORGS_LIST = 'JML_TrustedOrganizations';
-  private readonly GUEST_USERS_LIST = 'JML_ExternalGuestUsers';
-  private readonly SHARED_RESOURCES_LIST = 'JML_ExternalSharedResources';
-  private readonly AUDIT_LOG_LIST = 'JML_ExternalSharingAuditLog';
-  private readonly POLICIES_LIST = 'JML_ExternalSharingPolicies';
-  private readonly ACCESS_REVIEWS_LIST = 'JML_ExternalAccessReviews';
+  private readonly TRUSTED_ORGS_LIST = 'PM_TrustedOrganizations';
+  private readonly GUEST_USERS_LIST = 'PM_ExternalGuestUsers';
+  private readonly SHARED_RESOURCES_LIST = 'PM_ExternalSharedResources';
+  private readonly AUDIT_LOG_LIST = 'PM_ExternalSharingAuditLog';
+  private readonly POLICIES_LIST = 'PM_ExternalSharingPolicies';
+  private readonly ACCESS_REVIEWS_LIST = 'PM_ExternalAccessReviews';
 
   // Current user context
   private currentUserId: number = 0;

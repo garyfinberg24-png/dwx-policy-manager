@@ -1,4 +1,4 @@
-// JML_TaskTimeEntries List Model
+// PM_TaskTimeEntries List Model
 // Tracks time spent on task assignments for analytics and SLA monitoring
 
 import { IBaseListItem, IUser } from './ICommon';

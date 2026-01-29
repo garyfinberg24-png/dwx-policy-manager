@@ -28,10 +28,10 @@ export class GuestUserService {
   private sp: SPFI;
   private graph: GraphFI;
 
-  private readonly GUEST_USERS_LIST = 'JML_ExternalGuestUsers';
-  private readonly SHARED_RESOURCES_LIST = 'JML_ExternalSharedResources';
-  private readonly AUDIT_LOG_LIST = 'JML_ExternalSharingAuditLog';
-  private readonly ACCESS_REVIEWS_LIST = 'JML_ExternalAccessReviews';
+  private readonly GUEST_USERS_LIST = 'PM_ExternalGuestUsers';
+  private readonly SHARED_RESOURCES_LIST = 'PM_ExternalSharedResources';
+  private readonly AUDIT_LOG_LIST = 'PM_ExternalSharingAuditLog';
+  private readonly ACCESS_REVIEWS_LIST = 'PM_ExternalAccessReviews';
 
   private currentUserId: number = 0;
   private currentUserEmail: string = '';

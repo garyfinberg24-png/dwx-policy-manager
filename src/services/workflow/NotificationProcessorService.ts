@@ -75,7 +75,7 @@ export class NotificationProcessorService {
   private config: INotificationProcessorConfig;
   private intervalHandle: any = null;
   private isProcessing: boolean = false;
-  private readonly LIST_NAME = 'JML_Notifications';
+  private readonly LIST_NAME = 'PM_Notifications';
 
   constructor(sp: SPFI, config?: Partial<INotificationProcessorConfig>) {
     this.sp = sp;

@@ -27,7 +27,7 @@ import { ProcessType } from '../../models/ICommon';
 import { logger } from '../LoggingService';
 
 // List name constant
-const LIST_NAME = 'JML_WorkflowDefinitions';
+const LIST_NAME = 'PM_WorkflowDefinitions';
 
 // Default select fields for workflow definitions
 const SELECT_FIELDS = [
@@ -1045,7 +1045,7 @@ export class WorkflowDefinitionService {
    */
   private async getInstanceCount(definitionId: number): Promise<number> {
     try {
-      const items = await this.sp.web.lists.getByTitle('JML_WorkflowInstances').items
+      const items = await this.sp.web.lists.getByTitle('PM_WorkflowInstances').items
         .filter(`WorkflowDefinitionId eq ${definitionId}`)
         .select('Id')
         .top(1)();

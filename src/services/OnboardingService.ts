@@ -57,7 +57,7 @@ export class OnboardingService {
       // Get user progress with secure filter
       const filter = ValidationUtils.buildFilter('UserId', 'eq', this.currentUserId);
       const progress = await this.sp.web.lists
-        .getByTitle('JML_UserTutorialProgress')
+        .getByTitle('PM_UserTutorialProgress')
         .items
         .filter(filter)();
 
@@ -111,7 +111,7 @@ export class OnboardingService {
       }
 
       const tutorials = await this.sp.web.lists
-        .getByTitle('JML_OnboardingTutorials')
+        .getByTitle('PM_OnboardingTutorials')
         .items
         .filter(filter)
         .orderBy('Priority')();
@@ -129,7 +129,7 @@ export class OnboardingService {
   public async getTutorial(tutorialId: number): Promise<IOnboardingTutorial | null> {
     try {
       const tutorial = await this.sp.web.lists
-        .getByTitle('JML_OnboardingTutorials')
+        .getByTitle('PM_OnboardingTutorials')
         .items
         .getById(tutorialId)();
 
@@ -155,7 +155,7 @@ export class OnboardingService {
       const filter = `${userFilter} and ${tutFilter}`;
 
       const existing = await this.sp.web.lists
-        .getByTitle('JML_UserTutorialProgress')
+        .getByTitle('PM_UserTutorialProgress')
         .items
         .filter(filter)
         .top(1)();
@@ -185,7 +185,7 @@ export class OnboardingService {
       };
 
       const result = await this.sp.web.lists
-        .getByTitle('JML_UserTutorialProgress')
+        .getByTitle('PM_UserTutorialProgress')
         .items
         .add(progressData);
 
@@ -211,7 +211,7 @@ export class OnboardingService {
   ): Promise<void> {
     try {
       await this.sp.web.lists
-        .getByTitle('JML_UserTutorialProgress')
+        .getByTitle('PM_UserTutorialProgress')
         .items
         .getById(progressId)
         .update({
@@ -230,7 +230,7 @@ export class OnboardingService {
   public async completeTutorial(progressId: number, timeSpent: number): Promise<void> {
     try {
       await this.sp.web.lists
-        .getByTitle('JML_UserTutorialProgress')
+        .getByTitle('PM_UserTutorialProgress')
         .items
         .getById(progressId)
         .update({
@@ -256,7 +256,7 @@ export class OnboardingService {
   public async skipTutorial(progressId: number): Promise<void> {
     try {
       await this.sp.web.lists
-        .getByTitle('JML_UserTutorialProgress')
+        .getByTitle('PM_UserTutorialProgress')
         .items
         .getById(progressId)
         .update({
@@ -282,7 +282,7 @@ export class OnboardingService {
       const sanitizedUrl = ValidationUtils.sanitizeForOData(pageUrl);
 
       const helps = await this.sp.web.lists
-        .getByTitle('JML_ContextualHelp')
+        .getByTitle('PM_ContextualHelp')
         .items
         .filter(`IsActive eq true and substringof('${sanitizedUrl}', PageUrl)`)
         .orderBy('Priority')();
@@ -308,7 +308,7 @@ export class OnboardingService {
       const sanitizedQuery = ValidationUtils.sanitizeForOData(query.substring(0, 100));
 
       const articles = await this.sp.web.lists
-        .getByTitle('JML_HelpArticles')
+        .getByTitle('PM_HelpArticles')
         .items
         .filter(`IsPublished eq true and (substringof('${sanitizedQuery}', Title) or substringof('${sanitizedQuery}', Content))`)
         .orderBy('ViewCount', false)
@@ -333,13 +333,13 @@ export class OnboardingService {
   public async getHelpArticle(articleId: number): Promise<IHelpArticle | null> {
     try {
       const article = await this.sp.web.lists
-        .getByTitle('JML_HelpArticles')
+        .getByTitle('PM_HelpArticles')
         .items
         .getById(articleId)();
 
       // Increment view count
       await this.sp.web.lists
-        .getByTitle('JML_HelpArticles')
+        .getByTitle('PM_HelpArticles')
         .items
         .getById(articleId)
         .update({
@@ -366,7 +366,7 @@ export class OnboardingService {
       const now = new Date().toISOString();
 
       const announcements = await this.sp.web.lists
-        .getByTitle('JML_WhatsNew')
+        .getByTitle('PM_WhatsNew')
         .items
         .filter(`IsActive eq true and (ShowUntil eq null or ShowUntil ge datetime'${now}')`)
         .orderBy('ReleaseDate', false)
@@ -393,7 +393,7 @@ export class OnboardingService {
       // Get user views with secure filter
       const filter = `${ValidationUtils.buildFilter('UserId', 'eq', this.currentUserId)} and Dismissed eq true`;
       const views = await this.sp.web.lists
-        .getByTitle('JML_UserAnnouncementViews')
+        .getByTitle('PM_UserAnnouncementViews')
         .items
         .filter(filter)();
 
@@ -422,14 +422,14 @@ export class OnboardingService {
       const filter = `${userFilter} and ${annFilter}`;
 
       const existing = await this.sp.web.lists
-        .getByTitle('JML_UserAnnouncementViews')
+        .getByTitle('PM_UserAnnouncementViews')
         .items
         .filter(filter)
         .top(1)();
 
       if (existing.length === 0) {
         await this.sp.web.lists
-          .getByTitle('JML_UserAnnouncementViews')
+          .getByTitle('PM_UserAnnouncementViews')
           .items
           .add({
             Title: `${announcementId} - ${this.currentUserEmail}`,
@@ -466,14 +466,14 @@ export class OnboardingService {
       const filter = `${userFilter} and ${annFilter}`;
 
       const existing = await this.sp.web.lists
-        .getByTitle('JML_UserAnnouncementViews')
+        .getByTitle('PM_UserAnnouncementViews')
         .items
         .filter(filter)
         .top(1)();
 
       if (existing.length > 0) {
         await this.sp.web.lists
-          .getByTitle('JML_UserAnnouncementViews')
+          .getByTitle('PM_UserAnnouncementViews')
           .items
           .getById(existing[0].Id)
           .update({
@@ -484,7 +484,7 @@ export class OnboardingService {
           });
       } else {
         await this.sp.web.lists
-          .getByTitle('JML_UserAnnouncementViews')
+          .getByTitle('PM_UserAnnouncementViews')
           .items
           .add({
             Title: `${validAnnouncementId} - ${this.currentUserEmail}`,
@@ -513,7 +513,7 @@ export class OnboardingService {
       // Check if user has completed any tutorials with secure filter
       const filter = ValidationUtils.buildFilter('UserId', 'eq', this.currentUserId);
       const progress = await this.sp.web.lists
-        .getByTitle('JML_UserTutorialProgress')
+        .getByTitle('PM_UserTutorialProgress')
         .items
         .filter(filter)
         .top(1)();
@@ -545,7 +545,7 @@ export class OnboardingService {
     try {
       // Get sample data template
       const templates = await this.sp.web.lists
-        .getByTitle('JML_SampleDataTemplates')
+        .getByTitle('PM_SampleDataTemplates')
         .items
         .filter('IsActive eq true and TemplateType eq \'Full Demo\'')
         .top(1)();
@@ -567,7 +567,7 @@ export class OnboardingService {
 
       // Update install count
       await this.sp.web.lists
-        .getByTitle('JML_SampleDataTemplates')
+        .getByTitle('PM_SampleDataTemplates')
         .items
         .getById(template.Id)
         .update({
@@ -591,12 +591,12 @@ export class OnboardingService {
     try {
       // Update article votes
       const article = await this.sp.web.lists
-        .getByTitle('JML_HelpArticles')
+        .getByTitle('PM_HelpArticles')
         .items
         .getById(articleId)();
 
       await this.sp.web.lists
-        .getByTitle('JML_HelpArticles')
+        .getByTitle('PM_HelpArticles')
         .items
         .getById(articleId)
         .update({
@@ -659,7 +659,7 @@ export class OnboardingService {
   ): Promise<void> {
     try {
       await this.sp.web.lists
-        .getByTitle('JML_UserHelpInteractions')
+        .getByTitle('PM_UserHelpInteractions')
         .items
         .add({
           Title: `${interactionType} - ${new Date().toISOString()}`,

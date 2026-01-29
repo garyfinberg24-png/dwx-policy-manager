@@ -32,10 +32,10 @@ import { RequisitionService } from './RequisitionService';
 export class PurchaseOrderService {
   private sp: SPFI;
   private requisitionService: RequisitionService;
-  private readonly PO_LIST = 'JML_PurchaseOrders';
-  private readonly PO_LINE_ITEMS_LIST = 'JML_POLineItems';
-  private readonly GOODS_RECEIPTS_LIST = 'JML_GoodsReceipts';
-  private readonly RECEIPT_LINE_ITEMS_LIST = 'JML_ReceiptLineItems';
+  private readonly PO_LIST = 'PM_PurchaseOrders';
+  private readonly PO_LINE_ITEMS_LIST = 'PM_POLineItems';
+  private readonly GOODS_RECEIPTS_LIST = 'PM_GoodsReceipts';
+  private readonly RECEIPT_LINE_ITEMS_LIST = 'PM_ReceiptLineItems';
 
   constructor(sp: SPFI) {
     this.sp = sp;

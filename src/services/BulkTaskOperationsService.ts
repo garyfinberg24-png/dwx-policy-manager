@@ -71,9 +71,9 @@ export class BulkTaskOperationsService {
     };
 
     try {
-      const list = this.sp.web.lists.getByTitle('JML_TaskAssignments');
+      const list = this.sp.web.lists.getByTitle('PM_TaskAssignments');
       const [batch] = this.sp.web.batched();
-      const batchedList = this.sp.web.lists.getByTitle('JML_TaskAssignments').using(batch);
+      const batchedList = this.sp.web.lists.getByTitle('PM_TaskAssignments').using(batch);
 
       // Store original values for rollback
       const rollbackData: IBulkRollbackData[] = [];
@@ -185,9 +185,9 @@ export class BulkTaskOperationsService {
     };
 
     try {
-      const list = this.sp.web.lists.getByTitle('JML_TaskAssignments');
+      const list = this.sp.web.lists.getByTitle('PM_TaskAssignments');
       const [batch] = this.sp.web.batched();
-      const batchedList = this.sp.web.lists.getByTitle('JML_TaskAssignments').using(batch);
+      const batchedList = this.sp.web.lists.getByTitle('PM_TaskAssignments').using(batch);
 
       // Store original values for rollback
       const rollbackData: IBulkRollbackData[] = [];
@@ -254,9 +254,9 @@ export class BulkTaskOperationsService {
     };
 
     try {
-      const list = this.sp.web.lists.getByTitle('JML_TaskAssignments');
+      const list = this.sp.web.lists.getByTitle('PM_TaskAssignments');
       const [batch] = this.sp.web.batched();
-      const batchedList = this.sp.web.lists.getByTitle('JML_TaskAssignments').using(batch);
+      const batchedList = this.sp.web.lists.getByTitle('PM_TaskAssignments').using(batch);
 
       // Store original values for rollback
       const rollbackData: IBulkRollbackData[] = [];
@@ -324,9 +324,9 @@ export class BulkTaskOperationsService {
     };
 
     try {
-      const list = this.sp.web.lists.getByTitle('JML_TaskAssignments');
+      const list = this.sp.web.lists.getByTitle('PM_TaskAssignments');
       const [batch] = this.sp.web.batched();
-      const batchedList = this.sp.web.lists.getByTitle('JML_TaskAssignments').using(batch);
+      const batchedList = this.sp.web.lists.getByTitle('PM_TaskAssignments').using(batch);
 
       // Build update object
       const updateObj: any = {};
@@ -408,12 +408,12 @@ export class BulkTaskOperationsService {
     };
 
     try {
-      const list = this.sp.web.lists.getByTitle('JML_TaskAssignments');
+      const list = this.sp.web.lists.getByTitle('PM_TaskAssignments');
 
       if (hardDelete) {
         // Hard delete - actually remove items
         const [batch] = this.sp.web.batched();
-        const batchedList = this.sp.web.lists.getByTitle('JML_TaskAssignments').using(batch);
+        const batchedList = this.sp.web.lists.getByTitle('PM_TaskAssignments').using(batch);
 
         for (const taskId of taskIds) {
           try {
@@ -434,7 +434,7 @@ export class BulkTaskOperationsService {
       } else {
         // Soft delete - set IsDeleted flag
         const [batch] = this.sp.web.batched();
-        const batchedList = this.sp.web.lists.getByTitle('JML_TaskAssignments').using(batch);
+        const batchedList = this.sp.web.lists.getByTitle('PM_TaskAssignments').using(batch);
         const rollbackData: IBulkRollbackData[] = [];
 
         for (const taskId of taskIds) {
@@ -495,9 +495,9 @@ export class BulkTaskOperationsService {
     };
 
     try {
-      const list = this.sp.web.lists.getByTitle('JML_TaskAssignments');
+      const list = this.sp.web.lists.getByTitle('PM_TaskAssignments');
       const [batch] = this.sp.web.batched();
-      const batchedList = this.sp.web.lists.getByTitle('JML_TaskAssignments').using(batch);
+      const batchedList = this.sp.web.lists.getByTitle('PM_TaskAssignments').using(batch);
 
       for (const item of rollbackData) {
         try {
@@ -538,7 +538,7 @@ export class BulkTaskOperationsService {
     const errors: string[] = [];
 
     try {
-      const list = this.sp.web.lists.getByTitle('JML_TaskAssignments');
+      const list = this.sp.web.lists.getByTitle('PM_TaskAssignments');
 
       for (const taskId of taskIds) {
         const task = await list.items.getById(taskId)

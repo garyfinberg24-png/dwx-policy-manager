@@ -33,8 +33,8 @@ import { logger } from './LoggingService';
 const CACHE_DURATION = 15 * 60 * 1000;
 
 // Local storage keys
-const LICENSE_CACHE_KEY = 'jml_license_cache';
-const LICENSE_CACHE_TIMESTAMP_KEY = 'jml_license_cache_ts';
+const LICENSE_CACHE_KEY = 'PM_license_cache';
+const LICENSE_CACHE_TIMESTAMP_KEY = 'PM_license_cache_ts';
 
 export class LicenseService {
   private sp: SPFI;
@@ -203,7 +203,7 @@ export class LicenseService {
         ActivatedDate: new Date()
       };
 
-      await this.sp.web.lists.getByTitle('JML_Licenses').items.add(newLicense);
+      await this.sp.web.lists.getByTitle('PM_Licenses').items.add(newLicense);
 
       // Log activation attempt
       await this.logLicenseCheck(request.licenseKey, 'ACTIVATION_REQUESTED');
@@ -236,7 +236,7 @@ export class LicenseService {
    */
   public async logModuleUsage(moduleId: PremiumModule, action: string): Promise<void> {
     try {
-      await this.sp.web.lists.getByTitle('JML_AuditLog').items.add({
+      await this.sp.web.lists.getByTitle('PM_AuditLog').items.add({
         Title: `Module Usage: ${moduleId}`,
         Action: action,
         Category: 'LICENSE',
@@ -262,7 +262,7 @@ export class LicenseService {
    */
   public async getAllLicenses(): Promise<ILicense[]> {
     try {
-      const items = await this.sp.web.lists.getByTitle('JML_Licenses').items
+      const items = await this.sp.web.lists.getByTitle('PM_Licenses').items
         .select('*')
         .orderBy('Created', false)();
 
@@ -278,7 +278,7 @@ export class LicenseService {
    */
   public async updateLicense(id: number, updates: Partial<ILicense>): Promise<void> {
     try {
-      await this.sp.web.lists.getByTitle('JML_Licenses').items.getById(id).update(updates);
+      await this.sp.web.lists.getByTitle('PM_Licenses').items.getById(id).update(updates);
 
       // Clear cache after update
       this.clearCache();
@@ -309,7 +309,7 @@ export class LicenseService {
 
   private async fetchLicenseFromSharePoint(): Promise<ILicense | null> {
     try {
-      const items = await this.sp.web.lists.getByTitle('JML_Licenses').items
+      const items = await this.sp.web.lists.getByTitle('PM_Licenses').items
         .select('*')
         .filter(`Status ne '${LicenseStatus.Suspended}'`)
         .top(1)();
@@ -320,7 +320,7 @@ export class LicenseService {
       return null;
     } catch (error) {
       // List might not exist yet
-      logger.warn('LicenseService', 'JML_Licenses list not found or error', error);
+      logger.warn('LicenseService', 'PM_Licenses list not found or error', error);
       return null;
     }
   }
@@ -375,7 +375,7 @@ export class LicenseService {
   private async updateExistingLicense(existing: ILicense, request: ILicenseActivationRequest): Promise<ILicenseActivationResponse> {
     // If key matches, just update contact info
     if (existing.LicenseKey === request.licenseKey) {
-      await this.sp.web.lists.getByTitle('JML_Licenses').items.getById(existing.Id!).update({
+      await this.sp.web.lists.getByTitle('PM_Licenses').items.getById(existing.Id!).update({
         ContactEmail: request.contactEmail,
         LastValidated: new Date()
       });
@@ -390,7 +390,7 @@ export class LicenseService {
     }
 
     // Different key - update to new key (pending admin approval)
-    await this.sp.web.lists.getByTitle('JML_Licenses').items.getById(existing.Id!).update({
+    await this.sp.web.lists.getByTitle('PM_Licenses').items.getById(existing.Id!).update({
       LicenseKey: request.licenseKey,
       ContactEmail: request.contactEmail,
       Status: LicenseStatus.PendingActivation,
@@ -407,7 +407,7 @@ export class LicenseService {
 
   private async logLicenseCheck(licenseKey: string, action: string): Promise<void> {
     try {
-      await this.sp.web.lists.getByTitle('JML_AuditLog').items.add({
+      await this.sp.web.lists.getByTitle('PM_AuditLog').items.add({
         Title: `License Check: ${action}`,
         Action: action,
         Category: 'LICENSE',

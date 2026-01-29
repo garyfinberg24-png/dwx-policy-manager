@@ -261,7 +261,7 @@ export class BulkDocumentService {
         const filter = filterParts.join(' or ');
 
         const items = await this.sp.web.lists
-          .getByTitle('JML_Processes')
+          .getByTitle('PM_Processes')
           .items.filter(filter)
           .select('*', 'Manager/Id', 'Manager/Title', 'Manager/EMail')
           .expand('Manager')();

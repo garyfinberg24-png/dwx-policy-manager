@@ -24,7 +24,7 @@ import { logger } from './LoggingService';
 
 export class ContractService {
   private sp: SPFI;
-  private readonly CONTRACTS_LIST = 'JML_Contracts';
+  private readonly CONTRACTS_LIST = 'PM_Contracts';
 
   constructor(sp: SPFI) {
     this.sp = sp;

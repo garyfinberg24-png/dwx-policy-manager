@@ -716,7 +716,7 @@ export class SuccessMetricsService {
 
       const filterQuery = filterParts.length > 0 ? filterParts.join(' and ') : undefined;
 
-      let query = this.sp.web.lists.getByTitle('JML_Processes').items
+      let query = this.sp.web.lists.getByTitle('PM_Processes').items
         .select('*', 'Manager/Title', 'Manager/EMail')
         .expand('Manager')
         .top(5000);
@@ -735,7 +735,7 @@ export class SuccessMetricsService {
 
   private async getAllTasks(filters?: IAnalyticsFilters): Promise<IJmlTaskAssignment[]> {
     try {
-      const items = await this.sp.web.lists.getByTitle('JML_TaskAssignments').items
+      const items = await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
         .select('*', 'Task/Title')
         .expand('Task')
         .top(5000)();
@@ -766,7 +766,7 @@ export class SuccessMetricsService {
 
       const filterQuery = filterParts.length > 0 ? filterParts.join(' and ') : undefined;
 
-      let query = this.sp.web.lists.getByTitle('JML_AuditLog').items
+      let query = this.sp.web.lists.getByTitle('PM_AuditLog').items
         .select('*')
         .top(5000);
 
@@ -794,7 +794,7 @@ export class SuccessMetricsService {
 
   private async getSatisfactionSurveys(filters?: IAnalyticsFilters): Promise<any[]> {
     try {
-      const items = await this.sp.web.lists.getByTitle('JML_Satisfaction').items
+      const items = await this.sp.web.lists.getByTitle('PM_Satisfaction').items
         .select('*')
         .top(5000)();
       return items;

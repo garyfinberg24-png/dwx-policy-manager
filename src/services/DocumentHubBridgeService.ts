@@ -70,14 +70,14 @@ import { logger } from './LoggingService';
 
 const LISTS = {
   // Document Hub Bridge Lists
-  DOCUMENT_CONTRACT_LINKS: 'JML_DocumentContractLinks',
-  DOCUMENT_SIGNING_REQUESTS: 'JML_DocumentSigningRequests',
-  DOCUMENT_SIGNERS: 'JML_DocumentSigners',
+  DOCUMENT_CONTRACT_LINKS: 'PM_DocumentContractLinks',
+  DOCUMENT_SIGNING_REQUESTS: 'PM_DocumentSigningRequests',
+  DOCUMENT_SIGNERS: 'PM_DocumentSigners',
   DOCUMENT_POLICY_LINKS: 'PM_DocumentPolicyLinks',  // Policy Manager list
-  DOCUMENT_CV_LINKS: 'JML_DocumentCVLinks',
+  DOCUMENT_CV_LINKS: 'PM_DocumentCVLinks',
 
   // Contract Manager Lists (JML integration - keep JML prefix)
-  CONTRACTS: 'JML_ContractRecords',
+  CONTRACTS: 'PM_ContractRecords',
 
   // Policy Hub Lists (Policy Manager owned - use PM prefix)
   POLICIES: 'PM_Policies',
@@ -85,15 +85,15 @@ const LISTS = {
   POLICY_RETENTION: 'PM_PolicyRetention',
 
   // CV Management Lists (JML integration - keep JML prefix)
-  CV_DATABASE: 'JML_CVDatabase',
-  CV_POSITIONS: 'JML_Positions',
-  CV_DEPARTMENTS: 'JML_Departments',
+  CV_DATABASE: 'PM_CVDatabase',
+  CV_POSITIONS: 'PM_Positions',
+  CV_DEPARTMENTS: 'PM_Departments',
 
   // Document Registry (JML integration - keep JML prefix)
-  DOCUMENT_REGISTRY: 'JML_DocumentRegistry',
+  DOCUMENT_REGISTRY: 'PM_DocumentRegistry',
 
   // Signing Configuration (JML integration - keep JML prefix)
-  SIGNATURE_CONFIG: 'JML_SignatureConfig'
+  SIGNATURE_CONFIG: 'PM_SignatureConfig'
 };
 
 // ============================================================================

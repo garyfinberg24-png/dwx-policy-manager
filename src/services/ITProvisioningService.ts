@@ -39,9 +39,9 @@ export class ITProvisioningService {
   private context: WebPartContext;
   private emailQueueService: EmailQueueService;
 
-  private readonly PROVISIONING_LOG_LIST = 'JML_ITProvisioningLog';
-  private readonly PROVISIONING_AUDIT_LIST = 'JML_ITProvisioningAuditLog';
-  private readonly PROVISIONING_CONFIG_LIST = 'JML_ITProvisioningConfig';
+  private readonly PROVISIONING_LOG_LIST = 'PM_ITProvisioningLog';
+  private readonly PROVISIONING_AUDIT_LIST = 'PM_ITProvisioningAuditLog';
+  private readonly PROVISIONING_CONFIG_LIST = 'PM_ITProvisioningConfig';
 
   // Default configuration (can be overridden by SharePoint config)
   private defaultConfig: IProvisioningConfig = {
@@ -1063,7 +1063,7 @@ export class ITProvisioningService {
       // Also create high-priority in-app notification
       for (const adminEmail of adminEmails) {
         try {
-          await this.sp.web.lists.getByTitle('JML_Notifications').items.add({
+          await this.sp.web.lists.getByTitle('PM_Notifications').items.add({
             Title: `Provisioning Failed: ${process.EmployeeName}`,
             NotificationType: 'ProvisioningFailure',
             RecipientEmail: adminEmail,
@@ -1263,7 +1263,7 @@ export class ITProvisioningService {
       }
 
       // Also create in-app notification as backup
-      await this.sp.web.lists.getByTitle('JML_Notifications').items.add({
+      await this.sp.web.lists.getByTitle('PM_Notifications').items.add({
         Title: `Welcome - ${user.displayName}`,
         NotificationType: 'WelcomeEmail',
         RecipientId: null, // External recipient
@@ -1279,7 +1279,7 @@ export class ITProvisioningService {
 
       // Fallback: Create notification for manual sending
       try {
-        await this.sp.web.lists.getByTitle('JML_Notifications').items.add({
+        await this.sp.web.lists.getByTitle('PM_Notifications').items.add({
           Title: `Welcome - ${user.displayName}`,
           NotificationType: 'WelcomeEmail',
           RecipientId: null,

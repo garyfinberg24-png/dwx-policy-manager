@@ -136,7 +136,7 @@ export class PolicyNotificationService {
   ): Promise<void> {
     try {
       const notification: IPolicyNotification = {
-        recipientId: acknowledgement.UserId,
+        recipientId: acknowledgement.AckUserId,
         notificationType: 'AcknowledgementRequired',
         subject: `Action Required: Acknowledge Policy - ${policy.PolicyName}`,
         body: this.buildAcknowledgementRequiredEmail(policy, acknowledgement),
@@ -149,7 +149,7 @@ export class PolicyNotificationService {
 
       // Schedule reminders if due date is set
       if (acknowledgement.DueDate) {
-        await this.scheduleReminders(policy.Id!, acknowledgement.UserId, new Date(acknowledgement.DueDate));
+        await this.scheduleReminders(policy.Id!, acknowledgement.AckUserId, new Date(acknowledgement.DueDate));
       }
     } catch (error) {
       logger.error('PolicyNotificationService', 'Failed to send acknowledgement required notification:', error);
@@ -165,7 +165,7 @@ export class PolicyNotificationService {
   ): Promise<void> {
     try {
       const notification: IPolicyNotification = {
-        recipientId: acknowledgement.UserId,
+        recipientId: acknowledgement.AckUserId,
         notificationType: 'Reminder3Day',
         subject: `Reminder: 3 Days to Acknowledge - ${policy.PolicyName}`,
         body: this.buildReminder3DayEmail(policy, acknowledgement),
@@ -189,7 +189,7 @@ export class PolicyNotificationService {
   ): Promise<void> {
     try {
       const notification: IPolicyNotification = {
-        recipientId: acknowledgement.UserId,
+        recipientId: acknowledgement.AckUserId,
         notificationType: 'Reminder1Day',
         subject: `Urgent Reminder: Acknowledge Tomorrow - ${policy.PolicyName}`,
         body: this.buildReminder1DayEmail(policy, acknowledgement),
@@ -214,7 +214,7 @@ export class PolicyNotificationService {
   ): Promise<void> {
     try {
       const notification: IPolicyNotification = {
-        recipientId: acknowledgement.UserId,
+        recipientId: acknowledgement.AckUserId,
         notificationType: 'Overdue',
         subject: `OVERDUE: Policy Acknowledgement Required - ${policy.PolicyName}`,
         body: this.buildOverdueEmail(policy, acknowledgement, daysOverdue),
@@ -243,7 +243,7 @@ export class PolicyNotificationService {
   ): Promise<void> {
     try {
       const notification: IPolicyNotification = {
-        recipientId: acknowledgement.UserId,
+        recipientId: acknowledgement.AckUserId,
         notificationType: 'AcknowledgementComplete',
         subject: `Confirmed: Policy Acknowledged - ${policy.PolicyName}`,
         body: this.buildAcknowledgementCompleteEmail(policy, acknowledgement),
@@ -422,7 +422,7 @@ export class PolicyNotificationService {
         if (!policy) continue;
 
         const acknowledgement = await this.getAcknowledgement(schedule.PolicyId, schedule.UserId);
-        if (!acknowledgement || acknowledgement.Status === AcknowledgementStatus.Acknowledged) {
+        if (!acknowledgement || acknowledgement.AckStatus === AcknowledgementStatus.Acknowledged) {
           // Already acknowledged, remove schedule
           await this.sp.web.lists
             .getByTitle(this.REMINDER_SCHEDULE_LIST)
@@ -1004,7 +1004,7 @@ export class PolicyNotificationService {
     const managerId = (acknowledgement as any).ManagerId;
     if (!managerId) return;
 
-    const user = await this.sp.web.siteUsers.getById(acknowledgement.UserId)();
+    const user = await this.sp.web.siteUsers.getById(acknowledgement.AckUserId)();
 
     const notification: IPolicyNotification = {
       recipientId: managerId,
@@ -1071,7 +1071,7 @@ export class PolicyNotificationService {
     try {
       const items = await this.sp.web.lists
         .getByTitle(PolicyLists.POLICY_ACKNOWLEDGEMENTS)
-        .items.filter(`PolicyId eq ${policyId} and UserId eq ${userId}`)
+        .items.filter(`PolicyId eq ${policyId} and AckUserId eq ${userId}`)
         .top(1)() as IPolicyAcknowledgement[];
       return items.length > 0 ? items[0] : null;
     } catch {

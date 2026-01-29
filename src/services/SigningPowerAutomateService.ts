@@ -76,8 +76,8 @@ export class SigningPowerAutomateService {
   private signingService: SigningService;
   private webhookConfigs: Map<string, IWebhookConfig> = new Map();
 
-  private readonly WEBHOOK_CONFIG_LIST = 'JML_SigningWebhooks';
-  private readonly WEBHOOK_LOG_LIST = 'JML_SigningWebhookLog';
+  private readonly WEBHOOK_CONFIG_LIST = 'PM_SigningWebhooks';
+  private readonly WEBHOOK_LOG_LIST = 'PM_SigningWebhookLog';
 
   constructor(sp: SPFI) {
     this.sp = sp;
@@ -483,7 +483,7 @@ export class SigningPowerAutomateService {
 
     // Add signer to request
     await this.sp.web.lists
-      .getByTitle('JML_Signers')
+      .getByTitle('PM_Signers')
       .items.add({
         Title: params.name,
         RequestId: actionRequest.requestId,
@@ -731,7 +731,7 @@ export class SigningPowerAutomateService {
 
     // Find the request by external envelope ID
     const requests = await this.sp.web.lists
-      .getByTitle('JML_SigningRequests')
+      .getByTitle('PM_SigningRequests')
       .items.filter(`ExternalEnvelopeId eq '${envelopeId}'`)
       .top(1)();
 
@@ -781,7 +781,7 @@ export class SigningPowerAutomateService {
     }
 
     const requests = await this.sp.web.lists
-      .getByTitle('JML_SigningRequests')
+      .getByTitle('PM_SigningRequests')
       .items.filter(`ExternalEnvelopeId eq '${agreementId}'`)
       .top(1)();
 
@@ -824,7 +824,7 @@ export class SigningPowerAutomateService {
     }
 
     const requests = await this.sp.web.lists
-      .getByTitle('JML_SigningRequests')
+      .getByTitle('PM_SigningRequests')
       .items.filter(`ExternalEnvelopeId eq '${packageId}'`)
       .top(1)();
 
@@ -1015,7 +1015,7 @@ export class SigningPowerAutomateService {
     }
 
     await this.sp.web.lists
-      .getByTitle('JML_SigningRequests')
+      .getByTitle('PM_SigningRequests')
       .items.getById(requestId)
       .update(updates);
   }
@@ -1025,7 +1025,7 @@ export class SigningPowerAutomateService {
    */
   private async updateSignerStatusByEmail(requestId: number, email: string, status: SignerStatus): Promise<void> {
     const signers = await this.sp.web.lists
-      .getByTitle('JML_Signers')
+      .getByTitle('PM_Signers')
       .items.filter(`RequestId eq ${requestId} and SignerEmail eq '${email}'`)();
 
     for (const signer of signers) {
@@ -1038,7 +1038,7 @@ export class SigningPowerAutomateService {
       }
 
       await this.sp.web.lists
-        .getByTitle('JML_Signers')
+        .getByTitle('PM_Signers')
         .items.getById(signer.Id)
         .update(updates);
     }

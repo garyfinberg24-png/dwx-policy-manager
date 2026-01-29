@@ -3,7 +3,7 @@
  * EntraUserSyncService
  *
  * Comprehensive service for synchronizing users from Entra ID (Azure AD)
- * to the JML_Employees SharePoint list.
+ * to the PM_Employees SharePoint list.
  *
  * Features:
  * - Full sync of all Entra users
@@ -50,10 +50,10 @@ interface IDeltaUser extends IEntraUser {
 }
 
 /** List name for employee data */
-const EMPLOYEES_LIST = 'JML_Employees';
+const EMPLOYEES_LIST = 'PM_Employees';
 
 /** List name for sync logs */
-const SYNC_LOG_LIST = 'JML_Sync_Log';
+const SYNC_LOG_LIST = 'PM_Sync_Log';
 
 /**
  * Service for synchronizing Entra ID users to JML Employees list
@@ -623,7 +623,7 @@ export class EntraUserSyncService {
   private async getDeltaLink(): Promise<string | null> {
     try {
       const items = await this.sp.web.lists
-        .getByTitle('JML_Sync_Config')
+        .getByTitle('PM_Sync_Config')
         .items
         .filter("ConfigType eq 'DeltaLink'")
         .top(1)();
@@ -648,7 +648,7 @@ export class EntraUserSyncService {
 
       // Check if delta link record exists
       const items = await this.sp.web.lists
-        .getByTitle('JML_Sync_Config')
+        .getByTitle('PM_Sync_Config')
         .items
         .filter("ConfigType eq 'DeltaLink'")
         .top(1)();
@@ -656,7 +656,7 @@ export class EntraUserSyncService {
       if (items.length > 0) {
         // Update existing
         await this.sp.web.lists
-          .getByTitle('JML_Sync_Config')
+          .getByTitle('PM_Sync_Config')
           .items.getById(items[0].Id)
           .update({
             ConfigValue: deltaLink,
@@ -664,7 +664,7 @@ export class EntraUserSyncService {
           });
       } else {
         // Create new
-        await this.sp.web.lists.getByTitle('JML_Sync_Config').items.add({
+        await this.sp.web.lists.getByTitle('PM_Sync_Config').items.add({
           Title: 'Delta Link',
           ConfigType: 'DeltaLink',
           ConfigValue: deltaLink
@@ -680,11 +680,11 @@ export class EntraUserSyncService {
    */
   private async ensureSyncConfigList(): Promise<void> {
     try {
-      await this.sp.web.lists.getByTitle('JML_Sync_Config')();
+      await this.sp.web.lists.getByTitle('PM_Sync_Config')();
     } catch {
       // Create the list if it doesn't exist
-      await this.sp.web.lists.add('JML_Sync_Config', '', 100, false);
-      const list = this.sp.web.lists.getByTitle('JML_Sync_Config');
+      await this.sp.web.lists.add('PM_Sync_Config', '', 100, false);
+      const list = this.sp.web.lists.getByTitle('PM_Sync_Config');
       await list.fields.addText('ConfigType', { MaxLength: 50 });
       await list.fields.addMultilineText('ConfigValue', { NumberOfLines: 10 });
     }
@@ -696,14 +696,14 @@ export class EntraUserSyncService {
   public async resetDeltaSync(): Promise<void> {
     try {
       const items = await this.sp.web.lists
-        .getByTitle('JML_Sync_Config')
+        .getByTitle('PM_Sync_Config')
         .items
         .filter("ConfigType eq 'DeltaLink'")
         .top(1)();
 
       if (items.length > 0) {
         await this.sp.web.lists
-          .getByTitle('JML_Sync_Config')
+          .getByTitle('PM_Sync_Config')
           .items.getById(items[0].Id)
           .delete();
       }
@@ -721,7 +721,7 @@ export class EntraUserSyncService {
   }> {
     try {
       const items = await this.sp.web.lists
-        .getByTitle('JML_Sync_Config')
+        .getByTitle('PM_Sync_Config')
         .items
         .filter("ConfigType eq 'DeltaLink'")
         .select('Id', 'Modified')
@@ -1125,7 +1125,7 @@ export class EntraUserSyncService {
       });
     } catch {
       // Sync log list might not exist - fail silently
-      console.warn('Could not log sync event - JML_Sync_Log list may not exist');
+      console.warn('Could not log sync event - PM_Sync_Log list may not exist');
     }
   }
 

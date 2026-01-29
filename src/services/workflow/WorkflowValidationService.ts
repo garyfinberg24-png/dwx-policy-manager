@@ -402,7 +402,7 @@ export class WorkflowValidationService {
       case StepType.CreateTask:
         // Validate task template exists
         if (config.taskTemplateId) {
-          const templateExists = await this.checkItemExists('JML_ChecklistTemplates', config.taskTemplateId);
+          const templateExists = await this.checkItemExists('PM_ChecklistTemplates', config.taskTemplateId);
           if (!templateExists) {
             errors.push({
               code: 'TASK_TEMPLATE_NOT_FOUND',
@@ -1028,7 +1028,7 @@ export class WorkflowValidationService {
    */
   private async checkWorkflowCodeExists(code: string): Promise<boolean> {
     try {
-      const items = await this.sp.web.lists.getByTitle('JML_WorkflowDefinitions').items
+      const items = await this.sp.web.lists.getByTitle('PM_WorkflowDefinitions').items
         .filter(`WorkflowCode eq '${code}' and IsActive eq true`)
         .select('Id')
         .top(1)();
@@ -1051,7 +1051,7 @@ export class WorkflowValidationService {
         filter += ` and Id ne ${excludeId}`;
       }
 
-      const items = await this.sp.web.lists.getByTitle('JML_WorkflowDefinitions').items
+      const items = await this.sp.web.lists.getByTitle('PM_WorkflowDefinitions').items
         .filter(filter)
         .select('Id')
         .top(1)();

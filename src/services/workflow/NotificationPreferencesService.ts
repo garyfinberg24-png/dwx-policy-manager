@@ -156,8 +156,8 @@ export interface IDigestItem {
 
 export class NotificationPreferencesService {
   private sp: SPFI;
-  private readonly PREFERENCES_LIST = 'JML_UserPreferences';
-  private readonly DIGEST_QUEUE_LIST = 'JML_DigestQueue';
+  private readonly PREFERENCES_LIST = 'PM_UserPreferences';
+  private readonly DIGEST_QUEUE_LIST = 'PM_DigestQueue';
 
   // Cache for preferences to reduce list queries
   private preferencesCache: Map<number, { preferences: IUserNotificationPreferences; expiry: Date }> = new Map();

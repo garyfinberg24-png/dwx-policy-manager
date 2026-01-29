@@ -180,7 +180,7 @@ export class ROIAnalyticsService {
     try {
       // Get all processes in period
       const processes = await this.sp.web.lists
-        .getByTitle('JML_Processes')
+        .getByTitle('PM_Processes')
         .items.filter(`Created ge datetime'${startDate.toISOString()}' and Created le datetime'${endDate.toISOString()}'`)
         .select('Id', 'ProcessType', 'Created', 'EmployeeID')();
 
@@ -219,13 +219,13 @@ export class ROIAnalyticsService {
     try {
       // Get processes with templates
       const processes = await this.sp.web.lists
-        .getByTitle('JML_Processes')
+        .getByTitle('PM_Processes')
         .items.filter(`Created ge datetime'${startDate.toISOString()}' and Created le datetime'${endDate.toISOString()}' and ChecklistTemplateID ne null`)
         .select('Id', 'ChecklistTemplateID')();
 
       // Get task assignments created via automation
       const tasks = await this.sp.web.lists
-        .getByTitle('JML_TaskAssignments')
+        .getByTitle('PM_TaskAssignments')
         .items.filter(`Created ge datetime'${startDate.toISOString()}' and Created le datetime'${endDate.toISOString()}'`)
         .select('Id', 'ProcessID')();
 
@@ -264,7 +264,7 @@ export class ROIAnalyticsService {
       // For now, we'll estimate based on task completion patterns
 
       const tasks = await this.sp.web.lists
-        .getByTitle('JML_TaskAssignments')
+        .getByTitle('PM_TaskAssignments')
         .items.filter(`Created ge datetime'${startDate.toISOString()}' and Created le datetime'${endDate.toISOString()}'`)
         .select('Id', 'Status', 'DueDate', 'CompletedDate')();
 
@@ -310,7 +310,7 @@ export class ROIAnalyticsService {
   public async getApprovalWorkflowMetrics(startDate: Date, endDate: Date): Promise<IApprovalWorkflowMetrics> {
     try {
       const approvals = await this.sp.web.lists
-        .getByTitle('JML_Approvals')
+        .getByTitle('PM_Approvals')
         .items.filter(`RequestedDate ge datetime'${startDate.toISOString()}' and RequestedDate le datetime'${endDate.toISOString()}'`)
         .select('Id', 'Status', 'RequestedDate', 'CompletedDate', 'ProcessID')();
 

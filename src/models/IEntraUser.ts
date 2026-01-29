@@ -1,6 +1,6 @@
 /**
  * Entra ID (Azure AD) User Sync Models
- * Used for synchronizing users from Entra ID to JML_Employees list
+ * Used for synchronizing users from Entra ID to PM_Employees list
  */
 
 /**

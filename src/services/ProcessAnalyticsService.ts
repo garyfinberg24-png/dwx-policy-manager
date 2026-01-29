@@ -291,7 +291,7 @@ export class ProcessAnalyticsService {
    */
   private async getProcessesForPeriod(filter?: IAnalyticsTimeFilter): Promise<IJmlProcess[]> {
     try {
-      let query = this.sp.web.lists.getByTitle('JML_Processes_Test').items
+      let query = this.sp.web.lists.getByTitle('PM_Processes_Test').items
         .select(
           'Id', 'Title', 'ProcessType', 'ProcessStatus', 'Department', 'Priority',
           'StartDate', 'TargetCompletionDate', 'ActualCompletionDate',

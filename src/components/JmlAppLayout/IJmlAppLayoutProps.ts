@@ -81,4 +81,5 @@ export interface IJmlAppLayoutProps {
   contentPadding?: string;
   /** Children to render in content area */
   children?: React.ReactNode;
+
 }

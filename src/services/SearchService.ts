@@ -12,7 +12,7 @@ import { logger } from './LoggingService';
  */
 export class SearchService {
   private sp: SPFI;
-  private readonly RECENT_SEARCHES_KEY = 'jml_recent_searches';
+  private readonly RECENT_SEARCHES_KEY = 'PM_recent_searches';
   private readonly MAX_RECENT_SEARCHES = 10;
 
   constructor(sp: SPFI) {

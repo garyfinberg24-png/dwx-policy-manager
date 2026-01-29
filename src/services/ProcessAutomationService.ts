@@ -79,8 +79,8 @@ export class ProcessAutomationService {
   private flowConfigs: Map<string, IFlowConfig> = new Map();
 
   // Default flow configuration list
-  private readonly FLOW_CONFIG_LIST = 'JML_PowerAutomateFlows';
-  private readonly AUTOMATION_LOG_LIST = 'JML_AutomationLogs';
+  private readonly FLOW_CONFIG_LIST = 'PM_PowerAutomateFlows';
+  private readonly AUTOMATION_LOG_LIST = 'PM_AutomationLogs';
 
   constructor(context: WebPartContext, sp: SPFI) {
     this.context = context;

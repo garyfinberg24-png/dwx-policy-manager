@@ -40,9 +40,9 @@ export class CalendarService {
   private context: WebPartContext;
   private defaultTimeZone: string = 'UTC';
 
-  private readonly CALENDAR_EVENTS_LIST = 'JML_CalendarEvents';
-  private readonly EVENT_TEMPLATES_LIST = 'JML_EventTemplates';
-  private readonly ONBOARDING_TEMPLATES_LIST = 'JML_OnboardingTemplates';
+  private readonly CALENDAR_EVENTS_LIST = 'PM_CalendarEvents';
+  private readonly EVENT_TEMPLATES_LIST = 'PM_EventTemplates';
+  private readonly ONBOARDING_TEMPLATES_LIST = 'PM_OnboardingTemplates';
 
   constructor(sp: SPFI, graph: GraphFI, context: WebPartContext) {
     this.sp = sp;
@@ -806,7 +806,7 @@ export class CalendarService {
 
   private async saveOnboardingSchedule(schedule: IOnboardingSchedule): Promise<void> {
     try {
-      await this.sp.web.lists.getByTitle('JML_OnboardingSchedules').items.add({
+      await this.sp.web.lists.getByTitle('PM_OnboardingSchedules').items.add({
         Title: `Onboarding - ${schedule.employeeName}`,
         ProcessId: schedule.processId,
         EmployeeId: schedule.employeeId,

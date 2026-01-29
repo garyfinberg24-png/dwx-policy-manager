@@ -62,8 +62,8 @@ export class JMLAssetIntegrationService {
   private sp: SPFI;
   private assetService: AssetService;
   private trackingService: AssetTrackingService;
-  private readonly JML_PROCESSES_LIST = 'JML_Processes';
-  private readonly JML_ASSET_CONFIG_LIST = 'JML_Asset_Configuration';
+  private readonly PM_PROCESSES_LIST = 'PM_Processes';
+  private readonly PM_ASSET_CONFIG_LIST = 'PM_Asset_Configuration';
 
   constructor(sp: SPFI) {
     this.sp = sp;
@@ -375,7 +375,7 @@ export class JMLAssetIntegrationService {
   ): Promise<IJMLAssetConfig> {
     try {
       // For now, return a default configuration
-      // In production, this would query the JML_Asset_Configuration list
+      // In production, this would query the PM_Asset_Configuration list
       const config: IJMLAssetConfig = {
         assetTypesByRole: new Map(),
         assetTypesByDepartment: new Map(),
@@ -446,7 +446,7 @@ export class JMLAssetIntegrationService {
       const validProcessId = ValidationUtils.validateInteger(processId, 'processId', 1);
 
       // Get current process
-      const process = await this.sp.web.lists.getByTitle(this.JML_PROCESSES_LIST).items
+      const process = await this.sp.web.lists.getByTitle(this.PM_PROCESSES_LIST).items
         .getById(validProcessId)
         .select('Id', 'Comments', 'CustomFields')();
 
@@ -465,7 +465,7 @@ export class JMLAssetIntegrationService {
         notes: result.notes
       };
 
-      await this.sp.web.lists.getByTitle(this.JML_PROCESSES_LIST).items
+      await this.sp.web.lists.getByTitle(this.PM_PROCESSES_LIST).items
         .getById(validProcessId)
         .update({
           Notes: ValidationUtils.sanitizeHtml(updatedNotes),

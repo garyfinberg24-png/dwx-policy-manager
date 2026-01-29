@@ -50,10 +50,10 @@ if ($siteUsers.Count -lt 3) {
 Write-Host "Using $($users.Count) users for sample data`n" -ForegroundColor Gray
 
 # ============================================================================
-# SEED: JML_Policy_ApprovalTemplates
+# SEED: PM_Policy_ApprovalTemplates
 # ============================================================================
 
-$listName = "JML_Policy_ApprovalTemplates"
+$listName = "PM_Policy_ApprovalTemplates"
 Write-Host "Seeding: $listName..." -ForegroundColor White
 
 $approvalTemplates = @(
@@ -306,10 +306,10 @@ foreach ($template in $approvalTemplates) {
 Write-Host "  Created $templateCount templates`n" -ForegroundColor Green
 
 # ============================================================================
-# SEED: JML_Policy_ApprovalWorkflows
+# SEED: PM_Policy_ApprovalWorkflows
 # ============================================================================
 
-$listName = "JML_Policy_ApprovalWorkflows"
+$listName = "PM_Policy_ApprovalWorkflows"
 Write-Host "Seeding: $listName..." -ForegroundColor White
 
 $now = Get-Date
@@ -478,10 +478,10 @@ foreach ($workflow in $workflows) {
 Write-Host "  Created $workflowCount workflows`n" -ForegroundColor Green
 
 # ============================================================================
-# SEED: JML_Policy_ApprovalDecisions
+# SEED: PM_Policy_ApprovalDecisions
 # ============================================================================
 
-$listName = "JML_Policy_ApprovalDecisions"
+$listName = "PM_Policy_ApprovalDecisions"
 Write-Host "Seeding: $listName..." -ForegroundColor White
 
 $decisions = @(
@@ -804,10 +804,10 @@ foreach ($decision in $decisions) {
 Write-Host "  Created $decisionCount decisions`n" -ForegroundColor Green
 
 # ============================================================================
-# SEED: JML_Policy_ApprovalDelegations
+# SEED: PM_Policy_ApprovalDelegations
 # ============================================================================
 
-$listName = "JML_Policy_ApprovalDelegations"
+$listName = "PM_Policy_ApprovalDelegations"
 Write-Host "Seeding: $listName..." -ForegroundColor White
 
 $delegations = @(
@@ -918,10 +918,10 @@ foreach ($delegation in $delegations) {
 Write-Host "  Created $delegationCount delegations`n" -ForegroundColor Green
 
 # ============================================================================
-# SEED: JML_Policy_EscalationRules
+# SEED: PM_Policy_EscalationRules
 # ============================================================================
 
-$listName = "JML_Policy_EscalationRules"
+$listName = "PM_Policy_EscalationRules"
 Write-Host "Seeding: $listName..." -ForegroundColor White
 
 $escalationRules = @(

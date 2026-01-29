@@ -42,9 +42,9 @@ export interface INotificationRequest {
  */
 export class SigningNotificationService {
   private sp: SPFI;
-  private readonly REQUESTS_LIST = 'JML_SigningRequests';
-  private readonly SIGNERS_LIST = 'JML_Signers';
-  private readonly NOTIFICATIONS_LIST = 'JML_Notifications';
+  private readonly REQUESTS_LIST = 'PM_SigningRequests';
+  private readonly SIGNERS_LIST = 'PM_Signers';
+  private readonly NOTIFICATIONS_LIST = 'PM_Notifications';
 
   // Base URL for signing portal (would be configured in settings)
   private signingPortalUrl: string = '';

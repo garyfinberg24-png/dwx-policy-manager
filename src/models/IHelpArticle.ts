@@ -1,4 +1,4 @@
-// JML_HelpArticles List Model
+// PM_HelpArticles List Model
 // Knowledge base articles, FAQs, and documentation
 
 import { IBaseListItem, IUser } from './ICommon';

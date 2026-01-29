@@ -4,11 +4,11 @@
  * Default Workflow Definitions for JML Solution
  *
  * These workflow definitions are the standard templates for Joiner, Mover, and Leaver processes.
- * They should be seeded into the JML_WorkflowDefinitions SharePoint list during deployment.
+ * They should be seeded into the PM_WorkflowDefinitions SharePoint list during deployment.
  *
  * Usage:
  * 1. Run the provisioning script: scripts/Provision-WorkflowDefinitions.ps1
- * 2. Or manually create items in JML_WorkflowDefinitions list using these JSON structures
+ * 2. Or manually create items in PM_WorkflowDefinitions list using these JSON structures
  */
 
 import {
@@ -1016,7 +1016,7 @@ export const LEAVER_WORKFLOW_STEPS: IWorkflowStep[] = [
     config: {
       actionType: ActionType.UpdateListItem,
       actionConfig: {
-        listName: 'JML_Employees',
+        listName: 'PM_Employees',
         itemIdField: 'employeeId',
         updates: [
           { fieldName: 'Status', value: 'Archived' },

@@ -51,11 +51,11 @@ export interface IApprovalProgressionResult {
 
 export class ApprovalService {
   private sp: SPFI;
-  private readonly APPROVALS_LIST = 'JML_Approvals';
-  private readonly APPROVAL_CHAINS_LIST = 'JML_ApprovalChains';
-  private readonly APPROVAL_HISTORY_LIST = 'JML_ApprovalHistory';
-  private readonly DELEGATIONS_LIST = 'JML_ApprovalDelegations';
-  private readonly TEMPLATES_LIST = 'JML_ApprovalTemplates';
+  private readonly APPROVALS_LIST = 'PM_Approvals';
+  private readonly APPROVAL_CHAINS_LIST = 'PM_ApprovalChains';
+  private readonly APPROVAL_HISTORY_LIST = 'PM_ApprovalHistory';
+  private readonly DELEGATIONS_LIST = 'PM_ApprovalDelegations';
+  private readonly TEMPLATES_LIST = 'PM_ApprovalTemplates';
   private currentUserId: number = 0;
   private workflowInstanceService: WorkflowInstanceService;
   // INTEGRATION FIX: Add ApprovalNotificationService for email/Teams delivery
@@ -570,7 +570,7 @@ export class ApprovalService {
     const result = await retryWithDLQ<void>(
       async () => {
         await this.sp.web.lists
-          .getByTitle('JML_Processes')
+          .getByTitle('PM_Processes')
           .items
           .getById(processId)
           .update({
@@ -618,7 +618,7 @@ export class ApprovalService {
     try {
       // Get process details for notification context
       const process = await this.sp.web.lists
-        .getByTitle('JML_Processes')
+        .getByTitle('PM_Processes')
         .items
         .getById(processId)
         .select('Id', 'Title', 'ProcessType', 'EmployeeName')() as {
@@ -634,7 +634,7 @@ export class ApprovalService {
           const actualApproverId = await this.getActiveDelegation(approverId) || approverId;
 
           // Create in-app notification
-          await this.sp.web.lists.getByTitle('JML_Notifications').items.add({
+          await this.sp.web.lists.getByTitle('PM_Notifications').items.add({
             Title: 'Approval Required',
             Message: `Your approval is required for ${process.ProcessType} process: ${process.EmployeeName}. This is level ${levelNumber} of the approval chain.`,
             RecipientId: actualApproverId,
@@ -703,7 +703,7 @@ export class ApprovalService {
     try {
       // Get process details
       const process = await this.sp.web.lists
-        .getByTitle('JML_Processes')
+        .getByTitle('PM_Processes')
         .items
         .getById(processId)
         .select('Id', 'Title', 'ProcessType', 'EmployeeName', 'ManagerId', 'CreatedById')() as {
@@ -732,7 +732,7 @@ export class ApprovalService {
       for (const recipientId of Array.from(recipientIds)) {
         try {
           // Create in-app notification
-          await this.sp.web.lists.getByTitle('JML_Notifications').items.add({
+          await this.sp.web.lists.getByTitle('PM_Notifications').items.add({
             Title: `Approval ${isApproved ? 'Completed' : 'Rejected'}`,
             Message: `The approval chain for ${process.ProcessType} process (${process.EmployeeName}) has been ${statusText}.`,
             RecipientId: recipientId,
@@ -939,7 +939,7 @@ export class ApprovalService {
     try {
       // Get process details for notification context
       const process = await this.sp.web.lists
-        .getByTitle('JML_Processes')
+        .getByTitle('PM_Processes')
         .items
         .getById(approval.ProcessID)
         .select('Id', 'Title', 'ProcessType', 'EmployeeName')() as {
@@ -959,7 +959,7 @@ export class ApprovalService {
       }
 
       // Send in-app notification to the delegate
-      await this.sp.web.lists.getByTitle('JML_Notifications').items.add({
+      await this.sp.web.lists.getByTitle('PM_Notifications').items.add({
         Title: 'Approval Delegated to You',
         Message: `${originalApproverName} has delegated an approval for ${process.ProcessType} process (${process.EmployeeName}) to you.${reason ? ` Reason: ${reason}` : ''} Please review and respond.`,
         RecipientId: delegateToId,
@@ -973,7 +973,7 @@ export class ApprovalService {
       });
 
       // Also notify original approver that delegation was successful
-      await this.sp.web.lists.getByTitle('JML_Notifications').items.add({
+      await this.sp.web.lists.getByTitle('PM_Notifications').items.add({
         Title: 'Approval Successfully Delegated',
         Message: `Your approval for ${process.ProcessType} process (${process.EmployeeName}) has been delegated successfully.`,
         RecipientId: approval.ApproverId,
@@ -1134,7 +1134,7 @@ export class ApprovalService {
 
           // Notify the approver that their approval was cancelled
           try {
-            await this.sp.web.lists.getByTitle('JML_Notifications').items.add({
+            await this.sp.web.lists.getByTitle('PM_Notifications').items.add({
               Title: 'Approval Cancelled',
               Message: `The approval request "${approval.Title}" has been cancelled because the process was cancelled.${reason ? ` Reason: ${reason}` : ''}`,
               RecipientId: approval.ApproverId,
@@ -1390,7 +1390,7 @@ export class ApprovalService {
 
     // Notify the approver
     try {
-      await this.sp.web.lists.getByTitle('JML_Notifications').items.add({
+      await this.sp.web.lists.getByTitle('PM_Notifications').items.add({
         Title: 'Approval Expired',
         Message: `Your approval request "${approval.Title}" has expired because it was not completed within the allowed time period.`,
         RecipientId: approval.ApproverId,
@@ -1651,8 +1651,8 @@ export class ApprovalService {
    */
   private async getApproverManager(approverId: number): Promise<number | null> {
     try {
-      // Try to get manager from user profile or JML_Employees list
-      const employees = await this.sp.web.lists.getByTitle('JML_Employees')
+      // Try to get manager from user profile or PM_Employees list
+      const employees = await this.sp.web.lists.getByTitle('PM_Employees')
         .items
         .filter(`UserId eq ${approverId}`)
         .select('ManagerId')
@@ -1706,7 +1706,7 @@ export class ApprovalService {
     try {
       // Get process details for notification context
       const process = await this.sp.web.lists
-        .getByTitle('JML_Processes')
+        .getByTitle('PM_Processes')
         .items
         .getById(approval.ProcessID)
         .select('Id', 'Title', 'ProcessType', 'EmployeeName')() as {
@@ -1717,7 +1717,7 @@ export class ApprovalService {
         };
 
       // Notify original approver that their approval was escalated
-      await this.sp.web.lists.getByTitle('JML_Notifications').items.add({
+      await this.sp.web.lists.getByTitle('PM_Notifications').items.add({
         Title: autoApproved ? 'Approval Auto-Approved' : 'Approval Escalated',
         Message: autoApproved
           ? `Your approval for ${process.ProcessType} process (${process.EmployeeName}) was auto-approved due to escalation policy.`
@@ -1733,7 +1733,7 @@ export class ApprovalService {
 
       // If reassigned, notify the new approver
       if (newApproverId && !autoApproved) {
-        await this.sp.web.lists.getByTitle('JML_Notifications').items.add({
+        await this.sp.web.lists.getByTitle('PM_Notifications').items.add({
           Title: 'Escalated Approval Requires Your Attention',
           Message: `An approval for ${process.ProcessType} process (${process.EmployeeName}) has been escalated to you. Please review urgently.`,
           RecipientId: newApproverId,

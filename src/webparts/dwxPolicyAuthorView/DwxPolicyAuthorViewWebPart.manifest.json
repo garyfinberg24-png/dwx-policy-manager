@@ -1,0 +1,25 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx/client-side-web-part-manifest.schema.json",
+  "id": "c7e2f4a1-3b8d-49e5-a1c6-d9f0e2b4a7c3",
+  "alias": "DwxPolicyAuthorViewWebPart",
+  "componentType": "WebPart",
+
+  "version": "*",
+  "manifestVersion": 2,
+
+  "requiresCustomScript": false,
+  "supportedHosts": ["SharePointWebPart", "SharePointFullPage", "TeamsPersonalApp", "TeamsTab"],
+  "supportsThemeVariants": true,
+
+  "preconfiguredEntries": [{
+    "groupId": "e4b0a295-44e2-4fa4-8f15-4eac5edf4275",
+    "group": { "default": "DWx Policy Manager" },
+    "title": { "default": "DWx Policy Author View" },
+    "description": { "default": "Author view for managing policy creation requests — review, assign, and track policy drafting progress" },
+    "officeFabricIconFontName": "AuthoringTool",
+    "properties": {
+      "title": "DWx Policy Author View"
+    }
+  }],
+  "supportsFullBleed": true
+}

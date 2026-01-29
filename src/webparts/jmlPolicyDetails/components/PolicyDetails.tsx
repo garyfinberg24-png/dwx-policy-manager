@@ -1413,11 +1413,6 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
         compactFooter={true}
       >
         <section className={styles.policyDetails}>
-          <PageSubheader
-            iconName="DocumentSearch"
-            title="Policy Details"
-            description="View policy content, version history and acknowledgements"
-          />
           <Stack tokens={{ childrenGap: 24 }}>
             {loading && (
               <Stack horizontalAlign="center" tokens={{ padding: 40 }}>

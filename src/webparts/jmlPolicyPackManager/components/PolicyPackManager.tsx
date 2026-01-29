@@ -706,11 +706,6 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
         compactFooter={true}
       >
         <section className={styles.policyPackManager}>
-          <PageSubheader
-            iconName="Edit"
-            title="Policy Builder"
-            description="Create and manage policy packs with bundled documents and templates"
-          />
           <Stack tokens={{ childrenGap: 24 }}>
             {/* Module nav removed - now in global header */}
             {this.renderCommandBar()}

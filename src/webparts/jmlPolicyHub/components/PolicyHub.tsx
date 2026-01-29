@@ -2648,11 +2648,6 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
         compactFooter={true}
       >
         <section className={styles.policyHub}>
-          <PageSubheader
-            iconName="Library"
-            title="Policy Hub"
-            description="Browse, search and filter organisational policies"
-          />
           <Stack tokens={{ childrenGap: 0 }}>
             {/* Module nav removed - now in global header */}
 

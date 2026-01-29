@@ -497,16 +497,13 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
     const filteredPolicies = this.getFilteredPolicies();
 
     return (
-      <JmlAppLayout context={this.props.context}>
+      <JmlAppLayout
+        context={this.props.context}
+        breadcrumbs={[{ text: 'Policy Manager', url: '/sites/PolicyManager' }, { text: 'My Policies' }]}
+        activeNavKey="my-policies"
+      >
         <div className={styles.myPolicies}>
           <div style={{ maxWidth: '1400px', width: '100%', margin: '0 auto', padding: '24px', boxSizing: 'border-box' }}>
-            <PageSubheader
-              iconName="ContactCard"
-              title="My Policies"
-              description="Policies assigned to you for reading and acknowledgement"
-              badgeCount={this.state.policies.filter(p => p.status !== 'completed').length}
-            />
-
             {loading ? (
               <div style={{ padding: '60px', textAlign: 'center' }}>
                 <Spinner size={SpinnerSize.large} label="Loading your policies..." />

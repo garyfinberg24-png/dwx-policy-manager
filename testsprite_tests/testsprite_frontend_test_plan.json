@@ -1,0 +1,492 @@
+[
+  {
+    "id": "TC001",
+    "title": "Policy Creation and Versioning",
+    "description": "Verify that a Policy Author can create a new policy using the authoring interface, save drafts, submit for review, and create new versions of existing policies.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login as a Policy Author."
+      },
+      {
+        "type": "action",
+        "description": "Navigate to the Policy Authoring Interface."
+      },
+      {
+        "type": "action",
+        "description": "Create a new policy with all required fields completed and rich text content."
+      },
+      {
+        "type": "action",
+        "description": "Save the policy as a draft."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the draft is saved correctly and visible in draft list."
+      },
+      {
+        "type": "action",
+        "description": "Submit the draft for review and approval workflow."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm the policy status changes to 'Under Review' and notifications are sent appropriately."
+      },
+      {
+        "type": "action",
+        "description": "After approval, update the policy to create a new version."
+      },
+      {
+        "type": "assertion",
+        "description": "Validate that the new version is linked correctly and version history is updated."
+      }
+    ]
+  },
+  {
+    "id": "TC002",
+    "title": "Policy Browsing and Search in Policy Hub",
+    "description": "Verify that users can browse, filter, and search policies in the Policy Hub with accurate results and performance within SLAs.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login as an Employee."
+      },
+      {
+        "type": "action",
+        "description": "Navigate to the Policy Hub."
+      },
+      {
+        "type": "action",
+        "description": "Apply various filters such as policy type, status, and department."
+      },
+      {
+        "type": "action",
+        "description": "Perform keyword and AI-enhanced searches for policies."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that search results are relevant, correctly filtered, and displayed within 2 seconds."
+      },
+      {
+        "type": "action",
+        "description": "Open a policy detail from search results."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm that the policy details, version history, and related policies are displayed correctly."
+      }
+    ]
+  },
+  {
+    "id": "TC003",
+    "title": "Multi-role Access Control Enforcement",
+    "description": "Verify that multi-role access controls restrict policy, user, and system data visibility according to role permissions.",
+    "category": "security",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login as a Policy Author."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm access to create, edit, and submit policies only."
+      },
+      {
+        "type": "action",
+        "description": "Login as an HR Manager."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify access to approve policies and manage users and exemptions but no authoring permissions."
+      },
+      {
+        "type": "action",
+        "description": "Login as Compliance Officer."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm read access to compliance dashboards and audit reports, no edit permissions on policy content."
+      },
+      {
+        "type": "action",
+        "description": "Attempt to access unauthorized features and verify access is denied."
+      }
+    ]
+  },
+  {
+    "id": "TC004",
+    "title": "Policy Acknowledgement Workflow with Digital Signatures and Audit Logs",
+    "description": "Ensure employees receive assigned policies, acknowledge them with digital signatures, and audit logs are created and immutable.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login as an Employee with assigned policies."
+      },
+      {
+        "type": "action",
+        "description": "Access 'My Policies' dashboard and open an assigned policy."
+      },
+      {
+        "type": "action",
+        "description": "Acknowledge the policy with digital signature."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify acknowledgement status updates correctly on dashboard."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm audit log entry is generated with timestamp and signature, and it cannot be altered."
+      },
+      {
+        "type": "action",
+        "description": "Attempt to submit duplicate acknowledgements and verify system handles duplicates properly."
+      }
+    ]
+  },
+  {
+    "id": "TC005",
+    "title": "Policy Exemption Request and Approval Workflow",
+    "description": "Validate the workflow for users requesting policy exemptions, reviews by managers and compliance officers, and final approval with compensating controls tracking.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login as an Employee and request exemption for a policy."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify exemption request submission with reason and attachments is successful."
+      },
+      {
+        "type": "action",
+        "description": "Login as HR Manager and review exemption requests."
+      },
+      {
+        "type": "action",
+        "description": "Approve the exemption with compensating controls notes."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm approval status updates and notifications are sent accordingly."
+      },
+      {
+        "type": "action",
+        "description": "Verify audit logs record exemption request and approval history immutably."
+      }
+    ]
+  },
+  {
+    "id": "TC006",
+    "title": "Comprehension Quiz Creation and Assignment",
+    "description": "Test creation of policy comprehension quizzes with various question types, assigning quizzes to users, and enforcing retake limitations.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login as a Policy Author or Admin."
+      },
+      {
+        "type": "action",
+        "description": "Create a new comprehension quiz with multiple question types (multiple choice, true/false, short answer)."
+      },
+      {
+        "type": "action",
+        "description": "Assign the quiz to a group of users or specific policies."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify quiz is visible and accessible only to assigned users."
+      },
+      {
+        "type": "action",
+        "description": "Attempt retake before allowed interval and ensure system restricts retake attempt."
+      }
+    ]
+  },
+  {
+    "id": "TC007",
+    "title": "Comprehension Quiz Taking and Analytics",
+    "description": "Validate that assigned users can take quizzes, receive immediate feedback, and the system records analytics correctly including scores and retake history.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login as an Employee assigned a quiz."
+      },
+      {
+        "type": "action",
+        "description": "Complete the quiz entering answers to all question types."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify immediate feedback on correct/incorrect answers is displayed."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm quiz score, pass/fail status, and completion date are recorded accurately."
+      },
+      {
+        "type": "action",
+        "description": "Review analytics dashboards as Admin to verify quiz completion metrics."
+      }
+    ]
+  },
+  {
+    "id": "TC008",
+    "title": "Compliance Analytics and Reporting Accuracy",
+    "description": "Ensure real-time dashboards provide accurate compliance and engagement metrics, predictive insights, and reports export correctly to Excel, PDF, and PowerPoint formats.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login as HR Manager or Compliance Officer."
+      },
+      {
+        "type": "action",
+        "description": "Access the Advanced Analytics dashboards."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify metrics such as compliance scores, overdue acknowledgements, and engagement rates reflect underlying data accurately."
+      },
+      {
+        "type": "action",
+        "description": "Generate audit and compliance reports."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm reports export correctly to Excel, PDF, and PowerPoint with valid and complete content."
+      },
+      {
+        "type": "action",
+        "description": "Test predictive analytics and assess that generated insights are plausible based on dataset."
+      }
+    ]
+  },
+  {
+    "id": "TC009",
+    "title": "Automated Notifications and Escalation Workflows",
+    "description": "Validate that email and Microsoft Teams alerts, reminders, and escalations are triggered on policy assignments, overdue acknowledgements, and exemption workflow status changes.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Trigger policy distribution to a user or group."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify email and Teams notifications are sent correctly."
+      },
+      {
+        "type": "action",
+        "description": "Simulate overdue acknowledgement scenario."
+      },
+      {
+        "type": "assertion",
+        "description": "Check that reminder notifications and escalations are sent per configured rules."
+      },
+      {
+        "type": "action",
+        "description": "Change status of exemption request and verify notification to stakeholders."
+      }
+    ]
+  },
+  {
+    "id": "TC010",
+    "title": "Performance and Mobile Responsiveness",
+    "description": "Verify that key pages including Policy Hub, My Policies dashboard, and Admin Dashboard load within 2 seconds, and UI adjusts correctly on various mobile screen sizes.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Access Policy Hub on desktop."
+      },
+      {
+        "type": "assertion",
+        "description": "Measure page load time is under 2 seconds."
+      },
+      {
+        "type": "action",
+        "description": "Open My Policies dashboard on mobile device or emulator."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify correct layout, no content overflow, navigation works correctly."
+      },
+      {
+        "type": "action",
+        "description": "Navigate Admin Dashboard on tablet screen size."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm UI elements display properly without layout breakages."
+      }
+    ]
+  },
+  {
+    "id": "TC011",
+    "title": "Security Features: Encrypted Storage and Multi-factor Authentication",
+    "description": "Validate that sensitive data is encrypted at rest and in transit, and multi-factor authentication prompts occur appropriately during login.",
+    "category": "security",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Attempt login as a user with MFA enabled."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify system prompts for second authentication factor after password entry."
+      },
+      {
+        "type": "action",
+        "description": "Inspect data storage to confirm encryption of policy documents and audit trails."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm data transmissions use secure protocols (HTTPS/TLS)."
+      },
+      {
+        "type": "action",
+        "description": "Attempt to access data without appropriate permissions."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that unauthorized data access is blocked."
+      }
+    ]
+  },
+  {
+    "id": "TC012",
+    "title": "Integration with Microsoft 365 and DWx Suite",
+    "description": "Verify seamless integration points including Azure AD authentication, SharePoint storage of policies, Microsoft Graph for user and group data, and Power Automate workflows triggering.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login using Azure AD credentials."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm that user is authenticated and roles/groups are resolved correctly from Microsoft Graph."
+      },
+      {
+        "type": "action",
+        "description": "Create or update a policy and verify it is stored correctly in SharePoint Online document library."
+      },
+      {
+        "type": "assertion",
+        "description": "Check file metadata and permissions reflect policy authoring actions."
+      },
+      {
+        "type": "action",
+        "description": "Trigger a configured Power Automate workflow on policy approval."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the workflow executes and notifications or follow-up actions complete successfully."
+      }
+    ]
+  },
+  {
+    "id": "TC013",
+    "title": "Policy Pack Management",
+    "description": "Validate the grouping of related policies into policy packs, including creation, modification, distribution, and removal of packs.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login as Policy Administrator."
+      },
+      {
+        "type": "action",
+        "description": "Create a new Policy Pack by selecting multiple existing policies."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify policy pack is created with correct policies grouped."
+      },
+      {
+        "type": "action",
+        "description": "Modify the policy pack by adding/removing policies."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm changes are saved and reflected in distribution targets."
+      },
+      {
+        "type": "action",
+        "description": "Distribute the policy pack to target users/groups."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify users receive all policies in the policy pack and acknowledgement tracking works per policy."
+      }
+    ]
+  },
+  {
+    "id": "TC014",
+    "title": "Policy Lifecycle Transitions",
+    "description": "Validate that policies move correctly through lifecycle stages: draft, under review, approved, distributed, archived, with proper triggers and status changes.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Create a new policy, save as draft."
+      },
+      {
+        "type": "assertion",
+        "description": "Validate status is 'Draft'."
+      },
+      {
+        "type": "action",
+        "description": "Submit policy for review."
+      },
+      {
+        "type": "assertion",
+        "description": "Validate status changes to 'Under Review'."
+      },
+      {
+        "type": "action",
+        "description": "Approve the policy."
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm status changes to 'Approved' and distribution process initiates."
+      },
+      {
+        "type": "action",
+        "description": "Distribute policy to users."
+      },
+      {
+        "type": "assertion",
+        "description": "Check status is 'Distributed'."
+      },
+      {
+        "type": "action",
+        "description": "Archive a policy and ensure it is no longer active but remains accessible for audit."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify archived policies appear in archive section with correct metadata."
+      }
+    ]
+  }
+]

@@ -1,0 +1,220 @@
+{
+  "tech_stack": [
+    "TypeScript",
+    "React 17",
+    "SharePoint Framework (SPFx) 1.20.0",
+    "Fluent UI v8 & v9",
+    "PnP.js (SharePoint & Graph)",
+    "SharePoint Online"
+  ],
+  "features": [
+    {
+      "name": "Policy Hub",
+      "description": "Central policy discovery and search interface for browsing all organizational policies",
+      "files": [
+        "src/webparts/jmlPolicyHub/components/PolicyHub.tsx",
+        "src/webparts/jmlPolicyHub/JmlPolicyHubWebPart.ts"
+      ]
+    },
+    {
+      "name": "My Policies",
+      "description": "Personal policy dashboard showing policies assigned to the current user and their acknowledgement status",
+      "files": [
+        "src/webparts/jmlMyPolicies/components/MyPolicies.tsx",
+        "src/webparts/jmlMyPolicies/JmlMyPoliciesWebPart.ts"
+      ]
+    },
+    {
+      "name": "Policy Admin",
+      "description": "Administrative interface for managing policies, users, and system configuration",
+      "files": [
+        "src/webparts/jmlPolicyAdmin/components/PolicyAdmin.tsx",
+        "src/webparts/jmlPolicyAdmin/JmlPolicyAdminWebPart.ts"
+      ]
+    },
+    {
+      "name": "Policy Author",
+      "description": "Policy creation and editing interface for authoring new policies with rich text editing",
+      "files": [
+        "src/webparts/jmlPolicyAuthor/components/PolicyAuthor.tsx",
+        "src/webparts/jmlPolicyAuthor/components/PolicyAuthorEnhanced.tsx",
+        "src/webparts/jmlPolicyAuthor/JmlPolicyAuthorWebPart.ts"
+      ]
+    },
+    {
+      "name": "Policy Details",
+      "description": "Detailed policy view showing full policy content, version history, and acknowledgement options",
+      "files": [
+        "src/webparts/jmlPolicyDetails/components/PolicyDetails.tsx",
+        "src/webparts/jmlPolicyDetails/JmlPolicyDetailsWebPart.ts"
+      ]
+    },
+    {
+      "name": "Policy Pack Manager",
+      "description": "Policy package bundling interface for grouping related policies together",
+      "files": [
+        "src/webparts/jmlPolicyPackManager/components/PolicyPackManager.tsx",
+        "src/webparts/jmlPolicyPackManager/JmlPolicyPackManagerWebPart.ts"
+      ]
+    },
+    {
+      "name": "Quiz Builder",
+      "description": "Interface for creating and managing policy comprehension quizzes",
+      "files": [
+        "src/webparts/dwxQuizBuilder/components/QuizBuilderWrapper.tsx",
+        "src/webparts/dwxQuizBuilder/DwxQuizBuilderWebPart.ts",
+        "src/components/QuizBuilder/QuizBuilder.tsx"
+      ]
+    },
+    {
+      "name": "Quiz Taker",
+      "description": "Component for users to take policy comprehension quizzes",
+      "files": [
+        "src/components/QuizTaker/QuizTaker.tsx"
+      ]
+    },
+    {
+      "name": "App Layout",
+      "description": "Shared application layout component with header and footer",
+      "files": [
+        "src/components/JmlAppLayout/JmlAppLayout.tsx",
+        "src/components/JmlAppHeader/JmlAppHeader.tsx",
+        "src/components/JmlAppFooter/JmlAppFooter.tsx"
+      ]
+    },
+    {
+      "name": "Policy Manager Header",
+      "description": "Branded header component for the Policy Manager application",
+      "files": [
+        "src/components/PolicyManagerHeader/PolicyManagerHeader.tsx"
+      ]
+    },
+    {
+      "name": "Splash Screen",
+      "description": "Application splash/landing screen component",
+      "files": [
+        "src/components/PolicyManagerSplashScreen/PolicyManagerSplashScreen.tsx",
+        "src/webparts/dwxSplashScreen/components/DwxSplashScreenWrapper.tsx"
+      ]
+    },
+    {
+      "name": "Analytics Service",
+      "description": "Service for tracking and reporting policy usage analytics",
+      "files": [
+        "src/services/AnalyticsService.ts",
+        "src/services/ProcessAnalyticsService.ts",
+        "src/services/PredictiveAnalyticsService.ts"
+      ]
+    },
+    {
+      "name": "Policy Cache Service",
+      "description": "Caching layer for policy data to improve performance",
+      "files": [
+        "src/services/PolicyCacheService.ts",
+        "src/services/CacheService.ts"
+      ]
+    },
+    {
+      "name": "Approval Service",
+      "description": "Workflow service for policy approval processes",
+      "files": [
+        "src/services/ApprovalService.ts",
+        "src/services/ApprovalNotificationService.ts",
+        "src/services/DocumentApprovalService.ts"
+      ]
+    },
+    {
+      "name": "Document Service",
+      "description": "Services for document management and generation",
+      "files": [
+        "src/services/DocumentService.ts",
+        "src/services/DocumentHubService.ts",
+        "src/services/DocumentTemplateService.ts",
+        "src/services/DocumentWorkflowService.ts"
+      ]
+    },
+    {
+      "name": "Gamification Service",
+      "description": "Points, badges, and leaderboards for policy engagement",
+      "files": [
+        "src/services/GamificationService.ts",
+        "src/services/GamificationAdminService.ts",
+        "src/services/GamificationBridgeService.ts"
+      ]
+    },
+    {
+      "name": "Search Service",
+      "description": "Policy search functionality with AI-enhanced search",
+      "files": [
+        "src/services/SearchService.ts",
+        "src/services/SearchAIService.ts"
+      ]
+    },
+    {
+      "name": "Graph Service",
+      "description": "Microsoft Graph API integration for user and group data",
+      "files": [
+        "src/services/GraphService.ts"
+      ]
+    },
+    {
+      "name": "SharePoint Service",
+      "description": "Core SharePoint data access layer using PnP.js",
+      "files": [
+        "src/services/SPService.ts"
+      ]
+    },
+    {
+      "name": "Export Service",
+      "description": "Services for exporting data to Excel, PDF, and PowerPoint",
+      "files": [
+        "src/services/ExportService.ts",
+        "src/services/ExcelGenerationService.ts",
+        "src/services/PdfConversionService.ts",
+        "src/services/PowerPointGenerationService.ts"
+      ]
+    },
+    {
+      "name": "Notification Services",
+      "description": "Browser and email notification capabilities",
+      "files": [
+        "src/services/BrowserNotificationService.ts",
+        "src/services/EmailQueueService.ts",
+        "src/services/StakeholderNotificationService.ts"
+      ]
+    },
+    {
+      "name": "Data Validation Hooks",
+      "description": "React hooks for form validation and field validation",
+      "files": [
+        "src/hooks/useFormValidation.ts",
+        "src/hooks/useFieldValidation.ts"
+      ]
+    },
+    {
+      "name": "Data Caching Hooks",
+      "description": "React hooks for data and template caching",
+      "files": [
+        "src/hooks/useDataCache.ts",
+        "src/hooks/useTemplateCache.ts"
+      ]
+    },
+    {
+      "name": "Policy Models",
+      "description": "TypeScript interfaces for policy data structures",
+      "files": [
+        "src/models/IPolicy.ts",
+        "src/models/IJmlProcess.ts",
+        "src/models/IJmlTask.ts"
+      ]
+    },
+    {
+      "name": "Workflow Models",
+      "description": "TypeScript interfaces for workflow and approval data",
+      "files": [
+        "src/models/IWorkflow.ts",
+        "src/models/IJmlApproval.ts"
+      ]
+    }
+  ]
+}

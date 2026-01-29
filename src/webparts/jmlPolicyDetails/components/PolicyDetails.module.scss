@@ -1,11 +1,29 @@
 @import '~@fluentui/react/dist/sass/References.scss';
 @import '../../../styles/fluent-mixins';
 
-// Full-bleed container and SharePoint overrides come from fluent-mixins (via sharepoint-overrides.scss)
+// Forest Teal Theme
+$teal-900: #0f4c47;
+$teal-700: #0f766e;
+$teal-600: #0d9488;
+$teal-500: #14b8a6;
+$teal-100: #ccfbf1;
+$teal-50: #f0fdfa;
+$slate-900: #0f172a;
+$slate-700: #334155;
+$slate-500: #64748b;
+$slate-300: #cbd5e1;
+$slate-200: #e2e8f0;
+$slate-100: #f1f5f9;
+$slate-50: #f8fafc;
+$green-600: #16a34a;
+$green-100: #dcfce7;
+$red-600: #dc2626;
+$red-100: #fee2e2;
+$amber-600: #d97706;
+$amber-100: #fef3c7;
 
-// SharePoint canvas and social bar overrides - REQUIRED for full-bleed and embedded mode
+// SharePoint canvas overrides
 :global {
-  // Enable full-bleed layouts
   .CanvasZone,
   [class*="CanvasZone"],
   .CanvasSection,
@@ -49,318 +67,665 @@
   }
 }
 
+// ============================================
+// BASE CONTAINER
+// ============================================
+
 .policyDetails {
-  @include full-bleed-container;
+  width: 100%;
   background-color: #ffffff;
+  padding-bottom: 80px; // Room for sticky footer
+}
 
-  .policyHeader {
-    background: white;
-    padding: 24px;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    border-left: 4px solid $ms-color-themePrimary;
+// ============================================
+// WIZARD PROGRESS STEPPER
+// ============================================
 
-    .policyTitle {
-      font-weight: 600;
-      color: $ms-color-themePrimary;
-      margin: 0;
+.wizardStepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin: 0 0 24px;
+  padding: 20px 32px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.wizardStep {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: background 0.15s;
+
+  &:hover {
+    background: $slate-50;
+  }
+
+  &.future {
+    .stepCircle {
+      background: $slate-200;
+      color: $slate-500;
     }
-
-    .category {
-      color: $ms-color-neutralSecondary;
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      padding: 4px 12px;
-      background: $ms-color-neutralLight;
-      border-radius: 4px;
+    .stepLabel {
+      color: $slate-500;
     }
+  }
 
-    .statusBadge {
+  &.active {
+    .stepCircle {
+      background: $teal-600;
       color: white;
-      padding: 4px 12px;
-      border-radius: 4px;
-      font-size: 12px;
-      font-weight: 600;
-      text-transform: uppercase;
+      box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.2);
     }
-
-    .label {
-      color: $ms-color-neutralSecondary;
-      font-weight: 500;
+    .stepLabel {
+      color: $teal-700;
     }
   }
 
-  .policyContent {
-    background: white;
-    padding: 32px;
-    border-radius: 8px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-
-    .sectionTitle {
-      font-weight: 600;
-      color: $ms-color-themePrimary;
-      margin-bottom: 12px;
-    }
-
-    .keyPoints {
-      list-style-type: disc;
-      padding-left: 24px;
-
-      li {
-        margin-bottom: 8px;
-        line-height: 1.6;
-      }
-    }
-  }
-
-  .acknowledgementSection {
-    background: white;
-    padding: 24px;
-    border-radius: 8px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-    border-left: 4px solid #FFA500;
-  }
-
-  .ratingsSection {
-    background: white;
-    padding: 24px;
-    border-radius: 8px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-
-    .sectionTitle {
-      font-weight: 600;
-      color: $ms-color-themePrimary;
-      margin-bottom: 16px;
-    }
-  }
-
-  .commentsSection {
-    background: white;
-    padding: 24px;
-    border-radius: 8px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-
-    .sectionTitle {
-      font-weight: 600;
-      color: $ms-color-themePrimary;
-    }
-
-    .commentCard {
-      padding: 16px;
-      border: 1px solid $ms-color-neutralLight;
-      border-radius: 6px;
-      background: $ms-color-neutralLighter;
-
-      &:hover {
-        border-color: $ms-color-themePrimary;
-        background: white;
-      }
-    }
-  }
-
-  // ============================================
-  // ENHANCED READ FLOW STYLES
-  // ============================================
-
-  .readFlowProgress {
-    background: white;
-    padding: 24px;
-    border-radius: 8px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-    margin-bottom: 16px;
-    border-top: 4px solid $ms-color-themePrimary;
-  }
-
-  .flowStepIcon {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: $ms-color-neutralLight;
-    color: $ms-color-neutralSecondary;
-    font-size: 18px;
-    transition: all 0.2s ease;
-
-    &.current {
-      background: $ms-color-themePrimary;
-      color: white;
-      box-shadow: 0 2px 8px rgba(0, 120, 212, 0.3);
-    }
-
-    &.completed {
-      background: #107c10;
+  &.completed {
+    .stepCircle {
+      background: $green-600;
       color: white;
     }
-  }
-
-  .quizSection {
-    background: white;
-    padding: 32px;
-    border-radius: 8px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-    border-left: 4px solid $ms-color-themePrimary;
-    margin-top: 16px;
-
-    .sectionTitle {
-      font-weight: 600;
-      color: $ms-color-themePrimary;
-      display: flex;
-      align-items: center;
+    .stepLabel {
+      color: $green-600;
     }
   }
+}
 
-  .quizPlaceholder {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 48px;
-    background: $ms-color-neutralLighter;
-    border-radius: 8px;
-    border: 2px dashed $ms-color-neutralTertiaryAlt;
-    margin-top: 16px;
-    text-align: center;
+.stepCircle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+  transition: all 0.3s;
+}
+
+.stepLabel {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.stepConnector {
+  width: 48px;
+  height: 2px;
+  background: $slate-200;
+  flex-shrink: 0;
+  transition: background 0.3s;
+
+  &.done {
+    background: $green-600;
+  }
+}
+
+// ============================================
+// STEP CONTENT
+// ============================================
+
+.stepContent {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+// ============================================
+// WIZARD CARDS
+// ============================================
+
+.wizardCard {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.cardIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: $teal-50;
+  color: $teal-600;
+  flex-shrink: 0;
+}
+
+.cardHeaderInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.cardActions {
+  flex-shrink: 0;
+}
+
+// ============================================
+// BADGES
+// ============================================
+
+.badgeTeal, .badgeGreen, .badgeAmber, .badgeSlate, .badgeRed {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.badgeTeal { background: $teal-100; color: $teal-700; }
+.badgeGreen { background: $green-100; color: $green-600; }
+.badgeAmber { background: $amber-100; color: $amber-600; }
+.badgeSlate { background: $slate-200; color: $slate-700; }
+.badgeRed { background: $red-100; color: $red-600; }
+
+// ============================================
+// POLICY META
+// ============================================
+
+.policyMeta {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 12px;
+}
+
+.metaItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.metaLabel {
+  font-size: 11px;
+  color: $slate-500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.metaValue {
+  font-size: 14px;
+  font-weight: 600;
+  color: $slate-900;
+}
+
+.readTimer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: $teal-700;
+  font-weight: 600;
+  background: $teal-50;
+  padding: 6px 12px;
+  border-radius: 20px;
+}
+
+// ============================================
+// DOCUMENT VIEWER
+// ============================================
+
+.documentViewerWrapper {
+  margin-bottom: 16px;
+}
+
+.viewerToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: $slate-100;
+  border: 1px solid $slate-200;
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+}
+
+.documentViewer {
+  background: $slate-50;
+  border: 1px solid $slate-200;
+  height: 520px;
+  overflow-y: auto;
+  position: relative;
+}
+
+.scrollProgressBar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 4px;
+  height: 100%;
+  background: $slate-200;
+  border-radius: 2px;
+  z-index: 5;
+}
+
+.scrollProgressFill {
+  width: 100%;
+  background: $teal-600;
+  border-radius: 2px;
+  transition: height 0.2s;
+}
+
+.scrollNotice {
+  text-align: center;
+  padding: 12px;
+  font-size: 12px;
+  color: $slate-500;
+  background: $amber-100;
+  border-radius: 0 0 8px 8px;
+  border: 1px solid $slate-200;
+  border-top: none;
+}
+
+.attachmentRow {
+  padding: 6px 12px;
+  border-radius: 4px;
+  background: white;
+  border: 1px solid $slate-200;
+
+  &:hover {
+    border-color: $teal-500;
+  }
+}
+
+// ============================================
+// QUIZ STYLES
+// ============================================
+
+.quizBanner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: $teal-50;
+  border: 1px solid $teal-500;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: $teal-700;
+  font-weight: 600;
+}
+
+.questionDots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.qDot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 2px solid $slate-200;
+  background: white;
+  color: $slate-500;
+  transition: all 0.15s;
+
+  &.answered {
+    border-color: $teal-600;
+    background: $teal-50;
+    color: $teal-600;
   }
 
-  .quizResult {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 32px;
-    border-radius: 8px;
-    text-align: center;
+  &.current {
+    border-color: $teal-600;
+    background: $teal-600;
+    color: white;
+  }
+}
 
-    &.passed {
-      background: rgba(16, 124, 16, 0.08);
-      border: 2px solid #107c10;
-      color: #107c10;
-    }
+.questionsViewport {
+  position: relative;
+  overflow: hidden;
+  min-height: 320px;
+}
 
-    &.failed {
-      background: rgba(209, 52, 56, 0.08);
-      border: 2px solid #d13438;
-      color: #d13438;
-    }
+.questionCard {
+  background: white;
+  border: 1px solid $slate-200;
+  border-radius: 8px;
+  padding: 24px 28px;
+  transition: border-color 0.2s;
+  display: none;
+
+  &.visible {
+    display: block;
+    animation: slideIn 0.3s ease;
   }
 
-  .readFlowActions {
-    background: white;
-    padding: 24px;
-    border-radius: 8px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-    margin-top: 16px;
+  &.answered {
+    border-color: $teal-500;
   }
 
-  // Panel Styles
-  .legalHeader {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: 12px;
-    padding: 24px;
-    background: linear-gradient(135deg, rgba(0, 120, 212, 0.08) 0%, rgba(0, 120, 212, 0.02) 100%);
-    border-radius: 8px;
+  &.correct {
+    border-color: $green-600;
+    background: $green-100;
   }
 
-  .acknowledgePolicyInfo {
-    padding: 16px;
-    background: $ms-color-neutralLighter;
-    border-radius: 8px;
-    text-align: center;
+  &.wrong {
+    border-color: $red-600;
+    background: $red-100;
+  }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(40px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.questionNum {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: $slate-500;
+  margin-bottom: 6px;
+}
+
+.questionText {
+  font-size: 15px;
+  font-weight: 600;
+  color: $slate-900;
+  margin-bottom: 14px;
+}
+
+.optionGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.optionLabel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1.5px solid $slate-200;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.15s;
+
+  &:hover {
+    border-color: $teal-500;
+    background: $teal-50;
   }
 
-  .legalAgreements {
-    background: #fffbf0;
-    border: 1px solid #ffb900;
-    border-radius: 8px;
-    padding: 20px;
+  &.selected {
+    border-color: $teal-600;
+    background: $teal-50;
   }
 
-  .digitalSignature {
-    padding: 16px;
-    background: $ms-color-neutralLighter;
-    border-radius: 8px;
+  &.correctAnswer {
+    border-color: $green-600;
+    background: $green-100;
   }
 
-  // Certificate Styles
-  .certificateContainer {
-    width: 100%;
-    max-width: 400px;
-    border: 3px solid $ms-color-themePrimary;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  &.wrongAnswer {
+    border-color: $red-600;
+    background: $red-100;
   }
 
-  .certificateHeader {
-    background: linear-gradient(135deg, #004578 0%, #0078d4 100%);
-    padding: 24px;
-    text-align: center;
+  input[type="radio"] {
+    accent-color: $teal-600;
+  }
+}
+
+.quizNavRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid $slate-200;
+}
+
+.quizResult {
+  text-align: center;
+  padding: 32px;
+  border-radius: 8px;
+  margin: 16px 0;
+
+  &.passed {
+    background: $green-100;
+    border: 2px solid $green-600;
+    color: $green-600;
   }
 
-  .certificateBody {
-    padding: 32px;
-    background: white;
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
+  &.failed {
+    background: $red-100;
+    border: 2px solid $red-600;
+    color: $red-600;
+  }
+}
+
+// ============================================
+// SUCCESS / CERTIFICATE (STEP 4)
+// ============================================
+
+.successContainer {
+  text-align: center;
+  padding: 16px 0;
+}
+
+.trophyIcon {
+  font-size: 64px;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.certificateCard {
+  background: white;
+  border: 2px solid $teal-500;
+  border-radius: 12px;
+  padding: 32px;
+  max-width: 600px;
+  margin: 0 auto 24px;
+  position: relative;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, $teal-600, $teal-500, $teal-600);
+    border-radius: 12px 12px 0 0;
+  }
+}
+
+.certificateTitle {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: $teal-600;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.certificateMainTitle {
+  font-size: 20px;
+  font-weight: 800;
+  color: $slate-900;
+  margin-bottom: 20px;
+}
+
+.certificateGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  text-align: left;
+  margin-bottom: 20px;
+}
+
+.certItem {
+  .certLabel {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: $slate-500;
+    font-weight: 700;
   }
 
-  .certificateSeal {
-    width: 64px;
-    height: 64px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #107c10 0%, #0b6a0b 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 16px 0;
-    box-shadow: 0 4px 12px rgba(16, 124, 16, 0.3);
+  .certValue {
+    font-size: 14px;
+    font-weight: 600;
+    color: $slate-900;
   }
+}
 
-  .certificateDetails {
-    margin-top: 16px;
-    padding-top: 16px;
-    border-top: 1px dashed $ms-color-neutralTertiaryAlt;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    color: $ms-color-neutralSecondary;
+.certSignature {
+  font-family: 'Brush Script MT', 'Segoe Script', cursive;
+  font-size: 28px;
+  font-style: italic;
+  color: $teal-700;
+  border-top: 1px solid $slate-200;
+  padding-top: 12px;
+  margin-top: 8px;
+}
+
+.certSigLabel {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: $slate-500;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.ratingSection {
+  max-width: 600px;
+  margin: 16px auto;
+  padding: 20px;
+  background: $slate-50;
+  border-radius: 8px;
+}
+
+// ============================================
+// ACKNOWLEDGE PANEL STYLES
+// ============================================
+
+.legalHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  padding: 24px;
+  background: linear-gradient(135deg, rgba(13, 148, 136, 0.08) 0%, rgba(13, 148, 136, 0.02) 100%);
+  border-radius: 8px;
+}
+
+.acknowledgePolicyInfo {
+  padding: 16px;
+  background: $slate-100;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.legalAgreements {
+  background: #fffbf0;
+  border: 1px solid #ffb900;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.digitalSignature {
+  padding: 16px;
+  background: $slate-100;
+  border-radius: 8px;
+}
+
+// ============================================
+// RECEIPT PANEL STYLES
+// ============================================
+
+.receiptHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  padding: 24px;
+  background: linear-gradient(135deg, rgba(22, 163, 74, 0.08) 0%, rgba(22, 163, 74, 0.02) 100%);
+  border-radius: 8px;
+}
+
+.receiptRow {
+  display: flex;
+  padding: 8px 0;
+  border-bottom: 1px solid $slate-200;
+
+  &:last-child {
+    border-bottom: none;
   }
+}
 
-  // Receipt Panel Styles
-  .receiptHeader {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: 8px;
-    padding: 24px;
-    background: linear-gradient(135deg, rgba(16, 124, 16, 0.08) 0%, rgba(16, 124, 16, 0.02) 100%);
-    border-radius: 8px;
-  }
+.legalConfirmation {
+  padding: 16px;
+  background: $slate-100;
+  border-radius: 8px;
+  border-left: 3px solid $teal-600;
+}
 
-  .receiptRow {
-    display: flex;
-    padding: 8px 0;
-    border-bottom: 1px solid $ms-color-neutralLight;
+// ============================================
+// STICKY FOOTER
+// ============================================
 
-    &:last-child {
-      border-bottom: none;
-    }
-  }
+.wizardFooter {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  border-top: 1px solid $slate-200;
+  padding: 12px 32px;
+  z-index: 100;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.06);
+}
 
-  .legalConfirmation {
-    padding: 16px;
-    background: $ms-color-neutralLighter;
-    border-radius: 8px;
-    border-left: 3px solid $ms-color-themePrimary;
-  }
+.footerInner {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.footerLeft,
+.footerRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }

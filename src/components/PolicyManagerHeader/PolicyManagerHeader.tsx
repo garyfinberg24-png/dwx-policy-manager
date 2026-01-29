@@ -17,6 +17,7 @@ export interface INavItem {
 export interface IBreadcrumb {
   text: string;
   href?: string;
+  url?: string;
 }
 
 export interface IPageStat {
@@ -331,8 +332,7 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
     { key: 'my-policies', text: 'My Policies', icon: NavIcons.authored, href: '/sites/PolicyManager/SitePages/MyPolicies.aspx' },
     { key: 'distribution', text: 'Distribution', icon: NavIcons.distribution, href: '/sites/PolicyManager/SitePages/PolicyDistribution.aspx' },
     { key: 'analytics', text: 'Analytics', icon: NavIcons.analytics, href: '/sites/PolicyManager/SitePages/PolicyAnalytics.aspx' },
-    { key: 'details', text: 'Policy Details', icon: NavIcons.details, href: '/sites/PolicyManager/SitePages/PolicyDetails.aspx' },
-    { key: 'packs', text: 'Policy Packs', icon: NavIcons.packs, href: '/sites/PolicyManager/SitePages/PolicyPacks.aspx' },
+{ key: 'packs', text: 'Policy Packs', icon: NavIcons.packs, href: '/sites/PolicyManager/SitePages/PolicyPacks.aspx' },
     { key: 'quiz', text: 'Quiz Builder', icon: NavIcons.quiz, href: '/sites/PolicyManager/SitePages/QuizBuilder.aspx' }
   ];
 
@@ -740,19 +740,24 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
         )}
       </nav>
 
-      {/* Breadcrumbs Bar */}
+      {/* Breadcrumbs Bar — aligned with content area */}
       {breadcrumbs && breadcrumbs.length > 0 && (
-        <div className={styles.breadcrumbBar}>
-          {breadcrumbs.map((crumb, index) => (
-            <span key={index} className={styles.breadcrumbItem}>
-              {index > 0 && <span className={styles.breadcrumbSeparator}>/</span>}
-              {crumb.href ? (
-                <a href={crumb.href} className={styles.breadcrumbLink}>{crumb.text}</a>
-              ) : (
-                <span className={styles.breadcrumbCurrent}>{crumb.text}</span>
-              )}
-            </span>
-          ))}
+        <div className={styles.breadcrumbBarOuter}>
+          <div className={styles.breadcrumbBar}>
+            {breadcrumbs.map((crumb, index) => {
+              const link = crumb.href || crumb.url;
+              return (
+                <span key={index} className={styles.breadcrumbItem}>
+                  {index > 0 && <span className={styles.breadcrumbSeparator}>/</span>}
+                  {link ? (
+                    <a href={link} className={styles.breadcrumbLink}>{crumb.text}</a>
+                  ) : (
+                    <span className={styles.breadcrumbCurrent}>{crumb.text}</span>
+                  )}
+                </span>
+              );
+            })}
+          </div>
         </div>
       )}
 

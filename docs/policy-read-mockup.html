@@ -1,0 +1,1706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Policy Read Process — Interactive Mockup</title>
+<style>
+  /* ── Reset & Base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #f1f5f9;
+    color: #1e293b;
+    min-height: 100vh;
+  }
+
+  /* ── Theme Tokens ── */
+  :root {
+    --teal-900: #0f4c47;
+    --teal-700: #0f766e;
+    --teal-600: #0d9488;
+    --teal-500: #14b8a6;
+    --teal-100: #ccfbf1;
+    --teal-50: #f0fdfa;
+    --slate-900: #0f172a;
+    --slate-700: #334155;
+    --slate-500: #64748b;
+    --slate-300: #cbd5e1;
+    --slate-200: #e2e8f0;
+    --slate-100: #f1f5f9;
+    --slate-50: #f8fafc;
+    --white: #ffffff;
+    --red-600: #dc2626;
+    --red-100: #fee2e2;
+    --amber-600: #d97706;
+    --amber-100: #fef3c7;
+    --green-600: #16a34a;
+    --green-100: #dcfce7;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+    --radius: 8px;
+  }
+
+  /* ── Header Bar ── */
+  .header-bar {
+    background: linear-gradient(135deg, var(--teal-900), var(--teal-700));
+    color: white;
+    padding: 12px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .breadcrumbs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    opacity: 0.9;
+  }
+  .breadcrumbs a { color: rgba(255,255,255,0.8); text-decoration: none; }
+  .breadcrumbs a:hover { color: white; text-decoration: underline; }
+  .breadcrumbs .sep { opacity: 0.5; }
+  .breadcrumbs .current { color: white; font-weight: 600; }
+  .header-bar .app-title {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+
+  /* ── Page Container ── */
+  .page-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px 24px 100px;
+  }
+
+  /* ── Progress Stepper ── */
+  .stepper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    margin: 24px 0 32px;
+    padding: 20px 32px;
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+  }
+  .step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 6px;
+    transition: background 0.15s;
+    position: relative;
+  }
+  .step:hover { background: var(--slate-50); }
+  .step-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+    transition: all 0.3s;
+  }
+  .step.future .step-circle {
+    background: var(--slate-200);
+    color: var(--slate-500);
+  }
+  .step.active .step-circle {
+    background: var(--teal-600);
+    color: white;
+    box-shadow: 0 0 0 3px rgba(13,148,136,0.2);
+  }
+  .step.completed .step-circle {
+    background: var(--green-600);
+    color: white;
+  }
+  .step-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--slate-500);
+    white-space: nowrap;
+  }
+  .step.active .step-label { color: var(--teal-700); }
+  .step.completed .step-label { color: var(--green-600); }
+  .step-connector {
+    width: 48px;
+    height: 2px;
+    background: var(--slate-200);
+    flex-shrink: 0;
+    transition: background 0.3s;
+  }
+  .step-connector.done { background: var(--green-600); }
+  .step-badge {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    background: var(--slate-200);
+    color: var(--slate-500);
+    font-weight: 600;
+    margin-left: -4px;
+  }
+  .step.active .step-badge { background: var(--teal-100); color: var(--teal-700); }
+
+  /* ── Content Panels ── */
+  .step-content {
+    display: none;
+    animation: fadeIn 0.3s ease;
+  }
+  .step-content.visible { display: block; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    padding: 20px 24px;
+    margin-bottom: 16px;
+  }
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .card-header h2 {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--slate-900);
+  }
+  .card-header .icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  /* ── Sticky Footer ── */
+  .footer-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--white);
+    border-top: 1px solid var(--slate-200);
+    padding: 12px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    z-index: 100;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
+  }
+  .footer-inner {
+    max-width: 1000px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .footer-left, .footer-right { display: flex; align-items: center; gap: 12px; }
+  .footer-center { font-size: 13px; color: var(--slate-500); }
+
+  /* ── Buttons ── */
+  .btn {
+    padding: 9px 20px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1.5px solid transparent;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-primary {
+    background: var(--teal-600);
+    color: white;
+    border-color: var(--teal-600);
+  }
+  .btn-primary:hover { background: var(--teal-700); }
+  .btn-primary:disabled {
+    background: var(--slate-300);
+    border-color: var(--slate-300);
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+  .btn-secondary {
+    background: var(--white);
+    color: var(--slate-700);
+    border-color: var(--slate-300);
+  }
+  .btn-secondary:hover { background: var(--slate-50); border-color: var(--slate-500); }
+  .btn-ghost {
+    background: transparent;
+    color: var(--teal-600);
+    border: none;
+    padding: 8px 12px;
+  }
+  .btn-ghost:hover { background: var(--teal-50); }
+  .btn-sm { padding: 6px 14px; font-size: 12px; }
+  .btn-danger {
+    background: var(--white);
+    color: var(--red-600);
+    border-color: var(--red-600);
+  }
+  .btn-success {
+    background: var(--green-600);
+    color: white;
+    border-color: var(--green-600);
+  }
+
+  /* ── Badge / Tag ── */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .badge-teal { background: var(--teal-100); color: var(--teal-700); }
+  .badge-green { background: var(--green-100); color: var(--green-600); }
+  .badge-amber { background: var(--amber-100); color: var(--amber-600); }
+  .badge-red { background: var(--red-100); color: var(--red-600); }
+  .badge-slate { background: var(--slate-200); color: var(--slate-700); }
+
+  /* ── Step 1: Read Policy ── */
+  .policy-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .meta-item .label {
+    font-size: 11px;
+    color: var(--slate-500);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+  }
+  .meta-item .value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--slate-900);
+  }
+  .read-timer {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--teal-700);
+    font-weight: 600;
+    background: var(--teal-50);
+    padding: 6px 12px;
+    border-radius: 20px;
+  }
+  .document-viewer {
+    background: var(--slate-50);
+    border: 1px solid var(--slate-200);
+    border-radius: var(--radius);
+    height: 520px;
+    overflow-y: auto;
+    padding: 40px 48px;
+    position: relative;
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--slate-700);
+  }
+  .document-viewer h1 { font-size: 22px; font-weight: 700; color: var(--slate-900); margin: 0 0 8px; }
+  .document-viewer h2 { font-size: 17px; font-weight: 700; color: var(--slate-900); margin: 24px 0 8px; border-bottom: 1px solid var(--slate-200); padding-bottom: 6px; }
+  .document-viewer h3 { font-size: 15px; font-weight: 700; color: var(--slate-700); margin: 16px 0 6px; }
+  .document-viewer p { margin: 0 0 12px; }
+  .document-viewer ul { margin: 0 0 12px 24px; }
+  .document-viewer li { margin-bottom: 4px; }
+  .viewer-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px;
+    background: var(--slate-100);
+    border: 1px solid var(--slate-200);
+    border-bottom: none;
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+  .viewer-toolbar .file-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--slate-700);
+  }
+  .scroll-progress-bar {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--slate-200);
+    border-radius: 2px;
+    z-index: 5;
+  }
+  .scroll-progress-fill {
+    width: 100%;
+    background: var(--teal-600);
+    border-radius: 2px;
+    transition: height 0.2s;
+  }
+  .scroll-notice {
+    text-align: center;
+    padding: 12px;
+    font-size: 12px;
+    color: var(--slate-500);
+    background: var(--amber-100);
+    border-radius: 0 0 var(--radius) var(--radius);
+    border: 1px solid var(--slate-200);
+    border-top: none;
+  }
+
+  /* ── Step 2: Quiz ── */
+  .quiz-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: var(--teal-50);
+    border: 1px solid var(--teal-500);
+    border-radius: var(--radius);
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: var(--teal-700);
+    font-weight: 600;
+  }
+  .questions-viewport {
+    position: relative;
+    overflow: hidden;
+    min-height: 320px;
+  }
+  .question-card {
+    background: var(--white);
+    border: 1px solid var(--slate-200);
+    border-radius: var(--radius);
+    padding: 24px 28px;
+    transition: border-color 0.2s, opacity 0.3s, transform 0.3s;
+    display: none;
+  }
+  .question-card.visible { display: block; animation: slideIn 0.3s ease; }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(40px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  .question-card.answered { border-color: var(--teal-500); }
+  .question-card.correct { border-color: var(--green-600); background: var(--green-100); }
+  .question-card.wrong { border-color: var(--red-600); background: var(--red-100); }
+  .quiz-nav-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--slate-200);
+  }
+  .question-num {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--slate-500);
+    margin-bottom: 6px;
+  }
+  .question-text {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--slate-900);
+    margin-bottom: 14px;
+  }
+  .option-group { display: flex; flex-direction: column; gap: 8px; }
+  .option-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border: 1.5px solid var(--slate-200);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.15s;
+  }
+  .option-label:hover { border-color: var(--teal-500); background: var(--teal-50); }
+  .option-label.selected { border-color: var(--teal-600); background: var(--teal-50); }
+  .option-label.correct-answer { border-color: var(--green-600); background: var(--green-100); }
+  .option-label.wrong-answer { border-color: var(--red-600); background: var(--red-100); }
+  .option-label input[type="radio"] { accent-color: var(--teal-600); }
+  .question-dots {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .q-dot {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    border: 2px solid var(--slate-200);
+    background: var(--white);
+    color: var(--slate-500);
+    transition: all 0.15s;
+  }
+  .q-dot.answered { border-color: var(--teal-600); background: var(--teal-50); color: var(--teal-600); }
+  .q-dot.current { border-color: var(--teal-600); background: var(--teal-600); color: white; }
+  .quiz-result {
+    text-align: center;
+    padding: 32px;
+    border-radius: var(--radius);
+    margin: 16px 0;
+  }
+  .quiz-result.passed { background: var(--green-100); border: 2px solid var(--green-600); }
+  .quiz-result.failed { background: var(--red-100); border: 2px solid var(--red-600); }
+  .quiz-result .score { font-size: 48px; font-weight: 800; }
+  .quiz-result.passed .score { color: var(--green-600); }
+  .quiz-result.failed .score { color: var(--red-600); }
+  .quiz-result .score-label { font-size: 14px; color: var(--slate-700); margin-top: 4px; }
+  .skip-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: var(--slate-100);
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--slate-500);
+    cursor: pointer;
+    margin-bottom: 16px;
+  }
+  .skip-toggle input { accent-color: var(--teal-600); }
+
+  /* ── Step 3: Acknowledge Panel ── */
+  .ack-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.35);
+    z-index: 200;
+    display: none;
+    animation: fadeInOverlay 0.2s;
+  }
+  .ack-overlay.visible { display: block; }
+  @keyframes fadeInOverlay { from { opacity: 0; } to { opacity: 1; } }
+  .ack-panel {
+    position: fixed;
+    top: 0; right: 0; bottom: 0;
+    width: 520px;
+    background: var(--white);
+    box-shadow: -4px 0 24px rgba(0,0,0,0.15);
+    z-index: 201;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+  }
+  .ack-panel.visible { transform: translateX(0); }
+  .ack-panel-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--slate-200);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .ack-panel-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .ack-panel-header .shield-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    background: var(--teal-50);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+  }
+  .ack-panel-header h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--slate-900);
+  }
+  .ack-panel-header .subtitle {
+    font-size: 12px;
+    color: var(--slate-500);
+  }
+  .ack-close-btn {
+    width: 32px; height: 32px;
+    border-radius: 6px;
+    border: none;
+    background: var(--slate-100);
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--slate-500);
+  }
+  .ack-close-btn:hover { background: var(--slate-200); }
+  .ack-panel-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+  }
+  .ack-policy-summary {
+    background: var(--slate-50);
+    border: 1px solid var(--slate-200);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .ack-policy-summary .item-label {
+    font-size: 11px;
+    color: var(--slate-500);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+  }
+  .ack-policy-summary .item-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--slate-900);
+  }
+  .legal-section { margin-bottom: 20px; }
+  .legal-section h4 {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--slate-700);
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .legal-checkbox {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid var(--slate-200);
+    border-radius: 6px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--slate-700);
+  }
+  .legal-checkbox:hover { border-color: var(--teal-500); background: var(--teal-50); }
+  .legal-checkbox.checked { border-color: var(--teal-600); background: var(--teal-50); }
+  .legal-checkbox input { margin-top: 2px; accent-color: var(--teal-600); flex-shrink: 0; }
+  .signature-field {
+    margin-bottom: 16px;
+  }
+  .signature-field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--slate-700);
+    margin-bottom: 6px;
+  }
+  .signature-field input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1.5px solid var(--slate-200);
+    border-radius: 6px;
+    font-size: 20px;
+    font-family: 'Brush Script MT', 'Segoe Script', cursive;
+    font-style: italic;
+    color: var(--slate-900);
+    transition: border-color 0.15s;
+  }
+  .signature-field input:focus { outline: none; border-color: var(--teal-600); }
+  .signature-field input::placeholder {
+    font-size: 16px;
+    font-family: 'Brush Script MT', 'Segoe Script', cursive;
+    color: var(--slate-300);
+  }
+  .notes-field textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid var(--slate-200);
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 70px;
+    transition: border-color 0.15s;
+  }
+  .notes-field textarea:focus { outline: none; border-color: var(--teal-600); }
+  .notes-field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--slate-700);
+    margin-bottom: 6px;
+  }
+  .ack-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    background: var(--amber-100);
+    border: 1px solid var(--amber-600);
+    border-radius: 6px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #92400e;
+    margin-top: 16px;
+  }
+  .ack-panel-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--slate-200);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    background: var(--slate-50);
+  }
+
+  /* ── Step 4: Complete ── */
+  .success-container {
+    text-align: center;
+    padding: 16px 0;
+  }
+  .trophy-icon {
+    font-size: 64px;
+    margin-bottom: 8px;
+    display: block;
+  }
+  .success-heading {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--teal-700);
+    margin-bottom: 8px;
+  }
+  .success-subtitle {
+    font-size: 15px;
+    color: var(--slate-500);
+    margin-bottom: 28px;
+  }
+  .certificate-card {
+    background: var(--white);
+    border: 2px solid var(--teal-500);
+    border-radius: 12px;
+    padding: 32px;
+    max-width: 600px;
+    margin: 0 auto 24px;
+    position: relative;
+    box-shadow: var(--shadow-md);
+  }
+  .certificate-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--teal-600), var(--teal-500), var(--teal-600));
+    border-radius: 12px 12px 0 0;
+  }
+  .certificate-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--teal-600);
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .certificate-main-title {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--slate-900);
+    margin-bottom: 20px;
+  }
+  .certificate-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    text-align: left;
+    margin-bottom: 20px;
+  }
+  .cert-item .cert-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--slate-500);
+    font-weight: 700;
+  }
+  .cert-item .cert-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--slate-900);
+  }
+  .cert-signature {
+    font-family: 'Brush Script MT', 'Segoe Script', cursive;
+    font-size: 28px;
+    font-style: italic;
+    color: var(--teal-700);
+    border-top: 1px solid var(--slate-200);
+    padding-top: 12px;
+    margin-top: 8px;
+  }
+  .cert-sig-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--slate-500);
+    font-weight: 700;
+    margin-top: 2px;
+  }
+  .action-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+
+  /* ── Rating widget ── */
+  .rating-section {
+    display: none;
+    margin-top: 16px;
+    padding: 20px;
+    background: var(--slate-50);
+    border-radius: var(--radius);
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .rating-section.visible { display: block; }
+  .stars { display: flex; gap: 4px; justify-content: center; margin-bottom: 8px; }
+  .star {
+    font-size: 32px;
+    cursor: pointer;
+    color: var(--slate-300);
+    transition: color 0.1s;
+  }
+  .star.filled { color: #f59e0b; }
+  .star:hover { color: #f59e0b; }
+  .comment-section {
+    display: none;
+    margin-top: 16px;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .comment-section.visible { display: block; }
+  .comment-section textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid var(--slate-200);
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 80px;
+    margin-bottom: 8px;
+  }
+
+  /* ── Dev Controls ── */
+  .dev-controls {
+    position: fixed;
+    bottom: 70px;
+    left: 16px;
+    background: var(--slate-900);
+    color: white;
+    padding: 12px 16px;
+    border-radius: var(--radius);
+    font-size: 11px;
+    z-index: 300;
+    box-shadow: var(--shadow-lg);
+    max-width: 200px;
+  }
+  .dev-controls h5 {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--slate-500);
+    margin-bottom: 8px;
+  }
+  .dev-controls button {
+    display: block;
+    width: 100%;
+    padding: 6px 10px;
+    margin-bottom: 4px;
+    background: rgba(255,255,255,0.1);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 11px;
+    cursor: pointer;
+    text-align: left;
+  }
+  .dev-controls button:hover { background: rgba(255,255,255,0.2); }
+  .dev-controls button.active-btn { background: var(--teal-600); }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════ HEADER BAR ══════════════════════ -->
+<div class="header-bar">
+  <div class="breadcrumbs">
+    <a href="#">Policy Manager</a>
+    <span class="sep">/</span>
+    <a href="#">Policies</a>
+    <span class="sep">/</span>
+    <span class="current" id="breadcrumb-text">Reading: Information Security Policy</span>
+  </div>
+  <div style="display: flex; align-items: center; gap: 12px;">
+    <div class="read-timer" id="read-timer" style="display:none;">
+      <span>&#9201;</span>
+      <span id="timer-display">0m 00s</span>
+    </div>
+    <span class="app-title">Policy Manager</span>
+  </div>
+</div>
+
+<!-- ══════════════════════ PAGE CONTAINER ══════════════════════ -->
+<div class="page-container">
+
+  <!-- ── Progress Stepper ── -->
+  <div class="stepper">
+    <div class="step active" data-step="1" onclick="goToStep(1)">
+      <div class="step-circle" id="sc1">1</div>
+      <span class="step-label">Read Policy</span>
+    </div>
+    <div class="step-connector" id="conn1"></div>
+    <div class="step future" data-step="2" onclick="goToStep(2)">
+      <div class="step-circle" id="sc2">2</div>
+      <span class="step-label">Quiz</span>
+      <span class="step-badge" id="quiz-badge">Optional</span>
+    </div>
+    <div class="step-connector" id="conn2"></div>
+    <div class="step future" data-step="3" onclick="goToStep(3)">
+      <div class="step-circle" id="sc3">3</div>
+      <span class="step-label">Acknowledge</span>
+    </div>
+    <div class="step-connector" id="conn3"></div>
+    <div class="step future" data-step="4" onclick="goToStep(4)">
+      <div class="step-circle" id="sc4">4</div>
+      <span class="step-label">Complete</span>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ STEP 1: READ POLICY ══════════════════════ -->
+  <div class="step-content visible" id="step1">
+    <!-- Policy Metadata -->
+    <div class="card">
+      <div class="card-header">
+        <div class="icon" style="background: var(--teal-50); color: var(--teal-600);">&#128196;</div>
+        <div>
+          <h2>Information Security Policy v2.1</h2>
+          <div style="display: flex; gap: 8px; margin-top: 4px;">
+            <span class="badge badge-green">Published</span>
+            <span class="badge badge-teal">IT Security</span>
+            <span class="badge badge-slate">POL-2024-0047</span>
+          </div>
+        </div>
+      </div>
+      <div class="policy-meta">
+        <div class="meta-item">
+          <span class="label">Department</span>
+          <span class="value">Information Technology</span>
+        </div>
+        <div class="meta-item">
+          <span class="label">Effective Date</span>
+          <span class="value">15 Jan 2024</span>
+        </div>
+        <div class="meta-item">
+          <span class="label">Review Due</span>
+          <span class="value" style="color: var(--amber-600);">15 Jul 2024</span>
+        </div>
+        <div class="meta-item">
+          <span class="label">Acknowledgement Due</span>
+          <span class="value" style="color: var(--red-600);">28 Feb 2024</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Document Viewer -->
+    <div class="viewer-toolbar">
+      <div class="file-info">
+        <span>&#128462;</span>
+        <span>InformationSecurityPolicy_v2.1.pdf</span>
+        <span style="color: var(--slate-400); font-weight: 400;">— 12 pages</span>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button class="btn btn-ghost btn-sm">&#8599; Open in New Tab</button>
+        <button class="btn btn-ghost btn-sm">&#11015; Download</button>
+      </div>
+    </div>
+    <div class="document-viewer" id="doc-viewer" onscroll="handleDocScroll()">
+      <div class="scroll-progress-bar">
+        <div class="scroll-progress-fill" id="scroll-fill" style="height: 0%;"></div>
+      </div>
+
+      <h1>Information Security Policy</h1>
+      <p style="color: var(--slate-500); margin-bottom: 20px;">Version 2.1 &bull; Effective January 15, 2024 &bull; Information Technology Department</p>
+
+      <h2>1. Purpose</h2>
+      <p>This policy establishes the information security framework for all employees, contractors, and third-party users who access organizational information systems and data. It defines the requirements for protecting the confidentiality, integrity, and availability of information assets.</p>
+
+      <h2>2. Scope</h2>
+      <p>This policy applies to all personnel who have access to the organization's information systems, including but not limited to:</p>
+      <ul>
+        <li>Full-time and part-time employees</li>
+        <li>Temporary staff and contractors</li>
+        <li>Third-party service providers with system access</li>
+        <li>Volunteers and interns</li>
+      </ul>
+
+      <h2>3. Password Requirements</h2>
+      <p>All users must adhere to the following password requirements to maintain system security:</p>
+      <ul>
+        <li><strong>Minimum length:</strong> 12 characters</li>
+        <li><strong>Complexity:</strong> Must include uppercase, lowercase, numbers, and special characters</li>
+        <li><strong>Rotation:</strong> Passwords must be changed every 90 days</li>
+        <li><strong>History:</strong> Cannot reuse the last 12 passwords</li>
+        <li><strong>Lockout:</strong> Account locks after 5 failed attempts for 30 minutes</li>
+      </ul>
+
+      <h2>4. Data Classification</h2>
+      <p>All organizational data must be classified according to the following levels:</p>
+      <h3>4.1 Public</h3>
+      <p>Information that can be freely shared with external parties without risk. Examples include marketing materials, published reports, and public-facing website content.</p>
+      <h3>4.2 Internal</h3>
+      <p>Information intended for use within the organization. Unauthorized disclosure could cause minor inconvenience. Examples include internal memos, meeting notes, and organizational charts.</p>
+      <h3>4.3 Confidential</h3>
+      <p>Sensitive information that could cause significant harm if disclosed. Examples include employee records, financial data, customer information, and strategic plans.</p>
+      <h3>4.4 Restricted</h3>
+      <p>Highly sensitive information requiring the strictest controls. Examples include trade secrets, encryption keys, security audit findings, and regulatory compliance data.</p>
+
+      <h2>5. Incident Reporting</h2>
+      <p>All security incidents must be reported immediately to the Security Team through the designated incident reporting portal. Incidents include but are not limited to:</p>
+      <ul>
+        <li>Suspected or confirmed data breaches</li>
+        <li>Phishing emails or social engineering attempts</li>
+        <li>Lost or stolen devices containing organizational data</li>
+        <li>Unauthorized access to systems or physical areas</li>
+        <li>Malware infections or suspicious system behavior</li>
+      </ul>
+      <p>Employees should forward suspected phishing emails to the Security Team at security@company.com for analysis. Do not click any links or download attachments from suspicious emails.</p>
+
+      <h2>6. Acceptable Use</h2>
+      <p>Organizational information systems are provided for business purposes. Limited personal use is permitted provided it does not interfere with work duties, consume excessive resources, or violate any other organizational policy.</p>
+      <p><strong>Prohibited activities include:</strong></p>
+      <ul>
+        <li>Sharing login credentials with any other person</li>
+        <li>Installing unauthorized software on company devices</li>
+        <li>Connecting personal devices to secure networks without approval</li>
+        <li>Storing classified data on personal cloud storage services</li>
+        <li>Bypassing or attempting to circumvent security controls</li>
+      </ul>
+
+      <h2>7. Remote Work Security</h2>
+      <p>Employees working remotely must ensure their workspace meets the following security requirements:</p>
+      <ul>
+        <li>Use of company-approved VPN for all network access</li>
+        <li>Encrypted Wi-Fi networks (WPA2 or higher)</li>
+        <li>Screen lock enabled with maximum 5-minute idle timeout</li>
+        <li>Physical security of devices and printed materials</li>
+        <li>No use of public Wi-Fi for accessing confidential data</li>
+      </ul>
+
+      <h2>8. Compliance & Enforcement</h2>
+      <p>Violation of this policy may result in disciplinary action up to and including termination of employment. Violations may also be reported to appropriate legal authorities where applicable.</p>
+      <p>All employees must acknowledge receipt and understanding of this policy within the designated acknowledgement period.</p>
+
+      <div style="margin-top: 32px; padding-top: 20px; border-top: 2px solid var(--slate-200); text-align: center; color: var(--slate-400); font-size: 12px;">
+        <p>End of Document &bull; Information Security Policy v2.1 &bull; Page 12 of 12</p>
+      </div>
+    </div>
+    <div class="scroll-notice" id="scroll-notice">
+      &#9888; Please scroll through the entire document before proceeding &nbsp;&bull;&nbsp;
+      <a href="#" onclick="simulateScrollComplete(); return false;" style="color: var(--teal-600); font-weight: 600;">Simulate scroll complete</a>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ STEP 2: QUIZ ══════════════════════ -->
+  <div class="step-content" id="step2">
+    <label class="skip-toggle" id="skip-toggle">
+      <input type="checkbox" id="skip-quiz-cb" onchange="toggleSkipQuiz()">
+      <span>Skip quiz (no quiz required for this policy) — <em>toggle to simulate no-quiz flow</em></span>
+    </label>
+
+    <div id="quiz-content">
+      <div class="quiz-banner">
+        <span style="font-size: 18px;">&#128218;</span>
+        <span>This policy requires a comprehension quiz. You must score at least <strong>80%</strong> to proceed.</span>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="icon" style="background: var(--teal-50); color: var(--teal-600);">&#9997;</div>
+          <h2>Information Security Policy Quiz</h2>
+        </div>
+
+        <div class="question-dots" id="q-dots"></div>
+
+        <!-- Single question at a time -->
+        <div class="questions-viewport" id="questions-container"></div>
+
+        <!-- Prev / Next question navigation -->
+        <div class="quiz-nav-row" id="quiz-nav-row">
+          <button class="btn btn-secondary btn-sm" id="prev-q-btn" onclick="prevQuestion()" disabled>&#8592; Previous</button>
+          <span id="quiz-nav-label" style="font-size: 13px; color: var(--slate-500); font-weight: 600;">Question 1 of 5</span>
+          <button class="btn btn-secondary btn-sm" id="next-q-btn" onclick="nextQuestion()">Next &#8594;</button>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px;">
+          <button class="btn btn-primary" id="submit-quiz-btn" onclick="submitQuiz()" disabled>Submit Quiz</button>
+        </div>
+
+        <!-- Result -->
+        <div id="quiz-result-area" style="display: none;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ STEP 3: ACKNOWLEDGE (Inline placeholder, actual panel is overlay) ══════════════════════ -->
+  <div class="step-content" id="step3">
+    <div class="card" style="text-align: center; padding: 48px;">
+      <div style="font-size: 48px; margin-bottom: 12px;">&#128274;</div>
+      <h2 style="font-size: 20px; margin-bottom: 8px;">Policy Acknowledgement</h2>
+      <p style="color: var(--slate-500); margin-bottom: 24px;">The acknowledgement panel will slide in from the right. Please review the policy details and complete your legal acknowledgement.</p>
+      <button class="btn btn-primary" onclick="openAckPanel()">Open Acknowledgement Panel</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ STEP 4: COMPLETE ══════════════════════ -->
+  <div class="step-content" id="step4">
+    <div class="success-container">
+      <span class="trophy-icon">&#127942;</span>
+      <h1 class="success-heading">Congratulations!</h1>
+      <p class="success-subtitle">You have successfully completed the policy acknowledgement process.</p>
+
+      <div class="certificate-card">
+        <div class="certificate-title">Certificate of Compliance</div>
+        <div class="certificate-main-title">Information Security Policy v2.1</div>
+        <div class="certificate-grid">
+          <div class="cert-item">
+            <div class="cert-label">Employee</div>
+            <div class="cert-value">John Smith</div>
+          </div>
+          <div class="cert-item">
+            <div class="cert-label">Date Completed</div>
+            <div class="cert-value" id="cert-date">29 Jan 2026</div>
+          </div>
+          <div class="cert-item">
+            <div class="cert-label">Receipt Number</div>
+            <div class="cert-value">RR-20260129-A7B3</div>
+          </div>
+          <div class="cert-item">
+            <div class="cert-label">Read Duration</div>
+            <div class="cert-value" id="cert-duration">4m 22s</div>
+          </div>
+          <div class="cert-item">
+            <div class="cert-label">Quiz Score</div>
+            <div class="cert-value" id="cert-quiz-score">100% (5/5)</div>
+          </div>
+          <div class="cert-item">
+            <div class="cert-label">Policy Number</div>
+            <div class="cert-value">POL-2024-0047</div>
+          </div>
+        </div>
+        <div class="cert-signature" id="cert-signature">John Smith</div>
+        <div class="cert-sig-label">Digital Signature</div>
+      </div>
+
+      <div class="action-row">
+        <button class="btn btn-secondary" onclick="alert('Email receipt sent! (mock)')">&#128231; Email Receipt</button>
+        <button class="btn btn-secondary" onclick="alert('PDF downloading... (mock)')">&#128196; Download PDF</button>
+        <button class="btn btn-secondary" onclick="toggleRating()">&#11088; Rate This Policy</button>
+        <button class="btn btn-secondary" onclick="toggleComment()">&#128172; Leave a Comment</button>
+      </div>
+
+      <!-- Rating widget -->
+      <div class="rating-section" id="rating-section">
+        <div style="font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--slate-700);">How would you rate this policy?</div>
+        <div class="stars" id="stars-container"></div>
+        <div id="rating-text" style="font-size: 13px; color: var(--teal-600); font-weight: 600; min-height: 20px;"></div>
+      </div>
+
+      <!-- Comment section -->
+      <div class="comment-section" id="comment-section">
+        <div style="font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--slate-700); text-align: left;">Leave a comment</div>
+        <textarea placeholder="Share your feedback about this policy..."></textarea>
+        <div style="text-align: right;">
+          <button class="btn btn-primary btn-sm" onclick="alert('Comment submitted! (mock)'); document.querySelector('.comment-section textarea').value = ''; toggleComment();">Submit Comment</button>
+        </div>
+      </div>
+
+      <div style="margin-top: 24px;">
+        <button class="btn btn-primary" onclick="alert('Navigating to My Policies... (mock)')">&#8592; Return to My Policies</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════ ACKNOWLEDGEMENT FLY-IN PANEL ══════════════════════ -->
+<div class="ack-overlay" id="ack-overlay" onclick="closeAckPanel()"></div>
+<div class="ack-panel" id="ack-panel">
+  <div class="ack-panel-header">
+    <div class="ack-panel-header-left">
+      <div class="shield-icon">&#128737;</div>
+      <div>
+        <h3>Policy Acknowledgement</h3>
+        <div class="subtitle">Legal Compliance Record</div>
+      </div>
+    </div>
+    <button class="ack-close-btn" onclick="closeAckPanel()">&#10005;</button>
+  </div>
+
+  <div class="ack-panel-body">
+    <div class="ack-policy-summary">
+      <div>
+        <div class="item-label">Policy</div>
+        <div class="item-value">Information Security Policy</div>
+      </div>
+      <div>
+        <div class="item-label">Version</div>
+        <div class="item-value">v2.1</div>
+      </div>
+      <div>
+        <div class="item-label">Policy Number</div>
+        <div class="item-value">POL-2024-0047</div>
+      </div>
+      <div>
+        <div class="item-label">Read Duration</div>
+        <div class="item-value" id="ack-read-duration">4m 22s</div>
+      </div>
+    </div>
+
+    <div class="legal-section">
+      <h4>Legal Agreements</h4>
+      <label class="legal-checkbox" id="lc1" onclick="toggleLegal(1)">
+        <input type="checkbox" id="legal1">
+        <span>I have read and understood the entire policy document and all its provisions.</span>
+      </label>
+      <label class="legal-checkbox" id="lc2" onclick="toggleLegal(2)">
+        <input type="checkbox" id="legal2">
+        <span>I agree to comply with all requirements, guidelines, and procedures outlined in this policy.</span>
+      </label>
+      <label class="legal-checkbox" id="lc3" onclick="toggleLegal(3)">
+        <input type="checkbox" id="legal3">
+        <span>I understand this electronic acknowledgement constitutes my official record of compliance.</span>
+      </label>
+    </div>
+
+    <div class="signature-field">
+      <label>Digital Signature <span style="color: var(--slate-400); font-weight: 400;">(Type your full legal name)</span></label>
+      <input type="text" id="sig-input" placeholder="John Smith" oninput="checkAckReady()">
+    </div>
+
+    <div class="notes-field">
+      <label>Additional Notes <span style="color: var(--slate-400); font-weight: 400;">(Optional)</span></label>
+      <textarea placeholder="Any additional notes or comments..."></textarea>
+    </div>
+
+    <div class="ack-warning">
+      <span style="font-size: 16px; flex-shrink: 0;">&#9888;</span>
+      <span>This acknowledgement is legally binding and will be recorded in the compliance audit trail. Your digital signature confirms your identity and agreement.</span>
+    </div>
+  </div>
+
+  <div class="ack-panel-footer">
+    <button class="btn btn-secondary" onclick="closeAckPanel()">Cancel</button>
+    <button class="btn btn-primary" id="submit-ack-btn" onclick="submitAcknowledgement()" disabled>Submit Acknowledgement</button>
+  </div>
+</div>
+
+<!-- ══════════════════════ STICKY FOOTER ══════════════════════ -->
+<div class="footer-bar">
+  <div class="footer-inner">
+    <div class="footer-left">
+      <button class="btn btn-secondary" id="back-btn" onclick="goBack()" disabled>&#8592; Back</button>
+    </div>
+    <div class="footer-center" id="footer-status">Step 1 of 4 — Read the policy document</div>
+    <div class="footer-right">
+      <button class="btn btn-primary" id="next-btn" onclick="goNext()" disabled>Next &#8594;</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════ DEV CONTROLS ══════════════════════ -->
+<div class="dev-controls">
+  <h5>Dev Controls</h5>
+  <button onclick="goToStep(1)" id="dev1" class="active-btn">1. Read Policy</button>
+  <button onclick="goToStep(2)" id="dev2">2. Quiz</button>
+  <button onclick="goToStep(3)" id="dev3">3. Acknowledge</button>
+  <button onclick="goToStep(4)" id="dev4">4. Complete</button>
+  <hr style="border-color: rgba(255,255,255,0.1); margin: 8px 0;">
+  <button onclick="resetAll()">&#8635; Reset All</button>
+</div>
+
+<!-- ══════════════════════ JAVASCRIPT ══════════════════════ -->
+<script>
+  // ── State ──
+  let currentStep = 1;
+  let scrollComplete = false;
+  let quizSubmitted = false;
+  let quizPassed = false;
+  let quizScore = 0;
+  let skipQuiz = false;
+  let ackSubmitted = false;
+  let timerSeconds = 0;
+  let timerInterval = null;
+
+  // ── Quiz Data ──
+  const questions = [
+    { q: "What is the minimum password length required?", options: ["8 characters", "10 characters", "12 characters", "16 characters"], correct: 2 },
+    { q: "How often must passwords be changed?", options: ["30 days", "60 days", "90 days", "Never"], correct: 2 },
+    { q: "Who should you report security incidents to?", options: ["Your manager", "IT Help Desk", "Security Team", "All of the above"], correct: 2 },
+    { q: "Is it acceptable to share your login credentials with a colleague?", options: ["Yes, if they need access", "Only in emergencies", "Never", "Only with manager approval"], correct: 2 },
+    { q: "What should you do if you suspect a phishing email?", options: ["Delete it", "Forward to Security Team", "Click to verify", "Ignore it"], correct: 1 }
+  ];
+  const answers = new Array(5).fill(-1);
+  let currentQuestion = 0;
+
+  // ── Init ──
+  window.addEventListener('DOMContentLoaded', () => {
+    renderQuestions();
+    renderQuestionDots();
+    showQuestion(0);
+    renderStars();
+    startTimer();
+    updateUI();
+  });
+
+  // ── Timer ──
+  function startTimer() {
+    document.getElementById('read-timer').style.display = 'flex';
+    timerInterval = setInterval(() => {
+      timerSeconds++;
+      const m = Math.floor(timerSeconds / 60);
+      const s = timerSeconds % 60;
+      document.getElementById('timer-display').textContent = `${m}m ${s.toString().padStart(2, '0')}s`;
+    }, 1000);
+  }
+  function getTimerText() {
+    const m = Math.floor(timerSeconds / 60);
+    const s = timerSeconds % 60;
+    return `${m}m ${s.toString().padStart(2, '0')}s`;
+  }
+
+  // ── Navigation ──
+  function goToStep(step) {
+    currentStep = step;
+    updateUI();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (step === 3) {
+      setTimeout(() => openAckPanel(), 400);
+    }
+  }
+  function goNext() {
+    if (currentStep === 1) {
+      if (skipQuiz) { goToStep(3); }
+      else { goToStep(2); }
+    } else if (currentStep === 2) {
+      goToStep(3);
+    } else if (currentStep === 3) {
+      goToStep(4);
+    }
+  }
+  function goBack() {
+    if (currentStep === 2) { goToStep(1); }
+    else if (currentStep === 3) {
+      if (skipQuiz) { goToStep(1); }
+      else { goToStep(2); }
+    } else if (currentStep === 4) { goToStep(3); }
+  }
+
+  // ── Update UI ──
+  function updateUI() {
+    // Steps
+    for (let i = 1; i <= 4; i++) {
+      const el = document.querySelector(`.step[data-step="${i}"]`);
+      const content = document.getElementById(`step${i}`);
+      el.className = 'step';
+      if (i < currentStep) el.classList.add('completed');
+      else if (i === currentStep) el.classList.add('active');
+      else el.classList.add('future');
+      content.classList.toggle('visible', i === currentStep);
+
+      // Circle content
+      const circle = document.getElementById(`sc${i}`);
+      circle.textContent = i < currentStep ? '\u2713' : i;
+    }
+    // Connectors
+    document.getElementById('conn1').className = 'step-connector' + (currentStep > 1 ? ' done' : '');
+    document.getElementById('conn2').className = 'step-connector' + (currentStep > 2 ? ' done' : '');
+    document.getElementById('conn3').className = 'step-connector' + (currentStep > 3 ? ' done' : '');
+
+    // Quiz badge
+    document.getElementById('quiz-badge').textContent = skipQuiz ? 'Skipped' : 'Required';
+    document.getElementById('quiz-badge').style.background = skipQuiz ? 'var(--slate-200)' : '';
+
+    // Footer
+    const backBtn = document.getElementById('back-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const footerStatus = document.getElementById('footer-status');
+    backBtn.disabled = currentStep === 1;
+
+    const statusTexts = [
+      'Step 1 of 4 \u2014 Read the policy document',
+      'Step 2 of 4 \u2014 Complete the comprehension quiz',
+      'Step 3 of 4 \u2014 Acknowledge the policy',
+      'Complete \u2014 Policy acknowledged successfully'
+    ];
+    footerStatus.textContent = statusTexts[currentStep - 1];
+
+    // Next button logic
+    if (currentStep === 1) {
+      nextBtn.disabled = !scrollComplete;
+      nextBtn.textContent = 'Next \u2192';
+    } else if (currentStep === 2) {
+      nextBtn.disabled = !quizPassed && !skipQuiz;
+      nextBtn.textContent = 'Next \u2192';
+    } else if (currentStep === 3) {
+      nextBtn.disabled = !ackSubmitted;
+      nextBtn.textContent = 'Next \u2192';
+    } else {
+      nextBtn.style.display = 'none';
+    }
+    if (currentStep < 4) nextBtn.style.display = '';
+
+    // Breadcrumb
+    const bcTexts = [
+      'Reading: Information Security Policy',
+      'Quiz: Information Security Policy',
+      'Acknowledging: Information Security Policy',
+      'Completed: Information Security Policy'
+    ];
+    document.getElementById('breadcrumb-text').textContent = bcTexts[currentStep - 1];
+
+    // Dev controls
+    for (let i = 1; i <= 4; i++) {
+      document.getElementById(`dev${i}`).className = i === currentStep ? 'active-btn' : '';
+    }
+  }
+
+  // ── Scroll Tracking ──
+  function handleDocScroll() {
+    const viewer = document.getElementById('doc-viewer');
+    const pct = viewer.scrollTop / (viewer.scrollHeight - viewer.clientHeight) * 100;
+    document.getElementById('scroll-fill').style.height = Math.min(pct, 100) + '%';
+    if (pct >= 95 && !scrollComplete) {
+      simulateScrollComplete();
+    }
+  }
+  function simulateScrollComplete() {
+    scrollComplete = true;
+    document.getElementById('scroll-fill').style.height = '100%';
+    document.getElementById('scroll-notice').innerHTML = '<span style="color: var(--green-600); font-weight: 600;">&#10003; Document read complete \u2014 you may now proceed</span>';
+    updateUI();
+  }
+
+  // ── Quiz ──
+  function renderQuestions() {
+    const container = document.getElementById('questions-container');
+    container.innerHTML = questions.map((q, qi) => `
+      <div class="question-card" id="qcard-${qi}">
+        <div class="question-num">Question ${qi + 1} of ${questions.length}</div>
+        <div class="question-text">${q.q}</div>
+        <div class="option-group">
+          ${q.options.map((opt, oi) => `
+            <label class="option-label" id="opt-${qi}-${oi}" onclick="selectAnswer(${qi}, ${oi})">
+              <input type="radio" name="q${qi}" value="${oi}">
+              <span>${opt}</span>
+            </label>
+          `).join('')}
+        </div>
+      </div>
+    `).join('');
+  }
+  function renderQuestionDots() {
+    const container = document.getElementById('q-dots');
+    container.innerHTML = questions.map((_, i) =>
+      `<div class="q-dot" id="qdot-${i}" onclick="goToQuestion(${i})">${i + 1}</div>`
+    ).join('');
+  }
+  function showQuestion(qi) {
+    currentQuestion = qi;
+    // Show only the current question card
+    questions.forEach((_, i) => {
+      const card = document.getElementById(`qcard-${i}`);
+      if (i === qi) {
+        card.classList.add('visible');
+      } else {
+        card.classList.remove('visible');
+      }
+    });
+    // Update dots — mark current
+    questions.forEach((_, i) => {
+      const dot = document.getElementById(`qdot-${i}`);
+      dot.classList.remove('current');
+      if (i === qi) dot.classList.add('current');
+    });
+    // Update nav buttons
+    document.getElementById('prev-q-btn').disabled = qi === 0;
+    const nextQBtn = document.getElementById('next-q-btn');
+    if (qi === questions.length - 1) {
+      nextQBtn.disabled = true;
+    } else {
+      nextQBtn.disabled = false;
+    }
+    // Update label
+    document.getElementById('quiz-nav-label').textContent = `Question ${qi + 1} of ${questions.length}`;
+  }
+  function prevQuestion() {
+    if (currentQuestion > 0) showQuestion(currentQuestion - 1);
+  }
+  function nextQuestion() {
+    if (currentQuestion < questions.length - 1) showQuestion(currentQuestion + 1);
+  }
+  function goToQuestion(qi) {
+    showQuestion(qi);
+  }
+  function selectAnswer(qi, oi) {
+    if (quizSubmitted) return;
+    answers[qi] = oi;
+    // Update option styling
+    questions[qi].options.forEach((_, j) => {
+      document.getElementById(`opt-${qi}-${j}`).className = 'option-label' + (j === oi ? ' selected' : '');
+    });
+    // Update dot as answered
+    document.getElementById(`qdot-${qi}`).classList.add('answered');
+    // Update card
+    const card = document.getElementById(`qcard-${qi}`);
+    card.classList.add('answered');
+    // Auto-advance to next question after a short delay
+    if (currentQuestion < questions.length - 1) {
+      setTimeout(() => showQuestion(currentQuestion + 1), 400);
+    }
+    // Check if all answered
+    const allAnswered = answers.every(a => a >= 0);
+    document.getElementById('submit-quiz-btn').disabled = !allAnswered;
+  }
+  function submitQuiz() {
+    quizSubmitted = true;
+    let correct = 0;
+    questions.forEach((q, qi) => {
+      const isCorrect = answers[qi] === q.correct;
+      if (isCorrect) correct++;
+      // Highlight correct/wrong
+      const card = document.getElementById(`qcard-${qi}`);
+      card.className = 'question-card visible ' + (isCorrect ? 'correct' : 'wrong');
+      questions[qi].options.forEach((_, oi) => {
+        const el = document.getElementById(`opt-${qi}-${oi}`);
+        if (oi === q.correct) el.className = 'option-label correct-answer';
+        else if (oi === answers[qi] && !isCorrect) el.className = 'option-label wrong-answer';
+        else el.className = 'option-label';
+      });
+    });
+    quizScore = correct;
+    const pct = Math.round((correct / questions.length) * 100);
+    quizPassed = pct >= 80;
+
+    // Hide quiz nav row
+    document.getElementById('quiz-nav-row').style.display = 'none';
+
+    // Show all questions for review (stacked)
+    document.querySelector('.questions-viewport').style.display = 'flex';
+    document.querySelector('.questions-viewport').style.flexDirection = 'column';
+    document.querySelector('.questions-viewport').style.gap = '12px';
+    document.querySelector('.questions-viewport').style.minHeight = 'auto';
+    questions.forEach((_, qi) => {
+      document.getElementById(`qcard-${qi}`).classList.add('visible');
+    });
+
+    const resultArea = document.getElementById('quiz-result-area');
+    resultArea.style.display = 'block';
+    if (quizPassed) {
+      resultArea.innerHTML = `
+        <div class="quiz-result passed">
+          <div class="score">${pct}%</div>
+          <div class="score-label">${correct}/${questions.length} correct \u2014 PASSED &#10003;</div>
+        </div>
+      `;
+    } else {
+      resultArea.innerHTML = `
+        <div class="quiz-result failed">
+          <div class="score">${pct}%</div>
+          <div class="score-label">${correct}/${questions.length} correct \u2014 Required: 80%</div>
+          <div style="margin-top: 12px;">
+            <button class="btn btn-danger" onclick="retakeQuiz()">&#8635; Retake Quiz</button>
+          </div>
+        </div>
+      `;
+    }
+    document.getElementById('submit-quiz-btn').style.display = 'none';
+    updateUI();
+  }
+  function retakeQuiz() {
+    quizSubmitted = false;
+    quizPassed = false;
+    quizScore = 0;
+    currentQuestion = 0;
+    answers.fill(-1);
+    document.getElementById('quiz-result-area').style.display = 'none';
+    document.getElementById('submit-quiz-btn').style.display = '';
+    document.getElementById('submit-quiz-btn').disabled = true;
+    // Restore quiz nav row and viewport
+    document.getElementById('quiz-nav-row').style.display = '';
+    const viewport = document.querySelector('.questions-viewport');
+    viewport.style.display = '';
+    viewport.style.flexDirection = '';
+    viewport.style.gap = '';
+    viewport.style.minHeight = '';
+    renderQuestions();
+    renderQuestionDots();
+    showQuestion(0);
+    updateUI();
+  }
+  function toggleSkipQuiz() {
+    skipQuiz = document.getElementById('skip-quiz-cb').checked;
+    document.getElementById('quiz-content').style.display = skipQuiz ? 'none' : 'block';
+    updateUI();
+  }
+
+  // ── Acknowledge Panel ──
+  function openAckPanel() {
+    document.getElementById('ack-overlay').classList.add('visible');
+    document.getElementById('ack-panel').classList.add('visible');
+    document.getElementById('ack-read-duration').textContent = getTimerText();
+  }
+  function closeAckPanel() {
+    document.getElementById('ack-overlay').classList.remove('visible');
+    document.getElementById('ack-panel').classList.remove('visible');
+  }
+  function toggleLegal(n) {
+    const cb = document.getElementById(`legal${n}`);
+    const lc = document.getElementById(`lc${n}`);
+    // toggle happens via label click, just update style
+    setTimeout(() => {
+      lc.className = 'legal-checkbox' + (cb.checked ? ' checked' : '');
+      checkAckReady();
+    }, 10);
+  }
+  function checkAckReady() {
+    const allChecked = document.getElementById('legal1').checked &&
+                       document.getElementById('legal2').checked &&
+                       document.getElementById('legal3').checked;
+    const hasSig = document.getElementById('sig-input').value.trim().length >= 3;
+    document.getElementById('submit-ack-btn').disabled = !(allChecked && hasSig);
+  }
+  function submitAcknowledgement() {
+    ackSubmitted = true;
+    const sig = document.getElementById('sig-input').value.trim();
+    // Update certificate
+    document.getElementById('cert-signature').textContent = sig;
+    document.getElementById('cert-duration').textContent = getTimerText();
+    document.getElementById('cert-quiz-score').textContent = skipQuiz ? 'N/A (no quiz)' : `${Math.round((quizScore / questions.length) * 100)}% (${quizScore}/${questions.length})`;
+    const now = new Date();
+    document.getElementById('cert-date').textContent = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+    closeAckPanel();
+    // Auto-advance to Complete
+    setTimeout(() => goToStep(4), 300);
+  }
+
+  // ── Step 4 widgets ──
+  function renderStars() {
+    const container = document.getElementById('stars-container');
+    const labels = ['Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
+    container.innerHTML = [1,2,3,4,5].map(i =>
+      `<span class="star" data-val="${i}" onclick="rateStar(${i})" onmouseenter="hoverStar(${i})" onmouseleave="unhoverStar()">&#9733;</span>`
+    ).join('');
+  }
+  let selectedRating = 0;
+  function rateStar(n) {
+    selectedRating = n;
+    const labels = ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
+    document.getElementById('rating-text').textContent = `You rated: ${n}/5 \u2014 ${labels[n]}`;
+    updateStars(n);
+  }
+  function hoverStar(n) { updateStars(n); }
+  function unhoverStar() { updateStars(selectedRating); }
+  function updateStars(n) {
+    document.querySelectorAll('.star').forEach((s, i) => {
+      s.classList.toggle('filled', i < n);
+    });
+  }
+  function toggleRating() {
+    document.getElementById('rating-section').classList.toggle('visible');
+  }
+  function toggleComment() {
+    document.getElementById('comment-section').classList.toggle('visible');
+  }
+
+  // ── Reset ──
+  function resetAll() {
+    currentStep = 1;
+    scrollComplete = false;
+    quizSubmitted = false;
+    quizPassed = false;
+    quizScore = 0;
+    skipQuiz = false;
+    ackSubmitted = false;
+    timerSeconds = 0;
+    answers.fill(-1);
+    selectedRating = 0;
+    document.getElementById('skip-quiz-cb').checked = false;
+    document.getElementById('quiz-content').style.display = 'block';
+    document.getElementById('scroll-fill').style.height = '0%';
+    document.getElementById('scroll-notice').innerHTML = '&#9888; Please scroll through the entire document before proceeding &nbsp;&bull;&nbsp;<a href="#" onclick="simulateScrollComplete(); return false;" style="color: var(--teal-600); font-weight: 600;">Simulate scroll complete</a>';
+    document.getElementById('doc-viewer').scrollTop = 0;
+    // Reset ack
+    [1,2,3].forEach(n => {
+      document.getElementById(`legal${n}`).checked = false;
+      document.getElementById(`lc${n}`).className = 'legal-checkbox';
+    });
+    document.getElementById('sig-input').value = '';
+    document.getElementById('submit-ack-btn').disabled = true;
+    // Reset quiz
+    retakeQuiz();
+    // Reset rating/comment
+    document.getElementById('rating-section').classList.remove('visible');
+    document.getElementById('comment-section').classList.remove('visible');
+    updateStars(0);
+    document.getElementById('rating-text').textContent = '';
+    updateUI();
+    window.scrollTo({ top: 0 });
+  }
+</script>
+</body>
+</html>

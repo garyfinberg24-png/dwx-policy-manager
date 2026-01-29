@@ -1,0 +1,25 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx/client-side-web-part-manifest.schema.json",
+  "id": "b4c83d12-5f9a-4e7b-a6d2-8f1e3c5b7a9d",
+  "alias": "JmlPolicyDistributionWebPart",
+  "componentType": "WebPart",
+
+  "version": "*",
+  "manifestVersion": 2,
+
+  "requiresCustomScript": false,
+  "supportedHosts": ["SharePointWebPart", "SharePointFullPage", "TeamsPersonalApp", "TeamsTab"],
+  "supportsThemeVariants": true,
+
+  "preconfiguredEntries": [{
+    "groupId": "e4b0a295-44e2-4fa4-8f15-4eac5edf4275",
+    "group": { "default": "DWx Policy Manager" },
+    "title": { "default": "DWx Policy Distribution" },
+    "description": { "default": "Policy Distribution & Tracking - create campaigns, distribute policies, and monitor acknowledgement progress" },
+    "officeFabricIconFontName": "MailForward",
+    "properties": {
+      "title": "DWx Policy Distribution"
+    }
+  }],
+  "supportsFullBleed": true
+}

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx/client-side-web-part-manifest.schema.json",
+  "id": "c5d94e23-6a7b-4f8c-b1e3-9d2f7a4c8b6e",
+  "alias": "JmlPolicyAnalyticsWebPart",
+  "componentType": "WebPart",
+
+  "version": "*",
+  "manifestVersion": 2,
+
+  "requiresCustomScript": false,
+  "supportedHosts": ["SharePointWebPart", "SharePointFullPage", "TeamsPersonalApp", "TeamsTab"],
+  "supportsThemeVariants": true,
+
+  "preconfiguredEntries": [{
+    "groupId": "e4b0a295-44e2-4fa4-8f15-4eac5edf4275",
+    "group": { "default": "DWx Policy Manager" },
+    "title": { "default": "DWx Policy Analytics" },
+    "description": { "default": "Executive dashboard, compliance metrics, SLA tracking, acknowledgement analytics, and audit reports" },
+    "officeFabricIconFontName": "BarChartVertical",
+    "properties": {
+      "title": "DWx Policy Analytics"
+    }
+  }],
+  "supportsFullBleed": true
+}

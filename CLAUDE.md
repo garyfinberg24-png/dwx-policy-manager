@@ -20,6 +20,8 @@
 - **Company**: First Digital
 - **Tagline**: Policy Governance & Compliance
 - **Current Version**: 1.2.0
+- **Package ID**: `12538121-8a6b-4e41-8bc7-17f252d5c36e`
+- **SharePoint Site**: https://mf7m.sharepoint.com/sites/PolicyManager
 
 ---
 
@@ -30,7 +32,7 @@
 | Framework | SharePoint Framework (SPFx) | 1.20.0 |
 | UI Library | React | 17.0.1 |
 | Language | TypeScript | 4.7.4 |
-| UI Components | Fluent UI v8 + v9 | 8.106.4 / 9.54.0 |
+| UI Components | Fluent UI v8 | 8.106.4 |
 | Data Access | PnP/SP, PnP/Graph | 3.25.0 |
 | Build System | Gulp | 4.0.2 |
 | Node | Node.js | 18.17.1+, 20.x, or 22.x |
@@ -39,142 +41,168 @@
 
 ## Architecture Overview
 
-### WebParts (6 total)
+### WebParts (9 total)
 1. **jmlMyPolicies** - Personal policy dashboard for employees
-2. **jmlPolicyHub** - Central policy discovery and search
-3. **jmlPolicyAdmin** - Administrative interface
-4. **jmlPolicyAuthor** - Policy creation and editing
-5. **jmlPolicyDetails** - Detailed policy view
-6. **jmlPolicyPackManager** - Policy package bundling
+2. **jmlPolicyHub** - Central policy discovery, browsing, and search
+3. **jmlPolicyAdmin** - Administrative interface (sidebar + content layout)
+4. **jmlPolicyAuthor** - Policy creation and editing (rich text editor)
+5. **jmlPolicyDetails** - Detailed policy view with acknowledgement
+6. **jmlPolicyPackManager** - Policy package bundling and assignment
+7. **dwxQuizBuilder** - Quiz creation and management
+8. **jmlPolicySearch** - Dedicated search center (hero + filters + results)
+9. **jmlPolicyHelp** - Help center with articles, FAQs, shortcuts, videos, support
+
+### SharePoint Pages
+| Page | WebPart | Purpose |
+|------|---------|---------|
+| PolicyHub.aspx | jmlPolicyHub | Main dashboard, browsing, recently viewed |
+| MyPolicies.aspx | jmlMyPolicies | User's assigned policies |
+| PolicyAdmin.aspx | jmlPolicyAdmin | Admin settings and configuration |
+| PolicyBuilder.aspx | jmlPolicyAuthor | Create/edit policies |
+| PolicyDetails.aspx | jmlPolicyDetails | View policy + acknowledge |
+| PolicyPacks.aspx | jmlPolicyPackManager | Manage policy packs |
+| QuizBuilder.aspx | dwxQuizBuilder | Create quizzes |
+| PolicySearch.aspx | jmlPolicySearch | Search center |
+| PolicyHelp.aspx | jmlPolicyHelp | Help center |
 
 ### Directory Structure
 ```
 policy-manager/
 ├── src/
-│   ├── webparts/          # 6 SPFx webparts
-│   ├── components/        # Shared components (JmlAppLayout, etc.)
+│   ├── webparts/          # 9 SPFx webparts
+│   │   ├── jmlMyPolicies/
+│   │   ├── jmlPolicyHub/
+│   │   ├── jmlPolicyAdmin/
+│   │   ├── jmlPolicyAuthor/
+│   │   ├── jmlPolicyDetails/
+│   │   ├── jmlPolicyPackManager/
+│   │   ├── dwxQuizBuilder/
+│   │   ├── jmlPolicySearch/
+│   │   └── jmlPolicyHelp/
+│   ├── components/        # Shared components
+│   │   ├── JmlAppLayout/       # Full-page layout wrapper
+│   │   ├── JmlAppHeader/       # App header with navigation
+│   │   ├── PageSubheader/      # Page subheader component
+│   │   ├── PolicyManagerHeader/ # Policy Manager branded header
+│   │   ├── PolicyManagerSplashScreen/
+│   │   └── QuizTaker/          # Quiz-taking component
 │   ├── services/          # 141+ business logic services
 │   ├── models/            # 56+ TypeScript interfaces
-│   ├── hooks/             # Custom React hooks
-│   ├── styles/            # Centralized styling system
-│   └── utils/             # Configuration utilities
-├── docs/                  # Brand guide, style guide
+│   ├── hooks/             # Custom React hooks (useDialog, etc.)
+│   ├── constants/         # SharePointListNames.ts, etc.
+│   ├── styles/            # Centralized styling (fluent-mixins.scss)
+│   └── utils/             # pnpConfig, injectPortalStyles, etc.
+├── scripts/
+│   └── policy-management/ # PnP PowerShell provisioning scripts
+├── docs/                  # Documentation
 ├── config/                # SPFx build configurations
 └── CLAUDE.md              # This file
 ```
 
 ---
 
-## DWx Brand Guidelines
+## Design System
 
-### Color Palette
-| Name | Hex | CSS Variable |
-|------|-----|--------------|
-| Primary Blue | #1a5a8a | `--dwx-primary` |
-| Primary Dark | #0d3a5c | `--dwx-primary-dark` |
-| Primary Light | #2d7ab8 | `--dwx-primary-light` |
-| Text Primary | #333333 | `--dwx-text-primary` |
-| Text Secondary | #6c757d | `--dwx-text-secondary` |
-| Text Muted | #a0a0a0 | `--dwx-text-muted` |
-| Border | #c8c6c4 | `--dwx-border` |
-| Border Light | #e1dfdd | `--dwx-border-light` |
-| Background Subtle | #f3f2f1 | `--dwx-bg-subtle` |
-| Success | #107c10 | `--dwx-success` |
-| Warning | #986f0b | `--dwx-warning` |
-| Error | #d13438 | `--dwx-error` |
+### Color Palette — Forest Teal Theme
+The application uses a **Forest Teal** color scheme throughout, distinct from the DWx Blue brand.
 
-### Typography
-- **Font Family**: Inter (primary), system fallbacks
-- **Font Weights**:
-  - 400 (Normal) - Default for body text, labels
-  - 500 (Medium) - Titles, buttons, badges
-  - 700 (Bold) - KPI numbers ONLY
-  - **NEVER use 600 (Semibold)**
+| Name | Hex | Usage |
+|------|-----|-------|
+| Primary Teal | #0d9488 | Headers, active states, accents |
+| Dark Teal | #0f766e | Gradient endpoints, hover states |
+| Light Teal BG | #ccfbf1 | Active nav items, badges |
+| Pale Teal BG | #f0fdfa | Summary bars, info panels |
+| Text Primary | #0f172a | Headlines, primary text |
+| Text Secondary | #334155 | Body text |
+| Text Muted | #605e5c | Labels, descriptions |
+| Border | #e2e8f0 | Card borders |
+| Border Light | #edebe9 | Section separators |
+| Sidebar BG | #f1f5f9 | Admin sidebar background |
+| Warning | #d97706 | SLA warnings, thresholds |
+| Error/Danger | #dc2626 | Auto-delete indicators |
+| Success | #059669 | Active status indicators |
 
-### Gradient (Headers)
+### Gradients
 ```css
-background: linear-gradient(135deg, #1a5a8a 0%, #2d7ab8 100%);
+/* Header gradient (teal) */
+background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+
+/* Summary bar gradient */
+background: linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%);
 ```
 
-### Spacing Scale
-- XS: 4px
-- SM: 8px
-- MD: 12px
-- LG: 16px
-- XL: 20px
-- XXL: 24px
+### Typography
+- **Font Family**: Segoe UI (SharePoint default), system fallbacks
+- **Font Weights**: 400 (body), 500 (labels), 600 (headings), 700 (KPI numbers)
+- Components use Fluent UI `Text` component with `variant` props
 
-### Reference Documents
-- Brand Guide: `docs/DWx-Brand-Guide.pdf`
-- Style Guide: `docs/DWx-Style-Guide-Preview.html`
+### Spacing Scale
+- XS: 4px | SM: 8px | MD: 12px | LG: 16px | XL: 20px | XXL: 24px
+
+---
+
+## Policy Admin Structure
+
+The Policy Admin page uses a **sidebar + content area** layout pattern:
+
+### Navigation Sections
+```
+CONFIGURATION
+├── Templates           — Manage reusable policy templates
+├── Metadata Profiles   — Configure metadata presets
+├── Approval Workflows  — Approval chains and routing
+├── Compliance Settings — Risk levels, acknowledgement, review settings
+├── Notifications       — Email templates and alerts
+├── Naming Rules        — Naming convention builder (NEW)
+├── SLA Targets         — Service level agreements (NEW)
+├── Data Lifecycle      — Data retention and archival (NEW)
+└── Navigation          — Toggle app navigation items (NEW)
+
+MANAGEMENT
+├── Reviewers & Approvers — SharePoint group management
+├── Audit Log             — Policy change history
+└── Data Export           — CSV/report exports
+```
+
+### Admin Component Details
+
+| Component | Description | State Fields |
+|-----------|-------------|-------------|
+| Naming Rules | Card-based naming convention builder with segment chips (prefix, counter, date, category) | `namingRules: INamingRule[]` |
+| SLA Targets | Grid of SLA cards with target days, warning thresholds, progress bars | `slaConfigs: ISLAConfig[]` |
+| Data Lifecycle | Retention policies per entity type with auto-delete and archive toggles | `lifecyclePolicies: IDataLifecyclePolicy[]` |
+| Navigation | Toggle switches per nav item, Enable/Disable All, protected items | `navToggles: INavToggleItem[]` |
 
 ---
 
 ## Critical Development Notes
 
-### JML Coupling (HIGH PRIORITY)
-The codebase has **3,200+ JML references across 270 files**. This is the primary technical debt to address for the spinoff.
+### JML Coupling (LEGACY)
+The codebase retains JML-prefixed names for components and webparts. SharePoint list names have been migrated to `PM_` prefix via `src/constants/SharePointListNames.ts`.
 
-#### JML Integration Services to Refactor:
-- `PolicyJMLIntegrationService.ts` - Creates policy tasks in JML processes
-- `JMLAssetIntegrationService.ts` - Asset coordination with JML
-- `TalentJMLIntegrationService.ts` - Talent management integration
+#### Key Constants File
+```typescript
+import { PM_LISTS } from '../constants/SharePointListNames';
+// Use: .getByTitle(PM_LISTS.POLICIES)
+```
 
-#### Naming Convention Changes Required:
-- All "Jml" prefixes need renaming to "Dwx" or "Policy"
-- SharePoint lists use "JML_" prefix (e.g., JML_Policies)
-- Components: JmlAppLayout, JmlAppHeader, JmlAppFooter
+### Component Patterns
+- **Class components** are used throughout (React 17 pattern, consistent with SPFx)
+- **@ts-nocheck** is used in several large components to suppress strict warnings
+- Services are instantiated with `new ServiceName(props.sp)` pattern
+- Dialog management uses `createDialogManager()` from `src/hooks/useDialog`
 
-### Current Naming Convention → Target
-| Current | Target |
-|---------|--------|
-| JmlAppLayout | DwxAppLayout or PolicyAppLayout |
-| JmlAppHeader | DwxAppHeader |
-| JmlAppFooter | DwxAppFooter |
-| JML_Policies | PM_Policies |
-| jmlMyPolicies | policyMyPolicies |
-
----
-
-## Codebase Assessment
-
-### Strengths
-1. **Comprehensive Service Layer** - 141 services covering all business domains
-2. **Type Safety** - Full TypeScript with strict mode, comprehensive interfaces
-3. **SharePoint Integration** - Well-abstracted via PnP.js with singleton pattern
-4. **Layered Styling** - Multi-layer approach with Fluent UI and design tokens
-5. **Modular WebParts** - 6 independent but composable webparts
-6. **Workflow Engine** - Sophisticated workflow execution with state machine pattern
-7. **Policy Models** - Comprehensive IPolicy interface with 80+ fields
-8. **Audit Logging** - Built-in compliance audit trail
-9. **Quiz System** - Policy comprehension assessment capability
-10. **Gamification** - Points, badges, leaderboards for engagement
-
-### Weaknesses & Technical Debt
-
-#### High Priority
-1. **Heavy JML Coupling** - 3,200+ references to decouple
-2. **No Centralized State Management** - State scattered across components/hooks/services
-3. **Inadequate Testing** - Only 4 test files for 141+ services (~2.8% coverage)
-4. **Service Proliferation** - 141 services suggests weak organization
-
-#### Medium Priority
-5. **Empty Documentation** - docs/ folder needs architecture guides
-6. **Class Components** - Should migrate to functional components
-7. **Duplicate Caching** - PolicyCacheService vs CacheService vs hook caching
-8. **No Dependency Injection** - Services manually instantiated
-9. **Hardcoded Configuration** - List names and URLs hardcoded
-
-#### Lower Priority
-10. **No Virtual Scrolling** - Performance risk with large lists
-11. **Accessibility Gaps** - Missing ARIA labels in custom components
-12. **@ts-nocheck Usage** - Disables type safety in many services
+### Build Configuration
+All 9 webparts must be registered in `config/config.json`:
+- `bundles` section: entry point + manifest for each webpart
+- `localizedResources` section: locale file path for each webpart
+- Missing entries will cause webparts to not appear in SharePoint
 
 ---
 
 ## SharePoint Lists
 
-**IMPORTANT: All SharePoint lists and libraries MUST use the `PM_` prefix (Policy Manager), NOT `JML_`.**
+**All lists use the `PM_` prefix (Policy Manager).**
 
 ### Core Lists
 | List Name | Purpose |
@@ -182,6 +210,7 @@ The codebase has **3,200+ JML references across 270 files**. This is the primary
 | PM_Policies | Core policy records |
 | PM_PolicyVersions | Version history |
 | PM_PolicyAcknowledgements | User acknowledgements |
+| PM_PolicyMetadataProfiles | Metadata presets |
 
 ### Quiz Lists
 | List Name | Purpose |
@@ -189,6 +218,21 @@ The codebase has **3,200+ JML references across 270 files**. This is the primary
 | PM_PolicyQuizzes | Quiz definitions |
 | PM_PolicyQuizQuestions | Quiz questions |
 | PM_PolicyQuizResults | Quiz results |
+
+### Approval Lists
+| List Name | Purpose | Script |
+|-----------|---------|--------|
+| PM_Approvals | Individual approval records | 08-Approval-Lists.ps1 |
+| PM_ApprovalChains | Approval chain instances | 08-Approval-Lists.ps1 |
+| PM_ApprovalHistory | Action audit trail | 08-Approval-Lists.ps1 |
+| PM_ApprovalDelegations | Delegation assignments | 08-Approval-Lists.ps1 |
+| PM_ApprovalTemplates | Reusable workflow templates | 08-Approval-Lists.ps1 |
+
+### Notification Lists
+| List Name | Purpose | Script |
+|-----------|---------|--------|
+| PM_Notifications | In-app notifications | 07-Notification-Lists.ps1 |
+| PM_NotificationQueue | Email notification queue | 07-Notification-Lists.ps1 |
 
 ### Workflow Lists
 | List Name | Purpose |
@@ -222,13 +266,17 @@ The codebase has **3,200+ JML references across 270 files**. This is the primary
 
 ### Provisioning Scripts
 Located in `scripts/policy-management/`:
-- `01-Core-PolicyLists.ps1` - Core lists (Policies, Versions, Acknowledgements)
-- `02-Quiz-Lists.ps1` - Quiz system lists
-- `03-Exemption-Distribution-Lists.ps1` - Workflow lists
-- `04-Social-Lists.ps1` - Social engagement lists
-- `05-PolicyPack-Lists.ps1` - Policy pack lists
-- `06-Analytics-Audit-Lists.ps1` - Analytics and audit lists
-- `Deploy-AllPolicyLists.ps1` - Master deployment script
+| Script | Lists |
+|--------|-------|
+| `Create-PolicyManagementLists.ps1` | Core lists (Policies, Versions, Acknowledgements, etc.) |
+| `02-Quiz-Lists.ps1` | Quiz system lists |
+| `Create-PolicySocialLists.ps1` | Social engagement lists |
+| `Create-PolicyTemplatesLibrary.ps1` | Templates document library |
+| `07-Notification-Lists.ps1` | PM_Notifications, PM_NotificationQueue |
+| `08-Approval-Lists.ps1` | 5 approval-related lists |
+| `Deploy-AllPolicyLists.ps1` | Master deployment script |
+| `Seed-ApprovalAndNotificationData.ps1` | Sample data for approvals + notifications |
+| `Deploy-SampleData.ps1` | Master sample data deployment |
 
 ---
 
@@ -239,6 +287,11 @@ Located in `scripts/policy-management/`:
 - Supports versioning, acknowledgement, quizzes
 - Data classification and retention
 - Regulatory compliance mapping
+
+### IJmlApproval (src/models/IJmlApproval.ts)
+- IJmlApproval, IJmlApprovalChain, IJmlApprovalLevel
+- IJmlApprovalHistory, IJmlApprovalDelegation, IJmlApprovalTemplate
+- Enums: ApprovalStatus, ApprovalType, EscalationAction
 
 ### Policy Status Lifecycle
 ```
@@ -264,14 +317,14 @@ npm install
 # Development build
 npm run build
 
-# Production build
-npm run ship
+# Production build (ship)
+gulp clean && gulp bundle --ship && gulp package-solution --ship
+
+# Package location
+sharepoint/solution/policy-manager.sppkg
 
 # Clean build artifacts
 npm run clean
-
-# Run tests
-npm run test
 ```
 
 ---
@@ -279,62 +332,50 @@ npm run test
 ## Development Guidelines
 
 ### Styling
-1. Always use CSS variables from the DWx design tokens
-2. Never hardcode colors - reference `--dwx-*` variables
-3. Follow the font weight rules (400, 500, 700 only)
-4. Use the gradient for modal/panel headers
+1. Use Forest Teal color scheme (#0d9488 primary)
+2. Follow the teal gradient for headers: `linear-gradient(135deg, #0d9488, #0f766e)`
+3. Use SCSS modules per component (ComponentName.module.scss)
+4. Shared mixins in `src/styles/fluent-mixins.scss`
 
 ### Components
-1. Prefer functional components with hooks
-2. Use the shared DwxAppLayout for full-page webparts
-3. Implement error boundaries for resilience
-4. Follow Fluent UI patterns for consistency
+1. Use class components (consistent with existing codebase)
+2. Use `JmlAppLayout` for full-page webparts
+3. Use `createDialogManager()` for modal dialogs
+4. Follow Fluent UI v8 patterns (Stack, Text, Icon, Toggle, etc.)
 
 ### Services
 1. Use the singleton SPFI instance via `getSP()`
-2. Implement proper caching with TTL
+2. Use `PM_LISTS` constants for all list names
 3. Add comprehensive audit logging for compliance
 4. Handle errors gracefully with user-friendly messages
 
-### Testing
-1. All new code should have unit tests
-2. Target 60%+ code coverage
-3. Mock PnP calls for isolation
-4. Test edge cases and error scenarios
+### Adding a New Webpart
+1. Create webpart folder under `src/webparts/`
+2. Add manifest.json, WebPart.ts, components/, loc/
+3. Register in `config/config.json` → `bundles` and `localizedResources`
+4. Build and verify manifest count in output
 
 ---
 
-## Spinoff Roadmap (Recommended)
+## Session State (Last Updated: 29 Jan 2026)
 
-### Phase 1: Foundation
-- [ ] Rename JML prefixes to DWx/Policy
-- [ ] Create configuration service for tenant settings
-- [ ] Set up comprehensive testing infrastructure
-- [ ] Document architecture and APIs
+### Recently Completed
+- Search Center webpart (jmlPolicySearch) — fully built and registered
+- Help Center webpart (jmlPolicyHelp) — fully built and registered
+- MyPolicies rewrite — clean class component replacing broken version
+- Policy Admin restructure — sidebar + content layout with 12 nav sections
+- 4 new admin components: Naming Rules, SLA Targets, Data Lifecycle, Navigation
+- Expanded row styling fix in PolicyHub table view
+- Approval lists provisioning (08-Approval-Lists.ps1)
+- Seed data for approvals + notifications
+- Config.json registration for Search + Help webparts (fix: 7→9 manifests)
+- Ship build passes clean with all 9 webpart manifests
 
-### Phase 2: Decoupling
-- [ ] Abstract JML integration behind interfaces
-- [ ] Create standalone process models
-- [ ] Remove unused JML-specific services
-- [ ] Implement dependency injection
+### Known Issues
+- Expanded row detail panel in PolicyHub was unstyled (FIXED)
+- PowerShell scripts starting with numbers need `.\` prefix to execute
 
-### Phase 3: Enhancement
-- [ ] Add centralized state management (Zustand/Redux)
-- [ ] Migrate class components to functional
-- [ ] Consolidate caching strategy
-- [ ] Add virtual scrolling for large lists
-
-### Phase 4: Polish
-- [ ] Accessibility audit and fixes
-- [ ] Performance optimization
-- [ ] Security hardening
-- [ ] Documentation completion
-
----
-
-## Contact & Resources
-
-- **Suite**: DWx (Digital Workplace Excellence)
-- **Brand**: First Digital
-- **Style Guide**: `docs/DWx-Style-Guide-Preview.html`
-- **Brand Guide**: `docs/DWx-Brand-Guide.pdf`
+### Next Steps
+- User testing of new admin components (Naming Rules, SLA, Lifecycle, Navigation)
+- User testing of expanded row styling in Policy Hub
+- Potential refinements based on user feedback

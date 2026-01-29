@@ -75,18 +75,29 @@ PowerShell scripts create 20 SharePoint lists with PM_ prefix:
 19. **PM_PolicyAnalytics** - Analytics data
 20. **PM_PolicyDocuments** - Document library
 
-#### 4. **Web Parts Developed (9)**
+#### 4. **Web Parts Developed (14)**
 - **Policy Hub** - Main policy library/repository with KPI dashboard, advanced filtering, table/card views
 - **Policy Details** - Detailed policy view with version history, acknowledgement, quiz, feedback
-- **Policy Author** - Rich policy authoring interface with enhanced editor
+- **Policy Author** - Rich policy authoring interface with enhanced editor, V3 accordion wizard
 - **Policy Admin** - Administrative panel with sidebar navigation (12 sections: templates, metadata, workflows, compliance, notifications, naming rules, SLA, lifecycle, navigation, reviewers, audit, export)
 - **Policy Pack Manager** - Create and manage policy bundles, assign to users/groups
 - **My Policies** - Employee portal for assigned policies, due dates, completion tracking
 - **Quiz Builder** - Create comprehension quizzes for policies
 - **Policy Search** - Dedicated search center with filters, category chips, result cards
 - **Policy Help** - Help center with articles, FAQs, shortcuts, videos, support tabs
+- **Policy Distribution** - Distribution campaign management (active campaigns, creation wizard, history, settings)
+- **Policy Analytics** - Executive analytics dashboard (6 tabs: Executive, Policy Metrics, Acknowledgements, SLA, Compliance & Risk, Audit & Reports)
+- **Policy Author View** (DWx) - Author dashboard (4 tabs: My Policies, Approvals, Delegations with Add Delegation panel, Activity)
+- **Policy Manager View** (DWx) - Line manager dashboard (6 tabs: Dashboard with compliance score, Team Compliance, Approvals, Delegations, Policy Reviews, Reports)
 
-#### 5. **DWx Branding**
+#### 5. **Role-Based Access Control**
+4-tier role hierarchy (PolicyRoleService):
+- **User** — Browse, My Policies, Details
+- **Author** — + Create, Packs, Author View
+- **Manager** — + Approvals, Delegations, Distribution, Analytics, Manager View, Settings cog
+- **Admin** — + Quiz Builder, Admin panel, all configuration
+
+#### 6. **DWx Branding**
 - Forest Teal color theme (#0d9488, #0f766e, #14b8a6)
 - PolicyManagerHeader component with white nav bar
 - PolicyManagerSplashScreen component
@@ -471,10 +482,17 @@ Create the following pages in SitePages:
 - Home.aspx - Splash Screen
 - PolicyHub.aspx - Policy Library
 - MyPolicies.aspx - My Policies
-- PolicyAuthor.aspx - Policy Author/Editor
+- PolicyBuilder.aspx - Policy Creation (jmlPolicyAuthor)
+- PolicyAuthor.aspx - Author Dashboard (dwxPolicyAuthorView)
 - PolicyAdmin.aspx - Policy Administration
 - PolicyPackManager.aspx - Policy Pack Manager
 - QuizBuilder.aspx - Quiz Builder
+- PolicySearch.aspx - Search Center
+- PolicyHelp.aspx - Help Center
+- PolicyDistribution.aspx - Distribution Campaigns
+- PolicyAnalytics.aspx - Analytics Dashboard
+- PolicyManagerView.aspx - Manager Dashboard
+- PolicyDetails.aspx - Policy Detail View
 
 ---
 

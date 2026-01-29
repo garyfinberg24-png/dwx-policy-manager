@@ -50,7 +50,7 @@
 }
 
 .policyAuthor {
-  @include full-bleed-container;
+  width: 100%;
   background-color: #ffffff;
 
   .title {
@@ -606,26 +606,26 @@
     color: #605e5c;
   }
 
-  // Creation Method Cards (Step 0) - Fixed 3-column grid
+  // Creation Method Cards (Step 0) - Responsive 3-column grid
   .creationMethodGrid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-    margin-top: 16px;
-    margin-bottom: 24px;
+    gap: 14px;
+    margin-top: 12px;
+    margin-bottom: 20px;
   }
 
   .creationMethodCard {
     background: white;
     border: 2px solid $ms-color-neutralLight;
     border-radius: 8px;
-    padding: 20px;
+    padding: 14px 16px;
     cursor: pointer;
     transition: all 0.15s ease;
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    min-height: 120px;
+    gap: 8px;
+    min-height: 0;
 
     &:hover {
       border-color: $ms-color-themePrimary;
@@ -655,9 +655,9 @@
   }
 
   .creationMethodIcon {
-    width: 44px;
-    height: 44px;
-    border-radius: 8px;
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -674,17 +674,17 @@
     &.iconImage { background: #ffeee6; }
 
     i {
-      font-size: 24px;
+      font-size: 18px;
     }
 
     svg {
-      width: 32px;
-      height: 32px;
+      width: 24px;
+      height: 24px;
     }
   }
 
   .creationMethodTitle {
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 600;
     color: #323130;
     line-height: 1.3;
@@ -1383,7 +1383,7 @@
     position: fixed;
     top: 0;
     right: 0;
-    width: 600px;
+    width: 700px;
     max-width: 90vw;
     height: 100vh;
     background: #ffffff;
@@ -1450,12 +1450,13 @@
     overflow: hidden;
     border: 1px solid #e5e7eb;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+    margin-left: 28px;
   }
 
   // --- Left: Accordion Sidebar ---
   .v3Sidebar {
-    width: 240px;
-    min-width: 240px;
+    width: 210px;
+    min-width: 210px;
     background: #ffffff;
     border-right: 1px solid #e5e7eb;
     display: flex;
@@ -1527,31 +1528,59 @@
   // --- Center: Main Form ---
   .v3Center {
     flex: 1;
-    padding: 32px 36px;
+    padding: 24px;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
   }
 
   .v3CenterHeader {
-    margin-bottom: 28px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
   }
 
-  .v3StepBadge {
-    display: inline-block;
-    padding: 3px 10px;
-    background: #f0fdfa;
-    color: #0f766e;
-    border-radius: 12px;
-    font-size: 11px;
+  .v3HeaderLeft {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .v3HeaderProgress {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+    padding-top: 4px;
+  }
+
+  .v3HeaderProgressTrack {
+    width: 120px;
+    height: 10px;
+    background: #e5e7eb;
+    border-radius: 5px;
+    overflow: hidden;
+  }
+
+  .v3HeaderProgressFill {
+    height: 100%;
+    background: linear-gradient(90deg, #0d9488, #14b8a6);
+    border-radius: 5px;
+    transition: width 0.4s ease;
+  }
+
+  .v3HeaderProgressLabel {
+    font-size: 13px;
     font-weight: 700;
-    margin-bottom: 8px;
+    color: #0f766e;
+    white-space: nowrap;
   }
 
   .v3FormCard {
     background: #ffffff;
     border-radius: 10px;
-    padding: 28px;
+    padding: 20px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
     flex: 1;
     animation: v3FadeIn 0.35s ease;
@@ -1585,7 +1614,7 @@
 
   .v3ProgressTrack {
     flex: 1;
-    height: 6px;
+    height: 10px;
     background: #e5e7eb;
     border-radius: 3px;
     overflow: hidden;
@@ -1612,8 +1641,8 @@
 
   // --- Right: Context Panel ---
   .v3RightPanel {
-    width: 300px;
-    min-width: 300px;
+    width: 260px;
+    min-width: 260px;
     background: #ffffff;
     border-left: 1px solid #e5e7eb;
     padding: 24px 20px;
@@ -1648,6 +1677,88 @@
 
     &:hover {
       background: #f9fafb;
+    }
+  }
+
+  // --- Collapsible Review Sections ---
+  .reviewSectionCollapsible {
+    background: $ms-color-neutralLighter;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+
+    &:last-of-type {
+      margin-bottom: 0;
+    }
+  }
+
+  .reviewSectionToggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+
+    &:hover {
+      background: #f0f0f0;
+    }
+  }
+
+  .reviewSectionBody {
+    padding: 0 16px 16px;
+  }
+
+  .reviewSectionBodyCollapsed {
+    display: none;
+  }
+
+  // --- Responsive Breakpoints for Wizard ---
+  @media (max-width: 1200px) {
+    .v3RightPanel {
+      width: 220px;
+      min-width: 220px;
+    }
+  }
+
+  @media (max-width: 1024px) {
+    .v3RightPanel {
+      display: none;
+    }
+
+    .v3Layout {
+      margin-left: 16px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .v3Sidebar {
+      width: 180px;
+      min-width: 180px;
+    }
+
+    .v3Center {
+      padding: 16px;
+    }
+
+    .v3FormCard {
+      padding: 16px;
+    }
+
+    .v3Layout {
+      margin-left: 8px;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .v3Sidebar {
+      display: none;
+    }
+
+    .v3Layout {
+      margin-left: 0;
     }
   }
 }

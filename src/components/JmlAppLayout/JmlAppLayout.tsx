@@ -7,6 +7,7 @@ import JmlAppFooter from '../JmlAppFooter/JmlAppFooter';
 import { PolicyManagerRole } from '../../services/PolicyRoleService';
 import { RoleDetectionService } from '../../services/RoleDetectionService';
 import { getHighestPolicyRole } from '../../services/PolicyRoleService';
+import { signalAppReady } from '../../utils/SharePointOverrides';
 /**
  * DWx App Layout Component
  * Provides a complete page layout with header, content area, and footer
@@ -94,6 +95,11 @@ const DwxAppLayout: React.FC<IJmlAppLayoutProps> = (props) => {
   }, [policyManagerRole, context]);
 
   const effectiveRole = policyManagerRole || detectedRole;
+
+  // Signal app readiness to dismiss loading skeleton and reveal content
+  React.useEffect(() => {
+    signalAppReady();
+  }, []);
 
   // Custom content wrapper style
   const contentWrapperStyle: React.CSSProperties = {

@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create Policy Wizard — All 8 Steps Layout Tuning</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', -apple-system, sans-serif; background: #f3f2f1; color: #323130; }
+
+  /* ===== CONTROLS BAR ===== */
+  .controls {
+    position: sticky; top: 0; z-index: 100; background: #1a1a2e;
+    padding: 12px 24px; display: flex; flex-wrap: wrap; gap: 16px; align-items: center; color: #fff;
+  }
+  .controls h3 { font-size: 13px; font-weight: 700; margin-right: 4px; }
+  .ctrl-group { display: flex; align-items: center; gap: 5px; font-size: 11px; }
+  .ctrl-group label { color: #a5b4fc; font-weight: 600; }
+  .ctrl-group input[type="range"] { width: 80px; accent-color: #0d9488; }
+  .ctrl-group .val { background: rgba(255,255,255,0.15); padding: 2px 6px; border-radius: 3px; font-weight: 700; min-width: 38px; text-align: center; font-size: 10px; }
+  .ctrl-group select { background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.2); padding: 2px 4px; border-radius: 3px; font-size: 10px; }
+  .presets { display: flex; gap: 5px; }
+  .presets button { background: rgba(165,180,252,0.15); color: #a5b4fc; border: 1px solid rgba(165,180,252,0.3); padding: 3px 10px; border-radius: 4px; font-size: 10px; font-weight: 600; cursor: pointer; }
+  .presets button:hover { background: rgba(165,180,252,0.3); color: #fff; }
+
+  /* Step selector */
+  .step-nav { display: flex; gap: 2px; margin-left: auto; }
+  .step-nav button { background: rgba(255,255,255,0.1); color: #a5b4fc; border: none; padding: 4px 10px; border-radius: 3px; font-size: 10px; font-weight: 600; cursor: pointer; }
+  .step-nav button:hover { background: rgba(255,255,255,0.2); }
+  .step-nav button.active { background: #0d9488; color: #fff; }
+
+  /* ===== PAGE CHROME ===== */
+  .pm-header { background: #0d9488; color: white; padding: 8px 24px; display: flex; align-items: center; gap: 12px; }
+  .pm-header .logo { font-size: 15px; font-weight: 700; }
+  .pm-header .subtitle { font-size: 10px; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.5px; }
+  .pm-nav { background: #fff; border-bottom: 1px solid #edebe9; padding: 0 24px; display: flex; gap: 2px; font-size: 12px; }
+  .pm-nav a { padding: 8px 12px; color: #605e5c; text-decoration: none; border-bottom: 2px solid transparent; white-space: nowrap; }
+  .pm-nav a.active { color: #0d9488; border-bottom-color: #0d9488; font-weight: 600; }
+  .breadcrumb { padding: 6px 24px; font-size: 11px; color: #605e5c; }
+  .breadcrumb a { color: #0d9488; text-decoration: none; }
+
+  /* ===== WIZARD LAYOUT ===== */
+  .wizard-layout { display: flex; min-height: 600px; background: #f9fafb; overflow: hidden; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-radius: 8px; }
+
+  /* Left sidebar */
+  .wiz-sidebar { background: #fff; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column; flex-shrink: 0; }
+  .wiz-sidebar-header { padding: 14px 14px; border-bottom: 1px solid #e5e7eb; }
+  .wiz-sidebar-header h3 { font-size: 13px; font-weight: 700; color: #111827; }
+  .wiz-sidebar-header .sub { font-size: 10px; color: #9ca3af; margin-top: 2px; }
+  .wiz-step { display: flex; align-items: center; gap: 8px; padding: 9px 14px; border-bottom: 1px solid #f3f4f6; font-size: 11px; font-weight: 600; color: #374151; cursor: pointer; }
+  .wiz-step:hover { background: #f9fafb; }
+  .wiz-step.active { background: #f0fdfa; color: #0f766e; border-left: 3px solid #0d9488; }
+  .wiz-step.completed { color: #9ca3af; }
+  .wiz-step .num { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; flex-shrink: 0; }
+  .wiz-step .num.pending { background: #e5e7eb; color: #9ca3af; }
+  .wiz-step .num.current { background: #0d9488; color: #fff; }
+  .wiz-step .num.done { background: #0d9488; color: #fff; }
+  .wiz-step .chevron { margin-left: auto; color: #9ca3af; font-size: 8px; }
+  .wiz-step-body { padding: 0 14px 6px 42px; border-bottom: 1px solid #f3f4f6; }
+  .wiz-step-body li { font-size: 10px; color: #6b7280; list-style: none; padding: 1px 0 1px 10px; position: relative; }
+  .wiz-step-body li::before { content: ''; position: absolute; left: 0; top: 6px; width: 4px; height: 4px; border-radius: 50%; background: #0d9488; opacity: 0.5; }
+  .wiz-step-body li:first-child { color: #0f766e; font-weight: 600; }
+  .wiz-step-body li:first-child::before { opacity: 1; }
+
+  /* Center */
+  .wiz-center { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+  .wiz-center-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; }
+  .wiz-center-header .title-area h2 { font-size: 18px; font-weight: 700; color: #111827; }
+  .wiz-center-header .title-area p { font-size: 12px; color: #6b7280; margin-top: 2px; }
+  .wiz-step-indicator { display: flex; align-items: center; gap: 6px; flex-shrink: 0; margin-top: 4px; }
+  .wiz-step-indicator .bar { width: 80px; height: 4px; background: #e5e7eb; border-radius: 2px; overflow: hidden; }
+  .wiz-step-indicator .bar-fill { height: 100%; background: linear-gradient(90deg, #0d9488, #14b8a6); border-radius: 2px; }
+  .wiz-step-indicator .pct { font-size: 10px; font-weight: 700; color: #0f766e; }
+  .wiz-step-indicator .lbl { font-size: 10px; color: #9ca3af; }
+
+  .wiz-form-card { background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); flex: 1; }
+
+  /* Form elements */
+  .form-field { margin-bottom: 14px; }
+  .form-field:last-child { margin-bottom: 0; }
+  .form-label { font-size: 12px; font-weight: 600; color: #323130; margin-bottom: 4px; display: block; }
+  .form-label .req { color: #d13438; }
+  .form-input { width: 100%; padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px; color: #323130; background: #fff; }
+  .form-input:focus { outline: none; border-color: #0d9488; }
+  .form-input.textarea { min-height: 60px; resize: vertical; }
+  .form-select { width: 100%; padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px; color: #323130; background: #fff; }
+  .form-input.short { max-width: 200px; }
+  .form-input.medium { max-width: 300px; }
+  .form-checkbox { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 10px; }
+  .form-checkbox input { margin-top: 3px; accent-color: #0d9488; }
+  .form-checkbox .cb-text { font-size: 12px; font-weight: 600; color: #323130; }
+  .form-checkbox .cb-helper { font-size: 10px; color: #605e5c; margin-top: 1px; }
+  .form-row { display: flex; gap: 16px; }
+  .form-row > * { flex: 1; }
+
+  /* Section header inside form */
+  .section-title { font-size: 15px; font-weight: 700; color: #323130; margin-bottom: 4px; }
+  .section-desc { font-size: 12px; color: #605e5c; margin-bottom: 14px; }
+
+  /* Method cards */
+  .method-section-title { font-size: 13px; font-weight: 700; color: #0d9488; margin-bottom: 2px; }
+  .method-section-sub { font-size: 10px; color: #9ca3af; margin-bottom: 8px; }
+  .method-grid { display: grid; gap: 6px; margin-bottom: 14px; grid-template-columns: repeat(3, 1fr); }
+  .method-card { background: #fff; border: 1.5px solid #e5e7eb; border-radius: 6px; padding: 10px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.15s; }
+  .method-card:hover { border-color: #0d9488; box-shadow: 0 2px 6px rgba(13,148,136,0.1); }
+  .method-card.selected { border-color: #0d9488; background: #f0fdfa; }
+  .method-card .icon { width: 30px; height: 30px; border-radius: 5px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 13px; }
+  .method-card .text h4 { font-size: 11px; font-weight: 600; color: #323130; }
+  .method-card .text p { font-size: 9px; color: #6b7280; margin-top: 1px; }
+
+  .tip-bar { display: flex; align-items: center; gap: 6px; padding: 7px 10px; background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 5px; font-size: 10px; color: #6b7280; }
+
+  /* Rich text editor mock */
+  .rich-editor-mock { border: 1px solid #d1d5db; border-radius: 4px; overflow: hidden; }
+  .rich-toolbar { background: #fafafa; border-bottom: 1px solid #d1d5db; padding: 4px 8px; display: flex; gap: 2px; }
+  .rich-toolbar span { padding: 3px 6px; border-radius: 2px; font-size: 10px; color: #605e5c; cursor: pointer; }
+  .rich-toolbar span:hover { background: #e5e7eb; }
+  .rich-body { min-height: 200px; padding: 10px; font-size: 12px; color: #9ca3af; }
+
+  /* Key points */
+  .key-points { margin-top: 14px; }
+  .key-point-input { display: flex; gap: 8px; margin-bottom: 8px; }
+  .key-point-input input { flex: 1; }
+  .key-point-item { display: flex; align-items: center; gap: 6px; padding: 6px 10px; background: #f9fafb; border-radius: 4px; margin-bottom: 4px; font-size: 11px; }
+  .key-point-item .remove { margin-left: auto; color: #d13438; cursor: pointer; font-size: 10px; }
+
+  /* People picker mock */
+  .people-picker { border: 1px solid #d1d5db; border-radius: 4px; padding: 6px 10px; min-height: 36px; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+  .people-tag { background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600; display: flex; align-items: center; gap: 4px; }
+  .people-tag .x { cursor: pointer; color: #6b7280; }
+  .people-placeholder { color: #9ca3af; font-size: 11px; }
+
+  /* Review summary */
+  .review-section { margin-bottom: 16px; border: 1px solid #e5e7eb; border-radius: 6px; overflow: hidden; }
+  .review-section-header { background: #f9fafb; padding: 8px 12px; font-size: 12px; font-weight: 700; color: #323130; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid #e5e7eb; }
+  .review-section-header .ico { color: #0d9488; }
+  .review-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0; }
+  .review-item { padding: 8px 12px; border-bottom: 1px solid #f3f4f6; }
+  .review-item .ri-label { font-size: 10px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 2px; }
+  .review-item .ri-value { font-size: 12px; color: #323130; font-weight: 500; }
+
+  .warning-bar { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 6px; padding: 10px 14px; font-size: 11px; color: #9a3412; margin-top: 14px; display: flex; gap: 8px; align-items: flex-start; }
+  .warning-bar .wi { flex-shrink: 0; }
+
+  /* Footer */
+  .wiz-footer { margin-top: 14px; display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+  .btn { padding: 5px 12px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid #d1d5db; background: #fff; color: #374151; }
+  .btn:hover { background: #f3f4f6; }
+  .btn.primary { background: #0d9488; color: #fff; border-color: #0d9488; }
+  .btn.primary:hover { background: #0f766e; }
+  .btn.disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Right panel */
+  .wiz-right { background: #fff; border-left: 1px solid #e5e7eb; overflow-y: auto; flex-shrink: 0; }
+  .wiz-right h4 { font-size: 11px; font-weight: 700; color: #374151; margin-bottom: 8px; display: flex; align-items: center; gap: 5px; }
+  .wiz-right h4 .icon { color: #0d9488; font-size: 10px; }
+  .wiz-right .tip { background: #f0fdfa; border-radius: 5px; padding: 8px 10px; font-size: 10px; color: #115e59; line-height: 1.5; margin-bottom: 6px; border-left: 3px solid #0d9488; }
+  .wiz-right .tip strong { display: block; margin-bottom: 2px; font-size: 11px; }
+  .wiz-right .related-item { display: flex; align-items: center; gap: 5px; padding: 4px 6px; border-radius: 3px; font-size: 10px; color: #4b5563; cursor: pointer; }
+  .wiz-right .related-item:hover { background: #f9fafb; }
+  .compliance-note { display: flex; gap: 5px; padding: 4px 0; font-size: 10px; color: #4b5563; line-height: 1.4; }
+  .compliance-note .dot { width: 5px; height: 5px; border-radius: 50%; background: #0d9488; flex-shrink: 0; margin-top: 4px; }
+  .right-section { margin-bottom: 14px; }
+  .right-divider { border-top: 1px solid #e5e7eb; margin: 10px 0; }
+
+  /* Hide non-active step content */
+  .step-content { display: none; }
+  .step-content.active { display: block; }
+
+  .dims-display { position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.85); color: #fff; padding: 6px 12px; border-radius: 5px; font-size: 10px; font-family: monospace; z-index: 200; }
+</style>
+</head>
+<body>
+
+<!-- Controls -->
+<div class="controls">
+  <h3>Layout Tuner</h3>
+  <div class="ctrl-group"><label>Left:</label><input type="range" id="sliderLeft" min="160" max="280" value="240" step="10"><span class="val" id="valLeft">240</span></div>
+  <div class="ctrl-group"><label>Right:</label><input type="range" id="sliderRight" min="180" max="340" value="300" step="10"><span class="val" id="valRight">300</span></div>
+  <div class="ctrl-group"><label>Pad:</label><input type="range" id="sliderPad" min="12" max="36" value="24" step="2"><span class="val" id="valPad">24</span></div>
+  <div class="ctrl-group"><label>Card:</label><input type="range" id="sliderCardPad" min="10" max="28" value="20" step="2"><span class="val" id="valCardPad">20</span></div>
+  <div class="ctrl-group"><label>MaxW:</label><select id="selectMaxWidth"><option value="none" selected>None</option><option value="720">720</option><option value="900">900</option><option value="1100">1100</option></select></div>
+  <div class="ctrl-group"><label>Margin:</label><input type="range" id="sliderMargin" min="0" max="48" value="24" step="4"><span class="val" id="valMargin">24</span></div>
+  <div class="presets">
+    <button onclick="applyPreset('current')">Current</button>
+    <button onclick="applyPreset('wide')">Wide</button>
+    <button onclick="applyPreset('compact')">Compact</button>
+    <button onclick="applyPreset('balanced')">Balanced</button>
+  </div>
+  <div class="step-nav" id="stepNav"></div>
+</div>
+
+<!-- Page chrome -->
+<div class="pm-header"><div><div class="logo">Policy Manager</div><div class="subtitle">Policy Governance & Compliance</div></div></div>
+<div class="pm-nav">
+  <a href="#" class="active">+ Policy Builder</a><a href="#">Policy Author</a><a href="#">Manager View</a><a href="#">Browse Policies</a><a href="#">My Policies</a><a href="#">Distribution</a><a href="#">Analytics</a><a href="#">Policy Details</a><a href="#">Policy Packs</a><a href="#">Quiz Builder</a>
+</div>
+<div class="breadcrumb"><a href="#">Policy Manager</a> / <a href="#">Policy Hub</a> / Policy Builder</div>
+
+<!-- Wizard -->
+<div id="wizardOuter" style="padding: 12px 24px 24px;">
+  <div class="wizard-layout">
+
+    <!-- Left Sidebar -->
+    <div class="wiz-sidebar" id="wizSidebar"></div>
+
+    <!-- Center -->
+    <div class="wiz-center" id="wizCenter">
+      <div class="wiz-center-header">
+        <div class="title-area"><h2 id="stepTitle"></h2><p id="stepDesc"></p></div>
+        <div class="wiz-step-indicator">
+          <span class="lbl" id="stepLabel"></span>
+          <div class="bar"><div class="bar-fill" id="progressFill"></div></div>
+          <span class="pct" id="progressPct"></span>
+        </div>
+      </div>
+      <div class="wiz-form-card" id="wizFormCard">
+        <!-- Step 0 -->
+        <div class="step-content" id="step0">
+          <div class="method-section-title">Create New Policy</div>
+          <div class="method-section-sub">Choose how to start</div>
+          <div class="method-grid">
+            <div class="method-card selected"><div class="icon" style="background:#dbeafe;color:#2563eb;">&#x1F4C4;</div><div class="text"><h4>Blank Policy</h4><p>Empty rich text editor</p></div></div>
+            <div class="method-card"><div class="icon" style="background:#fef3c7;color:#d97706;">&#x1F4CB;</div><div class="text"><h4>From Template</h4><p>Pre-approved template</p></div></div>
+            <div class="method-card"><div class="icon" style="background:#d1fae5;color:#059669;">&#x2B06;</div><div class="text"><h4>Upload Document</h4><p>Import Word, PDF, etc.</p></div></div>
+          </div>
+          <div class="method-section-title">Create from Office</div>
+          <div class="method-section-sub">For complex documents</div>
+          <div class="method-grid">
+            <div class="method-card"><div class="icon" style="background:#dbeafe;color:#2563eb;">&#x1F4DD;</div><div class="text"><h4>Word Document</h4><p>New Word document</p></div></div>
+            <div class="method-card"><div class="icon" style="background:#d1fae5;color:#059669;">&#x1F4CA;</div><div class="text"><h4>Excel Spreadsheet</h4><p>Excel for data policies</p></div></div>
+            <div class="method-card"><div class="icon" style="background:#fce7f3;color:#db2777;">&#x1F4D1;</div><div class="text"><h4>PowerPoint</h4><p>Presentation-style</p></div></div>
+          </div>
+          <div class="method-section-title">Additional Options</div>
+          <div class="method-grid">
+            <div class="method-card"><div class="icon" style="background:#e0e7ff;color:#4f46e5;">&#x1F3E2;</div><div class="text"><h4>Corporate Template</h4><p>Branded template</p></div></div>
+            <div class="method-card"><div class="icon" style="background:#fef3c7;color:#d97706;">&#x1F5BC;</div><div class="text"><h4>Infographic/Image</h4><p>Visual policy</p></div></div>
+            <div style="visibility:hidden"></div>
+          </div>
+          <div class="tip-bar"><span style="color:#0d9488;">&#x2139;</span> <strong>Tip:</strong>&nbsp;For most policies, "Blank Policy" or "From Template" are recommended.</div>
+        </div>
+
+        <!-- Step 1: Basic Information -->
+        <div class="step-content" id="step1">
+          <div class="section-title">Basic Information</div>
+          <div class="section-desc">Core policy details and categorization</div>
+          <div class="form-field"><label class="form-label">Policy Number</label><input class="form-input medium" placeholder="Auto-generated if left blank"></div>
+          <div class="form-field"><label class="form-label">Policy Name <span class="req">*</span></label><input class="form-input" placeholder="Enter policy name"></div>
+          <div class="form-field"><label class="form-label">Category <span class="req">*</span></label><select class="form-select"><option>Select category...</option><option>HR & People</option><option>IT Security</option><option>Compliance</option><option>Finance</option><option>Operations</option><option>Health & Safety</option><option>Data Privacy</option></select></div>
+          <div class="form-field"><label class="form-label">Summary</label><textarea class="form-input textarea" placeholder="Brief summary of the policy (2-3 sentences)" rows="3"></textarea></div>
+          <div class="form-row">
+            <div class="form-field"><label class="form-label">Compliance Risk</label><select class="form-select"><option>Select risk level...</option><option>Low</option><option>Medium</option><option>High</option><option>Critical</option></select></div>
+            <div class="form-field"><label class="form-label">Read Timeframe</label><select class="form-select"><option>Select timeframe...</option><option>7 Days</option><option>14 Days</option><option>30 Days</option><option>60 Days</option><option>90 Days</option><option>Custom</option></select></div>
+          </div>
+        </div>
+
+        <!-- Step 2: Policy Content -->
+        <div class="step-content" id="step2">
+          <div class="section-title">Policy Content</div>
+          <div class="section-desc">Write or edit your policy content</div>
+          <div class="rich-editor-mock">
+            <div class="rich-toolbar">
+              <span><b>B</b></span><span><i>I</i></span><span><u>U</u></span><span>|</span>
+              <span>H1</span><span>H2</span><span>H3</span><span>|</span>
+              <span>&#x2022; List</span><span>1. List</span><span>|</span>
+              <span>Link</span><span>Image</span><span>Table</span>
+            </div>
+            <div class="rich-body">Enter the detailed policy content here...<br><br>Use headings, bullet points, and sections to structure the policy clearly.</div>
+          </div>
+          <div class="key-points">
+            <div class="section-title" style="font-size:13px; margin-top:14px;">Key Points</div>
+            <div class="key-point-input">
+              <input class="form-input" placeholder="Add a key point">
+              <button class="btn primary" style="white-space:nowrap;">+ Add</button>
+            </div>
+            <div class="key-point-item"><span>&#x2022;</span> All employees must complete annual security awareness training <span class="remove">&#x2716;</span></div>
+            <div class="key-point-item"><span>&#x2022;</span> Violations may result in disciplinary action <span class="remove">&#x2716;</span></div>
+            <div class="key-point-item"><span>&#x2022;</span> Exceptions require written approval from department head <span class="remove">&#x2716;</span></div>
+          </div>
+        </div>
+
+        <!-- Step 3: Compliance & Risk -->
+        <div class="step-content" id="step3">
+          <div class="section-title">Compliance & Risk Settings</div>
+          <div class="section-desc">Define the compliance requirements and risk level for this policy.</div>
+          <div class="form-field"><label class="form-label">Compliance Risk Level <span class="req">*</span></label><select class="form-select" style="max-width:300px;"><option>Select risk level...</option><option>Low</option><option>Medium</option><option selected>High</option><option>Critical</option></select></div>
+          <div class="form-field"><label class="form-label">Read Timeframe</label><select class="form-select" style="max-width:300px;"><option>14 Days</option></select></div>
+          <div style="margin-top: 16px;">
+            <div class="form-checkbox">
+              <input type="checkbox" checked>
+              <div><div class="cb-text">Requires Acknowledgement</div><div class="cb-helper">Employees must confirm they have read and understood the policy</div></div>
+            </div>
+            <div class="form-checkbox">
+              <input type="checkbox" checked>
+              <div><div class="cb-text">Requires Quiz</div><div class="cb-helper">Employees must pass a quiz to demonstrate understanding</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 4: Target Audience -->
+        <div class="step-content" id="step4">
+          <div class="section-title">Target Audience</div>
+          <div class="section-desc">Define who needs to read and acknowledge this policy.</div>
+          <div class="form-checkbox"><input type="checkbox"><div><div class="cb-text">All Employees</div></div></div>
+          <div class="form-field"><label class="form-label">Target Departments</label><input class="form-input" placeholder="e.g., HR, IT, Finance (comma-separated)" value="IT Security, Engineering, Data"></div>
+          <div class="form-field"><label class="form-label">Target Roles</label><input class="form-input" placeholder="e.g., Manager, Director, Executive (comma-separated)" value="All Levels"></div>
+          <div class="form-field"><label class="form-label">Target Locations</label><input class="form-input" placeholder="e.g., London, New York, Sydney (comma-separated)" value="All Locations"></div>
+          <div class="form-checkbox" style="margin-top:8px;"><input type="checkbox" checked><div><div class="cb-text">Include Contractors/Third Parties</div></div></div>
+        </div>
+
+        <!-- Step 5: Effective Dates -->
+        <div class="step-content" id="step5">
+          <div class="section-title">Effective Dates & Versioning</div>
+          <div class="section-desc">Set when the policy becomes active and when it should be reviewed.</div>
+          <div class="form-row">
+            <div class="form-field"><label class="form-label">Effective Date <span class="req">*</span></label><input class="form-input" type="date" value="2026-03-01"></div>
+            <div class="form-field"><label class="form-label">Expiry Date (Optional)</label><input class="form-input" type="date"></div>
+          </div>
+          <div class="form-field"><label class="form-label">Review Frequency</label><select class="form-select" style="max-width:300px;"><option>Annual (every 12 months)</option><option>Biannual (every 6 months)</option><option>Quarterly (every 3 months)</option><option>Monthly</option><option>No scheduled review</option></select></div>
+          <div class="form-field"><label class="form-label">Next Review Date</label><input class="form-input short" type="date" value="2027-03-01"></div>
+          <div class="form-field"><label class="form-label">Supersedes Policy (Optional)</label><input class="form-input medium" placeholder="Enter policy number if replacing an existing policy"></div>
+        </div>
+
+        <!-- Step 6: Review Workflow -->
+        <div class="step-content" id="step6">
+          <div class="section-title">Review & Approval Workflow</div>
+          <div class="section-desc">Assign reviewers and approvers for this policy.</div>
+          <div class="form-field">
+            <label class="form-label">Technical Reviewers</label>
+            <div class="people-picker">
+              <div class="people-tag">Sarah Chen <span class="x">&#x2716;</span></div>
+              <div class="people-tag">Mike Johnson <span class="x">&#x2716;</span></div>
+              <span class="people-placeholder">Add reviewer...</span>
+            </div>
+          </div>
+          <div class="form-field">
+            <label class="form-label">Final Approvers</label>
+            <div class="people-picker">
+              <div class="people-tag">David Smith <span class="x">&#x2716;</span></div>
+              <span class="people-placeholder">Add approver...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 7: Review & Submit -->
+        <div class="step-content" id="step7">
+          <div class="section-title">Review & Submit</div>
+          <div class="section-desc">Review all information before submitting for approval.</div>
+
+          <div class="review-section">
+            <div class="review-section-header"><span class="ico">&#x2139;</span> Basic Information</div>
+            <div class="review-grid">
+              <div class="review-item"><div class="ri-label">Policy Number</div><div class="ri-value">(Auto-generated)</div></div>
+              <div class="review-item"><div class="ri-label">Policy Name</div><div class="ri-value">Information Security Policy</div></div>
+              <div class="review-item"><div class="ri-label">Category</div><div class="ri-value">IT Security</div></div>
+              <div class="review-item"><div class="ri-label">Summary</div><div class="ri-value">Defines the security standards and practices for all employees...</div></div>
+            </div>
+          </div>
+          <div class="review-section">
+            <div class="review-section-header"><span class="ico">&#x270F;</span> Content</div>
+            <div class="review-grid">
+              <div class="review-item"><div class="ri-label">Content Preview</div><div class="ri-value">This policy establishes the information security framework...</div></div>
+              <div class="review-item"><div class="ri-label">Key Points</div><div class="ri-value">Annual training, Disciplinary action, Written approval</div></div>
+            </div>
+          </div>
+          <div class="review-section">
+            <div class="review-section-header"><span class="ico">&#x1F6E1;</span> Compliance & Risk</div>
+            <div class="review-grid">
+              <div class="review-item"><div class="ri-label">Risk Level</div><div class="ri-value" style="color:#d97706;font-weight:600;">High</div></div>
+              <div class="review-item"><div class="ri-label">Read Timeframe</div><div class="ri-value">14 Days</div></div>
+              <div class="review-item"><div class="ri-label">Acknowledgement</div><div class="ri-value" style="color:#059669;">Yes</div></div>
+              <div class="review-item"><div class="ri-label">Quiz Required</div><div class="ri-value" style="color:#059669;">Yes</div></div>
+            </div>
+          </div>
+          <div class="review-section">
+            <div class="review-section-header"><span class="ico">&#x1F465;</span> Target Audience</div>
+            <div class="review-grid">
+              <div class="review-item"><div class="ri-label">Audience</div><div class="ri-value">Specific groups</div></div>
+              <div class="review-item"><div class="ri-label">Departments</div><div class="ri-value">IT Security, Engineering, Data</div></div>
+              <div class="review-item"><div class="ri-label">Locations</div><div class="ri-value">All Locations</div></div>
+              <div class="review-item"><div class="ri-label">Contractors</div><div class="ri-value">Included</div></div>
+            </div>
+          </div>
+          <div class="review-section">
+            <div class="review-section-header"><span class="ico">&#x1F4C5;</span> Dates</div>
+            <div class="review-grid">
+              <div class="review-item"><div class="ri-label">Effective Date</div><div class="ri-value">1 March 2026</div></div>
+              <div class="review-item"><div class="ri-label">Expiry Date</div><div class="ri-value">No expiry</div></div>
+              <div class="review-item"><div class="ri-label">Review Frequency</div><div class="ri-value">Annual</div></div>
+            </div>
+          </div>
+          <div class="review-section">
+            <div class="review-section-header"><span class="ico">&#x1F504;</span> Workflow</div>
+            <div class="review-grid">
+              <div class="review-item"><div class="ri-label">Reviewers</div><div class="ri-value">2 assigned</div></div>
+              <div class="review-item"><div class="ri-label">Approvers</div><div class="ri-value">1 assigned</div></div>
+            </div>
+          </div>
+
+          <div class="warning-bar"><span class="wi">&#x26A0;</span> Please review all information carefully before submitting. Once submitted, the policy enters the approval workflow and cannot be directly edited.</div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="wiz-footer">
+        <button class="btn" id="btnPrev" style="display:none;">&#x2190; Previous</button>
+        <button class="btn">&#x1F4BE; Save Draft</button>
+        <button class="btn primary" id="btnNext">Next &#x2192;</button>
+      </div>
+    </div>
+
+    <!-- Right Panel -->
+    <div class="wiz-right" id="wizRight"></div>
+  </div>
+</div>
+
+<div class="dims-display" id="dimsDisplay"></div>
+
+<script>
+const STEPS = [
+  { title: 'Creation Method', desc: 'Choose how to create your policy', fields: ['Creation method selection'] },
+  { title: 'Basic Information', desc: 'Policy name, category, and summary', fields: ['Policy Number', 'Policy Name', 'Category', 'Summary', 'Compliance Risk', 'Read Timeframe'] },
+  { title: 'Policy Content', desc: 'Write or edit policy content', fields: ['Rich text editor', 'Key points list'] },
+  { title: 'Compliance & Risk', desc: 'Risk level and requirements', fields: ['Risk Level', 'Read Timeframe', 'Acknowledgement toggle', 'Quiz toggle'] },
+  { title: 'Target Audience', desc: 'Who needs to read this policy', fields: ['All Employees', 'Departments', 'Roles', 'Locations', 'Contractors'] },
+  { title: 'Effective Dates', desc: 'When the policy is active', fields: ['Effective Date', 'Expiry Date', 'Review Frequency', 'Next Review', 'Supersedes Policy'] },
+  { title: 'Review Workflow', desc: 'Reviewers and approvers', fields: ['Technical Reviewers', 'Final Approvers'] },
+  { title: 'Review & Submit', desc: 'Final review before submission', fields: ['Summary review grid'] }
+];
+
+const TIPS = {
+  0: [{ t: 'Choosing a Method', b: 'Start from a template for consistency, or choose blank for full creative control.' }, { t: 'Corporate Templates', b: 'Corporate templates include pre-approved branding, headers, and formatting.' }],
+  1: [{ t: 'Policy Title Best Practices', b: 'Use descriptive, action-oriented titles. Avoid acronyms unless universally understood.' }, { t: 'Category Selection', b: 'Choose the primary category. Cross-referencing can be added via tags later.' }, { t: 'Writing a Good Summary', b: "Include the policy's purpose, who it applies to, and key requirements. Aim for 2-3 sentences." }],
+  2: [{ t: 'Content Structure', b: 'Use clear headings and bullet points. Start with purpose, then scope, responsibilities, and procedures.' }, { t: 'Key Points', b: 'Add 3-5 key points summarizing the most important takeaways.' }],
+  3: [{ t: 'Risk Assessment', b: 'Consider regulatory, legal, and operational risk if not followed. Higher risk = stricter tracking.' }, { t: 'Acknowledgement & Quiz', b: 'Critical policies should require both acknowledgement and quiz to ensure comprehension.' }],
+  4: [{ t: 'Target Audience', b: 'Select "All Employees" for company-wide policies. For department-specific, choose relevant teams.' }, { t: 'Contractors', b: 'If your policy applies to external contractors, include them in the audience.' }],
+  5: [{ t: 'Effective Dates', b: 'Allow at least 2 weeks between publication and effective date for employees to read.' }, { t: 'Review Cycle', b: 'Most policies should be reviewed annually. Critical compliance policies may need quarterly.' }],
+  6: [{ t: 'Review Workflow', b: 'Add subject matter experts as reviewers and department heads as approvers.' }, { t: 'Multi-Level Approval', b: 'High-risk policies typically require both department and executive approval.' }],
+  7: [{ t: 'Final Check', b: 'Review all sections carefully. Once submitted, the policy enters review and cannot be directly edited.' }, { t: 'Draft Option', b: 'Not ready to submit? Save as draft to continue editing later.' }]
+};
+
+let currentStep = 0;
+
+function renderSidebar() {
+  const sidebar = document.getElementById('wizSidebar');
+  let html = '<div class="wiz-sidebar-header"><h3>New Policy Wizard</h3><div class="sub">8 steps to complete</div></div>';
+  STEPS.forEach((s, i) => {
+    const cls = i === currentStep ? 'active' : (i < currentStep ? 'completed' : '');
+    const numCls = i === currentStep ? 'current' : (i < currentStep ? 'done' : 'pending');
+    const numContent = i < currentStep ? '&#x2713;' : (i + 1);
+    const chevron = i === currentStep ? '&#x25B2;' : '&#x25BC;';
+    html += `<div class="wiz-step ${cls}" onclick="goToStep(${i})"><div class="num ${numCls}">${numContent}</div><span>${s.title}</span><span class="chevron">${chevron}</span></div>`;
+    if (i === currentStep) {
+      html += '<div class="wiz-step-body"><ul>';
+      s.fields.forEach((f, fi) => { html += `<li>${f}</li>`; });
+      html += '</ul></div>';
+    }
+  });
+  sidebar.innerHTML = html;
+}
+
+function renderRightPanel() {
+  const right = document.getElementById('wizRight');
+  const tips = TIPS[currentStep] || [];
+  let html = '<div class="right-section"><h4><span class="icon">&#x1F4A1;</span> Tips & Guidance</h4>';
+  tips.forEach(t => { html += `<div class="tip"><strong>${t.t}</strong>${t.b}</div>`; });
+  html += '</div><div class="right-divider"></div>';
+  html += '<div class="right-section"><h4><span class="icon">&#x1F4D1;</span> Related Policies</h4>';
+  html += '<div class="related-item"><span style="color:#9ca3af;">&#x1F4C4;</span> Code of Conduct <span style="color:#9ca3af;margin-left:4px;">HR &middot; Active</span></div>';
+  html += '<div class="related-item"><span style="color:#9ca3af;">&#x1F4C4;</span> Data Classification <span style="color:#9ca3af;margin-left:4px;">IT &middot; Active</span></div>';
+  html += '<div class="related-item"><span style="color:#9ca3af;">&#x1F4C4;</span> Acceptable Use <span style="color:#9ca3af;margin-left:4px;">IT &middot; Active</span></div>';
+  html += '</div><div class="right-divider"></div>';
+  html += '<div class="right-section"><h4><span class="icon">&#x26A0;</span> Compliance Notes</h4>';
+  html += '<div class="compliance-note"><span class="dot"></span> All policies must comply with governance framework (GF-2025).</div>';
+  html += '<div class="compliance-note"><span class="dot"></span> HR policies require Head of People & Culture sign-off.</div>';
+  html += '<div class="compliance-note"><span class="dot"></span> Policies impacting external stakeholders need Legal review.</div>';
+  html += '</div>';
+  right.innerHTML = html;
+}
+
+function renderStepNav() {
+  const nav = document.getElementById('stepNav');
+  let html = '';
+  STEPS.forEach((s, i) => {
+    const cls = i === currentStep ? 'active' : '';
+    html += `<button class="${cls}" onclick="goToStep(${i})">${i + 1}</button>`;
+  });
+  nav.innerHTML = html;
+}
+
+function goToStep(i) {
+  currentStep = i;
+  // Hide all step contents
+  document.querySelectorAll('.step-content').forEach(el => el.classList.remove('active'));
+  document.getElementById('step' + i).classList.add('active');
+  // Update header
+  document.getElementById('stepTitle').textContent = STEPS[i].title;
+  document.getElementById('stepDesc').textContent = STEPS[i].desc;
+  const pct = Math.round(((i + 1) / STEPS.length) * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressPct').textContent = pct + '%';
+  document.getElementById('stepLabel').textContent = `Step ${i + 1} of ${STEPS.length}`;
+  // Footer buttons
+  document.getElementById('btnPrev').style.display = i > 0 ? '' : 'none';
+  const btnNext = document.getElementById('btnNext');
+  if (i === STEPS.length - 1) {
+    btnNext.textContent = 'Submit for Review';
+    btnNext.className = 'btn primary';
+  } else {
+    btnNext.innerHTML = 'Next &#x2192;';
+    btnNext.className = 'btn primary';
+  }
+  renderSidebar();
+  renderRightPanel();
+  renderStepNav();
+}
+
+document.getElementById('btnNext').addEventListener('click', () => { if (currentStep < STEPS.length - 1) goToStep(currentStep + 1); });
+document.getElementById('btnPrev').addEventListener('click', () => { if (currentStep > 0) goToStep(currentStep - 1); });
+
+// Layout controls
+const sliderLeft = document.getElementById('sliderLeft');
+const sliderRight = document.getElementById('sliderRight');
+const sliderPad = document.getElementById('sliderPad');
+const sliderCardPad = document.getElementById('sliderCardPad');
+const selectMaxWidth = document.getElementById('selectMaxWidth');
+const sliderMargin = document.getElementById('sliderMargin');
+
+function updateLayout() {
+  const left = sliderLeft.value, right = sliderRight.value, pad = sliderPad.value;
+  const cardPad = sliderCardPad.value, maxW = selectMaxWidth.value, margin = sliderMargin.value;
+  const sidebar = document.getElementById('wizSidebar');
+  const center = document.getElementById('wizCenter');
+  const rightP = document.getElementById('wizRight');
+  const formCard = document.getElementById('wizFormCard');
+  const outer = document.getElementById('wizardOuter');
+
+  sidebar.style.width = left + 'px'; sidebar.style.minWidth = left + 'px';
+  rightP.style.width = right + 'px'; rightP.style.minWidth = right + 'px';
+  rightP.style.padding = '14px ' + Math.max(10, Math.round(right * 0.05)) + 'px';
+  center.style.padding = pad + 'px';
+  formCard.style.padding = cardPad + 'px';
+  center.style.maxWidth = maxW === 'none' ? 'none' : maxW + 'px';
+  outer.style.paddingLeft = margin + 'px'; outer.style.paddingRight = margin + 'px';
+
+  document.getElementById('valLeft').textContent = left;
+  document.getElementById('valRight').textContent = right;
+  document.getElementById('valPad').textContent = pad;
+  document.getElementById('valCardPad').textContent = cardPad;
+  document.getElementById('valMargin').textContent = margin;
+
+  const totalFixed = parseInt(left) + parseInt(right);
+  const avail = window.innerWidth - parseInt(margin) * 2;
+  const ctr = maxW !== 'none' ? Math.min(avail - totalFixed, parseInt(maxW)) : avail - totalFixed;
+  document.getElementById('dimsDisplay').textContent = `Left: ${left}px | Center: ~${ctr}px | Right: ${right}px | Fixed: ${totalFixed}px | Viewport: ${window.innerWidth}px`;
+}
+
+[sliderLeft, sliderRight, sliderPad, sliderCardPad, sliderMargin].forEach(s => s.addEventListener('input', updateLayout));
+selectMaxWidth.addEventListener('change', updateLayout);
+window.addEventListener('resize', updateLayout);
+
+function applyPreset(name) {
+  const p = { current: { l:240,r:300,p:32,c:28,m:'720',mg:24 }, wide: { l:240,r:300,p:24,c:20,m:'none',mg:24 }, compact: { l:200,r:240,p:20,c:16,m:'none',mg:28 }, balanced: { l:210,r:260,p:24,c:20,m:'none',mg:28 } }[name];
+  sliderLeft.value=p.l; sliderRight.value=p.r; sliderPad.value=p.p; sliderCardPad.value=p.c; selectMaxWidth.value=p.m; sliderMargin.value=p.mg;
+  updateLayout();
+}
+
+// Init
+goToStep(0);
+updateLayout();
+</script>
+</body>
+</html>

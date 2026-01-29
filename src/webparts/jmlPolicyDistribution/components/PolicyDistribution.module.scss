@@ -9,7 +9,7 @@ $pm-font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-se
 .policyDistribution {
   font-family: $pm-font-family;
   color: #1e293b;
-  @include full-bleed;
+  width: 100%;
 }
 
 /* ──────────── KPI Dashboard ──────────── */

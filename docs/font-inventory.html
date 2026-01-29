@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Font Inventory — Policy Manager SPFx</title>
+<style>
+  /* ── Reset & Base ─────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --teal-primary: #0d9488;
+    --teal-dark:    #0f766e;
+    --teal-light:   #14b8a6;
+    --teal-50:      #f0fdfa;
+    --teal-100:     #ccfbf1;
+    --teal-200:     #99f6e4;
+    --teal-900:     #134e4a;
+    --surface:      #ffffff;
+    --bg:           #f4f6f8;
+    --text:         #1e293b;
+    --text-secondary:#64748b;
+    --border:       #e2e8f0;
+    --shadow:       0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+    --shadow-lg:    0 4px 12px rgba(0,0,0,.1);
+    --radius:       8px;
+    --font-family:  'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    --sidebar-width: 260px;
+    --header-height: 64px;
+  }
+
+  /* Dark mode overrides */
+  body.dark {
+    --surface:      #1e293b;
+    --bg:           #0f172a;
+    --text:         #e2e8f0;
+    --text-secondary:#94a3b8;
+    --border:       #334155;
+    --shadow:       0 1px 3px rgba(0,0,0,.3);
+    --shadow-lg:    0 4px 12px rgba(0,0,0,.4);
+  }
+
+  html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+
+  body {
+    font-family: var(--font-family);
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text);
+    background: var(--bg);
+    transition: background .25s, color .25s;
+  }
+
+  /* ── Header ───────────────────────────────────────────── */
+  .site-header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    height: var(--header-height);
+    background: linear-gradient(135deg, var(--teal-dark), var(--teal-primary));
+    color: #fff;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 32px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.15);
+  }
+  .site-header h1 { font-size: 20px; font-weight: 600; letter-spacing: .3px; }
+  .site-header .subtitle { font-size: 13px; opacity: .85; margin-left: 12px; font-weight: 400; }
+
+  .header-actions { display: flex; align-items: center; gap: 12px; }
+  .header-actions button {
+    background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.25);
+    color: #fff; padding: 6px 14px; border-radius: 6px; cursor: pointer;
+    font: 600 13px var(--font-family); transition: background .2s;
+  }
+  .header-actions button:hover { background: rgba(255,255,255,.25); }
+  .header-actions button.active { background: rgba(255,255,255,.3); }
+
+  /* ── Sidebar ──────────────────────────────────────────── */
+  .sidebar {
+    position: fixed; top: var(--header-height); left: 0; bottom: 0;
+    width: var(--sidebar-width); background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 24px 0; overflow-y: auto; z-index: 50;
+    transition: background .25s, border-color .25s;
+  }
+  .sidebar-title {
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px;
+    color: var(--text-secondary); padding: 0 20px; margin-bottom: 12px;
+  }
+  .sidebar a {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 20px; font-size: 13px; font-weight: 500;
+    color: var(--text-secondary); text-decoration: none;
+    border-left: 3px solid transparent; transition: all .15s;
+  }
+  .sidebar a:hover { color: var(--teal-primary); background: var(--teal-50); }
+  body.dark .sidebar a:hover { background: rgba(13,148,136,.1); }
+  .sidebar a.active {
+    color: var(--teal-primary); border-left-color: var(--teal-primary);
+    background: var(--teal-50); font-weight: 600;
+  }
+  body.dark .sidebar a.active { background: rgba(13,148,136,.12); }
+  .sidebar .nav-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; border-radius: 6px; font-size: 11px; font-weight: 700;
+    background: var(--teal-100); color: var(--teal-900); flex-shrink: 0;
+  }
+  body.dark .sidebar .nav-num { background: rgba(13,148,136,.2); color: var(--teal-light); }
+
+  /* ── Main ──────────────────────────────────────────────── */
+  .main {
+    margin-left: var(--sidebar-width);
+    margin-top: var(--header-height);
+    padding: 32px 40px 80px;
+    max-width: 1100px;
+  }
+
+  /* ── Section Cards ────────────────────────────────────── */
+  .section-card {
+    background: var(--surface); border-radius: var(--radius);
+    box-shadow: var(--shadow); border: 1px solid var(--border);
+    padding: 32px; margin-bottom: 32px;
+    transition: background .25s, border-color .25s;
+  }
+  .section-card h2 {
+    font-size: 22px; font-weight: 600; color: var(--teal-dark);
+    margin-bottom: 6px; display: flex; align-items: center; gap: 10px;
+  }
+  body.dark .section-card h2 { color: var(--teal-light); }
+  .section-card h2 .sec-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px; border-radius: 8px; font-size: 14px;
+    background: var(--teal-primary); color: #fff;
+  }
+  .section-desc { color: var(--text-secondary); margin-bottom: 24px; font-size: 14px; }
+
+  /* ── Font Sample Row ──────────────────────────────────── */
+  .font-sample {
+    display: grid; grid-template-columns: 180px 1fr auto;
+    align-items: center; gap: 16px;
+    padding: 16px 0; border-bottom: 1px solid var(--border);
+    transition: border-color .25s;
+  }
+  .font-sample:last-child { border-bottom: none; }
+  .font-sample:hover { background: var(--teal-50); margin: 0 -16px; padding: 16px; border-radius: 6px; }
+  body.dark .font-sample:hover { background: rgba(13,148,136,.06); }
+
+  .fs-meta { display: flex; flex-direction: column; gap: 2px; }
+  .fs-token { font-size: 14px; font-weight: 600; color: var(--text); }
+  .fs-detail { font-size: 12px; color: var(--text-secondary); font-family: 'Cascadia Code', 'Consolas', monospace; }
+
+  .fs-preview { color: var(--text); transition: color .25s; }
+
+  .copy-btn {
+    background: none; border: 1px solid var(--border); color: var(--text-secondary);
+    padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 11px;
+    font-family: var(--font-family); font-weight: 600; white-space: nowrap;
+    transition: all .15s;
+  }
+  .copy-btn:hover { border-color: var(--teal-primary); color: var(--teal-primary); }
+  .copy-btn.copied { background: var(--teal-primary); color: #fff; border-color: var(--teal-primary); }
+
+  /* ── Table ─────────────────────────────────────────────── */
+  .ctx-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .ctx-table th {
+    text-align: left; padding: 10px 12px; font-weight: 600; font-size: 12px;
+    text-transform: uppercase; letter-spacing: .5px;
+    background: var(--teal-50); color: var(--teal-dark); border-bottom: 2px solid var(--teal-primary);
+  }
+  body.dark .ctx-table th { background: rgba(13,148,136,.1); color: var(--teal-light); }
+  .ctx-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .ctx-table tr:hover td { background: rgba(13,148,136,.04); }
+  .ctx-table code {
+    background: var(--teal-50); color: var(--teal-dark); padding: 2px 6px;
+    border-radius: 4px; font-size: 12px; font-family: 'Cascadia Code', Consolas, monospace;
+  }
+  body.dark .ctx-table code { background: rgba(13,148,136,.12); color: var(--teal-light); }
+
+  /* ── Alert Cards ───────────────────────────────────────── */
+  .alert-card {
+    display: flex; gap: 14px; padding: 14px 18px;
+    border-radius: 8px; margin-bottom: 12px;
+    border-left: 4px solid;
+  }
+  .alert-card.warn { background: #fef9e7; border-color: #f59e0b; }
+  .alert-card.error { background: #fef2f2; border-color: #ef4444; }
+  .alert-card.info { background: #eff6ff; border-color: #3b82f6; }
+  body.dark .alert-card.warn { background: rgba(245,158,11,.08); }
+  body.dark .alert-card.error { background: rgba(239,68,68,.08); }
+  body.dark .alert-card.info { background: rgba(59,130,246,.08); }
+  .alert-icon { font-size: 18px; flex-shrink: 0; line-height: 1.4; }
+  .alert-body strong { display: block; font-size: 14px; margin-bottom: 2px; }
+  .alert-body p { font-size: 13px; color: var(--text-secondary); margin: 0; }
+
+  /* ── Recommended Scale ─────────────────────────────────── */
+  .rec-row {
+    display: grid; grid-template-columns: 160px 120px 1fr 200px;
+    align-items: center; gap: 12px;
+    padding: 14px 0; border-bottom: 1px solid var(--border);
+  }
+  .rec-row:last-child { border-bottom: none; }
+  .rec-role { font-weight: 600; font-size: 14px; }
+  .rec-spec { font-size: 13px; color: var(--text-secondary); font-family: 'Cascadia Code', Consolas, monospace; }
+  .rec-token {
+    font-size: 12px; font-family: 'Cascadia Code', Consolas, monospace;
+    background: var(--teal-50); color: var(--teal-dark); padding: 4px 10px;
+    border-radius: 5px; display: inline-block;
+  }
+  body.dark .rec-token { background: rgba(13,148,136,.12); color: var(--teal-light); }
+
+  /* ── Toast ──────────────────────────────────────────────── */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px; z-index: 200;
+    background: var(--teal-dark); color: #fff; padding: 10px 20px;
+    border-radius: 8px; font-size: 13px; font-weight: 600;
+    box-shadow: var(--shadow-lg); opacity: 0; transform: translateY(12px);
+    transition: opacity .25s, transform .25s; pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  /* ── Print ──────────────────────────────────────────────── */
+  @media print {
+    .site-header, .sidebar, .header-actions, .copy-btn, .toast { display: none !important; }
+    .main { margin: 0; padding: 20px; max-width: 100%; }
+    .section-card { break-inside: avoid; box-shadow: none; border: 1px solid #ccc; }
+    body, body.dark { background: #fff; color: #000; }
+    .section-card { background: #fff; }
+  }
+
+  /* ── Responsive ─────────────────────────────────────────── */
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .main { margin-left: 0; padding: 24px 16px 60px; }
+    .font-sample { grid-template-columns: 140px 1fr; }
+    .font-sample .copy-btn { grid-column: 1 / -1; justify-self: start; }
+    .rec-row { grid-template-columns: 1fr 1fr; }
+    .ctx-table { font-size: 12px; display: block; overflow-x: auto; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ━━ Header ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+<header class="site-header">
+  <div style="display:flex;align-items:baseline">
+    <h1>Font Inventory</h1>
+    <span class="subtitle">Policy Manager SPFx &mdash; Design Reference</span>
+  </div>
+  <div class="header-actions">
+    <button id="darkToggle" onclick="toggleDark()" title="Toggle dark mode">Dark Mode</button>
+    <button onclick="window.print()" title="Print / Save PDF">Print</button>
+  </div>
+</header>
+
+<!-- ━━ Sidebar ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-title">Sections</div>
+  <a href="#sec-tokens"><span class="nav-num">1</span> Design Token Scale</a>
+  <a href="#sec-weights"><span class="nav-num">2</span> Font Weight Scale</a>
+  <a href="#sec-fluent"><span class="nav-num">3</span> Fluent UI Variants</a>
+  <a href="#sec-mixins"><span class="nav-num">4</span> Mixin Typography</a>
+  <a href="#sec-matrix"><span class="nav-num">5</span> Usage Context Matrix</a>
+  <a href="#sec-alerts"><span class="nav-num">6</span> Inconsistency Alerts</a>
+  <a href="#sec-standard"><span class="nav-num">7</span> Recommended Standard</a>
+</nav>
+
+<!-- ━━ Main Content ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+<main class="main">
+
+<!-- ─── Section 1: Design Token Scale ──────────────────── -->
+<div class="section-card" id="sec-tokens">
+  <h2><span class="sec-num">1</span> Design Token Scale</h2>
+  <p class="section-desc">Font size tokens defined in <code>shared-styles.module.scss</code>. Each token maps to a specific pixel value used across the application.</p>
+
+  <div id="tokenSamples"></div>
+</div>
+
+<!-- ─── Section 2: Font Weight Scale ───────────────────── -->
+<div class="section-card" id="sec-weights">
+  <h2><span class="sec-num">2</span> Font Weight Scale</h2>
+  <p class="section-desc">All font weights actively used in the Policy Manager codebase, from Light (300) to ExtraBold (800).</p>
+
+  <div id="weightSamples"></div>
+</div>
+
+<!-- ─── Section 3: Fluent UI Text Variants ─────────────── -->
+<div class="section-card" id="sec-fluent">
+  <h2><span class="sec-num">3</span> Font UI Text Variants</h2>
+  <p class="section-desc">All Fluent UI <code>&lt;Text variant="..."&gt;</code> variants used in the codebase, showing the rendered output of each variant.</p>
+
+  <div id="fluentSamples"></div>
+</div>
+
+<!-- ─── Section 4: Mixin Typography Styles ─────────────── -->
+<div class="section-card" id="sec-mixins">
+  <h2><span class="sec-num">4</span> Mixin Typography Styles</h2>
+  <p class="section-desc">Typography mixins from <code>fluent-mixins.scss</code>. Each mixin bundles size, weight, and line-height into a reusable style.</p>
+
+  <div id="mixinSamples"></div>
+</div>
+
+<!-- ─── Section 5: Usage Context Matrix ────────────────── -->
+<div class="section-card" id="sec-matrix">
+  <h2><span class="sec-num">5</span> Usage Context Matrix</h2>
+  <p class="section-desc">Where each font style is used in the application. This maps every typographic context to its specific size, weight, Fluent variant, and component location.</p>
+
+  <table class="ctx-table">
+    <thead>
+      <tr>
+        <th>Context</th><th>Size</th><th>Weight</th><th>Variant</th><th>Used In</th>
+      </tr>
+    </thead>
+    <tbody id="matrixBody"></tbody>
+  </table>
+</div>
+
+<!-- ─── Section 6: Inconsistency Alerts ────────────────── -->
+<div class="section-card" id="sec-alerts">
+  <h2><span class="sec-num">6</span> Inconsistency Alerts</h2>
+  <p class="section-desc">Font inconsistencies identified across the codebase that should be addressed for a cohesive design system.</p>
+
+  <div id="alertCards"></div>
+</div>
+
+<!-- ─── Section 7: Recommended Standard ────────────────── -->
+<div class="section-card" id="sec-standard">
+  <h2><span class="sec-num">7</span> Recommended Standard</h2>
+  <p class="section-desc">A proposed standardized type scale to replace current inconsistencies. Each role maps to a single SCSS token.</p>
+
+  <div style="display:grid; grid-template-columns:160px 120px 1fr 200px; gap:0 12px; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--text-secondary); padding:0 0 8px; border-bottom:2px solid var(--teal-primary); margin-bottom:4px;">
+    <span>Role</span><span>Spec</span><span>Preview</span><span>Token</span>
+  </div>
+  <div id="recRows"></div>
+</div>
+
+</main>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- ━━ JavaScript ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+<script>
+/* ── Helpers ───────────────────────────────────────────── */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._tid);
+  t._tid = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+function copyCSS(css, btn) {
+  navigator.clipboard.writeText(css).then(() => {
+    btn.textContent = 'Copied!'; btn.classList.add('copied');
+    showToast('CSS copied to clipboard');
+    setTimeout(() => { btn.textContent = 'Copy CSS'; btn.classList.remove('copied'); }, 1600);
+  });
+}
+
+function toggleDark() {
+  document.body.classList.toggle('dark');
+  const btn = document.getElementById('darkToggle');
+  btn.textContent = document.body.classList.contains('dark') ? 'Light Mode' : 'Dark Mode';
+  btn.classList.toggle('active', document.body.classList.contains('dark'));
+}
+
+function makeSampleRow(meta, previewHTML, css) {
+  const row = document.createElement('div');
+  row.className = 'font-sample';
+  row.innerHTML = `
+    <div class="fs-meta">
+      <span class="fs-token">${meta.name}</span>
+      <span class="fs-detail">${meta.detail}</span>
+    </div>
+    <div class="fs-preview" style="${meta.style}">${previewHTML}</div>
+    <button class="copy-btn" onclick="copyCSS(\`${css.replace(/`/g,'\\`')}\`, this)">Copy CSS</button>
+  `;
+  return row;
+}
+
+/* ── Section 1: Design Token Scale ─────────────────────── */
+const tokens = [
+  { name: 'Hero',    token: '$jml-font-size-hero',    px: 32 },
+  { name: 'Title',   token: '$jml-font-size-title',   px: 28, note: 'page titles standard' },
+  { name: 'H1',      token: '$jml-font-size-h1',      px: 24 },
+  { name: 'H2',      token: '$jml-font-size-h2',      px: 20 },
+  { name: 'H3',      token: '$jml-font-size-h3',      px: 18 },
+  { name: 'H4',      token: '$jml-font-size-h4',      px: 16 },
+  { name: 'Base',    token: '$jml-font-size-base',    px: 14, note: 'body text standard' },
+  { name: 'Small',   token: '$jml-font-size-small',   px: 13 },
+  { name: 'Caption', token: '$jml-font-size-caption', px: 12 },
+];
+const tokenContainer = document.getElementById('tokenSamples');
+tokens.forEach(t => {
+  const noteStr = t.note ? ` — ${t.note}` : '';
+  const css = `font-size: ${t.px}px;`;
+  tokenContainer.appendChild(makeSampleRow(
+    { name: t.name, detail: `${t.token} &middot; ${t.px}px${noteStr}`, style: `font-size:${t.px}px;line-height:1.3` },
+    'The quick brown fox jumps over the lazy dog',
+    css
+  ));
+});
+
+/* ── Section 2: Font Weight Scale ──────────────────────── */
+const weights = [
+  { value: 300, label: 'Light',      usage: 'used rarely' },
+  { value: 400, label: 'Regular',    usage: 'body text' },
+  { value: 500, label: 'Medium',     usage: 'some labels' },
+  { value: 600, label: 'Semibold',   usage: 'headings, buttons, badges — MOST COMMON' },
+  { value: 700, label: 'Bold',       usage: 'some emphasis/stats' },
+  { value: 800, label: 'ExtraBold',  usage: 'rare, some stat numbers' },
+];
+const weightContainer = document.getElementById('weightSamples');
+weights.forEach(w => {
+  const css = `font-weight: ${w.value};`;
+  weightContainer.appendChild(makeSampleRow(
+    { name: `${w.value} (${w.label})`, detail: w.usage, style: `font-weight:${w.value};font-size:20px;line-height:1.4` },
+    'The quick brown fox jumps over the lazy dog',
+    css
+  ));
+});
+
+/* ── Section 3: Fluent UI Text Variants ────────────────── */
+const fluent = [
+  { variant: 'tiny',       px: 11 },
+  { variant: 'xSmall',     px: 11 },
+  { variant: 'small',      px: 12 },
+  { variant: 'smallPlus',  px: 13 },
+  { variant: 'medium',     px: 14, note: 'default' },
+  { variant: 'mediumPlus', px: 15 },
+  { variant: 'large',      px: 17 },
+  { variant: 'xLarge',     px: 20 },
+  { variant: 'xxLarge',    px: 28 },
+  { variant: 'mega',       px: 68, note: '68-72px' },
+];
+const fluentContainer = document.getElementById('fluentSamples');
+fluent.forEach(f => {
+  const noteStr = f.note ? ` — ${f.note}` : '';
+  const displayPx = f.variant === 'mega' ? 48 : f.px; // clamp mega for display
+  const css = `font-size: ${f.px}px; /* Fluent variant="${f.variant}" */`;
+  fluentContainer.appendChild(makeSampleRow(
+    { name: `variant="${f.variant}"`, detail: `${f.px}px${noteStr}`, style: `font-size:${displayPx}px;line-height:1.25` },
+    f.variant === 'mega' ? 'Mega' : 'The quick brown fox jumps over the lazy dog',
+    css
+  ));
+});
+
+/* ── Section 4: Mixin Typography Styles ────────────────── */
+const mixins = [
+  { name: 'heading-h1',     size: 24, weight: 600, lh: 1.3 },
+  { name: 'heading-h2',     size: 20, weight: 600, lh: 1.3 },
+  { name: 'heading-h3',     size: 16, weight: 600, lh: 1.3 },
+  { name: 'body-text',      size: 14, weight: 400, lh: 1.5 },
+  { name: 'caption-text',   size: 12, weight: 400, lh: 1.4 },
+  { name: 'button-primary', size: 14, weight: 600, lh: null },
+  { name: 'status-badge',   size: 12, weight: 600, lh: null },
+];
+const mixinContainer = document.getElementById('mixinSamples');
+mixins.forEach(m => {
+  const lhStr = m.lh ? ` / line-height: ${m.lh}` : '';
+  const detail = `${m.size}px / ${m.weight}${lhStr}`;
+  const css = `font-size: ${m.size}px; font-weight: ${m.weight};${m.lh ? ` line-height: ${m.lh};` : ''} /* @include ${m.name} */`;
+  const style = `font-size:${m.size}px;font-weight:${m.weight};${m.lh ? `line-height:${m.lh}` : ''}`;
+  mixinContainer.appendChild(makeSampleRow(
+    { name: `@include ${m.name}`, detail: detail, style: style },
+    m.name.includes('button') ? 'Submit Policy' : m.name.includes('badge') ? 'Active' : 'The quick brown fox jumps over the lazy dog',
+    css
+  ));
+});
+
+/* ── Section 5: Usage Context Matrix ───────────────────── */
+const matrix = [
+  ['Page Title',      '28px', '600', 'xxLarge',          'All webpart headers'],
+  ['Section Header',  '20px', '600', 'xLarge',           'Card sections, step headers'],
+  ['Sub-header',      '18px', '600', '\u2014',           'Some wizard headers'],
+  ['Card Title',      '16px', '600', 'large / mediumPlus','Card titles'],
+  ['Body Text',       '14px', '400', 'medium',           'General content'],
+  ['Button Text',     '14px', '600', '\u2014',           'All buttons'],
+  ['Small Label',     '13px', '400', 'smallPlus',        'Secondary labels'],
+  ['Caption / Meta',  '12px', '400', 'small',            'Timestamps, metadata'],
+  ['Badge Text',      '12px', '600', 'small',            'Status badges'],
+  ['Tiny Text',       '11px', '400', 'tiny / xSmall',    'Fine print'],
+  ['Stat Numbers',    '28\u201332px','700\u2013800','\u2014','Analytics dashboards'],
+  ['Icon Labels',     '12\u201314px','400\u2013600','\u2014','Nav, sidebar icons'],
+  ['Header Subtitle', '14px', '400', 'medium',           'Below page titles'],
+  ['Breadcrumb',      '14px', '600 \u2192 should be 400','\u2014','Navigation breadcrumb'],
+  ['Footer Text',     '12\u201313px','400','\u2014',     'Footer content'],
+];
+const matrixBody = document.getElementById('matrixBody');
+matrix.forEach(row => {
+  const tr = document.createElement('tr');
+  tr.innerHTML = row.map((cell, i) => `<td>${i === 3 && cell !== '\u2014' ? `<code>${cell}</code>` : cell}</td>`).join('');
+  matrixBody.appendChild(tr);
+});
+
+/* ── Section 6: Inconsistency Alerts ───────────────────── */
+const alerts = [
+  { type: 'error', icon: '\u26a0',
+    title: 'Card title sizes vary widely',
+    body: 'Card titles range from 14px to 20px across different components. Some use <code>large</code> (17px), others use <code>mediumPlus</code> (15px) or hardcoded 16px. Standardize to 16px / 600 via <code>heading-h3</code> mixin.' },
+  { type: 'warn', icon: '\u26a0',
+    title: 'Hardcoded font sizes bypass tokens',
+    body: 'Multiple components use inline <code>fontSize: 14</code> or <code>font-size: 12px</code> instead of the SCSS tokens (<code>$jml-font-size-base</code>, <code>$jml-font-size-caption</code>). Refactor to tokens for consistency.' },
+  { type: 'warn', icon: '\u26a0',
+    title: 'Heading weight inconsistency',
+    body: 'Most headings use <code>font-weight: 600</code> but some stat headings use <code>700</code> and analytics numbers use <code>800</code>. Decide if 700/800 are intentional emphasis or accidental drift.' },
+  { type: 'info', icon: '\u2139',
+    title: 'Line-height not consistently applied',
+    body: 'Mixins define line-heights (1.3 for headings, 1.5 for body) but many components override or omit line-height entirely, causing vertical rhythm inconsistencies across pages.' },
+  { type: 'warn', icon: '\u26a0',
+    title: 'Letter-spacing applied inconsistently',
+    body: 'Some headings and badges apply <code>letter-spacing: 0.5px</code> while most elements have none. This creates subtle visual inconsistencies. Either apply letter-spacing systematically via tokens or remove it.' },
+  { type: 'error', icon: '\u26a0',
+    title: 'Breadcrumb weight should be 400, not 600',
+    body: 'The navigation breadcrumb currently uses <code>font-weight: 600</code> which makes it visually compete with page titles. Standard breadcrumbs should use <code>400</code> weight.' },
+  { type: 'info', icon: '\u2139',
+    title: 'Fluent variant vs. hardcoded size mismatch',
+    body: 'Some components use Fluent <code>&lt;Text variant="large"&gt;</code> (17px) when 16px was intended. The Fluent variant system does not have a 16px option, so a CSS override or the <code>heading-h3</code> mixin should be used instead.' },
+];
+const alertContainer = document.getElementById('alertCards');
+alerts.forEach(a => {
+  const el = document.createElement('div');
+  el.className = `alert-card ${a.type}`;
+  el.innerHTML = `<span class="alert-icon">${a.icon}</span><div class="alert-body"><strong>${a.title}</strong><p>${a.body}</p></div>`;
+  alertContainer.appendChild(el);
+});
+
+/* ── Section 7: Recommended Standard ───────────────────── */
+const recommended = [
+  { role: 'Page Title',      spec: '28px / 600', px: 28, wt: 600, token: '$jml-font-size-title' },
+  { role: 'Section Heading', spec: '20px / 600', px: 20, wt: 600, token: '$jml-font-size-h2' },
+  { role: 'Sub Heading',     spec: '16px / 600', px: 16, wt: 600, token: '$jml-font-size-h4' },
+  { role: 'Body',            spec: '14px / 400', px: 14, wt: 400, token: '$jml-font-size-base' },
+  { role: 'Small',           spec: '13px / 400', px: 13, wt: 400, token: '$jml-font-size-small' },
+  { role: 'Caption',         spec: '12px / 400', px: 12, wt: 400, token: '$jml-font-size-caption' },
+  { role: 'Stat Large',      spec: '32px / 700', px: 32, wt: 700, token: '$jml-font-size-hero' },
+];
+const recContainer = document.getElementById('recRows');
+recommended.forEach(r => {
+  const row = document.createElement('div');
+  row.className = 'rec-row';
+  row.innerHTML = `
+    <span class="rec-role">${r.role}</span>
+    <span class="rec-spec">${r.spec}</span>
+    <span style="font-size:${r.px}px;font-weight:${r.wt};line-height:1.3">Sample Text</span>
+    <span class="rec-token">${r.token}</span>
+  `;
+  recContainer.appendChild(row);
+});
+
+/* ── Sidebar active state on scroll ────────────────────── */
+const sections = document.querySelectorAll('.section-card[id]');
+const navLinks = document.querySelectorAll('.sidebar a');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      navLinks.forEach(l => l.classList.remove('active'));
+      const link = document.querySelector(`.sidebar a[href="#${entry.target.id}"]`);
+      if (link) link.classList.add('active');
+    }
+  });
+}, { rootMargin: '-80px 0px -60% 0px', threshold: 0.1 });
+sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>

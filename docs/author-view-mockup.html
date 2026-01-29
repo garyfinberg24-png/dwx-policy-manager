@@ -1,0 +1,1862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Policy Author View — Design Tuning Mockup</title>
+<style>
+/* ===== RESET & BASE ===== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: var(--page-bg, #f3f2f1);
+  color: #323130;
+  display: flex;
+  min-height: 100vh;
+}
+
+:root {
+  --primary: #0d9488;
+  --primary-dark: #0f766e;
+  --primary-light: #14b8a6;
+  --primary-lighter: #ccfbf1;
+  --card-bg: #ffffff;
+  --page-bg: #f3f2f1;
+  --container-max-w: 1200px;
+  --container-pad: 28px;
+  --section-gap: 20px;
+  --card-pad: 16px;
+  --card-radius: 8px;
+  --card-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  --card-hover-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  --card-border: 1px solid #e5e7eb;
+  --left-border-w: 4px;
+  --kpi-cols: 4;
+  --kpi-min-w: 180px;
+  --kpi-icon-size: 40px;
+  --kpi-icon-radius: 10px;
+  --kpi-value-fs: 26px;
+  --kpi-label-fs: 12px;
+  --title-fs: 26px;
+  --section-fs: 18px;
+  --card-title-fs: 15px;
+  --body-fs: 13px;
+  --caption-fs: 12px;
+  --heading-fw: 600;
+  --chip-radius: 16px;
+  --chip-px: 14px;
+  --chip-py: 6px;
+  --chip-fs: 12px;
+  --chip-style: filled;
+  --badge-radius: 10px;
+  --badge-fs: 11px;
+  --badge-pad: 2px 8px;
+}
+
+/* ===== MAIN CONTENT AREA ===== */
+.main-area {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== HEADER BAR ===== */
+.pm-header {
+  background: var(--primary);
+  color: white;
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.pm-header .logo { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.pm-header .logo svg { width: 22px; height: 22px; }
+.pm-header .subtitle { font-size: 10px; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.5px; margin-left: auto; }
+
+/* ===== PIVOT TABS ===== */
+.pivot-bar {
+  background: #fff;
+  border-bottom: 1px solid #edebe9;
+  padding: 0 24px;
+  display: flex;
+  gap: 0;
+}
+.pivot-tab {
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #605e5c;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all 0.15s;
+  user-select: none;
+}
+.pivot-tab:hover { color: var(--primary); background: #f9fafb; }
+.pivot-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+.pivot-tab .tab-count {
+  display: inline-block;
+  background: #e5e7eb;
+  color: #6b7280;
+  border-radius: 10px;
+  padding: 1px 7px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-left: 6px;
+}
+.pivot-tab.active .tab-count { background: var(--primary-lighter); color: var(--primary-dark); }
+
+/* ===== CONTAINER ===== */
+.view-container {
+  max-width: var(--container-max-w);
+  margin: 0 auto;
+  padding: var(--container-pad);
+  width: 100%;
+}
+
+/* ===== PAGE HEADER ===== */
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: var(--section-gap);
+}
+.page-header-left { display: flex; align-items: flex-start; gap: 14px; }
+.page-header-icon {
+  width: 44px; height: 44px;
+  background: var(--primary-lighter);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--primary-dark);
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.page-header-title { font-size: var(--title-fs); font-weight: var(--heading-fw); color: #111827; }
+.page-header-desc { font-size: var(--body-fs); color: #6b7280; margin-top: 2px; }
+.page-header-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+.header-btn {
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #374151;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s;
+}
+.header-btn:hover { background: #f3f4f6; }
+.header-btn.primary {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.header-btn.primary:hover { background: var(--primary-dark); }
+.sort-select {
+  padding: 7px 10px;
+  font-size: 13px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  color: #374151;
+  cursor: pointer;
+}
+
+/* ===== KPI CARDS ===== */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--kpi-cols), minmax(var(--kpi-min-w), 1fr));
+  gap: 16px;
+  margin-bottom: var(--section-gap);
+}
+.kpi-card {
+  background: var(--card-bg);
+  border-radius: var(--card-radius);
+  padding: var(--card-pad);
+  box-shadow: var(--card-shadow);
+  border: var(--card-border);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: box-shadow 0.15s;
+}
+.kpi-card:hover { box-shadow: var(--card-hover-shadow); }
+.kpi-icon {
+  width: var(--kpi-icon-size);
+  height: var(--kpi-icon-size);
+  border-radius: var(--kpi-icon-radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.kpi-value { font-size: var(--kpi-value-fs); font-weight: 700; color: #111827; line-height: 1.1; }
+.kpi-label { font-size: var(--kpi-label-fs); color: #6b7280; margin-top: 2px; }
+
+/* ===== ALERT BAR ===== */
+.alert-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: var(--body-fs);
+  font-weight: 600;
+  margin-bottom: var(--section-gap);
+}
+.alert-bar.critical { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+.alert-bar.critical .alert-icon { color: #dc2626; }
+.alert-bar.warning { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
+.alert-bar.warning .alert-icon { color: #f59e0b; }
+.alert-bar .alert-icon { font-size: 16px; }
+.alert-bar .alert-dismiss { margin-left: auto; cursor: pointer; opacity: 0.5; font-size: 14px; }
+.alert-bar .alert-dismiss:hover { opacity: 1; }
+
+/* ===== SEARCH + FILTER CHIPS ===== */
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: var(--section-gap);
+  flex-wrap: wrap;
+}
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--card-bg);
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 7px 12px;
+  flex-shrink: 0;
+  min-width: 240px;
+}
+.search-box input {
+  border: none;
+  outline: none;
+  font-size: var(--body-fs);
+  font-family: inherit;
+  color: #374151;
+  width: 100%;
+  background: transparent;
+}
+.search-box .search-icon { color: #9ca3af; font-size: 14px; }
+.chip-group { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip {
+  padding: var(--chip-py) var(--chip-px);
+  font-size: var(--chip-fs);
+  font-weight: 600;
+  border-radius: var(--chip-radius);
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+  border: 1.5px solid transparent;
+}
+/* Filled style */
+.chip.chip-filled { background: #e5e7eb; color: #4b5563; border-color: #e5e7eb; }
+.chip.chip-filled:hover { background: #d1d5db; }
+.chip.chip-filled.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+/* Outlined style */
+.chip.chip-outlined { background: transparent; color: #4b5563; border-color: #d1d5db; }
+.chip.chip-outlined:hover { border-color: var(--primary); color: var(--primary); }
+.chip.chip-outlined.active { border-color: var(--primary); color: var(--primary); background: var(--primary-lighter); }
+/* Underline style */
+.chip.chip-underline { background: transparent; color: #4b5563; border-color: transparent; border-bottom: 2px solid transparent; border-radius: 0; }
+.chip.chip-underline:hover { color: var(--primary); }
+.chip.chip-underline.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+/* ===== REQUEST CARDS ===== */
+.card-list { display: flex; flex-direction: column; gap: 12px; }
+.req-card {
+  background: var(--card-bg);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+  border: var(--card-border);
+  border-left: var(--left-border-w) solid #d1d5db;
+  padding: var(--card-pad);
+  display: flex;
+  gap: 16px;
+  transition: all 0.18s;
+  cursor: pointer;
+}
+.req-card:hover {
+  box-shadow: var(--card-hover-shadow);
+  border-left-color: var(--primary) !important;
+}
+.req-card.priority-critical { border-left-color: #dc2626; }
+.req-card.priority-high { border-left-color: #f59e0b; }
+.req-card.priority-medium { border-left-color: #0078d4; }
+.req-card.priority-low { border-left-color: #10b981; }
+
+.req-card-body { flex: 1; min-width: 0; }
+.req-card-title-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+.req-card-title { font-size: var(--card-title-fs); font-weight: var(--heading-fw); color: #111827; }
+.badge {
+  display: inline-block;
+  padding: var(--badge-pad);
+  font-size: var(--badge-fs);
+  font-weight: 700;
+  border-radius: var(--badge-radius);
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.badge-critical { background: #fef2f2; color: #dc2626; }
+.badge-high { background: #fffbeb; color: #d97706; }
+.badge-medium { background: #eff6ff; color: #2563eb; }
+.badge-low { background: #f0fdf4; color: #16a34a; }
+.badge-new { background: #eff6ff; color: #0078d4; }
+.badge-assigned { background: #f3e8ff; color: #7c3aed; }
+.badge-inprogress { background: #fffbeb; color: #d97706; }
+.badge-draft { background: #f0fdf4; color: #16a34a; }
+.badge-completed { background: #f0fdf4; color: #107c10; }
+.badge-rejected { background: #fef2f2; color: #dc2626; }
+.badge-pending { background: #fffbeb; color: #d97706; }
+.badge-overdue { background: #fef2f2; color: #dc2626; }
+.badge-returned { background: #eff6ff; color: #2563eb; }
+.badge-approved { background: #f0fdf4; color: #107c10; }
+.badge-version { background: #f3f4f6; color: #6b7280; text-transform: none; letter-spacing: 0; }
+.badge-review { background: #eff6ff; color: #2563eb; }
+.badge-distribute { background: #f3e8ff; color: #7c3aed; }
+
+.meta-row {
+  display: flex;
+  gap: 16px;
+  font-size: var(--caption-fs);
+  color: #6b7280;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.meta-item { display: flex; align-items: center; gap: 5px; }
+.meta-icon { font-size: 12px; opacity: 0.7; }
+
+.persona {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.persona-circle {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+.persona-name { font-size: var(--caption-fs); color: #374151; }
+
+.justification {
+  font-size: var(--caption-fs);
+  color: #9ca3af;
+  font-style: italic;
+  margin-bottom: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 600px;
+}
+
+.small-meta {
+  display: flex;
+  gap: 14px;
+  font-size: 11px;
+  color: #9ca3af;
+  align-items: center;
+}
+.small-meta-item { display: flex; align-items: center; gap: 4px; }
+
+.req-card-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
+  min-width: 130px;
+}
+.req-date { font-size: 11px; color: #9ca3af; }
+.req-date.overdue { color: #dc2626; font-weight: 600; }
+.assigned-author { font-size: 11px; color: #6b7280; }
+
+/* ===== APPROVAL CARDS ===== */
+.approval-card {
+  background: var(--card-bg);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+  border: var(--card-border);
+  padding: var(--card-pad);
+  transition: all 0.18s;
+}
+.approval-card:hover { box-shadow: var(--card-hover-shadow); }
+.approval-card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+.approval-card-title { font-size: var(--card-title-fs); font-weight: var(--heading-fw); color: #111827; }
+.approval-card-body { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px; margin-bottom: 12px; }
+.approval-meta-label { font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.3px; font-weight: 600; }
+.approval-meta-value { font-size: var(--caption-fs); color: #374151; margin-top: 1px; }
+.change-summary { font-size: var(--caption-fs); color: #6b7280; font-style: italic; grid-column: 1 / -1; margin-top: 4px; }
+.approval-card-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid #f3f4f6; }
+.approval-actions { display: flex; gap: 8px; }
+.action-btn {
+  padding: 6px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1px solid;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.action-btn.approve { background: #107c10; color: #fff; border-color: #107c10; }
+.action-btn.approve:hover { background: #0e6b0e; }
+.action-btn.return-btn { background: #fff; color: #605e5c; border-color: #d1d5db; }
+.action-btn.return-btn:hover { background: #f3f4f6; }
+
+/* ===== DELEGATION CARDS ===== */
+.deleg-card {
+  background: var(--card-bg);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+  border: var(--card-border);
+  padding: var(--card-pad);
+  transition: all 0.18s;
+}
+.deleg-card:hover { box-shadow: var(--card-hover-shadow); }
+.deleg-card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+.deleg-card-body { display: flex; flex-direction: column; gap: 8px; }
+.deleg-notes { font-size: var(--caption-fs); color: #6b7280; font-style: italic; }
+.deleg-dates { display: flex; gap: 20px; font-size: 11px; }
+.deleg-date-label { color: #9ca3af; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+.deleg-date-value { color: #374151; margin-top: 1px; }
+.deleg-card-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid #f3f4f6; margin-top: 8px; }
+.delegated-by { font-size: 11px; color: #9ca3af; }
+
+/* ===== TAB CONTENT ===== */
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* ===== TUNING PANEL ===== */
+.tuning-panel {
+  width: 340px;
+  background: #1a1a2e;
+  color: #e2e8f0;
+  overflow-y: auto;
+  flex-shrink: 0;
+  font-size: 11px;
+  transition: width 0.25s;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+.tuning-panel.collapsed { width: 40px; }
+.tuning-panel.collapsed .panel-content { display: none; }
+.tuning-panel.collapsed .panel-toggle-label { display: block; }
+.panel-toggle {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 22px;
+  height: 22px;
+  background: rgba(255,255,255,0.15);
+  border: none;
+  color: #a5b4fc;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.panel-toggle:hover { background: rgba(255,255,255,0.25); }
+.panel-toggle-label {
+  display: none;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+  color: #a5b4fc;
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin: 50px auto 0;
+}
+.panel-content { padding: 40px 14px 20px; }
+.panel-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #a5b4fc;
+  margin-bottom: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.panel-section {
+  margin-bottom: 18px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  padding-bottom: 14px;
+}
+.panel-section:last-child { border-bottom: none; }
+.panel-section-title {
+  font-size: 10px;
+  font-weight: 700;
+  color: #818cf8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+.ctrl {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 7px;
+}
+.ctrl label {
+  flex-shrink: 0;
+  min-width: 100px;
+  font-size: 10px;
+  color: #94a3b8;
+  font-weight: 600;
+}
+.ctrl input[type="range"] {
+  flex: 1;
+  min-width: 60px;
+  accent-color: #0d9488;
+  height: 14px;
+}
+.ctrl .val {
+  background: rgba(255,255,255,0.1);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-weight: 700;
+  min-width: 42px;
+  text-align: center;
+  font-size: 10px;
+  color: #e2e8f0;
+  flex-shrink: 0;
+}
+.ctrl select {
+  flex: 1;
+  background: rgba(255,255,255,0.1);
+  color: #e2e8f0;
+  border: 1px solid rgba(255,255,255,0.15);
+  padding: 3px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-family: inherit;
+}
+.ctrl input[type="color"] {
+  width: 28px;
+  height: 22px;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 4px;
+  padding: 1px;
+  cursor: pointer;
+  background: transparent;
+}
+.presets-group { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 14px; }
+.preset-btn {
+  background: rgba(165,180,252,0.12);
+  color: #a5b4fc;
+  border: 1px solid rgba(165,180,252,0.25);
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.preset-btn:hover { background: rgba(165,180,252,0.25); color: #fff; }
+.export-btn {
+  width: 100%;
+  padding: 8px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  margin-top: 10px;
+  transition: background 0.15s;
+}
+.export-btn:hover { background: var(--primary-dark); }
+
+/* ===== PRINT ===== */
+@media print {
+  .tuning-panel { display: none !important; }
+  body { display: block; }
+  .main-area { width: 100%; }
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1100px) {
+  .tuning-panel { position: fixed; right: 0; top: 0; bottom: 0; z-index: 1000; box-shadow: -4px 0 20px rgba(0,0,0,0.3); }
+}
+@media (max-width: 800px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .page-header { flex-direction: column; gap: 12px; }
+  .filter-row { flex-direction: column; align-items: stretch; }
+  .search-box { min-width: unset; }
+  .req-card { flex-direction: column; }
+  .req-card-right { align-items: flex-start; flex-direction: row; gap: 12px; }
+  .approval-card-body { grid-template-columns: 1fr; }
+}
+
+/* ===== EXPORT MODAL ===== */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 2000;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 700px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.modal h2 { font-size: 18px; font-weight: 700; margin-bottom: 12px; color: #111827; }
+.modal pre {
+  background: #1a1a2e;
+  color: #e2e8f0;
+  padding: 16px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.modal-actions { display: flex; gap: 8px; margin-top: 14px; justify-content: flex-end; }
+.modal-btn {
+  padding: 8px 18px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #374151;
+}
+.modal-btn.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+.modal-btn.primary:hover { background: var(--primary-dark); }
+</style>
+</head>
+<body>
+
+<!-- ===== MAIN AREA ===== -->
+<div class="main-area">
+  <!-- Header -->
+  <div class="pm-header">
+    <div class="logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      Policy Manager
+    </div>
+    <div class="subtitle">Author View</div>
+  </div>
+
+  <!-- Pivot Tabs -->
+  <div class="pivot-bar">
+    <div class="pivot-tab active" data-tab="requests">
+      &#128203; Requests <span class="tab-count">12</span>
+    </div>
+    <div class="pivot-tab" data-tab="approvals">
+      &#9989; Approvals <span class="tab-count">7</span>
+    </div>
+    <div class="pivot-tab" data-tab="delegations">
+      &#128101; Delegations <span class="tab-count">5</span>
+    </div>
+  </div>
+
+  <!-- ==================== REQUESTS TAB ==================== -->
+  <div class="tab-content active" id="tab-requests">
+    <div class="view-container">
+      <!-- Page Header -->
+      <div class="page-header">
+        <div class="page-header-left">
+          <div class="page-header-icon">&#128203;</div>
+          <div>
+            <div class="page-header-title">Policy Requests</div>
+            <div class="page-header-desc">Manage and track incoming policy authoring requests</div>
+          </div>
+        </div>
+        <div class="page-header-actions">
+          <select class="sort-select">
+            <option>Sort: Newest first</option>
+            <option>Sort: Priority</option>
+            <option>Sort: Due date</option>
+          </select>
+          <button class="header-btn">&#8635; Refresh</button>
+        </div>
+      </div>
+
+      <!-- KPI Cards -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:#eff6ff;color:#0078d4;">&#128233;</div>
+          <div>
+            <div class="kpi-value">3</div>
+            <div class="kpi-label">New Requests</div>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:#f3e8ff;color:#8764b8;">&#128100;</div>
+          <div>
+            <div class="kpi-value">2</div>
+            <div class="kpi-label">Assigned</div>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:#fffbeb;color:#f59e0b;">&#9881;</div>
+          <div>
+            <div class="kpi-value">4</div>
+            <div class="kpi-label">In Progress</div>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:#f0fdf4;color:#107c10;">&#10004;</div>
+          <div>
+            <div class="kpi-value">2</div>
+            <div class="kpi-label">Completed</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alert Bar -->
+      <div class="alert-bar critical">
+        <span class="alert-icon">&#9888;</span>
+        <span>2 requests are marked as <strong>Critical</strong> priority and require immediate attention.</span>
+        <span class="alert-dismiss">&#10005;</span>
+      </div>
+
+      <!-- Search + Filter Chips -->
+      <div class="filter-row">
+        <div class="search-box">
+          <span class="search-icon">&#128269;</span>
+          <input type="text" placeholder="Search requests...">
+        </div>
+        <div class="chip-group" id="req-chips">
+          <span class="chip chip-filled active" data-filter="all">All (12)</span>
+          <span class="chip chip-filled" data-filter="new">New (3)</span>
+          <span class="chip chip-filled" data-filter="assigned">Assigned (2)</span>
+          <span class="chip chip-filled" data-filter="inprogress">In Progress (4)</span>
+          <span class="chip chip-filled" data-filter="draft">Draft Ready (1)</span>
+          <span class="chip chip-filled" data-filter="completed">Completed (2)</span>
+          <span class="chip chip-filled" data-filter="rejected">Rejected (0)</span>
+        </div>
+      </div>
+
+      <!-- Request Cards -->
+      <div class="card-list">
+        <!-- Card 1: Critical -->
+        <div class="req-card priority-critical">
+          <div class="req-card-body">
+            <div class="req-card-title-row">
+              <span class="req-card-title">Information Security Policy</span>
+              <span class="badge badge-critical">Critical</span>
+            </div>
+            <div class="meta-row">
+              <div class="meta-item">
+                <span class="persona">
+                  <span class="persona-circle" style="background:#0078d4;">JD</span>
+                  <span class="persona-name">James Davidson</span>
+                </span>
+              </div>
+              <div class="meta-item"><span class="meta-icon">&#128193;</span> Information Technology</div>
+              <div class="meta-item"><span class="meta-icon">&#128196;</span> New Policy</div>
+            </div>
+            <div class="justification">"Regulatory compliance requires an updated information security policy to address recent NIST framework changes and audit findings..."</div>
+            <div class="small-meta">
+              <span class="small-meta-item">&#128197; Due: Jan 15, 2026</span>
+              <span class="small-meta-item">&#128337; ~45 min read</span>
+              <span class="small-meta-item">&#10003; Ack required</span>
+              <span class="small-meta-item">&#128218; Quiz required</span>
+            </div>
+          </div>
+          <div class="req-card-right">
+            <span class="badge badge-new">New</span>
+            <span class="req-date">Submitted Dec 28, 2025</span>
+            <span class="assigned-author">
+              <span class="persona">
+                <span class="persona-circle" style="background:#8764b8;">SM</span>
+                <span class="persona-name">Sarah Mitchell</span>
+              </span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Card 2: Critical -->
+        <div class="req-card priority-critical">
+          <div class="req-card-body">
+            <div class="req-card-title-row">
+              <span class="req-card-title">Data Breach Response Protocol</span>
+              <span class="badge badge-critical">Critical</span>
+            </div>
+            <div class="meta-row">
+              <div class="meta-item">
+                <span class="persona">
+                  <span class="persona-circle" style="background:#dc2626;">LK</span>
+                  <span class="persona-name">Laura Kim</span>
+                </span>
+              </div>
+              <div class="meta-item"><span class="meta-icon">&#128193;</span> Legal &amp; Compliance</div>
+              <div class="meta-item"><span class="meta-icon">&#128196;</span> New Policy</div>
+            </div>
+            <div class="justification">"Recent incident highlighted gaps in our breach response procedures. Need formal policy aligned with GDPR Article 33 requirements..."</div>
+            <div class="small-meta">
+              <span class="small-meta-item">&#128197; Due: Jan 20, 2026</span>
+              <span class="small-meta-item">&#128337; ~30 min read</span>
+              <span class="small-meta-item">&#10003; Ack required</span>
+            </div>
+          </div>
+          <div class="req-card-right">
+            <span class="badge badge-inprogress">In Progress</span>
+            <span class="req-date overdue">Due: Jan 20, 2026</span>
+            <span class="assigned-author">
+              <span class="persona">
+                <span class="persona-circle" style="background:#107c10;">RB</span>
+                <span class="persona-name">Robert Bell</span>
+              </span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Card 3: High -->
+        <div class="req-card priority-high">
+          <div class="req-card-body">
+            <div class="req-card-title-row">
+              <span class="req-card-title">Data Retention Policy</span>
+              <span class="badge badge-high">High</span>
+            </div>
+            <div class="meta-row">
+              <div class="meta-item">
+                <span class="persona">
+                  <span class="persona-circle" style="background:#f59e0b;">AP</span>
+                  <span class="persona-name">Anika Patel</span>
+                </span>
+              </div>
+              <div class="meta-item"><span class="meta-icon">&#128193;</span> Records Management</div>
+              <div class="meta-item"><span class="meta-icon">&#128196;</span> Major Revision</div>
+            </div>
+            <div class="justification">"Current data retention schedules need updating to comply with new state privacy laws effective Q2 2026..."</div>
+            <div class="small-meta">
+              <span class="small-meta-item">&#128197; Due: Feb 10, 2026</span>
+              <span class="small-meta-item">&#128337; ~20 min read</span>
+              <span class="small-meta-item">&#10003; Ack required</span>
+              <span class="small-meta-item">&#128218; Quiz required</span>
+            </div>
+          </div>
+          <div class="req-card-right">
+            <span class="badge badge-assigned">Assigned</span>
+            <span class="req-date">Submitted Jan 3, 2026</span>
+            <span class="assigned-author">
+              <span class="persona">
+                <span class="persona-circle" style="background:#0d9488;">MR</span>
+                <span class="persona-name">Maria Rodriguez</span>
+              </span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Card 4: Medium -->
+        <div class="req-card priority-medium">
+          <div class="req-card-body">
+            <div class="req-card-title-row">
+              <span class="req-card-title">Code of Conduct</span>
+              <span class="badge badge-medium">Medium</span>
+            </div>
+            <div class="meta-row">
+              <div class="meta-item">
+                <span class="persona">
+                  <span class="persona-circle" style="background:#8764b8;">TW</span>
+                  <span class="persona-name">Tom Wilson</span>
+                </span>
+              </div>
+              <div class="meta-item"><span class="meta-icon">&#128193;</span> Human Resources</div>
+              <div class="meta-item"><span class="meta-icon">&#128196;</span> Minor Revision</div>
+            </div>
+            <div class="justification">"Annual review cycle — updates needed for remote work conduct guidelines and social media policy sections..."</div>
+            <div class="small-meta">
+              <span class="small-meta-item">&#128197; Due: Mar 1, 2026</span>
+              <span class="small-meta-item">&#128337; ~15 min read</span>
+            </div>
+          </div>
+          <div class="req-card-right">
+            <span class="badge badge-inprogress">In Progress</span>
+            <span class="req-date">Submitted Jan 8, 2026</span>
+            <span class="assigned-author">
+              <span class="persona">
+                <span class="persona-circle" style="background:#0078d4;">SM</span>
+                <span class="persona-name">Sarah Mitchell</span>
+              </span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Card 5: Low -->
+        <div class="req-card priority-low">
+          <div class="req-card-body">
+            <div class="req-card-title-row">
+              <span class="req-card-title">Travel &amp; Expense Reimbursement Policy</span>
+              <span class="badge badge-low">Low</span>
+            </div>
+            <div class="meta-row">
+              <div class="meta-item">
+                <span class="persona">
+                  <span class="persona-circle" style="background:#10b981;">CF</span>
+                  <span class="persona-name">Chris Franklin</span>
+                </span>
+              </div>
+              <div class="meta-item"><span class="meta-icon">&#128193;</span> Finance</div>
+              <div class="meta-item"><span class="meta-icon">&#128196;</span> Minor Revision</div>
+            </div>
+            <div class="justification">"Updating mileage rates and per diem amounts for fiscal year 2026. Also adding electric vehicle rental provisions..."</div>
+            <div class="small-meta">
+              <span class="small-meta-item">&#128197; Due: Apr 1, 2026</span>
+              <span class="small-meta-item">&#128337; ~10 min read</span>
+            </div>
+          </div>
+          <div class="req-card-right">
+            <span class="badge badge-completed">Completed</span>
+            <span class="req-date">Submitted Dec 15, 2025</span>
+            <span class="assigned-author">
+              <span class="persona">
+                <span class="persona-circle" style="background:#f59e0b;">AP</span>
+                <span class="persona-name">Anika Patel</span>
+              </span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== APPROVALS TAB ==================== -->
+  <div class="tab-content" id="tab-approvals">
+    <div class="view-container">
+      <div class="page-header">
+        <div class="page-header-left">
+          <div class="page-header-icon">&#9989;</div>
+          <div>
+            <div class="page-header-title">Policy Approvals</div>
+            <div class="page-header-desc">Review and approve policy submissions awaiting sign-off</div>
+          </div>
+        </div>
+        <div class="page-header-actions">
+          <select class="sort-select">
+            <option>Sort: Due date</option>
+            <option>Sort: Priority</option>
+            <option>Sort: Newest first</option>
+          </select>
+          <button class="header-btn">&#8635; Refresh</button>
+        </div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:#fffbeb;color:#f59e0b;">&#9203;</div>
+          <div><div class="kpi-value">4</div><div class="kpi-label">Pending</div></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:#fef2f2;color:#dc2626;">&#9888;</div>
+          <div><div class="kpi-value">1</div><div class="kpi-label">Urgent</div></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:#f0fdf4;color:#107c10;">&#10004;</div>
+          <div><div class="kpi-value">5</div><div class="kpi-label">Approved</div></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:#eff6ff;color:#0078d4;">&#8617;</div>
+          <div><div class="kpi-value">2</div><div class="kpi-label">Returned</div></div>
+        </div>
+      </div>
+
+      <div class="filter-row">
+        <div class="search-box">
+          <span class="search-icon">&#128269;</span>
+          <input type="text" placeholder="Search approvals...">
+        </div>
+        <div class="chip-group" id="approval-chips">
+          <span class="chip chip-filled active">All (12)</span>
+          <span class="chip chip-filled">Pending (4)</span>
+          <span class="chip chip-filled">Approved (5)</span>
+          <span class="chip chip-filled">Rejected (1)</span>
+          <span class="chip chip-filled">Returned (2)</span>
+        </div>
+      </div>
+
+      <div class="card-list">
+        <!-- Approval 1 -->
+        <div class="approval-card">
+          <div class="approval-card-header">
+            <span class="approval-card-title">Acceptable Use Policy</span>
+            <span class="badge badge-version">v2.0</span>
+            <span class="badge badge-high">High</span>
+            <span class="badge badge-pending">Pending</span>
+          </div>
+          <div class="approval-card-body">
+            <div>
+              <div class="approval-meta-label">Submitter</div>
+              <div class="approval-meta-value">
+                <span class="persona">
+                  <span class="persona-circle" style="background:#0078d4;">SM</span>
+                  <span class="persona-name">Sarah Mitchell</span>
+                </span>
+              </div>
+            </div>
+            <div>
+              <div class="approval-meta-label">Department</div>
+              <div class="approval-meta-value">Information Technology</div>
+            </div>
+            <div>
+              <div class="approval-meta-label">Submitted</div>
+              <div class="approval-meta-value">Jan 22, 2026</div>
+            </div>
+            <div>
+              <div class="approval-meta-label">Due</div>
+              <div class="approval-meta-value" style="color:#dc2626;font-weight:600;">Jan 28, 2026 (Overdue)</div>
+            </div>
+            <div class="change-summary">"Major revision incorporating BYOD policy updates, AI tool usage guidelines, and updated cloud storage provisions."</div>
+          </div>
+          <div class="approval-card-footer">
+            <span class="badge badge-pending">Pending Review</span>
+            <div class="approval-actions">
+              <button class="action-btn approve">&#10004; Approve</button>
+              <button class="action-btn return-btn">&#8617; Return</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Approval 2 -->
+        <div class="approval-card">
+          <div class="approval-card-header">
+            <span class="approval-card-title">Remote Work Policy</span>
+            <span class="badge badge-version">v1.0</span>
+            <span class="badge badge-medium">Medium</span>
+            <span class="badge badge-pending">Pending</span>
+          </div>
+          <div class="approval-card-body">
+            <div>
+              <div class="approval-meta-label">Submitter</div>
+              <div class="approval-meta-value">
+                <span class="persona">
+                  <span class="persona-circle" style="background:#8764b8;">MR</span>
+                  <span class="persona-name">Maria Rodriguez</span>
+                </span>
+              </div>
+            </div>
+            <div>
+              <div class="approval-meta-label">Department</div>
+              <div class="approval-meta-value">Human Resources</div>
+            </div>
+            <div>
+              <div class="approval-meta-label">Submitted</div>
+              <div class="approval-meta-value">Jan 18, 2026</div>
+            </div>
+            <div>
+              <div class="approval-meta-label">Due</div>
+              <div class="approval-meta-value">Feb 5, 2026</div>
+            </div>
+            <div class="change-summary">"New policy formalizing hybrid work arrangements, defining eligibility criteria, and establishing equipment provisions for remote employees."</div>
+          </div>
+          <div class="approval-card-footer">
+            <span class="badge badge-pending">Pending Review</span>
+            <div class="approval-actions">
+              <button class="action-btn approve">&#10004; Approve</button>
+              <button class="action-btn return-btn">&#8617; Return</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Approval 3: Approved -->
+        <div class="approval-card">
+          <div class="approval-card-header">
+            <span class="approval-card-title">Vendor Management Policy</span>
+            <span class="badge badge-version">v3.1</span>
+            <span class="badge badge-low">Low</span>
+            <span class="badge badge-approved">Approved</span>
+          </div>
+          <div class="approval-card-body">
+            <div>
+              <div class="approval-meta-label">Submitter</div>
+              <div class="approval-meta-value">
+                <span class="persona">
+                  <span class="persona-circle" style="background:#107c10;">RB</span>
+                  <span class="persona-name">Robert Bell</span>
+                </span>
+              </div>
+            </div>
+            <div>
+              <div class="approval-meta-label">Department</div>
+              <div class="approval-meta-value">Procurement</div>
+            </div>
+            <div>
+              <div class="approval-meta-label">Submitted</div>
+              <div class="approval-meta-value">Jan 10, 2026</div>
+            </div>
+            <div>
+              <div class="approval-meta-label">Approved</div>
+              <div class="approval-meta-value" style="color:#107c10;font-weight:600;">Jan 24, 2026</div>
+            </div>
+            <div class="change-summary">"Minor updates to vendor risk assessment scoring and annual review cadence."</div>
+          </div>
+          <div class="approval-card-footer">
+            <span class="badge badge-approved">Approved</span>
+            <div></div>
+          </div>
+        </div>
+
+        <!-- Approval 4: Returned -->
+        <div class="approval-card">
+          <div class="approval-card-header">
+            <span class="approval-card-title">Social Media Usage Policy</span>
+            <span class="badge badge-version">v1.2</span>
+            <span class="badge badge-medium">Medium</span>
+            <span class="badge badge-returned">Returned</span>
+          </div>
+          <div class="approval-card-body">
+            <div>
+              <div class="approval-meta-label">Submitter</div>
+              <div class="approval-meta-value">
+                <span class="persona">
+                  <span class="persona-circle" style="background:#f59e0b;">AP</span>
+                  <span class="persona-name">Anika Patel</span>
+                </span>
+              </div>
+            </div>
+            <div>
+              <div class="approval-meta-label">Department</div>
+              <div class="approval-meta-value">Communications</div>
+            </div>
+            <div>
+              <div class="approval-meta-label">Submitted</div>
+              <div class="approval-meta-value">Jan 5, 2026</div>
+            </div>
+            <div>
+              <div class="approval-meta-label">Returned</div>
+              <div class="approval-meta-value" style="color:#2563eb;">Jan 12, 2026</div>
+            </div>
+            <div class="change-summary">"Returned for revisions: Legal team requires additional language around AI-generated content disclosure on social platforms."</div>
+          </div>
+          <div class="approval-card-footer">
+            <span class="badge badge-returned">Returned for Revisions</span>
+            <div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== DELEGATIONS TAB ==================== -->
+  <div class="tab-content" id="tab-delegations">
+    <div class="view-container">
+      <div class="page-header">
+        <div class="page-header-left">
+          <div class="page-header-icon">&#128101;</div>
+          <div>
+            <div class="page-header-title">Policy Delegations</div>
+            <div class="page-header-desc">Track delegated tasks and their progress</div>
+          </div>
+        </div>
+        <div class="page-header-actions">
+          <button class="header-btn primary">+ Add Delegation</button>
+          <button class="header-btn">&#8635; Refresh</button>
+        </div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:#fffbeb;color:#f59e0b;">&#9203;</div>
+          <div><div class="kpi-value">2</div><div class="kpi-label">Pending</div></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:#eff6ff;color:#0078d4;">&#9881;</div>
+          <div><div class="kpi-value">3</div><div class="kpi-label">In Progress</div></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:#fef2f2;color:#dc2626;">&#9888;</div>
+          <div><div class="kpi-value">1</div><div class="kpi-label">Overdue</div></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:#f0fdf4;color:#107c10;">&#10004;</div>
+          <div><div class="kpi-value">4</div><div class="kpi-label">Completed</div></div>
+        </div>
+      </div>
+
+      <div class="alert-bar warning">
+        <span class="alert-icon">&#9888;</span>
+        <span>1 delegation is <strong>overdue</strong>. Please follow up with the assigned team member.</span>
+        <span class="alert-dismiss">&#10005;</span>
+      </div>
+
+      <div class="filter-row">
+        <div class="search-box">
+          <span class="search-icon">&#128269;</span>
+          <input type="text" placeholder="Search delegations...">
+        </div>
+        <div class="chip-group" id="deleg-chips">
+          <span class="chip chip-filled active">All (10)</span>
+          <span class="chip chip-filled">Pending (2)</span>
+          <span class="chip chip-filled">In Progress (3)</span>
+          <span class="chip chip-filled">Completed (4)</span>
+          <span class="chip chip-filled">Overdue (1)</span>
+        </div>
+      </div>
+
+      <div class="card-list">
+        <!-- Delegation 1: Overdue -->
+        <div class="deleg-card">
+          <div class="deleg-card-header">
+            <span class="approval-card-title">Information Security Policy</span>
+            <span class="badge badge-review">Review</span>
+            <span class="badge badge-high">High</span>
+            <span class="badge badge-overdue">Overdue</span>
+          </div>
+          <div class="deleg-card-body">
+            <div class="meta-row">
+              <div class="meta-item">
+                <span class="persona">
+                  <span class="persona-circle" style="background:#dc2626;">LK</span>
+                  <span class="persona-name">Laura Kim</span>
+                </span>
+              </div>
+            </div>
+            <div class="deleg-notes">"Please review Sections 4-7 for compliance with the new NIST CSF 2.0 framework and flag any gaps."</div>
+            <div class="deleg-dates">
+              <div><div class="deleg-date-label">Assigned</div><div class="deleg-date-value">Jan 8, 2026</div></div>
+              <div><div class="deleg-date-label">Due</div><div class="deleg-date-value" style="color:#dc2626;font-weight:600;">Jan 22, 2026 (Overdue)</div></div>
+            </div>
+          </div>
+          <div class="deleg-card-footer">
+            <div class="delegated-by">Delegated by:
+              <span class="persona" style="margin-left:4px;">
+                <span class="persona-circle" style="background:#8764b8;width:18px;height:18px;font-size:8px;">SM</span>
+                <span class="persona-name">Sarah Mitchell</span>
+              </span>
+            </div>
+            <span class="badge badge-overdue">Overdue</span>
+          </div>
+        </div>
+
+        <!-- Delegation 2 -->
+        <div class="deleg-card">
+          <div class="deleg-card-header">
+            <span class="approval-card-title">Data Retention Policy</span>
+            <span class="badge badge-inprogress" style="background:#fffbeb;color:#d97706;">Draft</span>
+            <span class="badge badge-pending">In Progress</span>
+          </div>
+          <div class="deleg-card-body">
+            <div class="meta-row">
+              <div class="meta-item">
+                <span class="persona">
+                  <span class="persona-circle" style="background:#107c10;">RB</span>
+                  <span class="persona-name">Robert Bell</span>
+                </span>
+              </div>
+            </div>
+            <div class="deleg-notes">"Draft the retention schedule tables for financial records (Section 3) and HR records (Section 4)."</div>
+            <div class="deleg-dates">
+              <div><div class="deleg-date-label">Assigned</div><div class="deleg-date-value">Jan 15, 2026</div></div>
+              <div><div class="deleg-date-label">Due</div><div class="deleg-date-value">Feb 5, 2026</div></div>
+            </div>
+          </div>
+          <div class="deleg-card-footer">
+            <div class="delegated-by">Delegated by:
+              <span class="persona" style="margin-left:4px;">
+                <span class="persona-circle" style="background:#0d9488;width:18px;height:18px;font-size:8px;">MR</span>
+                <span class="persona-name">Maria Rodriguez</span>
+              </span>
+            </div>
+            <span class="badge badge-inprogress">In Progress</span>
+          </div>
+        </div>
+
+        <!-- Delegation 3 -->
+        <div class="deleg-card">
+          <div class="deleg-card-header">
+            <span class="approval-card-title">Code of Conduct</span>
+            <span class="badge badge-approved" style="background:#f0fdf4;color:#107c10;">Approve</span>
+            <span class="badge badge-pending">Pending</span>
+          </div>
+          <div class="deleg-card-body">
+            <div class="meta-row">
+              <div class="meta-item">
+                <span class="persona">
+                  <span class="persona-circle" style="background:#f59e0b;">AP</span>
+                  <span class="persona-name">Anika Patel</span>
+                </span>
+              </div>
+            </div>
+            <div class="deleg-notes">"Review and provide final approval for the updated remote work conduct section. Legal has already signed off."</div>
+            <div class="deleg-dates">
+              <div><div class="deleg-date-label">Assigned</div><div class="deleg-date-value">Jan 25, 2026</div></div>
+              <div><div class="deleg-date-label">Due</div><div class="deleg-date-value">Feb 10, 2026</div></div>
+            </div>
+          </div>
+          <div class="deleg-card-footer">
+            <div class="delegated-by">Delegated by:
+              <span class="persona" style="margin-left:4px;">
+                <span class="persona-circle" style="background:#0078d4;width:18px;height:18px;font-size:8px;">SM</span>
+                <span class="persona-name">Sarah Mitchell</span>
+              </span>
+            </div>
+            <span class="badge badge-pending">Pending</span>
+          </div>
+        </div>
+
+        <!-- Delegation 4 -->
+        <div class="deleg-card">
+          <div class="deleg-card-header">
+            <span class="approval-card-title">Acceptable Use Policy</span>
+            <span class="badge badge-distribute" style="background:#f3e8ff;color:#7c3aed;">Distribute</span>
+            <span class="badge badge-completed">Completed</span>
+          </div>
+          <div class="deleg-card-body">
+            <div class="meta-row">
+              <div class="meta-item">
+                <span class="persona">
+                  <span class="persona-circle" style="background:#0078d4;">JD</span>
+                  <span class="persona-name">James Davidson</span>
+                </span>
+              </div>
+            </div>
+            <div class="deleg-notes">"Distribute the approved v1.8 to all IT department staff and collect acknowledgments."</div>
+            <div class="deleg-dates">
+              <div><div class="deleg-date-label">Assigned</div><div class="deleg-date-value">Jan 5, 2026</div></div>
+              <div><div class="deleg-date-label">Completed</div><div class="deleg-date-value" style="color:#107c10;font-weight:600;">Jan 18, 2026</div></div>
+            </div>
+          </div>
+          <div class="deleg-card-footer">
+            <div class="delegated-by">Delegated by:
+              <span class="persona" style="margin-left:4px;">
+                <span class="persona-circle" style="background:#8764b8;width:18px;height:18px;font-size:8px;">SM</span>
+                <span class="persona-name">Sarah Mitchell</span>
+              </span>
+            </div>
+            <span class="badge badge-completed">Completed</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TUNING PANEL ===== -->
+<div class="tuning-panel" id="tuningPanel">
+  <button class="panel-toggle" id="panelToggle" title="Toggle panel">&#9776;</button>
+  <div class="panel-toggle-label">DESIGN CONTROLS</div>
+  <div class="panel-content">
+    <div class="panel-title">Design Tuning</div>
+
+    <!-- Presets -->
+    <div class="panel-section">
+      <div class="panel-section-title">Presets</div>
+      <div class="presets-group">
+        <button class="preset-btn" onclick="applyPreset('current')">Current</button>
+        <button class="preset-btn" onclick="applyPreset('compact')">Compact</button>
+        <button class="preset-btn" onclick="applyPreset('spacious')">Spacious</button>
+        <button class="preset-btn" onclick="applyPreset('modern')">Modern</button>
+        <button class="preset-btn" onclick="applyPreset('corporate')">Corporate</button>
+      </div>
+    </div>
+
+    <!-- Layout -->
+    <div class="panel-section">
+      <div class="panel-section-title">Layout</div>
+      <div class="ctrl">
+        <label>Max Width</label>
+        <input type="range" min="900" max="1600" value="1200" data-var="--container-max-w" data-unit="px">
+        <span class="val">1200px</span>
+      </div>
+      <div class="ctrl">
+        <label>Padding</label>
+        <input type="range" min="16" max="48" value="28" data-var="--container-pad" data-unit="px">
+        <span class="val">28px</span>
+      </div>
+      <div class="ctrl">
+        <label>Section Gap</label>
+        <input type="range" min="8" max="32" value="20" data-var="--section-gap" data-unit="px">
+        <span class="val">20px</span>
+      </div>
+    </div>
+
+    <!-- Card -->
+    <div class="panel-section">
+      <div class="panel-section-title">Cards</div>
+      <div class="ctrl">
+        <label>Card Padding</label>
+        <input type="range" min="12" max="28" value="16" data-var="--card-pad" data-unit="px">
+        <span class="val">16px</span>
+      </div>
+      <div class="ctrl">
+        <label>Border Radius</label>
+        <input type="range" min="0" max="16" value="8" data-var="--card-radius" data-unit="px">
+        <span class="val">8px</span>
+      </div>
+      <div class="ctrl">
+        <label>Shadow Depth</label>
+        <select data-var="--card-shadow">
+          <option value="none">None</option>
+          <option value="0 1px 3px rgba(0,0,0,0.08)" selected>Depth 4</option>
+          <option value="0 2px 8px rgba(0,0,0,0.12)">Depth 8</option>
+          <option value="0 4px 16px rgba(0,0,0,0.15)">Depth 16</option>
+        </select>
+      </div>
+      <div class="ctrl">
+        <label>Hover Shadow</label>
+        <select data-var="--card-hover-shadow">
+          <option value="none">None</option>
+          <option value="0 2px 8px rgba(0,0,0,0.12)">Depth 8</option>
+          <option value="0 4px 12px rgba(0,0,0,0.12)" selected>Depth 12</option>
+          <option value="0 6px 20px rgba(0,0,0,0.18)">Depth 16</option>
+        </select>
+      </div>
+      <div class="ctrl">
+        <label>Card Border</label>
+        <select data-var="--card-border">
+          <option value="none">None</option>
+          <option value="1px solid #e5e7eb" selected>1px Light</option>
+          <option value="1px solid #d1d5db">1px Medium</option>
+        </select>
+      </div>
+      <div class="ctrl">
+        <label>Left Border W</label>
+        <input type="range" min="2" max="6" value="4" data-var="--left-border-w" data-unit="px">
+        <span class="val">4px</span>
+      </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="panel-section">
+      <div class="panel-section-title">KPI Cards</div>
+      <div class="ctrl">
+        <label>Columns</label>
+        <select data-var="--kpi-cols">
+          <option value="3">3</option>
+          <option value="4" selected>4</option>
+        </select>
+      </div>
+      <div class="ctrl">
+        <label>Min Width</label>
+        <input type="range" min="140" max="220" value="180" data-var="--kpi-min-w" data-unit="px">
+        <span class="val">180px</span>
+      </div>
+      <div class="ctrl">
+        <label>Icon Size</label>
+        <input type="range" min="32" max="52" value="40" data-var="--kpi-icon-size" data-unit="px">
+        <span class="val">40px</span>
+      </div>
+      <div class="ctrl">
+        <label>Icon Radius</label>
+        <select data-var="--kpi-icon-radius">
+          <option value="4px">4px</option>
+          <option value="8px">8px</option>
+          <option value="10px" selected>10px</option>
+          <option value="16px">16px</option>
+          <option value="50%">Circle</option>
+        </select>
+      </div>
+      <div class="ctrl">
+        <label>Value Size</label>
+        <input type="range" min="20" max="32" value="26" data-var="--kpi-value-fs" data-unit="px">
+        <span class="val">26px</span>
+      </div>
+      <div class="ctrl">
+        <label>Label Size</label>
+        <input type="range" min="11" max="14" value="12" data-var="--kpi-label-fs" data-unit="px">
+        <span class="val">12px</span>
+      </div>
+    </div>
+
+    <!-- Typography -->
+    <div class="panel-section">
+      <div class="panel-section-title">Typography</div>
+      <div class="ctrl">
+        <label>Page Title</label>
+        <input type="range" min="22" max="32" value="26" data-var="--title-fs" data-unit="px">
+        <span class="val">26px</span>
+      </div>
+      <div class="ctrl">
+        <label>Section Header</label>
+        <input type="range" min="16" max="24" value="18" data-var="--section-fs" data-unit="px">
+        <span class="val">18px</span>
+      </div>
+      <div class="ctrl">
+        <label>Card Title</label>
+        <input type="range" min="14" max="18" value="15" data-var="--card-title-fs" data-unit="px">
+        <span class="val">15px</span>
+      </div>
+      <div class="ctrl">
+        <label>Body Text</label>
+        <input type="range" min="13" max="15" value="13" data-var="--body-fs" data-unit="px">
+        <span class="val">13px</span>
+      </div>
+      <div class="ctrl">
+        <label>Caption</label>
+        <input type="range" min="11" max="13" value="12" data-var="--caption-fs" data-unit="px">
+        <span class="val">12px</span>
+      </div>
+      <div class="ctrl">
+        <label>Heading Weight</label>
+        <select data-var="--heading-fw">
+          <option value="500">500</option>
+          <option value="600" selected>600</option>
+          <option value="700">700</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Filter Chips -->
+    <div class="panel-section">
+      <div class="panel-section-title">Filter Chips</div>
+      <div class="ctrl">
+        <label>Border Radius</label>
+        <input type="range" min="4" max="20" value="16" data-var="--chip-radius" data-unit="px">
+        <span class="val">16px</span>
+      </div>
+      <div class="ctrl">
+        <label>Horiz Padding</label>
+        <input type="range" min="8" max="20" value="14" data-var="--chip-px" data-unit="px">
+        <span class="val">14px</span>
+      </div>
+      <div class="ctrl">
+        <label>Vert Padding</label>
+        <input type="range" min="4" max="10" value="6" data-var="--chip-py" data-unit="px">
+        <span class="val">6px</span>
+      </div>
+      <div class="ctrl">
+        <label>Font Size</label>
+        <input type="range" min="11" max="14" value="12" data-var="--chip-fs" data-unit="px">
+        <span class="val">12px</span>
+      </div>
+      <div class="ctrl">
+        <label>Active Style</label>
+        <select id="chipStyleSelect">
+          <option value="filled" selected>Filled Teal</option>
+          <option value="outlined">Outlined Teal</option>
+          <option value="underline">Underline</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Badges -->
+    <div class="panel-section">
+      <div class="panel-section-title">Badges</div>
+      <div class="ctrl">
+        <label>Border Radius</label>
+        <select data-var="--badge-radius">
+          <option value="2px">2px</option>
+          <option value="4px">4px</option>
+          <option value="6px">6px</option>
+          <option value="10px" selected>10px</option>
+          <option value="12px">12px</option>
+          <option value="99px">Pill</option>
+        </select>
+      </div>
+      <div class="ctrl">
+        <label>Font Size</label>
+        <input type="range" min="10" max="13" value="11" data-var="--badge-fs" data-unit="px">
+        <span class="val">11px</span>
+      </div>
+      <div class="ctrl">
+        <label>Padding</label>
+        <select data-var="--badge-pad">
+          <option value="2px 6px">2px 6px</option>
+          <option value="2px 8px" selected>2px 8px</option>
+          <option value="3px 10px">3px 10px</option>
+          <option value="4px 12px">4px 12px</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Colors -->
+    <div class="panel-section">
+      <div class="panel-section-title">Colors</div>
+      <div class="ctrl">
+        <label>Primary</label>
+        <input type="color" value="#0d9488" id="primaryColorPicker">
+        <span class="val" id="primaryColorVal">#0d9488</span>
+      </div>
+      <div class="ctrl">
+        <label>Card Background</label>
+        <select data-var="--card-bg">
+          <option value="#ffffff" selected>White</option>
+          <option value="#fafafa">#fafafa</option>
+          <option value="#f5f5f5">#f5f5f5</option>
+        </select>
+      </div>
+      <div class="ctrl">
+        <label>Page Background</label>
+        <select data-var="--page-bg">
+          <option value="#f3f2f1" selected>#f3f2f1</option>
+          <option value="#f8f8f8">#f8f8f8</option>
+          <option value="#ffffff">White</option>
+          <option value="#e8e8e8">#e8e8e8</option>
+        </select>
+      </div>
+    </div>
+
+    <button class="export-btn" onclick="showExportModal()">Export CSS Variables</button>
+  </div>
+</div>
+
+<!-- ===== EXPORT MODAL ===== -->
+<div class="modal-overlay" id="exportModal">
+  <div class="modal">
+    <h2>Exported CSS Variables</h2>
+    <pre id="exportedCSS"></pre>
+    <div class="modal-actions">
+      <button class="modal-btn" onclick="copyExport()">Copy to Clipboard</button>
+      <button class="modal-btn primary" onclick="closeExportModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== TAB SWITCHING =====
+document.querySelectorAll('.pivot-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.pivot-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+// ===== CHIP TOGGLING =====
+document.querySelectorAll('.chip-group').forEach(group => {
+  group.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      group.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+    });
+  });
+});
+
+// ===== ALERT DISMISS =====
+document.querySelectorAll('.alert-dismiss').forEach(btn => {
+  btn.addEventListener('click', () => {
+    btn.parentElement.style.display = 'none';
+  });
+});
+
+// ===== PANEL TOGGLE =====
+const panel = document.getElementById('tuningPanel');
+document.getElementById('panelToggle').addEventListener('click', () => {
+  panel.classList.toggle('collapsed');
+});
+
+// ===== RANGE SLIDERS =====
+document.querySelectorAll('.ctrl input[type="range"]').forEach(input => {
+  const valSpan = input.nextElementSibling;
+  const varName = input.dataset.var;
+  const unit = input.dataset.unit || '';
+
+  const update = () => {
+    const v = input.value + unit;
+    valSpan.textContent = v;
+    document.documentElement.style.setProperty(varName, v);
+  };
+  input.addEventListener('input', update);
+});
+
+// ===== SELECT CONTROLS =====
+document.querySelectorAll('.ctrl select[data-var]').forEach(sel => {
+  sel.addEventListener('change', () => {
+    document.documentElement.style.setProperty(sel.dataset.var, sel.value);
+  });
+});
+
+// ===== PRIMARY COLOR PICKER =====
+const primaryPicker = document.getElementById('primaryColorPicker');
+const primaryVal = document.getElementById('primaryColorVal');
+primaryPicker.addEventListener('input', () => {
+  const hex = primaryPicker.value;
+  primaryVal.textContent = hex;
+  document.documentElement.style.setProperty('--primary', hex);
+  // Compute darker and lighter variants
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  const dark = '#' + [r,g,b].map(c => Math.max(0, Math.round(c*0.85)).toString(16).padStart(2,'0')).join('');
+  const light = '#' + [r,g,b].map(c => Math.min(255, Math.round(c*1.2)).toString(16).padStart(2,'0')).join('');
+  const lighter = '#' + [r,g,b].map(c => Math.min(255, Math.round(c*0.15 + 255*0.85)).toString(16).padStart(2,'0')).join('');
+  document.documentElement.style.setProperty('--primary-dark', dark);
+  document.documentElement.style.setProperty('--primary-light', light);
+  document.documentElement.style.setProperty('--primary-lighter', lighter);
+  // Update header bg
+  document.querySelector('.pm-header').style.background = hex;
+});
+
+// ===== CHIP STYLE SWITCHING =====
+const chipStyleSelect = document.getElementById('chipStyleSelect');
+chipStyleSelect.addEventListener('change', () => {
+  const style = chipStyleSelect.value;
+  document.querySelectorAll('.chip').forEach(chip => {
+    chip.classList.remove('chip-filled', 'chip-outlined', 'chip-underline');
+    chip.classList.add('chip-' + style);
+  });
+});
+
+// ===== PRESETS =====
+const presets = {
+  current: {
+    '--container-max-w':'1200px','--container-pad':'28px','--section-gap':'20px',
+    '--card-pad':'16px','--card-radius':'8px',
+    '--card-shadow':'0 1px 3px rgba(0,0,0,0.08)','--card-hover-shadow':'0 4px 12px rgba(0,0,0,0.12)',
+    '--card-border':'1px solid #e5e7eb','--left-border-w':'4px',
+    '--kpi-cols':'4','--kpi-min-w':'180px','--kpi-icon-size':'40px','--kpi-icon-radius':'10px',
+    '--kpi-value-fs':'26px','--kpi-label-fs':'12px',
+    '--title-fs':'26px','--section-fs':'18px','--card-title-fs':'15px','--body-fs':'13px','--caption-fs':'12px','--heading-fw':'600',
+    '--chip-radius':'16px','--chip-px':'14px','--chip-py':'6px','--chip-fs':'12px',
+    '--badge-radius':'10px','--badge-fs':'11px','--badge-pad':'2px 8px',
+    '--primary':'#0d9488','--card-bg':'#ffffff','--page-bg':'#f3f2f1',
+    chipStyle:'filled'
+  },
+  compact: {
+    '--container-max-w':'1100px','--container-pad':'18px','--section-gap':'12px',
+    '--card-pad':'12px','--card-radius':'6px',
+    '--card-shadow':'0 1px 2px rgba(0,0,0,0.06)','--card-hover-shadow':'0 2px 8px rgba(0,0,0,0.1)',
+    '--card-border':'1px solid #e5e7eb','--left-border-w':'3px',
+    '--kpi-cols':'4','--kpi-min-w':'150px','--kpi-icon-size':'34px','--kpi-icon-radius':'8px',
+    '--kpi-value-fs':'22px','--kpi-label-fs':'11px',
+    '--title-fs':'22px','--section-fs':'16px','--card-title-fs':'14px','--body-fs':'13px','--caption-fs':'11px','--heading-fw':'600',
+    '--chip-radius':'12px','--chip-px':'10px','--chip-py':'4px','--chip-fs':'11px',
+    '--badge-radius':'6px','--badge-fs':'10px','--badge-pad':'2px 6px',
+    '--primary':'#0d9488','--card-bg':'#ffffff','--page-bg':'#f3f2f1',
+    chipStyle:'filled'
+  },
+  spacious: {
+    '--container-max-w':'1400px','--container-pad':'40px','--section-gap':'28px',
+    '--card-pad':'24px','--card-radius':'10px',
+    '--card-shadow':'0 2px 8px rgba(0,0,0,0.1)','--card-hover-shadow':'0 6px 20px rgba(0,0,0,0.15)',
+    '--card-border':'1px solid #e5e7eb','--left-border-w':'5px',
+    '--kpi-cols':'4','--kpi-min-w':'200px','--kpi-icon-size':'48px','--kpi-icon-radius':'12px',
+    '--kpi-value-fs':'30px','--kpi-label-fs':'13px',
+    '--title-fs':'30px','--section-fs':'22px','--card-title-fs':'17px','--body-fs':'14px','--caption-fs':'13px','--heading-fw':'700',
+    '--chip-radius':'18px','--chip-px':'18px','--chip-py':'8px','--chip-fs':'13px',
+    '--badge-radius':'12px','--badge-fs':'12px','--badge-pad':'3px 10px',
+    '--primary':'#0d9488','--card-bg':'#ffffff','--page-bg':'#f8f8f8',
+    chipStyle:'filled'
+  },
+  modern: {
+    '--container-max-w':'1200px','--container-pad':'32px','--section-gap':'22px',
+    '--card-pad':'20px','--card-radius':'14px',
+    '--card-shadow':'0 2px 12px rgba(0,0,0,0.06)','--card-hover-shadow':'0 8px 24px rgba(0,0,0,0.1)',
+    '--card-border':'none','--left-border-w':'4px',
+    '--kpi-cols':'4','--kpi-min-w':'180px','--kpi-icon-size':'44px','--kpi-icon-radius':'50%',
+    '--kpi-value-fs':'28px','--kpi-label-fs':'12px',
+    '--title-fs':'28px','--section-fs':'20px','--card-title-fs':'16px','--body-fs':'14px','--caption-fs':'12px','--heading-fw':'600',
+    '--chip-radius':'20px','--chip-px':'16px','--chip-py':'6px','--chip-fs':'12px',
+    '--badge-radius':'99px','--badge-fs':'11px','--badge-pad':'3px 10px',
+    '--primary':'#0d9488','--card-bg':'#ffffff','--page-bg':'#f8f8f8',
+    chipStyle:'outlined'
+  },
+  corporate: {
+    '--container-max-w':'1200px','--container-pad':'24px','--section-gap':'16px',
+    '--card-pad':'16px','--card-radius':'2px',
+    '--card-shadow':'none','--card-hover-shadow':'0 1px 4px rgba(0,0,0,0.08)',
+    '--card-border':'1px solid #d1d5db','--left-border-w':'3px',
+    '--kpi-cols':'4','--kpi-min-w':'170px','--kpi-icon-size':'36px','--kpi-icon-radius':'4px',
+    '--kpi-value-fs':'24px','--kpi-label-fs':'11px',
+    '--title-fs':'24px','--section-fs':'17px','--card-title-fs':'14px','--body-fs':'13px','--caption-fs':'11px','--heading-fw':'600',
+    '--chip-radius':'4px','--chip-px':'12px','--chip-py':'5px','--chip-fs':'12px',
+    '--badge-radius':'2px','--badge-fs':'10px','--badge-pad':'2px 6px',
+    '--primary':'#0d9488','--card-bg':'#ffffff','--page-bg':'#f3f2f1',
+    chipStyle:'filled'
+  }
+};
+
+function applyPreset(name) {
+  const p = presets[name];
+  if (!p) return;
+  for (const [k, v] of Object.entries(p)) {
+    if (k === 'chipStyle') {
+      chipStyleSelect.value = v;
+      chipStyleSelect.dispatchEvent(new Event('change'));
+      continue;
+    }
+    document.documentElement.style.setProperty(k, v);
+  }
+  // Sync controls
+  document.querySelectorAll('.ctrl input[type="range"]').forEach(input => {
+    const varName = input.dataset.var;
+    if (p[varName]) {
+      input.value = parseInt(p[varName]);
+      input.nextElementSibling.textContent = p[varName];
+    }
+  });
+  document.querySelectorAll('.ctrl select[data-var]').forEach(sel => {
+    if (p[sel.dataset.var] !== undefined) {
+      sel.value = p[sel.dataset.var];
+    }
+  });
+  // Color
+  if (p['--primary']) {
+    primaryPicker.value = p['--primary'];
+    primaryVal.textContent = p['--primary'];
+    document.querySelector('.pm-header').style.background = p['--primary'];
+  }
+  if (p['--page-bg']) {
+    document.body.style.background = p['--page-bg'];
+  }
+}
+
+// ===== EXPORT =====
+function showExportModal() {
+  const root = document.documentElement;
+  const cs = getComputedStyle(root);
+  const vars = [
+    '--primary','--primary-dark','--primary-light','--primary-lighter',
+    '--card-bg','--page-bg',
+    '--container-max-w','--container-pad','--section-gap',
+    '--card-pad','--card-radius','--card-shadow','--card-hover-shadow','--card-border','--left-border-w',
+    '--kpi-cols','--kpi-min-w','--kpi-icon-size','--kpi-icon-radius','--kpi-value-fs','--kpi-label-fs',
+    '--title-fs','--section-fs','--card-title-fs','--body-fs','--caption-fs','--heading-fw',
+    '--chip-radius','--chip-px','--chip-py','--chip-fs',
+    '--badge-radius','--badge-fs','--badge-pad'
+  ];
+  let css = ':root {\n';
+  vars.forEach(v => {
+    const val = cs.getPropertyValue(v).trim();
+    if (val) css += '  ' + v + ': ' + val + ';\n';
+  });
+  css += '}\n\n';
+  css += '/* Chip active style: ' + chipStyleSelect.value + ' */\n';
+  css += '/* Generated from Policy Author View Mockup — ' + new Date().toLocaleDateString() + ' */\n';
+
+  document.getElementById('exportedCSS').textContent = css;
+  document.getElementById('exportModal').classList.add('show');
+}
+
+function closeExportModal() {
+  document.getElementById('exportModal').classList.remove('show');
+}
+
+function copyExport() {
+  const text = document.getElementById('exportedCSS').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('.modal-actions .modal-btn:first-child');
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy to Clipboard', 1500);
+  });
+}
+
+// Close modal on overlay click
+document.getElementById('exportModal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeExportModal();
+});
+</script>
+</body>
+</html>

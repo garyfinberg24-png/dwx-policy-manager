@@ -327,6 +327,21 @@ export function removeSharePointOverrides(): void {
   const CRITICAL_CSS_ID = 'jml-critical-fouc-fix';
   if (document.getElementById(CRITICAL_CSS_ID)) return;
 
+  // Also inject embedded mode styles immediately (not just onInit)
+  // This prevents the double-flash: first SP chrome appears, then disappears
+  const embeddedCssId = 'jml-embedded-mode-critical';
+  if (!document.getElementById(embeddedCssId)) {
+    const embeddedEl = document.createElement('style');
+    embeddedEl.id = embeddedCssId;
+    embeddedEl.type = 'text/css';
+    embeddedEl.textContent = PM_EMBEDDED_STYLES;
+    if (document.head.firstChild) {
+      document.head.insertBefore(embeddedEl, document.head.firstChild);
+    } else {
+      document.head.appendChild(embeddedEl);
+    }
+  }
+
   // Critical CSS to hide SharePoint chrome IMMEDIATELY
   // This is a minimal subset focused on preventing the flash
   const criticalCss = `
@@ -378,7 +393,122 @@ export function removeSharePointOverrides(): void {
     body {
       padding-top: 0 !important;
       margin-top: 0 !important;
+      /* Set white background immediately to prevent default grey flash */
+      background-color: #ffffff !important;
     }
+
+    /* ============================================================
+       CONTENT FOUC PREVENTION
+       Hide webpart content until JmlAppLayout renders (adds
+       data-jml-ready attribute). Show a lightweight skeleton
+       placeholder in the meantime.
+       ============================================================ */
+
+    /* Hide the webpart content until React mounts */
+    [data-sp-web-part] > div:not([data-jml-ready]) {
+      opacity: 0;
+    }
+
+    /* Reveal smoothly once JmlAppLayout has mounted */
+    [data-sp-web-part] > div[data-jml-ready="true"] {
+      opacity: 1;
+      transition: opacity 0.15s ease-in;
+    }
+
+    /* Loading skeleton - shows immediately, hidden once app renders */
+    .jml-loading-skeleton {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      background: #ffffff;
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    .jml-loading-skeleton[data-hidden="true"] {
+      display: none !important;
+    }
+
+    /* Skeleton header bar */
+    .jml-skel-header {
+      height: 64px;
+      background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+      display: flex;
+      align-items: center;
+      padding: 0 56px;
+    }
+
+    .jml-skel-logo {
+      width: 140px;
+      height: 24px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 4px;
+    }
+
+    /* Skeleton nav bar */
+    .jml-skel-nav {
+      height: 44px;
+      background: #f0fdfa;
+      border-bottom: 1px solid #e6f7f5;
+      display: flex;
+      align-items: center;
+      padding: 0 56px;
+      gap: 24px;
+    }
+
+    .jml-skel-nav-item {
+      width: 72px;
+      height: 14px;
+      background: #d1fae5;
+      border-radius: 3px;
+    }
+
+    /* Skeleton content area */
+    .jml-skel-content {
+      flex: 1;
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 32px 24px;
+    }
+
+    .jml-skel-title {
+      width: 280px;
+      height: 28px;
+      background: #e5e7eb;
+      border-radius: 4px;
+      margin-bottom: 16px;
+    }
+
+    .jml-skel-line {
+      height: 14px;
+      background: #f3f4f6;
+      border-radius: 3px;
+      margin-bottom: 12px;
+    }
+
+    .jml-skel-line:nth-child(2) { width: 90%; }
+    .jml-skel-line:nth-child(3) { width: 75%; }
+    .jml-skel-line:nth-child(4) { width: 60%; }
+
+    /* Shimmer animation for skeleton */
+    @keyframes jml-shimmer {
+      0% { background-position: -200px 0; }
+      100% { background-position: calc(200px + 100%) 0; }
+    }
+
+    .jml-skel-logo,
+    .jml-skel-nav-item,
+    .jml-skel-title,
+    .jml-skel-line {
+      background-size: 200px 100%;
+      background-repeat: no-repeat;
+      animation: jml-shimmer 1.5s ease-in-out infinite;
+    }
+
+    .jml-skel-logo { background-image: linear-gradient(90deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.35) 50%, rgba(255,255,255,0.2) 100%); }
+    .jml-skel-nav-item { background-image: linear-gradient(90deg, #d1fae5 0%, #a7f3d0 50%, #d1fae5 100%); }
+    .jml-skel-title { background-image: linear-gradient(90deg, #e5e7eb 0%, #d1d5db 50%, #e5e7eb 100%); }
+    .jml-skel-line { background-image: linear-gradient(90deg, #f3f4f6 0%, #e5e7eb 50%, #f3f4f6 100%); }
   `;
 
   // Inject the critical CSS as early as possible
@@ -395,4 +525,66 @@ export function removeSharePointOverrides(): void {
   }
 
   console.log('[JML] Critical FOUC-prevention CSS injected immediately');
+
+  // Inject loading skeleton HTML into the page body
+  // This shows a branded placeholder while React boots
+  const skeletonId = 'jml-loading-skeleton';
+  if (!document.getElementById(skeletonId)) {
+    const skeleton = document.createElement('div');
+    skeleton.id = skeletonId;
+    skeleton.className = 'jml-loading-skeleton';
+    skeleton.innerHTML = `
+      <div class="jml-skel-header">
+        <div class="jml-skel-logo"></div>
+      </div>
+      <div class="jml-skel-nav">
+        <div class="jml-skel-nav-item"></div>
+        <div class="jml-skel-nav-item"></div>
+        <div class="jml-skel-nav-item"></div>
+        <div class="jml-skel-nav-item"></div>
+        <div class="jml-skel-nav-item"></div>
+      </div>
+      <div class="jml-skel-content">
+        <div class="jml-skel-title"></div>
+        <div class="jml-skel-line"></div>
+        <div class="jml-skel-line"></div>
+        <div class="jml-skel-line"></div>
+        <div class="jml-skel-line"></div>
+      </div>
+    `;
+    // Insert at top of body so it's the first thing visible
+    if (document.body) {
+      document.body.insertBefore(skeleton, document.body.firstChild);
+    } else {
+      // Body not ready yet — wait for DOMContentLoaded
+      document.addEventListener('DOMContentLoaded', () => {
+        if (!document.getElementById(skeletonId)) {
+          document.body.insertBefore(skeleton, document.body.firstChild);
+        }
+      }, { once: true });
+    }
+  }
 })();
+
+/**
+ * Signals that the JML app has rendered and is ready.
+ * Hides the loading skeleton and marks the webpart container for reveal.
+ * Call this from JmlAppLayout's useEffect on mount.
+ */
+export function signalAppReady(): void {
+  if (typeof document === 'undefined') return;
+
+  // Hide the loading skeleton
+  const skeleton = document.getElementById('jml-loading-skeleton');
+  if (skeleton) {
+    skeleton.setAttribute('data-hidden', 'true');
+  }
+
+  // Mark webpart containers as ready for reveal
+  const webPartContainers = document.querySelectorAll('[data-sp-web-part] > div');
+  webPartContainers.forEach((el) => {
+    el.setAttribute('data-jml-ready', 'true');
+  });
+
+  console.log('[JML] App ready — skeleton hidden, content revealed');
+}

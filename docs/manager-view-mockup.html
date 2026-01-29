@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Policy Manager — Manager View Mockup</title>
+<style>
+/* ===== RESET & BASE ===== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --primary:#0d9488;--primary-dark:#0f766e;--primary-light:#14b8a6;
+  --amber:#f59e0b;--red:#d13438;--blue:#0078d4;--purple:#8764b8;--green:#107c10;
+  --bg-page:#f3f2f1;--bg-card:#ffffff;--bg-hover:#f3f2f1;
+  --text:#323130;--text-secondary:#605e5c;--text-caption:#a19f9d;
+  --border-light:#edebe9;--border-medium:#d2d0ce;
+  --container-max:1200px;--container-pad:32px;--section-gap:20px;
+  --score-size:56px;--score-pad:32px;--score-radius:12px;
+  --card-pad:20px;--card-radius:8px;--card-shadow:0 2px 4px rgba(0,0,0,.08);--card-border:none;
+  --kpi-cols:auto-fit;--kpi-min:180px;--kpi-icon-size:40px;--kpi-icon-radius:10px;--kpi-val-size:26px;--kpi-lbl-size:12px;
+  --tbl-header-bg:#f3f2f1;--tbl-row-h:48px;--tbl-font:14px;--tbl-border:horizontal;--gauge-h:6px;--gauge-r:3px;--tbl-hover:#f3f2f1;
+  --act-icon:36px;--act-space:14px;--act-text:14px;--act-ts:12px;
+  --title-size:26px;--section-size:18px;--card-title-size:15px;--body-size:14px;--caption-size:12px;--heading-weight:600;
+  --card-hover:elevate;
+  font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+  color:var(--text);
+}
+body{background:var(--bg-page);min-height:100vh}
+/* ===== LAYOUT ===== */
+.app-shell{display:flex;min-height:100vh}
+.main-area{flex:1;min-width:0;padding:var(--container-pad);max-width:var(--container-max);margin:0 auto}
+/* ===== HEADER ===== */
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--section-gap);flex-wrap:wrap;gap:12px}
+.page-header h1{font-size:var(--title-size);font-weight:var(--heading-weight);color:var(--text)}
+.page-header .subtitle{font-size:var(--caption-size);color:var(--text-secondary);margin-top:2px}
+.header-actions{display:flex;gap:8px;align-items:center}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border:1px solid var(--border-medium);border-radius:6px;background:#fff;color:var(--text);font-size:var(--body-size);cursor:pointer;font-family:inherit;transition:all .15s}
+.btn:hover{background:var(--bg-hover)}
+.btn-primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+.btn-primary:hover{background:var(--primary-dark)}
+.btn-sm{padding:5px 12px;font-size:var(--caption-size)}
+.btn-teal{background:var(--primary);color:#fff;border-color:var(--primary)}
+.btn-teal:hover{background:var(--primary-dark)}
+/* ===== TABS ===== */
+.tab-bar{display:flex;gap:0;border-bottom:2px solid var(--border-light);margin-bottom:var(--section-gap);overflow-x:auto}
+.tab-btn{padding:10px 20px;font-size:var(--body-size);font-weight:500;color:var(--text-secondary);background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;white-space:nowrap;font-family:inherit;transition:all .15s}
+.tab-btn:hover{color:var(--primary);background:rgba(13,148,136,.04)}
+.tab-btn.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:600}
+/* ===== SECTION ===== */
+.section{margin-bottom:var(--section-gap)}
+.section-title{font-size:var(--section-size);font-weight:var(--heading-weight);margin-bottom:12px;color:var(--text)}
+/* ===== CARDS ===== */
+.card{background:var(--bg-card);border-radius:var(--card-radius);padding:var(--card-pad);box-shadow:var(--card-shadow);border:var(--card-border);transition:all .2s}
+.card-hover-elevate .card:hover{box-shadow:0 4px 12px rgba(0,0,0,.12);transform:translateY(-1px)}
+.card-hover-border-teal .card:hover{border-color:var(--primary)!important}
+.card-hover-both .card:hover{box-shadow:0 4px 12px rgba(0,0,0,.12);transform:translateY(-1px);border-color:var(--primary)!important}
+/* ===== KPI GRID ===== */
+.kpi-grid{display:grid;gap:16px;margin-bottom:var(--section-gap)}
+.kpi-grid.auto-fit{grid-template-columns:repeat(auto-fit,minmax(var(--kpi-min),1fr))}
+.kpi-grid.cols-3{grid-template-columns:repeat(3,1fr)}
+.kpi-grid.cols-4{grid-template-columns:repeat(4,1fr)}
+.kpi-grid.cols-6{grid-template-columns:repeat(6,1fr)}
+.kpi-card{display:flex;align-items:flex-start;gap:14px}
+.kpi-icon{width:var(--kpi-icon-size);height:var(--kpi-icon-size);border-radius:var(--kpi-icon-radius);display:flex;align-items:center;justify-content:center;font-size:calc(var(--kpi-icon-size) * .45);flex-shrink:0;color:#fff}
+.kpi-info{flex:1;min-width:0}
+.kpi-value{font-size:var(--kpi-val-size);font-weight:700;line-height:1.1}
+.kpi-label{font-size:var(--kpi-lbl-size);color:var(--text-secondary);margin-top:2px}
+/* ===== ALERT BARS ===== */
+.alert-bar{display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:6px;font-size:var(--body-size);margin-bottom:12px}
+.alert-bar.severe{background:#fde7e9;color:#a4262c;border-left:4px solid #d13438}
+.alert-bar.warning{background:#fff4ce;color:#835c00;border-left:4px solid #f59e0b}
+.alert-bar.info{background:#e8f4fd;color:#004578;border-left:4px solid #0078d4}
+.alert-bar .alert-icon{font-size:18px}
+.alert-bar .alert-actions{margin-left:auto}
+/* ===== TWO-COL ===== */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:860px){.two-col{grid-template-columns:1fr}}
+/* ===== SCORE CARD ===== */
+.score-card{text-align:center;padding:var(--score-pad);border-radius:var(--score-radius)}
+.score-value{font-size:var(--score-size);font-weight:700;line-height:1}
+.score-label{font-size:var(--section-size);font-weight:600;margin-top:6px;color:var(--text)}
+.score-sub{font-size:var(--caption-size);color:var(--text-secondary);margin-top:4px}
+.score-green .score-value{color:var(--green)}
+.score-amber .score-value{color:var(--amber)}
+.score-red .score-value{color:var(--red)}
+/* ===== TEAM MEMBER LIST ===== */
+.member-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border-light)}
+.member-row:last-child{border-bottom:none}
+.avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:600;flex-shrink:0}
+.member-info{flex:1;min-width:0}
+.member-name{font-size:var(--body-size);font-weight:600}
+.member-detail{font-size:var(--caption-size);color:var(--text-secondary)}
+.member-stat{text-align:right}
+.member-compliance{font-size:var(--body-size);font-weight:700}
+.member-overdue{font-size:var(--caption-size);color:var(--red)}
+/* ===== ACTIVITY FEED ===== */
+.activity-item{display:flex;gap:var(--act-space);padding:8px 0;border-bottom:1px solid var(--border-light);align-items:flex-start}
+.activity-item:last-child{border-bottom:none}
+.activity-icon{width:var(--act-icon);height:var(--act-icon);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:calc(var(--act-icon)*.4);flex-shrink:0}
+.activity-text{flex:1;font-size:var(--act-text);line-height:1.4}
+.activity-text strong{font-weight:600}
+.activity-ts{font-size:var(--act-ts);color:var(--text-caption);margin-top:2px}
+/* ===== TABLE ===== */
+.data-table{width:100%;border-collapse:collapse;font-size:var(--tbl-font)}
+.data-table thead th{background:var(--tbl-header-bg);padding:10px 12px;text-align:left;font-weight:600;font-size:var(--caption-size);color:var(--text-secondary);text-transform:uppercase;letter-spacing:.3px;border-bottom:2px solid var(--border-medium);white-space:nowrap}
+.data-table tbody td{padding:10px 12px;height:var(--tbl-row-h);vertical-align:middle;border-bottom:1px solid var(--border-light)}
+.tbl-border-none .data-table tbody td{border-bottom:none}
+.tbl-border-full .data-table tbody td{border:1px solid var(--border-light)}
+.data-table tbody tr{transition:background .12s}
+.data-table tbody tr:hover{background:var(--tbl-hover)}
+.persona{display:flex;align-items:center;gap:10px}
+.persona .avatar{width:32px;height:32px;font-size:12px}
+.persona-name{font-weight:600;font-size:var(--tbl-font)}
+.persona-sub{font-size:var(--caption-size);color:var(--text-secondary)}
+.gauge-bar{background:#e1dfdd;height:var(--gauge-h);border-radius:var(--gauge-r);overflow:hidden;width:100px;display:inline-block;vertical-align:middle;margin-right:8px}
+.gauge-fill{height:100%;border-radius:var(--gauge-r);transition:width .6s ease}
+.gauge-text{font-weight:600;font-size:var(--caption-size)}
+.icon-btn{background:none;border:none;cursor:pointer;padding:4px;border-radius:4px;font-size:16px;color:var(--text-secondary);transition:all .12s}
+.icon-btn:hover{background:var(--bg-hover);color:var(--primary)}
+/* ===== SEARCH ===== */
+.search-box{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border-medium);border-radius:6px;padding:8px 14px;margin-bottom:16px;max-width:360px}
+.search-box input{border:none;outline:none;flex:1;font-size:var(--body-size);font-family:inherit;background:transparent}
+.search-box .search-icon{color:var(--text-caption);font-size:16px}
+/* ===== FILTER CHIPS ===== */
+.chip-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.chip{padding:6px 14px;border-radius:20px;font-size:var(--caption-size);font-weight:500;border:1px solid var(--border-medium);background:#fff;cursor:pointer;transition:all .15s;font-family:inherit}
+.chip:hover{border-color:var(--primary);color:var(--primary)}
+.chip.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+/* ===== APPROVAL CARDS ===== */
+.approval-card{display:flex;flex-direction:column;gap:10px}
+.approval-header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.approval-title{font-size:var(--card-title-size);font-weight:600}
+.approval-meta{font-size:var(--caption-size);color:var(--text-secondary);display:flex;flex-wrap:wrap;gap:12px;margin-top:4px}
+.badge{display:inline-flex;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;white-space:nowrap}
+.badge-amber{background:#fff4ce;color:#835c00}
+.badge-red{background:#fde7e9;color:#a4262c}
+.badge-green{background:#dff6dd;color:#107c10}
+.badge-blue{background:#e8f4fd;color:#004578}
+.badge-purple{background:#f0ebf8;color:#5c2d91}
+.badge-grey{background:#f3f2f1;color:#605e5c}
+.badge-teal{background:#e0f5f3;color:#0d9488}
+.approval-actions{display:flex;gap:8px;margin-top:4px}
+/* ===== REVIEW CARDS ===== */
+.review-card{display:flex;flex-direction:column;gap:8px}
+.review-dates{display:flex;gap:20px;font-size:var(--caption-size);color:var(--text-secondary)}
+.review-dates .overdue{color:var(--red);font-weight:600}
+/* ===== REPORT CARDS ===== */
+.report-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.report-card{display:flex;gap:16px;align-items:flex-start}
+.report-icon-box{width:48px;height:48px;border-radius:10px;background:var(--primary);display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;flex-shrink:0}
+.report-info{flex:1}
+.report-title{font-size:var(--card-title-size);font-weight:600}
+.report-desc{font-size:var(--caption-size);color:var(--text-secondary);margin:4px 0 6px}
+/* ===== DELEGATION TABLE ===== */
+.delegation-card{display:flex;flex-direction:column;gap:8px}
+.delegation-people{display:flex;gap:12px;align-items:center;font-size:var(--body-size)}
+.delegation-people .arrow{color:var(--text-caption);font-size:18px}
+/* ===== TUNING PANEL ===== */
+.tuning-toggle{position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:1001;background:var(--primary);color:#fff;border:none;padding:12px 8px;border-radius:8px 0 0 8px;cursor:pointer;font-size:14px;writing-mode:vertical-rl;text-orientation:mixed;letter-spacing:1px;font-family:inherit;font-weight:600;box-shadow:-2px 0 8px rgba(0,0,0,.15)}
+.tuning-toggle:hover{background:var(--primary-dark)}
+.tuning-panel{position:fixed;right:0;top:0;bottom:0;width:340px;background:#fff;box-shadow:-4px 0 20px rgba(0,0,0,.12);z-index:1000;overflow-y:auto;transform:translateX(100%);transition:transform .25s ease;padding:0}
+.tuning-panel.open{transform:translateX(0)}
+.tuning-header{position:sticky;top:0;background:#fff;z-index:2;padding:16px 20px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between}
+.tuning-header h2{font-size:16px;font-weight:700}
+.tuning-body{padding:12px 20px 80px}
+.tuning-section{margin-bottom:20px}
+.tuning-section-title{font-size:12px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border-light)}
+.ctrl-row{margin-bottom:10px}
+.ctrl-label{display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);margin-bottom:3px}
+.ctrl-label span:last-child{font-weight:600;color:var(--text);font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--primary);height:4px}
+.ctrl-select{width:100%;padding:5px 8px;font-size:12px;border:1px solid var(--border-medium);border-radius:4px;font-family:inherit;background:#fff}
+input[type=color]{width:40px;height:28px;border:1px solid var(--border-medium);border-radius:4px;cursor:pointer;padding:2px}
+.preset-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.preset-btn{padding:7px 10px;font-size:11px;font-weight:600;border:1px solid var(--border-medium);border-radius:6px;background:#fff;cursor:pointer;font-family:inherit;transition:all .15s;text-align:center}
+.preset-btn:hover{border-color:var(--primary);color:var(--primary)}
+.preset-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.export-bar{position:sticky;bottom:0;background:#fff;padding:12px 20px;border-top:1px solid var(--border-light)}
+.export-bar .btn{width:100%;justify-content:center}
+/* ===== TAB CONTENT ===== */
+.tab-content{display:none}
+.tab-content.active{display:block}
+/* ===== CARDS LIST ===== */
+.cards-list{display:flex;flex-direction:column;gap:12px}
+/* ===== PRINT ===== */
+@media print{
+  .tuning-panel,.tuning-toggle{display:none!important}
+  body{background:#fff}
+  .card{box-shadow:none;border:1px solid #ddd}
+}
+@media(max-width:600px){
+  .main-area{padding:16px}
+  .two-col{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="app-shell card-hover-elevate" id="appShell">
+<div class="main-area" id="mainArea">
+
+<!-- HEADER -->
+<div class="page-header">
+  <div>
+    <h1>Policy Manager</h1>
+    <div class="subtitle">Manager View &mdash; Engineering Department</div>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-sm" onclick="window.print()">&#128438; Print</button>
+    <button class="btn btn-sm btn-primary" id="exportCssBtn">&#128194; Export CSS</button>
+  </div>
+</div>
+
+<!-- TAB BAR -->
+<div class="tab-bar" id="tabBar">
+  <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
+  <button class="tab-btn" data-tab="teamCompliance">Team Compliance</button>
+  <button class="tab-btn" data-tab="approvals">Approvals</button>
+  <button class="tab-btn" data-tab="delegations">Delegations</button>
+  <button class="tab-btn" data-tab="reviews">Policy Reviews</button>
+  <button class="tab-btn" data-tab="reports">Reports</button>
+</div>
+
+<!-- ===================== DASHBOARD TAB ===================== -->
+<div class="tab-content active" id="tab-dashboard">
+
+  <!-- Big Score -->
+  <div class="section">
+    <div class="card score-card score-green" id="scoreCard">
+      <div class="score-value" id="scoreValue">91%</div>
+      <div class="score-label">Team Compliance Score</div>
+      <div class="score-sub">142 of 156 policies across 24 team members</div>
+    </div>
+  </div>
+
+  <!-- KPI Grid -->
+  <div class="kpi-grid auto-fit section" id="dashKpiGrid">
+    <div class="card kpi-card"><div class="kpi-icon" style="background:var(--amber)">&#128203;</div><div class="kpi-info"><div class="kpi-value" style="color:var(--amber)">12</div><div class="kpi-label">Pending Approvals</div></div></div>
+    <div class="card kpi-card"><div class="kpi-icon" style="background:var(--red)">&#9888;</div><div class="kpi-info"><div class="kpi-value" style="color:var(--red)">5</div><div class="kpi-label">Overdue Acknowledgements</div></div></div>
+    <div class="card kpi-card"><div class="kpi-icon" style="background:var(--blue)">&#128101;</div><div class="kpi-info"><div class="kpi-value" style="color:var(--blue)">3</div><div class="kpi-label">Active Delegations</div></div></div>
+    <div class="card kpi-card"><div class="kpi-icon" style="background:var(--purple)">&#128197;</div><div class="kpi-info"><div class="kpi-value" style="color:var(--purple)">7</div><div class="kpi-label">Reviews Due</div></div></div>
+    <div class="card kpi-card"><div class="kpi-icon" style="background:var(--primary)">&#128100;</div><div class="kpi-info"><div class="kpi-value" style="color:var(--primary)">24</div><div class="kpi-label">Team Members</div></div></div>
+    <div class="card kpi-card"><div class="kpi-icon" style="background:var(--red)">&#128680;</div><div class="kpi-info"><div class="kpi-value" style="color:var(--red)">4</div><div class="kpi-label">At Risk</div></div></div>
+  </div>
+
+  <!-- Alerts -->
+  <div class="section">
+    <div class="alert-bar severe"><span class="alert-icon">&#9888;</span><span><strong>5 overdue acknowledgements</strong> require immediate attention across 3 team members.</span><div class="alert-actions"><button class="btn btn-sm" style="color:#a4262c;border-color:#a4262c">View Details</button></div></div>
+    <div class="alert-bar warning"><span class="alert-icon">&#9201;</span><span><strong>12 pending approvals</strong> are awaiting your review. 3 are approaching SLA deadline.</span><div class="alert-actions"><button class="btn btn-sm" style="color:#835c00;border-color:#835c00">Review Now</button></div></div>
+  </div>
+
+  <!-- Two Col -->
+  <div class="two-col section">
+    <!-- Team Members at Risk -->
+    <div class="card">
+      <div class="section-title">Team Members at Risk</div>
+      <div id="atRiskList">
+        <!-- JS populated -->
+      </div>
+    </div>
+    <!-- Recent Activity -->
+    <div class="card">
+      <div class="section-title">Recent Activity</div>
+      <div id="activityFeed">
+        <!-- JS populated -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== TEAM COMPLIANCE TAB ===================== -->
+<div class="tab-content" id="tab-teamCompliance">
+  <div class="kpi-grid auto-fit section" id="compKpiGrid">
+    <div class="card kpi-card"><div class="kpi-icon" style="background:var(--blue)">&#128203;</div><div class="kpi-info"><div class="kpi-value" style="color:var(--blue)">180</div><div class="kpi-label">Total Assigned</div></div></div>
+    <div class="card kpi-card"><div class="kpi-icon" style="background:var(--green)">&#10003;</div><div class="kpi-info"><div class="kpi-value" style="color:var(--green)">142</div><div class="kpi-label">Acknowledged</div></div></div>
+    <div class="card kpi-card"><div class="kpi-icon" style="background:var(--amber)">&#9203;</div><div class="kpi-info"><div class="kpi-value" style="color:var(--amber)">24</div><div class="kpi-label">Pending</div></div></div>
+    <div class="card kpi-card"><div class="kpi-icon" style="background:var(--red)">&#9888;</div><div class="kpi-info"><div class="kpi-value" style="color:var(--red)">14</div><div class="kpi-label">Overdue</div></div></div>
+  </div>
+
+  <div class="search-box"><span class="search-icon">&#128269;</span><input type="text" placeholder="Search team members..." id="teamSearch"></div>
+
+  <div class="alert-bar severe section"><span class="alert-icon">&#9888;</span><span><strong>14 overdue items</strong> across 6 team members. SLA breaches may occur within 48 hours.</span><div class="alert-actions"><button class="btn btn-sm btn-teal">Send Reminders</button></div></div>
+
+  <div class="card section" id="compTableWrap">
+    <table class="data-table" id="compTable">
+      <thead><tr>
+        <th>Team Member</th><th>Department</th><th>Assigned</th><th>Acknowledged</th><th>Pending</th><th>Overdue</th><th>Compliance</th><th>Actions</th>
+      </tr></thead>
+      <tbody id="compTableBody">
+        <!-- JS populated -->
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ===================== APPROVALS TAB ===================== -->
+<div class="tab-content" id="tab-approvals">
+  <div class="kpi-grid auto-fit section">
+    <div class="card kpi-card"><div class="kpi-icon" style="background:var(--amber)">&#9203;</div><div class="kpi-info"><div class="kpi-value" style="color:var(--amber)">12</div><div class="kpi-label">Pending</div></div></div>
+    <div class="card kpi-card"><div class="kpi-icon" style="background:var(--green)">&#10003;</div><div class="kpi-info"><div class="kpi-value" style="color:var(--green)">38</div><div class="kpi-label">Approved</div></div></div>
+    <div class="card kpi-card"><div class="kpi-icon" style="background:var(--red)">&#10007;</div><div class="kpi-info"><div class="kpi-value" style="color:var(--red)">4</div><div class="kpi-label">Returned</div></div></div>
+    <div class="card kpi-card"><div class="kpi-icon" style="background:var(--blue)">&#128203;</div><div class="kpi-info"><div class="kpi-value" style="color:var(--blue)">54</div><div class="kpi-label">Total</div></div></div>
+  </div>
+
+  <div class="chip-bar" id="approvalChips">
+    <button class="chip active" data-filter="all">All (12)</button>
+    <button class="chip" data-filter="pending">Pending (8)</button>
+    <button class="chip" data-filter="urgent">Urgent (3)</button>
+    <button class="chip" data-filter="returned">Returned (1)</button>
+  </div>
+
+  <div class="cards-list" id="approvalCards">
+    <!-- JS populated -->
+  </div>
+</div>
+
+<!-- ===================== DELEGATIONS TAB ===================== -->
+<div class="tab-content" id="tab-delegations">
+  <div class="kpi-grid auto-fit section">
+    <div class="card kpi-card"><div class="kpi-icon" style="background:var(--blue)">&#128101;</div><div class="kpi-info"><div class="kpi-value" style="color:var(--blue)">3</div><div class="kpi-label">Active</div></div></div>
+    <div class="card kpi-card"><div class="kpi-icon" style="background:var(--amber)">&#9203;</div><div class="kpi-info"><div class="kpi-value" style="color:var(--amber)">1</div><div class="kpi-label">Pending</div></div></div>
+    <div class="card kpi-card"><div class="kpi-icon" style="background:var(--green)">&#10003;</div><div class="kpi-info"><div class="kpi-value" style="color:var(--green)">12</div><div class="kpi-label">Completed</div></div></div>
+    <div class="card kpi-card"><div class="kpi-icon" style="background:var(--red)">&#10007;</div><div class="kpi-info"><div class="kpi-value" style="color:var(--red)">1</div><div class="kpi-label">Expired</div></div></div>
+  </div>
+
+  <div class="chip-bar" id="delegChips">
+    <button class="chip active" data-filter="all">All</button>
+    <button class="chip" data-filter="active">Active</button>
+    <button class="chip" data-filter="pending">Pending</button>
+    <button class="chip" data-filter="completed">Completed</button>
+  </div>
+
+  <div class="cards-list" id="delegationCards">
+    <!-- JS populated -->
+  </div>
+</div>
+
+<!-- ===================== POLICY REVIEWS TAB ===================== -->
+<div class="tab-content" id="tab-reviews">
+  <div class="kpi-grid auto-fit section">
+    <div class="card kpi-card"><div class="kpi-icon" style="background:var(--amber)">&#128197;</div><div class="kpi-info"><div class="kpi-value" style="color:var(--amber)">4</div><div class="kpi-label">Due Now</div></div></div>
+    <div class="card kpi-card"><div class="kpi-icon" style="background:var(--red)">&#9888;</div><div class="kpi-info"><div class="kpi-value" style="color:var(--red)">2</div><div class="kpi-label">Overdue</div></div></div>
+    <div class="card kpi-card"><div class="kpi-icon" style="background:var(--blue)">&#9203;</div><div class="kpi-info"><div class="kpi-value" style="color:var(--blue)">6</div><div class="kpi-label">Upcoming</div></div></div>
+    <div class="card kpi-card"><div class="kpi-icon" style="background:var(--green)">&#10003;</div><div class="kpi-info"><div class="kpi-value" style="color:var(--green)">18</div><div class="kpi-label">Completed</div></div></div>
+  </div>
+
+  <div class="chip-bar" id="reviewChips">
+    <button class="chip active" data-filter="all">All</button>
+    <button class="chip" data-filter="due">Due</button>
+    <button class="chip" data-filter="overdue">Overdue</button>
+    <button class="chip" data-filter="upcoming">Upcoming</button>
+    <button class="chip" data-filter="completed">Completed</button>
+  </div>
+
+  <div class="cards-list" id="reviewCards">
+    <!-- JS populated -->
+  </div>
+</div>
+
+<!-- ===================== REPORTS TAB ===================== -->
+<div class="tab-content" id="tab-reports">
+  <div class="section">
+    <div class="section-title">Available Reports</div>
+    <div class="report-grid" id="reportGrid">
+      <!-- JS populated -->
+    </div>
+  </div>
+  <div class="alert-bar info section" style="margin-top:20px"><span class="alert-icon">&#8505;</span><span>Reports generated with data as of today, 29 January 2026. Processing may take a few moments for large datasets.</span></div>
+</div>
+
+</div><!-- /main-area -->
+</div><!-- /app-shell -->
+
+<!-- TUNING TOGGLE -->
+<button class="tuning-toggle" id="tuningToggle">&#9881; Tune</button>
+
+<!-- TUNING PANEL -->
+<div class="tuning-panel" id="tuningPanel">
+<div class="tuning-header">
+  <h2>&#9881; Design Tuning</h2>
+  <button class="icon-btn" onclick="togglePanel()" style="font-size:20px">&times;</button>
+</div>
+<div class="tuning-body">
+
+<!-- PRESETS -->
+<div class="tuning-section">
+  <div class="tuning-section-title">Presets</div>
+  <div class="preset-grid" id="presetGrid">
+    <button class="preset-btn active" data-preset="current">Current</button>
+    <button class="preset-btn" data-preset="compact">Compact</button>
+    <button class="preset-btn" data-preset="spacious">Spacious</button>
+    <button class="preset-btn" data-preset="modern">Modern</button>
+    <button class="preset-btn" data-preset="corporate">Corporate</button>
+    <button class="preset-btn" data-preset="dashboard">Dashboard Focus</button>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="tuning-section">
+  <div class="tuning-section-title">Layout</div>
+  <div class="ctrl-row"><div class="ctrl-label"><span>Container max-width</span><span id="v-maxw">1200px</span></div><input type="range" min="900" max="1600" value="1200" data-var="--container-max" data-unit="px" id="r-maxw"></div>
+  <div class="ctrl-row"><div class="ctrl-label"><span>Container padding</span><span id="v-cpad">32px</span></div><input type="range" min="16" max="48" value="32" data-var="--container-pad" data-unit="px" id="r-cpad"></div>
+  <div class="ctrl-row"><div class="ctrl-label"><span>Section gap</span><span id="v-sgap">20px</span></div><input type="range" min="8" max="32" value="20" data-var="--section-gap" data-unit="px" id="r-sgap"></div>
+</div>
+
+<!-- DASHBOARD SCORE -->
+<div class="tuning-section">
+  <div class="tuning-section-title">Dashboard Score</div>
+  <div class="ctrl-row"><div class="ctrl-label"><span>Score font size</span><span id="v-sfs">56px</span></div><input type="range" min="36" max="72" value="56" data-var="--score-size" data-unit="px" id="r-sfs"></div>
+  <div class="ctrl-row"><div class="ctrl-label"><span>Score card padding</span><span id="v-scp">32px</span></div><input type="range" min="20" max="48" value="32" data-var="--score-pad" data-unit="px" id="r-scp"></div>
+  <div class="ctrl-row"><div class="ctrl-label"><span>Score border-radius</span><span id="v-scr">12px</span></div><input type="range" min="0" max="20" value="12" data-var="--score-radius" data-unit="px" id="r-scr"></div>
+</div>
+
+<!-- CARDS -->
+<div class="tuning-section">
+  <div class="tuning-section-title">Cards</div>
+  <div class="ctrl-row"><div class="ctrl-label"><span>Card padding</span><span id="v-cp">20px</span></div><input type="range" min="12" max="28" value="20" data-var="--card-pad" data-unit="px" id="r-cp"></div>
+  <div class="ctrl-row"><div class="ctrl-label"><span>Card border-radius</span><span id="v-cbr">8px</span></div><input type="range" min="0" max="16" value="8" data-var="--card-radius" data-unit="px" id="r-cbr"></div>
+  <div class="ctrl-row"><div class="ctrl-label"><span>Card shadow</span></div>
+    <select class="ctrl-select" id="sel-shadow" onchange="applyShadow(this.value)">
+      <option value="none">None</option>
+      <option value="0 2px 4px rgba(0,0,0,.08)" selected>Depth 4</option>
+      <option value="0 3px 8px rgba(0,0,0,.12)">Depth 8</option>
+      <option value="0 6px 16px rgba(0,0,0,.16)">Depth 16</option>
+    </select>
+  </div>
+  <div class="ctrl-row"><div class="ctrl-label"><span>Card hover effect</span></div>
+    <select class="ctrl-select" id="sel-hover" onchange="applyHover(this.value)">
+      <option value="none">None</option>
+      <option value="elevate" selected>Elevate</option>
+      <option value="border-teal">Border Teal</option>
+      <option value="both">Both</option>
+    </select>
+  </div>
+  <div class="ctrl-row"><div class="ctrl-label"><span>Card border</span></div>
+    <select class="ctrl-select" id="sel-cborder" onchange="applyCardBorder(this.value)">
+      <option value="none" selected>None</option>
+      <option value="1px solid #edebe9">1px Light</option>
+      <option value="1px solid #d2d0ce">1px Medium</option>
+    </select>
+  </div>
+</div>
+
+<!-- KPI CARDS -->
+<div class="tuning-section">
+  <div class="tuning-section-title">KPI Cards</div>
+  <div class="ctrl-row"><div class="ctrl-label"><span>Grid columns</span></div>
+    <select class="ctrl-select" id="sel-kpicols" onchange="applyKpiCols(this.value)">
+      <option value="auto-fit" selected>Auto-fit</option>
+      <option value="cols-3">3 columns</option>
+      <option value="cols-4">4 columns</option>
+      <option value="cols-6">6 columns</option>
+    </select>
+  </div>
+  <div class="ctrl-row"><div class="ctrl-label"><span>KPI min-width</span><span id="v-kmin">180px</span></div><input type="range" min="140" max="220" value="180" data-var="--kpi-min" data-unit="px" id="r-kmin"></div>
+  <div class="ctrl-row"><div class="ctrl-label"><span>Icon size</span><span id="v-kis">40px</span></div><input type="range" min="32" max="52" value="40" data-var="--kpi-icon-size" data-unit="px" id="r-kis"></div>
+  <div class="ctrl-row"><div class="ctrl-label"><span>Icon border-radius</span><span id="v-kir">10px</span></div><input type="range" min="4" max="26" value="10" data-var="--kpi-icon-radius" data-unit="px" id="r-kir"></div>
+  <div class="ctrl-row"><div class="ctrl-label"><span>Value font-size</span><span id="v-kvs">26px</span></div><input type="range" min="20" max="32" value="26" data-var="--kpi-val-size" data-unit="px" id="r-kvs"></div>
+  <div class="ctrl-row"><div class="ctrl-label"><span>Label font-size</span><span id="v-kls">12px</span></div><input type="range" min="11" max="14" value="12" data-var="--kpi-lbl-size" data-unit="px" id="r-kls"></div>
+</div>
+
+<!-- TABLE -->
+<div class="tuning-section">
+  <div class="tuning-section-title">Table Controls</div>
+  <div class="ctrl-row"><div class="ctrl-label"><span>Header background</span></div>
+    <select class="ctrl-select" id="sel-tblhdr" onchange="setVar('--tbl-header-bg',this.value)">
+      <option value="#f3f2f1" selected>#f3f2f1</option>
+      <option value="#edebe9">#edebe9</option>
+      <option value="#0d9488">Teal</option>
+      <option value="#323130">Dark</option>
+    </select>
+  </div>
+  <div class="ctrl-row"><div class="ctrl-label"><span>Row height</span><span id="v-trh">48px</span></div><input type="range" min="40" max="60" value="48" data-var="--tbl-row-h" data-unit="px" id="r-trh"></div>
+  <div class="ctrl-row"><div class="ctrl-label"><span>Table font-size</span><span id="v-tfs">14px</span></div><input type="range" min="13" max="15" value="14" data-var="--tbl-font" data-unit="px" id="r-tfs"></div>
+  <div class="ctrl-row"><div class="ctrl-label"><span>Border style</span></div>
+    <select class="ctrl-select" id="sel-tblborder" onchange="applyTblBorder(this.value)">
+      <option value="horizontal" selected>Horizontal</option>
+      <option value="none">None</option>
+      <option value="full">Full Grid</option>
+    </select>
+  </div>
+  <div class="ctrl-row"><div class="ctrl-label"><span>Gauge height</span><span id="v-gh">6px</span></div><input type="range" min="4" max="10" value="6" data-var="--gauge-h" data-unit="px" id="r-gh"></div>
+  <div class="ctrl-row"><div class="ctrl-label"><span>Gauge border-radius</span><span id="v-gr">3px</span></div><input type="range" min="0" max="5" value="3" data-var="--gauge-r" data-unit="px" id="r-gr"></div>
+  <div class="ctrl-row"><div class="ctrl-label"><span>Row hover bg</span></div>
+    <select class="ctrl-select" id="sel-tblhov" onchange="setVar('--tbl-hover',this.value)">
+      <option value="#f3f2f1" selected>#f3f2f1</option>
+      <option value="#e0f5f3">Light Teal</option>
+      <option value="#e8f4fd">Light Blue</option>
+    </select>
+  </div>
+</div>
+
+<!-- ACTIVITY FEED -->
+<div class="tuning-section">
+  <div class="tuning-section-title">Activity Feed</div>
+  <div class="ctrl-row"><div class="ctrl-label"><span>Icon size</span><span id="v-ais">36px</span></div><input type="range" min="28" max="44" value="36" data-var="--act-icon" data-unit="px" id="r-ais"></div>
+  <div class="ctrl-row"><div class="ctrl-label"><span>Spacing</span><span id="v-asp">14px</span></div><input type="range" min="8" max="20" value="14" data-var="--act-space" data-unit="px" id="r-asp"></div>
+  <div class="ctrl-row"><div class="ctrl-label"><span>Text size</span><span id="v-ats">14px</span></div><input type="range" min="13" max="15" value="14" data-var="--act-text" data-unit="px" id="r-ats"></div>
+  <div class="ctrl-row"><div class="ctrl-label"><span>Timestamp size</span><span id="v-atss">12px</span></div><input type="range" min="11" max="13" value="12" data-var="--act-ts" data-unit="px" id="r-atss"></div>
+</div>
+
+<!-- TYPOGRAPHY -->
+<div class="tuning-section">
+  <div class="tuning-section-title">Typography</div>
+  <div class="ctrl-row"><div class="ctrl-label"><span>Page title</span><span id="v-tts">26px</span></div><input type="range" min="22" max="32" value="26" data-var="--title-size" data-unit="px" id="r-tts"></div>
+  <div class="ctrl-row"><div class="ctrl-label"><span>Section header</span><span id="v-shs">18px</span></div><input type="range" min="16" max="24" value="18" data-var="--section-size" data-unit="px" id="r-shs"></div>
+  <div class="ctrl-row"><div class="ctrl-label"><span>Card title</span><span id="v-cts">15px</span></div><input type="range" min="14" max="18" value="15" data-var="--card-title-size" data-unit="px" id="r-cts"></div>
+  <div class="ctrl-row"><div class="ctrl-label"><span>Body text</span><span id="v-bts">14px</span></div><input type="range" min="13" max="15" value="14" data-var="--body-size" data-unit="px" id="r-bts"></div>
+  <div class="ctrl-row"><div class="ctrl-label"><span>Caption</span><span id="v-caps">12px</span></div><input type="range" min="11" max="13" value="12" data-var="--caption-size" data-unit="px" id="r-caps"></div>
+  <div class="ctrl-row"><div class="ctrl-label"><span>Heading weight</span></div>
+    <select class="ctrl-select" id="sel-hw" onchange="setVar('--heading-weight',this.value)">
+      <option value="500">500</option>
+      <option value="600" selected>600</option>
+      <option value="700">700</option>
+    </select>
+  </div>
+</div>
+
+<!-- COLORS -->
+<div class="tuning-section">
+  <div class="tuning-section-title">Colors</div>
+  <div class="ctrl-row" style="display:flex;align-items:center;gap:10px">
+    <label style="font-size:12px;color:var(--text-secondary)">Primary</label>
+    <input type="color" value="#0d9488" id="clr-primary" onchange="setVar('--primary',this.value)">
+  </div>
+  <div class="ctrl-row"><div class="ctrl-label"><span>Card background</span></div>
+    <select class="ctrl-select" id="sel-cardbg" onchange="setVar('--bg-card',this.value)">
+      <option value="#ffffff" selected>White</option>
+      <option value="#fafafa">#fafafa</option>
+      <option value="#f5f5f5">#f5f5f5</option>
+    </select>
+  </div>
+  <div class="ctrl-row"><div class="ctrl-label"><span>Page background</span></div>
+    <select class="ctrl-select" id="sel-pagebg" onchange="setVar('--bg-page',this.value)">
+      <option value="#f3f2f1" selected>#f3f2f1</option>
+      <option value="#f8f8f8">#f8f8f8</option>
+      <option value="#ffffff">White</option>
+    </select>
+  </div>
+</div>
+
+</div><!-- /tuning-body -->
+<div class="export-bar">
+  <button class="btn btn-primary" onclick="exportCSS()">&#128194; Export CSS Variables</button>
+</div>
+</div><!-- /tuning-panel -->
+
+<script>
+/* ===== DATA ===== */
+const avatarColors = ['#0d9488','#0078d4','#8764b8','#d13438','#f59e0b','#107c10','#b4009e','#e74856','#00b7c3','#7a7574'];
+function ac(i){return avatarColors[i%avatarColors.length]}
+function initials(n){return n.split(' ').map(w=>w[0]).join('')}
+
+const atRiskMembers = [
+  {name:'James Rodriguez',dept:'Engineering',compliance:68,overdue:5},
+  {name:'Priya Sharma',dept:'QA',compliance:72,overdue:4},
+  {name:'Tom Bradley',dept:'DevOps',compliance:78,overdue:3},
+  {name:'Aisha Okafor',dept:'Engineering',compliance:80,overdue:2},
+  {name:'Kevin Liu',dept:'Support',compliance:83,overdue:2}
+];
+
+const activities = [
+  {icon:'&#10003;',color:'#107c10',text:'<strong>Sarah Chen</strong> acknowledged Data Protection Policy',ts:'5 min ago'},
+  {icon:'&#9888;',color:'#d13438',text:'<strong>James Rodriguez</strong> has 3 overdue acknowledgements',ts:'12 min ago'},
+  {icon:'&#128203;',color:'#f59e0b',text:'<strong>Remote Work Policy v2.1</strong> submitted for approval',ts:'28 min ago'},
+  {icon:'&#128101;',color:'#0078d4',text:'<strong>Maria Garcia</strong> delegated approval authority to <strong>David Kim</strong>',ts:'1 hour ago'},
+  {icon:'&#10003;',color:'#107c10',text:'<strong>Li Wei</strong> completed acknowledgement of Cyber Security Framework',ts:'1.5 hours ago'},
+  {icon:'&#128197;',color:'#8764b8',text:'<strong>Information Security Policy</strong> review cycle initiated',ts:'2 hours ago'},
+  {icon:'&#10003;',color:'#107c10',text:'<strong>Priya Sharma</strong> acknowledged Business Continuity Plan',ts:'3 hours ago'},
+  {icon:'&#128680;',color:'#d13438',text:'SLA alert: <strong>Anti-Bribery Policy</strong> acknowledgement deadline approaching',ts:'4 hours ago'}
+];
+
+const teamMembers = [
+  {name:'James Rodriguez',dept:'Engineering',assigned:10,ack:5,pending:2,overdue:3,compliance:50},
+  {name:'Priya Sharma',dept:'QA',assigned:8,ack:4,pending:2,overdue:2,compliance:50},
+  {name:'Tom Bradley',dept:'DevOps',assigned:9,ack:6,pending:1,overdue:2,compliance:67},
+  {name:'Aisha Okafor',dept:'Engineering',assigned:7,ack:5,pending:1,overdue:1,compliance:71},
+  {name:'Kevin Liu',dept:'Support',assigned:8,ack:6,pending:1,overdue:1,compliance:75},
+  {name:'Maria Garcia',dept:'Engineering',assigned:8,ack:7,pending:1,overdue:0,compliance:88},
+  {name:'David Kim',dept:'Design',assigned:6,ack:6,pending:0,overdue:0,compliance:100},
+  {name:'Sarah Chen',dept:'Engineering',assigned:9,ack:8,pending:1,overdue:0,compliance:89},
+  {name:'Li Wei',dept:'QA',assigned:7,ack:7,pending:0,overdue:0,compliance:100},
+  {name:'Elena Volkov',dept:'DevOps',assigned:8,ack:8,pending:0,overdue:0,compliance:100}
+];
+
+const approvals = [
+  {title:'Remote Work Policy v2.1',id:'POL-042',category:'HR',author:'Sarah Chen',submitted:'25 Jan 2026',status:'pending',urgent:true},
+  {title:'Data Retention Standards',id:'POL-038',category:'IT Security',author:'David Kim',submitted:'23 Jan 2026',status:'pending',urgent:true},
+  {title:'Cloud Services Usage Policy',id:'POL-051',category:'IT',author:'Tom Bradley',submitted:'22 Jan 2026',status:'pending',urgent:true},
+  {title:'Employee Wellness Program',id:'POL-055',category:'HR',author:'Maria Garcia',submitted:'20 Jan 2026',status:'pending',urgent:false},
+  {title:'Vendor Management Policy',id:'POL-049',category:'Procurement',author:'Li Wei',submitted:'18 Jan 2026',status:'pending',urgent:false},
+  {title:'Travel Expense Guidelines',id:'POL-044',category:'Finance',author:'Kevin Liu',submitted:'15 Jan 2026',status:'returned',urgent:false}
+];
+
+const delegations = [
+  {from:'Maria Garcia',to:'David Kim',scope:'All HR Policies',start:'15 Jan 2026',end:'15 Feb 2026',status:'active',reason:'Maternity leave'},
+  {from:'Tom Bradley',to:'Sarah Chen',scope:'IT Security Policies',start:'20 Jan 2026',end:'28 Jan 2026',status:'active',reason:'Conference travel'},
+  {from:'Li Wei',to:'Elena Volkov',scope:'QA & Compliance Policies',start:'01 Feb 2026',end:'15 Feb 2026',status:'pending',reason:'Annual leave'},
+  {from:'James Rodriguez',to:'Priya Sharma',scope:'Engineering Standards',start:'01 Jan 2026',end:'10 Jan 2026',status:'completed',reason:'Holiday cover'},
+  {from:'Kevin Liu',to:'Aisha Okafor',scope:'Support Procedures',start:'01 Dec 2025',end:'15 Dec 2025',status:'expired',reason:'Sick leave'}
+];
+
+const reviews = [
+  {title:'Anti-Bribery & Corruption Policy',id:'POL-012',category:'Compliance',cycle:180,reviewer:'Maria Garcia',lastReview:'15 Jul 2025',nextReview:'12 Jan 2026',status:'overdue'},
+  {title:'Information Security Framework',id:'POL-005',category:'IT Security',cycle:365,reviewer:'Tom Bradley',lastReview:'20 Jan 2025',nextReview:'20 Jan 2026',status:'overdue'},
+  {title:'Data Protection Policy',id:'POL-003',category:'Legal',cycle:365,reviewer:'Sarah Chen',lastReview:'01 Feb 2025',nextReview:'01 Feb 2026',status:'due'},
+  {title:'Remote Working Guidelines',id:'POL-042',category:'HR',cycle:180,reviewer:'David Kim',lastReview:'10 Aug 2025',nextReview:'06 Feb 2026',status:'due'},
+  {title:'Business Continuity Plan',id:'POL-008',category:'Operations',cycle:365,reviewer:'Li Wei',lastReview:'15 Mar 2025',nextReview:'15 Mar 2026',status:'upcoming'},
+  {title:'Acceptable Use Policy',id:'POL-015',category:'IT',cycle:365,reviewer:'Elena Volkov',lastReview:'01 Oct 2025',nextReview:'01 Oct 2026',status:'upcoming'}
+];
+
+const reports = [
+  {title:'Department Compliance',desc:'Detailed compliance metrics broken down by department and team.', icon:'&#128202;',formats:['PDF','Excel']},
+  {title:'Acknowledgement Status',desc:'Full report of policy acknowledgement status across all team members.', icon:'&#10003;',formats:['PDF','Excel','CSV']},
+  {title:'Delegation Summary',desc:'Overview of all delegation activities including active, pending, and historical.', icon:'&#128101;',formats:['PDF']},
+  {title:'Policy Review Schedule',desc:'Upcoming and overdue policy reviews with assigned reviewers and timelines.', icon:'&#128197;',formats:['PDF','Excel']},
+  {title:'SLA Performance',desc:'Service level agreement performance metrics for policy acknowledgements.', icon:'&#9201;',formats:['PDF','Excel']},
+  {title:'Audit Trail Export',desc:'Comprehensive audit log of all policy management actions and events.', icon:'&#128274;',formats:['CSV','Excel']}
+];
+
+/* ===== RENDER FUNCTIONS ===== */
+function renderAtRisk(){
+  const el=document.getElementById('atRiskList');
+  el.innerHTML=atRiskMembers.map((m,i)=>`
+    <div class="member-row">
+      <div class="avatar" style="background:${ac(i)}">${initials(m.name)}</div>
+      <div class="member-info"><div class="member-name">${m.name}</div><div class="member-detail">${m.dept}</div></div>
+      <div class="member-stat"><div class="member-compliance" style="color:${m.compliance<75?'var(--red)':m.compliance<90?'var(--amber)':'var(--green)'}">${m.compliance}%</div><div class="member-overdue">${m.overdue} overdue</div></div>
+    </div>`).join('');
+}
+
+function renderActivity(){
+  const el=document.getElementById('activityFeed');
+  el.innerHTML=activities.map(a=>`
+    <div class="activity-item">
+      <div class="activity-icon" style="background:${a.color}">${a.icon}</div>
+      <div><div class="activity-text">${a.text}</div><div class="activity-ts">${a.ts}</div></div>
+    </div>`).join('');
+}
+
+function gaugeColor(v){return v>=90?'var(--green)':v>=75?'var(--amber)':'var(--red)'}
+
+function renderCompTable(){
+  const el=document.getElementById('compTableBody');
+  const sorted=[...teamMembers].sort((a,b)=>a.compliance-b.compliance);
+  el.innerHTML=sorted.map((m,i)=>`
+    <tr>
+      <td><div class="persona"><div class="avatar" style="background:${ac(i)}">${initials(m.name)}</div><div><div class="persona-name">${m.name}</div></div></div></td>
+      <td>${m.dept}</td><td>${m.assigned}</td><td>${m.ack}</td><td>${m.pending}</td>
+      <td style="color:${m.overdue>0?'var(--red)':'inherit'};font-weight:${m.overdue>0?'700':'400'}">${m.overdue}</td>
+      <td><div class="gauge-bar"><div class="gauge-fill" style="width:${m.compliance}%;background:${gaugeColor(m.compliance)}"></div></div><span class="gauge-text" style="color:${gaugeColor(m.compliance)}">${m.compliance}%</span></td>
+      <td>${m.overdue>0?'<button class="icon-btn" title="Send reminder">&#128231;</button>':''}</td>
+    </tr>`).join('');
+}
+
+function renderApprovals(){
+  const el=document.getElementById('approvalCards');
+  el.innerHTML=approvals.map((a,i)=>`
+    <div class="card approval-card">
+      <div class="approval-header">
+        <div>
+          <div class="approval-title">${a.title} <span class="badge badge-grey">${a.id}</span></div>
+          <div class="approval-meta">
+            <span>Category: ${a.category}</span>
+            <span>Author: ${a.author}</span>
+            <span>Submitted: ${a.submitted}</span>
+          </div>
+        </div>
+        ${a.urgent?'<span class="badge badge-red">Urgent</span>':a.status==='returned'?'<span class="badge badge-amber">Returned</span>':'<span class="badge badge-amber">Pending</span>'}
+      </div>
+      <div class="approval-actions">
+        ${a.status!=='returned'?'<button class="btn btn-sm btn-teal">&#10003; Approve</button><button class="btn btn-sm">&#8617; Return</button>':'<button class="btn btn-sm">&#128065; View Feedback</button>'}
+        <button class="btn btn-sm">&#128196; Preview</button>
+      </div>
+    </div>`).join('');
+}
+
+function statusBadge(s){
+  const m={active:'badge-green',pending:'badge-amber',completed:'badge-blue',expired:'badge-red',overdue:'badge-red',due:'badge-amber',upcoming:'badge-blue'};
+  return `<span class="badge ${m[s]||'badge-grey'}">${s.charAt(0).toUpperCase()+s.slice(1)}</span>`;
+}
+
+function renderDelegations(){
+  const el=document.getElementById('delegationCards');
+  el.innerHTML=delegations.map((d,i)=>`
+    <div class="card delegation-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div class="delegation-people">
+            <div class="persona"><div class="avatar" style="background:${ac(i)};width:28px;height:28px;font-size:11px">${initials(d.from)}</div><strong>${d.from}</strong></div>
+            <span class="arrow">&#10132;</span>
+            <div class="persona"><div class="avatar" style="background:${ac(i+3)};width:28px;height:28px;font-size:11px">${initials(d.to)}</div><strong>${d.to}</strong></div>
+          </div>
+          <div style="font-size:var(--caption-size);color:var(--text-secondary);margin-top:6px">
+            <span>Scope: ${d.scope}</span> &middot; <span>${d.start} &ndash; ${d.end}</span> &middot; <span>Reason: ${d.reason}</span>
+          </div>
+        </div>
+        ${statusBadge(d.status)}
+      </div>
+    </div>`).join('');
+}
+
+function renderReviews(){
+  const el=document.getElementById('reviewCards');
+  el.innerHTML=reviews.map((r,i)=>{
+    const isOverdue=r.status==='overdue',isDue=r.status==='due';
+    return `
+    <div class="card review-card" data-status="${r.status}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div class="approval-title">${r.title} <span class="badge badge-grey">${r.id}</span></div>
+          <div class="approval-meta" style="margin-top:6px">
+            <span>Category: ${r.category}</span>
+            <span>Review cycle: ${r.cycle} days</span>
+            <span>Reviewer: ${r.reviewer}</span>
+          </div>
+        </div>
+        ${statusBadge(r.status)}
+      </div>
+      <div class="review-dates">
+        <span>Last reviewed: ${r.lastReview}</span>
+        <span class="${isOverdue?'overdue':''}">Next review: ${r.nextReview}${isOverdue?' (OVERDUE)':''}</span>
+      </div>
+      ${(isDue||isOverdue)?'<div><button class="btn btn-sm btn-teal">&#128221; Start Review</button></div>':''}
+    </div>`;
+  }).join('');
+}
+
+function renderReports(){
+  const el=document.getElementById('reportGrid');
+  el.innerHTML=reports.map(r=>`
+    <div class="card report-card">
+      <div class="report-icon-box">${r.icon}</div>
+      <div class="report-info">
+        <div class="report-title">${r.title}</div>
+        <div class="report-desc">${r.desc}</div>
+        <div style="display:flex;gap:6px">${r.formats.map(f=>`<span class="badge badge-grey">${f}</span>`).join('')}</div>
+      </div>
+    </div>`).join('');
+}
+
+/* ===== INIT RENDER ===== */
+renderAtRisk();renderActivity();renderCompTable();renderApprovals();renderDelegations();renderReviews();renderReports();
+
+/* ===== TABS ===== */
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+  });
+});
+
+/* ===== CHIP BARS ===== */
+document.querySelectorAll('.chip-bar').forEach(bar=>{
+  bar.querySelectorAll('.chip').forEach(chip=>{
+    chip.addEventListener('click',()=>{
+      bar.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+      chip.classList.add('active');
+    });
+  });
+});
+
+/* ===== TUNING PANEL ===== */
+function togglePanel(){
+  document.getElementById('tuningPanel').classList.toggle('open');
+}
+document.getElementById('tuningToggle').addEventListener('click',togglePanel);
+
+/* ===== RANGE SLIDERS ===== */
+const root=document.documentElement;
+function setVar(name,val){root.style.setProperty(name,val)}
+
+document.querySelectorAll('input[type=range][data-var]').forEach(r=>{
+  const vid=r.id.replace('r-','v-');
+  const display=document.getElementById(vid);
+  r.addEventListener('input',()=>{
+    const val=r.value+r.dataset.unit;
+    setVar(r.dataset.var,val);
+    if(display) display.textContent=val;
+  });
+});
+
+function applyShadow(v){setVar('--card-shadow',v==='none'?'none':v)}
+function applyHover(v){
+  const shell=document.getElementById('appShell');
+  shell.classList.remove('card-hover-elevate','card-hover-border-teal','card-hover-both');
+  if(v!=='none') shell.classList.add('card-hover-'+v);
+}
+function applyCardBorder(v){setVar('--card-border',v)}
+function applyKpiCols(v){
+  document.querySelectorAll('.kpi-grid').forEach(g=>{
+    g.classList.remove('auto-fit','cols-3','cols-4','cols-6');
+    g.classList.add(v==='auto-fit'?'auto-fit':v);
+  });
+}
+function applyTblBorder(v){
+  const wrap=document.getElementById('compTableWrap');
+  wrap.classList.remove('tbl-border-none','tbl-border-full');
+  if(v==='none') wrap.classList.add('tbl-border-none');
+  else if(v==='full') wrap.classList.add('tbl-border-full');
+}
+
+/* ===== PRESETS ===== */
+const presets={
+  current:{maxw:1200,cpad:32,sgap:20,sfs:56,scp:32,scr:12,cp:20,cbr:8,shadow:'0 2px 4px rgba(0,0,0,.08)',hover:'elevate',cborder:'none',kpicols:'auto-fit',kmin:180,kis:40,kir:10,kvs:26,kls:12,trh:48,tfs:14,gh:6,gr:3,tts:26,shs:18,cts:15,bts:14,caps:12,hw:'600',primary:'#0d9488',cardbg:'#ffffff',pagebg:'#f3f2f1',tblhdr:'#f3f2f1',tblborder:'horizontal',tblhov:'#f3f2f1'},
+  compact:{maxw:1000,cpad:20,sgap:12,sfs:42,scp:20,scr:8,cp:14,cbr:6,shadow:'0 1px 3px rgba(0,0,0,.06)',hover:'none',cborder:'1px solid #edebe9',kpicols:'auto-fit',kmin:150,kis:32,kir:6,kvs:22,kls:11,trh:40,tfs:13,gh:4,gr:2,tts:22,shs:16,cts:14,bts:13,caps:11,hw:'600',primary:'#0d9488',cardbg:'#ffffff',pagebg:'#f3f2f1',tblhdr:'#f3f2f1',tblborder:'horizontal',tblhov:'#f3f2f1'},
+  spacious:{maxw:1400,cpad:40,sgap:28,sfs:64,scp:40,scr:16,cp:24,cbr:10,shadow:'0 3px 8px rgba(0,0,0,.12)',hover:'elevate',cborder:'none',kpicols:'auto-fit',kmin:200,kis:48,kir:12,kvs:30,kls:13,trh:56,tfs:15,gh:8,gr:4,tts:30,shs:22,cts:16,bts:15,caps:12,hw:'600',primary:'#0d9488',cardbg:'#ffffff',pagebg:'#f3f2f1',tblhdr:'#f3f2f1',tblborder:'horizontal',tblhov:'#f3f2f1'},
+  modern:{maxw:1200,cpad:32,sgap:20,sfs:56,scp:32,scr:20,cp:22,cbr:16,shadow:'0 4px 12px rgba(0,0,0,.06)',hover:'both',cborder:'none',kpicols:'auto-fit',kmin:180,kis:44,kir:50,kvs:26,kls:12,trh:48,tfs:14,gh:6,gr:5,tts:26,shs:18,cts:15,bts:14,caps:12,hw:'600',primary:'#0d9488',cardbg:'#ffffff',pagebg:'#f8f8f8',tblhdr:'#f3f2f1',tblborder:'horizontal',tblhov:'#e0f5f3'},
+  corporate:{maxw:1100,cpad:28,sgap:16,sfs:48,scp:28,scr:2,cp:18,cbr:2,shadow:'none',hover:'border-teal',cborder:'1px solid #d2d0ce',kpicols:'auto-fit',kmin:170,kis:36,kir:4,kvs:24,kls:12,trh:44,tfs:13,gh:4,gr:0,tts:24,shs:17,cts:14,bts:13,caps:12,hw:'700',primary:'#0d9488',cardbg:'#ffffff',pagebg:'#f3f2f1',tblhdr:'#edebe9',tblborder:'full',tblhov:'#f3f2f1'},
+  dashboard:{maxw:1300,cpad:32,sgap:24,sfs:72,scp:44,scr:16,cp:22,cbr:10,shadow:'0 3px 8px rgba(0,0,0,.12)',hover:'elevate',cborder:'none',kpicols:'cols-6',kmin:140,kis:48,kir:12,kvs:30,kls:12,trh:48,tfs:14,gh:8,gr:4,tts:28,shs:20,cts:15,bts:14,caps:12,hw:'700',primary:'#0d9488',cardbg:'#ffffff',pagebg:'#f3f2f1',tblhdr:'#0d9488',tblborder:'horizontal',tblhov:'#e0f5f3'}
+};
+
+function applyPreset(name){
+  const p=presets[name];if(!p) return;
+  document.querySelectorAll('.preset-btn').forEach(b=>b.classList.toggle('active',b.dataset.preset===name));
+
+  // Ranges
+  const rangeMap={maxw:'--container-max',cpad:'--container-pad',sgap:'--section-gap',sfs:'--score-size',scp:'--score-pad',scr:'--score-radius',cp:'--card-pad',cbr:'--card-radius',kmin:'--kpi-min',kis:'--kpi-icon-size',kir:'--kpi-icon-radius',kvs:'--kpi-val-size',kls:'--kpi-lbl-size',trh:'--tbl-row-h',tfs:'--tbl-font',gh:'--gauge-h',gr:'--gauge-r',tts:'--title-size',shs:'--section-size',cts:'--card-title-size',bts:'--body-size',caps:'--caption-size'};
+  Object.entries(rangeMap).forEach(([key,varName])=>{
+    const val=p[key];
+    setVar(varName,val+'px');
+    const r=document.getElementById('r-'+key);if(r)r.value=val;
+    const v=document.getElementById('v-'+key);if(v)v.textContent=val+'px';
+  });
+
+  // Selects & special
+  applyShadow(p.shadow);document.getElementById('sel-shadow').value=p.shadow;
+  applyHover(p.hover);document.getElementById('sel-hover').value=p.hover;
+  applyCardBorder(p.cborder);document.getElementById('sel-cborder').value=p.cborder;
+  applyKpiCols(p.kpicols);document.getElementById('sel-kpicols').value=p.kpicols;
+  setVar('--heading-weight',p.hw);document.getElementById('sel-hw').value=p.hw;
+  setVar('--bg-card',p.cardbg);document.getElementById('sel-cardbg').value=p.cardbg;
+  setVar('--bg-page',p.pagebg);document.getElementById('sel-pagebg').value=p.pagebg;
+  setVar('--tbl-header-bg',p.tblhdr);document.getElementById('sel-tblhdr').value=p.tblhdr;
+  applyTblBorder(p.tblborder);document.getElementById('sel-tblborder').value=p.tblborder;
+  setVar('--tbl-hover',p.tblhov);document.getElementById('sel-tblhov').value=p.tblhov;
+  document.getElementById('clr-primary').value=p.primary;setVar('--primary',p.primary);
+}
+
+document.querySelectorAll('.preset-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>applyPreset(btn.dataset.preset));
+});
+
+/* ===== EXPORT CSS ===== */
+function exportCSS(){
+  const style=getComputedStyle(root);
+  const vars=['--container-max','--container-pad','--section-gap','--score-size','--score-pad','--score-radius','--card-pad','--card-radius','--card-shadow','--card-border','--kpi-min','--kpi-icon-size','--kpi-icon-radius','--kpi-val-size','--kpi-lbl-size','--tbl-header-bg','--tbl-row-h','--tbl-font','--gauge-h','--gauge-r','--tbl-hover','--act-icon','--act-space','--act-text','--act-ts','--title-size','--section-size','--card-title-size','--body-size','--caption-size','--heading-weight','--primary','--bg-card','--bg-page'];
+  let css=':root {\n';
+  vars.forEach(v=>{css+='  '+v+': '+style.getPropertyValue(v).trim()+';\n'});
+  css+='}';
+
+  const blob=new Blob([css],{type:'text/css'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='manager-view-variables.css';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+document.getElementById('exportCssBtn').addEventListener('click',exportCSS);
+
+/* ===== SEARCH FILTER (Team Compliance) ===== */
+document.getElementById('teamSearch').addEventListener('input',function(){
+  const q=this.value.toLowerCase();
+  document.querySelectorAll('#compTableBody tr').forEach(tr=>{
+    const name=tr.querySelector('.persona-name');
+    tr.style.display=(!q||tr.textContent.toLowerCase().includes(q))?'':'none';
+  });
+});
+
+/* ===== ANIMATE GAUGES ON TAB SWITCH ===== */
+function animateGauges(){
+  document.querySelectorAll('.gauge-fill').forEach(g=>{
+    const w=g.style.width;
+    g.style.width='0';
+    requestAnimationFrame(()=>{requestAnimationFrame(()=>{g.style.width=w})});
+  });
+}
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>setTimeout(animateGauges,50));
+});
+setTimeout(animateGauges,100);
+</script>
+</body>
+</html>

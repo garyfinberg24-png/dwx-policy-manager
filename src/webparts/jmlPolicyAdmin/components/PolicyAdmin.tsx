@@ -162,6 +162,9 @@ export interface IPolicyAdminState {
   emailTemplates: IEmailTemplate[];
   editingEmailTemplate: IEmailTemplate | null;
   showEmailTemplatePanel: boolean;
+  // Naming Rule Refresh
+  refreshingRuleId: number | null;
+  refreshingAllRules: boolean;
 }
 
 interface IEmailTemplate {
@@ -321,7 +324,9 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         { id: 8, name: 'Welcome — New User Onboarding', event: 'User Added', subject: 'Welcome to Policy Manager — Required Policies', body: 'Dear {{UserName}},\n\nWelcome to the organisation! As part of your onboarding, you are required to review and acknowledge the following policies:\n\n{{PolicyList}}\n\nPlease complete all acknowledgements within {{OnboardingDeadline}} days of your start date.\n\nGet started: {{OnboardingURL}}\n\nIf you have questions, please contact your manager or the HR team.\n\nRegards,\nPolicy Management Team', recipients: 'New Users', isActive: true, lastModified: '2025-04-28', mergeTags: ['{{UserName}}', '{{PolicyList}}', '{{OnboardingDeadline}}', '{{OnboardingURL}}'] },
       ],
       editingEmailTemplate: null,
-      showEmailTemplatePanel: false
+      showEmailTemplatePanel: false,
+      refreshingRuleId: null,
+      refreshingAllRules: false
     };
 
     this.policyService = new PolicyService(props.sp);
@@ -650,26 +655,39 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         <Stack tokens={{ childrenGap: 20 }}>
           <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
             <Text variant="mediumPlus" style={{ fontWeight: 600 }}>Naming Rules</Text>
-            <PrimaryButton
-              text="New Naming Rule"
-              iconProps={{ iconName: 'Add' }}
-              onClick={() => {
-                const newRule: INamingRule = {
-                  Id: Date.now(),
-                  Title: '',
-                  Pattern: '',
-                  Segments: [
-                    { id: '1', type: 'prefix', value: 'POL' },
-                    { id: '2', type: 'separator', value: '-' },
-                    { id: '3', type: 'counter', value: '001', format: '3-digit' }
-                  ],
-                  AppliesTo: 'All Policies',
-                  IsActive: true,
-                  Example: 'POL-001'
-                };
-                this.setState({ editingNamingRule: newRule, showNamingRulePanel: true });
-              }}
-            />
+            <Stack horizontal tokens={{ childrenGap: 8 }}>
+              <DefaultButton
+                text={this.state.refreshingAllRules ? 'Refreshing...' : 'Refresh All Rules'}
+                iconProps={{ iconName: 'Sync' }}
+                disabled={this.state.refreshingAllRules || this.state.refreshingRuleId !== null}
+                onClick={() => void this.refreshAllNamingRules()}
+                styles={{
+                  root: { borderColor: '#0d9488', color: '#0d9488' },
+                  rootHovered: { borderColor: '#0f766e', color: '#0f766e', background: '#f0fdfa' },
+                  rootDisabled: { borderColor: '#94a3b8', color: '#94a3b8' }
+                }}
+              />
+              <PrimaryButton
+                text="New Naming Rule"
+                iconProps={{ iconName: 'Add' }}
+                onClick={() => {
+                  const newRule: INamingRule = {
+                    Id: Date.now(),
+                    Title: '',
+                    Pattern: '',
+                    Segments: [
+                      { id: '1', type: 'prefix', value: 'POL' },
+                      { id: '2', type: 'separator', value: '-' },
+                      { id: '3', type: 'counter', value: '001', format: '3-digit' }
+                    ],
+                    AppliesTo: 'All Policies',
+                    IsActive: true,
+                    Example: 'POL-001'
+                  };
+                  this.setState({ editingNamingRule: newRule, showNamingRulePanel: true });
+                }}
+              />
+            </Stack>
           </Stack>
 
           <Text variant="small" style={{ color: '#605e5c' }}>
@@ -703,7 +721,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                       <Icon iconName="Rename" style={{ fontSize: 18, color: rule.IsActive ? '#0d9488' : '#94a3b8' }} />
                       <Text variant="mediumPlus" style={{ fontWeight: 600 }}>{rule.Title}</Text>
                     </Stack>
-                    <Stack horizontal tokens={{ childrenGap: 8 }}>
+                    <Stack horizontal tokens={{ childrenGap: 8 }} verticalAlign="center">
                       <div style={{
                         padding: '2px 10px', borderRadius: 12, fontSize: 12, fontWeight: 600,
                         backgroundColor: rule.IsActive ? '#ccfbf1' : '#f1f5f9',
@@ -711,6 +729,24 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                       }}>
                         {rule.IsActive ? 'Active' : 'Inactive'}
                       </div>
+                      <div style={{
+                        padding: '2px 10px', borderRadius: 12, fontSize: 12, fontWeight: 500,
+                        backgroundColor: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd'
+                      }}>
+                        {this.getAffectedPolicyCount(rule)} policies
+                      </div>
+                      <DefaultButton
+                        iconProps={{ iconName: 'Sync' }}
+                        text={this.state.refreshingRuleId === rule.Id ? 'Refreshing...' : 'Refresh'}
+                        disabled={!rule.IsActive || this.state.refreshingRuleId !== null || this.state.refreshingAllRules}
+                        styles={{
+                          root: { minWidth: 'auto', padding: '0 8px', height: 28, borderColor: '#0d9488', color: '#0d9488' },
+                          label: { fontSize: 12 },
+                          rootHovered: { borderColor: '#0f766e', color: '#0f766e', background: '#f0fdfa' },
+                          rootDisabled: { borderColor: '#e2e8f0', color: '#94a3b8' }
+                        }}
+                        onClick={() => void this.refreshNamingRule(rule)}
+                      />
                       <DefaultButton
                         iconProps={{ iconName: 'Edit' }}
                         text="Edit"
@@ -1195,6 +1231,86 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
   private deleteNamingRule(id: number): void {
     this.setState({ namingRules: this.state.namingRules.filter(r => r.Id !== id) });
     void this.dialogManager.showAlert('Naming rule deleted.', { title: 'Deleted', variant: 'success' });
+  }
+
+  private getAffectedPolicyCount(rule: INamingRule): number {
+    // Mock: return a realistic count based on rule scope
+    const counts: Record<string, number> = {
+      'All Policies': 47,
+      'HR Policies': 12,
+      'Compliance Policies': 8,
+      'IT Policies': 15,
+      'Finance Policies': 6
+    };
+    return counts[rule.AppliesTo] || Math.floor(Math.random() * 20) + 3;
+  }
+
+  private async refreshNamingRule(rule: INamingRule): Promise<void> {
+    const affectedCount = this.getAffectedPolicyCount(rule);
+
+    // First confirmation
+    const firstConfirm = await this.dialogManager.showConfirm(
+      `This will refresh the naming rule "${rule.Title}" and re-apply it to ${affectedCount} ${rule.AppliesTo === 'All Policies' ? '' : rule.AppliesTo + ' '}polic${affectedCount === 1 ? 'y' : 'ies'}.\n\nExisting policy IDs that match this rule will be regenerated.`,
+      { title: 'Refresh Naming Rule', confirmText: 'Continue', cancelText: 'Cancel' }
+    );
+
+    if (!firstConfirm) return;
+
+    // Second confirmation (double confirmation)
+    const secondConfirm = await this.dialogManager.showConfirm(
+      `Are you absolutely sure?\n\n${affectedCount} polic${affectedCount === 1 ? 'y' : 'ies'} will have ${affectedCount === 1 ? 'its' : 'their'} ID${affectedCount === 1 ? '' : 's'} regenerated using the "${rule.Title}" naming pattern.\n\nThis action cannot be undone.`,
+      { title: 'Confirm Refresh', confirmText: `Yes, refresh ${affectedCount} policies`, cancelText: 'Cancel' }
+    );
+
+    if (!secondConfirm) return;
+
+    // Simulate refresh
+    this.setState({ refreshingRuleId: rule.Id });
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    this.setState({ refreshingRuleId: null });
+
+    void this.dialogManager.showAlert(
+      `Successfully refreshed "${rule.Title}" naming rule. ${affectedCount} polic${affectedCount === 1 ? 'y' : 'ies'} updated.`,
+      { title: 'Refresh Complete', variant: 'success' }
+    );
+  }
+
+  private async refreshAllNamingRules(): Promise<void> {
+    const { namingRules } = this.state;
+    const activeRules = namingRules.filter(r => r.IsActive);
+
+    if (activeRules.length === 0) {
+      void this.dialogManager.showAlert('No active naming rules to refresh.', { title: 'No Active Rules' });
+      return;
+    }
+
+    const totalAffected = activeRules.reduce((sum, r) => sum + this.getAffectedPolicyCount(r), 0);
+
+    // First confirmation
+    const firstConfirm = await this.dialogManager.showConfirm(
+      `This will refresh all ${activeRules.length} active naming rule${activeRules.length === 1 ? '' : 's'} and re-apply them to approximately ${totalAffected} policies.\n\nRules to refresh:\n${activeRules.map(r => `• ${r.Title} (${r.AppliesTo})`).join('\n')}`,
+      { title: 'Refresh All Naming Rules', confirmText: 'Continue', cancelText: 'Cancel' }
+    );
+
+    if (!firstConfirm) return;
+
+    // Second confirmation
+    const secondConfirm = await this.dialogManager.showConfirm(
+      `Are you absolutely sure?\n\nApproximately ${totalAffected} policies across ${activeRules.length} rule${activeRules.length === 1 ? '' : 's'} will have their IDs regenerated.\n\nThis action cannot be undone.`,
+      { title: 'Confirm Refresh All', confirmText: `Yes, refresh all ${totalAffected} policies`, cancelText: 'Cancel' }
+    );
+
+    if (!secondConfirm) return;
+
+    // Simulate refresh
+    this.setState({ refreshingAllRules: true });
+    await new Promise(resolve => setTimeout(resolve, 2500));
+    this.setState({ refreshingAllRules: false });
+
+    void this.dialogManager.showAlert(
+      `Successfully refreshed all ${activeRules.length} active naming rules. Approximately ${totalAffected} policies updated.`,
+      { title: 'Refresh Complete', variant: 'success' }
+    );
   }
 
   private renderNamingRulePanel(): JSX.Element {

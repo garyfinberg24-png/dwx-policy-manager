@@ -373,10 +373,6 @@ export default class PolicyAuthor extends React.Component<IPolicyAuthorProps, IP
 
     return (
       <div className={styles.section}>
-        <Text variant="xLarge" className={styles.sectionTitle}>
-          Basic Information
-        </Text>
-
         <Stack tokens={{ childrenGap: 16 }}>
           <TextField
             label="Policy Number"

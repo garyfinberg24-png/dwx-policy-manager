@@ -13,6 +13,7 @@ export interface INavItem {
 export interface IBreadcrumb {
   text: string;
   href?: string;
+  url?: string;
 }
 
 export interface IPageStat {

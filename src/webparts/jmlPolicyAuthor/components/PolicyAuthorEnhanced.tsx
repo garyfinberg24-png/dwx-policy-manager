@@ -219,6 +219,9 @@ export interface IPolicyAuthorEnhancedState {
   supersedesPolicy: string;
   policyOwner: string[];
 
+  // Review step collapsible sections
+  expandedReviewSections: Set<string>;
+
   // Embedded Tab System
   activeTab: PolicyBuilderTab;
 
@@ -524,6 +527,9 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       supersedesPolicy: '',
       policyOwner: [],
 
+      // Review step - first section expanded by default
+      expandedReviewSections: new Set<string>(['basic']),
+
       // Embedded Tab System - use URL ?tab= param if provided
       activeTab: tabParam && POLICY_BUILDER_TABS.some(t => t.key === tabParam) ? tabParam : 'create',
 
@@ -662,6 +668,93 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     this.stopAutoSave();
   }
 
+  private static readonly SAMPLE_TEMPLATES: IPolicyTemplate[] = [
+    {
+      Id: 1001,
+      Title: 'Corporate Governance Policy',
+      TemplateType: 'Standard',
+      TemplateCategory: 'Corporate',
+      TemplateDescription: 'Comprehensive corporate governance template with board oversight, executive responsibilities, and regulatory compliance sections. Includes standard headers, approval workflows, and compliance checkpoints.',
+      TemplateContent: '<h2>1. Purpose</h2><p>This policy establishes the framework for corporate governance across the organisation, ensuring accountability, transparency, and compliance with regulatory requirements.</p><h2>2. Scope</h2><p>This policy applies to all directors, officers, and employees of the organisation and its subsidiaries.</p><h2>3. Governance Framework</h2><h3>3.1 Board Responsibilities</h3><p>The Board of Directors is responsible for setting the strategic direction of the organisation, overseeing management, and ensuring fiduciary duties are fulfilled.</p><h3>3.2 Executive Accountability</h3><p>Executive leadership is accountable for implementing board-approved strategies, maintaining internal controls, and reporting to the board on operational performance.</p><h2>4. Compliance Requirements</h2><p>All activities must comply with applicable laws, regulations, and industry standards. Non-compliance must be reported immediately through the established escalation channels.</p><h2>5. Review and Amendment</h2><p>This policy will be reviewed annually by the Governance Committee and amended as necessary to reflect changes in legislation or organisational structure.</p>',
+      ComplianceRisk: 'High',
+      SuggestedReadTimeframe: '1 week',
+      RequiresAcknowledgement: true,
+      RequiresQuiz: true,
+      KeyPointsTemplate: 'Board oversight and fiduciary duties;Executive accountability framework;Regulatory compliance requirements;Annual review cycle;Escalation procedures for non-compliance',
+      UsageCount: 34
+    },
+    {
+      Id: 1002,
+      Title: 'Information Security Policy',
+      TemplateType: 'Standard',
+      TemplateCategory: 'IT Security',
+      TemplateDescription: 'IT security policy template covering data classification, access controls, incident response, and acceptable use. Aligned with ISO 27001 and NIST frameworks.',
+      TemplateContent: '<h2>1. Purpose</h2><p>To protect the confidentiality, integrity, and availability of organisational information assets by defining security controls and responsibilities.</p><h2>2. Data Classification</h2><p>All information must be classified as: <strong>Public</strong>, <strong>Internal</strong>, <strong>Confidential</strong>, or <strong>Restricted</strong>. Handling procedures must correspond to the classification level.</p><h2>3. Access Control</h2><p>Access to information systems must follow the principle of least privilege. Multi-factor authentication is required for all privileged access and remote connections.</p><h2>4. Incident Response</h2><p>Security incidents must be reported within 1 hour of discovery to the IT Security team. The incident response plan must be followed for containment, eradication, and recovery.</p><h2>5. Acceptable Use</h2><p>Organisational IT resources must be used for legitimate business purposes. Personal use is permitted within reasonable limits as defined in the Acceptable Use Guidelines.</p>',
+      ComplianceRisk: 'Critical',
+      SuggestedReadTimeframe: '3-4 days',
+      RequiresAcknowledgement: true,
+      RequiresQuiz: true,
+      KeyPointsTemplate: 'Data classification (Public, Internal, Confidential, Restricted);Least privilege access control;MFA required for privileged access;1-hour incident reporting window;ISO 27001 and NIST alignment',
+      UsageCount: 52
+    },
+    {
+      Id: 1003,
+      Title: 'General Policy Template',
+      TemplateType: 'General',
+      TemplateCategory: 'General',
+      TemplateDescription: 'Flexible general-purpose policy template suitable for most department-level policies. Easy to customise with standard sections for purpose, scope, responsibilities, and compliance.',
+      TemplateContent: '<h2>1. Purpose</h2><p>[Describe the purpose and objectives of this policy]</p><h2>2. Scope</h2><p>[Define who this policy applies to and under what circumstances]</p><h2>3. Policy Statement</h2><p>[State the key policy provisions and requirements]</p><h2>4. Roles and Responsibilities</h2><h3>4.1 Management</h3><p>[Describe management responsibilities]</p><h3>4.2 Employees</h3><p>[Describe employee responsibilities]</p><h2>5. Procedures</h2><p>[Outline the procedures for implementing this policy]</p><h2>6. Non-Compliance</h2><p>[Describe consequences of non-compliance]</p><h2>7. Related Documents</h2><p>[List related policies, standards, and procedures]</p>',
+      ComplianceRisk: 'Medium',
+      SuggestedReadTimeframe: '3-4 days',
+      RequiresAcknowledgement: true,
+      RequiresQuiz: false,
+      KeyPointsTemplate: 'Customisable template sections;Standard policy structure;Department-agnostic format;Clear responsibilities matrix',
+      UsageCount: 128
+    },
+    {
+      Id: 1004,
+      Title: 'HR Employee Handbook Policy',
+      TemplateType: 'Standard',
+      TemplateCategory: 'Human Resources',
+      TemplateDescription: 'Human resources policy template covering employment terms, benefits, conduct expectations, and workplace procedures. Suitable for employee handbook chapters.',
+      TemplateContent: '<h2>1. Purpose</h2><p>This policy establishes expectations and guidelines for employment at the organisation, ensuring fair and consistent treatment of all employees.</p><h2>2. Employment Terms</h2><p>All employment is subject to the terms outlined in individual employment agreements, this handbook, and applicable legislation.</p><h2>3. Code of Conduct</h2><p>Employees are expected to conduct themselves professionally and ethically at all times. This includes treating colleagues with respect, maintaining confidentiality, and avoiding conflicts of interest.</p><h2>4. Leave and Absences</h2><p>Leave entitlements are in accordance with employment agreements and statutory requirements. Requests must be submitted through the approved leave management system.</p><h2>5. Performance Management</h2><p>Regular performance reviews will be conducted to provide feedback, set objectives, and identify development opportunities.</p>',
+      ComplianceRisk: 'Medium',
+      SuggestedReadTimeframe: '1 week',
+      RequiresAcknowledgement: true,
+      RequiresQuiz: false,
+      KeyPointsTemplate: 'Employment terms and conditions;Code of conduct expectations;Leave management procedures;Performance review process;Workplace behaviour standards',
+      UsageCount: 45
+    },
+    {
+      Id: 1005,
+      Title: 'Data Protection & Privacy Policy',
+      TemplateType: 'Standard',
+      TemplateCategory: 'Compliance',
+      TemplateDescription: 'GDPR and privacy-aligned policy template for data protection obligations, data subject rights, breach notification, and data processing agreements.',
+      TemplateContent: '<h2>1. Purpose</h2><p>To ensure the organisation processes personal data lawfully, fairly, and transparently in compliance with data protection regulations.</p><h2>2. Data Processing Principles</h2><p>Personal data must be: processed lawfully and fairly; collected for specified purposes; adequate and relevant; accurate and up to date; not kept longer than necessary; processed securely.</p><h2>3. Data Subject Rights</h2><p>The organisation respects individuals\' rights including: right of access, rectification, erasure, restriction, portability, and objection to processing.</p><h2>4. Breach Notification</h2><p>Data breaches must be reported to the Data Protection Officer within 24 hours. Where required, the supervisory authority must be notified within 72 hours.</p><h2>5. Data Processing Agreements</h2><p>All third-party processors must have an approved Data Processing Agreement in place before any personal data is shared.</p>',
+      ComplianceRisk: 'Critical',
+      SuggestedReadTimeframe: '3-4 days',
+      RequiresAcknowledgement: true,
+      RequiresQuiz: true,
+      KeyPointsTemplate: 'GDPR compliance requirements;Six data processing principles;Data subject rights;24-hour breach reporting;Third-party DPA requirements',
+      UsageCount: 67
+    },
+    {
+      Id: 1006,
+      Title: 'Health & Safety Policy',
+      TemplateType: 'Standard',
+      TemplateCategory: 'Health & Safety',
+      TemplateDescription: 'Workplace health and safety policy covering risk assessments, incident reporting, emergency procedures, and duty of care obligations.',
+      TemplateContent: '<h2>1. Purpose</h2><p>To ensure the health, safety, and welfare of all employees, contractors, and visitors within the workplace.</p><h2>2. Employer Responsibilities</h2><p>The organisation will provide a safe working environment, conduct regular risk assessments, provide appropriate training, and maintain adequate welfare facilities.</p><h2>3. Employee Responsibilities</h2><p>Employees must take reasonable care for their own health and safety and that of others, report hazards, and use equipment as trained.</p><h2>4. Risk Assessment</h2><p>All workplace activities must be risk-assessed. Significant findings must be documented and control measures implemented.</p><h2>5. Incident Reporting</h2><p>All workplace incidents, near-misses, and hazards must be reported immediately using the incident reporting system.</p><h2>6. Emergency Procedures</h2><p>Emergency procedures including fire evacuation, first aid, and critical incident response are displayed at all workstations.</p>',
+      ComplianceRisk: 'High',
+      SuggestedReadTimeframe: '3-4 days',
+      RequiresAcknowledgement: true,
+      RequiresQuiz: true,
+      KeyPointsTemplate: 'Safe working environment;Risk assessment requirements;Incident reporting obligations;Emergency procedures;Duty of care',
+      UsageCount: 39
+    }
+  ];
+
   private async loadTemplates(): Promise<void> {
     try {
       const items = await this.props.sp.web.lists
@@ -670,9 +763,11 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         .orderBy('UsageCount', false)
         .top(100)();
 
-      this.setState({ templates: items as IPolicyTemplate[] });
+      this.setState({ templates: items.length > 0 ? items as IPolicyTemplate[] : PolicyAuthorEnhanced.SAMPLE_TEMPLATES });
     } catch (error) {
       console.error('Failed to load templates:', error);
+      // Use sample templates as fallback
+      this.setState({ templates: PolicyAuthorEnhanced.SAMPLE_TEMPLATES });
     }
   }
 
@@ -1621,11 +1716,6 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
     return (
       <div className={styles.wizardStepContent}>
-        <Text variant="xLarge" className={styles.stepHeader}>Compliance & Risk Settings</Text>
-        <Text variant="medium" className={styles.stepDescription}>
-          Define the compliance requirements and risk level for this policy.
-        </Text>
-
         <div className={styles.section}>
           <Stack tokens={{ childrenGap: 20 }}>
             <Dropdown
@@ -1691,11 +1781,6 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
     return (
       <div className={styles.wizardStepContent}>
-        <Text variant="xLarge" className={styles.stepHeader}>Target Audience</Text>
-        <Text variant="medium" className={styles.stepDescription}>
-          Define who needs to read and acknowledge this policy.
-        </Text>
-
         <div className={styles.section}>
           <Stack tokens={{ childrenGap: 20 }}>
             <Checkbox
@@ -1759,11 +1844,6 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
     return (
       <div className={styles.wizardStepContent}>
-        <Text variant="xLarge" className={styles.stepHeader}>Effective Dates & Versioning</Text>
-        <Text variant="medium" className={styles.stepDescription}>
-          Set when the policy becomes active and when it should be reviewed.
-        </Text>
-
         <div className={styles.section}>
           <Stack tokens={{ childrenGap: 20 }}>
             <TextField
@@ -1815,10 +1895,6 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
   private renderStep6_Workflow(): JSX.Element {
     return (
       <div className={styles.wizardStepContent}>
-        <Text variant="xLarge" className={styles.stepHeader}>Review & Approval Workflow</Text>
-        <Text variant="medium" className={styles.stepDescription}>
-          Assign reviewers and approvers for this policy.
-        </Text>
         {this.renderReviewers()}
       </div>
     );
@@ -1833,153 +1909,104 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       keyPoints, linkedDocumentUrl, linkedDocumentType
     } = this.state;
 
+    const { expandedReviewSections } = this.state;
+
+    const toggleSection = (key: string): void => {
+      const next = new Set(expandedReviewSections);
+      if (next.has(key)) { next.delete(key); } else { next.add(key); }
+      this.setState({ expandedReviewSections: next });
+    };
+
+    const sections = [
+      {
+        key: 'basic', icon: 'Info', title: 'Basic Information',
+        content: (
+          <div className={styles.reviewGrid}>
+            <div className={styles.reviewItem}><Label>Policy Number</Label><Text>{policyNumber || '(Auto-generated on save)'}</Text></div>
+            <div className={styles.reviewItem}><Label>Policy Name</Label><Text>{policyName || '-'}</Text></div>
+            <div className={styles.reviewItem}><Label>Category</Label><Text>{policyCategory || '-'}</Text></div>
+            <div className={styles.reviewItem}><Label>Summary</Label><Text>{policySummary || '-'}</Text></div>
+          </div>
+        )
+      },
+      {
+        key: 'content', icon: 'Edit', title: 'Content',
+        content: (
+          <div className={styles.reviewGrid}>
+            <div className={styles.reviewItem}><Label>Content Preview</Label><Text>{policyContent ? `${policyContent.substring(0, 200).replace(/<[^>]*>/g, '')}...` : '-'}</Text></div>
+            {linkedDocumentUrl && <div className={styles.reviewItem}><Label>Linked Document</Label><Text>{linkedDocumentType}: {linkedDocumentUrl}</Text></div>}
+            <div className={styles.reviewItem}><Label>Key Points</Label><Text>{keyPoints.length > 0 ? keyPoints.join(', ') : 'None specified'}</Text></div>
+          </div>
+        )
+      },
+      {
+        key: 'compliance', icon: 'Shield', title: 'Compliance & Risk',
+        content: (
+          <div className={styles.reviewGrid}>
+            <div className={styles.reviewItem}><Label>Risk Level</Label><Text>{complianceRisk}</Text></div>
+            <div className={styles.reviewItem}><Label>Read Timeframe</Label><Text>{readTimeframe}</Text></div>
+            <div className={styles.reviewItem}><Label>Acknowledgement Required</Label><Text>{requiresAcknowledgement ? 'Yes' : 'No'}</Text></div>
+            <div className={styles.reviewItem}><Label>Quiz Required</Label><Text>{requiresQuiz ? 'Yes' : 'No'}</Text></div>
+          </div>
+        )
+      },
+      {
+        key: 'audience', icon: 'People', title: 'Target Audience',
+        content: (
+          <div className={styles.reviewGrid}>
+            <div className={styles.reviewItem}><Label>Audience</Label><Text>{targetAllEmployees ? 'All Employees' : 'Specific groups'}</Text></div>
+            {!targetAllEmployees && <>
+              <div className={styles.reviewItem}><Label>Departments</Label><Text>{targetDepartments.join(', ') || 'None specified'}</Text></div>
+              <div className={styles.reviewItem}><Label>Roles</Label><Text>{targetRoles.join(', ') || 'None specified'}</Text></div>
+              <div className={styles.reviewItem}><Label>Locations</Label><Text>{targetLocations.join(', ') || 'None specified'}</Text></div>
+            </>}
+          </div>
+        )
+      },
+      {
+        key: 'dates', icon: 'Calendar', title: 'Dates',
+        content: (
+          <div className={styles.reviewGrid}>
+            <div className={styles.reviewItem}><Label>Effective Date</Label><Text>{effectiveDate || '-'}</Text></div>
+            <div className={styles.reviewItem}><Label>Expiry Date</Label><Text>{expiryDate || 'No expiry'}</Text></div>
+            <div className={styles.reviewItem}><Label>Review Frequency</Label><Text>{reviewFrequency}</Text></div>
+          </div>
+        )
+      },
+      {
+        key: 'workflow', icon: 'Flow', title: 'Workflow',
+        content: (
+          <div className={styles.reviewGrid}>
+            <div className={styles.reviewItem}><Label>Reviewers</Label><Text>{reviewers.length > 0 ? `${reviewers.length} assigned` : 'None assigned'}</Text></div>
+            <div className={styles.reviewItem}><Label>Approvers</Label><Text>{approvers.length > 0 ? `${approvers.length} assigned` : 'None assigned'}</Text></div>
+          </div>
+        )
+      }
+    ];
+
     return (
       <div className={styles.wizardStepContent}>
-        <Text variant="xLarge" className={styles.stepHeader}>Review & Submit</Text>
-        <Text variant="medium" className={styles.stepDescription}>
-          Review all information before submitting for approval.
-        </Text>
-
         <div className={styles.reviewSummary}>
-          <div className={styles.reviewSection}>
-            <Text variant="large" className={styles.reviewSectionTitle}>
-              <Icon iconName="Info" style={{ marginRight: 8 }} />
-              Basic Information
-            </Text>
-            <div className={styles.reviewGrid}>
-              <div className={styles.reviewItem}>
-                <Label>Policy Number</Label>
-                <Text>{policyNumber || '(Auto-generated on save)'}</Text>
-              </div>
-              <div className={styles.reviewItem}>
-                <Label>Policy Name</Label>
-                <Text>{policyName || '-'}</Text>
-              </div>
-              <div className={styles.reviewItem}>
-                <Label>Category</Label>
-                <Text>{policyCategory || '-'}</Text>
-              </div>
-              <div className={styles.reviewItem}>
-                <Label>Summary</Label>
-                <Text>{policySummary || '-'}</Text>
-              </div>
-            </div>
-          </div>
-
-          <div className={styles.reviewSection}>
-            <Text variant="large" className={styles.reviewSectionTitle}>
-              <Icon iconName="Edit" style={{ marginRight: 8 }} />
-              Content
-            </Text>
-            <div className={styles.reviewGrid}>
-              <div className={styles.reviewItem}>
-                <Label>Content Preview</Label>
-                <Text>{policyContent ? `${policyContent.substring(0, 200).replace(/<[^>]*>/g, '')}...` : '-'}</Text>
-              </div>
-              {linkedDocumentUrl && (
-                <div className={styles.reviewItem}>
-                  <Label>Linked Document</Label>
-                  <Text>{linkedDocumentType}: {linkedDocumentUrl}</Text>
+          {sections.map(section => {
+            const isExpanded = expandedReviewSections.has(section.key);
+            return (
+              <div key={section.key} className={(styles as Record<string, string>).reviewSectionCollapsible}>
+                <div
+                  className={(styles as Record<string, string>).reviewSectionToggle}
+                  onClick={() => toggleSection(section.key)}
+                >
+                  <Text variant="mediumPlus" className={styles.reviewSectionTitle}>
+                    <Icon iconName={section.icon} style={{ marginRight: 8 }} />
+                    {section.title}
+                  </Text>
+                  <Icon iconName={isExpanded ? 'ChevronUp' : 'ChevronDown'} style={{ fontSize: 12, color: '#6b7280' }} />
                 </div>
-              )}
-              <div className={styles.reviewItem}>
-                <Label>Key Points</Label>
-                <Text>{keyPoints.length > 0 ? keyPoints.join(', ') : 'None specified'}</Text>
+                <div className={isExpanded ? (styles as Record<string, string>).reviewSectionBody : (styles as Record<string, string>).reviewSectionBodyCollapsed}>
+                  {section.content}
+                </div>
               </div>
-            </div>
-          </div>
-
-          <div className={styles.reviewSection}>
-            <Text variant="large" className={styles.reviewSectionTitle}>
-              <Icon iconName="Shield" style={{ marginRight: 8 }} />
-              Compliance & Risk
-            </Text>
-            <div className={styles.reviewGrid}>
-              <div className={styles.reviewItem}>
-                <Label>Risk Level</Label>
-                <Text>{complianceRisk}</Text>
-              </div>
-              <div className={styles.reviewItem}>
-                <Label>Read Timeframe</Label>
-                <Text>{readTimeframe}</Text>
-              </div>
-              <div className={styles.reviewItem}>
-                <Label>Acknowledgement Required</Label>
-                <Text>{requiresAcknowledgement ? 'Yes' : 'No'}</Text>
-              </div>
-              <div className={styles.reviewItem}>
-                <Label>Quiz Required</Label>
-                <Text>{requiresQuiz ? 'Yes' : 'No'}</Text>
-              </div>
-            </div>
-          </div>
-
-          <div className={styles.reviewSection}>
-            <Text variant="large" className={styles.reviewSectionTitle}>
-              <Icon iconName="People" style={{ marginRight: 8 }} />
-              Target Audience
-            </Text>
-            <div className={styles.reviewGrid}>
-              <div className={styles.reviewItem}>
-                <Label>Audience</Label>
-                <Text>{targetAllEmployees ? 'All Employees' : 'Specific groups'}</Text>
-              </div>
-              {!targetAllEmployees && (
-                <>
-                  <div className={styles.reviewItem}>
-                    <Label>Departments</Label>
-                    <Text>{targetDepartments.join(', ') || 'None specified'}</Text>
-                  </div>
-                  <div className={styles.reviewItem}>
-                    <Label>Roles</Label>
-                    <Text>{targetRoles.join(', ') || 'None specified'}</Text>
-                  </div>
-                  <div className={styles.reviewItem}>
-                    <Label>Locations</Label>
-                    <Text>{targetLocations.join(', ') || 'None specified'}</Text>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-
-          <div className={styles.reviewSection}>
-            <Text variant="large" className={styles.reviewSectionTitle}>
-              <Icon iconName="Calendar" style={{ marginRight: 8 }} />
-              Dates
-            </Text>
-            <div className={styles.reviewGrid}>
-              <div className={styles.reviewItem}>
-                <Label>Effective Date</Label>
-                <Text>{effectiveDate || '-'}</Text>
-              </div>
-              <div className={styles.reviewItem}>
-                <Label>Expiry Date</Label>
-                <Text>{expiryDate || 'No expiry'}</Text>
-              </div>
-              <div className={styles.reviewItem}>
-                <Label>Review Frequency</Label>
-                <Text>{reviewFrequency}</Text>
-              </div>
-            </div>
-          </div>
-
-          <div className={styles.reviewSection}>
-            <Text variant="large" className={styles.reviewSectionTitle}>
-              <Icon iconName="Flow" style={{ marginRight: 8 }} />
-              Workflow
-            </Text>
-            <div className={styles.reviewGrid}>
-              <div className={styles.reviewItem}>
-                <Label>Reviewers</Label>
-                <Text>{reviewers.length > 0 ? `${reviewers.length} assigned` : 'None assigned'}</Text>
-              </div>
-              <div className={styles.reviewItem}>
-                <Label>Approvers</Label>
-                <Text>{approvers.length > 0 ? `${approvers.length} assigned` : 'None assigned'}</Text>
-              </div>
-            </div>
-          </div>
+            );
+          })}
         </div>
 
         <MessageBar messageBarType={MessageBarType.warning} styles={{ root: { marginTop: 16 } }}>
@@ -2527,6 +2554,63 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     );
   }
 
+  private static readonly SAMPLE_CORPORATE_TEMPLATES: ICorporateTemplate[] = [
+    {
+      Id: 2001,
+      Title: 'Corporate Policy - Standard A4',
+      TemplateType: 'Word',
+      TemplateUrl: '/sites/PolicyManager/CorporateTemplates/Corporate-Policy-Standard.docx',
+      Description: 'Standard A4 corporate policy template with company branding, headers, footers, and table of contents. Includes version control table and approval signature block.',
+      Category: 'Corporate',
+      IsDefault: true
+    },
+    {
+      Id: 2002,
+      Title: 'Corporate Policy - Executive Brief',
+      TemplateType: 'Word',
+      TemplateUrl: '/sites/PolicyManager/CorporateTemplates/Corporate-Executive-Brief.docx',
+      Description: 'Condensed executive briefing format for board-level policies. Includes executive summary, key decisions, and action items.',
+      Category: 'Corporate',
+      IsDefault: false
+    },
+    {
+      Id: 2003,
+      Title: 'General Department Policy',
+      TemplateType: 'Word',
+      TemplateUrl: '/sites/PolicyManager/CorporateTemplates/General-Department-Policy.docx',
+      Description: 'General-purpose department policy template with flexible sections. Suitable for all departments with minimal branding requirements.',
+      Category: 'General',
+      IsDefault: false
+    },
+    {
+      Id: 2004,
+      Title: 'Policy Data Sheet',
+      TemplateType: 'Excel',
+      TemplateUrl: '/sites/PolicyManager/CorporateTemplates/Policy-Data-Sheet.xlsx',
+      Description: 'Excel workbook for policies with data tables, compliance checklists, and tracking sheets. Includes pre-formatted pivot tables.',
+      Category: 'General',
+      IsDefault: false
+    },
+    {
+      Id: 2005,
+      Title: 'Policy Presentation Pack',
+      TemplateType: 'PowerPoint',
+      TemplateUrl: '/sites/PolicyManager/CorporateTemplates/Policy-Presentation.pptx',
+      Description: 'PowerPoint template for policy awareness presentations. Includes branded slides, agenda, key points, and Q&A sections.',
+      Category: 'Corporate',
+      IsDefault: false
+    },
+    {
+      Id: 2006,
+      Title: 'Compliance Infographic Template',
+      TemplateType: 'Image',
+      TemplateUrl: '/sites/PolicyManager/CorporateTemplates/Compliance-Infographic.png',
+      Description: 'Visual infographic template for summarising compliance policies. Editable PNG with placeholders for key metrics and icons.',
+      Category: 'General',
+      IsDefault: false
+    }
+  ];
+
   private async loadCorporateTemplates(): Promise<void> {
     try {
       const items = await this.props.sp.web.lists
@@ -2546,9 +2630,10 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         IsDefault: item.IsDefault || false
       }));
 
-      this.setState({ corporateTemplates: templates });
+      this.setState({ corporateTemplates: templates.length > 0 ? templates : PolicyAuthorEnhanced.SAMPLE_CORPORATE_TEMPLATES });
     } catch (error) {
       console.error('Failed to load corporate templates:', error);
+      this.setState({ corporateTemplates: PolicyAuthorEnhanced.SAMPLE_CORPORATE_TEMPLATES });
     }
   }
 
@@ -2609,76 +2694,172 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
   private renderTemplatePanel(): JSX.Element {
     const { showTemplatePanel, templates } = this.state;
 
-    const columns: IColumn[] = [
-      {
-        key: 'title',
-        name: 'Template Name',
-        fieldName: 'Title',
-        minWidth: 200,
-        maxWidth: 300,
-        isResizable: true
-      },
-      {
-        key: 'type',
-        name: 'Type',
-        fieldName: 'TemplateType',
-        minWidth: 120,
-        maxWidth: 150,
-        isResizable: true
-      },
-      {
-        key: 'category',
-        name: 'Category',
-        fieldName: 'TemplateCategory',
-        minWidth: 100,
-        maxWidth: 120,
-        isResizable: true
-      },
-      {
-        key: 'usage',
-        name: 'Usage Count',
-        fieldName: 'UsageCount',
-        minWidth: 80,
-        maxWidth: 100,
-        isResizable: true
-      },
-      {
-        key: 'actions',
-        name: 'Actions',
-        minWidth: 100,
-        maxWidth: 120,
-        onRender: (item: IPolicyTemplate) => (
-          <PrimaryButton
-            text="Use Template"
-            onClick={() => this.handleSelectTemplate(item)}
-          />
-        )
-      }
-    ];
+    const riskColors: Record<string, string> = {
+      Critical: '#dc2626',
+      High: '#d97706',
+      Medium: '#2563eb',
+      Low: '#059669'
+    };
+
+    const categoryIcons: Record<string, string> = {
+      Corporate: 'CityNext',
+      'IT Security': 'Lock',
+      General: 'DocumentSet',
+      'Human Resources': 'People',
+      Compliance: 'Shield',
+      'Health & Safety': 'Heart',
+      Finance: 'Money',
+      Legal: 'Gavel'
+    };
 
     return (
       <Panel
         isOpen={showTemplatePanel}
         onDismiss={() => this.setState({ showTemplatePanel: false })}
         type={PanelType.custom}
-        customWidth="750px"
+        customWidth="780px"
         headerText="Select Policy Template"
         closeButtonAriaLabel="Close"
       >
-        <Stack tokens={{ childrenGap: 16 }}>
-          <Text>Choose from company-approved policy templates:</Text>
+        <Stack tokens={{ childrenGap: 16 }} style={{ paddingTop: 8 }}>
+          <Text variant="medium" style={{ color: '#605e5c' }}>
+            Choose from company-approved policy templates. Each template includes pre-built content, compliance settings, and key points.
+          </Text>
 
           {templates.length === 0 ? (
             <MessageBar messageBarType={MessageBarType.info}>
               No templates available. Contact your administrator to add templates.
             </MessageBar>
           ) : (
-            <DetailsList
-              items={templates}
-              columns={columns}
-              layoutMode={DetailsListLayoutMode.justified}
-              selectionMode={SelectionMode.none}
-            />
+            <Stack tokens={{ childrenGap: 12 }}>
+              {templates.map(template => {
+                const riskColor = riskColors[template.ComplianceRisk] || '#64748b';
+                const iconName = categoryIcons[template.TemplateCategory] || 'Document';
+                const keyPoints = template.KeyPointsTemplate ? template.KeyPointsTemplate.split(';').map(k => k.trim()) : [];
+
+                return (
+                  <div
+                    key={template.Id}
+                    style={{
+                      background: '#ffffff',
+                      border: '1px solid #e2e8f0',
+                      borderLeft: `4px solid ${riskColor}`,
+                      borderRadius: 8,
+                      padding: 16,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.06)'
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.borderLeftColor = '#0d9488';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+                      e.currentTarget.style.transform = 'translateY(-1px)';
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.borderLeftColor = riskColor;
+                      e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.06)';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }}
+                  >
+                    <Stack tokens={{ childrenGap: 10 }}>
+                      {/* Header Row */}
+                      <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
+                        <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 10 }}>
+                          <div style={{
+                            width: 36, height: 36, borderRadius: 8,
+                            backgroundColor: `${riskColor}12`,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                          }}>
+                            <Icon iconName={iconName} style={{ fontSize: 18, color: riskColor }} />
+                          </div>
+                          <div>
+                            <Text variant="mediumPlus" style={{ fontWeight: 600, display: 'block' }}>{template.Title}</Text>
+                            <Stack horizontal tokens={{ childrenGap: 6 }} verticalAlign="center">
+                              <span style={{
+                                fontSize: 11, fontWeight: 600, padding: '1px 8px', borderRadius: 10,
+                                backgroundColor: `${riskColor}15`, color: riskColor
+                              }}>
+                                {template.ComplianceRisk} Risk
+                              </span>
+                              <span style={{
+                                fontSize: 11, fontWeight: 500, padding: '1px 8px', borderRadius: 10,
+                                backgroundColor: '#f1f5f9', color: '#475569'
+                              }}>
+                                {template.TemplateCategory}
+                              </span>
+                              <span style={{
+                                fontSize: 11, fontWeight: 500, padding: '1px 8px', borderRadius: 10,
+                                backgroundColor: '#f1f5f9', color: '#475569'
+                              }}>
+                                Used {template.UsageCount} times
+                              </span>
+                            </Stack>
+                          </div>
+                        </Stack>
+                        <PrimaryButton
+                          text="Use Template"
+                          iconProps={{ iconName: 'Accept' }}
+                          onClick={() => this.handleSelectTemplate(template)}
+                          styles={{ root: { height: 32, padding: '0 16px' }, label: { fontSize: 13 } }}
+                        />
+                      </Stack>
+
+                      {/* Description */}
+                      <Text variant="small" style={{ color: '#605e5c', lineHeight: 1.5 }}>
+                        {template.TemplateDescription}
+                      </Text>
+
+                      {/* Metadata Row */}
+                      <Stack horizontal tokens={{ childrenGap: 12 }} wrap>
+                        <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 4 }}>
+                          <Icon iconName="Timer" style={{ fontSize: 12, color: '#94a3b8' }} />
+                          <Text variant="tiny" style={{ color: '#64748b' }}>Read: {template.SuggestedReadTimeframe}</Text>
+                        </Stack>
+                        {template.RequiresAcknowledgement && (
+                          <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 4 }}>
+                            <Icon iconName="Handwriting" style={{ fontSize: 12, color: '#0d9488' }} />
+                            <Text variant="tiny" style={{ color: '#0d9488' }}>Acknowledgement Required</Text>
+                          </Stack>
+                        )}
+                        {template.RequiresQuiz && (
+                          <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 4 }}>
+                            <Icon iconName="Questionnaire" style={{ fontSize: 12, color: '#7c3aed' }} />
+                            <Text variant="tiny" style={{ color: '#7c3aed' }}>Quiz Required</Text>
+                          </Stack>
+                        )}
+                      </Stack>
+
+                      {/* Key Points Preview */}
+                      {keyPoints.length > 0 && (
+                        <div style={{
+                          padding: '8px 12px', borderRadius: 6,
+                          background: '#f8fafc', border: '1px solid #e2e8f0'
+                        }}>
+                          <Text variant="tiny" style={{ fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>
+                            Key Points Preview:
+                          </Text>
+                          <Stack horizontal tokens={{ childrenGap: 6 }} wrap>
+                            {keyPoints.slice(0, 4).map((point, i) => (
+                              <span key={i} style={{
+                                fontSize: 11, padding: '2px 8px', borderRadius: 4,
+                                background: '#ffffff', border: '1px solid #e2e8f0', color: '#475569'
+                              }}>
+                                {point}
+                              </span>
+                            ))}
+                            {keyPoints.length > 4 && (
+                              <span style={{ fontSize: 11, color: '#94a3b8' }}>
+                                +{keyPoints.length - 4} more
+                              </span>
+                            )}
+                          </Stack>
+                        </div>
+                      )}
+                    </Stack>
+                  </div>
+                );
+              })}
+            </Stack>
           )}
         </Stack>
       </Panel>
@@ -2784,7 +2965,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         isOpen={showCorporateTemplatePanel}
         onDismiss={() => this.setState({ showCorporateTemplatePanel: false })}
         type={PanelType.custom}
-        customWidth="750px"
+        customWidth="700px"
         headerText="Corporate Templates"
         closeButtonAriaLabel="Close"
       >
@@ -2843,7 +3024,8 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       <Panel
         isOpen={showBulkImportPanel}
         onDismiss={() => this.setState({ showBulkImportPanel: false, bulkImportFiles: [], bulkImportProgress: 0 })}
-        type={PanelType.large}
+        type={PanelType.custom}
+        customWidth="700px"
         headerText="Bulk Import Existing Policies"
         closeButtonAriaLabel="Close"
       >
@@ -4067,7 +4249,8 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         <Panel
           isOpen={showQuestionEditorPanel}
           onDismiss={() => this.setState({ showQuestionEditorPanel: false, editingQuiz: null, quizQuestions: [] })}
-          type={PanelType.large}
+          type={PanelType.custom}
+          customWidth="700px"
           headerText={`Edit Quiz: ${editingQuiz.Title}`}
           closeButtonAriaLabel="Close"
           onRenderFooterContent={() => (
@@ -4398,7 +4581,8 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       <Panel
         isOpen={showPolicyDetailsPanel}
         onDismiss={() => this.setState({ showPolicyDetailsPanel: false, selectedPolicyDetails: null })}
-        type={PanelType.large}
+        type={PanelType.custom}
+        customWidth="700px"
         headerText={selectedPolicyDetails.PolicyName}
         closeButtonAriaLabel="Close"
         onRenderFooterContent={() => (
@@ -4511,7 +4695,8 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       <Panel
         isOpen={showApprovalDetailsPanel}
         onDismiss={() => this.setState({ showApprovalDetailsPanel: false, selectedApprovalId: null })}
-        type={PanelType.large}
+        type={PanelType.custom}
+        customWidth="700px"
         headerText={`Review: ${policy.Title}`}
         closeButtonAriaLabel="Close"
         onRenderFooterContent={() => (
@@ -4947,10 +5132,6 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
     return (
       <div className={styles.section}>
-        <Text variant="xLarge" className={styles.sectionTitle}>
-          Basic Information
-        </Text>
-
         <Stack tokens={{ childrenGap: 16 }}>
           <TextField
             label="Policy Number"
@@ -5461,9 +5642,17 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             {/* Center: Main Form */}
             <main className={(styles as Record<string, string>).v3Center}>
               <div className={(styles as Record<string, string>).v3CenterHeader}>
-                <span className={(styles as Record<string, string>).v3StepBadge}>Step {currentStep + 1} of {WIZARD_STEPS.length}</span>
-                <Text variant="xLarge" style={{ fontWeight: 700, color: '#111827', display: 'block' }}>{currentStepConfig.title}</Text>
-                <Text style={{ fontSize: 14, color: '#6b7280', marginTop: 4 }}>{currentStepConfig.description}</Text>
+                <div className={(styles as Record<string, string>).v3HeaderLeft}>
+                  <Text variant="xLarge" style={{ fontWeight: 700, color: '#111827', display: 'block' }}>{currentStepConfig.title}</Text>
+                  <Text style={{ fontSize: 14, color: '#6b7280', marginTop: 4 }}>{currentStepConfig.description}</Text>
+                </div>
+                <div className={(styles as Record<string, string>).v3HeaderProgress}>
+                  <span className={(styles as Record<string, string>).v3HeaderProgressLabel}>Step {currentStep + 1} of {WIZARD_STEPS.length}</span>
+                  <div className={(styles as Record<string, string>).v3HeaderProgressTrack}>
+                    <div className={(styles as Record<string, string>).v3HeaderProgressFill} style={{ width: `${progressPercent}%` }} />
+                  </div>
+                  <span className={(styles as Record<string, string>).v3HeaderProgressLabel}>{progressPercent}%</span>
+                </div>
               </div>
 
               <div className={(styles as Record<string, string>).v3FormCard}>
@@ -6147,7 +6336,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
           }
         />
 
-        {/* KPI Summary Cards */}
+        {/* KPI Summary Cards — including Critical as a card */}
         <div className={(styles as Record<string, string>).delegationKpiGrid}>
           <div className={(styles as Record<string, string>).delegationKpiCard} onClick={() => this.setState({ requestStatusFilter: 'New' })} style={{ cursor: 'pointer' }}>
             <div className={(styles as Record<string, string>).delegationKpiIcon} style={{ background: '#e8f4fd' }}>
@@ -6185,14 +6374,16 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
               <Text variant="small" style={{ color: '#605e5c' }}>Completed</Text>
             </div>
           </div>
+          <div className={(styles as Record<string, string>).delegationKpiCard} onClick={() => this.setState({ requestStatusFilter: 'All' })} style={{ cursor: 'pointer' }}>
+            <div className={(styles as Record<string, string>).delegationKpiIcon} style={{ background: '#fef2f2' }}>
+              <Icon iconName="ShieldAlert" style={{ fontSize: 20, color: '#d13438' }} />
+            </div>
+            <div className={(styles as Record<string, string>).delegationKpiContent}>
+              <Text variant="xxLarge" style={{ fontWeight: 700, color: '#d13438' }}>{criticalCount}</Text>
+              <Text variant="small" style={{ color: '#605e5c' }}>Critical</Text>
+            </div>
+          </div>
         </div>
-
-        {/* Critical Alert */}
-        {criticalCount > 0 && (
-          <MessageBar messageBarType={MessageBarType.severeWarning} style={{ marginBottom: 16 }}>
-            <strong>{criticalCount} critical priority request{criticalCount > 1 ? 's' : ''}</strong> requiring urgent attention.
-          </MessageBar>
-        )}
 
         {/* Status Filter Chips */}
         <Stack horizontal tokens={{ childrenGap: 8 }} style={{ marginBottom: 16, flexWrap: 'wrap' }}>

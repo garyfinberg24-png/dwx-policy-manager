@@ -51,7 +51,7 @@
 }
 
 .policyHub {
-  @include full-bleed-container;
+  width: 100%;
   background-color: #ffffff;
 
   .title {
@@ -1286,75 +1286,73 @@
 }
 
 // ============================================
-// ENHANCED POLICY CARDS GRID
+// V2 LEFT ACCENT BAR POLICY CARDS
 // ============================================
 
 .enhancedPoliciesGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 14px;
 }
 
 .enhancedPolicyCard {
   background: #ffffff;
-  border: 1px solid #edebe9;
-  border-radius: 8px;
-  padding: 20px;
-  transition: all 0.15s ease;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0;
+  display: flex;
+  overflow: hidden;
+  transition: all 0.2s ease;
+  cursor: pointer;
   position: relative;
 
   &:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
   }
 }
 
-.policyCardBadges {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  display: flex;
-  gap: 6px;
+// Left accent bar — coloured by risk level
+.accentBar {
+  width: 5px;
+  flex-shrink: 0;
+  border-radius: 10px 0 0 10px;
 }
 
-.badgeNew {
-  padding: 2px 8px;
-  background: #107c10;
-  color: #ffffff;
-  border-radius: 10px;
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
+.accentCritical {
+  background: linear-gradient(180deg, #dc2626, #f87171);
 }
 
-.badgeUpdated {
-  padding: 2px 8px;
-  background: #0078d4;
-  color: #ffffff;
-  border-radius: 10px;
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
+.accentHigh {
+  background: linear-gradient(180deg, #ea580c, #fb923c);
 }
 
-.policyHeader {
+.accentMedium {
+  background: linear-gradient(180deg, #d97706, #fbbf24);
+}
+
+.accentLow {
+  background: linear-gradient(180deg, #16a34a, #4ade80);
+}
+
+.accentDefault {
+  background: linear-gradient(180deg, #0d9488, #14b8a6);
+}
+
+// Card content area (right of accent bar)
+.cardContent {
+  flex: 1;
+  padding: 18px 20px;
+  min-width: 0;
+}
+
+// Top row: title + risk badge
+.cardTop {
   display: flex;
   align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 10px;
   gap: 12px;
-  margin-bottom: 12px;
-}
-
-.policyIcon {
-  width: 40px;
-  height: 40px;
-  background: linear-gradient(135deg, #0078d4 0%, #004578 100%);
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  color: #ffffff;
-  flex-shrink: 0;
 }
 
 .policyTitleSection {
@@ -1362,12 +1360,187 @@
   min-width: 0;
 }
 
-.policyNumber {
-  font-size: 12px;
-  color: #605e5c;
+.policyTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 3px;
+  line-height: 1.3;
   display: block;
 }
 
+.policyNumber {
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 500;
+  display: block;
+}
+
+// Risk badge (top-right)
+.riskBadge {
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.riskCritical {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.riskHigh {
+  background: #fff7ed;
+  color: #ea580c;
+}
+
+.riskMedium {
+  background: #fffbeb;
+  color: #d97706;
+}
+
+.riskLow {
+  background: #f0fdf4;
+  color: #16a34a;
+}
+
+// Tags row
+.policyMeta {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.policyBadge {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.badgeCategory {
+  background: #f0f9ff;
+  color: #0369a1;
+}
+
+.badgeActive {
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.badgePending {
+  background: #fffbeb;
+  color: #d97706;
+}
+
+.badgeMandatory {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.badgeTimeline {
+  background: #f5f3ff;
+  color: #7c3aed;
+}
+
+// Description
+.policyDescription {
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.5;
+  margin-bottom: 12px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+// Footer row
+.policyFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.policyInfoRow {
+  display: flex;
+  gap: 14px;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.policyInfoItem {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+
+  i {
+    font-size: 11px;
+    color: #94a3b8;
+  }
+}
+
+// View button (outlined teal)
+.btnView {
+  padding: 5px 14px;
+  border-radius: 6px;
+  border: 1px solid #0d9488;
+  background: transparent;
+  color: #0d9488;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s ease;
+  min-width: auto;
+
+  &:hover {
+    background: #0d9488;
+    color: #ffffff;
+  }
+}
+
+// Ribbon badges (New / Updated)
+.policyCardBadges {
+  position: absolute;
+  top: 0;
+  right: 16px;
+  z-index: 1;
+}
+
+.badgeNew {
+  display: inline-block;
+  padding: 4px 10px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #ffffff;
+  background: #10b981;
+  border-radius: 0 0 6px 6px;
+  text-transform: uppercase;
+}
+
+.badgeUpdated {
+  display: inline-block;
+  padding: 4px 10px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #ffffff;
+  background: #3b82f6;
+  border-radius: 0 0 6px 6px;
+  text-transform: uppercase;
+}
+
+// Bookmark (kept for list view compatibility)
 .policyBookmark {
   width: 32px !important;
   height: 32px !important;
@@ -1391,87 +1564,7 @@
   color: #ffaa44;
 }
 
-.policyMeta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.policyBadge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 600;
-}
-
-.badgeCategory {
-  background: #e1dfdd;
-  color: #323130;
-}
-
-.badgeActive {
-  background: #dff6dd;
-  color: #107c10;
-}
-
-.badgePending {
-  background: #fff4ce;
-  color: #8a6914;
-}
-
-.badgeMandatory {
-  background: #fde7e9;
-  color: #c50f1f;
-}
-
-.badgeTimeline {
-  background: #deecf9;
-  color: #0078d4;
-}
-
-.policyDescription {
-  font-size: 13px;
-  color: #605e5c;
-  line-height: 1.5;
-  margin-bottom: 12px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.policyInfoRow {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 16px;
-  font-size: 12px;
-  color: #605e5c;
-}
-
-.policyInfoItem {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-
-  i {
-    font-size: 12px;
-    color: #a19f9d;
-  }
-}
-
-.policyFooter {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-top: 12px;
-  border-top: 1px solid #edebe9;
-}
-
+// Date (kept for list view)
 .policyDate {
   font-size: 12px;
   color: #a19f9d;
@@ -1482,15 +1575,31 @@
   gap: 8px;
 }
 
-.btnView {
-  padding: 6px 16px;
-  font-size: 13px;
-}
-
 .btnViewSmall {
   padding: 4px 12px;
   font-size: 12px;
   min-width: auto;
+}
+
+// Unused legacy policyHeader / policyIcon kept for list view
+.policyHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.policyIcon {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #ffffff;
+  flex-shrink: 0;
 }
 
 // ============================================

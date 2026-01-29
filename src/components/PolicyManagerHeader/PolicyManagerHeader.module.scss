@@ -44,7 +44,7 @@ $pm-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-se
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 24px;
+  padding: 20px 56px;
   background: $pm-gradient-header;
   min-height: 84px;
 
@@ -183,24 +183,24 @@ $pm-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-se
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 14px;
-  border: 1.5px solid rgba(255, 255, 255, 0.35);
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.1);
-  color: $pm-white;
+  padding: 7px 16px;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #0f766e;
   font-family: $pm-font-family;
   font-size: 12.5px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
-  backdrop-filter: blur(4px);
   line-height: 1;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.22);
-    border-color: rgba(255, 255, 255, 0.55);
+    background: $pm-white;
+    border-color: rgba(255, 255, 255, 0.6);
     transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
   }
 
   &:active {
@@ -215,12 +215,13 @@ $pm-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-se
 }
 
 .quickActionBtnPrimary {
-  background: rgba(255, 255, 255, 0.2);
+  background: $pm-white;
   border-color: rgba(255, 255, 255, 0.5);
+  color: #0d9488;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.32);
-    border-color: rgba(255, 255, 255, 0.7);
+    background: #f0fdfa;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
   }
 }
 
@@ -342,7 +343,7 @@ $pm-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-se
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 24px;
+  padding: 0 56px;
   background: $pm-white;
   border-bottom: 1px solid $pm-border-gray;
 
@@ -974,12 +975,22 @@ $pm-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-se
 // ============================================
 // BREADCRUMB BAR
 // ============================================
+// Full-width background strip
+.breadcrumbBarOuter {
+  background: #f8fffe;
+  border-bottom: 1px solid #e6f7f5;
+  width: 100%;
+}
+
+// Inner container — aligned with content area (matches .contentWrapper)
 .breadcrumbBar {
   display: flex;
   align-items: center;
-  padding: 8px 40px;
-  background: #f8fffe;
-  border-bottom: 1px solid #e6f7f5;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 8px 24px;
+  width: 100%;
+  box-sizing: border-box;
   font-family: $pm-font-family;
   font-size: 13px;
   min-height: 36px;
@@ -999,7 +1010,7 @@ $pm-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-se
 .breadcrumbLink {
   color: #0d9488;
   text-decoration: none;
-  font-weight: 500;
+  font-weight: 400;
   transition: color 0.15s;
 
   &:hover {
@@ -1010,7 +1021,7 @@ $pm-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-se
 
 .breadcrumbCurrent {
   color: #334155;
-  font-weight: 600;
+  font-weight: 400;
 }
 
 // ============================================================================

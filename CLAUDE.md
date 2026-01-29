@@ -41,7 +41,7 @@
 
 ## Architecture Overview
 
-### WebParts (9 total)
+### WebParts (14 total)
 1. **jmlMyPolicies** - Personal policy dashboard for employees
 2. **jmlPolicyHub** - Central policy discovery, browsing, and search
 3. **jmlPolicyAdmin** - Administrative interface (sidebar + content layout)
@@ -51,6 +51,10 @@
 7. **dwxQuizBuilder** - Quiz creation and management
 8. **jmlPolicySearch** - Dedicated search center (hero + filters + results)
 9. **jmlPolicyHelp** - Help center with articles, FAQs, shortcuts, videos, support
+10. **jmlPolicyDistribution** - Distribution campaign management and tracking
+11. **jmlPolicyAnalytics** - Executive analytics dashboard (6 tabs: Executive, Policy Metrics, Acknowledgements, SLA, Compliance, Audit)
+12. **dwxPolicyAuthorView** - Author dashboard with policies, approvals, delegations, activity tabs
+13. **dwxPolicyManagerView** - Manager dashboard for team compliance, approvals, delegations, reviews, reports
 
 ### SharePoint Pages
 | Page | WebPart | Purpose |
@@ -59,17 +63,21 @@
 | MyPolicies.aspx | jmlMyPolicies | User's assigned policies |
 | PolicyAdmin.aspx | jmlPolicyAdmin | Admin settings and configuration |
 | PolicyBuilder.aspx | jmlPolicyAuthor | Create/edit policies |
+| PolicyAuthor.aspx | dwxPolicyAuthorView | Author dashboard (policies, approvals, delegations) |
 | PolicyDetails.aspx | jmlPolicyDetails | View policy + acknowledge |
 | PolicyPacks.aspx | jmlPolicyPackManager | Manage policy packs |
 | QuizBuilder.aspx | dwxQuizBuilder | Create quizzes |
 | PolicySearch.aspx | jmlPolicySearch | Search center |
 | PolicyHelp.aspx | jmlPolicyHelp | Help center |
+| PolicyDistribution.aspx | jmlPolicyDistribution | Distribution campaigns |
+| PolicyAnalytics.aspx | jmlPolicyAnalytics | Executive analytics dashboard |
+| PolicyManagerView.aspx | dwxPolicyManagerView | Manager compliance dashboard |
 
 ### Directory Structure
 ```
 policy-manager/
 ├── src/
-│   ├── webparts/          # 9 SPFx webparts
+│   ├── webparts/          # 14 SPFx webparts
 │   │   ├── jmlMyPolicies/
 │   │   ├── jmlPolicyHub/
 │   │   ├── jmlPolicyAdmin/
@@ -78,15 +86,19 @@ policy-manager/
 │   │   ├── jmlPolicyPackManager/
 │   │   ├── dwxQuizBuilder/
 │   │   ├── jmlPolicySearch/
-│   │   └── jmlPolicyHelp/
+│   │   ├── jmlPolicyHelp/
+│   │   ├── jmlPolicyDistribution/
+│   │   ├── jmlPolicyAnalytics/
+│   │   ├── dwxPolicyAuthorView/
+│   │   └── dwxPolicyManagerView/
 │   ├── components/        # Shared components
-│   │   ├── JmlAppLayout/       # Full-page layout wrapper
+│   │   ├── JmlAppLayout/       # Full-page layout wrapper (with role filtering)
 │   │   ├── JmlAppHeader/       # App header with navigation
 │   │   ├── PageSubheader/      # Page subheader component
-│   │   ├── PolicyManagerHeader/ # Policy Manager branded header
+│   │   ├── PolicyManagerHeader/ # Policy Manager branded header with role-based nav
 │   │   ├── PolicyManagerSplashScreen/
 │   │   └── QuizTaker/          # Quiz-taking component
-│   ├── services/          # 141+ business logic services
+│   ├── services/          # 141+ business logic services + PolicyRoleService
 │   ├── models/            # 56+ TypeScript interfaces
 │   ├── hooks/             # Custom React hooks (useDialog, etc.)
 │   ├── constants/         # SharePointListNames.ts, etc.
@@ -94,8 +106,10 @@ policy-manager/
 │   └── utils/             # pnpConfig, injectPortalStyles, etc.
 ├── scripts/
 │   └── policy-management/ # PnP PowerShell provisioning scripts
-├── docs/                  # Documentation
+├── docs/                  # Documentation + HTML mockups
 ├── config/                # SPFx build configurations
+├── e2e/                   # Playwright e2e tests
+├── testsprite_tests/      # TestSprite test cases (14 test files)
 └── CLAUDE.md              # This file
 ```
 
@@ -192,8 +206,20 @@ import { PM_LISTS } from '../constants/SharePointListNames';
 - Services are instantiated with `new ServiceName(props.sp)` pattern
 - Dialog management uses `createDialogManager()` from `src/hooks/useDialog`
 
+### Role-Based Access Control
+The application uses a 4-tier role hierarchy defined in `src/services/PolicyRoleService.ts`:
+
+| Role | Who | Nav Access |
+|------|-----|------------|
+| **User** | All employees | Browse, My Policies, Details |
+| **Author** | Policy writers | + Create, Packs, Author View |
+| **Manager** | Department managers | + Approvals, Delegations, Distribution, Analytics, Manager View, Settings cog |
+| **Admin** | System admins | + Quiz Builder, Admin panel |
+
+Role detection flows: `WebPart.onInit()` → `RoleDetectionService` → `PolicyRoleService.mapToRole()` → passed via `JmlAppLayout` → `PolicyManagerHeader` → nav items filtered by `filterNavForRole()`.
+
 ### Build Configuration
-All 9 webparts must be registered in `config/config.json`:
+All 14 webparts must be registered in `config/config.json`:
 - `bundles` section: entry point + manifest for each webpart
 - `localizedResources` section: locale file path for each webpart
 - Missing entries will cause webparts to not appear in SharePoint
@@ -357,9 +383,26 @@ npm run clean
 
 ---
 
-## Session State (Last Updated: 29 Jan 2026)
+## Session State (Last Updated: 29 Jan 2026 — Session 3)
 
-### Recently Completed
+### Recently Completed (Session 3 — 29 Jan 2026)
+- **PolicyRoleService** — 4-tier role hierarchy (User/Author/Manager/Admin) with nav filtering
+- **Role-based nav filtering** — Threaded through JmlAppLayout → JmlAppHeader → PolicyManagerHeader
+- **DWx Policy Author View** webpart — Author dashboard with 4 tabs (My Policies, Approvals, Delegations, Activity)
+- **DWx Policy Manager View** webpart — Manager dashboard with 6 tabs (Dashboard, Team Compliance, Approvals, Delegations, Policy Reviews, Reports)
+- **Policy Distribution** webpart — Campaign management with 4 tabs
+- **Policy Analytics** webpart — Executive dashboard with 6 tabs (Executive, Policy Metrics, Acknowledgements, SLA, Compliance, Audit)
+- **Add Delegation panel** restored in Author View Delegations tab (480px fly-in with full form)
+- **Featured Policies/Recently Viewed** hidden by default (changed from `!== false` to `=== true`)
+- **Template panel width** reduced to 750px (from PanelType.large ~940px)
+- **V3 Accordion styling** for Create Policy wizard
+- **Manager View nav item** added to PolicyManagerHeader with custom SVG icon
+- **Package size fix** — `gulp clean` before build to prevent stale artifact accumulation (14MB → 2.7MB)
+- Config.json updated: 9 → 14 webpart bundles registered
+- Ship build passes clean with all 14 webpart manifests (2.7MB package)
+- All changes committed (11 commits) and pushed to remote
+
+### Previously Completed (Sessions 1-2)
 - Search Center webpart (jmlPolicySearch) — fully built and registered
 - Help Center webpart (jmlPolicyHelp) — fully built and registered
 - MyPolicies rewrite — clean class component replacing broken version
@@ -368,14 +411,16 @@ npm run clean
 - Expanded row styling fix in PolicyHub table view
 - Approval lists provisioning (08-Approval-Lists.ps1)
 - Seed data for approvals + notifications
-- Config.json registration for Search + Help webparts (fix: 7→9 manifests)
-- Ship build passes clean with all 9 webpart manifests
 
 ### Known Issues
-- Expanded row detail panel in PolicyHub was unstyled (FIXED)
 - PowerShell scripts starting with numbers need `.\` prefix to execute
+- Featured Policies and Recently Viewed sections hidden by default until Admin Navigation toggle is wired to live data
+- All webparts use mock/sample data — service calls need to be wired when SharePoint lists are provisioned
 
 ### Next Steps
-- User testing of new admin components (Naming Rules, SLA, Lifecycle, Navigation)
-- User testing of expanded row styling in Policy Hub
-- Potential refinements based on user feedback
+- User testing of Manager View dashboard and Author View
+- Wire PolicyRoleService to actual SharePoint group membership detection
+- Connect Analytics webpart to live data from PolicyAnalyticsService
+- Connect Distribution webpart to live data from PolicyDistributionService
+- Wire Admin Navigation toggles to control nav item visibility
+- Create SharePoint pages: PolicyAuthor.aspx, PolicyManagerView.aspx, PolicyAnalytics.aspx, PolicyDistribution.aspx

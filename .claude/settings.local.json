@@ -50,7 +50,9 @@
       "Bash(if exist dist rmdir /s /q dist)",
       "Bash(if exist release rmdir /s /q release)",
       "Bash(git push:*)",
-      "Bash(cmd /c:*)"
+      "Bash(cmd /c:*)",
+      "Bash(xargs:*)",
+      "Bash(start \"\" \"c:\\\\Projects\\\\SPFx\\\\PolicyManager\\\\policy-manager\\\\docs\\\\policy-read-mockup.html\")"
     ]
   }
 }

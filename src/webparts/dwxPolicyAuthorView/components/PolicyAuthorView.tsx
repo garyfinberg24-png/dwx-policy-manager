@@ -260,50 +260,25 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
           iconName="AuthoringTool"
           title="Policy Requests"
           description="Review and manage policy creation requests submitted by managers"
-          actions={
-            <Stack horizontal tokens={{ childrenGap: 8 }}>
-              <Dropdown
-                placeholder="Sort by"
-                selectedKey={sortBy}
-                options={[
-                  { key: 'date', text: 'Newest First' },
-                  { key: 'priority', text: 'Priority' },
-                  { key: 'status', text: 'Status' }
-                ]}
-                onChange={(_, opt) => opt && this.setState({ sortBy: opt.key as any })}
-                styles={{ root: { minWidth: 140 } }}
-              />
-              <DefaultButton text="Refresh" iconProps={{ iconName: 'Refresh' }} onClick={() => this.setState({ policyRequests: this.getSamplePolicyRequests() })} />
-            </Stack>
-          }
         />
 
-        {/* KPI Summary Cards */}
+        {/* KPI Summary Cards — including Critical as a card */}
         <div className={(styles as Record<string, string>).kpiGrid}>
           {this.renderKpiCard('New Requests', newCount, 'NewMail', '#0078d4', '#e8f4fd', () => this.setState({ statusFilter: 'New' }))}
           {this.renderKpiCard('Assigned', assignedCount, 'People', '#8764b8', '#f3eefc', () => this.setState({ statusFilter: 'Assigned' }))}
           {this.renderKpiCard('In Progress', inProgressCount, 'Edit', '#f59e0b', '#fff8e6', () => this.setState({ statusFilter: 'InProgress' }))}
           {this.renderKpiCard('Completed', completedCount, 'CheckMark', '#107c10', '#dff6dd', () => this.setState({ statusFilter: 'All' }))}
+          {this.renderKpiCard('Critical', criticalCount, 'ShieldAlert', '#d13438', '#fef2f2', () => this.setState({ statusFilter: 'All' }))}
         </div>
 
-        {/* Critical Alert */}
-        {criticalCount > 0 && (
-          <MessageBar messageBarType={MessageBarType.severeWarning} style={{ marginBottom: 16 }}>
-            <strong>{criticalCount} critical priority request{criticalCount > 1 ? 's' : ''}</strong> requiring urgent attention.
-          </MessageBar>
-        )}
-
-        {/* Search + Status Filter Chips */}
-        <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 12 }} style={{ marginBottom: 16 }}>
+        {/* Search + Filter Chips + Sort/Refresh — all in one toolbar row */}
+        <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 12 }} style={{ marginBottom: 16, flexWrap: 'wrap' }}>
           <SearchBox
             placeholder="Search requests..."
             value={searchQuery}
             onChange={(_, val) => this.setState({ searchQuery: val || '' })}
-            styles={{ root: { width: 260 } }}
+            styles={{ root: { width: 220 } }}
           />
-        </Stack>
-
-        <Stack horizontal tokens={{ childrenGap: 8 }} style={{ marginBottom: 16, flexWrap: 'wrap' }}>
           {statusFilters.map(status => (
             <DefaultButton
               key={status}
@@ -325,6 +300,20 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
               onClick={() => this.setState({ statusFilter: status })}
             />
           ))}
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+            <Dropdown
+              placeholder="Sort by"
+              selectedKey={sortBy}
+              options={[
+                { key: 'date', text: 'Newest First' },
+                { key: 'priority', text: 'Priority' },
+                { key: 'status', text: 'Status' }
+              ]}
+              onChange={(_, opt) => opt && this.setState({ sortBy: opt.key as any })}
+              styles={{ root: { minWidth: 140 } }}
+            />
+            <DefaultButton text="Refresh" iconProps={{ iconName: 'Refresh' }} onClick={() => this.setState({ policyRequests: this.getSamplePolicyRequests() })} />
+          </div>
         </Stack>
 
         {/* Request Cards */}
@@ -824,13 +813,6 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
           {this.renderKpiCard('Overdue', overdueCount, 'Warning', '#d13438', '#fef2f2', () => this.setState({ delegationFilter: 'Overdue' }))}
           {this.renderKpiCard('Completed', delegations.filter(d => d.Status === 'Completed').length, 'CheckMark', '#107c10', '#dff6dd', () => this.setState({ delegationFilter: 'Completed' }))}
         </div>
-
-        {/* Overdue Alert */}
-        {overdueCount > 0 && (
-          <MessageBar messageBarType={MessageBarType.severeWarning} style={{ marginBottom: 16 }}>
-            <strong>{overdueCount} delegation{overdueCount > 1 ? 's are' : ' is'} overdue</strong> — follow up with assigned team members.
-          </MessageBar>
-        )}
 
         {/* Filter Chips */}
         <Stack horizontal tokens={{ childrenGap: 8 }} style={{ marginBottom: 16, flexWrap: 'wrap' }}>

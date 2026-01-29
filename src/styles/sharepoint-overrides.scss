@@ -70,6 +70,39 @@
   }
 
   // =============================================================================
+  // FLUENT UI BUTTON OVERRIDES - Forest Teal theme, consistent border-radius
+  // =============================================================================
+
+  // PrimaryButton: Green/Teal with 6px border-radius
+  .ms-Button--primary,
+  button.ms-Button--primary {
+    background-color: #0d9488 !important;
+    border-color: #0d9488 !important;
+    border-radius: 6px !important;
+
+    &:hover {
+      background-color: #0f766e !important;
+      border-color: #0f766e !important;
+    }
+
+    &:active {
+      background-color: #115e59 !important;
+      border-color: #115e59 !important;
+    }
+  }
+
+  // DefaultButton: 6px border-radius
+  .ms-Button--default,
+  button.ms-Button--default {
+    border-radius: 6px !important;
+  }
+
+  // CompoundButton: 6px border-radius
+  .ms-Button--compound {
+    border-radius: 6px !important;
+  }
+
+  // =============================================================================
   // END - All other hiding is done by Application Customizer
   // =============================================================================
 }

@@ -6,7 +6,7 @@
 // sharepoint-overrides.scss to avoid aggressive selectors that hide SharePoint Fly-in Panels.
 
 .myPolicies {
-  @include full-bleed-container;
+  width: 100%;
   background-color: #ffffff;
 
   .title {

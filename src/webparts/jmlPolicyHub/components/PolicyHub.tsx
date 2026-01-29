@@ -232,7 +232,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
       currentPage: 1,
       sortBy: 'PolicyNumber',
       sortDescending: false,
-      viewMode: 'grid',
+      viewMode: 'list',
       selectedTab: 'policies',
       // Role-based state
       currentUserRole: 'Employee',
@@ -1710,12 +1710,35 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
   }
 
   /**
-   * Render enhanced policy card with badges, bookmarks, read time, timeline
+   * Get accent bar class based on compliance risk level
+   */
+  private getAccentClass(risk: string | undefined): string {
+    const accentMap: Record<string, string> = {
+      'Critical': styles.accentCritical,
+      'High': styles.accentHigh,
+      'Medium': styles.accentMedium,
+      'Low': styles.accentLow
+    };
+    return accentMap[risk || ''] || styles.accentDefault;
+  }
+
+  /**
+   * Get risk badge class based on compliance risk level
+   */
+  private getRiskBadgeClass(risk: string): string {
+    const riskMap: Record<string, string> = {
+      'Critical': styles.riskCritical,
+      'High': styles.riskHigh,
+      'Medium': styles.riskMedium,
+      'Low': styles.riskLow
+    };
+    return riskMap[risk] || '';
+  }
+
+  /**
+   * Render V2 Left Accent Bar policy card
    */
   private renderEnhancedPolicyCard(policy: IPolicy): JSX.Element {
-    const { bookmarkedPolicyIds } = this.state;
-    const isBookmarked = bookmarkedPolicyIds.has(policy.Id);
-
     // Determine if policy is new or updated (within last 14 days)
     const modifiedDate = policy.Modified ? new Date(policy.Modified) : null;
     const publishedDate = policy.PublishedDate ? new Date(policy.PublishedDate) : null;
@@ -1732,76 +1755,69 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
 
     return (
       <div key={policy.Id} className={styles.enhancedPolicyCard}>
-        {/* Badges */}
+        {/* Left accent bar — coloured by risk level */}
+        <div className={`${styles.accentBar} ${this.getAccentClass(policy.ComplianceRisk)}`} />
+
+        {/* Card content */}
+        <div className={styles.cardContent}>
+          {/* Top: Title + Risk badge */}
+          <div className={styles.cardTop}>
+            <div className={styles.policyTitleSection}>
+              <Text className={styles.policyTitle}>{policy.PolicyName}</Text>
+              <Text className={styles.policyNumber}>{policy.PolicyNumber}</Text>
+            </div>
+            {policy.ComplianceRisk && (
+              <span className={`${styles.riskBadge} ${this.getRiskBadgeClass(policy.ComplianceRisk)}`}>
+                {policy.ComplianceRisk}
+              </span>
+            )}
+          </div>
+
+          {/* Tags */}
+          <div className={styles.policyMeta}>
+            <span className={`${styles.policyBadge} ${styles.badgeCategory}`}>{policy.PolicyCategory}</span>
+            <span className={`${styles.policyBadge} ${policy.PolicyStatus === 'Published' ? styles.badgeActive : styles.badgePending}`}>
+              {policy.PolicyStatus}
+            </span>
+            {policy.IsMandatory && <span className={`${styles.policyBadge} ${styles.badgeMandatory}`}>Mandatory</span>}
+          </div>
+
+          {/* Description */}
+          {policy.PolicySummary && (
+            <Text className={styles.policyDescription}>
+              {policy.PolicySummary.substring(0, 150)}...
+            </Text>
+          )}
+
+          {/* Footer: meta + view button */}
+          <div className={styles.policyFooter}>
+            <div className={styles.policyInfoRow}>
+              <span className={styles.policyInfoItem}>
+                <Icon iconName="Clock" /> {readTime} min
+              </span>
+              <span className={styles.policyInfoItem}>
+                <Icon iconName="View" /> {viewCount.toLocaleString()}
+              </span>
+              <span className={styles.policyInfoItem}>
+                <Icon iconName="Calendar" /> {modifiedDate ? modifiedDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}
+              </span>
+            </div>
+            <button
+              className={styles.btnView}
+              onClick={() => { window.location.href = `/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${policy.Id}`; }}
+            >
+              View →
+            </button>
+          </div>
+        </div>
+
+        {/* Ribbon badge (New / Updated) */}
         {(isNew || isUpdated) && (
           <div className={styles.policyCardBadges}>
             {isNew && <span className={styles.badgeNew}>New</span>}
             {isUpdated && <span className={styles.badgeUpdated}>Updated</span>}
           </div>
         )}
-
-        {/* Header with icon, title, bookmark */}
-        <div className={styles.policyHeader}>
-          <div className={styles.policyIcon}>
-            <Icon iconName={this.getPolicyIcon(policy.PolicyCategory)} />
-          </div>
-          <div className={styles.policyTitleSection}>
-            <Text className={styles.policyTitle}>{policy.PolicyName}</Text>
-            <Text className={styles.policyNumber}>{policy.PolicyNumber}</Text>
-          </div>
-          <IconButton
-            iconProps={{ iconName: isBookmarked ? 'SingleBookmarkSolid' : 'SingleBookmark' }}
-            className={`${styles.policyBookmark} ${isBookmarked ? styles.bookmarkActive : ''}`}
-            onClick={() => this.handleToggleBookmark(policy.Id)}
-            title={isBookmarked ? 'Remove bookmark' : 'Add bookmark'}
-          />
-        </div>
-
-        {/* Meta badges */}
-        <div className={styles.policyMeta}>
-          <span className={`${styles.policyBadge} ${styles.badgeCategory}`}>{policy.PolicyCategory}</span>
-          <span className={`${styles.policyBadge} ${policy.PolicyStatus === 'Published' ? styles.badgeActive : styles.badgePending}`}>
-            {policy.PolicyStatus}
-          </span>
-          {policy.IsMandatory && <span className={`${styles.policyBadge} ${styles.badgeMandatory}`}>Mandatory</span>}
-          {policy.ReadTimeframe && <span className={`${styles.policyBadge} ${styles.badgeTimeline}`}>{policy.ReadTimeframe}</span>}
-        </div>
-
-        {/* Description */}
-        {policy.PolicySummary && (
-          <Text className={styles.policyDescription}>
-            {policy.PolicySummary.substring(0, 150)}...
-          </Text>
-        )}
-
-        {/* Info row */}
-        <div className={styles.policyInfoRow}>
-          <span className={styles.policyInfoItem}>
-            <Icon iconName="Clock" /> {readTime} min read
-          </span>
-          <span className={styles.policyInfoItem}>
-            <Icon iconName="View" /> {viewCount.toLocaleString()} views
-          </span>
-          {policy.ComplianceRisk && (
-            <span className={styles.policyInfoItem}>
-              <Icon iconName="Warning" /> {policy.ComplianceRisk} Risk
-            </span>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className={styles.policyFooter}>
-          <Text className={styles.policyDate}>
-            Updated: {modifiedDate ? modifiedDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}
-          </Text>
-          <div className={styles.policyActions}>
-            <PrimaryButton
-              text="View Policy"
-              href={`/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${policy.Id}`}
-              className={styles.btnView}
-            />
-          </div>
-        </div>
       </div>
     );
   }

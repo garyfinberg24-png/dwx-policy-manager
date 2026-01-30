@@ -287,6 +287,160 @@
     color: #605e5c;
   }
 
+  .partialBadge {
+    padding: 4px 12px;
+    background: #fff4ce;
+    color: #797673;
+    border-radius: 12px;
+    font-weight: 600;
+  }
+
+  // Fill in Blank
+  .fillInBlankContainer {
+    padding: 24px;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid $ms-color-neutralLight;
+    font-size: 16px;
+    line-height: 2.4;
+  }
+
+  // Matching
+  .matchingRow {
+    padding: 16px;
+    background: white;
+    border: 2px solid $ms-color-neutralLight;
+    border-radius: 8px;
+    transition: border-color 0.2s ease;
+
+    &:hover {
+      border-color: $ms-color-themePrimary;
+    }
+  }
+
+  .matchingLeft {
+    min-width: 180px;
+    padding: 8px 16px;
+    background: $ms-color-themeLighterAlt;
+    border-radius: 6px;
+    border-left: 4px solid $ms-color-themePrimary;
+    font-weight: 600;
+  }
+
+  // Ordering
+  .orderingItem {
+    padding: 12px 16px;
+    background: white;
+    border: 2px solid $ms-color-neutralLight;
+    border-radius: 8px;
+    cursor: grab;
+    transition: all 0.2s ease;
+
+    &:hover {
+      border-color: $ms-color-themePrimary;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  .orderNumber {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: $ms-color-themePrimary;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  // Rating Scale
+  .ratingDisplay {
+    text-align: center;
+    padding: 16px;
+    background: $ms-color-themeLighterAlt;
+    border-radius: 8px;
+  }
+
+  // Image Choice
+  .imageChoiceGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+
+    @media (max-width: 600px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .imageChoiceCard {
+    position: relative;
+    border: 3px solid $ms-color-neutralLight;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      border-color: $ms-color-themePrimary;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    &.selected {
+      border-color: $ms-color-themePrimary;
+      box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.2);
+    }
+  }
+
+  .imageChoiceImg {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    display: block;
+  }
+
+  .imageChoiceLabel {
+    padding: 12px 16px;
+    background: white;
+    text-align: center;
+  }
+
+  .imageChoiceCheck {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: $ms-color-themePrimary;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    i {
+      color: white;
+      font-size: 16px;
+    }
+  }
+
+  // Hotspot
+  .hotspotContainer {
+    border: 2px solid $ms-color-neutralLight;
+    border-radius: 8px;
+    overflow: hidden;
+    max-width: 800px;
+  }
+
+  .hotspotMarker {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: $ms-color-themePrimary;
+    border: 3px solid white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    pointer-events: none;
+  }
+
   // ChoiceGroup styles for quiz options
   .choiceGroup {
     :global(.ms-ChoiceField) {

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import * as React from 'react';
 import styles from './QuizTaker.module.scss';
 import {
@@ -10,45 +9,77 @@ import {
   MessageBar,
   MessageBarType,
   IconButton,
-  Panel,
-  PanelType,
   ChoiceGroup,
   IChoiceGroupOption,
   Checkbox,
   TextField,
-  Label,
-  IStackTokens,
-  mergeStyleSets
+  Slider,
+  Dropdown,
+  IDropdownOption,
+  Spinner,
+  SpinnerSize
 } from '@fluentui/react';
-import { QuizService, IQuiz, IQuizQuestion, IQuizAnswer, IQuizResult } from '../../services/QuizService';
+import {
+  QuizService,
+  IQuiz,
+  IQuizQuestion,
+  IQuizAnswer,
+  IQuizResult,
+  QuestionType
+} from '../../services/QuizService';
 import { SPFI } from '@pnp/sp';
+
+// ============================================================================
+// INTERFACES
+// ============================================================================
+
+export interface IQuizTakerUser {
+  Id: number;
+  Title?: string;
+  DisplayName?: string;
+  EMail?: string;
+  Email?: string;
+}
 
 export interface IQuizTakerProps {
   sp: SPFI;
   quizId: number;
   policyId: number;
-  userId: any;
+  userId: IQuizTakerUser | number;
   onComplete?: (result: IQuizResult) => void;
   onCancel?: () => void;
 }
+
+/** Extended answer map supporting complex answer types per question type */
+type AnswerValue =
+  | string                                        // Multiple Choice, True/False, Short Answer, Image Choice, Essay
+  | string[]                                       // Multiple Select, Fill in Blank (array of blank values), Ordering (array of item ids)
+  | { left: string; right: string }[]              // Matching
+  | { x: number; y: number }                       // Hotspot
+  | number;                                        // Rating Scale
 
 export interface IQuizTakerState {
   quiz: IQuiz | null;
   questions: IQuizQuestion[];
   currentQuestionIndex: number;
-  answers: Map<number, string | string[]>;
+  answers: Map<number, AnswerValue>;
   timeRemaining: number;
   attemptId: number | null;
   isSubmitting: boolean;
+  isLoading: boolean;
   result: IQuizResult | null;
   error: string | null;
   showResults: boolean;
   startTime: Date;
 }
 
+// ============================================================================
+// COMPONENT
+// ============================================================================
+
 export class QuizTaker extends React.Component<IQuizTakerProps, IQuizTakerState> {
   private quizService: QuizService;
-  private timerInterval: any;
+  private timerInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor(props: IQuizTakerProps) {
     super(props);
@@ -62,6 +93,7 @@ export class QuizTaker extends React.Component<IQuizTakerProps, IQuizTakerState>
       timeRemaining: 0,
       attemptId: null,
       isSubmitting: false,
+      isLoading: true,
       result: null,
       error: null,
       showResults: false,
@@ -74,23 +106,60 @@ export class QuizTaker extends React.Component<IQuizTakerProps, IQuizTakerState>
   }
 
   public componentWillUnmount(): void {
-    if (this.timerInterval) {
+    this.clearTimer();
+  }
+
+  // --------------------------------------------------------------------------
+  // Timer helpers
+  // --------------------------------------------------------------------------
+
+  private clearTimer(): void {
+    if (this.timerInterval !== null) {
       clearInterval(this.timerInterval);
+      this.timerInterval = null;
     }
   }
 
+  private startTimer(): void {
+    this.clearTimer(); // prevent double timers
+    this.timerInterval = setInterval(() => {
+      this.setState(prev => {
+        const newTimeRemaining = prev.timeRemaining - 1;
+
+        if (newTimeRemaining <= 0) {
+          this.clearTimer();
+          this.handleTimeExpired();
+          return { ...prev, timeRemaining: 0 };
+        }
+
+        return { ...prev, timeRemaining: newTimeRemaining };
+      });
+    }, 1000);
+  }
+
+  // --------------------------------------------------------------------------
+  // Quiz lifecycle
+  // --------------------------------------------------------------------------
+
   private async loadQuiz(): Promise<void> {
+    this.setState({ isLoading: true, error: null });
+
     try {
       const quiz = await this.quizService.getQuizById(this.props.quizId);
       if (!quiz) {
-        this.setState({ error: "Quiz not found" });
+        this.setState({ error: "Quiz not found", isLoading: false });
         return;
       }
 
+      // Resolve userId
+      const resolvedUserId = typeof this.props.userId === 'number'
+        ? this.props.userId
+        : this.props.userId.Id;
+
       // Check eligibility
-      const eligibility = await this.quizService.canUserTakeQuiz(this.props.quizId, this.props.userId.Id);
+      const eligibility = await this.quizService.canUserTakeQuiz(this.props.quizId, resolvedUserId);
       if (!eligibility.canTake) {
-        this.setState({ error: eligibility.reason || "Cannot take quiz" });
+        this.setState({ error: eligibility.reason || "Cannot take quiz", isLoading: false });
         return;
       }
 
@@ -98,19 +167,21 @@ export class QuizTaker extends React.Component<IQuizTakerProps, IQuizTakerState>
       const questions = await this.quizService.getQuizQuestions(this.props.quizId, { randomize: quiz.RandomizeQuestions });
 
       // Start attempt
-      const userId = this.props.userId?.Id || this.props.userId;
-      const userName = this.props.userId?.Title || this.props.userId?.DisplayName || 'Unknown User';
-      const userEmail = this.props.userId?.EMail || this.props.userId?.Email || '';
+      const user = typeof this.props.userId === 'number'
+        ? { Id: this.props.userId, Title: 'Unknown User', EMail: '' }
+        : this.props.userId;
+      const userName = user.Title || user.DisplayName || 'Unknown User';
+      const userEmail = user.EMail || user.Email || '';
       const attempt = await this.quizService.startQuizAttempt(
         this.props.quizId,
         this.props.policyId,
-        userId,
+        user.Id,
         userName,
         userEmail
       );
 
       if (!attempt) {
-        this.setState({ error: "Failed to start quiz attempt" });
+        this.setState({ error: "Failed to start quiz attempt", isLoading: false });
         return;
       }
 
@@ -118,48 +189,60 @@ export class QuizTaker extends React.Component<IQuizTakerProps, IQuizTakerState>
         quiz,
         questions,
         attemptId: attempt.Id,
-        timeRemaining: quiz.TimeLimit * 60, // Convert to seconds
-        startTime: new Date()
+        timeRemaining: quiz.TimeLimit * 60,
+        startTime: new Date(),
+        isLoading: false
       });
 
-      // Start timer
       this.startTimer();
     } catch (error) {
       console.error("Failed to load quiz:", error);
-      this.setState({ error: "Failed to load quiz" });
+      this.setState({ error: "Failed to load quiz", isLoading: false });
     }
   }
 
-  private startTimer(): void {
-    this.timerInterval = setInterval(() => {
-      this.setState(prev => {
-        const newTimeRemaining = prev.timeRemaining - 1;
-
-        if (newTimeRemaining <= 0) {
-          clearInterval(this.timerInterval);
-          this.handleTimeExpired();
-          return { timeRemaining: 0 };
-        }
-
-        return { timeRemaining: newTimeRemaining };
-      });
-    }, 1000);
+  /** Reset state and re-load quiz (used for retake instead of window.location.reload) */
+  private async retakeQuiz(): Promise<void> {
+    this.clearTimer();
+    this.setState({
+      quiz: null,
+      questions: [],
+      currentQuestionIndex: 0,
+      answers: new Map(),
+      timeRemaining: 0,
+      attemptId: null,
+      isSubmitting: false,
+      isLoading: true,
+      result: null,
+      error: null,
+      showResults: false,
+      startTime: new Date()
+    });
+    await this.loadQuiz();
   }
 
   private handleTimeExpired(): void {
     this.setState({ error: "Time expired! Quiz will be submitted automatically." });
     setTimeout(() => {
-      this.handleSubmit();
+      this.handleSubmit().catch(err => console.error("Auto-submit failed:", err));
     }, 2000);
   }
 
-  private handleAnswerChange = (questionId: number, answer: string | string[]): void => {
+  // --------------------------------------------------------------------------
+  // Answer handling
+  // --------------------------------------------------------------------------
+
+  private handleAnswerChange = (questionId: number, answer: AnswerValue): void => {
     this.setState(prev => {
       const newAnswers = new Map(prev.answers);
       newAnswers.set(questionId, answer);
       return { answers: newAnswers };
     });
   };
+
+  // --------------------------------------------------------------------------
+  // Navigation
+  // --------------------------------------------------------------------------
 
   private handleNext = (): void => {
     this.setState(prev => ({
@@ -176,6 +259,26 @@ export class QuizTaker extends React.Component<IQuizTakerProps, IQuizTakerState>
   private handleJumpToQuestion = (index: number): void => {
     this.setState({ currentQuestionIndex: index });
   };
+
+  private handleCancel = (): void => {
+    // Clear timer before calling onCancel to prevent leak
+    this.clearTimer();
+
+    // Abandon attempt if possible
+    if (this.state.attemptId) {
+      this.quizService.abandonQuizAttempt(this.state.attemptId).catch(err => {
+        console.warn("Failed to abandon quiz attempt:", err);
+      });
+    }
+
+    if (this.props.onCancel) {
+      this.props.onCancel();
+    }
+  };
+
+  // --------------------------------------------------------------------------
+  // Submission
+  // --------------------------------------------------------------------------
 
   private async handleSubmit(): Promise<void> {
     const { quiz, questions, answers, attemptId } = this.state;
@@ -196,7 +299,7 @@ export class QuizTaker extends React.Component<IQuizTakerProps, IQuizTakerState>
       // Grade answers
       const gradedAnswers: IQuizAnswer[] = questions.map(question => {
         const userAnswer = answers.get(question.Id);
-        if (!userAnswer) {
+        if (userAnswer === undefined) {
           return {
             questionId: question.Id,
             questionType: question.QuestionType,
@@ -207,10 +310,8 @@ export class QuizTaker extends React.Component<IQuizTakerProps, IQuizTakerState>
             maxPoints: question.Points
           };
         }
-        // Convert the simple answer to the expected format
-        const userResponse = typeof userAnswer === 'string'
-          ? { selectedAnswer: userAnswer }
-          : { selectedAnswers: userAnswer };
+        // Build the userResponse object expected by gradeAnswer
+        const userResponse = this.buildGradeResponse(question, userAnswer);
         return this.quizService.gradeAnswer(question, userResponse);
       });
 
@@ -222,9 +323,7 @@ export class QuizTaker extends React.Component<IQuizTakerProps, IQuizTakerState>
       }
 
       // Stop timer
-      if (this.timerInterval) {
-        clearInterval(this.timerInterval);
-      }
+      this.clearTimer();
 
       this.setState({
         result,
@@ -243,6 +342,57 @@ export class QuizTaker extends React.Component<IQuizTakerProps, IQuizTakerState>
       });
     }
   }
+
+  /** Convert the raw answer value into the shape expected by QuizService.gradeAnswer */
+  private buildGradeResponse(
+    question: IQuizQuestion,
+    answer: AnswerValue
+  ): {
+    selectedAnswer?: string;
+    selectedAnswers?: string[];
+    matchingAnswers?: { left: string; right: string }[];
+    orderingAnswers?: string[];
+    hotspotCoordinates?: { x: number; y: number };
+    essayText?: string;
+    ratingValue?: number;
+    fillInBlanks?: string[];
+  } {
+    switch (question.QuestionType) {
+      case QuestionType.MultipleChoice:
+      case QuestionType.TrueFalse:
+      case QuestionType.ShortAnswer:
+      case QuestionType.ImageChoice:
+        return { selectedAnswer: answer as string };
+
+      case QuestionType.MultipleSelect:
+        return { selectedAnswers: answer as string[] };
+
+      case QuestionType.FillInBlank:
+        return { fillInBlanks: answer as string[] };
+
+      case QuestionType.Matching:
+        return { matchingAnswers: answer as { left: string; right: string }[] };
+
+      case QuestionType.Ordering:
+        return { orderingAnswers: answer as string[] };
+
+      case QuestionType.RatingScale:
+        return { ratingValue: answer as number };
+
+      case QuestionType.Essay:
+        return { essayText: answer as string };
+
+      case QuestionType.Hotspot:
+        return { hotspotCoordinates: answer as { x: number; y: number } };
+
+      default:
+        return { selectedAnswer: String(answer) };
+    }
+  }
+
+  // ============================================================================
+  // RENDER — QUESTION TYPES
+  // ============================================================================
 
   private renderQuestion(question: IQuizQuestion, index: number): JSX.Element {
     const { answers } = this.state;
@@ -269,44 +419,82 @@ export class QuizTaker extends React.Component<IQuizTakerProps, IQuizTakerState>
             {question.QuestionText}
           </Text>
 
+          {question.QuestionImage && (
+            <img
+              src={question.QuestionImage}
+              alt="Question image"
+              style={{ maxWidth: '100%', borderRadius: 8, marginBottom: 8 }}
+            />
+          )}
+
           {this.renderAnswerOptions(question, userAnswer)}
+
+          {question.Hint && (
+            <MessageBar messageBarType={MessageBarType.info} isMultiline={false}>
+              Hint: {question.Hint}
+            </MessageBar>
+          )}
         </Stack>
       </div>
     );
   }
 
-  private renderAnswerOptions(question: IQuizQuestion, userAnswer: string | string[] | undefined): JSX.Element {
+  private renderAnswerOptions(question: IQuizQuestion, userAnswer: AnswerValue | undefined): JSX.Element {
     switch (question.QuestionType) {
-      case "Multiple Choice":
-        return this.renderMultipleChoice(question, userAnswer as string);
+      case QuestionType.MultipleChoice:
+        return this.renderMultipleChoice(question, userAnswer as string | undefined);
 
-      case "True/False":
-        return this.renderTrueFalse(question, userAnswer as string);
+      case QuestionType.TrueFalse:
+        return this.renderTrueFalse(question, userAnswer as string | undefined);
 
-      case "Multiple Select":
-        return this.renderMultipleSelect(question, userAnswer as string[]);
+      case QuestionType.MultipleSelect:
+        return this.renderMultipleSelect(question, userAnswer as string[] | undefined);
 
-      case "Short Answer":
-        return this.renderShortAnswer(question, userAnswer as string);
+      case QuestionType.ShortAnswer:
+        return this.renderShortAnswer(question, userAnswer as string | undefined);
+
+      case QuestionType.FillInBlank:
+        return this.renderFillInBlank(question, userAnswer as string[] | undefined);
+
+      case QuestionType.Matching:
+        return this.renderMatching(question, userAnswer as { left: string; right: string }[] | undefined);
+
+      case QuestionType.Ordering:
+        return this.renderOrdering(question, userAnswer as string[] | undefined);
+
+      case QuestionType.RatingScale:
+        return this.renderRatingScale(question, userAnswer as number | undefined);
+
+      case QuestionType.Essay:
+        return this.renderEssay(question, userAnswer as string | undefined);
+
+      case QuestionType.ImageChoice:
+        return this.renderImageChoice(question, userAnswer as string | undefined);
+
+      case QuestionType.Hotspot:
+        return this.renderHotspot(question, userAnswer as { x: number; y: number } | undefined);
 
       default:
-        return <Text>Unknown question type</Text>;
+        return <Text>Unsupported question type: {question.QuestionType}</Text>;
     }
   }
 
+  // --- Multiple Choice ---
   private renderMultipleChoice(question: IQuizQuestion, userAnswer: string | undefined): JSX.Element {
     const options: IChoiceGroupOption[] = [
-      { key: "A", text: `A. ${question.OptionA}` },
-      { key: "B", text: `B. ${question.OptionB}` },
-      { key: "C", text: `C. ${question.OptionC}` },
-      { key: "D", text: `D. ${question.OptionD}` }
-    ].filter(opt => opt.text && opt.text.length > 3); // Filter out empty options (just "A. " etc.)
+      { key: "A", text: `A. ${question.OptionA || ''}` },
+      { key: "B", text: `B. ${question.OptionB || ''}` },
+      { key: "C", text: `C. ${question.OptionC || ''}` },
+      { key: "D", text: `D. ${question.OptionD || ''}` },
+      { key: "E", text: `E. ${question.OptionE || ''}` },
+      { key: "F", text: `F. ${question.OptionF || ''}` }
+    ].filter(opt => opt.text.length > 3); // Filter out empty options
 
     return (
       <ChoiceGroup
         selectedKey={userAnswer}
         options={options}
-        onChange={(_, option) => {
+        onChange={(_ev, option) => {
           if (option) {
             this.handleAnswerChange(question.Id, option.key);
           }
@@ -316,6 +504,7 @@ export class QuizTaker extends React.Component<IQuizTakerProps, IQuizTakerState>
     );
   }
 
+  // --- True/False ---
   private renderTrueFalse(question: IQuizQuestion, userAnswer: string | undefined): JSX.Element {
     const options: IChoiceGroupOption[] = [
       { key: "A", text: "True" },
@@ -326,7 +515,7 @@ export class QuizTaker extends React.Component<IQuizTakerProps, IQuizTakerState>
       <ChoiceGroup
         selectedKey={userAnswer}
         options={options}
-        onChange={(_, option) => {
+        onChange={(_ev, option) => {
           if (option) {
             this.handleAnswerChange(question.Id, option.key);
           }
@@ -336,12 +525,15 @@ export class QuizTaker extends React.Component<IQuizTakerProps, IQuizTakerState>
     );
   }
 
+  // --- Multiple Select ---
   private renderMultipleSelect(question: IQuizQuestion, userAnswers: string[] | undefined): JSX.Element {
     const options = [
       { key: "A", text: question.OptionA },
       { key: "B", text: question.OptionB },
       { key: "C", text: question.OptionC },
-      { key: "D", text: question.OptionD }
+      { key: "D", text: question.OptionD },
+      { key: "E", text: question.OptionE },
+      { key: "F", text: question.OptionF }
     ].filter(opt => opt.text);
 
     const selectedAnswers = userAnswers || [];
@@ -359,7 +551,7 @@ export class QuizTaker extends React.Component<IQuizTakerProps, IQuizTakerState>
             <Checkbox
               label={`${option.key}. ${option.text}`}
               checked={selectedAnswers.includes(option.key)}
-              onChange={(e, checked) => {
+              onChange={(_ev, checked) => {
                 let newAnswers = [...selectedAnswers];
                 if (checked) {
                   newAnswers.push(option.key);
@@ -375,17 +567,369 @@ export class QuizTaker extends React.Component<IQuizTakerProps, IQuizTakerState>
     );
   }
 
+  // --- Short Answer ---
   private renderShortAnswer(question: IQuizQuestion, userAnswer: string | undefined): JSX.Element {
     return (
       <TextField
         multiline
         rows={4}
         value={userAnswer || ""}
-        onChange={(e, value) => this.handleAnswerChange(question.Id, value || "")}
+        onChange={(_ev, value) => this.handleAnswerChange(question.Id, value || "")}
         placeholder="Type your answer here..."
       />
     );
   }
+
+  // --- Fill in the Blank ---
+  private renderFillInBlank(question: IQuizQuestion, userAnswers: string[] | undefined): JSX.Element {
+    let blanks: { position: number; acceptedAnswers: string[] }[] = [];
+    try {
+      blanks = question.BlankAnswers ? JSON.parse(question.BlankAnswers) : [];
+    } catch {
+      blanks = [];
+    }
+
+    const currentAnswers = userAnswers || blanks.map(() => "");
+
+    // Render the question text with blanks highlighted
+    // QuestionText may contain "____" or "[blank]" markers
+    const parts = question.QuestionText.split(/(?:____|\[blank\])/gi);
+
+    return (
+      <Stack tokens={{ childrenGap: 16 }}>
+        <MessageBar messageBarType={MessageBarType.info}>
+          Fill in the blank{blanks.length > 1 ? 's' : ''} below
+        </MessageBar>
+        <div className={styles.fillInBlankContainer}>
+          {parts.map((part, index) => (
+            <span key={index}>
+              <span>{part}</span>
+              {index < blanks.length && (
+                <TextField
+                  underlined
+                  placeholder={`Blank ${index + 1}`}
+                  value={currentAnswers[index] || ""}
+                  onChange={(_ev, value) => {
+                    const newAnswers = [...currentAnswers];
+                    newAnswers[index] = value || "";
+                    this.handleAnswerChange(question.Id, newAnswers);
+                  }}
+                  styles={{ root: { display: 'inline-block', width: 200, margin: '0 4px' } }}
+                />
+              )}
+            </span>
+          ))}
+        </div>
+        {question.CaseSensitive && (
+          <Text variant="small" styles={{ root: { color: '#605e5c', fontStyle: 'italic' } }}>
+            Answers are case-sensitive
+          </Text>
+        )}
+      </Stack>
+    );
+  }
+
+  // --- Matching ---
+  private renderMatching(question: IQuizQuestion, userAnswers: { left: string; right: string }[] | undefined): JSX.Element {
+    let pairs: { left: string; right: string }[] = [];
+    try {
+      pairs = question.MatchingPairs ? JSON.parse(question.MatchingPairs) : [];
+    } catch {
+      pairs = [];
+    }
+
+    // Create shuffled right-side options
+    const rightOptions: IDropdownOption[] = pairs.map(p => ({
+      key: p.right,
+      text: p.right
+    }));
+
+    // Build current user matches
+    const currentMatches = userAnswers || pairs.map(p => ({ left: p.left, right: "" }));
+
+    return (
+      <Stack tokens={{ childrenGap: 16 }}>
+        <MessageBar messageBarType={MessageBarType.info}>
+          Match each item on the left with the correct item on the right
+        </MessageBar>
+        {pairs.map((pair, index) => {
+          const currentMatch = currentMatches.find(m => m.left === pair.left);
+          return (
+            <div key={index} className={styles.matchingRow}>
+              <Stack horizontal tokens={{ childrenGap: 16 }} verticalAlign="center">
+                <div className={styles.matchingLeft}>
+                  <Text variant="medium">{pair.left}</Text>
+                </div>
+                <Text variant="large" styles={{ root: { color: '#0d9488', fontWeight: 600 } }}>→</Text>
+                <Dropdown
+                  placeholder="Select a match..."
+                  selectedKey={currentMatch?.right || undefined}
+                  options={rightOptions}
+                  onChange={(_ev, option) => {
+                    if (option) {
+                      const newMatches = currentMatches.map(m =>
+                        m.left === pair.left ? { left: m.left, right: option.key as string } : m
+                      );
+                      // Ensure all pairs have entries
+                      const updatedMatches = pairs.map(p => {
+                        const existing = newMatches.find(m => m.left === p.left);
+                        return existing || { left: p.left, right: "" };
+                      });
+                      this.handleAnswerChange(question.Id, updatedMatches);
+                    }
+                  }}
+                  styles={{ root: { minWidth: 200 } }}
+                />
+              </Stack>
+            </div>
+          );
+        })}
+      </Stack>
+    );
+  }
+
+  // --- Ordering ---
+  private renderOrdering(question: IQuizQuestion, userOrder: string[] | undefined): JSX.Element {
+    let items: { id: string; text: string; correctOrder: number }[] = [];
+    try {
+      items = question.OrderingItems ? JSON.parse(question.OrderingItems) : [];
+    } catch {
+      items = [];
+    }
+
+    // Initialize order: use user's current order, or default shuffled order
+    const currentOrder = userOrder || items.map(i => i.id);
+
+    const orderedItems = currentOrder.map(id => items.find(i => i.id === id)).filter(Boolean) as typeof items;
+
+    const moveItem = (fromIndex: number, toIndex: number): void => {
+      const newOrder = [...currentOrder];
+      const [moved] = newOrder.splice(fromIndex, 1);
+      newOrder.splice(toIndex, 0, moved);
+      this.handleAnswerChange(question.Id, newOrder);
+    };
+
+    return (
+      <Stack tokens={{ childrenGap: 12 }}>
+        <MessageBar messageBarType={MessageBarType.info}>
+          Arrange the items in the correct order using the arrow buttons
+        </MessageBar>
+        {orderedItems.map((item, index) => (
+          <div key={item.id} className={styles.orderingItem}>
+            <Stack horizontal tokens={{ childrenGap: 12 }} verticalAlign="center">
+              <div className={styles.orderNumber}>
+                <Text variant="medium" styles={{ root: { fontWeight: 700, color: 'white' } }}>
+                  {index + 1}
+                </Text>
+              </div>
+              <Text variant="medium" styles={{ root: { flex: 1 } }}>{item.text}</Text>
+              <Stack horizontal tokens={{ childrenGap: 4 }}>
+                <IconButton
+                  iconProps={{ iconName: "ChevronUp" }}
+                  disabled={index === 0}
+                  onClick={() => moveItem(index, index - 1)}
+                  title="Move up"
+                  styles={{ root: { height: 32, width: 32 } }}
+                />
+                <IconButton
+                  iconProps={{ iconName: "ChevronDown" }}
+                  disabled={index === orderedItems.length - 1}
+                  onClick={() => moveItem(index, index + 1)}
+                  title="Move down"
+                  styles={{ root: { height: 32, width: 32 } }}
+                />
+              </Stack>
+            </Stack>
+          </div>
+        ))}
+      </Stack>
+    );
+  }
+
+  // --- Rating Scale ---
+  private renderRatingScale(question: IQuizQuestion, userRating: number | undefined): JSX.Element {
+    const min = question.ScaleMin ?? 1;
+    const max = question.ScaleMax ?? 5;
+
+    let labels: { min?: string; max?: string; mid?: string } = {};
+    try {
+      labels = question.ScaleLabels ? JSON.parse(question.ScaleLabels) : {};
+    } catch {
+      labels = {};
+    }
+
+    return (
+      <Stack tokens={{ childrenGap: 16 }}>
+        <Stack horizontal horizontalAlign="space-between">
+          <Text variant="small" styles={{ root: { color: '#605e5c' } }}>{labels.min || `${min}`}</Text>
+          {labels.mid && <Text variant="small" styles={{ root: { color: '#605e5c' } }}>{labels.mid}</Text>}
+          <Text variant="small" styles={{ root: { color: '#605e5c' } }}>{labels.max || `${max}`}</Text>
+        </Stack>
+        <Slider
+          min={min}
+          max={max}
+          step={1}
+          value={userRating ?? min}
+          showValue
+          onChange={(value: number) => this.handleAnswerChange(question.Id, value)}
+          styles={{ root: { marginTop: 8 } }}
+        />
+        <div className={styles.ratingDisplay}>
+          <Text variant="xxLarge" styles={{ root: { fontWeight: 700, color: '#0d9488' } }}>
+            {userRating !== undefined ? userRating : '-'}
+          </Text>
+          <Text variant="small" styles={{ root: { color: '#605e5c' } }}>
+            Selected value
+          </Text>
+        </div>
+      </Stack>
+    );
+  }
+
+  // --- Essay ---
+  private renderEssay(question: IQuizQuestion, userAnswer: string | undefined): JSX.Element {
+    const wordCount = (userAnswer || "").trim().split(/\s+/).filter(w => w.length > 0).length;
+
+    return (
+      <Stack tokens={{ childrenGap: 12 }}>
+        <MessageBar messageBarType={MessageBarType.info}>
+          This question requires a written response and will be manually reviewed.
+        </MessageBar>
+        <TextField
+          multiline
+          rows={10}
+          value={userAnswer || ""}
+          onChange={(_ev, value) => this.handleAnswerChange(question.Id, value || "")}
+          placeholder="Write your essay response here..."
+          resizable
+        />
+        <Stack horizontal horizontalAlign="space-between">
+          <Text variant="small" styles={{ root: { color: '#605e5c' } }}>
+            Word count: {wordCount}
+          </Text>
+          <Stack horizontal tokens={{ childrenGap: 8 }}>
+            {question.MinWordCount !== undefined && question.MinWordCount > 0 && (
+              <Text variant="small" styles={{
+                root: { color: wordCount < question.MinWordCount ? '#d13438' : '#107c10' }
+              }}>
+                Min: {question.MinWordCount} words
+              </Text>
+            )}
+            {question.MaxWordCount !== undefined && question.MaxWordCount > 0 && (
+              <Text variant="small" styles={{
+                root: { color: wordCount > question.MaxWordCount ? '#d13438' : '#605e5c' }
+              }}>
+                Max: {question.MaxWordCount} words
+              </Text>
+            )}
+          </Stack>
+        </Stack>
+      </Stack>
+    );
+  }
+
+  // --- Image Choice ---
+  private renderImageChoice(question: IQuizQuestion, userAnswer: string | undefined): JSX.Element {
+    const options = [
+      { key: "A", text: question.OptionA, image: question.OptionAImage },
+      { key: "B", text: question.OptionB, image: question.OptionBImage },
+      { key: "C", text: question.OptionC, image: question.OptionCImage },
+      { key: "D", text: question.OptionD, image: question.OptionDImage }
+    ].filter(opt => opt.text || opt.image);
+
+    return (
+      <Stack tokens={{ childrenGap: 16 }}>
+        <MessageBar messageBarType={MessageBarType.info}>
+          Select the correct image
+        </MessageBar>
+        <div className={styles.imageChoiceGrid}>
+          {options.map(option => (
+            <div
+              key={option.key}
+              className={`${styles.imageChoiceCard} ${userAnswer === option.key ? styles.selected : ''}`}
+              onClick={() => this.handleAnswerChange(question.Id, option.key)}
+            >
+              {option.image && (
+                <img
+                  src={option.image}
+                  alt={`Option ${option.key}`}
+                  className={styles.imageChoiceImg}
+                />
+              )}
+              <div className={styles.imageChoiceLabel}>
+                <Text variant="medium">{option.key}. {option.text || ''}</Text>
+              </div>
+              {userAnswer === option.key && (
+                <div className={styles.imageChoiceCheck}>
+                  <IconButton iconProps={{ iconName: "CheckMark" }} />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </Stack>
+    );
+  }
+
+  // --- Hotspot ---
+  private renderHotspot(question: IQuizQuestion, userAnswer: { x: number; y: number } | undefined): JSX.Element {
+    let hotspotData: { imageUrl: string; regions: { x: number; y: number; width: number; height: number; isCorrect: boolean }[] } | null = null;
+    try {
+      hotspotData = question.HotspotData ? JSON.parse(question.HotspotData) : null;
+    } catch {
+      hotspotData = null;
+    }
+
+    if (!hotspotData || !hotspotData.imageUrl) {
+      return <Text>Hotspot question data is not configured properly.</Text>;
+    }
+
+    const handleImageClick = (e: React.MouseEvent<HTMLDivElement>): void => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = Math.round(((e.clientX - rect.left) / rect.width) * 100);
+      const y = Math.round(((e.clientY - rect.top) / rect.height) * 100);
+      this.handleAnswerChange(question.Id, { x, y });
+    };
+
+    return (
+      <Stack tokens={{ childrenGap: 16 }}>
+        <MessageBar messageBarType={MessageBarType.info}>
+          Click on the correct area of the image
+        </MessageBar>
+        <div
+          className={styles.hotspotContainer}
+          onClick={handleImageClick}
+          style={{ position: 'relative', cursor: 'crosshair' }}
+        >
+          <img
+            src={hotspotData.imageUrl}
+            alt="Hotspot question"
+            style={{ width: '100%', display: 'block', borderRadius: 8 }}
+          />
+          {userAnswer && (
+            <div
+              className={styles.hotspotMarker}
+              style={{
+                position: 'absolute',
+                left: `${userAnswer.x}%`,
+                top: `${userAnswer.y}%`,
+                transform: 'translate(-50%, -50%)'
+              }}
+            />
+          )}
+        </div>
+        {userAnswer && (
+          <Text variant="small" styles={{ root: { color: '#605e5c' } }}>
+            Click position: ({userAnswer.x}%, {userAnswer.y}%) — Click again to change
+          </Text>
+        )}
+      </Stack>
+    );
+  }
+
+  // ============================================================================
+  // RENDER — CHROME (Timer, Nav, Results)
+  // ============================================================================
 
   private renderTimer(): JSX.Element {
     const { timeRemaining } = this.state;
@@ -398,7 +942,7 @@ export class QuizTaker extends React.Component<IQuizTakerProps, IQuizTakerState>
         <Stack horizontal tokens={{ childrenGap: 8 }} verticalAlign="center">
           <IconButton iconProps={{ iconName: "Clock" }} />
           <Text variant="large">
-            {minutes}:{seconds.toString().padStart(2, '0')}
+            {minutes}:{seconds < 10 ? '0' + seconds : seconds}
           </Text>
         </Stack>
       </div>
@@ -431,15 +975,15 @@ export class QuizTaker extends React.Component<IQuizTakerProps, IQuizTakerState>
         </div>
         <Stack className={styles.navLegend} tokens={{ childrenGap: 8 }}>
           <Stack horizontal tokens={{ childrenGap: 8 }} verticalAlign="center">
-            <div className={`${styles.legendBox} ${styles.current}`}></div>
+            <div className={`${styles.legendBox} ${styles.current}`} />
             <Text variant="small">Current</Text>
           </Stack>
           <Stack horizontal tokens={{ childrenGap: 8 }} verticalAlign="center">
-            <div className={`${styles.legendBox} ${styles.answered}`}></div>
+            <div className={`${styles.legendBox} ${styles.answered}`} />
             <Text variant="small">Answered</Text>
           </Stack>
           <Stack horizontal tokens={{ childrenGap: 8 }} verticalAlign="center">
-            <div className={`${styles.legendBox}`}></div>
+            <div className={styles.legendBox} />
             <Text variant="small">Not Answered</Text>
           </Stack>
         </Stack>
@@ -451,6 +995,10 @@ export class QuizTaker extends React.Component<IQuizTakerProps, IQuizTakerState>
     const { result, quiz, questions } = this.state;
 
     if (!result || !quiz) return <></>;
+
+    // Calculate remaining attempts correctly using attemptNumber, not attemptId
+    const attemptsUsed = result.attemptId; // This is actually the attempt count for this user
+    const remainingAttempts = Math.max(0, quiz.MaxAttempts - attemptsUsed);
 
     return (
       <div className={styles.resultsContainer}>
@@ -476,8 +1024,13 @@ export class QuizTaker extends React.Component<IQuizTakerProps, IQuizTakerState>
               </Text>
               {result.passed && (
                 <div className={styles.pointsEarned}>
-                  <Text variant="medium">🏆 +{result.pointsEarned} points earned!</Text>
+                  <Text variant="medium">+{result.pointsEarned} points earned!</Text>
                 </div>
+              )}
+              {result.requiresManualReview && (
+                <MessageBar messageBarType={MessageBarType.warning}>
+                  {result.pendingQuestions} question(s) require manual review. Your final score may change.
+                </MessageBar>
               )}
             </Stack>
           </div>
@@ -486,7 +1039,7 @@ export class QuizTaker extends React.Component<IQuizTakerProps, IQuizTakerState>
           <MessageBar messageBarType={result.passed ? MessageBarType.success : MessageBarType.error}>
             {result.passed
               ? `Congratulations! You passed with ${result.percentage}%. Passing score is ${quiz.PassingScore}%.`
-              : `You need ${quiz.PassingScore}% to pass. You scored ${result.percentage}%. You have ${quiz.MaxAttempts - result.attemptId} attempt(s) remaining.`}
+              : `You need ${quiz.PassingScore}% to pass. You scored ${result.percentage}%. You have ${remainingAttempts} attempt(s) remaining.`}
           </MessageBar>
 
           {/* Answer Review */}
@@ -506,9 +1059,9 @@ export class QuizTaker extends React.Component<IQuizTakerProps, IQuizTakerState>
                         <Text variant="medium">
                           Question {index + 1}
                         </Text>
-                        <div className={answer.isCorrect ? styles.correctBadge : styles.incorrectBadge}>
+                        <div className={answer.isCorrect ? styles.correctBadge : (answer.isPartiallyCorrect ? styles.partialBadge : styles.incorrectBadge)}>
                           <Text variant="small">
-                            {answer.isCorrect ? "✓ Correct" : "✗ Incorrect"}
+                            {answer.isCorrect ? "Correct" : (answer.isPartiallyCorrect ? "Partial" : "Incorrect")}
                           </Text>
                         </div>
                       </Stack>
@@ -517,16 +1070,25 @@ export class QuizTaker extends React.Component<IQuizTakerProps, IQuizTakerState>
 
                       <Stack tokens={{ childrenGap: 8 }}>
                         <Text variant="small" className={styles.labelText}>
-                          Your answer: <strong>{answer.selectedAnswer}</strong>
+                          Your answer: <strong>{this.formatUserAnswer(answer)}</strong>
                         </Text>
                         {!answer.isCorrect && (
                           <Text variant="small" className={styles.labelText}>
                             Correct answer: <strong>{question.CorrectAnswer}</strong>
                           </Text>
                         )}
+                        <Text variant="small" className={styles.labelText}>
+                          Points: {answer.pointsEarned} / {answer.maxPoints}
+                        </Text>
                       </Stack>
 
-                      {question.Explanation && (
+                      {answer.feedback && (
+                        <MessageBar messageBarType={MessageBarType.info}>
+                          {answer.feedback}
+                        </MessageBar>
+                      )}
+
+                      {question.Explanation && !answer.feedback && (
                         <MessageBar messageBarType={MessageBarType.info}>
                           {question.Explanation}
                         </MessageBar>
@@ -540,15 +1102,33 @@ export class QuizTaker extends React.Component<IQuizTakerProps, IQuizTakerState>
 
           {/* Actions */}
           <Stack horizontal tokens={{ childrenGap: 16 }} horizontalAlign="center">
-            <PrimaryButton text="Close" onClick={this.props.onCancel} />
-            {!result.passed && (
-              <DefaultButton text="Retake Quiz" onClick={() => window.location.reload()} />
+            <PrimaryButton text="Close" onClick={this.handleCancel} />
+            {!result.passed && remainingAttempts > 0 && (
+              <DefaultButton
+                text="Retake Quiz"
+                onClick={() => this.retakeQuiz()}
+              />
             )}
           </Stack>
         </Stack>
       </div>
     );
   }
+
+  /** Format a graded answer for display in the review */
+  private formatUserAnswer(answer: IQuizAnswer): string {
+    if (answer.essayText) return answer.essayText.substring(0, 100) + (answer.essayText.length > 100 ? '...' : '');
+    if (answer.selectedAnswers && answer.selectedAnswers.length > 0) return answer.selectedAnswers.join(', ');
+    if (answer.matchingAnswers) return answer.matchingAnswers.map(m => `${m.left} → ${m.right}`).join(', ');
+    if (answer.orderingAnswers) return answer.orderingAnswers.join(' → ');
+    if (answer.ratingValue !== undefined) return String(answer.ratingValue);
+    if (answer.hotspotCoordinates) return `(${answer.hotspotCoordinates.x}%, ${answer.hotspotCoordinates.y}%)`;
+    return answer.selectedAnswer || "(no answer)";
+  }
+
+  // ============================================================================
+  // MAIN RENDER
+  // ============================================================================
 
   public render(): React.ReactElement<IQuizTakerProps> {
     const {
@@ -557,23 +1137,30 @@ export class QuizTaker extends React.Component<IQuizTakerProps, IQuizTakerState>
       currentQuestionIndex,
       error,
       isSubmitting,
+      isLoading,
       showResults,
       answers
     } = this.state;
 
-    if (error) {
+    if (error && !showResults) {
       return (
         <div className={styles.quizTaker}>
           <MessageBar messageBarType={MessageBarType.error}>
             {error}
           </MessageBar>
-          <DefaultButton text="Close" onClick={this.props.onCancel} style={{ marginTop: 16 }} />
+          <DefaultButton text="Close" onClick={this.handleCancel} style={{ marginTop: 16 }} />
         </div>
       );
     }
 
-    if (!quiz || questions.length === 0) {
-      return <div className={styles.quizTaker}>Loading quiz...</div>;
+    if (isLoading || !quiz || questions.length === 0) {
+      return (
+        <div className={styles.quizTaker}>
+          <Stack horizontalAlign="center" tokens={{ childrenGap: 16, padding: 48 }}>
+            <Spinner size={SpinnerSize.large} label="Loading quiz..." />
+          </Stack>
+        </div>
+      );
     }
 
     if (showResults) {
@@ -586,7 +1173,7 @@ export class QuizTaker extends React.Component<IQuizTakerProps, IQuizTakerState>
 
     const currentQuestion = questions[currentQuestionIndex];
     const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
-    const answeredCount = Array.from(answers.keys()).length;
+    const answeredCount = answers.size;
 
     return (
       <div className={styles.quizTaker}>
@@ -635,7 +1222,7 @@ export class QuizTaker extends React.Component<IQuizTakerProps, IQuizTakerState>
 
                 <DefaultButton
                   text="Cancel"
-                  onClick={this.props.onCancel}
+                  onClick={this.handleCancel}
                   disabled={isSubmitting}
                 />
               </Stack>

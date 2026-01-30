@@ -288,7 +288,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
   public async componentDidMount(): Promise<void> {
     injectPortalStyles();
     await this.initializeUserContext();
-    this.initializeSampleData();
+    await this.initializeFeaturedAndRecent();
     await this.loadPolicies();
 
     // Start the notification queue processor
@@ -304,31 +304,69 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
   }
 
   /**
-   * Initialize sample data for Featured and Recently Viewed sections
-   * In production, this would come from SharePoint lists or user preferences
+   * Load featured and recently published policies from SharePoint.
+   * Falls back to sample data if the list query fails.
    */
+  private async initializeFeaturedAndRecent(): Promise<void> {
+    try {
+      // Featured: first 3 published mandatory policies
+      const featuredItems = await this.props.sp.web.lists.getByTitle('PM_Policies')
+        .items
+        .filter("PolicyStatus eq 'Published'")
+        .select('Id', 'Title', 'PolicyName', 'PolicyCategory', 'IsMandatory')
+        .orderBy('Modified', false)
+        .top(3)();
+
+      const iconMap: Record<string, string> = {
+        'IT Security': 'Shield', 'HR': 'People', 'Compliance': 'Lock',
+        'Data Protection': 'Lock', 'Health & Safety': 'HeartFill', 'Finance': 'Money'
+      };
+
+      const featuredPolicies: IFeaturedPolicy[] = featuredItems.map((item: any) => ({
+        id: item.Id,
+        title: item.PolicyName || item.Title,
+        iconName: iconMap[item.PolicyCategory] || 'Document',
+        readTime: 10,
+        isMandatory: !!item.IsMandatory
+      }));
+
+      // Recently viewed: next 5 most recently modified published policies
+      const recentItems = await this.props.sp.web.lists.getByTitle('PM_Policies')
+        .items
+        .filter("PolicyStatus eq 'Published'")
+        .select('Id', 'Title', 'PolicyName', 'Modified')
+        .orderBy('Modified', false)
+        .top(5)();
+
+      const recentlyViewedPolicies: IRecentlyViewedPolicy[] = recentItems.map((item: any) => ({
+        id: item.Id,
+        title: item.PolicyName || item.Title,
+        viewedDate: new Date(item.Modified)
+      }));
+
+      this.setState({ featuredPolicies, recentlyViewedPolicies });
+    } catch (err) {
+      console.warn('Could not load featured/recent from SharePoint, using sample data:', err);
+      this.initializeSampleData();
+    }
+  }
+
+  /** Fallback sample data for featured/recently viewed */
   private initializeSampleData(): void {
-    // Sample featured policies
     const featuredPolicies: IFeaturedPolicy[] = [
       { id: 1, title: 'Information Security Policy', iconName: 'Shield', readTime: 10, isMandatory: true },
       { id: 2, title: 'Code of Conduct', iconName: 'People', readTime: 15, isMandatory: true },
       { id: 3, title: 'Data Privacy Policy', iconName: 'Lock', readTime: 12, isMandatory: true }
     ];
-
-    // Sample recently viewed policies
     const now = new Date();
     const recentlyViewedPolicies: IRecentlyViewedPolicy[] = [
-      { id: 4, title: 'Remote Work Policy', viewedDate: new Date(now.getTime() - 2 * 60 * 60 * 1000) }, // 2 hours ago
-      { id: 5, title: 'Expense Policy', viewedDate: new Date(now.getTime() - 24 * 60 * 60 * 1000) }, // Yesterday
-      { id: 6, title: 'IT Security Guidelines', viewedDate: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000) }, // 2 days ago
-      { id: 7, title: 'Health & Safety', viewedDate: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000) }, // 3 days ago
-      { id: 8, title: 'Anti-Bribery Policy', viewedDate: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000) } // Last week
+      { id: 4, title: 'Remote Work Policy', viewedDate: new Date(now.getTime() - 2 * 60 * 60 * 1000) },
+      { id: 5, title: 'Expense Policy', viewedDate: new Date(now.getTime() - 24 * 60 * 60 * 1000) },
+      { id: 6, title: 'IT Security Guidelines', viewedDate: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000) },
+      { id: 7, title: 'Health & Safety', viewedDate: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000) },
+      { id: 8, title: 'Anti-Bribery Policy', viewedDate: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000) }
     ];
-
-    this.setState({
-      featuredPolicies,
-      recentlyViewedPolicies
-    });
+    this.setState({ featuredPolicies, recentlyViewedPolicies });
   }
 
   private async initializeUserContext(): Promise<void> {
@@ -946,7 +984,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
               <PrimaryButton
                 text={status === 'overdue' ? 'Acknowledge Now' : 'Read & Acknowledge'}
                 iconProps={{ iconName: 'ReadingMode' }}
-                href={`/SitePages/PolicyDetails.aspx?policyId=${policy.Id}`}
+                href={`/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${policy.Id}`}
               />
             )}
           </Stack>
@@ -973,8 +1011,8 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
       { key: 'actions', name: 'Actions', minWidth: 150,
         onRender: (item: IPolicy) => (
           <Stack horizontal tokens={{ childrenGap: 8 }}>
-            <IconButton iconProps={{ iconName: 'Edit' }} title="Edit" href={`/SitePages/PolicyAuthor.aspx?policyId=${item.Id}`} />
-            <IconButton iconProps={{ iconName: 'View' }} title="Preview" href={`/SitePages/PolicyDetails.aspx?policyId=${item.Id}&preview=true`} />
+            <IconButton iconProps={{ iconName: 'Edit' }} title="Edit" href={`/sites/PolicyManager/SitePages/PolicyAuthor.aspx?policyId=${item.Id}`} />
+            <IconButton iconProps={{ iconName: 'View' }} title="Preview" href={`/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${item.Id}&preview=true`} />
           </Stack>
         )
       }
@@ -1089,7 +1127,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
           <Stack horizontal tokens={{ childrenGap: 8 }}>
             <PrimaryButton text="Approve" iconProps={{ iconName: 'Accept' }} onClick={() => { void this.handleApprovePolicy(item.Id); }} />
             <DefaultButton text="Reject" iconProps={{ iconName: 'Cancel' }} onClick={() => { void this.handleRejectPolicy(item.Id, 'Rejected by manager'); }} />
-            <IconButton iconProps={{ iconName: 'View' }} title="Preview" href={`/SitePages/PolicyDetails.aspx?policyId=${item.Id}&preview=true`} />
+            <IconButton iconProps={{ iconName: 'View' }} title="Preview" href={`/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${item.Id}&preview=true`} />
           </Stack>
         )
       }
@@ -1804,7 +1842,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
             </div>
             <button
               className={styles.btnView}
-              onClick={() => { window.location.href = `/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${policy.Id}`; }}
+              onClick={() => { window.location.href = `/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${policy.Id}&mode=browse`; }}
             >
               View →
             </button>
@@ -1921,7 +1959,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
                     <td>{readTime} min</td>
                     <td>{modifiedDate ? modifiedDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}</td>
                     <td>
-                      <PrimaryButton text="View" href={`/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${policy.Id}`} className={styles.btnViewSmall} />
+                      <PrimaryButton text="View" href={`/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${policy.Id}&mode=browse`} className={styles.btnViewSmall} />
                     </td>
                   </tr>
                   {isExpanded && (
@@ -2015,7 +2053,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
                                 <PrimaryButton
                                   text="View Details"
                                   iconProps={{ iconName: 'View' }}
-                                  href={`/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${policy.Id}`}
+                                  href={`/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${policy.Id}&mode=browse`}
                                   styles={{ root: { width: '100%' } }}
                                 />
                                 <DefaultButton
@@ -2249,7 +2287,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
             <DefaultButton
               text="View Details"
               iconProps={{ iconName: 'View' }}
-              href={`/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${policy.Id}`}
+              href={`/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${policy.Id}&mode=browse`}
             />
           </Stack>
         </Stack>
@@ -2306,7 +2344,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
             <DefaultButton
               text="View"
               iconProps={{ iconName: 'View' }}
-              href={`/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${policy.Id}`}
+              href={`/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${policy.Id}&mode=browse`}
             />
           </Stack>
         </Stack>

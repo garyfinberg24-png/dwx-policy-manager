@@ -19,7 +19,7 @@
 - **Suite**: DWx (Digital Workplace Excellence)
 - **Company**: First Digital
 - **Tagline**: Policy Governance & Compliance
-- **Current Version**: 1.2.0
+- **Current Version**: 1.1.0
 - **Package ID**: `12538121-8a6b-4e41-8bc7-17f252d5c36e`
 - **SharePoint Site**: https://mf7m.sharepoint.com/sites/PolicyManager
 
@@ -97,13 +97,21 @@ policy-manager/
 │   │   ├── PageSubheader/      # Page subheader component
 │   │   ├── PolicyManagerHeader/ # Policy Manager branded header with role-based nav
 │   │   ├── PolicyManagerSplashScreen/
-│   │   └── QuizTaker/          # Quiz-taking component
+│   │   ├── QuizBuilder/        # Quiz creation, AI generation, question management
+│   │   └── QuizTaker/          # Quiz-taking component (11 question types)
 │   ├── services/          # 141+ business logic services + PolicyRoleService
 │   ├── models/            # 56+ TypeScript interfaces
 │   ├── hooks/             # Custom React hooks (useDialog, etc.)
 │   ├── constants/         # SharePointListNames.ts, etc.
 │   ├── styles/            # Centralized styling (fluent-mixins.scss)
 │   └── utils/             # pnpConfig, injectPortalStyles, etc.
+├── azure-functions/
+│   └── quiz-generator/    # Azure Function — AI Quiz Question Generator
+│       ├── src/functions/  # generateQuizQuestions.ts (HTTP trigger)
+│       ├── infra/          # Bicep IaC + deploy.ps1 deployment script
+│       ├── host.json
+│       ├── package.json
+│       └── tsconfig.json
 ├── scripts/
 │   └── policy-management/ # PnP PowerShell provisioning scripts
 ├── docs/                  # Documentation + HTML mockups
@@ -375,6 +383,11 @@ npm run clean
 3. Add comprehensive audit logging for compliance
 4. Handle errors gracefully with user-friendly messages
 
+### PowerShell / Provisioning Scripts
+1. **Always assume the user is already connected to SharePoint** — never include `Connect-PnPOnline` or `Disconnect-PnPOnline` in scripts
+2. When a SharePoint site URL is needed, use: `https://mf7m.sharepoint.com/sites/PolicyManager`
+3. Scripts should be idempotent — check for existing lists/fields before creating
+
 ### Adding a New Webpart
 1. Create webpart folder under `src/webparts/`
 2. Add manifest.json, WebPart.ts, components/, loc/
@@ -383,44 +396,122 @@ npm run clean
 
 ---
 
-## Session State (Last Updated: 29 Jan 2026 — Session 3)
+## Azure Functions — AI Quiz Generator
 
-### Recently Completed (Session 3 — 29 Jan 2026)
-- **PolicyRoleService** — 4-tier role hierarchy (User/Author/Manager/Admin) with nav filtering
-- **Role-based nav filtering** — Threaded through JmlAppLayout → JmlAppHeader → PolicyManagerHeader
-- **DWx Policy Author View** webpart — Author dashboard with 4 tabs (My Policies, Approvals, Delegations, Activity)
-- **DWx Policy Manager View** webpart — Manager dashboard with 6 tabs (Dashboard, Team Compliance, Approvals, Delegations, Policy Reviews, Reports)
-- **Policy Distribution** webpart — Campaign management with 4 tabs
-- **Policy Analytics** webpart — Executive dashboard with 6 tabs (Executive, Policy Metrics, Acknowledgements, SLA, Compliance, Audit)
-- **Add Delegation panel** restored in Author View Delegations tab (480px fly-in with full form)
-- **Featured Policies/Recently Viewed** hidden by default (changed from `!== false` to `=== true`)
-- **Template panel width** reduced to 750px (from PanelType.large ~940px)
-- **V3 Accordion styling** for Create Policy wizard
-- **Manager View nav item** added to PolicyManagerHeader with custom SVG icon
-- **Package size fix** — `gulp clean` before build to prevent stale artifact accumulation (14MB → 2.7MB)
-- Config.json updated: 9 → 14 webpart bundles registered
-- Ship build passes clean with all 14 webpart manifests (2.7MB package)
-- All changes committed (11 commits) and pushed to remote
+### Architecture
+The Quiz Builder integrates with Azure OpenAI GPT-4o via an Azure Function to generate quiz questions from policy documents.
 
-### Previously Completed (Sessions 1-2)
-- Search Center webpart (jmlPolicySearch) — fully built and registered
-- Help Center webpart (jmlPolicyHelp) — fully built and registered
-- MyPolicies rewrite — clean class component replacing broken version
-- Policy Admin restructure — sidebar + content layout with 12 nav sections
-- 4 new admin components: Naming Rules, SLA Targets, Data Lifecycle, Navigation
-- Expanded row styling fix in PolicyHub table view
-- Approval lists provisioning (08-Approval-Lists.ps1)
-- Seed data for approvals + notifications
+```
+QuizBuilder (SPFx) → Azure Function (Node.js 18) → Azure OpenAI (GPT-4o)
+                                                  ↗ Key Vault (API key)
+```
+
+### Deployed Resources (Resource Group: `dwx-pm-quiz-rg-prod`)
+| Resource | Name | Region |
+|----------|------|--------|
+| Azure OpenAI | `dwx-pm-openai-prod` | swedencentral |
+| Function App | `dwx-pm-quiz-func-prod` | swedencentral |
+| Key Vault | `dwx-pm-kv-ziqv6cfh2ck3o` | swedencentral |
+| Storage Account | `dwxpmstziqv6cfh2ck3o` | swedencentral |
+| App Insights | `dwx-pm-quiz-insights-prod` | swedencentral |
+| Log Analytics | `dwx-pm-quiz-logs-prod` | swedencentral |
+| App Service Plan | `dwx-pm-quiz-plan-prod` (Y1 Consumption) | swedencentral |
+
+### Function Endpoint
+```
+POST https://dwx-pm-quiz-func-prod.azurewebsites.net/api/generate-quiz-questions?code=<function-key>
+```
+
+### Infrastructure as Code
+- **Bicep template**: `azure-functions/quiz-generator/infra/main.bicep`
+- **Parameters**: `azure-functions/quiz-generator/infra/main.parameters.json`
+- **Deployment script**: `azure-functions/quiz-generator/infra/deploy.ps1`
+
+### Redeployment
+```powershell
+cd azure-functions/quiz-generator/infra
+.\deploy.ps1 -Environment prod -Location swedencentral
+```
+
+---
+
+## Quiz System
+
+### Question Types (11 total)
+1. Multiple Choice — 4 options (A-D), single correct answer
+2. True/False — Binary choice
+3. Multiple Select — Multiple correct answers (semicolon-separated)
+4. Short Answer — Free text with expected answer
+5. Fill in the Blank — Blank positions with accepted answers (JSON)
+6. Matching — Left-right pair matching (JSON array)
+7. Ordering — Sequence ordering (JSON array with correctOrder)
+8. Rating Scale — Numeric scale with tolerance
+9. Essay — Long-form with word count limits
+10. Image Choice — Image-based multiple choice
+11. Hotspot — Click-on-image coordinate selection
+
+### Quiz Lists (SharePoint)
+| List | Purpose |
+|------|---------|
+| PM_PolicyQuizzes | Quiz definitions (settings, passing score, attempts) |
+| PM_PolicyQuizQuestions | Individual questions with type-specific fields |
+| PM_PolicyQuizResults | User attempt results and scores |
+| PM_PolicyQuizAttempts | Individual attempt tracking |
+| PM_PolicyQuizAnswers | Per-question answer records |
+| PM_PolicyQuizFeedback | User feedback on quizzes |
+
+### AI Question Generation
+The QuizBuilder's "AI Generate" panel calls the Azure Function with:
+- Policy document text (extracted from SharePoint)
+- Question count, difficulty level, question types
+- Returns structured JSON questions ready for import into SharePoint lists
+
+---
+
+## Session State (Last Updated: 30 Jan 2026 — Session 4)
+
+### Recently Completed (Session 4 — 30 Jan 2026)
+
+#### Quiz System Overhaul
+- **QuizTaker rewrite** — Complete rewrite with proper TypeScript (removed `@ts-nocheck`), all 11 question type renderers, timer leak fix, retake fix, remaining attempts fix
+- **QuizService type safety** — Removed `@ts-nocheck`, fixed unused members, fixed `delete` operator on non-optional properties
+- **QuizBuilder enhancements** — Removed `@ts-nocheck`, added AI Generate panel, move up/down/duplicate buttons per question
+- **Quiz provisioning** — Updated `02-Quiz-Lists.ps1` with 6 quiz-related lists and all question type fields
+
+#### AI Quiz Generator (Azure Function)
+- **Azure Function** — `generateQuizQuestions.ts` HTTP trigger with PDF extraction, GPT-4o prompt engineering, structured JSON output
+- **Azure Infrastructure** — Bicep template provisioning OpenAI, Functions, Key Vault, Storage, App Insights, Log Analytics, RBAC
+- **Deployed to production** — `dwx-pm-quiz-func-prod` in swedencentral, tested and working
+- **QuizBuilder integration** — Function URL hardcoded as default in AI Generate panel
+
+#### Policy Details Integration
+- **QuizTaker wired to live data** — PolicyDetails looks up active published quiz via `QuizService.getQuizzesByPolicy()`, renders `<QuizTaker>` with fallback to mock quiz
+
+#### Version & Packaging
+- **Version bump** — Solution 1.0.0.0 → 1.1.0.0, package.json 1.0.0 → 1.1.0 (CDN cache busting)
+- **Ship build** — Zero errors, all 14 webpart manifests
+
+### Previously Completed (Sessions 1-3)
+- PolicyRoleService — 4-tier role hierarchy with nav filtering
+- Role-based nav filtering threaded through JmlAppLayout → PolicyManagerHeader
+- DWx Policy Author View webpart — 4 tabs (My Policies, Approvals, Delegations, Activity)
+- DWx Policy Manager View webpart — 6 tabs (Dashboard, Team Compliance, Approvals, Delegations, Reviews, Reports)
+- Policy Distribution webpart — Campaign management with 4 tabs
+- Policy Analytics webpart — Executive dashboard with 6 tabs
+- Search Center, Help Center webparts
+- MyPolicies rewrite, Policy Admin restructure with 12 nav sections
+- Approval lists provisioning, seed data
+- FOUC prevention, splash screen, layout enhancements
 
 ### Known Issues
 - PowerShell scripts starting with numbers need `.\` prefix to execute
-- Featured Policies and Recently Viewed sections hidden by default until Admin Navigation toggle is wired to live data
-- All webparts use mock/sample data — service calls need to be wired when SharePoint lists are provisioned
+- Featured Policies and Recently Viewed sections hidden by default until Admin Navigation toggle is wired
+- SPFx CDN caching may require version bump + app catalog re-upload + hard refresh to see updates
+- `az` CLI not in PATH in VSCode terminal — use full path: `C:\Program Files (x86)\Microsoft SDKs\Azure\CLI2\wbin\az.cmd`
 
 ### Next Steps
-- User testing of Manager View dashboard and Author View
-- Wire PolicyRoleService to actual SharePoint group membership detection
-- Connect Analytics webpart to live data from PolicyAnalyticsService
-- Connect Distribution webpart to live data from PolicyDistributionService
+- User testing of Quiz Builder AI generation with real policy documents
+- Wire remaining webparts to live SharePoint data (Analytics, Distribution)
 - Wire Admin Navigation toggles to control nav item visibility
-- Create SharePoint pages: PolicyAuthor.aspx, PolicyManagerView.aspx, PolicyAnalytics.aspx, PolicyDistribution.aspx
+- Create remaining SharePoint pages if not already created
+- Connect Distribution webpart to live data from PolicyDistributionService

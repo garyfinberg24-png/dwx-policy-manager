@@ -12,6 +12,7 @@ import {
 } from '@fluentui/react';
 import { JmlAppLayout } from '../../../components/JmlAppLayout';
 import { PageSubheader } from '../../../components/PageSubheader';
+import { PM_LISTS } from '../../../constants/SharePointListNames';
 
 // Assigned policy interface
 interface IAssignedPolicy {
@@ -131,16 +132,85 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
     };
   }
 
-  public componentDidMount(): void {
-    setTimeout(() => {
-      const completed = mockPolicies.filter(p => p.status === 'completed').length;
-      const total = mockPolicies.length;
-      this.setState({
-        loading: false,
-        policies: mockPolicies,
-        compliancePercent: total > 0 ? Math.round((completed / total) * 100) : 0,
-      });
-    }, 600);
+  public async componentDidMount(): Promise<void> {
+    try {
+      await this.loadFromSharePoint();
+    } catch (err) {
+      console.warn('Could not load from SharePoint, falling back to mock data:', err);
+      this.loadMockData();
+    }
+  }
+
+  private async loadFromSharePoint(): Promise<void> {
+    const { sp } = this.props;
+
+    // Get current user Id
+    const currentUser = await sp.web.currentUser();
+    const userId = currentUser.Id;
+
+    // Query acknowledgements assigned to this user
+    const items = await sp.web.lists.getByTitle(PM_LISTS.POLICY_ACKNOWLEDGEMENTS)
+      .items
+      .filter(`AckUserId eq ${userId}`)
+      .select(
+        'Id', 'PolicyId', 'PolicyName', 'PolicyNumber', 'PolicyCategory',
+        'AckStatus', 'AssignedDate', 'DueDate', 'AcknowledgedDate',
+        'QuizRequired', 'IsMandatory', 'PolicyVersionNumber'
+      )
+      .top(500)();
+
+    const policies: IAssignedPolicy[] = items.map((item: any) => {
+      const ackStatus: string = item.AckStatus || 'Not Sent';
+      let status: IAssignedPolicy['status'] = 'unread';
+      if (ackStatus === 'Acknowledged') {
+        status = 'completed';
+      } else if (ackStatus === 'In Progress' || ackStatus === 'Opened') {
+        status = 'in-progress';
+      } else if (ackStatus === 'Overdue') {
+        status = 'overdue';
+      } else {
+        // Check if overdue based on DueDate
+        if (item.DueDate && new Date(item.DueDate) < new Date()) {
+          status = 'overdue';
+        }
+      }
+
+      const priority: IAssignedPolicy['priority'] = item.IsMandatory ? 'high' :
+        (item.DueDate && getDaysUntilDue(new Date(item.DueDate)) !== null &&
+         (getDaysUntilDue(new Date(item.DueDate)) as number) <= 7) ? 'medium' : 'low';
+
+      return {
+        id: item.PolicyId || item.Id,
+        title: item.PolicyName || `Policy ${item.PolicyNumber || item.Id}`,
+        category: item.PolicyCategory || 'General',
+        department: item.PolicyCategory || 'General',
+        version: item.PolicyVersionNumber || '1.0',
+        dueDate: item.DueDate ? new Date(item.DueDate) : null,
+        assignedDate: item.AssignedDate ? new Date(item.AssignedDate) : new Date(),
+        status,
+        priority,
+        hasQuiz: !!item.QuizRequired,
+        acknowledgementDate: item.AcknowledgedDate ? new Date(item.AcknowledgedDate) : undefined
+      };
+    });
+
+    const completed = policies.filter(p => p.status === 'completed').length;
+    const total = policies.length;
+    this.setState({
+      loading: false,
+      policies,
+      compliancePercent: total > 0 ? Math.round((completed / total) * 100) : 0,
+    });
+  }
+
+  private loadMockData(): void {
+    const completed = mockPolicies.filter(p => p.status === 'completed').length;
+    const total = mockPolicies.length;
+    this.setState({
+      loading: false,
+      policies: mockPolicies,
+      compliancePercent: total > 0 ? Math.round((completed / total) * 100) : 0,
+    });
   }
 
   private getFilteredPolicies(): IAssignedPolicy[] {

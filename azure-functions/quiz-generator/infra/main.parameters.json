@@ -1,0 +1,30 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "baseName": {
+      "value": "dwx-pm"
+    },
+    "location": {
+      "value": "swedencentral"
+    },
+    "openAiModelName": {
+      "value": "gpt-4o"
+    },
+    "openAiModelVersion": {
+      "value": "2024-08-06"
+    },
+    "openAiCapacity": {
+      "value": 10
+    },
+    "sharePointSiteUrl": {
+      "value": "https://mf7m.sharepoint.com"
+    },
+    "environment": {
+      "value": "prod"
+    },
+    "nodeVersion": {
+      "value": "~18"
+    }
+  }
+}

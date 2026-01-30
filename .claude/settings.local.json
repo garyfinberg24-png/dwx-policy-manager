@@ -52,7 +52,10 @@
       "Bash(git push:*)",
       "Bash(cmd /c:*)",
       "Bash(xargs:*)",
-      "Bash(start \"\" \"c:\\\\Projects\\\\SPFx\\\\PolicyManager\\\\policy-manager\\\\docs\\\\policy-read-mockup.html\")"
+      "Bash(start \"\" \"c:\\\\Projects\\\\SPFx\\\\PolicyManager\\\\policy-manager\\\\docs\\\\policy-read-mockup.html\")",
+      "Bash(az bicep build:*)",
+      "Bash(npm install)",
+      "Bash(Select-Object -Last 3)"
     ]
   }
 }

@@ -1,0 +1,1589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Builder — Policy Manager</title>
+<style>
+/* ============================================================
+   CSS CUSTOM PROPERTIES — Forest Teal Design System
+   ============================================================ */
+:root {
+  --teal-900: #0f4c47;
+  --teal-700: #0f766e;
+  --teal-600: #0d9488;
+  --teal-500: #14b8a6;
+  --teal-100: #ccfbf1;
+  --teal-50: #f0fdfa;
+  --slate-900: #0f172a;
+  --slate-700: #334155;
+  --slate-500: #64748b;
+  --slate-300: #cbd5e1;
+  --slate-200: #e2e8f0;
+  --slate-100: #f1f5f9;
+  --slate-50: #f8fafc;
+  --green-600: #16a34a;
+  --green-100: #dcfce7;
+  --red-600: #dc2626;
+  --red-100: #fee2e2;
+  --amber-600: #d97706;
+  --amber-100: #fef3c7;
+  --blue-600: #2563eb;
+  --blue-100: #dbeafe;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+  --radius-card: 8px;
+  --radius-btn: 6px;
+  --radius-badge: 12px;
+  --font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font-family);
+  background: var(--slate-100);
+  color: var(--slate-900);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+button { font-family: inherit; cursor: pointer; border: none; background: none; }
+input, textarea, select { font-family: inherit; font-size: 14px; }
+
+/* ============================================================
+   HEADER BAR
+   ============================================================ */
+.header {
+  height: 56px;
+  background: linear-gradient(135deg, var(--teal-600), var(--teal-700));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow-md);
+}
+.header-logo {
+  display: flex; align-items: center; gap: 10px;
+  color: #fff; font-size: 18px; font-weight: 600; letter-spacing: -0.3px;
+}
+.header-logo svg { width: 28px; height: 28px; }
+.header-right { display: flex; align-items: center; gap: 16px; }
+.header-icon {
+  width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+  border-radius: 50%; color: rgba(255,255,255,0.85); transition: background 0.15s;
+}
+.header-icon:hover { background: rgba(255,255,255,0.15); }
+.header-avatar {
+  width: 34px; height: 34px; border-radius: 50%; background: var(--teal-900);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 13px; font-weight: 600; border: 2px solid rgba(255,255,255,0.4);
+}
+
+/* ============================================================
+   NAV BAR
+   ============================================================ */
+.nav {
+  height: 40px; background: var(--teal-50); border-bottom: 1px solid var(--slate-200);
+  display: flex; align-items: center; padding: 0 24px; gap: 0;
+}
+.nav-item {
+  height: 40px; padding: 0 16px; display: flex; align-items: center;
+  font-size: 13px; font-weight: 500; color: var(--slate-500);
+  border-bottom: 2px solid transparent; transition: all 0.15s;
+  text-decoration: none;
+}
+.nav-item:hover { color: var(--teal-700); }
+.nav-item.active {
+  color: var(--teal-700); border-bottom-color: var(--teal-600); font-weight: 600;
+}
+
+/* ============================================================
+   PAGE LAYOUT
+   ============================================================ */
+.page-content {
+  max-width: 1200px; margin: 0 auto; padding: 24px;
+  display: flex; gap: 24px; min-height: calc(100vh - 96px);
+}
+
+/* ============================================================
+   LEFT SIDEBAR
+   ============================================================ */
+.sidebar {
+  width: 240px; flex-shrink: 0; position: sticky; top: 80px; align-self: flex-start;
+  display: flex; flex-direction: column; gap: 16px;
+  transition: width 0.25s, opacity 0.25s;
+}
+.sidebar.collapsed { width: 0; opacity: 0; overflow: hidden; pointer-events: none; }
+
+.quiz-info-card {
+  background: #fff; border-radius: var(--radius-card); box-shadow: var(--shadow-sm);
+  border: 1px solid var(--slate-200); padding: 16px;
+}
+.quiz-info-title {
+  font-size: 15px; font-weight: 700; color: var(--slate-900); margin-bottom: 8px;
+  line-height: 1.3;
+}
+.quiz-info-row {
+  display: flex; align-items: center; gap: 6px; margin-bottom: 6px; flex-wrap: wrap;
+}
+.badge {
+  display: inline-flex; align-items: center; padding: 2px 10px; border-radius: var(--radius-badge);
+  font-size: 11px; font-weight: 600; letter-spacing: 0.2px;
+}
+.badge-teal { background: var(--teal-100); color: var(--teal-700); }
+.badge-amber { background: var(--amber-100); color: var(--amber-600); }
+.badge-green { background: var(--green-100); color: var(--green-600); }
+.badge-red { background: var(--red-100); color: var(--red-600); }
+.badge-blue { background: var(--blue-100); color: var(--blue-600); }
+.badge-slate { background: var(--slate-100); color: var(--slate-500); }
+.quiz-info-stats {
+  margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--slate-100);
+  font-size: 12px; color: var(--slate-500); line-height: 1.6;
+}
+.quiz-info-stats span { color: var(--slate-700); font-weight: 600; }
+
+/* Sidebar Nav */
+.sidebar-nav {
+  background: #fff; border-radius: var(--radius-card); box-shadow: var(--shadow-sm);
+  border: 1px solid var(--slate-200); padding: 6px; display: flex; flex-direction: column; gap: 2px;
+}
+.sidebar-nav-item {
+  display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+  border-radius: var(--radius-btn); font-size: 13px; font-weight: 500;
+  color: var(--slate-700); transition: all 0.15s; position: relative;
+}
+.sidebar-nav-item:hover { background: var(--slate-50); color: var(--slate-900); }
+.sidebar-nav-item.active {
+  background: var(--teal-50); color: var(--teal-700); font-weight: 600;
+}
+.sidebar-nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+.sidebar-nav-badge {
+  margin-left: auto; background: var(--teal-100); color: var(--teal-700);
+  font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 10px;
+}
+
+/* ============================================================
+   MAIN CONTENT
+   ============================================================ */
+.main-content {
+  flex: 1; min-width: 0;
+}
+.tab-panel {
+  display: none; opacity: 0;
+  animation: fadeIn 0.2s ease forwards;
+}
+.tab-panel.active { display: block; opacity: 1; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ============================================================
+   TAB 1: QUESTIONS
+   ============================================================ */
+.questions-toolbar {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;
+}
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; background: var(--teal-600); color: #fff;
+  border-radius: var(--radius-btn); font-size: 13px; font-weight: 600;
+  transition: all 0.15s; box-shadow: var(--shadow-sm);
+}
+.btn-primary:hover { background: var(--teal-700); box-shadow: var(--shadow-md); }
+.btn-primary svg { width: 16px; height: 16px; }
+.btn-secondary {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 14px; background: #fff; color: var(--slate-700);
+  border-radius: var(--radius-btn); font-size: 13px; font-weight: 500;
+  border: 1px solid var(--slate-300); transition: all 0.15s;
+}
+.btn-secondary:hover { background: var(--slate-50); border-color: var(--slate-500); }
+.btn-ghost {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 14px; color: var(--slate-500); border-radius: var(--radius-btn);
+  font-size: 13px; font-weight: 500; transition: all 0.15s;
+}
+.btn-ghost:hover { background: var(--slate-100); color: var(--slate-700); }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-danger { color: var(--red-600); }
+.btn-danger:hover { background: var(--red-100); color: var(--red-600); }
+.toolbar-sep { width: 1px; height: 24px; background: var(--slate-200); }
+select.form-select {
+  padding: 8px 32px 8px 12px; border: 1px solid var(--slate-300); border-radius: var(--radius-btn);
+  font-size: 13px; color: var(--slate-700); background: #fff;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center;
+  transition: border-color 0.15s;
+}
+select.form-select:hover { border-color: var(--slate-500); }
+select.form-select:focus { outline: none; border-color: var(--teal-500); box-shadow: 0 0 0 3px rgba(20,184,166,0.15); }
+
+/* Question Cards */
+.question-list { display: flex; flex-direction: column; gap: 12px; }
+.question-card {
+  background: #fff; border-radius: var(--radius-card); border: 1px solid var(--slate-200);
+  box-shadow: var(--shadow-sm); padding: 16px 16px 12px 16px;
+  transition: all 0.2s; position: relative; display: flex; gap: 14px;
+}
+.question-card:hover { box-shadow: var(--shadow-md); border-color: var(--slate-300); }
+.question-card.new-card { animation: slideDown 0.3s ease; }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-12px); max-height: 0; } to { opacity: 1; transform: translateY(0); max-height: 500px; } }
+@keyframes slideUp { from { opacity: 1; max-height: 500px; } to { opacity: 0; max-height: 0; margin: 0; padding: 0; border: 0; } }
+
+.drag-handle {
+  display: flex; flex-direction: column; gap: 2px; padding: 4px 2px; cursor: grab;
+  align-self: flex-start; margin-top: 2px; opacity: 0.35; transition: opacity 0.15s;
+}
+.drag-handle:hover { opacity: 0.7; }
+.drag-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--slate-500); }
+.drag-dots-row { display: flex; gap: 2px; }
+
+.question-number {
+  width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0;
+  background: var(--teal-100); color: var(--teal-700);
+}
+.question-body { flex: 1; min-width: 0; }
+.question-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+.question-text { font-size: 14px; font-weight: 600; color: var(--slate-900); margin-bottom: 10px; line-height: 1.4; }
+.required-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--red-600); flex-shrink: 0; }
+
+/* Answer options */
+.answer-options { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.answer-option {
+  display: flex; align-items: center; gap: 8px; padding: 6px 10px;
+  border-radius: var(--radius-btn); font-size: 13px; color: var(--slate-700);
+  background: var(--slate-50); border: 1px solid transparent;
+}
+.answer-option.correct { background: var(--green-100); color: var(--green-600); border-color: rgba(22,163,74,0.2); font-weight: 600; }
+.answer-radio, .answer-check {
+  width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--slate-300);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.answer-check { border-radius: 3px; }
+.answer-option.correct .answer-radio,
+.answer-option.correct .answer-check {
+  border-color: var(--green-600); background: var(--green-600);
+}
+.answer-option.correct .answer-radio::after,
+.answer-option.correct .answer-check::after {
+  content: ''; display: block;
+}
+.answer-option.correct .answer-radio::after {
+  width: 6px; height: 6px; border-radius: 50%; background: #fff;
+}
+.answer-option.correct .answer-check::after {
+  width: 8px; height: 5px; border-left: 2px solid #fff; border-bottom: 2px solid #fff;
+  transform: rotate(-45deg); margin-top: -2px;
+}
+.answer-text-hint {
+  padding: 8px 12px; background: var(--slate-50); border-radius: var(--radius-btn);
+  font-size: 13px; color: var(--slate-500); border: 1px dashed var(--slate-300);
+  margin-bottom: 12px;
+}
+.match-pairs { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.match-row { display: flex; align-items: center; gap: 8px; }
+.match-term, .match-def {
+  flex: 1; padding: 6px 10px; border-radius: var(--radius-btn); font-size: 13px;
+}
+.match-term { background: var(--teal-50); color: var(--teal-700); font-weight: 600; }
+.match-def { background: var(--slate-50); color: var(--slate-700); }
+.match-arrow { color: var(--slate-300); font-size: 16px; }
+
+.question-footer {
+  display: flex; align-items: center; gap: 4px; padding-top: 8px;
+  border-top: 1px solid var(--slate-100);
+}
+.question-footer .btn-ghost { font-size: 12px; padding: 4px 8px; }
+
+/* ============================================================
+   MODAL
+   ============================================================ */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(15,23,42,0.45);
+  backdrop-filter: blur(4px); z-index: 200; display: none;
+  align-items: center; justify-content: center; padding: 24px;
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: #fff; border-radius: 12px; box-shadow: var(--shadow-lg);
+  width: 100%; max-width: 700px; max-height: 85vh; overflow-y: auto;
+  animation: modalIn 0.2s ease;
+}
+@keyframes modalIn { from { opacity: 0; transform: scale(0.96) translateY(8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 24px; border-bottom: 1px solid var(--slate-200);
+}
+.modal-title { font-size: 16px; font-weight: 700; color: var(--slate-900); }
+.modal-close {
+  width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+  border-radius: 50%; color: var(--slate-500); transition: all 0.15s;
+}
+.modal-close:hover { background: var(--slate-100); color: var(--slate-900); }
+.modal-body { padding: 24px; display: flex; flex-direction: column; gap: 18px; }
+.modal-footer {
+  display: flex; align-items: center; justify-content: flex-end; gap: 10px;
+  padding: 16px 24px; border-top: 1px solid var(--slate-200);
+}
+
+/* Form Elements */
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-label { font-size: 13px; font-weight: 600; color: var(--slate-700); }
+.form-label-hint { font-size: 12px; font-weight: 400; color: var(--slate-500); }
+.form-input, .form-textarea {
+  padding: 8px 12px; border: 1px solid var(--slate-300); border-radius: var(--radius-btn);
+  font-size: 14px; color: var(--slate-900); transition: border-color 0.15s;
+  background: #fff;
+}
+.form-input:focus, .form-textarea:focus, select.form-select:focus {
+  outline: none; border-color: var(--teal-500);
+  box-shadow: 0 0 0 3px rgba(20,184,166,0.12);
+}
+.form-textarea { resize: vertical; min-height: 72px; }
+.form-row { display: flex; gap: 16px; }
+.form-row > .form-group { flex: 1; }
+.form-toggle-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 0; gap: 12px;
+}
+.form-toggle-label { font-size: 13px; font-weight: 500; color: var(--slate-700); }
+.form-toggle-desc { font-size: 12px; color: var(--slate-500); margin-top: 1px; }
+
+/* Toggle Switch */
+.toggle {
+  width: 40px; height: 22px; border-radius: 11px; background: var(--slate-300);
+  position: relative; cursor: pointer; transition: background 0.2s; flex-shrink: 0;
+}
+.toggle.on { background: var(--teal-600); }
+.toggle::after {
+  content: ''; position: absolute; top: 2px; left: 2px;
+  width: 18px; height: 18px; border-radius: 50%; background: #fff;
+  transition: transform 0.2s; box-shadow: var(--shadow-sm);
+}
+.toggle.on::after { transform: translateX(18px); }
+
+/* ============================================================
+   TAB 2: SETTINGS
+   ============================================================ */
+.settings-section {
+  background: #fff; border-radius: var(--radius-card); border: 1px solid var(--slate-200);
+  box-shadow: var(--shadow-sm); margin-bottom: 16px;
+}
+.settings-section-header {
+  padding: 14px 20px; border-bottom: 1px solid var(--slate-100);
+  font-size: 14px; font-weight: 700; color: var(--slate-900);
+  display: flex; align-items: center; gap: 8px;
+}
+.settings-section-header svg { width: 18px; height: 18px; color: var(--teal-600); }
+.settings-section-body { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+.settings-toggle-row {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+}
+.settings-toggle-info { flex: 1; }
+.settings-toggle-label { font-size: 13px; font-weight: 600; color: var(--slate-700); }
+.settings-toggle-desc { font-size: 12px; color: var(--slate-500); margin-top: 2px; }
+.slider-row { display: flex; align-items: center; gap: 12px; }
+.slider-row input[type="range"] {
+  flex: 1; height: 6px; -webkit-appearance: none; appearance: none;
+  background: var(--slate-200); border-radius: 3px; outline: none;
+}
+.slider-row input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--teal-600); cursor: pointer; box-shadow: var(--shadow-sm);
+}
+.slider-value {
+  min-width: 54px; text-align: center; padding: 4px 8px;
+  border: 1px solid var(--slate-300); border-radius: var(--radius-btn);
+  font-size: 13px; font-weight: 600; color: var(--teal-700);
+}
+.input-with-suffix { display: flex; align-items: center; gap: 8px; }
+.input-with-suffix input { width: 80px; }
+.input-suffix { font-size: 13px; color: var(--slate-500); }
+
+/* ============================================================
+   TAB 3: QUESTION BANK
+   ============================================================ */
+.bank-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+.search-input {
+  flex: 1; min-width: 200px; padding: 8px 12px 8px 36px; border: 1px solid var(--slate-300);
+  border-radius: var(--radius-btn); font-size: 13px; background: #fff;
+  transition: border-color 0.15s; position: relative;
+}
+.search-input:focus { outline: none; border-color: var(--teal-500); box-shadow: 0 0 0 3px rgba(20,184,166,0.12); }
+.search-wrapper { position: relative; flex: 1; min-width: 200px; }
+.search-wrapper svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--slate-400); pointer-events: none; }
+.search-wrapper input { width: 100%; padding-left: 36px; }
+.filter-pills { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+.filter-pill {
+  padding: 5px 12px; border-radius: 16px; font-size: 12px; font-weight: 500;
+  border: 1px solid var(--slate-200); color: var(--slate-500);
+  background: #fff; transition: all 0.15s;
+}
+.filter-pill:hover { border-color: var(--teal-500); color: var(--teal-600); }
+.filter-pill.active { background: var(--teal-600); color: #fff; border-color: var(--teal-600); }
+.bank-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.bank-card {
+  background: #fff; border-radius: var(--radius-card); border: 1px solid var(--slate-200);
+  box-shadow: var(--shadow-sm); padding: 16px; transition: all 0.2s;
+  display: flex; flex-direction: column;
+}
+.bank-card:hover { box-shadow: var(--shadow-md); border-color: var(--slate-300); }
+.bank-card-header { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+.bank-card-text { font-size: 13px; color: var(--slate-700); margin-bottom: 12px; flex: 1; line-height: 1.4; }
+.bank-card-footer { margin-top: auto; display: flex; align-items: center; justify-content: space-between; }
+.difficulty { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: var(--radius-badge); }
+.difficulty-easy { background: var(--green-100); color: var(--green-600); }
+.difficulty-medium { background: var(--amber-100); color: var(--amber-600); }
+.difficulty-hard { background: var(--red-100); color: var(--red-600); }
+.btn-add-bank {
+  padding: 5px 12px; font-size: 12px; font-weight: 600;
+  color: var(--teal-600); border: 1px solid var(--teal-500);
+  border-radius: var(--radius-btn); transition: all 0.15s;
+}
+.btn-add-bank:hover { background: var(--teal-50); }
+
+/* ============================================================
+   TAB 4: PREVIEW
+   ============================================================ */
+.preview-banner {
+  background: var(--blue-100); color: var(--blue-600); padding: 10px 16px;
+  border-radius: var(--radius-btn); font-size: 13px; font-weight: 600;
+  margin-bottom: 20px; display: flex; align-items: center; gap: 8px;
+}
+.preview-container {
+  background: #fff; border-radius: var(--radius-card); border: 1px solid var(--slate-200);
+  box-shadow: var(--shadow-md); max-width: 640px; margin: 0 auto; overflow: hidden;
+}
+.preview-header {
+  background: linear-gradient(135deg, var(--teal-600), var(--teal-700));
+  padding: 16px 20px; color: #fff;
+}
+.preview-quiz-title { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+.preview-quiz-meta { font-size: 12px; opacity: 0.85; display: flex; gap: 16px; }
+.preview-dots {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 16px; border-bottom: 1px solid var(--slate-100);
+}
+.preview-dot {
+  width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; font-size: 12px; font-weight: 600; cursor: pointer;
+  border: 2px solid var(--slate-200); color: var(--slate-500); transition: all 0.15s;
+}
+.preview-dot:hover { border-color: var(--teal-500); }
+.preview-dot.active { background: var(--teal-600); color: #fff; border-color: var(--teal-600); }
+.preview-dot.answered { background: var(--teal-100); color: var(--teal-700); border-color: var(--teal-500); }
+.preview-body { padding: 24px; }
+.preview-question-number { font-size: 12px; font-weight: 600; color: var(--teal-600); margin-bottom: 4px; }
+.preview-question-text { font-size: 15px; font-weight: 600; color: var(--slate-900); margin-bottom: 16px; line-height: 1.4; }
+.preview-option {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px; border: 2px solid var(--slate-200); border-radius: var(--radius-card);
+  margin-bottom: 8px; cursor: pointer; transition: all 0.15s; font-size: 14px;
+}
+.preview-option:hover { border-color: var(--teal-500); background: var(--teal-50); }
+.preview-option.selected { border-color: var(--teal-600); background: var(--teal-50); }
+.preview-option-letter {
+  width: 28px; height: 28px; border-radius: 50%; background: var(--slate-100);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: var(--slate-500); flex-shrink: 0;
+}
+.preview-option.selected .preview-option-letter { background: var(--teal-600); color: #fff; }
+.preview-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; border-top: 1px solid var(--slate-100);
+}
+.preview-timer {
+  display: flex; align-items: center; gap: 6px; font-size: 13px;
+  font-weight: 600; color: var(--slate-700);
+}
+.preview-progress { font-size: 12px; color: var(--slate-500); }
+
+/* ============================================================
+   TAB 5: STATISTICS
+   ============================================================ */
+.kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+.kpi-card {
+  background: #fff; border-radius: var(--radius-card); border: 1px solid var(--slate-200);
+  box-shadow: var(--shadow-sm); padding: 16px; text-align: center;
+}
+.kpi-value { font-size: 28px; font-weight: 800; color: var(--teal-700); margin-bottom: 2px; }
+.kpi-label { font-size: 12px; color: var(--slate-500); font-weight: 500; }
+.stats-section {
+  background: #fff; border-radius: var(--radius-card); border: 1px solid var(--slate-200);
+  box-shadow: var(--shadow-sm); margin-bottom: 16px;
+}
+.stats-section-title { padding: 14px 20px; border-bottom: 1px solid var(--slate-100); font-size: 14px; font-weight: 700; }
+.stats-table { width: 100%; border-collapse: collapse; }
+.stats-table th {
+  padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 700;
+  color: var(--slate-500); text-transform: uppercase; letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--slate-200); background: var(--slate-50);
+}
+.stats-table td {
+  padding: 10px 14px; font-size: 13px; border-bottom: 1px solid var(--slate-100);
+}
+.stats-table tr:last-child td { border-bottom: none; }
+.bar-chart { padding: 20px; display: flex; align-items: flex-end; gap: 12px; height: 200px; }
+.bar-item { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; }
+.bar-fill {
+  width: 100%; border-radius: 4px 4px 0 0; background: var(--teal-500);
+  transition: height 0.4s ease; min-height: 2px;
+}
+.bar-value { font-size: 12px; font-weight: 700; color: var(--slate-700); }
+.bar-label { font-size: 11px; color: var(--slate-500); text-align: center; }
+.pass-badge, .fail-badge {
+  padding: 2px 10px; border-radius: var(--radius-badge); font-size: 11px; font-weight: 600;
+}
+.pass-badge { background: var(--green-100); color: var(--green-600); }
+.fail-badge { background: var(--red-100); color: var(--red-600); }
+
+/* ============================================================
+   TAB 6: CERTIFICATE
+   ============================================================ */
+.certificate-preview {
+  background: #fff; border: 3px solid var(--teal-600); border-radius: 12px;
+  padding: 4px; margin-bottom: 24px; max-width: 600px; margin-left: auto; margin-right: auto;
+}
+.certificate-inner {
+  border: 1px solid var(--teal-100); border-radius: 8px; padding: 40px 32px;
+  text-align: center; position: relative; background: linear-gradient(180deg, #fff 0%, var(--teal-50) 100%);
+}
+.certificate-corner { position: absolute; width: 40px; height: 40px; }
+.certificate-corner svg { width: 100%; height: 100%; color: var(--teal-500); opacity: 0.4; }
+.certificate-corner.tl { top: 8px; left: 8px; }
+.certificate-corner.tr { top: 8px; right: 8px; transform: rotate(90deg); }
+.certificate-corner.bl { bottom: 8px; left: 8px; transform: rotate(-90deg); }
+.certificate-corner.br { bottom: 8px; right: 8px; transform: rotate(180deg); }
+.cert-seal {
+  width: 56px; height: 56px; margin: 0 auto 12px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--teal-600), var(--teal-700));
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--shadow-md);
+}
+.cert-seal svg { width: 28px; height: 28px; color: #fff; }
+.cert-title { font-size: 22px; font-weight: 800; color: var(--teal-900); margin-bottom: 4px; letter-spacing: -0.3px; }
+.cert-subtitle { font-size: 13px; color: var(--teal-600); font-weight: 500; margin-bottom: 24px; }
+.cert-divider { width: 80px; height: 2px; background: var(--teal-500); margin: 0 auto 20px; border-radius: 1px; }
+.cert-field { margin-bottom: 16px; }
+.cert-field-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--slate-500); margin-bottom: 2px; }
+.cert-field-value { font-size: 15px; font-weight: 600; color: var(--slate-900); }
+.cert-row { display: flex; justify-content: center; gap: 40px; margin-bottom: 16px; }
+.cert-signature { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--slate-200); }
+.cert-sig-line { width: 160px; border-bottom: 1px solid var(--slate-700); margin: 0 auto 4px; }
+.cert-sig-name { font-size: 13px; font-weight: 600; color: var(--slate-900); }
+.cert-sig-title { font-size: 11px; color: var(--slate-500); }
+
+.cert-settings {
+  background: #fff; border-radius: var(--radius-card); border: 1px solid var(--slate-200);
+  box-shadow: var(--shadow-sm); padding: 20px; display: flex; flex-direction: column; gap: 16px;
+}
+
+/* ============================================================
+   CONFIRM DIALOG
+   ============================================================ */
+.confirm-overlay {
+  position: fixed; inset: 0; background: rgba(15,23,42,0.4);
+  backdrop-filter: blur(2px); z-index: 300; display: none;
+  align-items: center; justify-content: center;
+}
+.confirm-overlay.show { display: flex; }
+.confirm-box {
+  background: #fff; border-radius: 12px; box-shadow: var(--shadow-lg);
+  padding: 24px; max-width: 380px; width: 100%; text-align: center;
+  animation: modalIn 0.2s ease;
+}
+.confirm-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+.confirm-text { font-size: 13px; color: var(--slate-500); margin-bottom: 20px; }
+.confirm-actions { display: flex; gap: 10px; justify-content: center; }
+
+/* ============================================================
+   DEV CONTROLS
+   ============================================================ */
+.dev-panel {
+  position: fixed; bottom: 16px; right: 16px; z-index: 500;
+}
+.dev-toggle {
+  width: 44px; height: 44px; border-radius: 50%; background: var(--slate-900);
+  color: #fff; display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--shadow-lg); transition: transform 0.15s;
+  font-size: 18px;
+}
+.dev-toggle:hover { transform: scale(1.08); }
+.dev-menu {
+  position: absolute; bottom: 52px; right: 0; background: #fff;
+  border-radius: var(--radius-card); box-shadow: var(--shadow-lg);
+  border: 1px solid var(--slate-200); padding: 12px; width: 200px;
+  display: none; flex-direction: column; gap: 4px;
+}
+.dev-menu.show { display: flex; }
+.dev-menu-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--slate-500); padding: 4px 8px; }
+.dev-btn {
+  padding: 6px 10px; font-size: 12px; text-align: left; border-radius: 4px;
+  color: var(--slate-700); transition: background 0.1s;
+}
+.dev-btn:hover { background: var(--slate-100); }
+.dev-sep { height: 1px; background: var(--slate-100); margin: 4px 0; }
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 900px) {
+  .page-content { flex-direction: column; padding: 16px; }
+  .sidebar {
+    width: 100% !important; position: static; flex-direction: row; gap: 12px;
+    overflow-x: auto; flex-wrap: nowrap; opacity: 1 !important;
+  }
+  .sidebar.collapsed { width: 100% !important; }
+  .quiz-info-card { min-width: 220px; }
+  .sidebar-nav { flex-direction: row; min-width: max-content; }
+  .sidebar-nav-item { white-space: nowrap; }
+  .kpi-row { grid-template-columns: repeat(2, 1fr); }
+  .bank-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .kpi-row { grid-template-columns: 1fr; }
+  .form-row { flex-direction: column; }
+  .preview-dots { flex-wrap: wrap; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     HEADER
+     ============================================================ -->
+<header class="header">
+  <div class="header-logo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    Policy Manager
+  </div>
+  <div class="header-right">
+    <button class="header-icon" title="Notifications">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+    </button>
+    <div class="header-avatar" title="John Carter">JC</div>
+  </div>
+</header>
+
+<!-- ============================================================
+     NAV BAR
+     ============================================================ -->
+<nav class="nav">
+  <a class="nav-item" href="#">Home</a>
+  <a class="nav-item" href="#">Browse</a>
+  <a class="nav-item" href="#">My Policies</a>
+  <a class="nav-item" href="#">Create</a>
+  <a class="nav-item active" href="#">Quiz Builder</a>
+</nav>
+
+<!-- ============================================================
+     PAGE CONTENT
+     ============================================================ -->
+<div class="page-content">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="quiz-info-card">
+      <div class="quiz-info-title">Information Security Assessment</div>
+      <div class="quiz-info-row">
+        <span class="badge badge-teal">POL-2024-001</span>
+        <span class="badge badge-amber" id="statusBadge">Draft</span>
+      </div>
+      <div class="quiz-info-stats">
+        <span id="questionCountStat">8</span> Questions &middot; <span>80%</span> Pass &middot; <span>15 min</span> limit
+      </div>
+    </div>
+    <div class="sidebar-nav" id="sidebarNav">
+      <button class="sidebar-nav-item active" data-tab="questions" onclick="switchTab('questions')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Questions <span class="sidebar-nav-badge" id="questionCountBadge">5</span>
+      </button>
+      <button class="sidebar-nav-item" data-tab="settings" onclick="switchTab('settings')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.32 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        Settings
+      </button>
+      <button class="sidebar-nav-item" data-tab="bank" onclick="switchTab('bank')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+        Question Bank
+      </button>
+      <button class="sidebar-nav-item" data-tab="preview" onclick="switchTab('preview')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        Preview
+      </button>
+      <button class="sidebar-nav-item" data-tab="statistics" onclick="switchTab('statistics')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Statistics
+      </button>
+      <button class="sidebar-nav-item" data-tab="certificate" onclick="switchTab('certificate')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        Certificate
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+
+    <!-- ===================== TAB: QUESTIONS ===================== -->
+    <div class="tab-panel active" id="tab-questions">
+      <div class="questions-toolbar">
+        <button class="btn-primary" onclick="addQuestion()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Question
+        </button>
+        <select class="form-select" id="questionTypeSelect">
+          <option>Multiple Choice</option>
+          <option>True / False</option>
+          <option>Multiple Select</option>
+          <option>Short Answer</option>
+          <option>Fill in Blank</option>
+          <option>Matching</option>
+          <option>Ordering</option>
+          <option>Essay</option>
+        </select>
+        <div class="toolbar-sep"></div>
+        <button class="btn-ghost">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Import
+        </button>
+        <button class="btn-secondary btn-sm" id="reorderBtn" onclick="this.classList.toggle('active'); this.style.background=this.classList.contains('active')?'var(--teal-50)':'#fff';">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          Reorder
+        </button>
+      </div>
+
+      <div class="question-list" id="questionList">
+        <!-- Question 1 -->
+        <div class="question-card" data-qid="1">
+          <div class="drag-handle"><div class="drag-dots-row"><span class="drag-dot"></span><span class="drag-dot"></span></div><div class="drag-dots-row"><span class="drag-dot"></span><span class="drag-dot"></span></div><div class="drag-dots-row"><span class="drag-dot"></span><span class="drag-dot"></span></div></div>
+          <div class="question-number">1</div>
+          <div class="question-body">
+            <div class="question-header">
+              <span class="badge badge-teal">Multiple Choice</span>
+              <span class="badge badge-slate">2 pts</span>
+              <span class="required-dot" title="Required"></span>
+            </div>
+            <div class="question-text">What is the minimum password length required by this policy?</div>
+            <div class="answer-options">
+              <div class="answer-option"><div class="answer-radio"></div> 8 characters</div>
+              <div class="answer-option"><div class="answer-radio"></div> 10 characters</div>
+              <div class="answer-option correct"><div class="answer-radio"></div> 12 characters</div>
+              <div class="answer-option"><div class="answer-radio"></div> 16 characters</div>
+            </div>
+            <div class="question-footer">
+              <button class="btn-ghost btn-sm" onclick="openEditModal(1)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit</button>
+              <button class="btn-ghost btn-sm" onclick="duplicateQuestion(1)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Duplicate</button>
+              <button class="btn-ghost btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg></button>
+              <button class="btn-ghost btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
+              <button class="btn-ghost btn-sm btn-danger" onclick="confirmDelete(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Question 2 -->
+        <div class="question-card" data-qid="2">
+          <div class="drag-handle"><div class="drag-dots-row"><span class="drag-dot"></span><span class="drag-dot"></span></div><div class="drag-dots-row"><span class="drag-dot"></span><span class="drag-dot"></span></div><div class="drag-dots-row"><span class="drag-dot"></span><span class="drag-dot"></span></div></div>
+          <div class="question-number">2</div>
+          <div class="question-body">
+            <div class="question-header">
+              <span class="badge badge-blue">True / False</span>
+              <span class="badge badge-slate">1 pt</span>
+              <span class="required-dot" title="Required"></span>
+            </div>
+            <div class="question-text">Sharing passwords with colleagues is acceptable in emergencies.</div>
+            <div class="answer-options">
+              <div class="answer-option"><div class="answer-radio"></div> True</div>
+              <div class="answer-option correct"><div class="answer-radio"></div> False</div>
+            </div>
+            <div class="question-footer">
+              <button class="btn-ghost btn-sm" onclick="openEditModal(2)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit</button>
+              <button class="btn-ghost btn-sm" onclick="duplicateQuestion(2)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Duplicate</button>
+              <button class="btn-ghost btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg></button>
+              <button class="btn-ghost btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
+              <button class="btn-ghost btn-sm btn-danger" onclick="confirmDelete(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Question 3 -->
+        <div class="question-card" data-qid="3">
+          <div class="drag-handle"><div class="drag-dots-row"><span class="drag-dot"></span><span class="drag-dot"></span></div><div class="drag-dots-row"><span class="drag-dot"></span><span class="drag-dot"></span></div><div class="drag-dots-row"><span class="drag-dot"></span><span class="drag-dot"></span></div></div>
+          <div class="question-number">3</div>
+          <div class="question-body">
+            <div class="question-header">
+              <span class="badge badge-green">Multiple Select</span>
+              <span class="badge badge-slate">3 pts</span>
+              <span class="required-dot" title="Required"></span>
+            </div>
+            <div class="question-text">Which of the following are considered sensitive data? (Select all that apply)</div>
+            <div class="answer-options">
+              <div class="answer-option correct"><div class="answer-check"></div> Customer names</div>
+              <div class="answer-option"><div class="answer-check"></div> Public website content</div>
+              <div class="answer-option correct"><div class="answer-check"></div> Social Security Numbers</div>
+              <div class="answer-option"><div class="answer-check"></div> Marketing brochures</div>
+              <div class="answer-option correct"><div class="answer-check"></div> Employee salaries</div>
+            </div>
+            <div class="question-footer">
+              <button class="btn-ghost btn-sm" onclick="openEditModal(3)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit</button>
+              <button class="btn-ghost btn-sm" onclick="duplicateQuestion(3)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Duplicate</button>
+              <button class="btn-ghost btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg></button>
+              <button class="btn-ghost btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
+              <button class="btn-ghost btn-sm btn-danger" onclick="confirmDelete(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Question 4 -->
+        <div class="question-card" data-qid="4">
+          <div class="drag-handle"><div class="drag-dots-row"><span class="drag-dot"></span><span class="drag-dot"></span></div><div class="drag-dots-row"><span class="drag-dot"></span><span class="drag-dot"></span></div><div class="drag-dots-row"><span class="drag-dot"></span><span class="drag-dot"></span></div></div>
+          <div class="question-number">4</div>
+          <div class="question-body">
+            <div class="question-header">
+              <span class="badge badge-amber">Short Answer</span>
+              <span class="badge badge-slate">2 pts</span>
+              <span class="required-dot" title="Required"></span>
+            </div>
+            <div class="question-text">Who should you contact to report a data breach?</div>
+            <div class="answer-text-hint">Accepted answers: "Security Team" or "IT Security"</div>
+            <div class="question-footer">
+              <button class="btn-ghost btn-sm" onclick="openEditModal(4)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit</button>
+              <button class="btn-ghost btn-sm" onclick="duplicateQuestion(4)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Duplicate</button>
+              <button class="btn-ghost btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg></button>
+              <button class="btn-ghost btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
+              <button class="btn-ghost btn-sm btn-danger" onclick="confirmDelete(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Question 5 -->
+        <div class="question-card" data-qid="5">
+          <div class="drag-handle"><div class="drag-dots-row"><span class="drag-dot"></span><span class="drag-dot"></span></div><div class="drag-dots-row"><span class="drag-dot"></span><span class="drag-dot"></span></div><div class="drag-dots-row"><span class="drag-dot"></span><span class="drag-dot"></span></div></div>
+          <div class="question-number">5</div>
+          <div class="question-body">
+            <div class="question-header">
+              <span class="badge badge-red">Matching</span>
+              <span class="badge badge-slate">3 pts</span>
+              <span class="required-dot" title="Required"></span>
+            </div>
+            <div class="question-text">Match the security term to its definition.</div>
+            <div class="match-pairs">
+              <div class="match-row">
+                <span class="match-term">Phishing</span>
+                <span class="match-arrow">&rarr;</span>
+                <span class="match-def">Fraudulent attempt to obtain sensitive information</span>
+              </div>
+              <div class="match-row">
+                <span class="match-term">Encryption</span>
+                <span class="match-arrow">&rarr;</span>
+                <span class="match-def">Converting data into a coded format</span>
+              </div>
+              <div class="match-row">
+                <span class="match-term">Firewall</span>
+                <span class="match-arrow">&rarr;</span>
+                <span class="match-def">Network security system that monitors traffic</span>
+              </div>
+            </div>
+            <div class="question-footer">
+              <button class="btn-ghost btn-sm" onclick="openEditModal(5)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit</button>
+              <button class="btn-ghost btn-sm" onclick="duplicateQuestion(5)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Duplicate</button>
+              <button class="btn-ghost btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg></button>
+              <button class="btn-ghost btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
+              <button class="btn-ghost btn-sm btn-danger" onclick="confirmDelete(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== TAB: SETTINGS ===================== -->
+    <div class="tab-panel" id="tab-settings">
+      <!-- General -->
+      <div class="settings-section">
+        <div class="settings-section-header">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.32 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          General Settings
+        </div>
+        <div class="settings-section-body">
+          <div class="form-group">
+            <label class="form-label">Quiz Title</label>
+            <input class="form-input" type="text" value="Information Security Assessment">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Description</label>
+            <textarea class="form-textarea" rows="3">This quiz assesses employee understanding of the organization's Information Security Policy, covering password management, data handling, and incident reporting procedures.</textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Linked Policy</label>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--teal-600)" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+              <span style="font-size:13px;color:var(--teal-700);font-weight:600;">POL-2024-001 — Information Security Policy</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Status</label>
+            <select class="form-select" style="max-width:200px;">
+              <option selected>Draft</option>
+              <option>Published</option>
+              <option>Archived</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <!-- Scoring -->
+      <div class="settings-section">
+        <div class="settings-section-header">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Scoring &amp; Passing
+        </div>
+        <div class="settings-section-body">
+          <div class="form-group">
+            <label class="form-label">Passing Score</label>
+            <div class="slider-row">
+              <input type="range" min="0" max="100" value="80" id="passSlider" oninput="document.getElementById('passValue').textContent=this.value+'%'">
+              <span class="slider-value" id="passValue">80%</span>
+            </div>
+          </div>
+          <div class="settings-toggle-row">
+            <div class="settings-toggle-info">
+              <div class="settings-toggle-label">Points Display</div>
+              <div class="settings-toggle-desc">Show point values per question to employees</div>
+            </div>
+            <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="settings-toggle-row">
+            <div class="settings-toggle-info">
+              <div class="settings-toggle-label">Partial Credit</div>
+              <div class="settings-toggle-desc">Award partial credit for multi-select questions with some correct answers</div>
+            </div>
+            <div class="toggle" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="settings-toggle-row">
+            <div class="settings-toggle-info">
+              <div class="settings-toggle-label">Negative Marking</div>
+              <div class="settings-toggle-desc">Deduct points for incorrect answers</div>
+            </div>
+            <div class="toggle" onclick="this.classList.toggle('on')"></div>
+          </div>
+        </div>
+      </div>
+      <!-- Attempts -->
+      <div class="settings-section">
+        <div class="settings-section-header">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+          Attempt Settings
+        </div>
+        <div class="settings-section-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Time Limit</label>
+              <div class="input-with-suffix">
+                <input class="form-input" type="number" value="15" style="width:80px;">
+                <span class="input-suffix">minutes</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Maximum Attempts</label>
+              <input class="form-input" type="number" value="3" style="width:80px;">
+            </div>
+          </div>
+          <div class="settings-toggle-row">
+            <div class="settings-toggle-info">
+              <div class="settings-toggle-label">Allow Retake</div>
+              <div class="settings-toggle-desc">Allow employees to retake the quiz after failing</div>
+            </div>
+            <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Cooldown Between Attempts</label>
+            <div class="input-with-suffix">
+              <input class="form-input" type="number" value="24" style="width:80px;">
+              <span class="input-suffix">hours</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Display -->
+      <div class="settings-section">
+        <div class="settings-section-header">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          Display Settings
+        </div>
+        <div class="settings-section-body">
+          <div class="settings-toggle-row">
+            <div class="settings-toggle-info"><div class="settings-toggle-label">Randomize Questions</div><div class="settings-toggle-desc">Present questions in a random order each attempt</div></div>
+            <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="settings-toggle-row">
+            <div class="settings-toggle-info"><div class="settings-toggle-label">Randomize Options</div><div class="settings-toggle-desc">Shuffle answer options for each question</div></div>
+            <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="settings-toggle-row">
+            <div class="settings-toggle-info"><div class="settings-toggle-label">Show Correct Answers After Submission</div><div class="settings-toggle-desc">Reveal correct answers once the quiz is submitted</div></div>
+            <div class="toggle" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="settings-toggle-row">
+            <div class="settings-toggle-info"><div class="settings-toggle-label">Show Explanations</div><div class="settings-toggle-desc">Display answer explanations after submission</div></div>
+            <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="settings-toggle-row">
+            <div class="settings-toggle-info"><div class="settings-toggle-label">Sequential Completion</div><div class="settings-toggle-desc">Require questions to be answered in order</div></div>
+            <div class="toggle" onclick="this.classList.toggle('on')"></div>
+          </div>
+        </div>
+      </div>
+      <!-- Scheduling -->
+      <div class="settings-section">
+        <div class="settings-section-header">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Scheduling
+        </div>
+        <div class="settings-section-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Available From</label>
+              <input class="form-input" type="date" value="2026-02-01">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Available Until</label>
+              <input class="form-input" type="date" value="2026-06-30">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Auto-Archive After</label>
+            <select class="form-select" style="max-width:200px;">
+              <option>30 days</option>
+              <option>60 days</option>
+              <option selected>90 days</option>
+              <option>Never</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== TAB: QUESTION BANK ===================== -->
+    <div class="tab-panel" id="tab-bank">
+      <div class="bank-toolbar">
+        <div class="search-wrapper">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="search-input" type="text" placeholder="Search question bank...">
+        </div>
+        <select class="form-select">
+          <option>All Categories</option>
+          <option>Information Security</option>
+          <option>Data Privacy</option>
+          <option>Compliance</option>
+          <option>IT Operations</option>
+        </select>
+        <select class="form-select">
+          <option>All Difficulties</option>
+          <option>Easy</option>
+          <option>Medium</option>
+          <option>Hard</option>
+        </select>
+      </div>
+      <div class="filter-pills">
+        <button class="filter-pill active">All Types</button>
+        <button class="filter-pill" onclick="this.parentElement.querySelector('.active').classList.remove('active');this.classList.add('active')">Multiple Choice</button>
+        <button class="filter-pill" onclick="this.parentElement.querySelector('.active').classList.remove('active');this.classList.add('active')">True / False</button>
+        <button class="filter-pill" onclick="this.parentElement.querySelector('.active').classList.remove('active');this.classList.add('active')">Multiple Select</button>
+        <button class="filter-pill" onclick="this.parentElement.querySelector('.active').classList.remove('active');this.classList.add('active')">Short Answer</button>
+        <button class="filter-pill" onclick="this.parentElement.querySelector('.active').classList.remove('active');this.classList.add('active')">Matching</button>
+      </div>
+      <div class="bank-grid">
+        <div class="bank-card">
+          <div class="bank-card-header"><span class="badge badge-teal">Multiple Choice</span><span class="difficulty difficulty-easy">Easy</span></div>
+          <div class="bank-card-text">What does the acronym 'MFA' stand for in the context of security?</div>
+          <div class="bank-card-footer"><span style="font-size:11px;color:var(--slate-500);">Used 12 times</span><button class="btn-add-bank">+ Add to Quiz</button></div>
+        </div>
+        <div class="bank-card">
+          <div class="bank-card-header"><span class="badge badge-blue">True / False</span><span class="difficulty difficulty-easy">Easy</span></div>
+          <div class="bank-card-text">All employees must complete security training within 30 days of onboarding.</div>
+          <div class="bank-card-footer"><span style="font-size:11px;color:var(--slate-500);">Used 8 times</span><button class="btn-add-bank">+ Add to Quiz</button></div>
+        </div>
+        <div class="bank-card">
+          <div class="bank-card-header"><span class="badge badge-teal">Multiple Choice</span><span class="difficulty difficulty-medium">Medium</span></div>
+          <div class="bank-card-text">Which encryption standard is required for data at rest per company policy?</div>
+          <div class="bank-card-footer"><span style="font-size:11px;color:var(--slate-500);">Used 5 times</span><button class="btn-add-bank">+ Add to Quiz</button></div>
+        </div>
+        <div class="bank-card">
+          <div class="bank-card-header"><span class="badge badge-green">Multiple Select</span><span class="difficulty difficulty-hard">Hard</span></div>
+          <div class="bank-card-text">Which of the following scenarios constitute a reportable data breach under GDPR?</div>
+          <div class="bank-card-footer"><span style="font-size:11px;color:var(--slate-500);">Used 3 times</span><button class="btn-add-bank">+ Add to Quiz</button></div>
+        </div>
+        <div class="bank-card">
+          <div class="bank-card-header"><span class="badge badge-amber">Short Answer</span><span class="difficulty difficulty-medium">Medium</span></div>
+          <div class="bank-card-text">What is the maximum number of days allowed to report a security incident?</div>
+          <div class="bank-card-footer"><span style="font-size:11px;color:var(--slate-500);">Used 7 times</span><button class="btn-add-bank">+ Add to Quiz</button></div>
+        </div>
+        <div class="bank-card">
+          <div class="bank-card-header"><span class="badge badge-red">Matching</span><span class="difficulty difficulty-hard">Hard</span></div>
+          <div class="bank-card-text">Match each compliance framework to its primary focus area.</div>
+          <div class="bank-card-footer"><span style="font-size:11px;color:var(--slate-500);">Used 2 times</span><button class="btn-add-bank">+ Add to Quiz</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== TAB: PREVIEW ===================== -->
+    <div class="tab-panel" id="tab-preview">
+      <div class="preview-banner">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        Preview Mode — This is how employees will see the quiz
+      </div>
+      <div class="preview-container">
+        <div class="preview-header">
+          <div class="preview-quiz-title">Information Security Assessment</div>
+          <div class="preview-quiz-meta">
+            <span>POL-2024-001</span>
+            <span>5 Questions</span>
+            <span>80% to pass</span>
+          </div>
+        </div>
+        <div class="preview-dots" id="previewDots">
+          <div class="preview-dot active" onclick="showPreviewQuestion(0)">1</div>
+          <div class="preview-dot" onclick="showPreviewQuestion(1)">2</div>
+          <div class="preview-dot" onclick="showPreviewQuestion(2)">3</div>
+          <div class="preview-dot" onclick="showPreviewQuestion(3)">4</div>
+          <div class="preview-dot" onclick="showPreviewQuestion(4)">5</div>
+        </div>
+        <div class="preview-body" id="previewBody">
+          <!-- Populated by JS -->
+        </div>
+        <div class="preview-footer">
+          <button class="btn-secondary btn-sm" id="prevBtn" onclick="navigatePreview(-1)" disabled>Back</button>
+          <div class="preview-timer">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14:32
+          </div>
+          <div class="preview-progress" id="previewProgress">Question 1 of 5</div>
+          <button class="btn-primary btn-sm" id="nextBtn" onclick="navigatePreview(1)">Next</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== TAB: STATISTICS ===================== -->
+    <div class="tab-panel" id="tab-statistics">
+      <div class="kpi-row">
+        <div class="kpi-card"><div class="kpi-value">147</div><div class="kpi-label">Total Attempts</div></div>
+        <div class="kpi-card"><div class="kpi-value" style="color:var(--green-600)">82%</div><div class="kpi-label">Pass Rate</div></div>
+        <div class="kpi-card"><div class="kpi-value">76%</div><div class="kpi-label">Average Score</div></div>
+        <div class="kpi-card"><div class="kpi-value">8.5<span style="font-size:14px;font-weight:500"> min</span></div><div class="kpi-label">Avg Completion Time</div></div>
+      </div>
+
+      <!-- Score Distribution -->
+      <div class="stats-section">
+        <div class="stats-section-title">Score Distribution</div>
+        <div class="bar-chart" id="barChart">
+          <div class="bar-item"><div class="bar-value">3</div><div class="bar-fill" style="height:4%"></div><div class="bar-label">0-20%</div></div>
+          <div class="bar-item"><div class="bar-value">5</div><div class="bar-fill" style="height:7%"></div><div class="bar-label">21-40%</div></div>
+          <div class="bar-item"><div class="bar-value">12</div><div class="bar-fill" style="height:16%;background:var(--amber-600)"></div><div class="bar-label">41-60%</div></div>
+          <div class="bar-item"><div class="bar-value">48</div><div class="bar-fill" style="height:61%;background:var(--teal-600)"></div><div class="bar-label">61-80%</div></div>
+          <div class="bar-item"><div class="bar-value">79</div><div class="bar-fill" style="height:100%;background:var(--green-600)"></div><div class="bar-label">81-100%</div></div>
+        </div>
+      </div>
+
+      <!-- Question Performance -->
+      <div class="stats-section">
+        <div class="stats-section-title">Question Performance</div>
+        <table class="stats-table">
+          <thead><tr><th>#</th><th>Question</th><th>Type</th><th>Correct %</th><th>Avg Time</th><th>Difficulty</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td style="max-width:260px">What is the minimum password length required?</td><td><span class="badge badge-teal" style="font-size:10px">MC</span></td><td style="color:var(--green-600);font-weight:600">87%</td><td>0:45</td><td><span class="difficulty difficulty-easy">Easy</span></td></tr>
+            <tr><td>2</td><td>Sharing passwords is acceptable in emergencies</td><td><span class="badge badge-blue" style="font-size:10px">T/F</span></td><td style="color:var(--green-600);font-weight:600">92%</td><td>0:22</td><td><span class="difficulty difficulty-easy">Easy</span></td></tr>
+            <tr><td>3</td><td>Which are considered sensitive data?</td><td><span class="badge badge-green" style="font-size:10px">MS</span></td><td style="color:var(--amber-600);font-weight:600">64%</td><td>1:35</td><td><span class="difficulty difficulty-medium">Medium</span></td></tr>
+            <tr><td>4</td><td>Who to contact for data breach?</td><td><span class="badge badge-amber" style="font-size:10px">SA</span></td><td style="color:var(--amber-600);font-weight:600">71%</td><td>0:55</td><td><span class="difficulty difficulty-medium">Medium</span></td></tr>
+            <tr><td>5</td><td>Match security term to definition</td><td><span class="badge badge-red" style="font-size:10px">Match</span></td><td style="color:var(--red-600);font-weight:600">48%</td><td>2:10</td><td><span class="difficulty difficulty-hard">Hard</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Recent Attempts -->
+      <div class="stats-section">
+        <div class="stats-section-title">Recent Attempts</div>
+        <table class="stats-table">
+          <thead><tr><th>Employee</th><th>Date</th><th>Score</th><th>Result</th><th>Duration</th></tr></thead>
+          <tbody>
+            <tr><td>Sarah Johnson</td><td>Jan 29, 2026</td><td>91%</td><td><span class="pass-badge">Pass</span></td><td>7:20</td></tr>
+            <tr><td>Marcus Chen</td><td>Jan 29, 2026</td><td>85%</td><td><span class="pass-badge">Pass</span></td><td>9:45</td></tr>
+            <tr><td>Emily Davis</td><td>Jan 28, 2026</td><td>73%</td><td><span class="fail-badge">Fail</span></td><td>12:05</td></tr>
+            <tr><td>James Wilson</td><td>Jan 28, 2026</td><td>88%</td><td><span class="pass-badge">Pass</span></td><td>8:30</td></tr>
+            <tr><td>Priya Patel</td><td>Jan 27, 2026</td><td>95%</td><td><span class="pass-badge">Pass</span></td><td>6:15</td></tr>
+            <tr><td>Robert Kim</td><td>Jan 27, 2026</td><td>64%</td><td><span class="fail-badge">Fail</span></td><td>14:50</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===================== TAB: CERTIFICATE ===================== -->
+    <div class="tab-panel" id="tab-certificate">
+      <div class="certificate-preview">
+        <div class="certificate-inner">
+          <div class="certificate-corner tl"><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 38V8a6 6 0 016-6h30"/></svg></div>
+          <div class="certificate-corner tr"><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 38V8a6 6 0 016-6h30"/></svg></div>
+          <div class="certificate-corner bl"><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 38V8a6 6 0 016-6h30"/></svg></div>
+          <div class="certificate-corner br"><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 38V8a6 6 0 016-6h30"/></svg></div>
+          <div class="cert-seal">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <div class="cert-title">Certificate of Completion</div>
+          <div class="cert-subtitle">Policy Compliance Verification</div>
+          <div class="cert-divider"></div>
+          <div class="cert-field">
+            <div class="cert-field-label">This certifies that</div>
+            <div class="cert-field-value" style="font-size:20px;">John Carter</div>
+          </div>
+          <div class="cert-field">
+            <div class="cert-field-label">Has successfully completed the assessment for</div>
+            <div class="cert-field-value">Information Security Policy</div>
+          </div>
+          <div class="cert-row">
+            <div class="cert-field"><div class="cert-field-label">Score</div><div class="cert-field-value">91%</div></div>
+            <div class="cert-field"><div class="cert-field-label">Date</div><div class="cert-field-value">January 30, 2026</div></div>
+          </div>
+          <div class="cert-field" style="margin-bottom:20px;">
+            <div class="cert-field-label">Certificate Number</div>
+            <div class="cert-field-value" style="font-size:12px;color:var(--slate-500);letter-spacing:1px;">CERT-PM-2026-00487</div>
+          </div>
+          <div class="cert-signature">
+            <div class="cert-sig-line"></div>
+            <div class="cert-sig-name">Alexandra Reynolds</div>
+            <div class="cert-sig-title">Chief Information Security Officer</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cert-settings">
+        <h3 style="font-size:14px;font-weight:700;color:var(--slate-900);margin-bottom:4px;">Certificate Settings</h3>
+        <div class="settings-toggle-row">
+          <div class="settings-toggle-info"><div class="settings-toggle-label">Enable Certificates</div><div class="settings-toggle-desc">Issue certificates upon successful quiz completion</div></div>
+          <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Certificate Title</label>
+          <input class="form-input" type="text" value="Certificate of Completion">
+        </div>
+        <div class="settings-toggle-row">
+          <div class="settings-toggle-info"><div class="settings-toggle-label">Include Quiz Score</div><div class="settings-toggle-desc">Display the employee's score on the certificate</div></div>
+          <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+        </div>
+        <div class="settings-toggle-row">
+          <div class="settings-toggle-info"><div class="settings-toggle-label">Include Digital Signature</div><div class="settings-toggle-desc">Add a signatory line to the certificate</div></div>
+          <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Signatory Name</label>
+            <input class="form-input" type="text" value="Alexandra Reynolds">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Signatory Title</label>
+            <input class="form-input" type="text" value="Chief Information Security Officer">
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ============================================================
+     EDIT MODAL
+     ============================================================ -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="editModalTitle">Edit Question #1</div>
+      <button class="modal-close" onclick="closeEditModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Question Type</label>
+        <select class="form-select" id="editType">
+          <option>Multiple Choice</option><option>True / False</option><option>Multiple Select</option><option>Short Answer</option><option>Fill in Blank</option><option>Matching</option><option>Ordering</option><option>Essay</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Question Text</label>
+        <textarea class="form-textarea" id="editText" rows="3">What is the minimum password length required by this policy?</textarea>
+      </div>
+      <div class="form-group" id="editOptionsGroup">
+        <label class="form-label">Answer Options <span class="form-label-hint">(select correct answer)</span></label>
+        <div style="display:flex;flex-direction:column;gap:8px;" id="editOptions">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <input type="radio" name="correctOpt" style="accent-color:var(--teal-600)">
+            <input class="form-input" style="flex:1" value="8 characters">
+            <button class="btn-ghost btn-sm btn-danger" style="padding:4px">&times;</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <input type="radio" name="correctOpt" style="accent-color:var(--teal-600)">
+            <input class="form-input" style="flex:1" value="10 characters">
+            <button class="btn-ghost btn-sm btn-danger" style="padding:4px">&times;</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <input type="radio" name="correctOpt" checked style="accent-color:var(--teal-600)">
+            <input class="form-input" style="flex:1" value="12 characters">
+            <button class="btn-ghost btn-sm btn-danger" style="padding:4px">&times;</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <input type="radio" name="correctOpt" style="accent-color:var(--teal-600)">
+            <input class="form-input" style="flex:1" value="16 characters">
+            <button class="btn-ghost btn-sm btn-danger" style="padding:4px">&times;</button>
+          </div>
+        </div>
+        <button class="btn-ghost btn-sm" style="margin-top:6px;color:var(--teal-600)">+ Add Option</button>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Points</label>
+          <input class="form-input" type="number" value="2" style="width:80px;" id="editPoints">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Section</label>
+          <select class="form-select" id="editSection">
+            <option>General</option><option>Password Management</option><option>Data Handling</option><option>Incident Response</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Explanation <span class="form-label-hint">(shown after the employee answers)</span></label>
+        <textarea class="form-textarea" rows="2" id="editExplanation">The Information Security Policy requires a minimum of 12 characters for all passwords to ensure adequate protection against brute-force attacks.</textarea>
+      </div>
+      <div class="settings-toggle-row">
+        <div class="settings-toggle-info"><div class="settings-toggle-label">Required</div><div class="settings-toggle-desc">Employee must answer this question</div></div>
+        <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeEditModal()">Cancel</button>
+      <button class="btn-primary" onclick="closeEditModal()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     CONFIRM DELETE DIALOG
+     ============================================================ -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <div class="confirm-title">Delete Question?</div>
+    <div class="confirm-text">This action cannot be undone. The question will be permanently removed from this quiz.</div>
+    <div class="confirm-actions">
+      <button class="btn-secondary" onclick="closeConfirm()">Cancel</button>
+      <button class="btn-primary" style="background:var(--red-600)" onclick="executeDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     DEV CONTROLS
+     ============================================================ -->
+<div class="dev-panel">
+  <div class="dev-menu" id="devMenu">
+    <div class="dev-menu-title">Dev Controls</div>
+    <button class="dev-btn" onclick="switchTab('questions')">Questions Tab</button>
+    <button class="dev-btn" onclick="switchTab('settings')">Settings Tab</button>
+    <button class="dev-btn" onclick="switchTab('bank')">Question Bank Tab</button>
+    <button class="dev-btn" onclick="switchTab('preview')">Preview Tab</button>
+    <button class="dev-btn" onclick="switchTab('statistics')">Statistics Tab</button>
+    <button class="dev-btn" onclick="switchTab('certificate')">Certificate Tab</button>
+    <div class="dev-sep"></div>
+    <button class="dev-btn" onclick="toggleSidebar()">Toggle Sidebar</button>
+    <button class="dev-btn" onclick="resetDefaults()">Reset to Defaults</button>
+  </div>
+  <button class="dev-toggle" onclick="document.getElementById('devMenu').classList.toggle('show')" title="Dev Controls">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+  </button>
+</div>
+
+<!-- ============================================================
+     JAVASCRIPT
+     ============================================================ -->
+<script>
+(function() {
+  'use strict';
+
+  // ---- TAB SWITCHING ----
+  window.switchTab = function(tabName) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.sidebar-nav-item').forEach(b => b.classList.remove('active'));
+    const panel = document.getElementById('tab-' + tabName);
+    if (panel) panel.classList.add('active');
+    const btn = document.querySelector('[data-tab="' + tabName + '"]');
+    if (btn) btn.classList.add('active');
+    if (tabName === 'preview') initPreview();
+  };
+
+  // ---- SIDEBAR TOGGLE ----
+  window.toggleSidebar = function() {
+    document.getElementById('sidebar').classList.toggle('collapsed');
+  };
+
+  // ---- QUESTION COUNT ----
+  function updateQuestionCount() {
+    var count = document.querySelectorAll('#questionList .question-card').length;
+    var badge = document.getElementById('questionCountBadge');
+    var stat = document.getElementById('questionCountStat');
+    if (badge) badge.textContent = count;
+    if (stat) stat.textContent = count;
+    // renumber
+    document.querySelectorAll('#questionList .question-card').forEach(function(card, i) {
+      var num = card.querySelector('.question-number');
+      if (num) num.textContent = i + 1;
+    });
+  }
+
+  // ---- ADD QUESTION ----
+  window.addQuestion = function() {
+    var type = document.getElementById('questionTypeSelect').value;
+    var list = document.getElementById('questionList');
+    var count = list.querySelectorAll('.question-card').length + 1;
+    var card = document.createElement('div');
+    card.className = 'question-card new-card';
+    card.setAttribute('data-qid', count);
+    card.innerHTML =
+      '<div class="drag-handle"><div class="drag-dots-row"><span class="drag-dot"></span><span class="drag-dot"></span></div><div class="drag-dots-row"><span class="drag-dot"></span><span class="drag-dot"></span></div><div class="drag-dots-row"><span class="drag-dot"></span><span class="drag-dot"></span></div></div>' +
+      '<div class="question-number">' + count + '</div>' +
+      '<div class="question-body">' +
+        '<div class="question-header">' +
+          '<span class="badge badge-teal">' + type + '</span>' +
+          '<span class="badge badge-slate">1 pt</span>' +
+          '<span class="required-dot" title="Required"></span>' +
+        '</div>' +
+        '<div class="question-text">New question — click Edit to configure</div>' +
+        '<div class="answer-text-hint">No options configured yet</div>' +
+        '<div class="question-footer">' +
+          '<button class="btn-ghost btn-sm" onclick="openEditModal(' + count + ')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit</button>' +
+          '<button class="btn-ghost btn-sm" onclick="duplicateQuestion(' + count + ')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Duplicate</button>' +
+          '<button class="btn-ghost btn-sm btn-danger" onclick="confirmDelete(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>' +
+        '</div>' +
+      '</div>';
+    list.appendChild(card);
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    updateQuestionCount();
+  };
+
+  // ---- DUPLICATE QUESTION ----
+  window.duplicateQuestion = function(qid) {
+    var card = document.querySelector('[data-qid="' + qid + '"]');
+    if (!card) return;
+    var clone = card.cloneNode(true);
+    clone.classList.add('new-card');
+    card.parentNode.insertBefore(clone, card.nextSibling);
+    updateQuestionCount();
+    clone.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+
+  // ---- DELETE QUESTION ----
+  var pendingDeleteCard = null;
+  window.confirmDelete = function(btn) {
+    pendingDeleteCard = btn.closest('.question-card');
+    document.getElementById('confirmOverlay').classList.add('show');
+  };
+  window.closeConfirm = function() {
+    document.getElementById('confirmOverlay').classList.remove('show');
+    pendingDeleteCard = null;
+  };
+  window.executeDelete = function() {
+    if (pendingDeleteCard) {
+      pendingDeleteCard.style.animation = 'slideUp 0.3s ease forwards';
+      setTimeout(function() {
+        pendingDeleteCard.remove();
+        updateQuestionCount();
+        pendingDeleteCard = null;
+      }, 300);
+    }
+    closeConfirm();
+  };
+
+  // ---- EDIT MODAL ----
+  window.openEditModal = function(qid) {
+    document.getElementById('editModalTitle').textContent = 'Edit Question #' + qid;
+    document.getElementById('editModal').classList.add('show');
+  };
+  window.closeEditModal = function() {
+    document.getElementById('editModal').classList.remove('show');
+  };
+  // Close modal on backdrop click
+  document.getElementById('editModal').addEventListener('click', function(e) {
+    if (e.target === this) closeEditModal();
+  });
+
+  // ---- PREVIEW ----
+  var previewQuestions = [
+    { num: 1, text: 'What is the minimum password length required by this policy?', options: ['8 characters', '10 characters', '12 characters', '16 characters'] },
+    { num: 2, text: 'Sharing passwords with colleagues is acceptable in emergencies.', options: ['True', 'False'] },
+    { num: 3, text: 'Which of the following are considered sensitive data? (Select all that apply)', options: ['Customer names', 'Public website content', 'Social Security Numbers', 'Marketing brochures', 'Employee salaries'] },
+    { num: 4, text: 'Who should you contact to report a data breach?', options: null },
+    { num: 5, text: 'Match the security term to its definition.', options: ['Phishing \u2192 Fraudulent attempt to obtain info', 'Encryption \u2192 Converting data into coded format', 'Firewall \u2192 Network security monitoring system'] }
+  ];
+  var currentPreviewQ = 0;
+  var previewSelections = {};
+
+  function initPreview() {
+    currentPreviewQ = 0;
+    renderPreviewQuestion();
+  }
+
+  function renderPreviewQuestion() {
+    var q = previewQuestions[currentPreviewQ];
+    var body = document.getElementById('previewBody');
+    var letters = ['A','B','C','D','E','F'];
+    var html = '<div class="preview-question-number">Question ' + q.num + ' of 5</div>' +
+               '<div class="preview-question-text">' + q.text + '</div>';
+    if (q.options) {
+      q.options.forEach(function(opt, i) {
+        var sel = (previewSelections[currentPreviewQ] === i) ? ' selected' : '';
+        html += '<div class="preview-option' + sel + '" onclick="selectPreviewOption(' + currentPreviewQ + ',' + i + ')">' +
+                '<div class="preview-option-letter">' + letters[i] + '</div>' + opt + '</div>';
+      });
+    } else {
+      html += '<input class="form-input" style="width:100%;margin-top:8px;" placeholder="Type your answer here...">';
+    }
+    body.innerHTML = html;
+    // Update dots
+    document.querySelectorAll('#previewDots .preview-dot').forEach(function(dot, i) {
+      dot.classList.remove('active');
+      if (previewSelections[i] !== undefined) dot.classList.add('answered');
+      if (i === currentPreviewQ) dot.classList.add('active');
+    });
+    document.getElementById('previewProgress').textContent = 'Question ' + (currentPreviewQ + 1) + ' of 5';
+    document.getElementById('prevBtn').disabled = (currentPreviewQ === 0);
+    document.getElementById('nextBtn').textContent = (currentPreviewQ === 4) ? 'Submit' : 'Next';
+  }
+
+  window.selectPreviewOption = function(qIndex, optIndex) {
+    previewSelections[qIndex] = optIndex;
+    renderPreviewQuestion();
+  };
+
+  window.showPreviewQuestion = function(index) {
+    currentPreviewQ = index;
+    renderPreviewQuestion();
+  };
+
+  window.navigatePreview = function(dir) {
+    var next = currentPreviewQ + dir;
+    if (next >= 0 && next < previewQuestions.length) {
+      currentPreviewQ = next;
+      renderPreviewQuestion();
+    }
+  };
+
+  // ---- RESET ----
+  window.resetDefaults = function() {
+    location.reload();
+  };
+
+  // Initialize preview on load
+  initPreview();
+})();
+</script>
+</body>
+</html>

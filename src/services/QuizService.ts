@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Quiz Service - Fully Featured
  * Comprehensive quiz management with advanced question types,
@@ -451,9 +450,10 @@ export class QuizService {
   private readonly attemptListName = QuizLists.QUIZ_ATTEMPTS;
   private readonly bankListName = QuizLists.QUESTION_BANKS;
   private readonly sectionListName = QuizLists.QUIZ_SECTIONS;
-  private readonly rubricListName = QuizLists.GRADING_RUBRICS;
+  // Reserved for future rubric/certificate features:
+  // private readonly rubricListName = QuizLists.GRADING_RUBRICS;
   private readonly certificateListName = QuizLists.QUIZ_CERTIFICATES;
-  private readonly templateListName = QuizLists.CERTIFICATE_TEMPLATES;
+  // private readonly templateListName = QuizLists.CERTIFICATE_TEMPLATES;
 
   constructor(sp: SPFI) {
     this.sp = sp;
@@ -1973,14 +1973,14 @@ export class QuizService {
     if (!quiz) throw new Error("Quiz not found");
 
     // Clean up data for export
-    const cleanQuiz = { ...quiz };
-    delete (cleanQuiz as any).Id;
+    const cleanQuiz: Record<string, unknown> = { ...quiz };
+    delete cleanQuiz.Id;
     delete cleanQuiz.AverageScore;
     delete cleanQuiz.CompletionRate;
 
     const cleanQuestions = questions.map(q => {
-      const clean = { ...q };
-      delete (clean as any).Id;
+      const clean: Record<string, unknown> = { ...q };
+      delete clean.Id;
       delete clean.QuizId;
       delete clean.TimesAnswered;
       delete clean.TimesCorrect;

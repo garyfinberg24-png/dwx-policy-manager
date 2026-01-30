@@ -1,4 +1,3 @@
-// @ts-nocheck
 import * as React from 'react';
 import {
   Stack,
@@ -27,18 +26,10 @@ import {
   Pivot,
   PivotItem,
   DatePicker,
-  TimePicker,
   Checkbox,
   ChoiceGroup,
-  IChoiceGroupOption,
-  TooltipHost,
-  Image,
-  ImageFit,
   ActionButton,
-  Separator,
-  ProgressIndicator,
-  Callout,
-  DirectionalHint
+  Separator
 } from '@fluentui/react';
 import {
   QuizService,
@@ -47,7 +38,6 @@ import {
   QuestionType,
   DifficultyLevel,
   QuizStatus,
-  GradingType,
   IQuestionBank,
   IQuizSection,
   IQuizStatistics,
@@ -164,6 +154,17 @@ export interface IQuizBuilderState {
 
   // Grading rubric for essays
   gradingRubric: Array<{ criteria: string; maxPoints: number; description: string }>;
+
+  // AI Question Builder
+  showAiPanel: boolean;
+  aiQuestionCount: number;
+  aiDifficulty: string;
+  aiIncludeExcerpts: boolean;
+  aiSelectedTypes: string[];
+  aiGenerating: boolean;
+  aiError: string | null;
+  aiGeneratedQuestions: IQuizQuestion[];
+  aiFunctionUrl: string;
 }
 
 const styles = mergeStyleSets({
@@ -543,7 +544,18 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
       ratingMin: 1,
       ratingMax: 5,
       ratingLabels: { min: 'Poor', max: 'Excellent' },
-      gradingRubric: []
+      gradingRubric: [],
+
+      // AI Question Builder
+      showAiPanel: false,
+      aiQuestionCount: 10,
+      aiDifficulty: 'Medium',
+      aiIncludeExcerpts: true,
+      aiSelectedTypes: ['Multiple Choice', 'True/False', 'Multiple Select', 'Short Answer'],
+      aiGenerating: false,
+      aiError: null,
+      aiGeneratedQuestions: [],
+      aiFunctionUrl: ''
     };
   }
 
@@ -803,7 +815,7 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
       blankAnswers,
       hotspotRegions,
       imageChoices,
-      gradingRubric,
+      // gradingRubric used in essay type editor panel — not needed in saveQuestion
       ratingMin,
       ratingMax,
       ratingLabels
@@ -920,6 +932,64 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
         saving: false,
         error: 'Failed to delete question. Please try again.'
       });
+    }
+  };
+
+  private handleMoveQuestion = async (fromIndex: number, toIndex: number): Promise<void> => {
+    const { questions, quizId } = this.state;
+    if (!quizId || toIndex < 0 || toIndex >= questions.length) return;
+
+    const updated = [...questions];
+    const [moved] = updated.splice(fromIndex, 1);
+    updated.splice(toIndex, 0, moved);
+
+    // Update order in state immediately for responsiveness
+    this.setState({ questions: updated });
+
+    // Persist order to SharePoint
+    try {
+      for (let i = 0; i < updated.length; i++) {
+        if (updated[i].QuestionOrder !== i + 1) {
+          await this.quizService.updateQuestion(updated[i].Id, { QuestionOrder: i + 1 });
+          updated[i] = { ...updated[i], QuestionOrder: i + 1 };
+        }
+      }
+      this.setState({ questions: updated, success: 'Question order updated.' });
+    } catch (err) {
+      console.error('Failed to update question order:', err);
+      this.setState({ error: 'Failed to save question order.' });
+    }
+  };
+
+  private handleDuplicateQuestion = async (question: IQuizQuestion): Promise<void> => {
+    const { quizId, questions } = this.state;
+    if (!quizId) return;
+
+    try {
+      this.setState({ saving: true });
+
+      // Create a copy of the question without the Id
+      const copy: Partial<IQuizQuestion> = {
+        ...question,
+        QuestionText: `${question.QuestionText} (Copy)`,
+        QuestionOrder: questions.length + 1,
+        TimesAnswered: 0,
+        TimesCorrect: 0,
+        AverageTime: 0
+      };
+      delete (copy as Record<string, unknown>).Id;
+
+      await this.quizService.createQuestion(copy);
+      const updatedQuestions = await this.quizService.getQuizQuestions(quizId);
+
+      this.setState({
+        questions: updatedQuestions,
+        saving: false,
+        success: 'Question duplicated!'
+      });
+    } catch (err) {
+      console.error('Failed to duplicate question:', err);
+      this.setState({ saving: false, error: 'Failed to duplicate question.' });
     }
   };
 
@@ -1051,6 +1121,13 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
         iconProps: { iconName: 'Add' },
         onClick: this.handleAddQuestion,
         disabled: saving || !quizId
+      },
+      {
+        key: 'aiGenerate',
+        text: 'AI Generate',
+        iconProps: { iconName: 'Robot' },
+        onClick: () => this.setState({ showAiPanel: true }),
+        disabled: saving || !quizId
       }
     ];
 
@@ -1111,7 +1188,7 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
 
     const policyOptions: IDropdownOption[] = [
       { key: '', text: '(No linked policy)' },
-      ...policies.map(p => ({ key: p.Id, text: `${p.PolicyNumber} - ${p.PolicyName}` }))
+      ...policies.map(p => ({ key: p.Id || 0, text: `${p.PolicyNumber} - ${p.PolicyName}` }))
     ];
 
     return (
@@ -1422,8 +1499,27 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
                   </span>
                 )}
               </Stack>
-              <Stack horizontal tokens={{ childrenGap: 4 }}>
+              <Stack horizontal tokens={{ childrenGap: 4 }} verticalAlign="center">
                 <Text className={styles.points}>{question.Points} pts</Text>
+                <IconButton
+                  iconProps={{ iconName: 'Up' }}
+                  title="Move Up"
+                  disabled={index === 0}
+                  onClick={() => this.handleMoveQuestion(index, index - 1)}
+                  styles={{ root: { height: 28, width: 28 } }}
+                />
+                <IconButton
+                  iconProps={{ iconName: 'Down' }}
+                  title="Move Down"
+                  disabled={index === questions.length - 1}
+                  onClick={() => this.handleMoveQuestion(index, index + 1)}
+                  styles={{ root: { height: 28, width: 28 } }}
+                />
+                <IconButton
+                  iconProps={{ iconName: 'Copy' }}
+                  title="Duplicate"
+                  onClick={() => this.handleDuplicateQuestion(question)}
+                />
                 <IconButton
                   iconProps={{ iconName: 'Edit' }}
                   title="Edit"
@@ -2698,6 +2794,274 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
     );
   }
 
+  // ============================================================================
+  // AI QUESTION BUILDER
+  // ============================================================================
+
+  private handleAiGenerate = async (): Promise<void> => {
+    const { aiFunctionUrl, aiQuestionCount, aiDifficulty, aiIncludeExcerpts, aiSelectedTypes, policyId } = this.state;
+
+    if (!aiFunctionUrl.trim()) {
+      this.setState({ aiError: 'Please enter the Azure Function URL.' });
+      return;
+    }
+
+    this.setState({ aiGenerating: true, aiError: null, aiGeneratedQuestions: [] });
+
+    try {
+      // Find the policy to get its document URL and metadata
+      const policy = this.state.policies.find(p => p.Id === policyId);
+      const policyTitle = policy?.PolicyName || 'Policy';
+      const policyCategory = policy?.PolicyCategory || 'General';
+
+      // Fetch the document text from SharePoint if possible
+      let policyText = '';
+      const docUrl = policy?.DocumentURL;
+      if (docUrl && typeof docUrl === 'string') {
+        try {
+          // Attempt to fetch document content via SharePoint REST API
+          const fileResponse = await this.props.sp.web.getFileByServerRelativePath(docUrl).getText();
+          policyText = fileResponse;
+        } catch {
+          console.warn('Could not extract document text via SP — will pass URL to Azure Function');
+        }
+      }
+
+      const requestBody: Record<string, unknown> = {
+        questionCount: aiQuestionCount,
+        difficultyLevel: aiDifficulty,
+        questionTypes: aiSelectedTypes,
+        includeExcerpts: aiIncludeExcerpts,
+        policyTitle,
+        policyCategory
+      };
+
+      if (policyText) {
+        requestBody.policyText = policyText;
+      } else if (docUrl) {
+        requestBody.policyDocumentUrl = docUrl;
+      } else {
+        this.setState({ aiGenerating: false, aiError: 'No policy document URL found. Please link a document to this policy first.' });
+        return;
+      }
+
+      const response = await fetch(aiFunctionUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: `HTTP ${response.status}` })) as { error: string };
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
+
+      const data = await response.json() as { questions: IQuizQuestion[]; metadata: Record<string, unknown> };
+
+      this.setState({
+        aiGenerating: false,
+        aiGeneratedQuestions: data.questions || [],
+        success: `AI generated ${(data.questions || []).length} questions in ${data.metadata?.generationTimeMs || 0}ms`
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      this.setState({ aiGenerating: false, aiError: `AI generation failed: ${message}` });
+    }
+  };
+
+  private handleImportAiQuestions = async (): Promise<void> => {
+    const { aiGeneratedQuestions, quizId } = this.state;
+    if (!quizId || aiGeneratedQuestions.length === 0) return;
+
+    this.setState({ saving: true });
+
+    try {
+      for (const question of aiGeneratedQuestions) {
+        await this.quizService.createQuestion({
+          ...question,
+          QuizId: quizId,
+          IsActive: true,
+          IsRequired: false,
+          QuestionOrder: this.state.questions.length + 1
+        });
+      }
+
+      const updatedQuestions = await this.quizService.getQuizQuestions(quizId);
+      this.setState({
+        questions: updatedQuestions,
+        saving: false,
+        showAiPanel: false,
+        aiGeneratedQuestions: [],
+        success: `Successfully imported ${aiGeneratedQuestions.length} AI-generated questions!`
+      });
+    } catch (err) {
+      console.error('Failed to import AI questions:', err);
+      this.setState({ saving: false, error: 'Failed to import AI-generated questions.' });
+    }
+  };
+
+  private renderAiPanel(): JSX.Element {
+    const {
+      showAiPanel, aiQuestionCount, aiDifficulty, aiIncludeExcerpts,
+      aiSelectedTypes, aiGenerating, aiError, aiGeneratedQuestions, aiFunctionUrl
+    } = this.state;
+
+    const difficultyOptions: IDropdownOption[] = [
+      { key: 'Easy', text: 'Easy — Basic facts and definitions' },
+      { key: 'Medium', text: 'Medium — Application scenarios' },
+      { key: 'Hard', text: 'Hard — Analysis and judgment' },
+      { key: 'Expert', text: 'Expert — Complex scenarios and edge cases' }
+    ];
+
+    const typeOptions = [
+      'Multiple Choice', 'True/False', 'Multiple Select', 'Short Answer',
+      'Fill in the Blank', 'Matching', 'Ordering', 'Essay'
+    ];
+
+    return (
+      <Panel
+        isOpen={showAiPanel}
+        onDismiss={() => this.setState({ showAiPanel: false })}
+        headerText="AI Question Builder"
+        type={PanelType.medium}
+      >
+        <Stack tokens={{ childrenGap: 16, padding: '16px 0' }}>
+          <MessageBar messageBarType={MessageBarType.info}>
+            Generate quiz questions automatically from your policy document using Azure OpenAI GPT-4.
+            The AI will analyze the document and create questions aligned with the selected difficulty and types.
+          </MessageBar>
+
+          {/* Azure Function URL */}
+          <TextField
+            label="Azure Function URL"
+            value={aiFunctionUrl}
+            onChange={(_e, v) => this.setState({ aiFunctionUrl: v || '' })}
+            placeholder="https://your-func.azurewebsites.net/api/generate-quiz-questions?code=..."
+            description="Enter your deployed Azure Function endpoint URL with the function key"
+            required
+          />
+
+          <Separator />
+
+          {/* Question Count */}
+          <Slider
+            label={`Number of Questions: ${aiQuestionCount}`}
+            min={1}
+            max={50}
+            step={1}
+            value={aiQuestionCount}
+            showValue={false}
+            onChange={(v) => this.setState({ aiQuestionCount: v })}
+          />
+
+          {/* Difficulty */}
+          <Dropdown
+            label="Difficulty Level"
+            selectedKey={aiDifficulty}
+            options={difficultyOptions}
+            onChange={(_e, opt) => opt && this.setState({ aiDifficulty: opt.key as string })}
+          />
+
+          {/* Question Types */}
+          <Label>Question Types to Generate</Label>
+          <Stack tokens={{ childrenGap: 8 }}>
+            {typeOptions.map(type => (
+              <Checkbox
+                key={type}
+                label={type}
+                checked={aiSelectedTypes.includes(type)}
+                onChange={(_e, checked) => {
+                  const updated = checked
+                    ? [...aiSelectedTypes, type]
+                    : aiSelectedTypes.filter(t => t !== type);
+                  this.setState({ aiSelectedTypes: updated });
+                }}
+              />
+            ))}
+          </Stack>
+
+          {/* Include Excerpts */}
+          <Toggle
+            label="Include Document Excerpts"
+            checked={aiIncludeExcerpts}
+            onChange={(_e, checked) => this.setState({ aiIncludeExcerpts: !!checked })}
+            onText="Yes — AI will include relevant policy passages"
+            offText="No — Questions only"
+          />
+
+          <Separator />
+
+          {/* Error */}
+          {aiError && (
+            <MessageBar messageBarType={MessageBarType.error} onDismiss={() => this.setState({ aiError: null })}>
+              {aiError}
+            </MessageBar>
+          )}
+
+          {/* Generate Button */}
+          <PrimaryButton
+            text={aiGenerating ? 'Generating...' : 'Generate Questions'}
+            iconProps={{ iconName: 'Robot' }}
+            onClick={this.handleAiGenerate}
+            disabled={aiGenerating || !aiFunctionUrl.trim()}
+          />
+
+          {aiGenerating && (
+            <Stack horizontalAlign="center" tokens={{ padding: 16 }}>
+              <Spinner size={SpinnerSize.large} label="AI is analyzing the policy document and generating questions..." />
+            </Stack>
+          )}
+
+          {/* Preview Generated Questions */}
+          {aiGeneratedQuestions.length > 0 && (
+            <>
+              <Separator />
+              <Text variant="large" style={{ fontWeight: 600 }}>
+                Generated Questions ({aiGeneratedQuestions.length})
+              </Text>
+
+              <div style={{ maxHeight: 400, overflowY: 'auto', border: '1px solid #edebe9', borderRadius: 4, padding: 12 }}>
+                {aiGeneratedQuestions.map((q, i) => (
+                  <div key={i} style={{ padding: '12px 0', borderBottom: i < aiGeneratedQuestions.length - 1 ? '1px solid #edebe9' : 'none' }}>
+                    <Stack horizontal tokens={{ childrenGap: 8 }} verticalAlign="center">
+                      <span style={{ fontWeight: 700, color: '#0d9488', minWidth: 24 }}>{i + 1}.</span>
+                      <span style={{ backgroundColor: '#e8f5e9', padding: '2px 8px', borderRadius: 4, fontSize: 11 }}>
+                        {q.QuestionType}
+                      </span>
+                      <span style={{ backgroundColor: '#fff3e0', padding: '2px 8px', borderRadius: 4, fontSize: 11 }}>
+                        {q.DifficultyLevel}
+                      </span>
+                      <span style={{ fontSize: 11, color: '#605e5c' }}>{q.Points} pts</span>
+                    </Stack>
+                    <Text style={{ marginTop: 4, display: 'block' }}>{q.QuestionText}</Text>
+                    {q.Explanation && (
+                      <Text variant="small" style={{ color: '#605e5c', marginTop: 4, display: 'block', fontStyle: 'italic' }}>
+                        {q.Explanation.substring(0, 120)}...
+                      </Text>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <Stack horizontal tokens={{ childrenGap: 12 }}>
+                <PrimaryButton
+                  text={`Import All ${aiGeneratedQuestions.length} Questions`}
+                  iconProps={{ iconName: 'Accept' }}
+                  onClick={this.handleImportAiQuestions}
+                />
+                <DefaultButton
+                  text="Discard"
+                  iconProps={{ iconName: 'Delete' }}
+                  onClick={() => this.setState({ aiGeneratedQuestions: [] })}
+                />
+              </Stack>
+            </>
+          )}
+        </Stack>
+      </Panel>
+    );
+  }
+
   public render(): React.ReactElement<IQuizBuilderProps> {
     const { loading, saving, error, success, quizId, activeTab } = this.state;
 
@@ -2789,6 +3153,7 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
         {this.renderImportDialog()}
         {this.renderExportDialog()}
         {this.renderStatisticsPanel()}
+        {this.renderAiPanel()}
       </div>
     );
   }

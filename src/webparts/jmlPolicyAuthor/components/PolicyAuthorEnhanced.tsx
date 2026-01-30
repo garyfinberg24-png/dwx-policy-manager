@@ -4596,7 +4596,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             <DefaultButton
               text="View Full Details"
               iconProps={{ iconName: 'OpenInNewWindow' }}
-              onClick={() => window.open(`/sites/JML/SitePages/PolicyDetails.aspx?policyId=${selectedPolicyDetails.Id}`, '_blank')}
+              onClick={() => window.open(`/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${selectedPolicyDetails.Id}&mode=browse`, '_blank')}
             />
             <DefaultButton
               text="Close"
@@ -4791,7 +4791,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             <DefaultButton
               text="View Full Policy"
               iconProps={{ iconName: 'OpenInNewWindow' }}
-              onClick={() => window.open(`/sites/JML/SitePages/PolicyDetails.aspx?policyId=${policy.Id}`, '_blank')}
+              onClick={() => window.open(`/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${policy.Id}&mode=browse`, '_blank')}
             />
             <DefaultButton
               text="Compare Versions"

@@ -304,7 +304,7 @@ export default class PolicySearch extends React.Component<IPolicySearchProps, IP
 
   private handleResultClick = (result: ISearchResult): void => {
     if (result.type === 'policy') {
-      window.location.href = `/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${result.id}`;
+      window.location.href = `/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${result.id}&mode=browse`;
     }
   };
 

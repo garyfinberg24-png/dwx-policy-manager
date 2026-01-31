@@ -405,9 +405,9 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         <div className={styles.sidebarHeader}>
           <div className={styles.sidebarTitle}>
             <Icon iconName="Admin" style={{ fontSize: 22 }} />
-            <span>Policy Admin</span>
+            <span>Admin Center</span>
           </div>
-          <div className={styles.sidebarSubtitle}>System Configuration</div>
+          <div className={styles.sidebarSubtitle}>Policy Manager Configuration</div>
         </div>
 
         {/* Navigation Sections */}

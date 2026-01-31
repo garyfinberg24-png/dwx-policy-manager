@@ -615,7 +615,7 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
                   />
                 </svg>
                 {unreadCount > 0 && (
-                  <span className={styles.notificationBadgeCount}>
+                  <span className={styles.notificationBadgeCount} style={{ border: 'none', outline: 'none', boxShadow: 'none' }}>
                     {unreadCount > 99 ? '99+' : unreadCount}
                   </span>
                 )}

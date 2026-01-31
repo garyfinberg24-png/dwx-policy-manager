@@ -188,19 +188,20 @@
 
   .contentHeader {
     padding: 24px 40px;
-    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
-    color: #ffffff;
+    background: #ffffff;
+    color: #0f172a;
     display: flex;
     align-items: center;
     gap: 16px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid #e2e8f0;
+    border-top: 4px solid #0d9488;
   }
 
   .contentHeaderIcon {
     width: 48px;
     height: 48px;
     min-width: 48px;
-    background: rgba(255, 255, 255, 0.2);
+    background: #0d9488;
     border-radius: 12px;
     display: flex;
     align-items: center;
@@ -216,12 +217,12 @@
   .contentHeaderTitle {
     font-size: 22px;
     font-weight: 600;
-    color: #ffffff;
+    color: #0f172a;
   }
 
   .contentHeaderDesc {
     font-size: 14px;
-    color: rgba(255, 255, 255, 0.9);
+    color: #64748b;
   }
 
   .contentBody {

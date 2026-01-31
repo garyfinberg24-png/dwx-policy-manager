@@ -787,7 +787,9 @@ $pm-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-se
   align-items: center;
   justify-content: center;
   color: $pm-white;
-  border: none;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
   line-height: 1;
 }
 

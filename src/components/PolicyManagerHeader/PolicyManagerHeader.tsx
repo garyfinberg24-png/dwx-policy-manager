@@ -337,17 +337,18 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
   // Format login time
   const displayLoginTime = loginTime || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-  // Default nav items for Policy Manager with icons
+  // Default nav items — ordered by workflow: consume → author → manage → analyse
+  // Role filtering applied via PolicyRoleService.filterNavForRole()
   const defaultNavItems: INavItem[] = [
+    { key: 'my-policies', text: 'My Policies', icon: NavIcons.authored, href: '/sites/PolicyManager/SitePages/MyPolicies.aspx' },
+    { key: 'browse', text: 'Policy Hub', icon: NavIcons.browse, href: '/sites/PolicyManager/SitePages/PolicyHub.aspx' },
     { key: 'create', text: 'Policy Builder', icon: NavIcons.create, href: '/sites/PolicyManager/SitePages/PolicyBuilder.aspx' },
     { key: 'author', text: 'Policy Author', icon: NavIcons.authored, href: '/sites/PolicyManager/SitePages/PolicyAuthor.aspx' },
-    { key: 'manager', text: 'Policy Manager', icon: NavIcons.manager, href: '/sites/PolicyManager/SitePages/PolicyManagerView.aspx' },
-    { key: 'browse', text: 'Browse Policies', icon: NavIcons.browse, href: '/sites/PolicyManager/SitePages/PolicyHub.aspx' },
-    { key: 'my-policies', text: 'My Policies', icon: NavIcons.authored, href: '/sites/PolicyManager/SitePages/MyPolicies.aspx' },
+    { key: 'packs', text: 'Policy Packs', icon: NavIcons.packs, href: '/sites/PolicyManager/SitePages/PolicyPacks.aspx' },
     { key: 'distribution', text: 'Distribution', icon: NavIcons.distribution, href: '/sites/PolicyManager/SitePages/PolicyDistribution.aspx' },
+    { key: 'manager', text: 'Policy Manager', icon: NavIcons.manager, href: '/sites/PolicyManager/SitePages/PolicyManagerView.aspx' },
     { key: 'analytics', text: 'Analytics', icon: NavIcons.analytics, href: '/sites/PolicyManager/SitePages/PolicyAnalytics.aspx' },
-{ key: 'packs', text: 'Policy Packs', icon: NavIcons.packs, href: '/sites/PolicyManager/SitePages/PolicyPacks.aspx' },
-    { key: 'quiz', text: 'Quiz Builder', icon: NavIcons.quiz, href: '/sites/PolicyManager/SitePages/QuizBuilder.aspx' }
+    { key: 'quiz', text: 'Quiz Builder', icon: NavIcons.quiz, href: '/sites/PolicyManager/SitePages/QuizBuilder.aspx' },
   ];
 
   const allNavItems = navItems.length > 0 ? navItems : defaultNavItems;

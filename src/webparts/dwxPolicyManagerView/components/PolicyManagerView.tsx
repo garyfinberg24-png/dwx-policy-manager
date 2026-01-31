@@ -194,6 +194,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
         context={this.props.context}
         sp={this.props.sp}
         activeNavKey="manager"
+        breadcrumbs={[{ text: 'Policy Manager', url: '/sites/PolicyManager' }, { text: 'Policy Manager' }]}
       >
         <Pivot
           selectedKey={this.state.activeTab}
@@ -402,7 +403,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
 
         {/* Overdue alert */}
         {totalOverdue > 0 && (
-          <MessageBar messageBarType={MessageBarType.severeWarning} style={{ marginBottom: 16 }}
+          <MessageBar messageBarType={MessageBarType.severeWarning} style={{ marginBottom: 24 }}
             actions={<DefaultButton text="Send Reminders" onClick={() => alert('Reminder functionality coming soon')} />}>
             <strong>{totalOverdue} overdue acknowledgement{totalOverdue > 1 ? 's' : ''}</strong> — send reminders to keep your team compliant.
           </MessageBar>
@@ -452,14 +453,22 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
                   </div>
                 </td>
                 <td>
-                  {member.PoliciesOverdue > 0 && (
+                  <div style={{ display: 'flex', gap: 4 }}>
                     <IconButton
-                      iconProps={{ iconName: 'Ringer' }}
-                      title="Send reminder"
-                      styles={{ root: { color: '#d13438' }, rootHovered: { color: '#a4262c', background: '#fef2f2' } }}
-                      onClick={() => alert(`Reminder sent to ${member.Name}`)}
+                      iconProps={{ iconName: 'TeamsLogo' }}
+                      title={`Nudge ${member.Name} on Teams`}
+                      ariaLabel="Nudge on Teams"
+                      styles={{ root: { width: 28, height: 28, color: '#6264a7' }, rootHovered: { color: '#4b4d8f', background: '#f3f2f1' } }}
+                      onClick={() => alert(`Teams nudge sent to ${member.Name}`)}
                     />
-                  )}
+                    <IconButton
+                      iconProps={{ iconName: 'Mail' }}
+                      title={`Email ${member.Name}`}
+                      ariaLabel="Send email reminder"
+                      styles={{ root: { width: 28, height: 28, color: '#0078d4' }, rootHovered: { color: '#005a9e', background: '#f3f2f1' } }}
+                      onClick={() => alert(`Email reminder sent to ${member.Name}`)}
+                    />
+                  </div>
                 </td>
               </tr>
             ))}
@@ -616,7 +625,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
         </div>
 
         {overdueCount > 0 && (
-          <MessageBar messageBarType={MessageBarType.severeWarning} style={{ marginBottom: 16 }}>
+          <MessageBar messageBarType={MessageBarType.severeWarning} style={{ marginBottom: 24 }}>
             <strong>{overdueCount} delegation{overdueCount > 1 ? 's are' : ' is'} overdue</strong> — follow up with assigned team members.
           </MessageBar>
         )}

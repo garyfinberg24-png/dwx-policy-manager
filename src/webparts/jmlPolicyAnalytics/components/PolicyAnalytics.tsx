@@ -7,6 +7,7 @@ import {
   Pivot,
   PivotItem,
   Icon,
+  IconButton,
   SearchBox,
   Dropdown,
   IDropdownOption,
@@ -376,6 +377,7 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
         title={this.props.title}
         context={this.props.context}
         pageTitle="Policy Analytics"
+        breadcrumbs={[{ text: 'Policy Manager', url: '/sites/PolicyManager' }, { text: 'Analytics' }]}
       >
         <div className={styles.policyAnalytics}>
           {/* Tab Navigation */}
@@ -780,6 +782,7 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
                   <th>Days Overdue</th>
                   <th>Department</th>
                   <th>Escalation</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -793,6 +796,12 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
                       <span className={`${styles.escalationBadge} ${item.escalationStatus !== 'None' ? styles.escalationActive : ''}`}>
                         {item.escalationStatus}
                       </span>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <IconButton iconProps={{ iconName: 'TeamsLogo' }} title={`Nudge ${item.userName} on Teams`} ariaLabel={`Nudge on Teams`} styles={{ root: { width: 28, height: 28, color: '#6264a7' }, rootHovered: { color: '#4b4d8f', background: '#f3f2f1' } }} onClick={() => alert(`Teams nudge sent to ${item.userName}`)} />
+                        <IconButton iconProps={{ iconName: 'Mail' }} title={`Email ${item.userName}`} ariaLabel={`Send email reminder`} styles={{ root: { width: 28, height: 28, color: '#0078d4' }, rootHovered: { color: '#005a9e', background: '#f3f2f1' } }} onClick={() => alert(`Email reminder sent to ${item.userName}`)} />
+                      </div>
                     </td>
                   </tr>
                 ))}

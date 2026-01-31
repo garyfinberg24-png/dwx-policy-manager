@@ -596,7 +596,7 @@ export default class PolicyHelp extends React.Component<IPolicyHelpProps, IPolic
 
     if (selectedArticle) {
       return (
-        <JmlAppLayout context={this.props.context}>
+        <JmlAppLayout context={this.props.context} breadcrumbs={[{ text: 'Policy Manager', url: '/sites/PolicyManager' }, { text: 'Help', url: '#' }, { text: selectedArticle.title }]}>
           <div className={styles.policyHelp}>
             <div className={styles.contentWrapper}>
               {this.renderArticleDetail()}
@@ -607,7 +607,7 @@ export default class PolicyHelp extends React.Component<IPolicyHelpProps, IPolic
     }
 
     return (
-      <JmlAppLayout context={this.props.context}>
+      <JmlAppLayout context={this.props.context} breadcrumbs={[{ text: 'Policy Manager', url: '/sites/PolicyManager' }, { text: 'Help' }]}>
         <div className={styles.policyHelp}>
           <div className={styles.contentWrapper}>
             {/* Hero Section */}

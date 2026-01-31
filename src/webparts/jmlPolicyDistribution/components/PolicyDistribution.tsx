@@ -17,9 +17,11 @@ import {
   Spinner,
   SpinnerSize,
   Icon,
+  Label,
   MessageBar,
   MessageBarType,
 } from '@fluentui/react';
+import { PeoplePicker, PrincipalType } from "@pnp/spfx-controls-react/lib/PeoplePicker";
 
 // ============================================================================
 // INTERFACES
@@ -265,6 +267,29 @@ const REMINDER_OPTIONS: IDropdownOption[] = [
   { key: '7,14,21', text: '7, 14, and 21 days' },
   { key: '3,7,14', text: '3, 7, and 14 days' },
   { key: 'custom', text: 'Custom schedule' },
+];
+
+const POLICY_PACK_OPTIONS: IDropdownOption[] = [
+  { key: '10', text: 'New Hire Onboarding Pack' },
+  { key: '11', text: 'Annual Compliance Refresher Pack' },
+  { key: '12', text: 'IT Security Essentials Pack' },
+  { key: '13', text: 'Manager Leadership Pack' },
+  { key: '14', text: 'GDPR & Data Privacy Pack' },
+  { key: '15', text: 'Health & Safety Essentials Pack' },
+  { key: '16', text: 'Finance & Anti-Fraud Pack' },
+];
+
+const POLICY_OPTIONS: IDropdownOption[] = [
+  { key: '101', text: 'Information Security Policy v3.2' },
+  { key: '102', text: 'Data Privacy & GDPR Compliance' },
+  { key: '103', text: 'Acceptable Use Policy' },
+  { key: '104', text: 'Code of Conduct & Ethics' },
+  { key: '105', text: 'Anti-Fraud & Financial Controls' },
+  { key: '106', text: 'Health & Safety at Work' },
+  { key: '107', text: 'Remote Working Policy' },
+  { key: '108', text: 'Anti-Bribery & Corruption' },
+  { key: '109', text: 'Environmental Sustainability Policy' },
+  { key: '110', text: 'Whistleblowing Policy' },
 ];
 
 const FILTER_TABS = ['All', 'Active', 'Scheduled', 'Completed', 'Draft', 'Paused'];
@@ -818,22 +843,22 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
             </div>
             {formContentType === 'Policy' ? (
               <div className={styles.formField}>
-                <TextField
+                <Dropdown
                   label="Policy"
-                  value={formPolicyId}
-                  onChange={(_, val) => this.setState({ formPolicyId: val || '' })}
-                  placeholder="Enter policy ID or search by name"
-                  description="Select the policy to distribute"
+                  selectedKey={formPolicyId || undefined}
+                  options={POLICY_OPTIONS}
+                  onChange={(_, opt) => opt && this.setState({ formPolicyId: opt.key as string })}
+                  placeholder="Select a policy to distribute"
                 />
               </div>
             ) : (
               <div className={styles.formField}>
-                <TextField
+                <Dropdown
                   label="Policy Pack"
-                  value={formPolicyPackId}
-                  onChange={(_, val) => this.setState({ formPolicyPackId: val || '' })}
-                  placeholder="Enter policy pack ID or search by name"
-                  description="Select the policy pack to distribute (contains multiple policies)"
+                  selectedKey={formPolicyPackId || undefined}
+                  options={POLICY_PACK_OPTIONS}
+                  onChange={(_, opt) => opt && this.setState({ formPolicyPackId: opt.key as string })}
+                  placeholder="Select a policy pack to distribute"
                 />
               </div>
             )}
@@ -851,26 +876,40 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
               />
             </div>
             <div className={styles.formField}>
-              <TextField
-                label="Target Users"
-                value={formTargetUsers}
-                onChange={(_, val) => this.setState({ formTargetUsers: val || '' })}
-                placeholder="e.g., alice.johnson@company.com, bob.williams@company.com"
-                description="Comma-separated list of individual users"
-                multiline
-                rows={2}
+              <Label>Target Users</Label>
+              <PeoplePicker
+                context={this.props.context as any}
+                personSelectionLimit={50}
+                groupName=""
+                showtooltip={true}
+                defaultSelectedUsers={formTargetUsers ? formTargetUsers.split(',').map(u => u.trim()).filter(Boolean) : []}
+                onChange={(items: any[]) => {
+                  const users = items.map(item => item.secondaryText || item.text || '').filter(Boolean);
+                  this.setState({ formTargetUsers: users.join(', ') });
+                }}
+                principalTypes={[PrincipalType.User]}
+                resolveDelay={500}
+                placeholder="Search for users in Entra ID..."
               />
+              <div style={{ fontSize: 12, color: '#605e5c', marginTop: 4 }}>Search and select individual users from your organisation directory</div>
             </div>
             <div className={styles.formField}>
-              <TextField
-                label="Target Groups / Departments"
-                value={formTargetGroups}
-                onChange={(_, val) => this.setState({ formTargetGroups: val || '' })}
-                placeholder="e.g., Engineering, Finance, All Managers"
-                description="Comma-separated list of groups or departments"
-                multiline
-                rows={2}
+              <Label>Target Groups / Departments</Label>
+              <PeoplePicker
+                context={this.props.context as any}
+                personSelectionLimit={20}
+                groupName=""
+                showtooltip={true}
+                defaultSelectedUsers={formTargetGroups ? formTargetGroups.split(',').map(g => g.trim()).filter(Boolean) : []}
+                onChange={(items: any[]) => {
+                  const groups = items.map(item => item.text || '').filter(Boolean);
+                  this.setState({ formTargetGroups: groups.join(', ') });
+                }}
+                principalTypes={[PrincipalType.SharePointGroup, PrincipalType.SecurityGroup, PrincipalType.DistributionList]}
+                resolveDelay={500}
+                placeholder="Search for groups in Entra ID..."
               />
+              <div style={{ fontSize: 12, color: '#605e5c', marginTop: 4 }}>Search and select security groups, distribution lists, or SharePoint groups</div>
             </div>
           </div>
 

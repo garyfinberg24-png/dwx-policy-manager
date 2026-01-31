@@ -314,7 +314,7 @@ export default class PolicySearch extends React.Component<IPolicySearchProps, IP
       (filters.dateFrom ? 1 : 0) + (filters.dateTo ? 1 : 0);
 
     return (
-      <JmlAppLayout context={this.props.context}>
+      <JmlAppLayout context={this.props.context} breadcrumbs={[{ text: 'Policy Manager', url: '/sites/PolicyManager' }, { text: 'Search' }]}>
         <div className={styles.policySearch}>
           <div className={styles.contentWrapper}>
             {/* Hero Section */}

@@ -184,6 +184,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
         context={this.props.context}
         sp={this.props.sp}
         activeNavKey="author"
+        breadcrumbs={[{ text: 'Policy Manager', url: '/sites/PolicyManager' }, { text: 'Policy Author' }]}
       >
         <Pivot
           selectedKey={this.state.activeTab}

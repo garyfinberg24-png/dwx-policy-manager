@@ -272,3 +272,286 @@ $pm-primary-light: #14b8a6;
   align-items: center;
   gap: 8px;
 }
+
+/* =========================================================================
+   REPORTS EXPERIENCE
+   ========================================================================= */
+
+/* Report Hub Grid */
+.reportHubGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.reportCard {
+  background: #ffffff;
+  padding: 22px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+
+  &:hover {
+    border-color: $pm-primary;
+    box-shadow: 0 4px 12px rgba(13, 148, 136, 0.15);
+    transform: translateY(-1px);
+  }
+}
+
+.reportCardIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #f0fdfa;
+  color: $pm-primary;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  margin-bottom: 12px;
+}
+
+.reportCardTitle {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #323130;
+  margin-bottom: 6px;
+}
+
+.reportCardDesc {
+  font-size: 0.8rem;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.reportCardMeta {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-bottom: 12px;
+}
+
+.reportCardActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+/* Format Badges */
+.formatBadge {
+  display: inline-block;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.3px;
+}
+
+.formatPdf {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.formatExcel {
+  background: #f0fdf4;
+  color: #16a34a;
+}
+
+.formatCsv {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+/* Category Pills */
+.categoryPills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.categoryPill {
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  background: #ffffff;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  outline: none;
+
+  &:hover {
+    border-color: $pm-primary;
+    color: $pm-primary;
+    background: #f0fdfa;
+  }
+}
+
+.categoryPillActive {
+  background: $pm-primary;
+  color: #ffffff;
+  border-color: $pm-primary;
+
+  &:hover {
+    background: $pm-primary-dark;
+    color: #ffffff;
+    border-color: $pm-primary-dark;
+  }
+}
+
+/* Report Builder Layout */
+.reportBuilderLayout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 0;
+  min-height: 500px;
+}
+
+.reportBuilderSidebar {
+  background: #ffffff;
+  border-right: 1px solid #e2e8f0;
+  padding: 20px 16px;
+  border-radius: 8px 0 0 8px;
+  border: 1px solid #edebe9;
+  border-right: 1px solid #e2e8f0;
+}
+
+.reportBuilderNavItem {
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #323130;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  border-radius: 0 4px 4px 0;
+  transition: all 0.15s ease;
+  margin-bottom: 2px;
+
+  &:hover {
+    background: #f0fdfa;
+    border-left-color: #ccfbf1;
+  }
+}
+
+.reportBuilderNavItemActive {
+  background: #f0fdfa;
+  border-left-color: $pm-primary;
+  color: $pm-primary;
+  font-weight: 600;
+}
+
+.reportBuilderParams {
+  background: #ffffff;
+  border: 1px solid #edebe9;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+/* Report Preview Stats */
+.reportPreviewStats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.reportPreviewStat {
+  background: #f0fdfa;
+  border-radius: 8px;
+  padding: 14px 16px;
+  text-align: center;
+}
+
+.reportPreviewStatNum {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: $pm-primary-dark;
+}
+
+/* KPI Card Highlight */
+.kpiCardHighlight {
+  border-left: 4px solid $pm-primary;
+}
+
+/* Quick Reports Scroll */
+.quickReportsScroll {
+  display: flex;
+  overflow-x: auto;
+  gap: 16px;
+  padding-bottom: 8px;
+
+  &::-webkit-scrollbar {
+    height: 6px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+  }
+}
+
+.quickReportCard {
+  min-width: 210px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+
+  &:hover {
+    border-color: $pm-primary;
+    box-shadow: 0 2px 8px rgba(13, 148, 136, 0.12);
+  }
+}
+
+/* Report Timeline */
+.reportTimeline {
+  display: flex;
+  flex-direction: column;
+}
+
+.reportTimelineItem {
+  display: flex;
+  gap: 16px;
+  border-bottom: none;
+}
+
+.reportTimelineDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: $pm-primary;
+  flex-shrink: 0;
+}
+
+.reportTimelineTitle {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #323130;
+}
+
+.reportTimelineMeta {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-top: 2px;
+  line-height: 1.6;
+}
+
+/* Scheduled Toggle */
+.scheduledToggle {
+  width: 40px;
+  height: 22px;
+  border-radius: 11px;
+  background: #cbd5e1;
+  position: relative;
+  transition: background 0.2s ease;
+  cursor: pointer;
+}
+
+.scheduledToggleOn {
+  background: $pm-primary;
+}

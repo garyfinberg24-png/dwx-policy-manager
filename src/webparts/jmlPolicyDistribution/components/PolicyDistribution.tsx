@@ -574,7 +574,7 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
             text="New Campaign"
             iconProps={{ iconName: 'Add' }}
             onClick={this.openCreatePanel}
-            styles={{ root: { borderRadius: 6, background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+            styles={{ root: { borderRadius: 6, background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' }, label: { fontWeight: 400 } }}
           />
         </div>
       </div>

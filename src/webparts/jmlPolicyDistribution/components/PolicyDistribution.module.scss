@@ -21,7 +21,7 @@ $pm-font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-se
 
 .kpiGrid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(7, 1fr);
   gap: 16px;
   max-width: 1200px;
 }
@@ -155,8 +155,8 @@ $pm-font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-se
 
 .campaignTable td {
   padding: 14px 16px;
-  font-size: 14px;
-  font-weight: 400;
+  font-size: 14px !important;
+  font-weight: 400 !important;
   color: #334155;
   border-bottom: 1px solid #e2e8f0;
   vertical-align: middle;
@@ -171,7 +171,7 @@ $pm-font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-se
 }
 
 .campaignName {
-  font-weight: 400;
+  font-weight: 400 !important;
   color: $pm-primary-dark;
   cursor: pointer;
   display: flex;
@@ -244,8 +244,8 @@ $pm-font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-se
 }
 
 .progressLabel {
-  font-size: 13px;
-  font-weight: 400;
+  font-size: 13px !important;
+  font-weight: 400 !important;
   color: #334155;
   min-width: 40px;
   text-align: right;

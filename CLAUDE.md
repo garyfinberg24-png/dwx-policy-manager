@@ -8,6 +8,27 @@
 4. **After you complete a task, always validate the result**
 5. **We are working in https://mf7m.sharepoint.com/sites/PolicyManager**
 
+### Task Execution Rules (MANDATORY)
+
+- **One task at a time, verify before moving on.** When given multiple items, complete the first one, then re-read the changed file and describe exactly what changed to yourself before starting the next item. Do NOT batch all items into one large edit.
+- **A successful build does NOT mean the task is done.** After every edit, re-read the relevant section of the file and verify it matches the user's requirements point by point. Check: Does the output match what was asked? Did I skip anything? Is the logic correct?
+- **NEVER package or ship without explicit user approval.** Do not run `gulp package-solution --ship` unless the user explicitly says "ship it", "package it", or "deploy it". A build check (`gulp bundle --ship`) is fine, but packaging for production requires permission.
+- **Track every sub-item in the todo list.** If the user asks for 3 things, create 3 separate todo items. Mark each as completed only AFTER verifying the implementation against the requirement — not after the build passes.
+- **When delegating to sub-agents, include the EXACT requirements verbatim.** Do not paraphrase or summarize the user's request when passing to a Task agent. Copy their words directly so nothing is lost in translation.
+- **If a task was done wrong before, flag it.** When re-implementing something that failed previously, add a note in the todo: "REDO — previously incorrect" so it gets extra attention during verification.
+
+### Task Communication Process (MANDATORY)
+
+Follow this loop for every task:
+
+1. **User requests a task** — Read and understand the requirement fully.
+2. **You explain it back** — Describe what you will do in your own words so the user can confirm you understood correctly. For visual/UI changes, create an HTML mockup first.
+3. **User approves or adjusts** — Wait for the user to say "go for it", "approved", or similar. If they adjust, update your understanding and repeat step 2.
+4. **You implement** — Only after explicit approval. Follow the Task Execution Rules above.
+5. **Iterate** — Continue this loop until the user is satisfied.
+
+Do NOT skip step 2 and jump straight to implementation. The user must confirm understanding before code is written.
+
 ---
 
 ## Project Overview

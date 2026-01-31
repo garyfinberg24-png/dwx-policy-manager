@@ -37,6 +37,7 @@ import {
   IAssignPolicyPackRequest,
   IPolicyPackDeploymentResult
 } from '../../../models/IPolicy';
+import { PeoplePicker, PrincipalType } from "@pnp/spfx-controls-react/lib/PeoplePicker";
 import styles from './PolicyPackManager.module.scss';
 
 export interface IPolicyPackManagerState {
@@ -62,6 +63,9 @@ export interface IPolicyPackManagerState {
   sendTeamsNotification: boolean;
   submitting: boolean;
   deploymentResult: IPolicyPackDeploymentResult | null;
+  policySearchFilter: string;
+  recentPoliciesExpanded: boolean;
+  deliveryOptionsExpanded: boolean;
 }
 
 export default class PolicyPackManager extends React.Component<IPolicyPackManagerProps, IPolicyPackManagerState> {
@@ -93,7 +97,10 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
       sendWelcomeEmail: true,
       sendTeamsNotification: true,
       submitting: false,
-      deploymentResult: null
+      deploymentResult: null,
+      policySearchFilter: '',
+      recentPoliciesExpanded: true,
+      deliveryOptionsExpanded: false
     };
     this.packService = new PolicyPackService(props.sp);
     this.policyService = new PolicyService(props.sp);
@@ -540,48 +547,247 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
 
           <div>
             <Label required>Select Policies</Label>
-            <div className={styles.policySelection}>
-              {allPolicies.map((policy: IPolicy) => (
-                <Checkbox
-                  key={policy.Id}
-                  label={`${policy.PolicyNumber} - ${policy.PolicyName}`}
-                  checked={selectedPolicyIds.includes(policy.Id)}
-                  onChange={(_, checked) => {
-                    if (checked) {
-                      this.setState({
-                        selectedPolicyIds: [...selectedPolicyIds, policy.Id]
-                      });
-                    } else {
-                      this.setState({
-                        selectedPolicyIds: selectedPolicyIds.filter(id => id !== policy.Id)
-                      });
-                    }
-                  }}
-                />
-              ))}
-            </div>
+
+            {/* Recently Created Policies — Collapsible */}
+            {(() => {
+              const recentPolicies = [...allPolicies]
+                .sort((a, b) => {
+                  const dateA = a.Created ? new Date(a.Created).getTime() : 0;
+                  const dateB = b.Created ? new Date(b.Created).getTime() : 0;
+                  return dateB - dateA;
+                })
+                .slice(0, 5);
+              return recentPolicies.length > 0 ? (
+                <div style={{ marginBottom: 12 }}>
+                  <div
+                    onClick={() => this.setState({ recentPoliciesExpanded: !this.state.recentPoliciesExpanded })}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer',
+                      padding: '6px 0', marginBottom: this.state.recentPoliciesExpanded ? 6 : 0
+                    }}
+                  >
+                    <Icon
+                      iconName={this.state.recentPoliciesExpanded ? 'ChevronDown' : 'ChevronRight'}
+                      style={{ fontSize: 12, color: '#605e5c', transition: 'transform 0.15s' }}
+                    />
+                    <Text variant="small" style={{ color: '#605e5c', fontWeight: 600 }}>
+                      Recently Created
+                    </Text>
+                    <Text variant="small" style={{ color: '#a0aec0', fontSize: 11 }}>
+                      ({recentPolicies.length})
+                    </Text>
+                  </div>
+                  {this.state.recentPoliciesExpanded && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      {recentPolicies.map((policy: IPolicy) => {
+                        const isSelected = selectedPolicyIds.includes(policy.Id);
+                        return (
+                          <div
+                            key={policy.Id}
+                            onClick={() => {
+                              if (isSelected) {
+                                this.setState({ selectedPolicyIds: selectedPolicyIds.filter(id => id !== policy.Id) });
+                              } else {
+                                this.setState({ selectedPolicyIds: [...selectedPolicyIds, policy.Id] });
+                              }
+                            }}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px',
+                              borderRadius: 4, cursor: 'pointer', fontSize: 13,
+                              background: isSelected ? '#e6f7f5' : '#f8f9fa',
+                              border: isSelected ? '1px solid #0d9488' : '1px solid #e2e8f0',
+                            }}
+                          >
+                            <Icon iconName={isSelected ? 'CheckboxComposite' : 'Checkbox'} style={{ color: isSelected ? '#0d9488' : '#8a8886', fontSize: 14 }} />
+                            <span style={{ flex: 1, color: '#323130' }}>{policy.PolicyNumber} - {policy.PolicyName}</span>
+                            {policy.Created && (
+                              <span style={{ color: '#a0aec0', fontSize: 11 }}>
+                                {new Date(policy.Created).toLocaleDateString()}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              ) : null;
+            })()}
+
+            {/* Filter-as-you-type search */}
+            <TextField
+              placeholder="Search policies by name or number..."
+              iconProps={{ iconName: 'Search' }}
+              value={this.state.policySearchFilter}
+              onChange={(_, value) => this.setState({ policySearchFilter: value || '' })}
+              styles={{ root: { marginBottom: 8 } }}
+            />
+
+            {/* Search results — only shown when user types a filter */}
+            {this.state.policySearchFilter.trim().length > 0 && (() => {
+              const search = this.state.policySearchFilter.toLowerCase();
+              const filtered = allPolicies.filter((policy: IPolicy) =>
+                (policy.PolicyName || '').toLowerCase().includes(search) ||
+                (policy.PolicyNumber || '').toLowerCase().includes(search) ||
+                (policy.Category || '').toLowerCase().includes(search)
+              );
+              return (
+                <div style={{
+                  maxHeight: 300, overflowY: 'auto',
+                  border: '1px solid #e2e8f0', borderRadius: 4, padding: 4,
+                  background: '#fff', marginBottom: 8
+                }}>
+                  {filtered.length > 0 ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      {filtered.map((policy: IPolicy) => {
+                        const isSelected = selectedPolicyIds.includes(policy.Id);
+                        return (
+                          <div
+                            key={policy.Id}
+                            onClick={() => {
+                              if (isSelected) {
+                                this.setState({ selectedPolicyIds: selectedPolicyIds.filter(id => id !== policy.Id) });
+                              } else {
+                                this.setState({ selectedPolicyIds: [...selectedPolicyIds, policy.Id] });
+                              }
+                            }}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px',
+                              borderRadius: 4, cursor: 'pointer', fontSize: 13,
+                              background: isSelected ? '#e6f7f5' : '#f8f9fa',
+                              border: isSelected ? '1px solid #0d9488' : '1px solid #e2e8f0',
+                            }}
+                          >
+                            <Icon iconName={isSelected ? 'CheckboxComposite' : 'Checkbox'} style={{ color: isSelected ? '#0d9488' : '#8a8886', fontSize: 14 }} />
+                            <span style={{ flex: 1, color: '#323130' }}>{policy.PolicyNumber} - {policy.PolicyName}</span>
+                            {policy.Category && (
+                              <span style={{
+                                color: '#64748b', fontSize: 11, padding: '1px 6px',
+                                background: '#f1f5f9', borderRadius: 3
+                              }}>
+                                {policy.Category}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <Text variant="small" style={{ color: '#a0aec0', fontStyle: 'italic', padding: 8, display: 'block', textAlign: 'center' }}>
+                      No policies match "{this.state.policySearchFilter}"
+                    </Text>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* Selected count + chips */}
             <Text variant="small" className={styles.subText}>
               {selectedPolicyIds.length} policies selected
             </Text>
+            {selectedPolicyIds.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
+                {selectedPolicyIds.map(id => {
+                  const policy = allPolicies.find((p: IPolicy) => p.Id === id);
+                  if (!policy) return null;
+                  return (
+                    <div key={id} style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 4,
+                      background: '#e6f7f5', border: '1px solid #0d9488', borderRadius: 12,
+                      padding: '2px 8px 2px 10px', fontSize: 12, color: '#0f766e'
+                    }}>
+                      <span>{policy.PolicyNumber}</span>
+                      <IconButton
+                        iconProps={{ iconName: 'Cancel', style: { fontSize: 10 } }}
+                        styles={{ root: { width: 18, height: 18, color: '#0f766e' }, rootHovered: { color: '#b91c1c', background: 'transparent' } }}
+                        onClick={() => this.setState({ selectedPolicyIds: selectedPolicyIds.filter(pid => pid !== id) })}
+                        title="Remove"
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
-          <Checkbox
-            label="Sequential Acknowledgement (users must complete policies in order)"
-            checked={isSequential}
-            onChange={(_, checked) => this.setState({ isSequential: checked || false })}
-          />
+          {/* ── Delivery & Notification Options ── */}
+          <div style={{
+            border: '1px solid #e2e8f0', borderRadius: 8,
+            background: '#fafbfc', overflow: 'hidden'
+          }}>
+            <div
+              onClick={() => this.setState({ deliveryOptionsExpanded: !this.state.deliveryOptionsExpanded })}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '12px 14px', cursor: 'pointer',
+                borderBottom: this.state.deliveryOptionsExpanded ? '1px solid #e2e8f0' : 'none',
+                background: '#fff'
+              }}
+            >
+              <Icon
+                iconName={this.state.deliveryOptionsExpanded ? 'ChevronDown' : 'ChevronRight'}
+                style={{ fontSize: 12, color: '#605e5c' }}
+              />
+              <Icon iconName="Settings" style={{ fontSize: 14, color: '#0d9488' }} />
+              <Text variant="medium" style={{ fontWeight: 600, color: '#323130', flex: 1 }}>
+                Delivery &amp; Notification Options
+              </Text>
+              <Text variant="small" style={{ color: '#a0aec0' }}>
+                {isSequential ? 'Sequential' : 'Any order'} &middot; {sendWelcomeEmail ? 'Email' : ''}{sendWelcomeEmail && sendTeamsNotification ? ' + ' : ''}{sendTeamsNotification ? 'Teams' : ''}
+              </Text>
+            </div>
+            {this.state.deliveryOptionsExpanded && (
+              <div style={{ padding: '16px 14px', display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-          <Checkbox
-            label="Send Welcome Email"
-            checked={sendWelcomeEmail}
-            onChange={(_, checked) => this.setState({ sendWelcomeEmail: checked || false })}
-          />
+                <Checkbox
+                  label="Sequential Acknowledgement (users must complete policies in order)"
+                  checked={isSequential}
+                  onChange={(_, checked) => this.setState({ isSequential: checked || false })}
+                />
 
-          <Checkbox
-            label="Send Teams Notification"
-            checked={sendTeamsNotification}
-            onChange={(_, checked) => this.setState({ sendTeamsNotification: checked || false })}
-          />
+                <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: 14 }}>
+                  <Text variant="small" style={{ fontWeight: 600, color: '#605e5c', display: 'block', marginBottom: 10 }}>
+                    Notifications
+                  </Text>
+                  <Stack tokens={{ childrenGap: 10 }}>
+                    <Checkbox
+                      label="Send Welcome Email"
+                      checked={sendWelcomeEmail}
+                      onChange={(_, checked) => this.setState({ sendWelcomeEmail: checked || false })}
+                    />
+                    <Checkbox
+                      label="Send Teams Notification"
+                      checked={sendTeamsNotification}
+                      onChange={(_, checked) => this.setState({ sendTeamsNotification: checked || false })}
+                    />
+                  </Stack>
+                </div>
+
+                <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: 14 }}>
+                  <Text variant="small" style={{ fontWeight: 600, color: '#605e5c', display: 'block', marginBottom: 4 }}>
+                    Approvers
+                  </Text>
+                  <Text variant="small" style={{ color: '#a0aec0', display: 'block', marginBottom: 10 }}>
+                    Add one or more approvers who must sign off before this pack is distributed
+                  </Text>
+                  <PeoplePicker
+                    context={this.props.context as any}
+                    personSelectionLimit={10}
+                    principalTypes={[PrincipalType.User]}
+                    resolveDelay={500}
+                    placeholder="Search for approvers in Entra ID..."
+                    groupName=""
+                    showHiddenInUI={false}
+                    onChange={(items: any[]) => {
+                      const approvers = items.map(item => item.secondaryText || item.text || '').filter(Boolean);
+                      console.log('Selected approvers:', approvers);
+                    }}
+                  />
+                </div>
+
+              </div>
+            )}
+          </div>
         </Stack>
       </Panel>
     );

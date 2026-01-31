@@ -131,6 +131,13 @@ interface IPolicyManagerViewState {
   teamSearchQuery: string;
   showDelegationPanel: boolean;
   delegationForm: IDelegationForm;
+  reportsSubTab: 'hub' | 'builder' | 'dashboard';
+  reportSearchFilter: string;
+  reportCategoryFilter: string;
+  selectedBuildReport: string;
+  showReportPreview: boolean;
+  showReportFlyout: boolean;
+  flyoutReportKey: string;
 }
 
 // ============================================================================
@@ -170,7 +177,14 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
         dueDate: '',
         priority: 'Medium',
         notes: ''
-      }
+      },
+      reportsSubTab: 'hub',
+      reportSearchFilter: '',
+      reportCategoryFilter: 'All',
+      selectedBuildReport: 'dept-compliance',
+      showReportPreview: false,
+      showReportFlyout: false,
+      flyoutReportKey: ''
     };
   }
 
@@ -806,13 +820,15 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
   // ==========================================================================
 
   private renderReportsTab(): JSX.Element {
-    const reports = [
-      { title: 'Department Compliance Report', description: 'Full compliance status for all team members with acknowledgement breakdown', icon: 'ReportDocument', format: 'PDF' },
-      { title: 'Acknowledgement Status Report', description: 'Detailed list of pending and overdue policy acknowledgements', icon: 'CheckboxComposite', format: 'Excel' },
-      { title: 'Delegation Summary', description: 'All current and completed delegations with status and timelines', icon: 'People', format: 'Excel' },
-      { title: 'Policy Review Schedule', description: 'Upcoming, due, and overdue policy reviews with reviewer assignments', icon: 'ReviewSolid', format: 'PDF' },
-      { title: 'SLA Performance Report', description: 'Team SLA metrics for acknowledgement, review, and approval turnarounds', icon: 'SpeedHigh', format: 'PDF' },
-      { title: 'Audit Trail Export', description: 'Complete log of all policy-related actions by team members', icon: 'ComplianceAudit', format: 'CSV' }
+    const allReportCards = [
+      { key: 'dept-compliance', title: 'Department Compliance Report', description: 'Full compliance status for all team members with acknowledgement breakdown', icon: 'ReportDocument', formats: ['PDF'], category: 'Compliance', lastGenerated: '30 Jan 2026, 08:15' },
+      { key: 'ack-status', title: 'Acknowledgement Status Report', description: 'Detailed list of pending and overdue policy acknowledgements', icon: 'CheckboxComposite', formats: ['Excel'], category: 'Acknowledgement', lastGenerated: '29 Jan 2026, 14:30' },
+      { key: 'delegation-summary', title: 'Delegation Summary', description: 'All current and completed delegations with status and timelines', icon: 'People', formats: ['Excel'], category: 'Delegation', lastGenerated: '28 Jan 2026, 09:00' },
+      { key: 'review-schedule', title: 'Policy Review Schedule', description: 'Upcoming, due, and overdue policy reviews with reviewer assignments', icon: 'ReviewSolid', formats: ['PDF'], category: 'Compliance', lastGenerated: '27 Jan 2026, 11:45' },
+      { key: 'sla-performance', title: 'SLA Performance Report', description: 'Team SLA metrics for acknowledgement, review, and approval turnarounds', icon: 'SpeedHigh', formats: ['PDF'], category: 'SLA', lastGenerated: '26 Jan 2026, 16:20' },
+      { key: 'audit-trail', title: 'Audit Trail Export', description: 'Complete log of all policy-related actions by team members', icon: 'ComplianceAudit', formats: ['CSV'], category: 'Audit', lastGenerated: '25 Jan 2026, 10:00' },
+      { key: 'risk-violations', title: 'Risk & Violations Report', description: 'Identify non-compliant areas, policy violations, and risk exposure across departments', icon: 'Warning', formats: ['PDF', 'Excel'], category: 'Compliance', lastGenerated: '24 Jan 2026, 13:10' },
+      { key: 'training-completion', title: 'Training Completion Report', description: 'Track policy training modules completed by team members with pass rates', icon: 'Education', formats: ['PDF', 'Excel'], category: 'Training', lastGenerated: '23 Jan 2026, 07:50' }
     ];
 
     return (
@@ -820,34 +836,717 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
         <PageSubheader
           iconName="ReportDocument"
           title="Reports"
-          description="Generate and export compliance reports for your team"
+          description="Generate, schedule, and export compliance reports for your team"
         />
 
-        <div className={(styles as Record<string, string>).kpiGrid}>
-          {reports.map((report, idx) => (
-            <div key={idx} className={(styles as Record<string, string>).sectionCard} style={{ cursor: 'pointer', margin: 0 }}
-              onClick={() => alert(`Generating ${report.title}...`)}>
-              <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 12 }}>
-                <div style={{
-                  width: 40, height: 40, borderRadius: 10, background: '#f0fdfa', display: 'flex',
-                  alignItems: 'center', justifyContent: 'center', color: '#0d9488', fontSize: 18
-                }}>
-                  <Icon iconName={report.icon} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <Text variant="medium" style={{ fontWeight: 600, display: 'block' }}>{report.title}</Text>
-                  <Text variant="small" style={{ color: '#605e5c' }}>{report.description}</Text>
-                </div>
-                <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 4, background: '#f3f2f1', color: '#605e5c', fontWeight: 600 }}>{report.format}</span>
-              </Stack>
+        <Pivot
+          selectedKey={this.state.reportsSubTab}
+          onLinkClick={(item) => {
+            if (item?.props.itemKey) {
+              this.setState({ reportsSubTab: item.props.itemKey as 'hub' | 'builder' | 'dashboard' });
+            }
+          }}
+          styles={{
+            root: { borderBottom: '1px solid #edebe9', marginBottom: 20 },
+            link: { fontSize: 13, height: 38, lineHeight: '38px', color: '#605e5c' },
+            linkIsSelected: { fontSize: 13, height: 38, lineHeight: '38px', color: '#0d9488', fontWeight: 600 },
+          }}
+        >
+          <PivotItem headerText="Report Hub" itemKey="hub" itemIcon="GridViewMedium" />
+          <PivotItem headerText="Report Builder" itemKey="builder" itemIcon="BuildQueue" />
+          <PivotItem headerText="Executive Dashboard" itemKey="dashboard" itemIcon="BarChartVertical" />
+        </Pivot>
+
+        {this.state.reportsSubTab === 'hub' && this.renderReportHub(allReportCards)}
+        {this.state.reportsSubTab === 'builder' && this.renderReportBuilder(allReportCards)}
+        {this.state.reportsSubTab === 'dashboard' && this.renderExecDashboard(allReportCards)}
+
+        {this.renderReportFlyout(allReportCards)}
+      </>
+    );
+  }
+
+  // ---------- REPORT HUB ----------
+
+  private renderReportHub(allReportCards: any[]): JSX.Element {
+    const categories = ['All', 'Compliance', 'Acknowledgement', 'SLA', 'Audit', 'Delegation', 'Training'];
+    const { reportSearchFilter, reportCategoryFilter } = this.state;
+
+    const filtered = allReportCards.filter(r => {
+      const matchesSearch = !reportSearchFilter || r.title.toLowerCase().includes(reportSearchFilter.toLowerCase()) || r.description.toLowerCase().includes(reportSearchFilter.toLowerCase());
+      const matchesCategory = reportCategoryFilter === 'All' || r.category === reportCategoryFilter;
+      return matchesSearch && matchesCategory;
+    });
+
+    const scheduledReports = [
+      { name: 'Department Compliance Report', frequency: 'Weekly (Monday 08:00)', format: 'PDF', recipients: 'Thabo Mokoena, Lindiwe Nkosi', nextRun: '3 Feb 2026' },
+      { name: 'Acknowledgement Status Report', frequency: 'Daily (06:00)', format: 'Excel', recipients: 'Compliance Team DL', nextRun: '31 Jan 2026' },
+      { name: 'SLA Performance Report', frequency: 'Monthly (1st, 09:00)', format: 'PDF', recipients: 'Sipho Dlamini, Executive Team', nextRun: '1 Feb 2026' }
+    ];
+
+    return (
+      <>
+        {/* Search + Category Pills */}
+        <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 16 }} style={{ marginBottom: 20 }}>
+          <SearchBox
+            placeholder="Search reports..."
+            value={reportSearchFilter}
+            onChange={(_, val) => this.setState({ reportSearchFilter: val || '' })}
+            styles={{ root: { width: 280 } }}
+          />
+          <div className={(styles as Record<string, string>).categoryPills}>
+            {categories.map(cat => (
+              <button
+                key={cat}
+                className={`${(styles as Record<string, string>).categoryPill} ${reportCategoryFilter === cat ? (styles as Record<string, string>).categoryPillActive : ''}`}
+                onClick={() => this.setState({ reportCategoryFilter: cat })}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </Stack>
+
+        {/* Report Cards Grid */}
+        <div className={(styles as Record<string, string>).reportHubGrid}>
+          {filtered.map(report => (
+            <div
+              key={report.key}
+              className={(styles as Record<string, string>).reportCard}
+              onClick={() => this.setState({ showReportFlyout: true, flyoutReportKey: report.key })}
+            >
+              <div className={(styles as Record<string, string>).reportCardIcon}>
+                <Icon iconName={report.icon} />
+              </div>
+              <div className={(styles as Record<string, string>).reportCardTitle}>{report.title}</div>
+              <div className={(styles as Record<string, string>).reportCardDesc}>{report.description}</div>
+              <div style={{ margin: '10px 0 6px', display: 'flex', gap: 6 }}>
+                {report.formats.map((fmt: string) => (
+                  <span key={fmt} className={`${(styles as Record<string, string>).formatBadge} ${fmt === 'PDF' ? (styles as Record<string, string>).formatPdf : fmt === 'Excel' ? (styles as Record<string, string>).formatExcel : (styles as Record<string, string>).formatCsv}`}>
+                    {fmt}
+                  </span>
+                ))}
+              </div>
+              <div className={(styles as Record<string, string>).reportCardMeta}>Last generated: {report.lastGenerated}</div>
+              <div className={(styles as Record<string, string>).reportCardActions} onClick={(e) => e.stopPropagation()}>
+                <PrimaryButton text="Generate" iconProps={{ iconName: 'Play' }}
+                  styles={{ root: { height: 30, padding: '0 12px', fontSize: 12, background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+                  onClick={() => alert(`Generating ${report.title}...`)} />
+                <DefaultButton text="Schedule" iconProps={{ iconName: 'ScheduleEventAction' }}
+                  styles={{ root: { height: 30, padding: '0 12px', fontSize: 12 } }}
+                  onClick={() => alert(`Opening schedule for ${report.title}`)} />
+              </div>
             </div>
           ))}
         </div>
 
-        <MessageBar messageBarType={MessageBarType.info} style={{ marginTop: 8 }}>
-          Reports are generated with data as of today. Export functionality will be available when connected to live data.
-        </MessageBar>
+        {filtered.length === 0 && (
+          <Stack horizontalAlign="center" tokens={{ padding: 40 }}>
+            <Icon iconName="SearchIssue" style={{ fontSize: 36, color: '#a19f9d', marginBottom: 8 }} />
+            <Text style={{ color: '#605e5c' }}>No reports match your search criteria</Text>
+          </Stack>
+        )}
+
+        {/* Scheduled Reports Table */}
+        <div className={(styles as Record<string, string>).sectionCard} style={{ marginTop: 28 }}>
+          <div className={(styles as Record<string, string>).sectionTitle}>
+            <Icon iconName="ScheduleEventAction" style={{ color: '#0d9488' }} />
+            Scheduled Reports
+          </div>
+          <table className={(styles as Record<string, string>).complianceTable}>
+            <thead>
+              <tr>
+                <th>Report Name</th>
+                <th>Frequency</th>
+                <th>Format</th>
+                <th>Recipients</th>
+                <th>Next Run</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {scheduledReports.map((sr, idx) => (
+                <tr key={idx}>
+                  <td style={{ fontWeight: 600 }}>{sr.name}</td>
+                  <td>{sr.frequency}</td>
+                  <td>
+                    <span className={`${(styles as Record<string, string>).formatBadge} ${sr.format === 'PDF' ? (styles as Record<string, string>).formatPdf : (styles as Record<string, string>).formatExcel}`}>
+                      {sr.format}
+                    </span>
+                  </td>
+                  <td style={{ fontSize: 12, color: '#64748b' }}>{sr.recipients}</td>
+                  <td>{sr.nextRun}</td>
+                  <td>
+                    <Stack horizontal tokens={{ childrenGap: 6 }}>
+                      <IconButton iconProps={{ iconName: 'Edit' }} title="Edit schedule" onClick={() => alert(`Editing schedule for ${sr.name}`)} styles={{ root: { height: 28, width: 28 } }} />
+                      <IconButton iconProps={{ iconName: 'Delete' }} title="Delete schedule" onClick={() => alert(`Deleting schedule for ${sr.name}`)} styles={{ root: { height: 28, width: 28, color: '#d13438' } }} />
+                    </Stack>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </>
+    );
+  }
+
+  // ---------- REPORT BUILDER ----------
+
+  private renderReportBuilder(allReportCards: any[]): JSX.Element {
+    const { selectedBuildReport, showReportPreview } = this.state;
+    const selectedReport = allReportCards.find(r => r.key === selectedBuildReport) || allReportCards[0];
+
+    const sidebarCategories: { label: string; reports: { key: string; title: string }[] }[] = [
+      { label: 'Compliance', reports: allReportCards.filter(r => r.category === 'Compliance').map(r => ({ key: r.key, title: r.title })) },
+      { label: 'Acknowledgement', reports: allReportCards.filter(r => r.category === 'Acknowledgement').map(r => ({ key: r.key, title: r.title })) },
+      { label: 'SLA', reports: allReportCards.filter(r => r.category === 'SLA').map(r => ({ key: r.key, title: r.title })) },
+      { label: 'Audit', reports: allReportCards.filter(r => r.category === 'Audit').map(r => ({ key: r.key, title: r.title })) },
+      { label: 'Delegation', reports: allReportCards.filter(r => r.category === 'Delegation').map(r => ({ key: r.key, title: r.title })) },
+      { label: 'Training', reports: allReportCards.filter(r => r.category === 'Training').map(r => ({ key: r.key, title: r.title })) }
+    ];
+
+    const recentReports = [
+      { name: 'Department Compliance Report', generatedBy: 'Thabo Mokoena', date: '30 Jan 2026, 08:15', format: 'PDF', size: '2.4 MB' },
+      { name: 'Acknowledgement Status Report', generatedBy: 'Lindiwe Nkosi', date: '29 Jan 2026, 14:30', format: 'Excel', size: '1.8 MB' },
+      { name: 'SLA Performance Report', generatedBy: 'Sipho Dlamini', date: '28 Jan 2026, 16:20', format: 'PDF', size: '3.1 MB' },
+      { name: 'Risk & Violations Report', generatedBy: 'Naledi Mahlangu', date: '27 Jan 2026, 10:00', format: 'PDF', size: '4.2 MB' },
+      { name: 'Audit Trail Export', generatedBy: 'Thabo Mokoena', date: '26 Jan 2026, 09:45', format: 'CSV', size: '890 KB' }
+    ];
+
+    return (
+      <div className={(styles as Record<string, string>).reportBuilderLayout}>
+        {/* Sidebar */}
+        <div className={(styles as Record<string, string>).reportBuilderSidebar}>
+          <Text variant="medium" style={{ fontWeight: 600, display: 'block', marginBottom: 16, color: '#323130' }}>Report Categories</Text>
+          {sidebarCategories.map(cat => (
+            <div key={cat.label} style={{ marginBottom: 12 }}>
+              <Text variant="small" style={{ fontWeight: 600, color: '#64748b', textTransform: 'uppercase', fontSize: 11, letterSpacing: 0.5, display: 'block', marginBottom: 6, paddingLeft: 12 }}>{cat.label}</Text>
+              {cat.reports.map(report => (
+                <div
+                  key={report.key}
+                  className={`${(styles as Record<string, string>).reportBuilderNavItem} ${selectedBuildReport === report.key ? (styles as Record<string, string>).reportBuilderNavItemActive : ''}`}
+                  onClick={() => this.setState({ selectedBuildReport: report.key, showReportPreview: false })}
+                >
+                  {report.title}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+
+        {/* Main Content */}
+        <div style={{ flex: 1 }}>
+          {/* Report Header */}
+          <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 14 }} style={{ marginBottom: 24 }}>
+            <div className={(styles as Record<string, string>).reportCardIcon}>
+              <Icon iconName={selectedReport.icon} />
+            </div>
+            <div>
+              <Text variant="large" style={{ fontWeight: 700, display: 'block' }}>{selectedReport.title}</Text>
+              <Text variant="small" style={{ color: '#64748b' }}>{selectedReport.description}</Text>
+            </div>
+          </Stack>
+
+          {/* Parameters Panel */}
+          <div className={(styles as Record<string, string>).reportBuilderParams}>
+            <Text variant="medium" style={{ fontWeight: 600, display: 'block', marginBottom: 16 }}>Report Parameters</Text>
+            <Stack horizontal tokens={{ childrenGap: 16 }} style={{ marginBottom: 16 }}>
+              <DatePicker label="Date Range Start" placeholder="Select start date" style={{ flex: 1 }}
+                value={new Date('2026-01-01')}
+                onSelectDate={() => alert('Date range start selected')} />
+              <DatePicker label="Date Range End" placeholder="Select end date" style={{ flex: 1 }}
+                value={new Date('2026-01-31')}
+                onSelectDate={() => alert('Date range end selected')} />
+            </Stack>
+
+            <Stack horizontal tokens={{ childrenGap: 16 }} style={{ marginBottom: 16 }}>
+              <Dropdown
+                label="Department"
+                placeholder="Select departments"
+                multiSelect
+                options={[
+                  { key: 'all', text: 'All Departments' },
+                  { key: 'it-security', text: 'IT Security' },
+                  { key: 'hr', text: 'Human Resources' },
+                  { key: 'finance', text: 'Finance' },
+                  { key: 'legal', text: 'Legal' },
+                  { key: 'operations', text: 'Operations' },
+                  { key: 'marketing', text: 'Marketing' },
+                  { key: 'procurement', text: 'Procurement' },
+                  { key: 'innovation', text: 'Innovation' }
+                ]}
+                styles={{ root: { flex: 1 } }}
+                onChange={() => alert('Department filter changed')}
+              />
+              <Dropdown
+                label="Output Format"
+                placeholder="Select format"
+                options={[
+                  { key: 'pdf', text: 'PDF' },
+                  { key: 'excel', text: 'Excel (.xlsx)' },
+                  { key: 'csv', text: 'CSV' }
+                ]}
+                defaultSelectedKey="pdf"
+                styles={{ root: { flex: 1 } }}
+                onChange={() => alert('Output format changed')}
+              />
+            </Stack>
+
+            <Text variant="small" style={{ fontWeight: 600, display: 'block', marginBottom: 10, color: '#323130' }}>Include in Report</Text>
+            <Stack tokens={{ childrenGap: 8 }} style={{ marginBottom: 20 }}>
+              {[
+                { label: 'Include summary charts', defaultChecked: true },
+                { label: 'Include individual breakdown', defaultChecked: true },
+                { label: 'Include historical comparison', defaultChecked: false },
+                { label: 'Include risk assessment', defaultChecked: false }
+              ].map((opt, idx) => (
+                <label key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
+                  <input type="checkbox" defaultChecked={opt.defaultChecked} style={{ accentColor: '#0d9488' }} />
+                  {opt.label}
+                </label>
+              ))}
+            </Stack>
+
+            {/* Action Buttons */}
+            <Stack horizontal tokens={{ childrenGap: 10 }}>
+              <PrimaryButton text="Preview" iconProps={{ iconName: 'RedEye' }}
+                styles={{ root: { background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+                onClick={() => this.setState({ showReportPreview: true })} />
+              <PrimaryButton text="Generate Report" iconProps={{ iconName: 'Play' }}
+                styles={{ root: { background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+                onClick={() => alert(`Generating ${selectedReport.title}...`)} />
+              <DefaultButton text="Schedule" iconProps={{ iconName: 'ScheduleEventAction' }}
+                onClick={() => alert(`Opening schedule for ${selectedReport.title}`)} />
+              <DefaultButton text="Email Report" iconProps={{ iconName: 'Mail' }}
+                onClick={() => alert(`Email dialog for ${selectedReport.title}`)} />
+            </Stack>
+          </div>
+
+          {/* Preview Section */}
+          {showReportPreview && (
+            <div className={(styles as Record<string, string>).sectionCard} style={{ marginTop: 20 }}>
+              <div className={(styles as Record<string, string>).sectionTitle}>
+                <Icon iconName="RedEye" style={{ color: '#0d9488' }} />
+                Report Preview — {selectedReport.title}
+              </div>
+
+              <div className={(styles as Record<string, string>).reportPreviewStats}>
+                {[
+                  { label: 'Compliance Rate', value: '87.3%' },
+                  { label: 'Team Members', value: '8' },
+                  { label: 'Policies Tracked', value: '24' },
+                  { label: 'Pending Actions', value: '12' }
+                ].map((stat, idx) => (
+                  <div key={idx} className={(styles as Record<string, string>).reportPreviewStat}>
+                    <div className={(styles as Record<string, string>).reportPreviewStatNum}>{stat.value}</div>
+                    <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>{stat.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              <table className={(styles as Record<string, string>).complianceTable} style={{ marginTop: 16 }}>
+                <thead>
+                  <tr>
+                    <th>Department</th>
+                    <th>Assigned</th>
+                    <th>Acknowledged</th>
+                    <th>Pending</th>
+                    <th>Overdue</th>
+                    <th>Compliance %</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { dept: 'IT Security', assigned: 18, acked: 16, pending: 2, overdue: 0, pct: '89%' },
+                    { dept: 'Human Resources', assigned: 16, acked: 12, pending: 1, overdue: 3, pct: '75%' },
+                    { dept: 'Finance', assigned: 11, acked: 9, pending: 2, overdue: 0, pct: '82%' },
+                    { dept: 'Legal', assigned: 20, acked: 18, pending: 2, overdue: 0, pct: '90%' },
+                    { dept: 'Operations', assigned: 13, acked: 8, pending: 2, overdue: 3, pct: '62%' }
+                  ].map((row, idx) => (
+                    <tr key={idx}>
+                      <td style={{ fontWeight: 600 }}>{row.dept}</td>
+                      <td>{row.assigned}</td>
+                      <td>{row.acked}</td>
+                      <td>{row.pending}</td>
+                      <td style={{ color: row.overdue > 0 ? '#d13438' : '#323130', fontWeight: row.overdue > 0 ? 600 : 400 }}>{row.overdue}</td>
+                      <td>
+                        <span style={{ color: parseInt(row.pct) >= 85 ? '#107c10' : parseInt(row.pct) >= 75 ? '#f59e0b' : '#d13438', fontWeight: 600 }}>{row.pct}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Recent Reports */}
+          <div className={(styles as Record<string, string>).sectionCard} style={{ marginTop: 20 }}>
+            <div className={(styles as Record<string, string>).sectionTitle}>
+              <Icon iconName="History" style={{ color: '#0d9488' }} />
+              Recently Generated Reports
+            </div>
+            <table className={(styles as Record<string, string>).complianceTable}>
+              <thead>
+                <tr>
+                  <th>Report Name</th>
+                  <th>Generated By</th>
+                  <th>Date</th>
+                  <th>Format</th>
+                  <th>Size</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentReports.map((rr, idx) => (
+                  <tr key={idx}>
+                    <td style={{ fontWeight: 600 }}>{rr.name}</td>
+                    <td>{rr.generatedBy}</td>
+                    <td style={{ fontSize: 12, color: '#64748b' }}>{rr.date}</td>
+                    <td>
+                      <span className={`${(styles as Record<string, string>).formatBadge} ${rr.format === 'PDF' ? (styles as Record<string, string>).formatPdf : rr.format === 'Excel' ? (styles as Record<string, string>).formatExcel : (styles as Record<string, string>).formatCsv}`}>
+                        {rr.format}
+                      </span>
+                    </td>
+                    <td style={{ fontSize: 12, color: '#64748b' }}>{rr.size}</td>
+                    <td>
+                      <a href="#" onClick={(e) => { e.preventDefault(); alert(`Downloading ${rr.name}`); }} style={{ color: '#0d9488', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Download</a>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ---------- EXECUTIVE DASHBOARD ----------
+
+  private renderExecDashboard(allReportCards: any[]): JSX.Element {
+    const quickReports = [
+      { title: 'Weekly Compliance', icon: 'ReportDocument', desc: 'Auto-generated every Monday' },
+      { title: 'Daily Ack Status', icon: 'CheckboxComposite', desc: 'Auto-generated at 06:00' },
+      { title: 'Monthly SLA', icon: 'SpeedHigh', desc: 'Auto-generated on the 1st' },
+      { title: 'Risk Summary', icon: 'Warning', desc: 'On-demand' },
+      { title: 'Audit Export', icon: 'ComplianceAudit', desc: 'On-demand' },
+      { title: 'Training Status', icon: 'Education', desc: 'On-demand' }
+    ];
+
+    const scheduledDash = [
+      { name: 'Department Compliance Report', frequency: 'Weekly — Mon 08:00', format: 'PDF', recipients: 'Thabo Mokoena, Lindiwe Nkosi', active: true },
+      { name: 'Acknowledgement Status Report', frequency: 'Daily — 06:00', format: 'Excel', recipients: 'Compliance Team DL', active: true },
+      { name: 'SLA Performance Report', frequency: 'Monthly — 1st 09:00', format: 'PDF', recipients: 'Sipho Dlamini, Exec Team', active: true },
+      { name: 'Risk & Violations Report', frequency: 'Fortnightly — Fri 14:00', format: 'PDF', recipients: 'Naledi Mahlangu', active: false },
+      { name: 'Training Completion Report', frequency: 'Monthly — 15th 08:00', format: 'Excel', recipients: 'HR Team DL', active: true }
+    ];
+
+    const timeline = [
+      { title: 'Department Compliance Report', by: 'Thabo Mokoena', date: '30 Jan 2026, 08:15', format: 'PDF', size: '2.4 MB' },
+      { title: 'Acknowledgement Status Report', by: 'System (Scheduled)', date: '30 Jan 2026, 06:00', format: 'Excel', size: '1.8 MB' },
+      { title: 'SLA Performance Report', by: 'Sipho Dlamini', date: '29 Jan 2026, 16:20', format: 'PDF', size: '3.1 MB' },
+      { title: 'Risk & Violations Report', by: 'Naledi Mahlangu', date: '28 Jan 2026, 10:00', format: 'PDF', size: '4.2 MB' },
+      { title: 'Audit Trail Export', by: 'Thabo Mokoena', date: '27 Jan 2026, 09:45', format: 'CSV', size: '890 KB' },
+      { title: 'Training Completion Report', by: 'System (Scheduled)', date: '26 Jan 2026, 08:00', format: 'Excel', size: '1.5 MB' },
+      { title: 'Delegation Summary', by: 'Lindiwe Nkosi', date: '25 Jan 2026, 14:30', format: 'Excel', size: '720 KB' },
+      { title: 'Department Compliance Report', by: 'System (Scheduled)', date: '23 Jan 2026, 08:00', format: 'PDF', size: '2.3 MB' }
+    ];
+
+    return (
+      <>
+        {/* KPI Cards */}
+        <div className={(styles as Record<string, string>).kpiGrid}>
+          <div className={`${(styles as Record<string, string>).kpiCard} ${(styles as Record<string, string>).kpiCardHighlight}`}>
+            <div className={(styles as Record<string, string>).kpiIcon} style={{ background: '#f0fdfa', color: '#0d9488' }}>
+              <Icon iconName="ReportDocument" />
+            </div>
+            <div className={(styles as Record<string, string>).kpiContent}>
+              <div className={(styles as Record<string, string>).kpiValue} style={{ color: '#0d9488' }}>1,247</div>
+              <div className={(styles as Record<string, string>).kpiLabel}>Total Reports Generated</div>
+            </div>
+          </div>
+          <div className={`${(styles as Record<string, string>).kpiCard} ${(styles as Record<string, string>).kpiCardHighlight}`}>
+            <div className={(styles as Record<string, string>).kpiIcon} style={{ background: '#eff6ff', color: '#2563eb' }}>
+              <Icon iconName="ScheduleEventAction" />
+            </div>
+            <div className={(styles as Record<string, string>).kpiContent}>
+              <div className={(styles as Record<string, string>).kpiValue} style={{ color: '#2563eb' }}>18</div>
+              <div className={(styles as Record<string, string>).kpiLabel}>Scheduled Reports</div>
+            </div>
+          </div>
+          <div className={`${(styles as Record<string, string>).kpiCard} ${(styles as Record<string, string>).kpiCardHighlight}`}>
+            <div className={(styles as Record<string, string>).kpiIcon} style={{ background: '#f0fdf4', color: '#16a34a' }}>
+              <Icon iconName="Group" />
+            </div>
+            <div className={(styles as Record<string, string>).kpiContent}>
+              <div className={(styles as Record<string, string>).kpiValue} style={{ color: '#16a34a' }}>94.2%</div>
+              <div className={(styles as Record<string, string>).kpiLabel}>Team Coverage</div>
+            </div>
+          </div>
+          <div className={`${(styles as Record<string, string>).kpiCard} ${(styles as Record<string, string>).kpiCardHighlight}`}>
+            <div className={(styles as Record<string, string>).kpiIcon} style={{ background: '#fef3c7', color: '#f59e0b' }}>
+              <Icon iconName="Calendar" />
+            </div>
+            <div className={(styles as Record<string, string>).kpiContent}>
+              <div className={(styles as Record<string, string>).kpiValue} style={{ color: '#f59e0b' }}>30 Jan</div>
+              <div className={(styles as Record<string, string>).kpiLabel}>Last Report Date</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Reports */}
+        <div className={(styles as Record<string, string>).sectionCard}>
+          <div className={(styles as Record<string, string>).sectionTitle}>
+            <Icon iconName="LightningBolt" style={{ color: '#0d9488' }} />
+            Quick Reports
+          </div>
+          <div className={(styles as Record<string, string>).quickReportsScroll}>
+            {quickReports.map((qr, idx) => (
+              <div key={idx} className={(styles as Record<string, string>).quickReportCard} onClick={() => alert(`Quick-generating ${qr.title}`)}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: '#f0fdfa', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0d9488', fontSize: 16, marginBottom: 10 }}>
+                  <Icon iconName={qr.icon} />
+                </div>
+                <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 4 }}>{qr.title}</div>
+                <div style={{ fontSize: 11, color: '#94a3b8' }}>{qr.desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Full Report Library */}
+        <div className={(styles as Record<string, string>).sectionCard}>
+          <div className={(styles as Record<string, string>).sectionTitle}>
+            <Icon iconName="Library" style={{ color: '#0d9488' }} />
+            Full Report Library
+          </div>
+          <table className={(styles as Record<string, string>).complianceTable}>
+            <thead>
+              <tr>
+                <th>Report Name</th>
+                <th>Category</th>
+                <th>Last Generated</th>
+                <th>Format</th>
+                <th>Recipients</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {allReportCards.map((report, idx) => {
+                const recipients = ['Thabo Mokoena', 'Lindiwe Nkosi', 'Sipho Dlamini', 'Naledi Mahlangu', 'Compliance Team', 'HR Team DL', 'Executive Team', 'IT Security DL'];
+                return (
+                  <tr key={idx}>
+                    <td style={{ fontWeight: 600 }}>
+                      <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
+                        <Icon iconName={report.icon} style={{ color: '#0d9488', fontSize: 14 }} />
+                        <span>{report.title}</span>
+                      </Stack>
+                    </td>
+                    <td><span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 4, background: '#f0fdfa', color: '#0d9488', fontWeight: 600 }}>{report.category}</span></td>
+                    <td style={{ fontSize: 12, color: '#64748b' }}>{report.lastGenerated}</td>
+                    <td>
+                      {report.formats.map((fmt: string) => (
+                        <span key={fmt} className={`${(styles as Record<string, string>).formatBadge} ${fmt === 'PDF' ? (styles as Record<string, string>).formatPdf : fmt === 'Excel' ? (styles as Record<string, string>).formatExcel : (styles as Record<string, string>).formatCsv}`} style={{ marginRight: 4 }}>
+                          {fmt}
+                        </span>
+                      ))}
+                    </td>
+                    <td style={{ fontSize: 12, color: '#64748b' }}>{recipients[idx]}</td>
+                    <td><span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 10, background: '#f0fdf4', color: '#16a34a', fontWeight: 600 }}>Active</span></td>
+                    <td>
+                      <Stack horizontal tokens={{ childrenGap: 8 }}>
+                        <a href="#" onClick={(e) => { e.preventDefault(); alert(`Generating ${report.title}`); }} style={{ color: '#0d9488', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Generate</a>
+                        <a href="#" onClick={(e) => { e.preventDefault(); alert(`Downloading ${report.title}`); }} style={{ color: '#0d9488', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Download</a>
+                        <a href="#" onClick={(e) => { e.preventDefault(); alert(`Scheduling ${report.title}`); }} style={{ color: '#0d9488', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Schedule</a>
+                      </Stack>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Scheduled Reports */}
+        <div className={(styles as Record<string, string>).sectionCard}>
+          <div className={(styles as Record<string, string>).sectionTitle}>
+            <Icon iconName="ScheduleEventAction" style={{ color: '#0d9488' }} />
+            Scheduled Reports
+          </div>
+          <table className={(styles as Record<string, string>).complianceTable}>
+            <thead>
+              <tr>
+                <th>Active</th>
+                <th>Report Name</th>
+                <th>Frequency</th>
+                <th>Format</th>
+                <th>Recipients</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {scheduledDash.map((sr, idx) => (
+                <tr key={idx}>
+                  <td>
+                    <div
+                      className={`${(styles as Record<string, string>).scheduledToggle} ${sr.active ? (styles as Record<string, string>).scheduledToggleOn : ''}`}
+                      onClick={() => alert(`Toggling schedule for ${sr.name}`)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <div style={{ width: 16, height: 16, borderRadius: '50%', background: '#fff', position: 'absolute', top: 3, transition: 'left 0.2s', left: sr.active ? 20 : 3 }} />
+                    </div>
+                  </td>
+                  <td style={{ fontWeight: 600 }}>{sr.name}</td>
+                  <td style={{ fontSize: 12 }}>{sr.frequency}</td>
+                  <td>
+                    <span className={`${(styles as Record<string, string>).formatBadge} ${sr.format === 'PDF' ? (styles as Record<string, string>).formatPdf : (styles as Record<string, string>).formatExcel}`}>
+                      {sr.format}
+                    </span>
+                  </td>
+                  <td style={{ fontSize: 12, color: '#64748b' }}>{sr.recipients}</td>
+                  <td>
+                    <Stack horizontal tokens={{ childrenGap: 8 }}>
+                      <a href="#" onClick={(e) => { e.preventDefault(); alert(`Editing ${sr.name} schedule`); }} style={{ color: '#0d9488', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Edit</a>
+                      <a href="#" onClick={(e) => { e.preventDefault(); alert(`Deleting ${sr.name} schedule`); }} style={{ color: '#d13438', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Delete</a>
+                    </Stack>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Report History Timeline */}
+        <div className={(styles as Record<string, string>).sectionCard}>
+          <div className={(styles as Record<string, string>).sectionTitle}>
+            <Icon iconName="History" style={{ color: '#0d9488' }} />
+            Report History
+          </div>
+          <div className={(styles as Record<string, string>).reportTimeline}>
+            {timeline.map((item, idx) => (
+              <div key={idx} className={(styles as Record<string, string>).reportTimelineItem}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 4 }}>
+                  <div className={(styles as Record<string, string>).reportTimelineDot} />
+                  {idx < timeline.length - 1 && <div style={{ width: 2, flex: 1, background: '#e2e8f0', marginTop: 4 }} />}
+                </div>
+                <div style={{ flex: 1, paddingBottom: 16 }}>
+                  <div className={(styles as Record<string, string>).reportTimelineTitle}>{item.title}</div>
+                  <div className={(styles as Record<string, string>).reportTimelineMeta}>
+                    Generated by {item.by} &middot; {item.date} &middot;{' '}
+                    <span className={`${(styles as Record<string, string>).formatBadge} ${item.format === 'PDF' ? (styles as Record<string, string>).formatPdf : item.format === 'Excel' ? (styles as Record<string, string>).formatExcel : (styles as Record<string, string>).formatCsv}`}>
+                      {item.format}
+                    </span>
+                    {' '}&middot; {item.size}
+                  </div>
+                </div>
+                <a href="#" onClick={(e) => { e.preventDefault(); alert(`Downloading ${item.title}`); }} style={{ color: '#0d9488', fontSize: 12, fontWeight: 600, textDecoration: 'none', alignSelf: 'center' }}>Download</a>
+              </div>
+            ))}
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  // ---------- REPORT FLYOUT PANEL ----------
+
+  private renderReportFlyout(allReportCards: any[]): JSX.Element {
+    const { showReportFlyout, flyoutReportKey } = this.state;
+    const report = allReportCards.find(r => r.key === flyoutReportKey);
+    if (!report) return <></>;
+
+    const sampleData = [
+      { name: 'Thabo Mokoena', dept: 'IT Security', status: 'Compliant', ackRate: '100%', pending: 0 },
+      { name: 'Lindiwe Nkosi', dept: 'Human Resources', status: 'At Risk', ackRate: '75%', pending: 3 },
+      { name: 'Sipho Dlamini', dept: 'Finance', status: 'Compliant', ackRate: '91%', pending: 1 },
+      { name: 'Naledi Mahlangu', dept: 'Legal', status: 'Compliant', ackRate: '95%', pending: 1 },
+      { name: 'Bongani Ndlovu', dept: 'Operations', status: 'Non-Compliant', ackRate: '62%', pending: 5 }
+    ];
+
+    return (
+      <Panel
+        isOpen={showReportFlyout}
+        onDismiss={() => this.setState({ showReportFlyout: false, flyoutReportKey: '' })}
+        type={PanelType.medium}
+        headerText={report.title}
+        closeButtonAriaLabel="Close"
+        onRenderFooterContent={() => (
+          <Stack horizontal tokens={{ childrenGap: 8 }} style={{ padding: '16px 0' }}>
+            <DefaultButton text="Schedule" iconProps={{ iconName: 'ScheduleEventAction' }}
+              onClick={() => alert(`Scheduling ${report.title}`)} />
+            <PrimaryButton text="Generate Full Report" iconProps={{ iconName: 'Play' }}
+              styles={{ root: { background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+              onClick={() => alert(`Generating ${report.title}...`)} />
+          </Stack>
+        )}
+        isFooterAtBottom={true}
+      >
+        <Stack tokens={{ childrenGap: 20 }} style={{ paddingTop: 8 }}>
+          <Text variant="small" style={{ color: '#64748b' }}>{report.description}</Text>
+
+          <div style={{ display: 'flex', gap: 6, marginBottom: 4 }}>
+            {report.formats.map((fmt: string) => (
+              <span key={fmt} className={`${(styles as Record<string, string>).formatBadge} ${fmt === 'PDF' ? (styles as Record<string, string>).formatPdf : fmt === 'Excel' ? (styles as Record<string, string>).formatExcel : (styles as Record<string, string>).formatCsv}`}>
+                {fmt}
+              </span>
+            ))}
+          </div>
+
+          {/* Stat Cards */}
+          <div className={(styles as Record<string, string>).reportPreviewStats}>
+            {[
+              { label: 'Compliance Rate', value: '87.3%' },
+              { label: 'Team Members', value: '8' },
+              { label: 'Pending Items', value: '12' }
+            ].map((stat, idx) => (
+              <div key={idx} className={(styles as Record<string, string>).reportPreviewStat}>
+                <div className={(styles as Record<string, string>).reportPreviewStatNum}>{stat.value}</div>
+                <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>{stat.label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Sample Data */}
+          <div>
+            <Text variant="medium" style={{ fontWeight: 600, display: 'block', marginBottom: 10 }}>Sample Data</Text>
+            <table className={(styles as Record<string, string>).complianceTable}>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Department</th>
+                  <th>Status</th>
+                  <th>Ack Rate</th>
+                  <th>Pending</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sampleData.map((row, idx) => (
+                  <tr key={idx}>
+                    <td style={{ fontWeight: 600 }}>{row.name}</td>
+                    <td>{row.dept}</td>
+                    <td>
+                      <span style={{
+                        fontSize: 11, padding: '2px 8px', borderRadius: 10, fontWeight: 600,
+                        background: row.status === 'Compliant' ? '#f0fdf4' : row.status === 'At Risk' ? '#fff8e6' : '#fef2f2',
+                        color: row.status === 'Compliant' ? '#16a34a' : row.status === 'At Risk' ? '#f59e0b' : '#d13438'
+                      }}>
+                        {row.status}
+                      </span>
+                    </td>
+                    <td style={{ fontWeight: 600, color: parseInt(row.ackRate) >= 85 ? '#16a34a' : parseInt(row.ackRate) >= 75 ? '#f59e0b' : '#d13438' }}>{row.ackRate}</td>
+                    <td>{row.pending}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <Text variant="tiny" style={{ color: '#94a3b8', fontStyle: 'italic' }}>
+            Last generated: {report.lastGenerated} &middot; Data shown is a preview sample
+          </Text>
+        </Stack>
+      </Panel>
     );
   }
 

@@ -10,6 +10,8 @@ import '@pnp/sp/webs';
 import '@pnp/sp/lists';
 import '@pnp/sp/items';
 import '@pnp/sp/site-users/web';
+import '@pnp/sp/folders';
+import '@pnp/sp/files';
 import {
   IPolicyRequest,
   IPolicyRequestFormData,
@@ -65,7 +67,8 @@ export class PolicyRequestService {
   public async submitRequest(
     formData: IPolicyRequestFormData,
     userName?: string,
-    userEmail?: string
+    userEmail?: string,
+    attachments?: File[]
   ): Promise<IPolicyRequestSubmitResult> {
     try {
       // Ensure we have user info
@@ -103,10 +106,22 @@ export class PolicyRequestService {
 
       const result = await this.sp.web.lists.getByTitle(this.LIST_NAME).items.add(listItem);
 
+      // Upload attachments if provided
+      let attachmentUrls: string[] = [];
+      if (attachments && attachments.length > 0) {
+        attachmentUrls = await this.uploadAttachments(referenceNumber, attachments);
+        if (attachmentUrls.length > 0) {
+          await this.sp.web.lists.getByTitle(this.LIST_NAME).items.getById(result.Id).update({
+            AttachmentUrls: JSON.stringify(attachmentUrls)
+          });
+        }
+      }
+
       logger.info('PolicyRequestService', `Policy request submitted: ${referenceNumber}`, {
         itemId: result.Id,
         title: formData.policyTitle,
-        requestedBy
+        requestedBy,
+        attachmentCount: attachmentUrls.length
       });
 
       // Log notification for policy authors (non-blocking)
@@ -247,6 +262,43 @@ export class PolicyRequestService {
       logger.error('PolicyRequestService', `Failed to update request ${itemId}`, err);
       return false;
     }
+  }
+
+  /**
+   * Upload attachment files to a subfolder in the PolicyRequestAttachments document library.
+   * Creates a folder per reference number and uploads files into it.
+   * Returns an array of server-relative URLs for the uploaded files.
+   */
+  private async uploadAttachments(referenceNumber: string, files: File[]): Promise<string[]> {
+    const LIB_NAME = 'PolicyRequestAttachments';
+    const urls: string[] = [];
+
+    try {
+      // Ensure the folder exists for this request
+      const folderPath = `${LIB_NAME}/${referenceNumber}`;
+      try {
+        await this.sp.web.folders.addUsingPath(folderPath);
+      } catch {
+        // Folder may already exist — ignore
+      }
+
+      for (const file of files) {
+        try {
+          const arrayBuffer = await file.arrayBuffer();
+          const uploadResult = await this.sp.web.getFolderByServerRelativePath(folderPath)
+            .files.addUsingPath(file.name, new Uint8Array(arrayBuffer), { Overwrite: true });
+          urls.push(uploadResult.ServerRelativeUrl);
+        } catch (fileErr) {
+          logger.warn('PolicyRequestService', `Failed to upload attachment: ${file.name}`, fileErr);
+        }
+      }
+
+      logger.info('PolicyRequestService', `Uploaded ${urls.length}/${files.length} attachments for ${referenceNumber}`);
+    } catch (err) {
+      logger.warn('PolicyRequestService', `Failed to create attachment folder for ${referenceNumber}`, err);
+    }
+
+    return urls;
   }
 
   /**

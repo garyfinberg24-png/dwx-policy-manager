@@ -14,18 +14,23 @@ import {
   DefaultButton
 } from '@fluentui/react';
 import { JmlAppLayout } from '../../../components/JmlAppLayout';
+import { PolicyService } from '../../../services/PolicyService';
+import { SearchService } from '../../../services/SearchService';
+import { IPolicy, PolicyStatus, PolicyCategory } from '../../../models/IPolicy';
+import { logger } from '../../../services/LoggingService';
 
-// Search result interface
+// Search result mapped from IPolicy
 interface ISearchResult {
   id: number;
-  type: 'policy' | 'template' | 'pack' | 'document';
+  type: 'policy';
   title: string;
   subtitle: string;
-  highlights: string[];
-  status?: string;
-  category?: string;
+  description: string;
+  status: string;
+  category: string;
   lastModified: Date;
-  relevanceScore: number;
+  policyNumber: string;
+  versionNumber: string;
 }
 
 // Filter state interface
@@ -41,177 +46,115 @@ interface IPolicySearchState {
   searchQuery: string;
   isSearching: boolean;
   results: ISearchResult[];
+  totalResults: number;
   hasSearched: boolean;
   sortBy: string;
   filters: ISearchFilters;
   quickFilter: string | null;
   recentSearches: string[];
+  isInitializing: boolean;
+  error: string | null;
 }
 
-// Type options for policy search
-const typeOptions = [
-  { key: 'policy', text: 'Policies', icon: 'Library' },
-  { key: 'template', text: 'Templates', icon: 'FileTemplate' },
-  { key: 'pack', text: 'Policy Packs', icon: 'Package' },
-  { key: 'document', text: 'Documents', icon: 'Document' },
-];
-
-// Status options
+// Status options matching PolicyStatus enum values
 const statusOptions = [
-  { key: 'draft', text: 'Draft' },
-  { key: 'pending', text: 'Pending Approval' },
-  { key: 'published', text: 'Published' },
-  { key: 'review', text: 'Under Review' },
-  { key: 'archived', text: 'Archived' },
+  { key: PolicyStatus.Draft, text: 'Draft' },
+  { key: PolicyStatus.InReview, text: 'In Review' },
+  { key: PolicyStatus.PendingApproval, text: 'Pending Approval' },
+  { key: PolicyStatus.Published, text: 'Published' },
+  { key: PolicyStatus.Approved, text: 'Approved' },
+  { key: PolicyStatus.Archived, text: 'Archived' },
 ];
 
-// Category options
+// Category options matching PolicyCategory enum values
 const categoryOptions = [
-  { key: 'hr', text: 'Human Resources' },
-  { key: 'it', text: 'Information Technology' },
-  { key: 'compliance', text: 'Compliance & Legal' },
-  { key: 'finance', text: 'Finance' },
-  { key: 'operations', text: 'Operations' },
-  { key: 'safety', text: 'Health & Safety' },
-  { key: 'security', text: 'Security' },
-  { key: 'governance', text: 'Governance' },
+  { key: PolicyCategory.HRPolicies, text: 'HR Policies' },
+  { key: PolicyCategory.ITSecurity, text: 'IT & Security' },
+  { key: PolicyCategory.HealthSafety, text: 'Health & Safety' },
+  { key: PolicyCategory.Compliance, text: 'Compliance' },
+  { key: PolicyCategory.Financial, text: 'Financial' },
+  { key: PolicyCategory.Operational, text: 'Operational' },
+  { key: PolicyCategory.Legal, text: 'Legal' },
+  { key: PolicyCategory.Environmental, text: 'Environmental' },
+  { key: PolicyCategory.QualityAssurance, text: 'Quality Assurance' },
+  { key: PolicyCategory.DataPrivacy, text: 'Data Privacy' },
 ];
 
 // Sort options
 const sortOptions: IDropdownOption[] = [
-  { key: 'relevance', text: 'Most Relevant' },
-  { key: 'recent', text: 'Most Recent' },
-  { key: 'title', text: 'Title A-Z' },
-  { key: 'status', text: 'By Status' },
+  { key: 'PolicyName', text: 'Title A-Z' },
+  { key: 'Modified', text: 'Most Recent' },
+  { key: 'PolicyStatus', text: 'By Status' },
+  { key: 'PolicyCategory', text: 'By Category' },
 ];
 
-// Mock search results generator
-const generateMockResults = (query: string, filters: ISearchFilters): ISearchResult[] => {
-  if (!query.trim()) return [];
-
-  const mockData: ISearchResult[] = [
-    {
-      id: 1,
-      type: 'policy',
-      title: 'Information Security Policy',
-      subtitle: 'POL-IT-001 | IT Department | Version 3.2',
-      highlights: [`Comprehensive information security guidelines covering "${query}" requirements and data protection standards...`],
-      status: 'published',
-      category: 'it',
-      lastModified: new Date('2024-01-15'),
-      relevanceScore: 0.95,
-    },
-    {
-      id: 2,
-      type: 'policy',
-      title: 'Data Privacy & Protection Policy',
-      subtitle: 'POL-COMP-003 | Compliance | Version 2.1',
-      highlights: [`Data handling procedures relating to "${query}" and GDPR compliance requirements...`],
-      status: 'published',
-      category: 'compliance',
-      lastModified: new Date('2024-01-10'),
-      relevanceScore: 0.88,
-    },
-    {
-      id: 3,
-      type: 'template',
-      title: 'Standard Policy Template v2.0',
-      subtitle: 'Template | 8 sections | Governance category',
-      highlights: [`Reusable policy template with sections covering "${query}" and related governance topics...`],
-      status: undefined,
-      category: 'governance',
-      lastModified: new Date('2023-12-01'),
-      relevanceScore: 0.82,
-    },
-    {
-      id: 4,
-      type: 'pack',
-      title: 'New Employee Onboarding Pack',
-      subtitle: 'Policy Pack | 12 policies | HR Department',
-      highlights: [`Employee onboarding bundle including policies related to "${query}" and workplace conduct...`],
-      status: 'published',
-      category: 'hr',
-      lastModified: new Date('2024-01-05'),
-      relevanceScore: 0.75,
-    },
-    {
-      id: 5,
-      type: 'policy',
-      title: 'Acceptable Use Policy',
-      subtitle: 'POL-IT-005 | IT Department | Version 1.8',
-      highlights: [`Guidelines for acceptable use of company resources relating to "${query}" and technology usage...`],
-      status: 'review',
-      category: 'it',
-      lastModified: new Date('2024-01-14'),
-      relevanceScore: 0.70,
-    },
-    {
-      id: 6,
-      type: 'document',
-      title: 'Compliance Audit Report Q4 2023',
-      subtitle: 'Document | Compliance Department | 45 pages',
-      highlights: [`Quarterly compliance audit findings referencing "${query}" and regulatory adherence...`],
-      status: undefined,
-      category: 'compliance',
-      lastModified: new Date('2023-11-20'),
-      relevanceScore: 0.65,
-    },
-  ];
-
-  let results = mockData;
-  if (filters.types.length > 0) {
-    results = results.filter(r => filters.types.includes(r.type));
-  }
-  if (filters.status.length > 0) {
-    results = results.filter(r => !r.status || filters.status.includes(r.status));
-  }
-  if (filters.category.length > 0) {
-    results = results.filter(r => !r.category || filters.category.includes(r.category));
-  }
-  return results;
-};
-
 // Helper functions
-const getTypeColor = (type: string): string => {
-  const colors: Record<string, string> = {
-    policy: '#0d9488',
-    template: '#8764b8',
-    pack: '#107c10',
-    document: '#0078d4',
-  };
-  return colors[type] || '#0d9488';
-};
-
-const getTypeIcon = (type: string): string => {
-  const icons: Record<string, string> = {
-    policy: 'Library',
-    template: 'FileTemplate',
-    pack: 'Package',
-    document: 'Document',
-  };
-  return icons[type] || 'Document';
-};
-
 const getStatusColor = (status: string): { bg: string; text: string } => {
   const colors: Record<string, { bg: string; text: string }> = {
-    draft: { bg: '#f3f2f1', text: '#605e5c' },
-    pending: { bg: '#fff4ce', text: '#8a6914' },
-    published: { bg: '#dff6dd', text: '#107c10' },
-    review: { bg: '#e6f2ff', text: '#0078d4' },
-    archived: { bg: '#f3f2f1', text: '#605e5c' },
+    [PolicyStatus.Draft]: { bg: '#f3f2f1', text: '#605e5c' },
+    [PolicyStatus.InReview]: { bg: '#e6f2ff', text: '#0078d4' },
+    [PolicyStatus.PendingApproval]: { bg: '#fff4ce', text: '#8a6914' },
+    [PolicyStatus.Approved]: { bg: '#dff6dd', text: '#107c10' },
+    [PolicyStatus.Published]: { bg: '#dff6dd', text: '#107c10' },
+    [PolicyStatus.Archived]: { bg: '#f3f2f1', text: '#605e5c' },
+    [PolicyStatus.Retired]: { bg: '#f3f2f1', text: '#605e5c' },
+    [PolicyStatus.Expired]: { bg: '#fde7e9', text: '#a4262c' },
+    [PolicyStatus.Rejected]: { bg: '#fde7e9', text: '#a4262c' },
   };
   return colors[status] || { bg: '#f3f2f1', text: '#605e5c' };
 };
 
+const getCategoryIcon = (category: string): string => {
+  const icons: Record<string, string> = {
+    [PolicyCategory.HRPolicies]: 'People',
+    [PolicyCategory.ITSecurity]: 'Shield',
+    [PolicyCategory.HealthSafety]: 'Health',
+    [PolicyCategory.Compliance]: 'ComplianceAudit',
+    [PolicyCategory.Financial]: 'Money',
+    [PolicyCategory.Operational]: 'Settings',
+    [PolicyCategory.Legal]: 'Library',
+    [PolicyCategory.Environmental]: 'Leaf',
+    [PolicyCategory.QualityAssurance]: 'CheckMark',
+    [PolicyCategory.DataPrivacy]: 'Lock',
+  };
+  return icons[category] || 'Library';
+};
+
+/**
+ * Map an IPolicy to a search result for display
+ */
+function mapPolicyToResult(policy: IPolicy): ISearchResult {
+  const modified = policy.Modified
+    ? (policy.Modified instanceof Date ? policy.Modified : new Date(policy.Modified))
+    : new Date();
+
+  return {
+    id: policy.Id || 0,
+    type: 'policy',
+    title: policy.PolicyName || policy.Title || '',
+    subtitle: `${policy.PolicyNumber || ''} | ${policy.PolicyCategory || ''} | Version ${policy.VersionNumber || '1.0'}`,
+    description: policy.Description || '',
+    status: policy.PolicyStatus || PolicyStatus.Draft,
+    category: policy.PolicyCategory || '',
+    lastModified: modified,
+    policyNumber: policy.PolicyNumber || '',
+    versionNumber: policy.VersionNumber || '1.0',
+  };
+}
+
 export default class PolicySearch extends React.Component<IPolicySearchProps, IPolicySearchState> {
+  private policyService: PolicyService | null = null;
+  private searchService: SearchService | null = null;
+
   constructor(props: IPolicySearchProps) {
     super(props);
     this.state = {
       searchQuery: '',
       isSearching: false,
       results: [],
+      totalResults: 0,
       hasSearched: false,
-      sortBy: 'relevance',
+      sortBy: 'Modified',
       filters: {
         types: [],
         status: [],
@@ -220,29 +163,125 @@ export default class PolicySearch extends React.Component<IPolicySearchProps, IP
         dateTo: null,
       },
       quickFilter: null,
-      recentSearches: [
-        'Data Protection',
-        'Information Security',
-        'Code of Conduct',
-        'Leave Policy',
-        'Compliance',
-      ],
+      recentSearches: [],
+      isInitializing: true,
+      error: null,
     };
   }
 
+  public async componentDidMount(): Promise<void> {
+    try {
+      if (this.props.sp) {
+        this.policyService = new PolicyService(this.props.sp);
+        await this.policyService.initialize();
+
+        this.searchService = new SearchService(this.props.sp);
+        const recent = this.searchService.getRecentSearches();
+        this.setState({
+          recentSearches: recent.map(r => r.searchText).slice(0, 5),
+          isInitializing: false,
+        });
+
+        // Check for search query in URL parameters (from header search bar)
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlQuery = urlParams.get('q');
+        if (urlQuery && urlQuery.trim()) {
+          this.setState({ searchQuery: urlQuery.trim() }, () => {
+            this.performSearch(urlQuery.trim());
+          });
+        }
+      } else {
+        this.setState({ isInitializing: false, error: 'SharePoint connection not available.' });
+      }
+    } catch (err) {
+      logger.error('PolicySearch', 'Failed to initialize services', err);
+      this.setState({ isInitializing: false, error: 'Failed to connect to SharePoint.' });
+    }
+  }
+
   private performSearch = async (query: string): Promise<void> => {
-    if (!query.trim()) {
-      this.setState({ results: [], hasSearched: false });
+    if (!query.trim() && this.state.filters.status.length === 0 && this.state.filters.category.length === 0) {
+      this.setState({ results: [], totalResults: 0, hasSearched: false });
       return;
     }
 
-    this.setState({ isSearching: true, hasSearched: true });
+    if (!this.policyService) {
+      this.setState({ error: 'Policy service not available.' });
+      return;
+    }
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 800));
+    this.setState({ isSearching: true, hasSearched: true, error: null });
 
-    const searchResults = generateMockResults(query, this.state.filters);
-    this.setState({ results: searchResults, isSearching: false });
+    try {
+      const { filters, sortBy } = this.state;
+
+      // Determine sort direction
+      const sortDirection: 'asc' | 'desc' = sortBy === 'Modified' ? 'desc' : 'asc';
+
+      // Build status filter — only use first selected if PolicyService expects single value
+      const statusFilter = filters.status.length === 1
+        ? filters.status[0] as PolicyStatus
+        : undefined;
+
+      // Build category filter — only use first selected if PolicyService expects single value
+      const categoryFilter = filters.category.length === 1
+        ? filters.category[0]
+        : undefined;
+
+      // Fetch policies from SharePoint
+      const result = await this.policyService.getPoliciesPaginated(
+        1,
+        50,
+        {
+          searchTerm: query.trim() || undefined,
+          status: statusFilter,
+          category: categoryFilter,
+          sortBy: sortBy,
+          sortDirection: sortDirection,
+        }
+      );
+
+      let searchResults = result.items.map(mapPolicyToResult);
+
+      // Apply client-side filters for multi-select status/category (service supports single only)
+      if (filters.status.length > 1) {
+        searchResults = searchResults.filter(r => filters.status.includes(r.status));
+      }
+      if (filters.category.length > 1) {
+        searchResults = searchResults.filter(r => filters.category.includes(r.category));
+      }
+
+      // Apply date filters client-side
+      if (filters.dateFrom) {
+        const from = filters.dateFrom.getTime();
+        searchResults = searchResults.filter(r => r.lastModified.getTime() >= from);
+      }
+      if (filters.dateTo) {
+        const to = filters.dateTo.getTime();
+        searchResults = searchResults.filter(r => r.lastModified.getTime() <= to);
+      }
+
+      this.setState({
+        results: searchResults,
+        totalResults: searchResults.length,
+        isSearching: false,
+      });
+
+      // Save to recent searches
+      if (query.trim() && this.searchService) {
+        this.searchService.saveRecentSearch(query.trim(), undefined, searchResults.length);
+        const recent = this.searchService.getRecentSearches();
+        this.setState({ recentSearches: recent.map(r => r.searchText).slice(0, 5) });
+      }
+    } catch (err) {
+      logger.error('PolicySearch', 'Search failed', err);
+      this.setState({
+        isSearching: false,
+        error: 'Search failed. Please try again.',
+        results: [],
+        totalResults: 0,
+      });
+    }
   };
 
   private handleSearch = (): void => {
@@ -260,7 +299,7 @@ export default class PolicySearch extends React.Component<IPolicySearchProps, IP
         filters: { ...prevState.filters, [filterType]: newValues }
       };
     }, () => {
-      if (this.state.hasSearched && this.state.searchQuery) {
+      if (this.state.hasSearched) {
         this.performSearch(this.state.searchQuery);
       }
     });
@@ -277,44 +316,55 @@ export default class PolicySearch extends React.Component<IPolicySearchProps, IP
       },
       quickFilter: null,
     }, () => {
-      if (this.state.hasSearched && this.state.searchQuery) {
+      if (this.state.hasSearched) {
         this.performSearch(this.state.searchQuery);
       }
     });
   };
 
-  private handleQuickFilter = (type: string): void => {
+  private handleQuickFilter = (category: string): void => {
     const { quickFilter } = this.state;
-    if (quickFilter === type) {
+    if (quickFilter === category) {
       this.setState(prevState => ({
         quickFilter: null,
-        filters: { ...prevState.filters, types: [] }
+        filters: { ...prevState.filters, category: [] }
       }), () => {
         if (this.state.hasSearched) this.performSearch(this.state.searchQuery);
       });
     } else {
       this.setState(prevState => ({
-        quickFilter: type,
-        filters: { ...prevState.filters, types: [type] }
+        quickFilter: category,
+        filters: { ...prevState.filters, category: [category] }
       }), () => {
-        if (this.state.hasSearched) this.performSearch(this.state.searchQuery);
+        // Auto-search when quick filter is applied
+        this.performSearch(this.state.searchQuery || '*');
       });
     }
   };
 
   private handleResultClick = (result: ISearchResult): void => {
-    if (result.type === 'policy') {
-      window.location.href = `/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${result.id}&mode=browse`;
+    if (result.type === 'policy' && result.id) {
+      const siteUrl = this.props.context?.pageContext?.web?.absoluteUrl || '';
+      window.location.href = `${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${result.id}&mode=browse`;
     }
   };
 
   public render(): React.ReactElement<IPolicySearchProps> {
-    const { searchQuery, isSearching, results, hasSearched, sortBy, filters, quickFilter, recentSearches } = this.state;
-    const activeFilterCount = filters.types.length + filters.status.length + filters.category.length +
+    const { searchQuery, isSearching, results, totalResults, hasSearched, sortBy, filters, quickFilter, recentSearches, isInitializing, error } = this.state;
+    const activeFilterCount = filters.status.length + filters.category.length +
       (filters.dateFrom ? 1 : 0) + (filters.dateTo ? 1 : 0);
 
+    // Quick filter chips — use top categories
+    const quickFilterOptions = [
+      { key: PolicyCategory.HRPolicies, text: 'HR Policies', icon: 'People' },
+      { key: PolicyCategory.ITSecurity, text: 'IT & Security', icon: 'Shield' },
+      { key: PolicyCategory.Compliance, text: 'Compliance', icon: 'ComplianceAudit' },
+      { key: PolicyCategory.HealthSafety, text: 'Health & Safety', icon: 'Health' },
+      { key: PolicyCategory.Financial, text: 'Financial', icon: 'Money' },
+    ];
+
     return (
-      <JmlAppLayout context={this.props.context} breadcrumbs={[{ text: 'Policy Manager', url: '/sites/PolicyManager' }, { text: 'Search' }]}>
+      <JmlAppLayout context={this.props.context} breadcrumbs={[{ text: 'Policy Manager', url: this.props.context?.pageContext?.web?.absoluteUrl || '/sites/PolicyManager' }, { text: 'Search' }]}>
         <div className={styles.policySearch}>
           <div className={styles.contentWrapper}>
             {/* Hero Section */}
@@ -324,61 +374,86 @@ export default class PolicySearch extends React.Component<IPolicySearchProps, IP
                 <div>
                   <h1 className={styles.heroTitle}>Search Policies</h1>
                   <p className={styles.heroSubtitle}>
-                    Find policies, templates, packs, and compliance documents
+                    Find policies by name, number, keywords, or category
                   </p>
                 </div>
               </div>
 
-              <div className={styles.searchBoxContainer}>
-                <SearchBox
-                  placeholder="Search by policy name, number, keywords, category..."
-                  value={searchQuery}
-                  onChange={(_, value) => this.setState({ searchQuery: value || '' })}
-                  onSearch={this.handleSearch}
-                  onClear={() => this.setState({ searchQuery: '', results: [], hasSearched: false })}
-                  styles={{
-                    root: { borderRadius: '6px', backgroundColor: '#ffffff' },
-                    field: { fontSize: '16px', padding: '8px' },
-                  }}
-                />
-
-                {/* Quick Filters */}
-                <div className={styles.quickFilters}>
-                  {typeOptions.map(opt => (
-                    <button
-                      key={opt.key}
-                      className={`${styles.quickFilterChip} ${quickFilter === opt.key ? styles.quickFilterChipActive : ''}`}
-                      onClick={() => this.handleQuickFilter(opt.key)}
-                      type="button"
-                    >
-                      <Icon iconName={opt.icon} />
-                      {opt.text}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Recent Searches */}
-              {!hasSearched && (
-                <div className={styles.recentSearches}>
-                  <div className={styles.recentSearchTitle}>Recent Searches</div>
-                  <div className={styles.recentSearchTags}>
-                    {recentSearches.map((search, index) => (
-                      <span
-                        key={index}
-                        className={styles.recentSearchTag}
-                        onClick={() => {
-                          this.setState({ searchQuery: search }, () => {
-                            this.performSearch(search);
-                          });
+              {isInitializing ? (
+                <Spinner size={SpinnerSize.medium} label="Connecting to SharePoint..." />
+              ) : (
+                <>
+                  <div className={styles.searchBoxContainer}>
+                    <div className={styles.searchInputRow}>
+                      <SearchBox
+                        placeholder="Search by policy name, number, keywords, category..."
+                        value={searchQuery}
+                        onChange={(_, value) => this.setState({ searchQuery: value || '' })}
+                        onSearch={this.handleSearch}
+                        onClear={() => this.setState({ searchQuery: '', results: [], totalResults: 0, hasSearched: false, error: null })}
+                        styles={{
+                          root: { borderRadius: '6px', backgroundColor: '#ffffff', flex: 1 },
+                          field: { fontSize: '16px', padding: '8px' },
                         }}
+                      />
+                      <button
+                        className={styles.searchButton}
+                        onClick={() => this.handleSearch(searchQuery)}
+                        type="button"
+                        title="Search"
                       >
-                        <Icon iconName="History" />
-                        {search}
-                      </span>
-                    ))}
+                        <Icon iconName="Search" />
+                        Search
+                      </button>
+                    </div>
+
+                    {/* Quick Filters by Category */}
+                    <div className={styles.quickFilters}>
+                      {quickFilterOptions.map(opt => (
+                        <button
+                          key={opt.key}
+                          className={`${styles.quickFilterChip} ${quickFilter === opt.key ? styles.quickFilterChipActive : ''}`}
+                          onClick={() => this.handleQuickFilter(opt.key)}
+                          type="button"
+                        >
+                          <Icon iconName={opt.icon} />
+                          {opt.text}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
+
+                  {/* Error Message */}
+                  {error && (
+                    <div style={{ color: '#a4262c', padding: '8px 16px', backgroundColor: '#fde7e9', borderRadius: '4px', marginTop: '8px' }}>
+                      <Icon iconName="ErrorBadge" style={{ marginRight: '8px' }} />
+                      {error}
+                    </div>
+                  )}
+
+                  {/* Recent Searches */}
+                  {!hasSearched && recentSearches.length > 0 && (
+                    <div className={styles.recentSearches}>
+                      <div className={styles.recentSearchTitle}>Recent Searches</div>
+                      <div className={styles.recentSearchTags}>
+                        {recentSearches.map((search, index) => (
+                          <span
+                            key={index}
+                            className={styles.recentSearchTag}
+                            onClick={() => {
+                              this.setState({ searchQuery: search }, () => {
+                                this.performSearch(search);
+                              });
+                            }}
+                          >
+                            <Icon iconName="History" />
+                            {search}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
@@ -393,20 +468,6 @@ export default class PolicySearch extends React.Component<IPolicySearchProps, IP
                       <span className={styles.filterCount}>({activeFilterCount})</span>
                     )}
                   </h3>
-
-                  {/* Type Filter */}
-                  <div className={styles.filterSection}>
-                    <div className={styles.filterTitle}>Content Type</div>
-                    {typeOptions.map(opt => (
-                      <Checkbox
-                        key={opt.key}
-                        label={opt.text}
-                        checked={filters.types.includes(opt.key)}
-                        onChange={(_, checked) => this.handleFilterChange('types', opt.key, checked || false)}
-                        className={styles.filterCheckbox}
-                      />
-                    ))}
-                  </div>
 
                   {/* Status Filter */}
                   <div className={styles.filterSection}>
@@ -425,7 +486,7 @@ export default class PolicySearch extends React.Component<IPolicySearchProps, IP
                   {/* Category Filter */}
                   <div className={styles.filterSection}>
                     <div className={styles.filterTitle}>Category</div>
-                    {categoryOptions.slice(0, 6).map(opt => (
+                    {categoryOptions.map(opt => (
                       <Checkbox
                         key={opt.key}
                         label={opt.text}
@@ -444,7 +505,9 @@ export default class PolicySearch extends React.Component<IPolicySearchProps, IP
                       value={filters.dateFrom || undefined}
                       onSelectDate={(date) => this.setState(prev => ({
                         filters: { ...prev.filters, dateFrom: date || null }
-                      }))}
+                      }), () => {
+                        if (this.state.hasSearched) this.performSearch(this.state.searchQuery);
+                      })}
                       styles={{ root: { marginBottom: '8px' } }}
                     />
                     <DatePicker
@@ -452,7 +515,9 @@ export default class PolicySearch extends React.Component<IPolicySearchProps, IP
                       value={filters.dateTo || undefined}
                       onSelectDate={(date) => this.setState(prev => ({
                         filters: { ...prev.filters, dateTo: date || null }
-                      }))}
+                      }), () => {
+                        if (this.state.hasSearched) this.performSearch(this.state.searchQuery);
+                      })}
                     />
                   </div>
 
@@ -468,35 +533,40 @@ export default class PolicySearch extends React.Component<IPolicySearchProps, IP
                 <div className={styles.resultsPanel}>
                   {isSearching ? (
                     <div className={styles.loadingOverlay}>
-                      <Spinner size={SpinnerSize.large} label="Searching..." />
+                      <Spinner size={SpinnerSize.large} label="Searching policies..." />
                     </div>
                   ) : results.length > 0 ? (
                     <>
                       <div className={styles.resultsHeader}>
                         <span className={styles.resultsCount}>
-                          {results.length} results for &ldquo;{searchQuery}&rdquo;
+                          {totalResults} {totalResults === 1 ? 'result' : 'results'}
+                          {searchQuery.trim() && <> for &ldquo;{searchQuery}&rdquo;</>}
                         </span>
                         <Dropdown
                           placeholder="Sort by"
                           selectedKey={sortBy}
                           options={sortOptions}
-                          onChange={(_, option) => this.setState({ sortBy: (option?.key as string) || 'relevance' })}
+                          onChange={(_, option) => {
+                            this.setState({ sortBy: (option?.key as string) || 'Modified' }, () => {
+                              this.performSearch(this.state.searchQuery);
+                            });
+                          }}
                           className={styles.sortDropdown}
                         />
                       </div>
 
                       {results.map(result => (
                         <div
-                          key={`${result.type}-${result.id}`}
+                          key={`policy-${result.id}`}
                           className={styles.resultCard}
                           onClick={() => this.handleResultClick(result)}
                         >
                           <div className={styles.resultHeader}>
                             <div
                               className={styles.resultIcon}
-                              style={{ backgroundColor: getTypeColor(result.type) }}
+                              style={{ backgroundColor: '#0d9488' }}
                             >
-                              <Icon iconName={getTypeIcon(result.type)} />
+                              <Icon iconName={getCategoryIcon(result.category)} />
                             </div>
                             <div className={styles.resultInfo}>
                               <div className={styles.resultTitle}>{result.title}</div>
@@ -515,25 +585,29 @@ export default class PolicySearch extends React.Component<IPolicySearchProps, IP
                             )}
                           </div>
 
-                          {result.highlights.length > 0 && (
+                          {result.description && (
                             <div className={styles.resultHighlights}>
-                              {result.highlights[0]}
+                              {result.description.length > 200
+                                ? result.description.substring(0, 200) + '...'
+                                : result.description}
                             </div>
                           )}
 
                           <div className={styles.resultMeta}>
                             <span className={styles.resultMetaItem}>
-                              <Icon iconName={getTypeIcon(result.type)} />
-                              {result.type.charAt(0).toUpperCase() + result.type.slice(1)}
+                              <Icon iconName={getCategoryIcon(result.category)} />
+                              {result.category}
                             </span>
                             <span className={styles.resultMetaItem}>
                               <Icon iconName="Calendar" />
                               Modified {result.lastModified.toLocaleDateString()}
                             </span>
-                            <span className={styles.resultMetaItem}>
-                              <Icon iconName="CustomActivity" />
-                              {Math.round(result.relevanceScore * 100)}% match
-                            </span>
+                            {result.policyNumber && (
+                              <span className={styles.resultMetaItem}>
+                                <Icon iconName="NumberField" />
+                                {result.policyNumber}
+                              </span>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -543,14 +617,18 @@ export default class PolicySearch extends React.Component<IPolicySearchProps, IP
                       <Icon iconName="SearchIssue" className={styles.noResultsIcon} />
                       <div className={styles.noResultsTitle}>No results found</div>
                       <div className={styles.noResultsText}>
-                        We couldn&apos;t find anything matching &ldquo;{searchQuery}&rdquo;.
-                        Try different keywords or adjust your filters.
+                        {searchQuery.trim()
+                          ? <>We couldn&apos;t find any policies matching &ldquo;{searchQuery}&rdquo;. Try different keywords or adjust your filters.</>
+                          : <>No policies match the selected filters. Try adjusting your filter criteria.</>
+                        }
                       </div>
-                      <DefaultButton
-                        text="Clear Filters"
-                        onClick={this.clearFilters}
-                        style={{ marginTop: '16px' }}
-                      />
+                      {activeFilterCount > 0 && (
+                        <DefaultButton
+                          text="Clear Filters"
+                          onClick={this.clearFilters}
+                          style={{ marginTop: '16px' }}
+                        />
+                      )}
                     </div>
                   )}
                 </div>

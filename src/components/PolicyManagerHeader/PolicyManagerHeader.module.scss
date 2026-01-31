@@ -35,8 +35,9 @@ $pm-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-se
   font-family: $pm-font-family;
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: 1000;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  overflow: visible;
 }
 
 // Top bar with logo, search, and user actions - Dark teal gradient
@@ -47,6 +48,7 @@ $pm-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-se
   padding: 20px 56px;
   background: $pm-gradient-header;
   min-height: 84px;
+  overflow: visible;
 
   @media (max-width: 768px) {
     padding: 14px 16px;
@@ -165,14 +167,18 @@ $pm-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-se
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-shrink: 0;
+  overflow: visible;
+  z-index: 10;
 }
 
-// Quick action buttons (New Contract, Request Contract, Recently Viewed)
+// Quick action buttons (New Policy, Request Policy, Recently Viewed)
 .quickActionButtons {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-right: 8px;
+  flex-shrink: 0;
 
   @media (max-width: 768px) {
     display: none;
@@ -294,6 +300,7 @@ $pm-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-se
 .searchSection {
   flex: 1;
   max-width: 300px;
+  min-width: 0;
   margin: 0 24px;
 
   @media (max-width: 1200px) {

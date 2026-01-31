@@ -48,6 +48,36 @@ $pm-light-teal: #14b8a6;
   max-width: 800px;
 }
 
+.searchInputRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.searchButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 20px;
+  height: 32px;
+  background-color: #ffffff;
+  color: $pm-dark-teal;
+  border: 1px solid #ffffff;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  box-sizing: border-box;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.85);
+  }
+}
+
 // Quick Filters
 .quickFilters {
   display: flex;
@@ -117,17 +147,24 @@ $pm-light-teal: #14b8a6;
 
 // Main Content Grid
 .mainContent {
-  display: grid;
-  grid-template-columns: 280px 1fr;
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
   gap: 24px;
+  align-items: flex-start;
+  width: 100%;
 
   @media (max-width: 768px) {
-    grid-template-columns: 1fr;
+    flex-direction: column !important;
   }
 }
 
 // Filters Panel
 .filtersPanel {
+  width: 280px;
+  min-width: 280px;
+  max-width: 280px;
+  flex-shrink: 0;
   background-color: #ffffff;
   border-radius: 8px;
   padding: 20px;
@@ -136,6 +173,14 @@ $pm-light-teal: #14b8a6;
   position: sticky;
   top: 20px;
   border: 1px solid #edebe9;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    min-width: unset;
+    max-width: unset;
+    position: static;
+  }
 }
 
 .filtersPanelTitle {
@@ -185,7 +230,13 @@ $pm-light-teal: #14b8a6;
 
 // Results Panel
 .resultsPanel {
-  min-height: 400px;
+  flex: 1 1 0%;
+  min-width: 0;
+  max-width: calc(100% - 304px);
+
+  @media (max-width: 768px) {
+    max-width: 100%;
+  }
 }
 
 .resultsHeader {
@@ -293,8 +344,12 @@ $pm-light-teal: #14b8a6;
 // No Results
 .noResults {
   text-align: center;
-  padding: 60px 40px;
+  padding: 40px 40px;
   color: #605e5c;
+  background-color: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #edebe9;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .noResultsIcon {

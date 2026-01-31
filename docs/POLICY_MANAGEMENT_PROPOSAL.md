@@ -53,7 +53,7 @@ Full-featured service class with:
 - Compliance summary generation
 
 #### 3. **SharePoint Provisioning** ([scripts/policy-management/](scripts/policy-management/))
-PowerShell scripts create 20 SharePoint lists with PM_ prefix:
+PowerShell scripts create 21 SharePoint lists with PM_ prefix:
 1. **PM_Policies** - Core policy repository (40+ fields)
 2. **PM_PolicyVersions** - Version history tracking
 3. **PM_PolicyAcknowledgements** - User acknowledgements (30+ fields)
@@ -74,6 +74,7 @@ PowerShell scripts create 20 SharePoint lists with PM_ prefix:
 18. **PM_PolicyPackAssignments** - Pack assignments to users
 19. **PM_PolicyAnalytics** - Analytics data
 20. **PM_PolicyDocuments** - Document library
+21. **PM_Configuration** - Key-value configuration store (ConfigKey, ConfigValue, Category, IsActive, IsSystemConfig)
 
 #### 4. **Web Parts Developed (14)**
 - **Policy Hub** - Main policy library/repository with KPI dashboard, advanced filtering, table/card views
@@ -82,7 +83,7 @@ PowerShell scripts create 20 SharePoint lists with PM_ prefix:
 - **Policy Admin** - Administrative panel with sidebar navigation (12 sections: templates, metadata, workflows, compliance, notifications, naming rules, SLA, lifecycle, navigation, reviewers, audit, export)
 - **Policy Pack Manager** - Create and manage policy bundles, assign to users/groups
 - **My Policies** - Employee portal for assigned policies, due dates, completion tracking
-- **Quiz Builder** - Create comprehension quizzes for policies
+- **Quiz Builder** - Create comprehension quizzes for policies, quiz list/management view with card grid, summary tab, AI question generation via Azure Function
 - **Policy Search** - Dedicated search center with filters, category chips, result cards
 - **Policy Help** - Help center with articles, FAQs, shortcuts, videos, support tabs
 - **Policy Distribution** - Distribution campaign management (active campaigns, creation wizard, history, settings)
@@ -90,14 +91,26 @@ PowerShell scripts create 20 SharePoint lists with PM_ prefix:
 - **Policy Author View** (DWx) - Author dashboard (4 tabs: My Policies, Approvals, Delegations with Add Delegation panel, Activity)
 - **Policy Manager View** (DWx) - Line manager dashboard (6 tabs: Dashboard with compliance score, Team Compliance, Approvals, Delegations, Policy Reviews, Reports)
 
-#### 5. **Role-Based Access Control**
+#### 5. **AI Quiz Generator (Azure Function)**
+- **Azure Function** — `generateQuizQuestions.ts` HTTP trigger with PDF extraction, GPT-4o prompt engineering
+- **Infrastructure** — Bicep template provisioning OpenAI, Functions, Key Vault, Storage, App Insights (swedencentral)
+- **Quiz Builder Integration** — AI Generate panel in Quiz Builder with configurable function URL
+- **Admin Settings** — AI Function URL configurable in Policy Admin with localStorage fallback
+
+#### 6. **Recently Viewed Policies**
+- Dropdown panel in app header showing 5 most recently viewed policies
+- Follows same UX pattern as Notifications and Profile dropdown panels
+
+#### 7. **Role-Based Access Control**
+
 4-tier role hierarchy (PolicyRoleService):
+
 - **User** — Browse, My Policies, Details
 - **Author** — + Create, Packs, Author View
 - **Manager** — + Approvals, Delegations, Distribution, Analytics, Manager View, Settings cog
 - **Admin** — + Quiz Builder, Admin panel, all configuration
 
-#### 6. **DWx Branding**
+#### 8. **DWx Branding**
 - Forest Teal color theme (#0d9488, #0f766e, #14b8a6)
 - PolicyManagerHeader component with white nav bar
 - PolicyManagerSplashScreen component
@@ -346,13 +359,14 @@ Request -> Review -> Approve/Deny -> [Active] -> [Expired/Revoked]
 - **Achievement tracking** - Completion milestones
 - **Certification badges** - Display compliance status
 
-#### AI & Machine Learning (Future)
-- **Sentiment analysis** - Gauge employee policy sentiment
-- **Predictive non-compliance** - Identify at-risk employees
-- **Policy optimization** - Recommend improvements
-- **Anomaly detection** - Flag unusual patterns
-- **NLP** - Extract key policy terms
-- **Auto-summarization** - Generate policy summaries
+#### AI & Machine Learning
+- **AI Quiz Generation** (Implemented) - Azure OpenAI GPT-4o generates quiz questions from policy documents via Azure Function
+- **Sentiment analysis** (Future) - Gauge employee policy sentiment
+- **Predictive non-compliance** (Future) - Identify at-risk employees
+- **Policy optimization** (Future) - Recommend improvements
+- **Anomaly detection** (Future) - Flag unusual patterns
+- **NLP** (Future) - Extract key policy terms
+- **Auto-summarization** (Future) - Generate policy summaries
 
 #### Document Intelligence (Future)
 - **OCR support** - Extract text from scanned documents
@@ -624,7 +638,7 @@ See [docs/DWx-Brand-Guide.pdf](docs/DWx-Brand-Guide.pdf) for branding specificat
 
 ---
 
-**Document Version:** 2.0
-**Last Updated:** January 2026
+**Document Version:** 3.0
+**Last Updated:** 31 January 2026
 **Author:** DWx Development Team
-**Status:** Foundation Complete - Web Parts Developed
+**Status:** v1.2.1 — 14 Web Parts, AI Quiz Generation, Role-Based Access

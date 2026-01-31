@@ -93,6 +93,7 @@ These PM_ prefixed lists already exist in SharePoint:
 - `PM_PolicyPacks`
 - `PM_PolicyQuizzes`
 - `PM_PolicySourceDocuments`
+- `PM_Configuration` (created by `scripts/upgrade-quiz-questions-list.ps1`)
 
 ### Lists Needing Provisioning ⚠️
 These lists need to be created on SharePoint:

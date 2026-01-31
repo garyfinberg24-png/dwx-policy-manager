@@ -19,7 +19,7 @@
 - **Suite**: DWx (Digital Workplace Excellence)
 - **Company**: First Digital
 - **Tagline**: Policy Governance & Compliance
-- **Current Version**: 1.1.0
+- **Current Version**: 1.2.1
 - **Package ID**: `12538121-8a6b-4e41-8bc7-17f252d5c36e`
 - **SharePoint Site**: https://mf7m.sharepoint.com/sites/PolicyManager
 
@@ -298,6 +298,11 @@ All 14 webparts must be registered in `config/config.json`:
 | PM_PolicyFeedback | User feedback |
 | PM_PolicyDocuments | Supporting documents |
 
+### Configuration List
+| List Name | Purpose |
+|-----------|---------|
+| PM_Configuration | Key-value configuration store (ConfigKey, ConfigValue, Category, IsActive, IsSystemConfig) |
+
 ### Provisioning Scripts
 Located in `scripts/policy-management/`:
 | Script | Lists |
@@ -311,6 +316,11 @@ Located in `scripts/policy-management/`:
 | `Deploy-AllPolicyLists.ps1` | Master deployment script |
 | `Seed-ApprovalAndNotificationData.ps1` | Sample data for approvals + notifications |
 | `Deploy-SampleData.ps1` | Master sample data deployment |
+
+Located in `scripts/` (root):
+| Script | Purpose |
+|--------|---------|
+| `upgrade-quiz-questions-list.ps1` | Adds all Quiz Builder columns to PM_PolicyQuizQuestions + creates PM_Configuration list (idempotent) |
 
 ---
 
@@ -468,28 +478,39 @@ The QuizBuilder's "AI Generate" panel calls the Azure Function with:
 
 ---
 
-## Session State (Last Updated: 30 Jan 2026 — Session 4)
+## Session State (Last Updated: 31 Jan 2026 — Session 5)
 
-### Recently Completed (Session 4 — 30 Jan 2026)
+### Recently Completed (Session 5 — 31 Jan 2026)
 
-#### Quiz System Overhaul
-- **QuizTaker rewrite** — Complete rewrite with proper TypeScript (removed `@ts-nocheck`), all 11 question type renderers, timer leak fix, retake fix, remaining attempts fix
-- **QuizService type safety** — Removed `@ts-nocheck`, fixed unused members, fixed `delete` operator on non-optional properties
-- **QuizBuilder enhancements** — Removed `@ts-nocheck`, added AI Generate panel, move up/down/duplicate buttons per question
-- **Quiz provisioning** — Updated `02-Quiz-Lists.ps1` with 6 quiz-related lists and all question type fields
+#### Quiz Builder UX Overhaul
+- **Quiz List/Management View** — Rewrote `QuizBuilderWrapper.tsx` as dual-mode component: quiz card grid (no quizId param) or quiz editor (with quizId). Status filter tabs (All/Draft/Published/Scheduled/Archived), search, Edit/Duplicate per card
+- **Quiz Summary Tab** — New "Summary" PivotItem in QuizBuilder with overview card, 6 KPI stats, 9-item config grid, conditional schedule section, question breakdown by type, scrollable question list preview
+- **Breadcrumbs** — Added breadcrumb navigation to Quiz Builder: Policy Manager > Quiz Builder > Quiz #ID / New Quiz
 
-#### AI Quiz Generator (Azure Function)
-- **Azure Function** — `generateQuizQuestions.ts` HTTP trigger with PDF extraction, GPT-4o prompt engineering, structured JSON output
-- **Azure Infrastructure** — Bicep template provisioning OpenAI, Functions, Key Vault, Storage, App Insights, Log Analytics, RBAC
-- **Deployed to production** — `dwx-pm-quiz-func-prod` in swedencentral, tested and working
-- **QuizBuilder integration** — Function URL hardcoded as default in AI Generate panel
+#### App Header — Recently Viewed Dropdown
+- **Recently Viewed dropdown** — Converted the "Recently Viewed" nav button to a dropdown panel (same pattern as Notifications/Profile panels) showing 5 most recently viewed policies with category, timestamp, status badges
+- Click-outside detection via ref, "View All Recent Policies" footer link
 
-#### Policy Details Integration
-- **QuizTaker wired to live data** — PolicyDetails looks up active published quiz via `QuizService.getQuizzesByPolicy()`, renders `<QuizTaker>` with fallback to mock quiz
+#### Admin Settings — AI URL Save Fix
+- **localStorage fallback** — PolicyAdmin save handler now tries SP first, falls through to localStorage when PM_Configuration list doesn't exist, shows warning dialog for local-only save
+- **PM_Configuration list** — Added creation to `upgrade-quiz-questions-list.ps1` (ConfigKey, ConfigValue, Category, IsActive, IsSystemConfig)
+
+#### AI Pipeline Hardening
+- **Two-tier retry** — `createQuestion()` in QuizService uses core fields first, falls back to extended fields on failure
+- **Azure Function improvements** — Enhanced `generateQuizQuestions.ts` with better error handling
+- **QuizService enhancements** — Improved `getAllQuizzes()` and `createQuiz()` methods
 
 #### Version & Packaging
-- **Version bump** — Solution 1.0.0.0 → 1.1.0.0, package.json 1.0.0 → 1.1.0 (CDN cache busting)
+- **Version bump** — 1.1.0 → 1.2.1, tagged `v1.2.1`
 - **Ship build** — Zero errors, all 14 webpart manifests
+- **Git tag** — `v1.2.1` pushed to origin
+
+### Previously Completed (Session 4 — 30 Jan 2026)
+- QuizTaker rewrite — All 11 question type renderers, timer leak fix, retake fix
+- QuizService/QuizBuilder — Removed `@ts-nocheck`, added AI Generate panel
+- Azure Function — `generateQuizQuestions.ts` with GPT-4o, Bicep IaC, deployed to production
+- QuizTaker wired to live data via `QuizService.getQuizzesByPolicy()`
+- Version 1.0.0 → 1.1.0
 
 ### Previously Completed (Sessions 1-3)
 - PolicyRoleService — 4-tier role hierarchy with nav filtering
@@ -508,8 +529,10 @@ The QuizBuilder's "AI Generate" panel calls the Azure Function with:
 - Featured Policies and Recently Viewed sections hidden by default until Admin Navigation toggle is wired
 - SPFx CDN caching may require version bump + app catalog re-upload + hard refresh to see updates
 - `az` CLI not in PATH in VSCode terminal — use full path: `C:\Program Files (x86)\Microsoft SDKs\Azure\CLI2\wbin\az.cmd`
+- Recently Viewed dropdown currently uses mock data — needs wiring to actual user browse history
 
 ### Next Steps
+- Wire Recently Viewed dropdown to actual user browse history (track in localStorage or SP list)
 - User testing of Quiz Builder AI generation with real policy documents
 - Wire remaining webparts to live SharePoint data (Analytics, Distribution)
 - Wire Admin Navigation toggles to control nav item visibility

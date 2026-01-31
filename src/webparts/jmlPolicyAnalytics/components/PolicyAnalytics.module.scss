@@ -35,7 +35,7 @@ $pm-font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-se
 
   h3 {
     font-size: 16px;
-    font-weight: 600;
+    font-weight: 400;
     color: #0f172a;
     margin: 0;
   }
@@ -64,14 +64,14 @@ $pm-font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-se
 
 .kpiValue {
   font-size: 28px;
-  font-weight: 700;
+  font-weight: 400;
   color: $pm-primary-dark;
   line-height: 1.1;
 }
 
 .kpiLabel {
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 400;
   color: #64748b;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -137,7 +137,7 @@ $pm-font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-se
 
 .trendBarValue {
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 400;
   color: $pm-primary-dark;
   margin-bottom: 4px;
 }
@@ -200,13 +200,13 @@ $pm-font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-se
 
 .riskCategory {
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 400;
   color: #0f172a;
 }
 
 .riskBadge {
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 400;
   padding: 2px 8px;
   border-radius: 4px;
   text-transform: uppercase;
@@ -356,7 +356,7 @@ $pm-font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-se
 
 .alertTitle {
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 400;
   color: #0f172a;
 }
 
@@ -389,7 +389,7 @@ $pm-font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-se
     th {
       padding: 10px 14px;
       text-align: left;
-      font-weight: 600;
+      font-weight: 400;
       font-size: 11px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
@@ -422,24 +422,24 @@ $pm-font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-se
 }
 
 .cellTitle {
-  font-weight: 500;
+  font-weight: 400;
   color: #0f172a;
 }
 
 .cellNumber {
-  font-weight: 600;
+  font-weight: 400;
   font-variant-numeric: tabular-nums;
 }
 
 .cellRank {
-  font-weight: 600;
+  font-weight: 400;
   color: $pm-primary;
   width: 30px;
 }
 
 .cellDanger {
   color: #ef4444;
-  font-weight: 600;
+  font-weight: 400;
 }
 
 .cellMono {
@@ -451,7 +451,7 @@ $pm-font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-se
 /* ──────────── Priority Badges ──────────── */
 .priorityBadge {
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 400;
   padding: 2px 8px;
   border-radius: 4px;
   text-transform: uppercase;
@@ -509,7 +509,7 @@ $pm-font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-se
 
 .statusCount {
   font-size: 22px;
-  font-weight: 700;
+  font-weight: 400;
   color: #0f172a;
 }
 
@@ -522,7 +522,7 @@ $pm-font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-se
 
 .statusPercent {
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 400;
   color: #94a3b8;
 }
 
@@ -556,7 +556,7 @@ $pm-font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-se
 .categoryName {
   width: 160px;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 400;
   color: #334155;
   flex-shrink: 0;
 }
@@ -580,7 +580,7 @@ $pm-font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-se
   width: 36px;
   text-align: right;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 400;
   color: $pm-primary-dark;
 }
 
@@ -630,7 +630,7 @@ $pm-font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-se
 
 .timelineTitle {
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 400;
   color: #0f172a;
 }
 
@@ -662,7 +662,7 @@ $pm-font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-se
 
 .ackRateValue {
   font-size: 48px;
-  font-weight: 700;
+  font-weight: 400;
   color: $pm-primary-dark;
   line-height: 1;
 }
@@ -717,7 +717,7 @@ $pm-font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-se
 
 .funnelLabel {
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 400;
 }
 
 .funnelValue {
@@ -745,7 +745,7 @@ $pm-font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-se
 /* ──────────── SLA Badges ──────────── */
 .slaBadge {
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 400;
   padding: 3px 8px;
   border-radius: 4px;
   text-transform: uppercase;
@@ -770,13 +770,13 @@ $pm-font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-se
 /* ──────────── Escalation Badge ──────────── */
 .escalationBadge {
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 400;
   color: #94a3b8;
 }
 
 .escalationActive {
   color: #dc2626;
-  font-weight: 600;
+  font-weight: 400;
 }
 
 /* ──────────── SLA Tab ──────────── */
@@ -823,7 +823,7 @@ $pm-font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-se
 
 .slaCardName {
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 400;
   color: #0f172a;
 }
 
@@ -886,7 +886,7 @@ $pm-font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-se
   thead th {
     padding: 10px 14px;
     text-align: center;
-    font-weight: 600;
+    font-weight: 400;
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.4px;
@@ -925,7 +925,7 @@ $pm-font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-se
 
 .legendLabel {
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 400;
   color: #64748b;
 }
 
@@ -947,7 +947,7 @@ $pm-font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-se
 /* ──────────── Severity & Status Badges ──────────── */
 .severityBadge {
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 400;
   padding: 2px 8px;
   border-radius: 4px;
   text-transform: uppercase;
@@ -975,7 +975,7 @@ $pm-font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-se
 
 .statusBadge {
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 400;
   padding: 2px 8px;
   border-radius: 4px;
 }
@@ -1008,7 +1008,7 @@ $pm-font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-se
 
 .filterBtn {
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 400;
   padding: 5px 12px;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
@@ -1032,7 +1032,7 @@ $pm-font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-se
 
 .categoryBadge {
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 400;
   padding: 2px 8px;
   border-radius: 4px;
   text-transform: capitalize;
@@ -1078,7 +1078,7 @@ $pm-font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-se
 
 .formatBadge {
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 400;
   padding: 2px 8px;
   border-radius: 4px;
   background: #f1f5f9;
@@ -1092,6 +1092,7 @@ $pm-font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-se
 .ackTab,
 .slaTab,
 .complianceTab,
-.auditTab {
+.auditTab,
+.quizTab {
   max-width: 1200px;
 }

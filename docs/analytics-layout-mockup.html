@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Policy Analytics Dashboard — Layout Mockup</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-weight: 400;
+    color: #334155;
+    background: #f1f5f9;
+    line-height: 1.5;
+  }
+  strong, b, th { font-weight: 400; }
+
+  /* ── Header ── */
+  .page-header {
+    background: linear-gradient(135deg, #0d9488, #0f766e);
+    color: #fff;
+    padding: 24px 32px 0;
+  }
+  .page-header h1 { font-size: 22px; font-weight: 400; margin-bottom: 20px; }
+
+  /* ── Tabs ── */
+  .tab-bar {
+    display: flex;
+    gap: 2px;
+    overflow-x: auto;
+  }
+  .tab-btn {
+    background: rgba(255,255,255,.12);
+    border: none;
+    color: rgba(255,255,255,.75);
+    padding: 10px 18px;
+    font-size: 13px;
+    font-weight: 400;
+    cursor: pointer;
+    white-space: nowrap;
+    border-radius: 6px 6px 0 0;
+    transition: background .15s, color .15s;
+    font-family: inherit;
+  }
+  .tab-btn:hover { background: rgba(255,255,255,.22); color: #fff; }
+  .tab-btn.active { background: #f1f5f9; color: #0f766e; }
+
+  /* ── Content area ── */
+  .tab-content { display: none; padding: 28px 32px 80px; max-width: 1280px; margin: 0 auto; }
+  .tab-content.active { display: block; }
+
+  /* ── Section ── */
+  .section {
+    margin-bottom: 32px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .section:nth-child(even) > .section-inner { background: #fafbfc; border-radius: 8px; padding: 20px; }
+  .section:nth-child(odd) > .section-inner { background: #fff; border-radius: 8px; padding: 20px; }
+  .section-header {
+    border-left: 3px solid #0d9488;
+    padding-left: 12px;
+    margin-bottom: 18px;
+    font-size: 15px;
+    font-weight: 400;
+    color: #1e293b;
+  }
+  .section-header small { color: #94a3b8; font-size: 12px; margin-left: 8px; }
+
+  /* ── Card grid ── */
+  .card-row { display: grid; gap: 16px; }
+  .card-row.cols-6 { grid-template-columns: repeat(6, 1fr); }
+  .card-row.cols-4 { grid-template-columns: repeat(4, 1fr); }
+  .card-row.cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .card-row.cols-2 { grid-template-columns: repeat(2, 1fr); }
+
+  .card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 18px;
+    transition: box-shadow .2s;
+  }
+  .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,.07); }
+  .card .label { font-size: 12px; color: #64748b; margin-bottom: 4px; }
+  .card .value { font-size: 22px; color: #0f766e; }
+  .card .sub { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+
+  /* ── Tables ── */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: .4px; padding: 10px 12px; border-bottom: 1px solid #e2e8f0; background: #f8fafc; }
+  td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; }
+  tr:hover td { background: #f8fafc; }
+
+  /* ── Charts (CSS-only mock bars) ── */
+  .bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 160px; padding-top: 8px; }
+  .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; }
+  .bar { width: 100%; border-radius: 4px 4px 0 0; background: #0d9488; min-height: 4px; transition: height .3s; }
+  .bar-label { font-size: 10px; color: #94a3b8; margin-top: 6px; }
+  .bar-value { font-size: 10px; color: #475569; margin-bottom: 2px; }
+
+  .h-bar-chart .h-bar-row { display: flex; align-items: center; margin-bottom: 8px; }
+  .h-bar-chart .h-label { width: 140px; font-size: 12px; color: #475569; flex-shrink: 0; }
+  .h-bar-chart .h-track { flex: 1; height: 20px; background: #f1f5f9; border-radius: 4px; overflow: hidden; position: relative; }
+  .h-bar-chart .h-fill { height: 100%; border-radius: 4px; background: #0d9488; }
+  .h-bar-chart .h-val { width: 40px; text-align: right; font-size: 12px; color: #64748b; margin-left: 8px; }
+
+  /* ── Two-column ── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+
+  /* ── Funnel ── */
+  .funnel .funnel-stage { margin-bottom: 10px; }
+  .funnel .funnel-label { font-size: 12px; color: #475569; margin-bottom: 2px; display: flex; justify-content: space-between; }
+  .funnel .funnel-track { height: 28px; background: #f1f5f9; border-radius: 4px; overflow: hidden; }
+  .funnel .funnel-fill { height: 100%; background: #0d9488; border-radius: 4px; display: flex; align-items: center; padding-left: 8px; color: #fff; font-size: 11px; }
+
+  /* ── Hero display ── */
+  .hero-stat { text-align: center; padding: 32px; }
+  .hero-stat .big { font-size: 64px; color: #0d9488; }
+  .hero-stat .caption { font-size: 14px; color: #64748b; }
+
+  /* ── Heatmap ── */
+  .heatmap td { text-align: center; font-size: 12px; color: #fff; border: 2px solid #fff; border-radius: 4px; }
+  .hm-high { background: #0d9488; }
+  .hm-med { background: #5eead4; color: #0f766e !important; }
+  .hm-low { background: #fbbf24; color: #78350f !important; }
+  .hm-crit { background: #ef4444; }
+
+  /* ── Score bars ── */
+  .score-bar { height: 8px; background: #e2e8f0; border-radius: 4px; margin-top: 8px; overflow: hidden; }
+  .score-fill { height: 100%; border-radius: 4px; }
+
+  /* ── Timeline ── */
+  .timeline-item { padding: 8px 0 8px 20px; border-left: 2px solid #e2e8f0; position: relative; font-size: 13px; }
+  .timeline-item::before { content: ''; position: absolute; left: -5px; top: 14px; width: 8px; height: 8px; border-radius: 50%; background: #0d9488; }
+  .timeline-item .t-date { font-size: 11px; color: #94a3b8; }
+
+  /* ── Buttons ── */
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .btn {
+    padding: 8px 16px; border: 1px solid #e2e8f0; background: #fff; border-radius: 6px; font-size: 13px; font-weight: 400; cursor: pointer; font-family: inherit; color: #334155; transition: all .15s;
+  }
+  .btn:hover { border-color: #0d9488; color: #0d9488; }
+  .btn.primary { background: #0d9488; color: #fff; border-color: #0d9488; }
+  .btn.primary:hover { background: #0f766e; }
+
+  /* ── Badge ── */
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+  .badge-green { background: #d1fae5; color: #065f46; }
+  .badge-yellow { background: #fef3c7; color: #92400e; }
+  .badge-red { background: #fee2e2; color: #991b1b; }
+  .badge-blue { background: #dbeafe; color: #1e40af; }
+  .badge-gray { background: #f1f5f9; color: #475569; }
+
+  /* ── Dev Controls ── */
+  .dev-panel {
+    position: fixed; bottom: 16px; right: 16px; background: #1e293b; color: #e2e8f0; border-radius: 10px; padding: 14px; z-index: 100; box-shadow: 0 8px 24px rgba(0,0,0,.25); width: 200px; font-size: 12px;
+  }
+  .dev-panel .dev-title { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: #94a3b8; margin-bottom: 8px; }
+  .dev-panel button {
+    display: block; width: 100%; text-align: left; background: transparent; border: none; color: #cbd5e1; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; font-family: inherit; font-weight: 400; margin-bottom: 2px;
+  }
+  .dev-panel button:hover { background: rgba(255,255,255,.08); color: #fff; }
+  .dev-panel button.active { background: #0d9488; color: #fff; }
+
+  @media (max-width: 1024px) {
+    .card-row.cols-6 { grid-template-columns: repeat(3, 1fr); }
+    .two-col { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 640px) {
+    .card-row.cols-6, .card-row.cols-4 { grid-template-columns: repeat(2, 1fr); }
+    .tab-btn { padding: 8px 12px; font-size: 12px; }
+    .tab-content { padding: 20px 16px 80px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════════════ HEADER + TABS ════════════════ -->
+<div class="page-header">
+  <h1>Policy Analytics Dashboard — Layout Mockup</h1>
+  <div class="tab-bar" id="tabBar">
+    <button class="tab-btn active" data-tab="executive">Executive Dashboard</button>
+    <button class="tab-btn" data-tab="metrics">Policy Metrics</button>
+    <button class="tab-btn" data-tab="ack">Acknowledgement Tracking</button>
+    <button class="tab-btn" data-tab="sla">SLA Tracking</button>
+    <button class="tab-btn" data-tab="compliance">Compliance &amp; Risk</button>
+    <button class="tab-btn" data-tab="audit">Audit &amp; Reports</button>
+    <button class="tab-btn" data-tab="quiz">Quiz Analytics</button>
+  </div>
+</div>
+
+<!-- ════════════════ TAB 1 — EXECUTIVE DASHBOARD ════════════════ -->
+<div class="tab-content active" id="tab-executive">
+
+  <!-- KPI Cards -->
+  <div class="section">
+    <div class="section-inner">
+      <div class="section-header">Key Performance Indicators</div>
+      <div class="card-row cols-6">
+        <div class="card"><div class="label">Compliance Score</div><div class="value">87%</div><div class="sub">+3% from last month</div></div>
+        <div class="card"><div class="label">Active Policies</div><div class="value">142</div><div class="sub">12 added this quarter</div></div>
+        <div class="card"><div class="label">Pending Reviews</div><div class="value">23</div><div class="sub">8 due this week</div></div>
+        <div class="card"><div class="label">Overdue Acks</div><div class="value">17</div><div class="sub">5 critical</div></div>
+        <div class="card"><div class="label">Critical Violations</div><div class="value">4</div><div class="sub">-2 from last month</div></div>
+        <div class="card"><div class="label">Avg Resolution Days</div><div class="value">6.3</div><div class="sub">Target: 5 days</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Compliance Trend -->
+  <div class="section">
+    <div class="section-inner">
+      <div class="section-header">Compliance Trend <small>Last 12 months</small></div>
+      <div class="bar-chart">
+        <div class="bar-col"><div class="bar-value">78</div><div class="bar" style="height:52%"></div><div class="bar-label">Feb</div></div>
+        <div class="bar-col"><div class="bar-value">80</div><div class="bar" style="height:55%"></div><div class="bar-label">Mar</div></div>
+        <div class="bar-col"><div class="bar-value">79</div><div class="bar" style="height:54%"></div><div class="bar-label">Apr</div></div>
+        <div class="bar-col"><div class="bar-value">82</div><div class="bar" style="height:58%"></div><div class="bar-label">May</div></div>
+        <div class="bar-col"><div class="bar-value">81</div><div class="bar" style="height:57%"></div><div class="bar-label">Jun</div></div>
+        <div class="bar-col"><div class="bar-value">83</div><div class="bar" style="height:60%"></div><div class="bar-label">Jul</div></div>
+        <div class="bar-col"><div class="bar-value">82</div><div class="bar" style="height:58%"></div><div class="bar-label">Aug</div></div>
+        <div class="bar-col"><div class="bar-value">84</div><div class="bar" style="height:62%"></div><div class="bar-label">Sep</div></div>
+        <div class="bar-col"><div class="bar-value">85</div><div class="bar" style="height:64%"></div><div class="bar-label">Oct</div></div>
+        <div class="bar-col"><div class="bar-value">84</div><div class="bar" style="height:62%"></div><div class="bar-label">Nov</div></div>
+        <div class="bar-col"><div class="bar-value">86</div><div class="bar" style="height:66%"></div><div class="bar-label">Dec</div></div>
+        <div class="bar-col"><div class="bar-value">87</div><div class="bar" style="height:68%"></div><div class="bar-label">Jan</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Risk Indicators + Alerts -->
+  <div class="section">
+    <div class="section-inner">
+      <div class="two-col">
+        <div>
+          <div class="section-header">Risk Indicators</div>
+          <div class="card-row cols-2" style="margin-top:12px;">
+            <div class="card"><div class="label">Data Privacy</div><div class="value" style="color:#ef4444">High</div><div class="sub">3 unresolved findings</div></div>
+            <div class="card"><div class="label">Information Security</div><div class="value" style="color:#f59e0b">Medium</div><div class="sub">1 pending review</div></div>
+            <div class="card"><div class="label">Operational</div><div class="value" style="color:#0d9488">Low</div><div class="sub">All controls met</div></div>
+            <div class="card"><div class="label">Regulatory</div><div class="value" style="color:#f59e0b">Medium</div><div class="sub">2 updates needed</div></div>
+          </div>
+        </div>
+        <div>
+          <div class="section-header">Alerts &amp; Upcoming Deadlines</div>
+          <table style="margin-top:12px;">
+            <thead><tr><th>Alert</th><th>Due</th><th>Priority</th></tr></thead>
+            <tbody>
+              <tr><td>GDPR Policy annual review</td><td>Feb 15</td><td><span class="badge badge-red">Critical</span></td></tr>
+              <tr><td>IT Security update approval</td><td>Feb 20</td><td><span class="badge badge-yellow">High</span></td></tr>
+              <tr><td>HR Onboarding ack deadline</td><td>Feb 28</td><td><span class="badge badge-yellow">High</span></td></tr>
+              <tr><td>Anti-Bribery training renewal</td><td>Mar 5</td><td><span class="badge badge-blue">Medium</span></td></tr>
+              <tr><td>Environmental compliance check</td><td>Mar 12</td><td><span class="badge badge-gray">Low</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ TAB 2 — POLICY METRICS ════════════════ -->
+<div class="tab-content" id="tab-metrics">
+
+  <!-- Status Breakdown -->
+  <div class="section">
+    <div class="section-inner">
+      <div class="section-header">Policy Status Breakdown</div>
+      <div class="card-row cols-4" style="margin-bottom:20px;">
+        <div class="card"><div class="label">Active</div><div class="value">108</div><div class="sub">76% of total</div></div>
+        <div class="card"><div class="label">Draft</div><div class="value">18</div><div class="sub">13% of total</div></div>
+        <div class="card"><div class="label">Under Review</div><div class="value">11</div><div class="sub">8% of total</div></div>
+        <div class="card"><div class="label">Archived</div><div class="value">5</div><div class="sub">3% of total</div></div>
+      </div>
+      <div style="display:flex;height:28px;border-radius:6px;overflow:hidden;">
+        <div style="width:76%;background:#0d9488;" title="Active 76%"></div>
+        <div style="width:13%;background:#5eead4;" title="Draft 13%"></div>
+        <div style="width:8%;background:#fbbf24;" title="Under Review 8%"></div>
+        <div style="width:3%;background:#94a3b8;" title="Archived 3%"></div>
+      </div>
+      <div style="display:flex;gap:16px;margin-top:8px;font-size:11px;color:#64748b;">
+        <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#0d9488;display:inline-block;"></span> Active</span>
+        <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#5eead4;display:inline-block;"></span> Draft</span>
+        <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#fbbf24;display:inline-block;"></span> Under Review</span>
+        <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#94a3b8;display:inline-block;"></span> Archived</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Policies by Category -->
+  <div class="section">
+    <div class="section-inner">
+      <div class="section-header">Policies by Category</div>
+      <div class="h-bar-chart">
+        <div class="h-bar-row"><div class="h-label">IT &amp; Security</div><div class="h-track"><div class="h-fill" style="width:85%"></div></div><div class="h-val">34</div></div>
+        <div class="h-bar-row"><div class="h-label">HR &amp; Employment</div><div class="h-track"><div class="h-fill" style="width:62%"></div></div><div class="h-val">25</div></div>
+        <div class="h-bar-row"><div class="h-label">Finance</div><div class="h-track"><div class="h-fill" style="width:45%"></div></div><div class="h-val">18</div></div>
+        <div class="h-bar-row"><div class="h-label">Compliance</div><div class="h-track"><div class="h-fill" style="width:40%"></div></div><div class="h-val">16</div></div>
+        <div class="h-bar-row"><div class="h-label">Health &amp; Safety</div><div class="h-track"><div class="h-fill" style="width:32%"></div></div><div class="h-val">13</div></div>
+        <div class="h-bar-row"><div class="h-label">Operations</div><div class="h-track"><div class="h-fill" style="width:27%"></div></div><div class="h-val">11</div></div>
+        <div class="h-bar-row"><div class="h-label">Environmental</div><div class="h-track"><div class="h-fill" style="width:20%"></div></div><div class="h-val">8</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Most Viewed + Recently Published -->
+  <div class="section">
+    <div class="section-inner">
+      <div class="two-col">
+        <div>
+          <div class="section-header">Most Viewed Policies</div>
+          <table style="margin-top:12px;">
+            <thead><tr><th>Policy</th><th>Views</th><th>Trend</th></tr></thead>
+            <tbody>
+              <tr><td>Acceptable Use Policy</td><td>1,248</td><td style="color:#0d9488">+12%</td></tr>
+              <tr><td>Data Protection Policy</td><td>1,105</td><td style="color:#0d9488">+8%</td></tr>
+              <tr><td>Remote Work Policy</td><td>982</td><td style="color:#0d9488">+22%</td></tr>
+              <tr><td>Travel &amp; Expenses</td><td>876</td><td style="color:#ef4444">-3%</td></tr>
+              <tr><td>Code of Conduct</td><td>821</td><td style="color:#0d9488">+5%</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div>
+          <div class="section-header">Recently Published</div>
+          <div style="margin-top:12px;">
+            <div class="timeline-item"><div class="t-date">Jan 28, 2026</div>AI Usage Policy v2.1</div>
+            <div class="timeline-item"><div class="t-date">Jan 22, 2026</div>Updated Remote Work Guidelines</div>
+            <div class="timeline-item"><div class="t-date">Jan 15, 2026</div>Cybersecurity Incident Response v3.0</div>
+            <div class="timeline-item"><div class="t-date">Jan 8, 2026</div>Vendor Management Policy</div>
+            <div class="timeline-item"><div class="t-date">Dec 30, 2025</div>Social Media Policy revision</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Policy Aging -->
+  <div class="section">
+    <div class="section-inner">
+      <div class="section-header">Policy Aging</div>
+      <table>
+        <thead><tr><th>Policy</th><th>Category</th><th>Last Reviewed</th><th>Age (days)</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Business Continuity Plan</td><td>Operations</td><td>Mar 12, 2025</td><td>325</td><td><span class="badge badge-red">Overdue</span></td></tr>
+          <tr><td>Anti-Money Laundering</td><td>Compliance</td><td>Apr 8, 2025</td><td>298</td><td><span class="badge badge-red">Overdue</span></td></tr>
+          <tr><td>Whistleblower Policy</td><td>HR</td><td>Jun 20, 2025</td><td>225</td><td><span class="badge badge-yellow">Due Soon</span></td></tr>
+          <tr><td>BYOD Policy</td><td>IT &amp; Security</td><td>Aug 5, 2025</td><td>179</td><td><span class="badge badge-green">Current</span></td></tr>
+          <tr><td>Equal Opportunity Policy</td><td>HR</td><td>Sep 14, 2025</td><td>139</td><td><span class="badge badge-green">Current</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ TAB 3 — ACKNOWLEDGEMENT TRACKING ════════════════ -->
+<div class="tab-content" id="tab-ack">
+
+  <!-- Hero Stat -->
+  <div class="section">
+    <div class="section-inner">
+      <div class="hero-stat">
+        <div class="big">91.4%</div>
+        <div class="caption">Overall Acknowledgement Rate — Target: 95% — Gap: 3.6%</div>
+        <div style="max-width:400px;margin:16px auto 0;">
+          <div class="score-bar" style="height:12px;"><div class="score-fill" style="width:91.4%;background:linear-gradient(90deg,#0d9488,#5eead4);"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Funnel -->
+  <div class="section">
+    <div class="section-inner">
+      <div class="section-header">Acknowledgement Funnel</div>
+      <div class="funnel" style="margin-top:12px;">
+        <div class="funnel-stage"><div class="funnel-label"><span>Policies Distributed</span><span>142</span></div><div class="funnel-track"><div class="funnel-fill" style="width:100%">142</div></div></div>
+        <div class="funnel-stage"><div class="funnel-label"><span>Notifications Sent</span><span>4,260</span></div><div class="funnel-track"><div class="funnel-fill" style="width:95%">4,260</div></div></div>
+        <div class="funnel-stage"><div class="funnel-label"><span>Opened / Viewed</span><span>3,892</span></div><div class="funnel-track"><div class="funnel-fill" style="width:82%">3,892</div></div></div>
+        <div class="funnel-stage"><div class="funnel-label"><span>Acknowledged</span><span>3,484</span></div><div class="funnel-track"><div class="funnel-fill" style="width:73%;background:#0f766e">3,484</div></div></div>
+        <div class="funnel-stage"><div class="funnel-label"><span>Overdue / Pending</span><span>776</span></div><div class="funnel-track"><div class="funnel-fill" style="width:16%;background:#ef4444">776</div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Department Scorecard -->
+  <div class="section">
+    <div class="section-inner">
+      <div class="section-header">Department Scorecard</div>
+      <table>
+        <thead><tr><th>Department</th><th>Total Staff</th><th>Acknowledged</th><th>Rate</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Engineering</td><td>85</td><td>82</td><td>96.5%</td><td><span class="badge badge-green">On Track</span></td></tr>
+          <tr><td>Finance</td><td>42</td><td>40</td><td>95.2%</td><td><span class="badge badge-green">On Track</span></td></tr>
+          <tr><td>Marketing</td><td>38</td><td>34</td><td>89.5%</td><td><span class="badge badge-yellow">Needs Attention</span></td></tr>
+          <tr><td>Sales</td><td>64</td><td>55</td><td>85.9%</td><td><span class="badge badge-yellow">Needs Attention</span></td></tr>
+          <tr><td>Operations</td><td>51</td><td>43</td><td>84.3%</td><td><span class="badge badge-red">Below Target</span></td></tr>
+          <tr><td>Legal</td><td>18</td><td>18</td><td>100%</td><td><span class="badge badge-green">On Track</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Overdue Acknowledgements -->
+  <div class="section">
+    <div class="section-inner">
+      <div class="section-header">Overdue Acknowledgements</div>
+      <table>
+        <thead><tr><th>Employee</th><th>Department</th><th>Policy</th><th>Due Date</th><th>Days Overdue</th></tr></thead>
+        <tbody>
+          <tr><td>James Carter</td><td>Sales</td><td>Data Protection Policy</td><td>Jan 10, 2026</td><td style="color:#ef4444">21</td></tr>
+          <tr><td>Priya Sharma</td><td>Operations</td><td>IT Security Policy</td><td>Jan 12, 2026</td><td style="color:#ef4444">19</td></tr>
+          <tr><td>Mike Reynolds</td><td>Marketing</td><td>Social Media Policy</td><td>Jan 18, 2026</td><td style="color:#ef4444">13</td></tr>
+          <tr><td>Sarah Kim</td><td>Sales</td><td>Anti-Bribery Policy</td><td>Jan 22, 2026</td><td style="color:#f59e0b">9</td></tr>
+          <tr><td>Tom Nguyen</td><td>Operations</td><td>Health &amp; Safety</td><td>Jan 25, 2026</td><td style="color:#f59e0b">6</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ TAB 4 — SLA TRACKING ════════════════ -->
+<div class="tab-content" id="tab-sla">
+
+  <!-- SLA Summary Cards -->
+  <div class="section">
+    <div class="section-inner">
+      <div class="section-header">SLA Summary</div>
+      <div class="card-row cols-4">
+        <div class="card">
+          <div class="label">Review SLA</div><div class="value">92%</div><div class="sub">Target: 14 days</div>
+          <div class="score-bar"><div class="score-fill" style="width:92%;background:#0d9488;"></div></div>
+        </div>
+        <div class="card">
+          <div class="label">Acknowledgement SLA</div><div class="value">88%</div><div class="sub">Target: 7 days</div>
+          <div class="score-bar"><div class="score-fill" style="width:88%;background:#f59e0b;"></div></div>
+        </div>
+        <div class="card">
+          <div class="label">Approval SLA</div><div class="value">95%</div><div class="sub">Target: 5 days</div>
+          <div class="score-bar"><div class="score-fill" style="width:95%;background:#0d9488;"></div></div>
+        </div>
+        <div class="card">
+          <div class="label">Distribution SLA</div><div class="value">97%</div><div class="sub">Target: 2 days</div>
+          <div class="score-bar"><div class="score-fill" style="width:97%;background:#0d9488;"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLA Breach Log -->
+  <div class="section">
+    <div class="section-inner">
+      <div class="section-header">SLA Breach Log</div>
+      <table>
+        <thead><tr><th>Policy</th><th>SLA Type</th><th>Due</th><th>Completed</th><th>Breach (days)</th><th>Owner</th></tr></thead>
+        <tbody>
+          <tr><td>Cloud Security Policy</td><td>Review</td><td>Jan 5</td><td>Jan 14</td><td style="color:#ef4444">9</td><td>D. Patel</td></tr>
+          <tr><td>Expense Policy v2</td><td>Approval</td><td>Jan 8</td><td>Jan 15</td><td style="color:#ef4444">7</td><td>L. Chen</td></tr>
+          <tr><td>Remote Access Policy</td><td>Acknowledgement</td><td>Jan 12</td><td>—</td><td style="color:#ef4444">19 (ongoing)</td><td>IT Dept</td></tr>
+          <tr><td>Data Retention Policy</td><td>Review</td><td>Jan 18</td><td>Jan 22</td><td style="color:#f59e0b">4</td><td>M. Brooks</td></tr>
+          <tr><td>Contractor Policy</td><td>Distribution</td><td>Jan 20</td><td>Jan 24</td><td style="color:#f59e0b">4</td><td>HR Ops</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Department SLA Comparison -->
+  <div class="section">
+    <div class="section-inner">
+      <div class="section-header">Department SLA Comparison</div>
+      <table>
+        <thead><tr><th>Department</th><th>Review SLA</th><th>Ack SLA</th><th>Approval SLA</th><th>Distribution SLA</th><th>Overall</th></tr></thead>
+        <tbody>
+          <tr><td>Legal</td><td>98%</td><td>96%</td><td>100%</td><td>99%</td><td><span class="badge badge-green">98.3%</span></td></tr>
+          <tr><td>Engineering</td><td>95%</td><td>91%</td><td>97%</td><td>98%</td><td><span class="badge badge-green">95.3%</span></td></tr>
+          <tr><td>Finance</td><td>93%</td><td>90%</td><td>94%</td><td>97%</td><td><span class="badge badge-green">93.5%</span></td></tr>
+          <tr><td>Marketing</td><td>88%</td><td>82%</td><td>91%</td><td>95%</td><td><span class="badge badge-yellow">89.0%</span></td></tr>
+          <tr><td>Sales</td><td>84%</td><td>78%</td><td>88%</td><td>94%</td><td><span class="badge badge-yellow">86.0%</span></td></tr>
+          <tr><td>Operations</td><td>82%</td><td>75%</td><td>86%</td><td>92%</td><td><span class="badge badge-red">83.8%</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ TAB 5 — COMPLIANCE & RISK ════════════════ -->
+<div class="tab-content" id="tab-compliance">
+
+  <!-- Compliance Heatmap -->
+  <div class="section">
+    <div class="section-inner">
+      <div class="section-header">Compliance Heatmap <small>Departments x Categories</small></div>
+      <table class="heatmap">
+        <thead><tr><th style="background:transparent;border:none;"></th><th>IT &amp; Security</th><th>HR</th><th>Finance</th><th>Compliance</th><th>Health &amp; Safety</th><th>Operations</th></tr></thead>
+        <tbody>
+          <tr><td style="background:transparent;color:#475569;text-align:left;">Engineering</td><td class="hm-high">96%</td><td class="hm-high">92%</td><td class="hm-med">88%</td><td class="hm-high">94%</td><td class="hm-high">91%</td><td class="hm-med">87%</td></tr>
+          <tr><td style="background:transparent;color:#475569;text-align:left;">Finance</td><td class="hm-med">85%</td><td class="hm-med">89%</td><td class="hm-high">97%</td><td class="hm-high">95%</td><td class="hm-med">84%</td><td class="hm-med">88%</td></tr>
+          <tr><td style="background:transparent;color:#475569;text-align:left;">Marketing</td><td class="hm-low">72%</td><td class="hm-med">81%</td><td class="hm-med">83%</td><td class="hm-low">76%</td><td class="hm-med">80%</td><td class="hm-low">74%</td></tr>
+          <tr><td style="background:transparent;color:#475569;text-align:left;">Sales</td><td class="hm-low">68%</td><td class="hm-low">75%</td><td class="hm-med">80%</td><td class="hm-low">71%</td><td class="hm-med">82%</td><td class="hm-low">69%</td></tr>
+          <tr><td style="background:transparent;color:#475569;text-align:left;">Operations</td><td class="hm-med">82%</td><td class="hm-med">84%</td><td class="hm-med">86%</td><td class="hm-med">83%</td><td class="hm-high">93%</td><td class="hm-high">91%</td></tr>
+          <tr><td style="background:transparent;color:#475569;text-align:left;">Legal</td><td class="hm-high">94%</td><td class="hm-high">96%</td><td class="hm-high">98%</td><td class="hm-high">99%</td><td class="hm-high">95%</td><td class="hm-high">93%</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Risk Assessment Cards -->
+  <div class="section">
+    <div class="section-inner">
+      <div class="section-header">Risk Assessment</div>
+      <div class="card-row cols-3" style="margin-top:12px;">
+        <div class="card">
+          <div class="label">Data Privacy Risk</div>
+          <div class="value" style="color:#ef4444;">High — 78/100</div>
+          <div class="sub">3 open findings, 1 critical</div>
+          <div class="score-bar"><div class="score-fill" style="width:78%;background:#ef4444;"></div></div>
+        </div>
+        <div class="card">
+          <div class="label">Regulatory Risk</div>
+          <div class="value" style="color:#f59e0b;">Medium — 55/100</div>
+          <div class="sub">2 updates pending</div>
+          <div class="score-bar"><div class="score-fill" style="width:55%;background:#f59e0b;"></div></div>
+        </div>
+        <div class="card">
+          <div class="label">Operational Risk</div>
+          <div class="value" style="color:#0d9488;">Low — 28/100</div>
+          <div class="sub">All controls met</div>
+          <div class="score-bar"><div class="score-fill" style="width:28%;background:#0d9488;"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Violation Log -->
+  <div class="section">
+    <div class="section-inner">
+      <div class="section-header">Violation Log</div>
+      <table>
+        <thead><tr><th>Date</th><th>Policy</th><th>Department</th><th>Severity</th><th>Status</th><th>Assigned To</th></tr></thead>
+        <tbody>
+          <tr><td>Jan 28</td><td>Data Protection Policy</td><td>Sales</td><td><span class="badge badge-red">Critical</span></td><td><span class="badge badge-yellow">Investigating</span></td><td>A. Torres</td></tr>
+          <tr><td>Jan 25</td><td>Acceptable Use Policy</td><td>Marketing</td><td><span class="badge badge-yellow">High</span></td><td><span class="badge badge-blue">In Progress</span></td><td>K. Lee</td></tr>
+          <tr><td>Jan 20</td><td>Access Control Policy</td><td>Engineering</td><td><span class="badge badge-yellow">High</span></td><td><span class="badge badge-green">Resolved</span></td><td>R. Ahmed</td></tr>
+          <tr><td>Jan 15</td><td>IT Security Policy</td><td>Operations</td><td><span class="badge badge-blue">Medium</span></td><td><span class="badge badge-green">Resolved</span></td><td>D. Patel</td></tr>
+          <tr><td>Jan 10</td><td>Clean Desk Policy</td><td>Finance</td><td><span class="badge badge-gray">Low</span></td><td><span class="badge badge-green">Resolved</span></td><td>S. Martinez</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ TAB 6 — AUDIT & REPORTS ════════════════ -->
+<div class="tab-content" id="tab-audit">
+
+  <!-- Audit Trail -->
+  <div class="section">
+    <div class="section-inner">
+      <div class="section-header">Audit Trail</div>
+      <div class="btn-row" style="margin-bottom:14px;">
+        <button class="btn primary">All Events</button>
+        <button class="btn">Policy Changes</button>
+        <button class="btn">Approvals</button>
+        <button class="btn">Acknowledgements</button>
+        <button class="btn">User Actions</button>
+      </div>
+      <table>
+        <thead><tr><th>Timestamp</th><th>User</th><th>Action</th><th>Resource</th><th>Details</th></tr></thead>
+        <tbody>
+          <tr><td>Jan 31, 10:42 AM</td><td>admin@corp.com</td><td>Published</td><td>AI Usage Policy v2.1</td><td>Moved from Draft to Active</td></tr>
+          <tr><td>Jan 31, 09:15 AM</td><td>j.carter@corp.com</td><td>Acknowledged</td><td>Data Protection Policy</td><td>Late acknowledgement (21 days overdue)</td></tr>
+          <tr><td>Jan 30, 04:30 PM</td><td>l.chen@corp.com</td><td>Approved</td><td>Expense Policy v2</td><td>Final approval granted</td></tr>
+          <tr><td>Jan 30, 02:18 PM</td><td>d.patel@corp.com</td><td>Submitted Review</td><td>Cloud Security Policy</td><td>Review completed with 3 comments</td></tr>
+          <tr><td>Jan 30, 11:05 AM</td><td>m.brooks@corp.com</td><td>Created Draft</td><td>Vendor Risk Policy</td><td>New policy draft created</td></tr>
+          <tr><td>Jan 29, 03:45 PM</td><td>admin@corp.com</td><td>Updated Permissions</td><td>Finance Policy Group</td><td>Added 5 reviewers</td></tr>
+          <tr><td>Jan 29, 10:22 AM</td><td>k.lee@corp.com</td><td>Archived</td><td>Legacy Travel Policy</td><td>Replaced by Travel Policy v3</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Generate Reports -->
+  <div class="section">
+    <div class="section-inner">
+      <div class="section-header">Generate Reports</div>
+      <div class="btn-row">
+        <button class="btn primary">Compliance Summary Report</button>
+        <button class="btn primary">Acknowledgement Status Report</button>
+        <button class="btn primary">SLA Performance Report</button>
+        <button class="btn primary">Risk Assessment Report</button>
+        <button class="btn">Policy Inventory Report</button>
+        <button class="btn">Audit Log Export</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scheduled Reports -->
+  <div class="section">
+    <div class="section-inner">
+      <div class="section-header">Scheduled Reports</div>
+      <table>
+        <thead><tr><th>Report</th><th>Frequency</th><th>Recipients</th><th>Next Run</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Weekly Compliance Summary</td><td>Weekly (Mon)</td><td>Leadership Team</td><td>Feb 3, 2026</td><td><span class="badge badge-green">Active</span></td></tr>
+          <tr><td>Monthly SLA Report</td><td>Monthly (1st)</td><td>Department Heads</td><td>Feb 1, 2026</td><td><span class="badge badge-green">Active</span></td></tr>
+          <tr><td>Quarterly Risk Assessment</td><td>Quarterly</td><td>Board, CISO</td><td>Apr 1, 2026</td><td><span class="badge badge-green">Active</span></td></tr>
+          <tr><td>Annual Policy Review</td><td>Annually</td><td>All Managers</td><td>Dec 31, 2026</td><td><span class="badge badge-gray">Scheduled</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Export Options -->
+  <div class="section">
+    <div class="section-inner">
+      <div class="section-header">Export Options</div>
+      <div class="btn-row">
+        <button class="btn">Export as PDF</button>
+        <button class="btn">Export as Excel</button>
+        <button class="btn">Export as CSV</button>
+        <button class="btn">Send via Email</button>
+        <button class="btn">Save to SharePoint</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ TAB 7 — QUIZ ANALYTICS ════════════════ -->
+<div class="tab-content" id="tab-quiz">
+
+  <!-- Quiz Overview KPIs -->
+  <div class="section">
+    <div class="section-inner">
+      <div class="section-header">Quiz Overview</div>
+      <div class="card-row cols-6">
+        <div class="card"><div class="label">Total Quizzes</div><div class="value">34</div><div class="sub">Across all policies</div></div>
+        <div class="card"><div class="label">Active Quizzes</div><div class="value">28</div><div class="sub">6 archived</div></div>
+        <div class="card"><div class="label">Total Attempts</div><div class="value">2,847</div><div class="sub">Last 12 months</div></div>
+        <div class="card"><div class="label">Avg Score</div><div class="value">76%</div><div class="sub">Pass threshold: 70%</div></div>
+        <div class="card"><div class="label">Pass Rate</div><div class="value">82%</div><div class="sub">+4% from last quarter</div></div>
+        <div class="card"><div class="label">Avg Completion Time</div><div class="value">8.4m</div><div class="sub">Target: 10 minutes</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quiz Attempts Trend -->
+  <div class="section">
+    <div class="section-inner">
+      <div class="section-header">Quiz Attempts Trend <small>Last 12 months</small></div>
+      <div class="bar-chart">
+        <div class="bar-col"><div class="bar-value">180</div><div class="bar" style="height:45%"></div><div class="bar-label">Feb</div></div>
+        <div class="bar-col"><div class="bar-value">210</div><div class="bar" style="height:52%"></div><div class="bar-label">Mar</div></div>
+        <div class="bar-col"><div class="bar-value">195</div><div class="bar" style="height:48%"></div><div class="bar-label">Apr</div></div>
+        <div class="bar-col"><div class="bar-value">240</div><div class="bar" style="height:60%"></div><div class="bar-label">May</div></div>
+        <div class="bar-col"><div class="bar-value">225</div><div class="bar" style="height:56%"></div><div class="bar-label">Jun</div></div>
+        <div class="bar-col"><div class="bar-value">260</div><div class="bar" style="height:65%"></div><div class="bar-label">Jul</div></div>
+        <div class="bar-col"><div class="bar-value">245</div><div class="bar" style="height:61%"></div><div class="bar-label">Aug</div></div>
+        <div class="bar-col"><div class="bar-value">270</div><div class="bar" style="height:67%"></div><div class="bar-label">Sep</div></div>
+        <div class="bar-col"><div class="bar-value">255</div><div class="bar" style="height:64%"></div><div class="bar-label">Oct</div></div>
+        <div class="bar-col"><div class="bar-value">290</div><div class="bar" style="height:72%"></div><div class="bar-label">Nov</div></div>
+        <div class="bar-col"><div class="bar-value">275</div><div class="bar" style="height:69%"></div><div class="bar-label">Dec</div></div>
+        <div class="bar-col"><div class="bar-value">302</div><div class="bar" style="height:76%"></div><div class="bar-label">Jan</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quiz Performance -->
+  <div class="section">
+    <div class="section-inner">
+      <div class="section-header">Quiz Performance</div>
+      <table>
+        <thead><tr><th>Quiz</th><th>Policy</th><th>Attempts</th><th>Avg Score</th><th>Pass Rate</th><th>Avg Time</th></tr></thead>
+        <tbody>
+          <tr><td>Data Protection Essentials</td><td>Data Protection Policy</td><td>412</td><td>81%</td><td><span class="badge badge-green">89%</span></td><td>7.2m</td></tr>
+          <tr><td>IT Security Awareness</td><td>IT Security Policy</td><td>389</td><td>74%</td><td><span class="badge badge-green">80%</span></td><td>9.1m</td></tr>
+          <tr><td>Anti-Bribery &amp; Corruption</td><td>Anti-Bribery Policy</td><td>298</td><td>72%</td><td><span class="badge badge-yellow">76%</span></td><td>8.8m</td></tr>
+          <tr><td>Code of Conduct Basics</td><td>Code of Conduct</td><td>356</td><td>85%</td><td><span class="badge badge-green">92%</span></td><td>6.5m</td></tr>
+          <tr><td>GDPR Compliance</td><td>GDPR Policy</td><td>275</td><td>68%</td><td><span class="badge badge-red">65%</span></td><td>11.2m</td></tr>
+          <tr><td>Health &amp; Safety Induction</td><td>H&amp;S Policy</td><td>320</td><td>79%</td><td><span class="badge badge-green">85%</span></td><td>7.8m</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Dept Performance + Top Performers -->
+  <div class="section">
+    <div class="section-inner">
+      <div class="two-col">
+        <div>
+          <div class="section-header">Department Performance</div>
+          <table style="margin-top:12px;">
+            <thead><tr><th>Department</th><th>Avg Score</th><th>Pass Rate</th><th>Completion</th></tr></thead>
+            <tbody>
+              <tr><td>Legal</td><td>88%</td><td>96%</td><td>100%</td></tr>
+              <tr><td>Engineering</td><td>82%</td><td>90%</td><td>97%</td></tr>
+              <tr><td>Finance</td><td>79%</td><td>85%</td><td>94%</td></tr>
+              <tr><td>HR</td><td>77%</td><td>83%</td><td>98%</td></tr>
+              <tr><td>Marketing</td><td>71%</td><td>74%</td><td>88%</td></tr>
+              <tr><td>Sales</td><td>68%</td><td>70%</td><td>82%</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div>
+          <div class="section-header">Top Performers</div>
+          <table style="margin-top:12px;">
+            <thead><tr><th>#</th><th>Employee</th><th>Department</th><th>Avg Score</th><th>Quizzes</th></tr></thead>
+            <tbody>
+              <tr><td>1</td><td>Elena Rodriguez</td><td>Legal</td><td>98%</td><td>12</td></tr>
+              <tr><td>2</td><td>Raj Krishnan</td><td>Engineering</td><td>96%</td><td>11</td></tr>
+              <tr><td>3</td><td>Amy Foster</td><td>Finance</td><td>95%</td><td>10</td></tr>
+              <tr><td>4</td><td>David Chang</td><td>Legal</td><td>94%</td><td>12</td></tr>
+              <tr><td>5</td><td>Lisa Okafor</td><td>HR</td><td>93%</td><td>11</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Question Difficulty -->
+  <div class="section">
+    <div class="section-inner">
+      <div class="section-header">Question Difficulty Analysis</div>
+      <table>
+        <thead><tr><th>Question</th><th>Quiz</th><th>Correct %</th><th>Attempts</th><th>Difficulty</th></tr></thead>
+        <tbody>
+          <tr><td>What constitutes personal data under GDPR?</td><td>GDPR Compliance</td><td>52%</td><td>275</td><td><span class="badge badge-red">Hard</span></td></tr>
+          <tr><td>Name 3 types of social engineering attacks</td><td>IT Security Awareness</td><td>58%</td><td>389</td><td><span class="badge badge-red">Hard</span></td></tr>
+          <tr><td>What is the reporting timeline for bribery?</td><td>Anti-Bribery &amp; Corruption</td><td>64%</td><td>298</td><td><span class="badge badge-yellow">Medium</span></td></tr>
+          <tr><td>Data breach notification requirements</td><td>Data Protection Essentials</td><td>71%</td><td>412</td><td><span class="badge badge-yellow">Medium</span></td></tr>
+          <tr><td>Fire evacuation procedure steps</td><td>Health &amp; Safety Induction</td><td>91%</td><td>320</td><td><span class="badge badge-green">Easy</span></td></tr>
+          <tr><td>Who is the Data Protection Officer?</td><td>GDPR Compliance</td><td>94%</td><td>275</td><td><span class="badge badge-green">Easy</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ DEV CONTROLS ════════════════ -->
+<div class="dev-panel" id="devPanel">
+  <div class="dev-title">Dev Controls</div>
+  <button class="active" data-tab="executive">1. Executive Dashboard</button>
+  <button data-tab="metrics">2. Policy Metrics</button>
+  <button data-tab="ack">3. Ack Tracking</button>
+  <button data-tab="sla">4. SLA Tracking</button>
+  <button data-tab="compliance">5. Compliance &amp; Risk</button>
+  <button data-tab="audit">6. Audit &amp; Reports</button>
+  <button data-tab="quiz">7. Quiz Analytics</button>
+</div>
+
+<script>
+(function(){
+  function switchTab(tabId){
+    // Tab buttons in header
+    document.querySelectorAll('#tabBar .tab-btn').forEach(function(b){
+      b.classList.toggle('active', b.getAttribute('data-tab') === tabId);
+    });
+    // Tab content panels
+    document.querySelectorAll('.tab-content').forEach(function(p){
+      p.classList.toggle('active', p.id === 'tab-' + tabId);
+    });
+    // Dev panel buttons
+    document.querySelectorAll('#devPanel button').forEach(function(b){
+      b.classList.toggle('active', b.getAttribute('data-tab') === tabId);
+    });
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  }
+
+  // Bind header tabs
+  document.querySelectorAll('#tabBar .tab-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){ switchTab(this.getAttribute('data-tab')); });
+  });
+
+  // Bind dev panel buttons
+  document.querySelectorAll('#devPanel button').forEach(function(btn){
+    btn.addEventListener('click', function(){ switchTab(this.getAttribute('data-tab')); });
+  });
+})();
+</script>
+</body>
+</html>

@@ -115,6 +115,13 @@ interface IPolicyAnalyticsState {
   auditEntries: IAuditEntry[];
   auditFilter: string;
   scheduledReports: Array<{ id: number; title: string; type: string; schedule: string; lastRun: string; nextRun: string; format: string }>;
+  // Quiz Analytics
+  quizOverview: { totalQuizzes: number; activeQuizzes: number; totalAttempts: number; avgScore: number; passRate: number; avgCompletionTime: string };
+  quizPerformance: Array<{ title: string; attempts: number; avgScore: number; passRate: number; avgTime: string; difficulty: string }>;
+  quizByDepartment: Array<{ department: string; attempts: number; avgScore: number; passRate: number; completionRate: number }>;
+  quizQuestionStats: Array<{ question: string; quizTitle: string; correctRate: number; avgTime: string; difficulty: string }>;
+  quizTrend: Array<{ month: string; attempts: number; passRate: number }>;
+  quizTopPerformers: Array<{ name: string; department: string; quizzesCompleted: number; avgScore: number; perfectScores: number }>;
 }
 
 // ============================================================================
@@ -306,6 +313,58 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
         { id: 4, title: 'Monthly Violation Report', type: 'Violation Report', schedule: 'Monthly', lastRun: '2025-06-01', nextRun: '2025-07-01', format: 'PDF' },
         { id: 5, title: 'Department Compliance Bi-Weekly', type: 'Department Compliance', schedule: 'Bi-Weekly', lastRun: '2025-06-08', nextRun: '2025-06-22', format: 'Excel' },
       ],
+      // Quiz Analytics
+      quizOverview: { totalQuizzes: 18, activeQuizzes: 12, totalAttempts: 3842, avgScore: 78.6, passRate: 84.2, avgCompletionTime: '8m 24s' },
+      quizPerformance: [
+        { title: 'Data Privacy & GDPR Quiz', attempts: 824, avgScore: 82.4, passRate: 88.1, avgTime: '9m 12s', difficulty: 'Medium' },
+        { title: 'IT Security Awareness', attempts: 756, avgScore: 74.8, passRate: 79.5, avgTime: '7m 45s', difficulty: 'Hard' },
+        { title: 'Code of Conduct Quiz', attempts: 692, avgScore: 86.2, passRate: 92.3, avgTime: '6m 30s', difficulty: 'Easy' },
+        { title: 'Anti-Bribery & Corruption', attempts: 534, avgScore: 71.5, passRate: 76.8, avgTime: '10m 18s', difficulty: 'Hard' },
+        { title: 'Health & Safety Basics', attempts: 478, avgScore: 88.9, passRate: 94.6, avgTime: '5m 42s', difficulty: 'Easy' },
+        { title: 'Remote Work Policy Quiz', attempts: 312, avgScore: 80.1, passRate: 85.7, avgTime: '7m 15s', difficulty: 'Medium' },
+        { title: 'Financial Controls Quiz', attempts: 246, avgScore: 68.3, passRate: 72.1, avgTime: '11m 30s', difficulty: 'Expert' },
+      ],
+      quizByDepartment: [
+        { department: 'Engineering', attempts: 680, avgScore: 82.4, passRate: 89.2, completionRate: 96.1 },
+        { department: 'Sales', attempts: 520, avgScore: 76.8, passRate: 82.5, completionRate: 91.4 },
+        { department: 'Marketing', attempts: 410, avgScore: 79.2, passRate: 85.1, completionRate: 93.8 },
+        { department: 'Finance', attempts: 480, avgScore: 74.5, passRate: 78.9, completionRate: 88.7 },
+        { department: 'HR', attempts: 390, avgScore: 85.6, passRate: 91.8, completionRate: 97.2 },
+        { department: 'Operations', attempts: 560, avgScore: 77.3, passRate: 83.4, completionRate: 90.5 },
+        { department: 'Legal', attempts: 340, avgScore: 83.1, passRate: 88.7, completionRate: 95.6 },
+        { department: 'IT', attempts: 462, avgScore: 80.9, passRate: 86.3, completionRate: 94.1 },
+      ],
+      quizQuestionStats: [
+        { question: 'What constitutes personal data under GDPR?', quizTitle: 'Data Privacy & GDPR Quiz', correctRate: 68.2, avgTime: '45s', difficulty: 'Hard' },
+        { question: 'Which of the following is a phishing indicator?', quizTitle: 'IT Security Awareness', correctRate: 72.5, avgTime: '32s', difficulty: 'Medium' },
+        { question: 'What is the data breach notification window?', quizTitle: 'Data Privacy & GDPR Quiz', correctRate: 54.8, avgTime: '52s', difficulty: 'Hard' },
+        { question: 'What defines a conflict of interest?', quizTitle: 'Anti-Bribery & Corruption', correctRate: 61.3, avgTime: '48s', difficulty: 'Hard' },
+        { question: 'MFA stands for...', quizTitle: 'IT Security Awareness', correctRate: 94.2, avgTime: '12s', difficulty: 'Easy' },
+        { question: 'Minimum password length requirement?', quizTitle: 'IT Security Awareness', correctRate: 88.7, avgTime: '15s', difficulty: 'Easy' },
+        { question: 'Segregation of duties applies to...', quizTitle: 'Financial Controls Quiz', correctRate: 52.1, avgTime: '58s', difficulty: 'Expert' },
+        { question: 'Fire evacuation assembly point?', quizTitle: 'Health & Safety Basics', correctRate: 96.8, avgTime: '8s', difficulty: 'Easy' },
+      ],
+      quizTrend: [
+        { month: 'Jan', attempts: 280, passRate: 81 },
+        { month: 'Feb', attempts: 310, passRate: 82 },
+        { month: 'Mar', attempts: 345, passRate: 83 },
+        { month: 'Apr', attempts: 320, passRate: 82 },
+        { month: 'May', attempts: 380, passRate: 85 },
+        { month: 'Jun', attempts: 410, passRate: 84 },
+        { month: 'Jul', attempts: 350, passRate: 83 },
+        { month: 'Aug', attempts: 290, passRate: 84 },
+        { month: 'Sep', attempts: 360, passRate: 85 },
+        { month: 'Oct', attempts: 395, passRate: 86 },
+        { month: 'Nov', attempts: 420, passRate: 85 },
+        { month: 'Dec', attempts: 382, passRate: 84 },
+      ],
+      quizTopPerformers: [
+        { name: 'Alice Johnson', department: 'HR', quizzesCompleted: 12, avgScore: 96.4, perfectScores: 8 },
+        { name: 'Robert Chen', department: 'Legal', quizzesCompleted: 11, avgScore: 94.8, perfectScores: 6 },
+        { name: 'Maria Garcia', department: 'Engineering', quizzesCompleted: 12, avgScore: 93.2, perfectScores: 5 },
+        { name: 'James Wilson', department: 'IT', quizzesCompleted: 10, avgScore: 92.7, perfectScores: 5 },
+        { name: 'Sophie Taylor', department: 'Finance', quizzesCompleted: 11, avgScore: 91.5, perfectScores: 4 },
+      ],
     };
   }
 
@@ -326,8 +385,8 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
               onLinkClick={(item) => { if (item) this.setState({ activeTab: item.props.itemKey || 'executive' }); }}
               styles={{
                 root: { borderBottom: '1px solid #e2e8f0', paddingLeft: 40 },
-                link: { fontSize: 13, fontWeight: 500, color: '#64748b', height: 44 },
-                linkIsSelected: { fontSize: 13, fontWeight: 600, color: '#0d9488' },
+                link: { fontSize: 13, fontWeight: 400, color: '#64748b', height: 44 },
+                linkIsSelected: { fontSize: 13, fontWeight: 400, color: '#0d9488' },
               }}
             >
               <PivotItem headerText="Executive Dashboard" itemKey="executive" itemIcon="ViewDashboard" />
@@ -336,6 +395,7 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
               <PivotItem headerText="SLA Tracking" itemKey="sla" itemIcon="Timer" />
               <PivotItem headerText="Compliance & Risk" itemKey="compliance" itemIcon="Shield" />
               <PivotItem headerText="Audit & Reports" itemKey="audit" itemIcon="ReportDocument" />
+              <PivotItem headerText="Quiz Analytics" itemKey="quiz" itemIcon="Questionnaire" />
             </Pivot>
           </div>
 
@@ -347,6 +407,7 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
             {activeTab === 'sla' && this._renderSLATracking()}
             {activeTab === 'compliance' && this._renderComplianceRisk()}
             {activeTab === 'audit' && this._renderAuditReports()}
+            {activeTab === 'quiz' && this._renderQuizAnalytics()}
           </div>
         </div>
       </JmlAppLayout>
@@ -613,11 +674,11 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
           </div>
           <div className={styles.ackTargetInfo}>
             <div className={styles.ackTargetLine}>
-              <span>Target SLA:</span> <strong>{ackTarget}%</strong>
+              <span>Target SLA:</span> <span>{ackTarget}%</span>
             </div>
             <div className={styles.ackTargetLine}>
               <span>Gap to Target:</span>
-              <strong className={styles.cellDanger}>{ackGap.toFixed(1)}%</strong>
+              <span className={styles.cellDanger}>{ackGap.toFixed(1)}%</span>
             </div>
             <div className={styles.ackTargetLine}>
               <span>Status:</span>
@@ -725,14 +786,14 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
               </div>
               <div className={styles.slaCardBody}>
                 <div className={styles.slaMetricRow}>
-                  <span>Target</span><strong>{sla.targetDays} days</strong>
+                  <span>Target</span><span>{sla.targetDays} days</span>
                 </div>
                 <div className={styles.slaMetricRow}>
-                  <span>Actual Avg</span><strong>{sla.actualAvgDays} days</strong>
+                  <span>Actual Avg</span><span>{sla.actualAvgDays} days</span>
                 </div>
                 <div className={styles.slaMetricRow}>
                   <span>% Met</span>
-                  <strong className={sla.percentMet >= 90 ? styles.textSuccess : sla.percentMet >= 80 ? styles.textWarning : styles.textDanger}>{sla.percentMet}%</strong>
+                  <span className={sla.percentMet >= 90 ? styles.textSuccess : sla.percentMet >= 80 ? styles.textWarning : styles.textDanger}>{sla.percentMet}%</span>
                 </div>
               </div>
               <div className={styles.slaCardBar}>
@@ -834,11 +895,11 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
               {heatmapData.map((row, i) => (
                 <tr key={i}>
                   <td className={styles.cellTitle}>{row.department}</td>
-                  <td style={{ background: getHeatColor(row.hr), color: '#fff', textAlign: 'center', fontWeight: 600 }}>{row.hr}%</td>
-                  <td style={{ background: getHeatColor(row.it), color: '#fff', textAlign: 'center', fontWeight: 600 }}>{row.it}%</td>
-                  <td style={{ background: getHeatColor(row.compliance), color: '#fff', textAlign: 'center', fontWeight: 600 }}>{row.compliance}%</td>
-                  <td style={{ background: getHeatColor(row.safety), color: '#fff', textAlign: 'center', fontWeight: 600 }}>{row.safety}%</td>
-                  <td style={{ background: getHeatColor(row.finance), color: '#fff', textAlign: 'center', fontWeight: 600 }}>{row.finance}%</td>
+                  <td style={{ background: getHeatColor(row.hr), color: '#fff', textAlign: 'center', fontWeight: 400 }}>{row.hr}%</td>
+                  <td style={{ background: getHeatColor(row.it), color: '#fff', textAlign: 'center', fontWeight: 400 }}>{row.it}%</td>
+                  <td style={{ background: getHeatColor(row.compliance), color: '#fff', textAlign: 'center', fontWeight: 400 }}>{row.compliance}%</td>
+                  <td style={{ background: getHeatColor(row.safety), color: '#fff', textAlign: 'center', fontWeight: 400 }}>{row.safety}%</td>
+                  <td style={{ background: getHeatColor(row.finance), color: '#fff', textAlign: 'center', fontWeight: 400 }}>{row.finance}%</td>
                 </tr>
               ))}
             </tbody>
@@ -877,7 +938,7 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
                 ))}
               </div>
               <div className={styles.riskMitigation}>
-                <strong>Mitigation:</strong> {risk.mitigation}
+                <span>Mitigation:</span> {risk.mitigation}
               </div>
             </div>
           ))}
@@ -1019,6 +1080,209 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
           <DefaultButton iconProps={{ iconName: 'PDF' }} text="Export to PDF" onClick={() => alert('Exporting to PDF...')} />
           <DefaultButton iconProps={{ iconName: 'TextDocument' }} text="Export to CSV" onClick={() => alert('Exporting to CSV...')} />
         </div>
+      </div>
+    );
+  }
+
+  // ============================================================================
+  // TAB 7: QUIZ ANALYTICS
+  // ============================================================================
+
+  private _renderQuizAnalytics(): React.ReactElement {
+    const { quizOverview, quizPerformance, quizByDepartment, quizQuestionStats, quizTrend, quizTopPerformers } = this.state;
+
+    const maxAttempts = Math.max(...quizTrend.map(t => t.attempts));
+
+    const difficultyColor = (d: string): string => {
+      switch (d) {
+        case 'Easy': return '#10b981';
+        case 'Medium': return '#f59e0b';
+        case 'Hard': return '#ef4444';
+        case 'Expert': return '#7c3aed';
+        default: return '#64748b';
+      }
+    };
+
+    return (
+      <div className={styles.executiveTab}>
+        {/* Overview KPIs */}
+        <div className={styles.sectionHeader}><h3>Quiz Overview</h3></div>
+        <div className={styles.kpiGrid}>
+          <div className={`${styles.kpiCard} ${styles.kpiPrimary}`}>
+            <div className={styles.kpiValue}>{quizOverview.totalQuizzes}</div>
+            <div className={styles.kpiLabel}>Total Quizzes</div>
+          </div>
+          <div className={styles.kpiCard}>
+            <div className={styles.kpiValue}>{quizOverview.activeQuizzes}</div>
+            <div className={styles.kpiLabel}>Active Quizzes</div>
+          </div>
+          <div className={styles.kpiCard}>
+            <div className={styles.kpiValue}>{quizOverview.totalAttempts.toLocaleString()}</div>
+            <div className={styles.kpiLabel}>Total Attempts</div>
+          </div>
+          <div className={styles.kpiCard}>
+            <div className={styles.kpiValue}>{quizOverview.avgScore}%</div>
+            <div className={styles.kpiLabel}>Avg Score</div>
+          </div>
+          <div className={styles.kpiCard}>
+            <div className={styles.kpiValue}>{quizOverview.passRate}%</div>
+            <div className={styles.kpiLabel}>Pass Rate</div>
+          </div>
+          <div className={styles.kpiCard}>
+            <div className={styles.kpiValue}>{quizOverview.avgCompletionTime}</div>
+            <div className={styles.kpiLabel}>Avg Completion Time</div>
+          </div>
+        </div>
+
+        {/* Quiz Attempts Trend */}
+        <div className={styles.sectionHeader}><h3>Quiz Attempts Trend (12 Months)</h3></div>
+        <div className={styles.trendChart}>
+          <div className={styles.trendBars}>
+            {quizTrend.map((t, i) => (
+              <div key={i} className={styles.trendBarCol}>
+                <div className={styles.trendBarValue}>{t.attempts}</div>
+                <div className={styles.trendBar} style={{ height: `${(t.attempts / maxAttempts) * 160}px` }} />
+                <div className={styles.trendBarLabel}>{t.month}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Quiz Performance Table */}
+        <div className={styles.sectionHeader}><h3>Quiz Performance</h3></div>
+        <table className={styles.dataTable}>
+          <thead>
+            <tr>
+              <th>Quiz</th>
+              <th>Attempts</th>
+              <th>Avg Score</th>
+              <th>Pass Rate</th>
+              <th>Avg Time</th>
+              <th>Difficulty</th>
+            </tr>
+          </thead>
+          <tbody>
+            {quizPerformance.map((quiz, i) => (
+              <tr key={i}>
+                <td className={styles.cellTitle}>{quiz.title}</td>
+                <td className={styles.cellNumber}>{quiz.attempts}</td>
+                <td>
+                  <span className={styles.rateBar}>
+                    <span className={styles.rateBarFill} style={{ width: `${quiz.avgScore}%`, background: quiz.avgScore >= 80 ? '#10b981' : quiz.avgScore >= 60 ? '#f59e0b' : '#ef4444' }} />
+                  </span>
+                  {quiz.avgScore}%
+                </td>
+                <td className={quiz.passRate >= 85 ? styles.textSuccess : quiz.passRate >= 75 ? styles.textWarning : styles.textDanger}>
+                  {quiz.passRate}%
+                </td>
+                <td>{quiz.avgTime}</td>
+                <td>
+                  <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 4, backgroundColor: `${difficultyColor(quiz.difficulty)}15`, color: difficultyColor(quiz.difficulty) }}>
+                    {quiz.difficulty}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        {/* Two Column: Department Performance + Top Performers */}
+        <div className={styles.twoColumnSection}>
+          <div className={styles.columnPanel}>
+            <div className={styles.sectionHeader}><h3>Performance by Department</h3></div>
+            <table className={styles.dataTable}>
+              <thead>
+                <tr>
+                  <th>Department</th>
+                  <th>Attempts</th>
+                  <th>Avg Score</th>
+                  <th>Pass Rate</th>
+                  <th>Completion</th>
+                </tr>
+              </thead>
+              <tbody>
+                {quizByDepartment.map((dept, i) => (
+                  <tr key={i}>
+                    <td className={styles.cellTitle}>{dept.department}</td>
+                    <td className={styles.cellNumber}>{dept.attempts}</td>
+                    <td>{dept.avgScore}%</td>
+                    <td className={dept.passRate >= 85 ? styles.textSuccess : dept.passRate >= 75 ? styles.textWarning : styles.textDanger}>
+                      {dept.passRate}%
+                    </td>
+                    <td>
+                      <span className={styles.rateBar}>
+                        <span className={styles.rateBarFill} style={{ width: `${dept.completionRate}%`, background: '#0d9488' }} />
+                      </span>
+                      {dept.completionRate}%
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className={styles.columnPanel}>
+            <div className={styles.sectionHeader}><h3>Top Performers</h3></div>
+            <table className={styles.dataTable}>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Name</th>
+                  <th>Dept</th>
+                  <th>Quizzes</th>
+                  <th>Avg Score</th>
+                  <th>Perfect</th>
+                </tr>
+              </thead>
+              <tbody>
+                {quizTopPerformers.map((p, i) => (
+                  <tr key={i}>
+                    <td className={styles.cellRank}>{i + 1}</td>
+                    <td className={styles.cellTitle}>{p.name}</td>
+                    <td>{p.department}</td>
+                    <td className={styles.cellNumber}>{p.quizzesCompleted}</td>
+                    <td className={styles.textSuccess}>{p.avgScore}%</td>
+                    <td className={styles.cellNumber}>{p.perfectScores}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Hardest Questions */}
+        <div className={styles.sectionHeader}><h3>Question Difficulty Analysis</h3></div>
+        <table className={styles.dataTable}>
+          <thead>
+            <tr>
+              <th>Question</th>
+              <th>Quiz</th>
+              <th>Correct Rate</th>
+              <th>Avg Time</th>
+              <th>Difficulty</th>
+            </tr>
+          </thead>
+          <tbody>
+            {quizQuestionStats.map((q, i) => (
+              <tr key={i}>
+                <td className={styles.cellTitle}>{q.question}</td>
+                <td>{q.quizTitle}</td>
+                <td>
+                  <span className={styles.rateBar}>
+                    <span className={styles.rateBarFill} style={{ width: `${q.correctRate}%`, background: q.correctRate >= 80 ? '#10b981' : q.correctRate >= 60 ? '#f59e0b' : '#ef4444' }} />
+                  </span>
+                  {q.correctRate}%
+                </td>
+                <td>{q.avgTime}</td>
+                <td>
+                  <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 4, backgroundColor: `${difficultyColor(q.difficulty)}15`, color: difficultyColor(q.difficulty) }}>
+                    {q.difficulty}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     );
   }

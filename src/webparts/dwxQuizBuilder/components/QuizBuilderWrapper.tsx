@@ -26,7 +26,9 @@ export const QuizBuilderWrapper: React.FC<IQuizBuilderWrapperProps> = (props) =>
 
   // Get quizId and policyId from URL params if present
   const urlParams = new URLSearchParams(window.location.search);
-  const quizId = urlParams.get('quizId') ? parseInt(urlParams.get('quizId')!, 10) : undefined;
+  const rawQuizId = urlParams.get('quizId');
+  const isNewQuiz = rawQuizId === 'new';
+  const quizId = isNewQuiz ? -1 : (rawQuizId ? parseInt(rawQuizId, 10) : undefined);
   const policyId = urlParams.get('policyId') ? parseInt(urlParams.get('policyId')!, 10) : undefined;
 
   // Quiz list state
@@ -121,7 +123,7 @@ export const QuizBuilderWrapper: React.FC<IQuizBuilderWrapperProps> = (props) =>
     ? [
         { text: 'Policy Manager', href: '/sites/PolicyManager/SitePages/PolicyHub.aspx' },
         { text: 'Quiz Builder', href: '/sites/PolicyManager/SitePages/QuizBuilder.aspx' },
-        { text: `Quiz #${quizId}` }
+        { text: isNewQuiz ? 'New Quiz' : `Quiz #${quizId}` }
       ]
     : [
         { text: 'Policy Manager', href: '/sites/PolicyManager/SitePages/PolicyHub.aspx' },
@@ -503,7 +505,7 @@ export const QuizBuilderWrapper: React.FC<IQuizBuilderWrapperProps> = (props) =>
         <QuizBuilder
           sp={sp}
           context={context}
-          quizId={quizId === 'new' as any ? undefined : quizId}
+          quizId={isNewQuiz ? undefined : quizId}
           policyId={policyId}
           aiFunctionUrl={props.aiFunctionUrl}
           onSave={handleSave}

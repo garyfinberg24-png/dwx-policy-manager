@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { WebPartContext } from '@microsoft/sp-webpart-base';
+import { SPFI } from '@pnp/sp';
 import { PolicyManagerRole } from '../../services/PolicyRoleService';
 
 export interface INavItem {
@@ -24,6 +25,8 @@ export interface IPageStat {
 export interface IJmlAppHeaderProps {
   /** SPFx WebPart context */
   context?: WebPartContext;
+  /** PnPjs SPFI instance for SharePoint operations */
+  sp?: SPFI;
   /** Page title */
   pageTitle?: string;
   /** Page description */

@@ -901,6 +901,7 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
     return (
       <JmlAppLayout
         context={this.props.context}
+        sp={this.props.sp}
         pageTitle="Policy Builder"
         pageDescription="Create and manage policy packs with bundled documents and templates"
         pageIcon="Edit"

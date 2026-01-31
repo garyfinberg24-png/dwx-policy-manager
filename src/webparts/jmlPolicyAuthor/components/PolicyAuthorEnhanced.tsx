@@ -7340,6 +7340,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     return (
       <JmlAppLayout
         context={this.props.context}
+        sp={this.props.sp}
         pageTitle="Policy Builder"
         pageDescription={currentTabConfig.description}
         pageIcon="Edit"

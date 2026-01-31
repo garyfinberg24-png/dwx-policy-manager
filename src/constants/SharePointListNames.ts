@@ -36,6 +36,8 @@ export const PolicyLists = {
   POLICY_READ_RECEIPTS: 'PM_PolicyReadReceipts',
   /** Policy categorization */
   POLICY_CATEGORIES: 'PM_PolicyCategories',
+  /** Policy requests from users */
+  POLICY_REQUESTS: 'PM_PolicyRequests',
 } as const;
 
 /**

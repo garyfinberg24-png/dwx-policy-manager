@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { WebPartContext } from '@microsoft/sp-webpart-base';
+import { SPFI } from '@pnp/sp';
 import { IStatCard, IBreadcrumbItem, INavItem, IQuickLink } from '../JmlAppHeader/IJmlAppHeaderProps';
 import { UserRole } from '../../services/RoleDetectionService';
 import { PolicyManagerRole } from '../../services/PolicyRoleService';
@@ -12,6 +13,8 @@ import { IFooterLinkGroup } from '../JmlAppFooter/IJmlAppFooterProps';
 export interface IJmlAppLayoutProps {
   /** SPFx WebPart context */
   context: WebPartContext;
+  /** PnPjs SPFI instance for SharePoint operations */
+  sp?: SPFI;
 
   // Page Header Configuration
   /** Page title displayed in header */

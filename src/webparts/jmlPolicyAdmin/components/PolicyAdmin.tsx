@@ -2920,6 +2920,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     return (
       <JmlAppLayout
         context={this.props.context}
+        sp={this.props.sp}
         pageTitle="Policy Administration"
         pageDescription="Manage policy settings, templates, and configurations"
         pageIcon="Admin"

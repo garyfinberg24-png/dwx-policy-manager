@@ -569,6 +569,7 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
     return (
       <JmlAppLayout
         context={this.props.context}
+        sp={this.props.sp}
         breadcrumbs={[{ text: 'Policy Manager', url: '/sites/PolicyManager' }, { text: 'My Policies' }]}
         activeNavKey="my-policies"
       >

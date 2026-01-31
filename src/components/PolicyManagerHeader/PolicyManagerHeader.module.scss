@@ -1470,3 +1470,11 @@ $pm-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-se
   justify-content: center;
   margin: 0 auto;
 }
+
+// Spinner animation for submit button
+:global {
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+}

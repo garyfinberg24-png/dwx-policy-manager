@@ -376,6 +376,7 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
       <JmlAppLayout
         title={this.props.title}
         context={this.props.context}
+        sp={this.props.sp}
         pageTitle="Policy Analytics"
         breadcrumbs={[{ text: 'Policy Manager', url: '/sites/PolicyManager' }, { text: 'Analytics' }]}
       >

@@ -24,6 +24,7 @@ const DwxAppLayout: React.FC<IJmlAppLayoutProps> = (props) => {
   const {
     // Context
     context,
+    sp,
 
     // Page Header
     pageTitle,
@@ -113,6 +114,7 @@ const DwxAppLayout: React.FC<IJmlAppLayoutProps> = (props) => {
       {showHeader && (
         <JmlAppHeader
           context={context}
+          sp={sp}
           pageTitle={pageTitle}
           pageDescription={pageDescription}
           pageIcon={pageIcon}

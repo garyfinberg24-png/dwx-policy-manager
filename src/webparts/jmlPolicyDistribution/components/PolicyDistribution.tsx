@@ -1019,6 +1019,7 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
     return (
       <JmlAppLayout
         context={this.props.context}
+        sp={this.props.sp}
         pageTitle="Policy Distribution & Tracking"
         breadcrumbs={[
           { text: 'Policy Manager', url: '/sites/PolicyManager' },

@@ -11,6 +11,7 @@ import { PolicyManagerHeader } from '../PolicyManagerHeader';
 
 export const DwxAppHeader: React.FC<IJmlAppHeaderProps> = ({
   context,
+  sp,
   pageTitle,
   pageDescription,
   pageIcon,
@@ -56,6 +57,7 @@ export const DwxAppHeader: React.FC<IJmlAppHeaderProps> = ({
 
   return (
     <PolicyManagerHeader
+      sp={sp}
       userName={userName}
       userEmail={userEmail}
       userInitials={userInitials}

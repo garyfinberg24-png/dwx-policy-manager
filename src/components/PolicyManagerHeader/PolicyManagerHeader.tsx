@@ -1,7 +1,10 @@
 // @ts-nocheck
 import * as React from 'react';
 import styles from './PolicyManagerHeader.module.scss';
+import { SPFI } from '@pnp/sp';
 import { PolicyManagerRole, filterNavForRole, getHeaderVisibility } from '../../services/PolicyRoleService';
+import { PolicyRequestService } from '../../services/PolicyRequestService';
+import { IPolicyRequestFormData, IPolicyRequestSubmitResult, DEFAULT_REQUEST_FORM } from '../../models/IPolicyRequest';
 
 export interface INavItem {
   key: string;
@@ -93,6 +96,8 @@ export interface IPolicyManagerHeaderProps {
   loginTime?: string;
   /** Policy Manager role for nav filtering */
   policyRole?: PolicyManagerRole;
+  /** PnPjs SPFI instance for SharePoint operations (wizard submit) */
+  sp?: SPFI;
 }
 
 // Icon components for nav items
@@ -235,7 +240,8 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
   pageStats,
   showPageHeader = false,
   loginTime,
-  policyRole
+  policyRole,
+  sp
 }) => {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [showProfileDropdown, setShowProfileDropdown] = React.useState(false);
@@ -243,39 +249,125 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
   const [showRecentlyViewedDropdown, setShowRecentlyViewedDropdown] = React.useState(false);
 
   // Request Policy Wizard State
+  const DRAFT_STORAGE_KEY = 'pm_policy_request_draft';
   const [showRequestWizard, setShowRequestWizard] = React.useState(false);
   const [wizardStep, setWizardStep] = React.useState(0);
   const [wizardSubmitted, setWizardSubmitted] = React.useState(false);
-  const [requestForm, setRequestForm] = React.useState({
-    policyTitle: '',
-    policyCategory: '',
-    policyType: 'New Policy',
-    priority: 'Medium',
-    targetAudience: '',
-    businessJustification: '',
-    regulatoryDriver: '',
-    desiredEffectiveDate: '',
-    readTimeframeDays: '7',
-    requiresAcknowledgement: true,
-    requiresQuiz: false,
-    additionalNotes: '',
-    notifyAuthors: true,
-    preferredAuthor: ''
+  const [wizardSubmitting, setWizardSubmitting] = React.useState(false);
+  const [wizardError, setWizardError] = React.useState<string | null>(null);
+  const [submitResult, setSubmitResult] = React.useState<IPolicyRequestSubmitResult | null>(null);
+  const [showUnsavedWarning, setShowUnsavedWarning] = React.useState(false);
+  const [requestForm, setRequestForm] = React.useState<IPolicyRequestFormData>(() => {
+    // Restore draft from localStorage if available
+    try {
+      const saved = localStorage.getItem(DRAFT_STORAGE_KEY);
+      if (saved) return JSON.parse(saved);
+    } catch { /* ignore */ }
+    return { ...DEFAULT_REQUEST_FORM };
   });
 
   const updateRequestForm = (field: string, value: string | boolean) => {
-    setRequestForm(prev => ({ ...prev, [field]: value }));
+    setRequestForm(prev => {
+      const updated = { ...prev, [field]: value };
+      // Auto-save draft to localStorage
+      try { localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(updated)); } catch { /* ignore */ }
+      return updated;
+    });
   };
+
+  // Check if form has any user input (for unsaved changes detection)
+  const formHasData = React.useMemo(() => {
+    return requestForm.policyTitle.trim() !== '' ||
+      requestForm.policyCategory !== '' ||
+      requestForm.businessJustification.trim() !== '' ||
+      requestForm.targetAudience.trim() !== '' ||
+      requestForm.regulatoryDriver.trim() !== '' ||
+      requestForm.additionalNotes.trim() !== '';
+  }, [requestForm]);
 
   const resetWizard = () => {
     setWizardStep(0);
     setWizardSubmitted(false);
-    setRequestForm({
-      policyTitle: '', policyCategory: '', policyType: 'New Policy', priority: 'Medium',
-      targetAudience: '', businessJustification: '', regulatoryDriver: '',
-      desiredEffectiveDate: '', readTimeframeDays: '7', requiresAcknowledgement: true,
-      requiresQuiz: false, additionalNotes: '', notifyAuthors: true, preferredAuthor: ''
-    });
+    setWizardSubmitting(false);
+    setWizardError(null);
+    setSubmitResult(null);
+    setShowUnsavedWarning(false);
+    setRequestForm({ ...DEFAULT_REQUEST_FORM });
+    try { localStorage.removeItem(DRAFT_STORAGE_KEY); } catch { /* ignore */ }
+  };
+
+  // Close wizard with unsaved changes check
+  const handleWizardClose = () => {
+    if (formHasData && !wizardSubmitted) {
+      setShowUnsavedWarning(true);
+    } else {
+      setShowRequestWizard(false);
+      resetWizard();
+    }
+  };
+
+  // Confirm discard unsaved changes
+  const handleDiscardDraft = () => {
+    setShowUnsavedWarning(false);
+    setShowRequestWizard(false);
+    resetWizard();
+  };
+
+  // Validation helpers
+  const getStepValidation = (step: number): { valid: boolean; errors: string[] } => {
+    const errors: string[] = [];
+    if (step === 0) {
+      if (!requestForm.policyTitle.trim()) errors.push('Policy title is required');
+      else if (requestForm.policyTitle.trim().length < 5) errors.push('Policy title must be at least 5 characters');
+      if (!requestForm.policyCategory) errors.push('Policy category is required');
+    }
+    if (step === 1) {
+      if (!requestForm.businessJustification.trim()) errors.push('Business justification is required');
+      else if (requestForm.businessJustification.trim().length < 20) errors.push('Business justification must be at least 20 characters');
+    }
+    if (step === 2) {
+      if (!requestForm.targetAudience.trim()) errors.push('Target audience is required');
+      if (requestForm.desiredEffectiveDate) {
+        const selectedDate = new Date(requestForm.desiredEffectiveDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (selectedDate < today) errors.push('Desired effective date must be in the future');
+      }
+    }
+    return { valid: errors.length === 0, errors };
+  };
+
+  // Submit handler — persists to SharePoint
+  const handleSubmitRequest = async () => {
+    setWizardSubmitting(true);
+    setWizardError(null);
+
+    if (!sp) {
+      // Fallback: if no sp instance, show success with mock reference (dev/preview mode)
+      const mockRef = `PR-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+      setSubmitResult({ success: true, referenceNumber: mockRef, itemId: 0 });
+      setWizardSubmitted(true);
+      setWizardSubmitting(false);
+      try { localStorage.removeItem(DRAFT_STORAGE_KEY); } catch { /* ignore */ }
+      return;
+    }
+
+    try {
+      const service = new PolicyRequestService(sp);
+      const result = await service.submitRequest(requestForm, userName, userEmail);
+
+      if (result.success) {
+        setSubmitResult(result);
+        setWizardSubmitted(true);
+        try { localStorage.removeItem(DRAFT_STORAGE_KEY); } catch { /* ignore */ }
+      } else {
+        setWizardError(result.error || 'Failed to submit request. Please try again.');
+      }
+    } catch (err) {
+      setWizardError(err instanceof Error ? err.message : 'An unexpected error occurred. Please try again.');
+    } finally {
+      setWizardSubmitting(false);
+    }
   };
 
   const WIZARD_STEPS = [
@@ -854,8 +946,8 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
     {/* REQUEST POLICY WIZARD — Full-screen overlay with stepped form     */}
     {/* ================================================================ */}
     {showRequestWizard && (
-      <div className={styles.wizardOverlay}>
-        <div className={styles.wizardModal}>
+      <div className={styles.wizardOverlay} onClick={handleWizardClose}>
+        <div className={styles.wizardModal} onClick={e => e.stopPropagation()}>
           {/* Wizard Header */}
           <div className={styles.wizardHeader}>
             <div className={styles.wizardHeaderLeft}>
@@ -870,7 +962,7 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
                 <div className={styles.wizardSubtitle}>Submit a request to the Policy Authoring team</div>
               </div>
             </div>
-            <button className={styles.wizardCloseBtn} onClick={() => setShowRequestWizard(false)} title="Close">
+            <button className={styles.wizardCloseBtn} onClick={handleWizardClose} title="Close">
               <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 20, height: 20 }}>
                 <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
@@ -913,6 +1005,11 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
                   </svg>
                 </div>
                 <h2 style={{ color: '#0f172a', margin: '16px 0 8px' }}>Policy Request Submitted!</h2>
+                {submitResult?.referenceNumber && (
+                  <div style={{ background: '#f0fdfa', border: '1px solid #99f6e4', borderRadius: 8, padding: '8px 16px', display: 'inline-block', margin: '0 auto 16px', fontFamily: 'monospace', fontSize: 15, color: '#0d9488', fontWeight: 600, letterSpacing: 1 }}>
+                    {submitResult.referenceNumber}
+                  </div>
+                )}
                 <p style={{ color: '#64748b', maxWidth: 400, margin: '0 auto 24px', lineHeight: 1.6 }}>
                   Your request for "<strong>{requestForm.policyTitle}</strong>" has been submitted successfully.
                   The Policy Authoring team will be notified and will review your request shortly.
@@ -1207,12 +1304,27 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
             )}
           </div>
 
+          {/* Error Banner */}
+          {wizardError && !wizardSubmitted && (
+            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '10px 16px', margin: '0 24px', display: 'flex', gap: 10, alignItems: 'center' }}>
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 20, height: 20, flexShrink: 0 }}>
+                <path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              <div style={{ fontSize: 13, color: '#991b1b', flex: 1 }}>{wizardError}</div>
+              <button onClick={() => setWizardError(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#991b1b', padding: 4 }}>
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 14, height: 14 }}>
+                  <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+            </div>
+          )}
+
           {/* Wizard Footer */}
           {!wizardSubmitted && (
             <div className={styles.wizardFooter}>
               <div>
                 {wizardStep > 0 && (
-                  <button className={styles.wizardBtnSecondary} onClick={() => setWizardStep(wizardStep - 1)}>
+                  <button className={styles.wizardBtnSecondary} onClick={() => setWizardStep(wizardStep - 1)} disabled={wizardSubmitting}>
                     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 14, height: 14 }}>
                       <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
@@ -1221,18 +1333,14 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
                 )}
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button className={styles.wizardBtnOutline} onClick={() => setShowRequestWizard(false)}>
+                <button className={styles.wizardBtnOutline} onClick={handleWizardClose} disabled={wizardSubmitting}>
                   Cancel
                 </button>
                 {wizardStep < WIZARD_STEPS.length - 1 ? (
                   <button
                     className={styles.wizardBtnPrimary}
                     onClick={() => setWizardStep(wizardStep + 1)}
-                    disabled={
-                      (wizardStep === 0 && (!requestForm.policyTitle || !requestForm.policyCategory)) ||
-                      (wizardStep === 1 && !requestForm.businessJustification) ||
-                      (wizardStep === 2 && !requestForm.targetAudience)
-                    }
+                    disabled={!getStepValidation(wizardStep).valid}
                   >
                     Next
                     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 14, height: 14 }}>
@@ -1242,17 +1350,60 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
                 ) : (
                   <button
                     className={styles.wizardBtnSubmit}
-                    onClick={() => setWizardSubmitted(true)}
+                    onClick={handleSubmitRequest}
+                    disabled={wizardSubmitting}
                   >
-                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 14, height: 14 }}>
-                      <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                    Submit Request
+                    {wizardSubmitting ? (
+                      <>
+                        <span style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: 'spin 1s linear infinite' }} />
+                        Submitting...
+                      </>
+                    ) : (
+                      <>
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 14, height: 14 }}>
+                          <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                        Submit Request
+                      </>
+                    )}
                   </button>
                 )}
               </div>
             </div>
           )}
+        </div>
+      </div>
+    )}
+
+    {/* Unsaved Changes Confirmation Dialog */}
+    {showUnsavedWarning && (
+      <div className={styles.wizardOverlay} style={{ zIndex: 10002 }} onClick={() => setShowUnsavedWarning(false)}>
+        <div style={{ background: '#fff', borderRadius: 16, padding: 32, maxWidth: 420, width: '90%', textAlign: 'center' as const, boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }} onClick={e => e.stopPropagation()}>
+          <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 24, height: 24 }}>
+              <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+          <h3 style={{ color: '#0f172a', margin: '0 0 8px', fontSize: 18 }}>Unsaved Changes</h3>
+          <p style={{ color: '#64748b', margin: '0 0 24px', fontSize: 14, lineHeight: 1.6 }}>
+            You have unsaved changes in your policy request. Do you want to discard them or continue editing?
+          </p>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+            <button
+              className={styles.wizardBtnOutline}
+              onClick={handleDiscardDraft}
+              style={{ flex: 1 }}
+            >
+              Discard
+            </button>
+            <button
+              className={styles.wizardBtnPrimary}
+              onClick={() => setShowUnsavedWarning(false)}
+              style={{ flex: 1 }}
+            >
+              Continue Editing
+            </button>
+          </div>
         </div>
       </div>
     )}

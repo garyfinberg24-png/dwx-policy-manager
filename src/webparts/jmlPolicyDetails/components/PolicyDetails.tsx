@@ -1807,6 +1807,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
     return (
       <JmlAppLayout
         context={this.props.context}
+        sp={this.props.sp}
         pageTitle={browseMode ? 'Policy Viewer' : 'Policy Details'}
         pageDescription={browseMode ? 'Viewing policy document' : 'View policy content, version history and acknowledgements'}
         pageIcon="Document"

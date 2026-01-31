@@ -2687,6 +2687,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
     return (
       <JmlAppLayout
         context={this.props.context}
+        sp={this.props.sp}
         pageTitle={viewTitles[currentView]}
         pageDescription={viewDescriptions[currentView]}
         pageIcon={currentView === 'analytics' ? 'BarChartVertical' : 'Library'}

@@ -460,26 +460,26 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
             <button
               className={`${styles.quickActionBtn} ${styles.quickActionBtnPrimary}`}
               type="button"
-              title="New Contract"
-              aria-label="New Contract"
+              title="New Policy"
+              aria-label="New Policy"
               onClick={() => window.location.href = '/sites/PolicyManager/SitePages/PolicyBuilder.aspx'}
             >
               <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
-              New Contract
+              New Policy
             </button>
             <button
               className={styles.quickActionBtn}
               type="button"
-              title="Request Contract"
-              aria-label="Request Contract"
+              title="Request Policy"
+              aria-label="Request Policy"
               onClick={() => { resetWizard(); setShowRequestWizard(true); }}
             >
               <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
-              Request Contract
+              Request Policy
             </button>
             <div className={styles.dropdownContainer} ref={recentlyViewedRef} style={{ display: 'inline-flex' }}>
               <button
@@ -945,9 +945,10 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
                 {wizardStep === 0 && (
                   <div className={styles.wizardFormGrid}>
                     <div className={styles.wizardFieldFull}>
-                      <label className={styles.wizardLabel}>Policy Title <span className={styles.wizardRequired}>*</span></label>
+                      <label className={styles.wizardLabel} style={{ fontWeight: 400 }}>Policy Title <span className={styles.wizardRequired}>*</span></label>
                       <input
                         className={styles.wizardInput}
+                        style={{ fontWeight: 400 }}
                         type="text"
                         placeholder="e.g. Data Retention Policy for Cloud Storage"
                         value={requestForm.policyTitle}
@@ -955,9 +956,10 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
                       />
                     </div>
                     <div className={styles.wizardField}>
-                      <label className={styles.wizardLabel}>Policy Category <span className={styles.wizardRequired}>*</span></label>
+                      <label className={styles.wizardLabel} style={{ fontWeight: 400 }}>Policy Category <span className={styles.wizardRequired}>*</span></label>
                       <select
                         className={styles.wizardSelect}
+                        style={{ fontWeight: 400 }}
                         value={requestForm.policyCategory}
                         onChange={(e) => updateRequestForm('policyCategory', e.target.value)}
                       >
@@ -975,9 +977,10 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
                       </select>
                     </div>
                     <div className={styles.wizardField}>
-                      <label className={styles.wizardLabel}>Request Type</label>
+                      <label className={styles.wizardLabel} style={{ fontWeight: 400 }}>Request Type</label>
                       <select
                         className={styles.wizardSelect}
+                        style={{ fontWeight: 400 }}
                         value={requestForm.policyType}
                         onChange={(e) => updateRequestForm('policyType', e.target.value)}
                       >
@@ -988,9 +991,10 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
                       </select>
                     </div>
                     <div className={styles.wizardField}>
-                      <label className={styles.wizardLabel}>Priority</label>
+                      <label className={styles.wizardLabel} style={{ fontWeight: 400 }}>Priority</label>
                       <select
                         className={styles.wizardSelect}
+                        style={{ fontWeight: 400 }}
                         value={requestForm.priority}
                         onChange={(e) => updateRequestForm('priority', e.target.value)}
                       >
@@ -1007,9 +1011,10 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
                 {wizardStep === 1 && (
                   <div className={styles.wizardFormGrid}>
                     <div className={styles.wizardFieldFull}>
-                      <label className={styles.wizardLabel}>Business Justification <span className={styles.wizardRequired}>*</span></label>
+                      <label className={styles.wizardLabel} style={{ fontWeight: 400 }}>Business Justification <span className={styles.wizardRequired}>*</span></label>
                       <textarea
                         className={styles.wizardTextarea}
+                        style={{ fontWeight: 400 }}
                         rows={5}
                         placeholder="Explain why this policy is needed. Include business drivers, risks of not having this policy, and any relevant context..."
                         value={requestForm.businessJustification}
@@ -1017,9 +1022,10 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
                       />
                     </div>
                     <div className={styles.wizardFieldFull}>
-                      <label className={styles.wizardLabel}>Regulatory / Compliance Driver</label>
+                      <label className={styles.wizardLabel} style={{ fontWeight: 400 }}>Regulatory / Compliance Driver</label>
                       <input
                         className={styles.wizardInput}
+                        style={{ fontWeight: 400 }}
                         type="text"
                         placeholder="e.g. GDPR Article 5, ISO 27001, Health & Safety Act"
                         value={requestForm.regulatoryDriver}
@@ -1028,9 +1034,10 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
                       <div className={styles.wizardHelpText}>If this policy is driven by a regulatory requirement, specify the regulation or standard</div>
                     </div>
                     <div className={styles.wizardFieldFull}>
-                      <label className={styles.wizardLabel}>Additional Notes</label>
+                      <label className={styles.wizardLabel} style={{ fontWeight: 400 }}>Additional Notes</label>
                       <textarea
                         className={styles.wizardTextarea}
+                        style={{ fontWeight: 400 }}
                         rows={3}
                         placeholder="Any additional context, reference documents, or specific requirements for the policy author..."
                         value={requestForm.additionalNotes}
@@ -1044,9 +1051,10 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
                 {wizardStep === 2 && (
                   <div className={styles.wizardFormGrid}>
                     <div className={styles.wizardFieldFull}>
-                      <label className={styles.wizardLabel}>Target Audience <span className={styles.wizardRequired}>*</span></label>
+                      <label className={styles.wizardLabel} style={{ fontWeight: 400 }}>Target Audience <span className={styles.wizardRequired}>*</span></label>
                       <input
                         className={styles.wizardInput}
+                        style={{ fontWeight: 400 }}
                         type="text"
                         placeholder="e.g. All Employees, IT Department, Management, Contractors"
                         value={requestForm.targetAudience}
@@ -1054,18 +1062,20 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
                       />
                     </div>
                     <div className={styles.wizardField}>
-                      <label className={styles.wizardLabel}>Desired Effective Date</label>
+                      <label className={styles.wizardLabel} style={{ fontWeight: 400 }}>Desired Effective Date</label>
                       <input
                         className={styles.wizardInput}
+                        style={{ fontWeight: 400 }}
                         type="date"
                         value={requestForm.desiredEffectiveDate}
                         onChange={(e) => updateRequestForm('desiredEffectiveDate', e.target.value)}
                       />
                     </div>
                     <div className={styles.wizardField}>
-                      <label className={styles.wizardLabel}>Read Timeframe (days)</label>
+                      <label className={styles.wizardLabel} style={{ fontWeight: 400 }}>Read Timeframe (days)</label>
                       <select
                         className={styles.wizardSelect}
+                        style={{ fontWeight: 400 }}
                         value={requestForm.readTimeframeDays}
                         onChange={(e) => updateRequestForm('readTimeframeDays', e.target.value)}
                       >
@@ -1105,9 +1115,10 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
                       </div>
                     </div>
                     <div className={styles.wizardFieldFull}>
-                      <label className={styles.wizardLabel}>Preferred Author (optional)</label>
+                      <label className={styles.wizardLabel} style={{ fontWeight: 400 }}>Preferred Author (optional)</label>
                       <input
                         className={styles.wizardInput}
+                        style={{ fontWeight: 400 }}
                         type="text"
                         placeholder="Leave blank to auto-assign, or enter a name"
                         value={requestForm.preferredAuthor}

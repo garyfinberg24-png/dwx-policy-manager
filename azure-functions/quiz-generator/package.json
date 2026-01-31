@@ -2,7 +2,7 @@
   "name": "dwx-quiz-generator",
   "version": "1.0.0",
   "description": "Azure Function — AI Quiz Question Generator for DWx Policy Manager",
-  "main": "src/functions/*.js",
+  "main": "dist/src/functions/*.js",
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@azure/functions": "^4.0.0",
+    "mammoth": "^1.11.0",
     "openai": "^4.20.0",
     "pdf-parse": "^1.1.1"
   },

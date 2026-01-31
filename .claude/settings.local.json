@@ -55,7 +55,14 @@
       "Bash(start \"\" \"c:\\\\Projects\\\\SPFx\\\\PolicyManager\\\\policy-manager\\\\docs\\\\policy-read-mockup.html\")",
       "Bash(az bicep build:*)",
       "Bash(npm install)",
-      "Bash(Select-Object -Last 3)"
+      "Bash(Select-Object -Last 3)",
+      "Bash(git reset:*)",
+      "Bash(git tag:*)",
+      "Bash(npx func:*)",
+      "Bash(npx:*)",
+      "Bash(\"C:\\\\Program Files \\(x86\\)\\\\Microsoft SDKs\\\\Azure\\\\CLI2\\\\wbin\\\\az.cmd\" functionapp function list --name dwx-pm-quiz-func-prod --resource-group dwx-pm-quiz-rg-prod --output json)",
+      "Bash(PATH=\"$PATH:/c/Program Files \\(x86\\)/Microsoft SDKs/Azure/CLI2/wbin\" npx:*)",
+      "Bash(git check-ignore:*)"
     ]
   }
 }

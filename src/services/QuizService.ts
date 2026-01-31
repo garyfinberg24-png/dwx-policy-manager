@@ -544,46 +544,52 @@ export class QuizService {
    * Create a new quiz
    */
   public async createQuiz(quiz: Partial<IQuiz>): Promise<IQuiz | null> {
+    // Build item data dynamically — only include fields that are provided
+    // This prevents 400 errors when SharePoint list columns don't exist
+    const itemData: Record<string, any> = {
+      Title: quiz.Title
+    };
+
+    // Optional fields — only add if explicitly provided
+    if (quiz.PolicyId !== undefined) itemData.PolicyId = quiz.PolicyId;
+    if (quiz.PolicyTitle !== undefined) itemData.PolicyTitle = quiz.PolicyTitle;
+    if (quiz.QuizDescription !== undefined) itemData.QuizDescription = quiz.QuizDescription;
+    itemData.PassingScore = quiz.PassingScore || 70;
+    itemData.TimeLimit = quiz.TimeLimit || 30;
+    itemData.MaxAttempts = quiz.MaxAttempts || 3;
+    itemData.IsActive = quiz.IsActive ?? true;
+    itemData.QuestionCount = 0;
+    if (quiz.QuizCategory !== undefined) itemData.QuizCategory = quiz.QuizCategory;
+    if (quiz.DifficultyLevel !== undefined) itemData.DifficultyLevel = quiz.DifficultyLevel;
+    itemData.RandomizeQuestions = quiz.RandomizeQuestions ?? true;
+    if (quiz.RandomizeOptions !== undefined) itemData.RandomizeOptions = quiz.RandomizeOptions;
+    itemData.ShowCorrectAnswers = quiz.ShowCorrectAnswers ?? true;
+    if (quiz.ShowExplanations !== undefined) itemData.ShowExplanations = quiz.ShowExplanations;
+    if (quiz.AllowReview !== undefined) itemData.AllowReview = quiz.AllowReview;
+    itemData.Status = quiz.Status || QuizStatus.Draft;
+    if (quiz.GradingType !== undefined) itemData.GradingType = quiz.GradingType;
+    if (quiz.ScheduledStartDate !== undefined) itemData.ScheduledStartDate = quiz.ScheduledStartDate;
+    if (quiz.ScheduledEndDate !== undefined) itemData.ScheduledEndDate = quiz.ScheduledEndDate;
+    if (quiz.QuestionBankId !== undefined) itemData.QuestionBankId = quiz.QuestionBankId;
+    if (quiz.QuestionPoolSize !== undefined) itemData.QuestionPoolSize = quiz.QuestionPoolSize;
+    if (quiz.GenerateCertificate !== undefined) itemData.GenerateCertificate = quiz.GenerateCertificate;
+    if (quiz.CertificateTemplateId !== undefined) itemData.CertificateTemplateId = quiz.CertificateTemplateId;
+    if (quiz.PerQuestionTimeLimit !== undefined) itemData.PerQuestionTimeLimit = quiz.PerQuestionTimeLimit;
+    if (quiz.AllowPartialCredit !== undefined) itemData.AllowPartialCredit = quiz.AllowPartialCredit;
+    if (quiz.ShuffleWithinSections !== undefined) itemData.ShuffleWithinSections = quiz.ShuffleWithinSections;
+    if (quiz.RequireSequentialCompletion !== undefined) itemData.RequireSequentialCompletion = quiz.RequireSequentialCompletion;
+    if (quiz.Tags !== undefined) itemData.Tags = quiz.Tags;
+
     try {
       const result = await this.sp.web.lists
         .getByTitle(this.quizListName)
-        .items.add({
-          Title: quiz.Title,
-          PolicyId: quiz.PolicyId,
-          PolicyTitle: quiz.PolicyTitle,
-          QuizDescription: quiz.QuizDescription,
-          PassingScore: quiz.PassingScore || 70,
-          TimeLimit: quiz.TimeLimit || 30,
-          MaxAttempts: quiz.MaxAttempts || 3,
-          IsActive: quiz.IsActive ?? true,
-          QuestionCount: 0,
-          QuizCategory: quiz.QuizCategory || "General",
-          DifficultyLevel: quiz.DifficultyLevel || DifficultyLevel.Medium,
-          RandomizeQuestions: quiz.RandomizeQuestions ?? true,
-          RandomizeOptions: quiz.RandomizeOptions ?? false,
-          ShowCorrectAnswers: quiz.ShowCorrectAnswers ?? true,
-          ShowExplanations: quiz.ShowExplanations ?? true,
-          AllowReview: quiz.AllowReview ?? true,
-          Status: quiz.Status || QuizStatus.Draft,
-          GradingType: quiz.GradingType || GradingType.Automatic,
-          ScheduledStartDate: quiz.ScheduledStartDate,
-          ScheduledEndDate: quiz.ScheduledEndDate,
-          QuestionBankId: quiz.QuestionBankId,
-          QuestionPoolSize: quiz.QuestionPoolSize,
-          GenerateCertificate: quiz.GenerateCertificate ?? false,
-          CertificateTemplateId: quiz.CertificateTemplateId,
-          PerQuestionTimeLimit: quiz.PerQuestionTimeLimit,
-          AllowPartialCredit: quiz.AllowPartialCredit ?? true,
-          ShuffleWithinSections: quiz.ShuffleWithinSections ?? false,
-          RequireSequentialCompletion: quiz.RequireSequentialCompletion ?? false,
-          Tags: quiz.Tags
-        });
+        .items.add(itemData);
 
       logger.info("QuizService", `Quiz created: ${quiz.Title}`);
       return result.data as IQuiz;
     } catch (error) {
       logger.error("QuizService", "Failed to create quiz", error);
-      return null;
+      throw error;
     }
   }
 
@@ -669,7 +675,7 @@ export class QuizService {
     }
   ): Promise<IQuizQuestion[]> {
     try {
-      let filter = `QuizId eq ${quizId} and IsActive eq true`;
+      let filter = `QuizId eq ${quizId}`;
       if (options?.sectionId) {
         filter += ` and SectionId eq ${options.sectionId}`;
       }
@@ -709,7 +715,7 @@ export class QuizService {
     }
   ): Promise<IQuizQuestion[]> {
     try {
-      let filter = `QuestionBankId eq ${bankId} and IsActive eq true`;
+      let filter = `QuestionBankId eq ${bankId}`;
 
       if (options?.category) {
         filter += ` and Category eq '${options.category}'`;
@@ -763,67 +769,102 @@ export class QuizService {
   public async createQuestion(question: Partial<IQuizQuestion>): Promise<IQuizQuestion | null> {
     try {
       // Get current question count for ordering
-      const existingQuestions = question.QuizId
-        ? await this.getQuizQuestions(question.QuizId)
-        : [];
-      const nextOrder = existingQuestions.length + 1;
+      let nextOrder = question.QuestionOrder || 1;
+      if (!question.QuestionOrder && question.QuizId) {
+        try {
+          const existing = await this.sp.web.lists
+            .getByTitle(this.questionListName)
+            .items.filter(`QuizId eq ${question.QuizId}`)
+            .select("Id")
+            .top(500)();
+          nextOrder = existing.length + 1;
+        } catch {
+          nextOrder = 1;
+        }
+      }
 
-      const result = await this.sp.web.lists
-        .getByTitle(this.questionListName)
-        .items.add({
-          Title: (question.QuestionText || "Question").substring(0, 100),
-          QuizId: question.QuizId,
-          QuestionBankId: question.QuestionBankId,
-          QuestionText: question.QuestionText,
-          QuestionType: question.QuestionType || QuestionType.MultipleChoice,
-          QuestionHtml: question.QuestionHtml,
-          OptionA: question.OptionA,
-          OptionB: question.OptionB,
-          OptionC: question.OptionC,
-          OptionD: question.OptionD,
-          OptionE: question.OptionE,
-          OptionF: question.OptionF,
-          OptionAImage: question.OptionAImage,
-          OptionBImage: question.OptionBImage,
-          OptionCImage: question.OptionCImage,
-          OptionDImage: question.OptionDImage,
-          QuestionImage: question.QuestionImage,
-          HotspotData: question.HotspotData,
-          MatchingPairs: question.MatchingPairs,
-          OrderingItems: question.OrderingItems,
-          BlankAnswers: question.BlankAnswers,
-          CaseSensitive: question.CaseSensitive ?? false,
-          ScaleMin: question.ScaleMin,
-          ScaleMax: question.ScaleMax,
-          ScaleLabels: question.ScaleLabels,
-          CorrectRating: question.CorrectRating,
-          RatingTolerance: question.RatingTolerance,
-          MinWordCount: question.MinWordCount,
-          MaxWordCount: question.MaxWordCount,
-          RubricId: question.RubricId,
-          CorrectAnswer: question.CorrectAnswer,
-          CorrectAnswers: question.CorrectAnswers,
-          AcceptedAnswers: question.AcceptedAnswers,
-          Explanation: question.Explanation,
-          CorrectFeedback: question.CorrectFeedback,
-          IncorrectFeedback: question.IncorrectFeedback,
-          PartialFeedback: question.PartialFeedback,
-          Hint: question.Hint,
-          Points: question.Points || 10,
-          PartialCreditEnabled: question.PartialCreditEnabled ?? false,
-          PartialCreditPercentages: question.PartialCreditPercentages,
-          NegativeMarking: question.NegativeMarking ?? false,
-          NegativePoints: question.NegativePoints,
-          QuestionOrder: question.QuestionOrder || nextOrder,
-          SectionId: question.SectionId,
-          SectionName: question.SectionName,
-          DifficultyLevel: question.DifficultyLevel || DifficultyLevel.Medium,
-          Tags: question.Tags,
-          Category: question.Category,
-          TimeLimit: question.TimeLimit,
-          IsActive: question.IsActive ?? true,
-          IsRequired: question.IsRequired ?? false
-        });
+      // Core fields — only the absolute minimum that exist on the SP list
+      const coreData: Record<string, unknown> = {
+        Title: (question.QuestionText || "Question").substring(0, 100),
+        QuestionText: question.QuestionText,
+        QuestionType: question.QuestionType || QuestionType.MultipleChoice,
+        CorrectAnswer: question.CorrectAnswer,
+        Points: question.Points || 10,
+        QuestionOrder: nextOrder
+      };
+      if (question.QuizId !== undefined) coreData.QuizId = question.QuizId;
+      if (question.OptionA !== undefined) coreData.OptionA = question.OptionA;
+      if (question.OptionB !== undefined) coreData.OptionB = question.OptionB;
+      if (question.OptionC !== undefined) coreData.OptionC = question.OptionC;
+      if (question.OptionD !== undefined) coreData.OptionD = question.OptionD;
+
+      // Extended fields — may or may not exist on the SP list
+      const extendedData: Record<string, unknown> = {};
+      if (question.DifficultyLevel !== undefined) extendedData.DifficultyLevel = question.DifficultyLevel;
+      if (question.QuestionBankId !== undefined) extendedData.QuestionBankId = question.QuestionBankId;
+      if (question.QuestionHtml !== undefined) extendedData.QuestionHtml = question.QuestionHtml;
+      if (question.OptionE !== undefined) extendedData.OptionE = question.OptionE;
+      if (question.OptionF !== undefined) extendedData.OptionF = question.OptionF;
+      if (question.OptionAImage !== undefined) extendedData.OptionAImage = question.OptionAImage;
+      if (question.OptionBImage !== undefined) extendedData.OptionBImage = question.OptionBImage;
+      if (question.OptionCImage !== undefined) extendedData.OptionCImage = question.OptionCImage;
+      if (question.OptionDImage !== undefined) extendedData.OptionDImage = question.OptionDImage;
+      if (question.QuestionImage !== undefined) extendedData.QuestionImage = question.QuestionImage;
+      if (question.HotspotData !== undefined) extendedData.HotspotData = question.HotspotData;
+      if (question.MatchingPairs !== undefined) extendedData.MatchingPairs = question.MatchingPairs;
+      if (question.OrderingItems !== undefined) extendedData.OrderingItems = question.OrderingItems;
+      if (question.BlankAnswers !== undefined) extendedData.BlankAnswers = question.BlankAnswers;
+      if (question.ScaleMin !== undefined) extendedData.ScaleMin = question.ScaleMin;
+      if (question.ScaleMax !== undefined) extendedData.ScaleMax = question.ScaleMax;
+      if (question.ScaleLabels !== undefined) extendedData.ScaleLabels = question.ScaleLabels;
+      if (question.CorrectRating !== undefined) extendedData.CorrectRating = question.CorrectRating;
+      if (question.RatingTolerance !== undefined) extendedData.RatingTolerance = question.RatingTolerance;
+      if (question.MinWordCount !== undefined) extendedData.MinWordCount = question.MinWordCount;
+      if (question.MaxWordCount !== undefined) extendedData.MaxWordCount = question.MaxWordCount;
+      if (question.RubricId !== undefined) extendedData.RubricId = question.RubricId;
+      if (question.CorrectAnswers !== undefined) extendedData.CorrectAnswers = question.CorrectAnswers;
+      if (question.AcceptedAnswers !== undefined) extendedData.AcceptedAnswers = question.AcceptedAnswers;
+      if (question.Explanation !== undefined) extendedData.Explanation = question.Explanation;
+      if (question.CorrectFeedback !== undefined) extendedData.CorrectFeedback = question.CorrectFeedback;
+      if (question.IncorrectFeedback !== undefined) extendedData.IncorrectFeedback = question.IncorrectFeedback;
+      if (question.PartialFeedback !== undefined) extendedData.PartialFeedback = question.PartialFeedback;
+      if (question.Hint !== undefined) extendedData.Hint = question.Hint;
+      if (question.PartialCreditEnabled !== undefined) extendedData.PartialCreditEnabled = question.PartialCreditEnabled;
+      if (question.PartialCreditPercentages !== undefined) extendedData.PartialCreditPercentages = question.PartialCreditPercentages;
+      if (question.NegativeMarking !== undefined) extendedData.NegativeMarking = question.NegativeMarking;
+      if (question.NegativePoints !== undefined) extendedData.NegativePoints = question.NegativePoints;
+      if (question.SectionId !== undefined) extendedData.SectionId = question.SectionId;
+      if (question.SectionName !== undefined) extendedData.SectionName = question.SectionName;
+      if (question.Tags !== undefined) extendedData.Tags = question.Tags;
+      if (question.Category !== undefined) extendedData.Category = question.Category;
+      if (question.TimeLimit !== undefined) extendedData.TimeLimit = question.TimeLimit;
+
+      // First attempt: core + extended fields
+      const hasExtended = Object.keys(extendedData).length > 0;
+      const fullData = hasExtended ? { ...coreData, ...extendedData } : coreData;
+
+      let result: { data: unknown };
+      try {
+        result = await this.sp.web.lists
+          .getByTitle(this.questionListName)
+          .items.add(fullData);
+      } catch (firstError: unknown) {
+        // If the full payload failed (likely a missing column), retry with core fields only
+        const firstMsg = firstError instanceof Error ? firstError.message : String(firstError);
+        const spMsg = (firstError as { response?: { data?: { error?: { message?: { value?: string } } } } })
+          ?.response?.data?.error?.message?.value || '';
+        const isColumnError = firstMsg.includes('does not exist') || spMsg.includes('does not exist')
+          || firstMsg.includes('404') || firstMsg.includes('400');
+
+        if (hasExtended && isColumnError) {
+          console.warn('[QuizService] Full payload failed, retrying with core fields only. Error:', spMsg || firstMsg);
+          result = await this.sp.web.lists
+            .getByTitle(this.questionListName)
+            .items.add(coreData);
+        } else {
+          throw firstError;
+        }
+      }
 
       // Update quiz question count
       if (question.QuizId) {
@@ -832,8 +873,11 @@ export class QuizService {
 
       logger.info("QuizService", `Question created for quiz ${question.QuizId}`);
       return result.data as IQuizQuestion;
-    } catch (error) {
-      logger.error("QuizService", "Failed to create question", error);
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : String(error);
+      const spData = (error as { response?: { data?: { error?: { message?: { value?: string } } } } })?.response?.data?.error?.message?.value;
+      logger.error("QuizService", `Failed to create question: ${errMsg}${spData ? ' — SP: ' + spData : ''}`, error);
+      console.error('[QuizService] createQuestion failed:', errMsg, spData || '');
       return null;
     }
   }
@@ -860,7 +904,11 @@ export class QuizService {
    */
   public async deleteQuestion(questionId: number, quizId: number): Promise<void> {
     try {
-      await this.updateQuestion(questionId, { IsActive: false });
+      // Hard delete — IsActive column may not exist on the list
+      await this.sp.web.lists
+        .getByTitle(this.questionListName)
+        .items.getById(questionId)
+        .delete();
       await this.updateQuestionCount(quizId);
       logger.info("QuizService", `Question deleted: ${questionId}`);
     } catch (error) {
@@ -1514,7 +1562,8 @@ export class QuizService {
 
       return banks as IQuestionBank[];
     } catch (error) {
-      logger.error("QuizService", "Failed to get question banks", error);
+      // PM_QuestionBanks list may not be provisioned yet — this is expected
+      logger.info("QuizService", "Question banks list not available (may not be provisioned)");
       return [];
     }
   }

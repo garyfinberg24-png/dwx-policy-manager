@@ -36,6 +36,8 @@ import { app, HttpRequest, HttpResponseInit, InvocationContext } from "@azure/fu
 interface GenerateRequest {
   policyText?: string;
   policyDocumentUrl?: string;
+  policyDocumentBase64?: string;
+  documentFileName?: string;
   accessToken?: string;
   questionCount: number;
   difficultyLevel: string;
@@ -123,7 +125,7 @@ const POINTS_MAP: Record<string, number> = {
 };
 
 // ============================================================================
-// PDF Text Extraction
+// Document Text Extraction (PDF, DOCX, plain text)
 // ============================================================================
 
 async function extractTextFromUrl(url: string, accessToken?: string): Promise<string> {
@@ -138,15 +140,48 @@ async function extractTextFromUrl(url: string, accessToken?: string): Promise<st
   }
 
   const buffer = Buffer.from(await response.arrayBuffer());
+  const lowerUrl = url.toLowerCase();
+  const contentType = response.headers.get('content-type') || '';
 
-  // Use pdf-parse for PDF files
-  if (url.toLowerCase().endsWith('.pdf') || response.headers.get('content-type')?.includes('pdf')) {
+  // PDF extraction
+  if (lowerUrl.endsWith('.pdf') || contentType.includes('pdf')) {
     const pdfParse = require('pdf-parse');
     const data = await pdfParse(buffer);
     return data.text;
   }
 
+  // DOCX extraction
+  if (lowerUrl.endsWith('.docx') || contentType.includes('wordprocessingml') || contentType.includes('msword')) {
+    const mammoth = require('mammoth');
+    const result = await mammoth.extractRawText({ buffer });
+    return result.value;
+  }
+
   // For other document types, return as text
+  return buffer.toString('utf-8');
+}
+
+/**
+ * Extract text from a base64-encoded document buffer.
+ * The fileName is used to determine the document type.
+ */
+async function extractTextFromBase64(base64: string, fileName: string): Promise<string> {
+  const buffer = Buffer.from(base64, 'base64');
+  const lowerName = fileName.toLowerCase();
+
+  if (lowerName.endsWith('.pdf')) {
+    const pdfParse = require('pdf-parse');
+    const data = await pdfParse(buffer);
+    return data.text;
+  }
+
+  if (lowerName.endsWith('.docx')) {
+    const mammoth = require('mammoth');
+    const result = await mammoth.extractRawText({ buffer });
+    return result.value;
+  }
+
+  // Fallback: treat as plain text
   return buffer.toString('utf-8');
 }
 
@@ -286,10 +321,10 @@ async function generateQuizQuestions(request: HttpRequest, context: InvocationCo
       };
     }
 
-    if (!body.policyText && !body.policyDocumentUrl) {
+    if (!body.policyText && !body.policyDocumentUrl && !body.policyDocumentBase64) {
       return {
         status: 400,
-        jsonBody: { error: "Either policyText or policyDocumentUrl is required" }
+        jsonBody: { error: "Either policyText, policyDocumentUrl, or policyDocumentBase64 is required" }
       };
     }
 
@@ -303,8 +338,13 @@ async function generateQuizQuestions(request: HttpRequest, context: InvocationCo
 
     // Get document text
     let documentText = body.policyText || "";
+    if (!documentText && body.policyDocumentBase64) {
+      const fileName = body.documentFileName || "document.docx";
+      context.log(`Extracting text from base64 document: ${fileName} (${Math.round(body.policyDocumentBase64.length / 1024)}KB)`);
+      documentText = await extractTextFromBase64(body.policyDocumentBase64, fileName);
+    }
     if (!documentText && body.policyDocumentUrl) {
-      context.log(`Fetching document from: ${body.policyDocumentUrl}`);
+      context.log(`Fetching document from URL: ${body.policyDocumentUrl}`);
       documentText = await extractTextFromUrl(body.policyDocumentUrl, body.accessToken);
     }
 
@@ -324,8 +364,17 @@ async function generateQuizQuestions(request: HttpRequest, context: InvocationCo
     // Parse the response
     let questions: GeneratedQuestion[];
     try {
-      // Handle potential markdown fences
-      const cleaned = content.replace(/^```json?\s*/i, '').replace(/\s*```$/i, '').trim();
+      // Strip markdown fences and any surrounding text to extract JSON array
+      let cleaned = content.trim();
+      // Remove markdown code fences (```json ... ``` or ``` ... ```)
+      cleaned = cleaned.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?\s*```\s*$/i, '').trim();
+      // If response still has text before the JSON array, find the first '['
+      const arrayStart = cleaned.indexOf('[');
+      const arrayEnd = cleaned.lastIndexOf(']');
+      if (arrayStart !== -1 && arrayEnd !== -1 && arrayStart < arrayEnd) {
+        cleaned = cleaned.substring(arrayStart, arrayEnd + 1);
+      }
+      context.log(`Parsing AI response (${cleaned.length} chars, starts with: ${cleaned.substring(0, 50)})`);
       questions = JSON.parse(cleaned);
     } catch (parseError) {
       context.error(`Failed to parse AI response: ${content.substring(0, 500)}`);

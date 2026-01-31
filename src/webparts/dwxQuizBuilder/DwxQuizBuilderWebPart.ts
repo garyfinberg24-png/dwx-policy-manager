@@ -20,6 +20,7 @@ export interface IDwxQuizBuilderWebPartProps {
   title: string;
   enableQuestionBanks: boolean;
   enableImportExport: boolean;
+  aiFunctionUrl: string;
 }
 
 export default class DwxQuizBuilderWebPart extends BaseClientSideWebPart<IDwxQuizBuilderWebPartProps> {
@@ -33,6 +34,7 @@ export default class DwxQuizBuilderWebPart extends BaseClientSideWebPart<IDwxQui
         title: this.properties.title,
         enableQuestionBanks: this.properties.enableQuestionBanks,
         enableImportExport: this.properties.enableImportExport,
+        aiFunctionUrl: this.properties.aiFunctionUrl || '',
         isDarkTheme: this._isDarkTheme,
         hasTeamsContext: !!this.context.sdks.microsoftTeams,
         sp: this._sp,
@@ -95,6 +97,11 @@ export default class DwxQuizBuilderWebPart extends BaseClientSideWebPart<IDwxQui
                 PropertyPaneToggle('enableImportExport', {
                   label: 'Enable Import/Export',
                   checked: true
+                }),
+                PropertyPaneTextField('aiFunctionUrl', {
+                  label: 'AI Function URL',
+                  description: 'Full URL to the Azure Function for AI quiz generation (including ?code= key)',
+                  multiline: true
                 })
               ]
             }

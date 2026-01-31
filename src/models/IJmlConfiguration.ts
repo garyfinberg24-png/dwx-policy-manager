@@ -41,6 +41,9 @@ export class ConfigKeys {
   static readonly GRAPH_API_ENABLED = 'Integration.GraphAPI.Enabled';
   static readonly TEAMS_NOTIFICATIONS = 'Integration.Teams.NotificationsEnabled';
 
+  // AI / Integration Settings
+  static readonly AI_FUNCTION_URL = 'Integration.AI.FunctionUrl';
+
   // Business Rules
   static readonly APPROVAL_REQUIRED = 'BusinessRules.ApprovalRequired';
   static readonly AUTO_ASSIGN_TASKS = 'BusinessRules.AutoAssignTasks';

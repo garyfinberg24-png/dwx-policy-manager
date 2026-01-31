@@ -240,6 +240,7 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
   const [searchQuery, setSearchQuery] = React.useState('');
   const [showProfileDropdown, setShowProfileDropdown] = React.useState(false);
   const [showNotificationDropdown, setShowNotificationDropdown] = React.useState(false);
+  const [showRecentlyViewedDropdown, setShowRecentlyViewedDropdown] = React.useState(false);
 
   // Request Policy Wizard State
   const [showRequestWizard, setShowRequestWizard] = React.useState(false);
@@ -287,6 +288,16 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
   // Refs for click-outside detection
   const profileRef = React.useRef<HTMLDivElement>(null);
   const notificationRef = React.useRef<HTMLDivElement>(null);
+  const recentlyViewedRef = React.useRef<HTMLDivElement>(null);
+
+  // Mock recently viewed policies
+  const recentlyViewedPolicies = [
+    { id: 1, title: 'Data Protection Policy v3.2', category: 'Data Privacy', time: '10m ago', status: 'Published' },
+    { id: 2, title: 'IT Security Policy', category: 'IT & Security', time: '1h ago', status: 'Published' },
+    { id: 3, title: 'Remote Work Policy v2.0', category: 'HR Policies', time: '2h ago', status: 'Published' },
+    { id: 4, title: 'GDPR Compliance Framework', category: 'Compliance', time: '3h ago', status: 'Published' },
+    { id: 5, title: 'Acceptable Use Policy', category: 'IT & Security', time: '1d ago', status: 'In Review' }
+  ];
 
   // Click-outside handler to close dropdowns
   React.useEffect(() => {
@@ -296,6 +307,9 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
       }
       if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
         setShowNotificationDropdown(false);
+      }
+      if (recentlyViewedRef.current && !recentlyViewedRef.current.contains(event.target as Node)) {
+        setShowRecentlyViewedDropdown(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -466,19 +480,66 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
               </svg>
               Request Contract
             </button>
-            <button
-              className={styles.quickActionBtn}
-              type="button"
-              title="Recently Viewed"
-              aria-label="Recently Viewed"
-              onClick={() => window.location.href = '/sites/PolicyManager/SitePages/PolicyHub.aspx?view=recent'}
-            >
-              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
-                <path d="M12 6v6l4 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              Recently Viewed
-            </button>
+            <div className={styles.dropdownContainer} ref={recentlyViewedRef} style={{ display: 'inline-flex' }}>
+              <button
+                className={styles.quickActionBtn}
+                type="button"
+                title="Recently Viewed"
+                aria-label="Recently Viewed"
+                onClick={() => {
+                  setShowRecentlyViewedDropdown(!showRecentlyViewedDropdown);
+                  setShowProfileDropdown(false);
+                  setShowNotificationDropdown(false);
+                }}
+              >
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
+                  <path d="M12 6v6l4 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Recently Viewed
+              </button>
+
+              {showRecentlyViewedDropdown && (
+                <div className={styles.dropdownPanel} style={{ left: 0, right: 'auto', minWidth: '340px' }}>
+                  <div className={styles.dropdownArrow} style={{ left: '40px', right: 'auto' }} />
+                  <div className={styles.dropdownPanelHeader}>
+                    <span className={styles.dropdownPanelTitle}>Recently Viewed</span>
+                    <span className={styles.dropdownPanelBadge}>{recentlyViewedPolicies.length} policies</span>
+                  </div>
+                  <div className={styles.dropdownPanelBody}>
+                    {recentlyViewedPolicies.map(policy => (
+                      <a
+                        key={policy.id}
+                        href={`/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${policy.id}`}
+                        className={styles.notificationItem}
+                        style={{ textDecoration: 'none', color: 'inherit' }}
+                        onClick={() => setShowRecentlyViewedDropdown(false)}
+                      >
+                        <div
+                          className={styles.notificationItemIcon}
+                          style={{ background: '#0d9488' }}
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 16, height: 16 }}>
+                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </div>
+                        <div className={styles.notificationItemContent}>
+                          <span className={styles.notificationItemTitle}>{policy.title}</span>
+                          <span className={styles.notificationItemMessage}>{policy.category}</span>
+                        </div>
+                        <span className={styles.notificationItemTime}>{policy.time}</span>
+                      </a>
+                    ))}
+                  </div>
+                  <div className={styles.dropdownPanelFooter}>
+                    <a href="/sites/PolicyManager/SitePages/PolicyHub.aspx?view=recent" className={styles.dropdownFooterLink}>
+                      View All Recent Policies
+                    </a>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Search icon button */}

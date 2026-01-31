@@ -5,6 +5,7 @@ export interface IQuizBuilderWrapperProps {
   title: string;
   enableQuestionBanks: boolean;
   enableImportExport: boolean;
+  aiFunctionUrl: string;
   isDarkTheme: boolean;
   hasTeamsContext: boolean;
   sp: SPFI;

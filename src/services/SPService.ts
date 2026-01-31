@@ -423,6 +423,43 @@ export class SPService {
   }
 
   /**
+   * Set a configuration value by key (upsert)
+   */
+  public async setConfigValue(key: string, value: string, category?: string): Promise<void> {
+    try {
+      if (!key || typeof key !== 'string') return;
+      const sanitizedKey = ValidationUtils.sanitizeForOData(key.substring(0, 100));
+      const filter = `ConfigKey eq '${sanitizedKey}'`;
+
+      const items = await this.sp.web.lists.getByTitle('PM_Configuration').items
+        .select('Id', 'ConfigKey')
+        .filter(filter)
+        .top(1)();
+
+      if (items.length > 0) {
+        // Update existing
+        await this.sp.web.lists.getByTitle('PM_Configuration').items.getById(items[0].Id).update({
+          ConfigValue: value,
+          IsActive: true
+        });
+      } else {
+        // Create new
+        await this.sp.web.lists.getByTitle('PM_Configuration').items.add({
+          Title: key,
+          ConfigKey: key,
+          ConfigValue: value,
+          Category: category || 'Integration',
+          IsActive: true,
+          IsSystemConfig: true
+        });
+      }
+    } catch (error) {
+      logger.error('SPService', `Error setting config ${key}:`, error);
+      throw error;
+    }
+  }
+
+  /**
    * Get all active configurations
    */
   public async getAllConfigurations(): Promise<IJmlConfiguration[]> {

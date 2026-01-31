@@ -20,7 +20,8 @@
     "properties": {
       "title": "DWx Quiz Builder",
       "enableQuestionBanks": true,
-      "enableImportExport": true
+      "enableImportExport": true,
+      "aiFunctionUrl": ""
     }
   }],
   "supportsFullBleed": true

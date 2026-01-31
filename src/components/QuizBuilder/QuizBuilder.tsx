@@ -15,8 +15,6 @@ import {
   MessageBarType,
   Panel,
   PanelType,
-  CommandBar,
-  ICommandBarItemProps,
   Dialog,
   DialogType,
   DialogFooter,
@@ -29,7 +27,8 @@ import {
   Checkbox,
   ChoiceGroup,
   ActionButton,
-  Separator
+  Separator,
+  Icon
 } from '@fluentui/react';
 import {
   QuizService,
@@ -46,11 +45,16 @@ import {
 import { PolicyService } from '../../services/PolicyService';
 import { IPolicy, PolicyStatus } from '../../models/IPolicy';
 import { SPFI } from '@pnp/sp';
+import { WebPartContext } from '@microsoft/sp-webpart-base';
+import { SPService } from '../../services/SPService';
+import { ConfigKeys } from '../../models/IJmlConfiguration';
 
 export interface IQuizBuilderProps {
   sp: SPFI;
+  context?: WebPartContext;
   quizId?: number;
   policyId?: number;
+  aiFunctionUrl?: string;
   onSave?: (quiz: IQuiz) => void;
   onCancel?: () => void;
 }
@@ -555,7 +559,7 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
       aiGenerating: false,
       aiError: null,
       aiGeneratedQuestions: [],
-      aiFunctionUrl: ''
+      aiFunctionUrl: this.props.aiFunctionUrl || ''
     };
   }
 
@@ -572,8 +576,13 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
       // Load policies for dropdown
       const policies = await this.policyService.getPolicies({ status: PolicyStatus.Published });
 
-      // Load question banks
-      const questionBanks = await this.quizService.getQuestionBanks();
+      // Load question banks (non-blocking — list may not exist yet)
+      let questionBanks: any[] = [];
+      try {
+        questionBanks = await this.quizService.getQuestionBanks();
+      } catch (qbError) {
+        console.warn('[QuizBuilder] Question banks not available:', qbError);
+      }
 
       // If editing existing quiz, load it
       if (this.props.quizId) {
@@ -609,6 +618,23 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
       }
 
       this.setState({ policies, questionBanks, loading: false });
+
+      // Load saved AI Function URL — try PM_Configuration first, then localStorage fallback
+      if (!this.state.aiFunctionUrl) {
+        let resolvedUrl = '';
+        try {
+          const spService = new SPService(this.props.sp);
+          resolvedUrl = await spService.getConfigValue(ConfigKeys.AI_FUNCTION_URL) || '';
+        } catch {
+          // PM_Configuration list may not exist — ignore
+        }
+        if (!resolvedUrl) {
+          try { resolvedUrl = localStorage.getItem('PM_AI_FunctionUrl') || ''; } catch { /* ignore */ }
+        }
+        if (resolvedUrl) {
+          this.setState({ aiFunctionUrl: resolvedUrl });
+        }
+      }
     } catch (error) {
       console.error('Failed to load data:', error);
       this.setState({
@@ -619,6 +645,7 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
   }
 
   private handleSaveQuiz = async (): Promise<void> => {
+    console.log('[QuizBuilder] handleSaveQuiz called — v1.2.1 dynamic fields');
     const {
       quizId,
       title,
@@ -654,39 +681,55 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
 
       const selectedPolicy = policies.find(p => p.Id === policyId);
 
-      const quizData: Partial<IQuiz> = {
-        Title: title,
-        QuizDescription: description,
-        PolicyId: policyId || undefined,
-        PolicyTitle: selectedPolicy?.PolicyName || '',
-        PassingScore: passingScore,
-        TimeLimit: timeLimit,
-        MaxAttempts: maxAttempts,
-        Status: isScheduled ? QuizStatus.Scheduled : status,
-        IsActive: status === QuizStatus.Published || status === QuizStatus.Scheduled,
-        QuizCategory: category,
-        DifficultyLevel: difficultyLevel,
-        RandomizeQuestions: randomizeQuestions,
-        ShowCorrectAnswers: showCorrectAnswers,
-        ScheduledStartDate: isScheduled && scheduledStartDate ? scheduledStartDate.toISOString() : undefined,
-        ScheduledEndDate: isScheduled && scheduledEndDate ? scheduledEndDate.toISOString() : undefined,
-        AllowPartialCredit: allowPartialCredit,
-        ShuffleWithinSections: shuffleWithinSections,
-        RequireSequentialCompletion: requireSequentialCompletion,
-        AllowReview: allowReview,
-        GenerateCertificate: generateCertificate,
-        CertificateTemplateId: certificateTemplateId || undefined
+      // Build quiz data — only include fields that exist on the list
+      // Core fields first, optional fields wrapped in try/catch
+      const quizData: Record<string, any> = {
+        Title: title
       };
 
-      let savedQuiz: IQuiz | null;
+      // Add optional fields — if list columns don't exist, SharePoint will ignore unknown ones
+      // but will throw 400 for columns that are defined differently. So we try a minimal set first.
+      if (description) quizData.QuizDescription = description;
+      if (policyId) quizData.PolicyId = policyId;
+      if (selectedPolicy?.PolicyName) quizData.PolicyTitle = selectedPolicy.PolicyName;
+      quizData.PassingScore = passingScore;
+      quizData.TimeLimit = timeLimit;
+      quizData.MaxAttempts = maxAttempts;
+      quizData.Status = isScheduled ? QuizStatus.Scheduled : status;
+      quizData.IsActive = status === QuizStatus.Published || status === QuizStatus.Scheduled;
+      if (category) quizData.QuizCategory = category;
+      if (difficultyLevel) quizData.DifficultyLevel = difficultyLevel;
+      quizData.RandomizeQuestions = randomizeQuestions;
+      quizData.ShowCorrectAnswers = showCorrectAnswers;
+      if (isScheduled && scheduledStartDate) quizData.ScheduledStartDate = scheduledStartDate.toISOString();
+      if (isScheduled && scheduledEndDate) quizData.ScheduledEndDate = scheduledEndDate.toISOString();
+      quizData.AllowPartialCredit = allowPartialCredit;
+      quizData.ShuffleWithinSections = shuffleWithinSections;
+      quizData.RequireSequentialCompletion = requireSequentialCompletion;
+      quizData.AllowReview = allowReview;
+      quizData.GenerateCertificate = generateCertificate;
+      if (certificateTemplateId) quizData.CertificateTemplateId = certificateTemplateId;
+
+      let savedQuiz: IQuiz | null = null;
 
       if (quizId) {
-        await this.quizService.updateQuiz(quizId, quizData);
+        await this.quizService.updateQuiz(quizId, quizData as Partial<IQuiz>);
         savedQuiz = await this.quizService.getQuizById(quizId);
       } else {
-        savedQuiz = await this.quizService.createQuiz(quizData);
-        if (savedQuiz) {
+        // Try full save first, fall back to minimal save if columns are missing
+        try {
+          savedQuiz = await this.quizService.createQuiz(quizData as Partial<IQuiz>);
+        } catch (fullSaveError) {
+          console.warn('[QuizBuilder] Full save failed, trying minimal fields:', fullSaveError);
+          // Minimal save — only Title (guaranteed to exist on any SharePoint list)
+          const minimalData: Record<string, any> = { Title: title };
+          savedQuiz = await this.quizService.createQuiz(minimalData as Partial<IQuiz>);
+        }
+        if (savedQuiz && savedQuiz.Id) {
+          console.log('[QuizBuilder] Quiz created with ID:', savedQuiz.Id);
           this.setState({ quizId: savedQuiz.Id });
+        } else {
+          console.warn('[QuizBuilder] Quiz saved but no ID returned. Response:', JSON.stringify(savedQuiz));
         }
       }
 
@@ -1107,64 +1150,76 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
   private renderCommandBar(): JSX.Element {
     const { saving, quizId } = this.state;
 
-    const items: ICommandBarItemProps[] = [
-      {
-        key: 'save',
-        text: quizId ? 'Update Quiz' : 'Create Quiz',
-        iconProps: { iconName: 'Save' },
-        onClick: (): void => { void this.handleSaveQuiz(); },
-        disabled: saving
-      },
-      {
-        key: 'addQuestion',
-        text: 'Add Question',
-        iconProps: { iconName: 'Add' },
-        onClick: this.handleAddQuestion,
-        disabled: saving || !quizId
-      },
-      {
-        key: 'aiGenerate',
-        text: 'AI Generate',
-        iconProps: { iconName: 'Robot' },
-        onClick: () => this.setState({ showAiPanel: true }),
-        disabled: saving || !quizId
-      }
-    ];
-
-    const farItems: ICommandBarItemProps[] = [
-      {
-        key: 'import',
-        text: 'Import',
-        iconProps: { iconName: 'Upload' },
-        onClick: () => this.setState({ showImportDialog: true }),
-        disabled: !quizId
-      },
-      {
-        key: 'export',
-        text: 'Export',
-        iconProps: { iconName: 'Download' },
-        onClick: () => this.setState({ showExportDialog: true }),
-        disabled: !quizId || this.state.questions.length === 0
-      },
-      {
-        key: 'statistics',
-        text: 'Statistics',
-        iconProps: { iconName: 'BarChartVertical' },
-        onClick: (): void => { void this.handleLoadStatistics(); },
-        disabled: !quizId
-      }
-    ];
-
-    if (this.props.onCancel) {
-      farItems.push({
-        key: 'cancel',
-        text: 'Cancel',
-        iconProps: { iconName: 'Cancel' },
-        onClick: this.props.onCancel
-      });
-    }
-
-    return <CommandBar items={items} farItems={farItems} />;
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '12px 16px',
+        marginBottom: '16px',
+        backgroundColor: '#ffffff',
+        borderRadius: '6px',
+        border: '1px solid #edebe9',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+        flexWrap: 'wrap',
+        gap: '8px'
+      }}>
+        <Stack horizontal tokens={{ childrenGap: 8 }} wrap>
+          <PrimaryButton
+            text={quizId ? 'Update Quiz' : 'Create Quiz'}
+            iconProps={{ iconName: 'Save' }}
+            onClick={(): void => { void this.handleSaveQuiz(); }}
+            disabled={saving}
+            styles={{ root: { borderRadius: '6px' } }}
+          />
+          <DefaultButton
+            text="Add Question"
+            iconProps={{ iconName: 'Add' }}
+            onClick={this.handleAddQuestion}
+            disabled={saving || !quizId}
+            styles={{ root: { borderRadius: '6px' } }}
+          />
+          <DefaultButton
+            text="AI Generate"
+            iconProps={{ iconName: 'Robot' }}
+            onClick={() => this.setState({ showAiPanel: true })}
+            disabled={saving || !quizId}
+            styles={{ root: { borderRadius: '6px', borderColor: '#0d9488', color: '#0d9488' }, rootHovered: { borderColor: '#0b7c72', color: '#0b7c72' } }}
+          />
+        </Stack>
+        <Stack horizontal tokens={{ childrenGap: 8 }} wrap>
+          <DefaultButton
+            text="Import"
+            iconProps={{ iconName: 'Upload' }}
+            onClick={() => this.setState({ showImportDialog: true })}
+            disabled={!quizId}
+            styles={{ root: { borderRadius: '6px' } }}
+          />
+          <DefaultButton
+            text="Export"
+            iconProps={{ iconName: 'Download' }}
+            onClick={() => this.setState({ showExportDialog: true })}
+            disabled={!quizId || this.state.questions.length === 0}
+            styles={{ root: { borderRadius: '6px' } }}
+          />
+          <DefaultButton
+            text="Statistics"
+            iconProps={{ iconName: 'BarChartVertical' }}
+            onClick={(): void => { void this.handleLoadStatistics(); }}
+            disabled={!quizId}
+            styles={{ root: { borderRadius: '6px' } }}
+          />
+          {this.props.onCancel && (
+            <DefaultButton
+              text="Cancel"
+              iconProps={{ iconName: 'Cancel' }}
+              onClick={this.props.onCancel}
+              styles={{ root: { borderRadius: '6px' } }}
+            />
+          )}
+        </Stack>
+      </div>
+    );
   }
 
   private renderQuizSettings(): JSX.Element {
@@ -1697,7 +1752,8 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
     return (
       <Panel
         isOpen={showQuestionPanel}
-        type={PanelType.large}
+        type={PanelType.custom}
+        customWidth="650px"
         onDismiss={() => this.setState({ showQuestionPanel: false, editingQuestion: null })}
         headerText={isNew ? 'Add Question' : 'Edit Question'}
         closeButtonAriaLabel="Close"
@@ -2816,14 +2872,52 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
 
       // Fetch the document text from SharePoint if possible
       let policyText = '';
-      const docUrl = policy?.DocumentURL;
-      if (docUrl && typeof docUrl === 'string') {
+      const rawDocUrl = policy?.DocumentURL;
+      // SharePoint URL fields may return { Url: string, Description: string } or a plain string
+      const docUrl: string | undefined = rawDocUrl
+        ? (typeof rawDocUrl === 'string' ? rawDocUrl : (rawDocUrl as { Url?: string }).Url || undefined)
+        : undefined;
+
+      // Determine file extension and server-relative path
+      let serverRelativePath = '';
+      let docExtension = '';
+      let documentBase64 = '';
+
+      if (docUrl) {
         try {
-          // Attempt to fetch document content via SharePoint REST API
-          const fileResponse = await this.props.sp.web.getFileByServerRelativePath(docUrl).getText();
-          policyText = fileResponse;
+          const parsedUrl = new URL(docUrl);
+          serverRelativePath = decodeURIComponent(parsedUrl.pathname);
         } catch {
-          console.warn('Could not extract document text via SP — will pass URL to Azure Function');
+          serverRelativePath = docUrl.replace(/^https?:\/\/[^/]+/i, '');
+        }
+        docExtension = serverRelativePath.split('.').pop()?.toLowerCase() || '';
+
+        const isBinaryDoc = ['docx', 'doc', 'pdf', 'pptx', 'xlsx'].includes(docExtension);
+
+        if (!isBinaryDoc) {
+          // Plain text files — read directly via SP REST getText()
+          try {
+            console.log('[QuizBuilder] Fetching text document via SP path:', serverRelativePath);
+            const fileResponse = await this.props.sp.web.getFileByServerRelativePath(serverRelativePath).getText();
+            policyText = fileResponse;
+          } catch (spErr) {
+            console.warn('[QuizBuilder] Could not extract text via SP:', spErr);
+          }
+        } else {
+          // Binary files — fetch buffer via PnPjs (uses existing SP auth) and convert to base64
+          try {
+            console.log('[QuizBuilder] Fetching binary document via SP buffer:', serverRelativePath);
+            const buffer: ArrayBuffer = await this.props.sp.web.getFileByServerRelativePath(serverRelativePath).getBuffer();
+            const bytes = new Uint8Array(buffer);
+            let binary = '';
+            for (let i = 0; i < bytes.length; i++) {
+              binary += String.fromCharCode(bytes[i]);
+            }
+            documentBase64 = btoa(binary);
+            console.log(`[QuizBuilder] Document fetched: ${docExtension}, ${Math.round(documentBase64.length / 1024)}KB base64`);
+          } catch (spErr) {
+            console.warn('[QuizBuilder] Could not fetch document buffer via SP:', spErr);
+          }
         }
       }
 
@@ -2838,7 +2932,12 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
 
       if (policyText) {
         requestBody.policyText = policyText;
+      } else if (documentBase64) {
+        // Send binary document as base64 for server-side text extraction
+        requestBody.policyDocumentBase64 = documentBase64;
+        requestBody.documentFileName = serverRelativePath.split('/').pop() || `document.${docExtension}`;
       } else if (docUrl) {
+        // Last resort: pass URL (may fail without auth)
         requestBody.policyDocumentUrl = docUrl;
       } else {
         this.setState({ aiGenerating: false, aiError: 'No policy document URL found. Please link a document to this policy first.' });
@@ -2875,28 +2974,91 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
 
     this.setState({ saving: true });
 
-    try {
-      for (const question of aiGeneratedQuestions) {
-        await this.quizService.createQuestion({
-          ...question,
-          QuizId: quizId,
-          IsActive: true,
-          IsRequired: false,
-          QuestionOrder: this.state.questions.length + 1
-        });
-      }
+    let successCount = 0;
+    let failCount = 0;
+    const baseOrder = this.state.questions.length;
 
+    for (let i = 0; i < aiGeneratedQuestions.length; i++) {
+      const question = aiGeneratedQuestions[i];
+      try {
+        // Build a clean question object with only fields that should go to SP
+        const cleanQuestion: Record<string, unknown> = {
+          QuizId: quizId,
+          QuestionText: question.QuestionText,
+          QuestionType: question.QuestionType || 'Multiple Choice',
+          CorrectAnswer: question.CorrectAnswer,
+          Points: question.Points || 10,
+          DifficultyLevel: question.DifficultyLevel || 'Medium',
+          QuestionOrder: baseOrder + i + 1,
+          Explanation: question.Explanation || ''
+        };
+
+        // Options (for multiple choice, true/false, etc.)
+        if (question.OptionA) cleanQuestion.OptionA = question.OptionA;
+        if (question.OptionB) cleanQuestion.OptionB = question.OptionB;
+        if (question.OptionC) cleanQuestion.OptionC = question.OptionC;
+        if (question.OptionD) cleanQuestion.OptionD = question.OptionD;
+
+        // Multiple select
+        if (question.CorrectAnswers) cleanQuestion.CorrectAnswers = question.CorrectAnswers;
+
+        // Fill in blank
+        if (question.BlankAnswers) cleanQuestion.BlankAnswers = question.BlankAnswers;
+
+        // Matching
+        if (question.MatchingPairs) cleanQuestion.MatchingPairs = question.MatchingPairs;
+
+        // Ordering
+        if (question.OrderingItems) cleanQuestion.OrderingItems = question.OrderingItems;
+
+        // Rating scale
+        if (question.ScaleMin !== undefined) cleanQuestion.ScaleMin = question.ScaleMin;
+        if (question.ScaleMax !== undefined) cleanQuestion.ScaleMax = question.ScaleMax;
+        if (question.CorrectRating !== undefined) cleanQuestion.CorrectRating = question.CorrectRating;
+        if (question.RatingTolerance !== undefined) cleanQuestion.RatingTolerance = question.RatingTolerance;
+
+        // Essay
+        if (question.MinWordCount !== undefined) cleanQuestion.MinWordCount = question.MinWordCount;
+        if (question.MaxWordCount !== undefined) cleanQuestion.MaxWordCount = question.MaxWordCount;
+
+        // Feedback
+        if (question.CorrectFeedback) cleanQuestion.CorrectFeedback = question.CorrectFeedback;
+        if (question.IncorrectFeedback) cleanQuestion.IncorrectFeedback = question.IncorrectFeedback;
+        if (question.Hint) cleanQuestion.Hint = question.Hint;
+
+        // Tags/Category
+        if (question.Tags) cleanQuestion.Tags = question.Tags;
+        if (question.Category) cleanQuestion.Category = question.Category;
+
+        const result = await this.quizService.createQuestion(cleanQuestion as any);
+        if (result) {
+          successCount++;
+        } else {
+          failCount++;
+          console.warn(`[QuizBuilder] Question ${i + 1} returned null from createQuestion`);
+        }
+      } catch (err) {
+        failCount++;
+        console.error(`[QuizBuilder] Failed to import question ${i + 1}:`, err);
+      }
+    }
+
+    if (successCount > 0) {
       const updatedQuestions = await this.quizService.getQuizQuestions(quizId);
       this.setState({
         questions: updatedQuestions,
         saving: false,
         showAiPanel: false,
         aiGeneratedQuestions: [],
-        success: `Successfully imported ${aiGeneratedQuestions.length} AI-generated questions!`
+        success: failCount === 0
+          ? `Successfully imported ${successCount} AI-generated questions!`
+          : `Imported ${successCount} of ${aiGeneratedQuestions.length} questions. ${failCount} failed — check console for details.`
       });
-    } catch (err) {
-      console.error('Failed to import AI questions:', err);
-      this.setState({ saving: false, error: 'Failed to import AI-generated questions.' });
+    } else {
+      this.setState({
+        saving: false,
+        error: `Failed to import all ${aiGeneratedQuestions.length} questions. The SharePoint list may be missing required columns. Check the browser console for details.`
+      });
     }
   };
 
@@ -2931,11 +3093,43 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
             The AI will analyze the document and create questions aligned with the selected difficulty and types.
           </MessageBar>
 
+          {/* Linked Document Status */}
+          {(() => {
+            const policy = this.state.policies.find(p => p.Id === this.state.policyId);
+            const rawDocUrl = policy?.DocumentURL;
+            const docUrl: string | undefined = rawDocUrl
+              ? (typeof rawDocUrl === 'string' ? rawDocUrl : (rawDocUrl as { Url?: string }).Url || undefined)
+              : undefined;
+            const docName = docUrl ? decodeURIComponent(docUrl.split('/').pop() || docUrl) : undefined;
+
+            return docUrl ? (
+              <div style={{
+                padding: '10px 14px', backgroundColor: '#e8f5e9', borderRadius: 6,
+                border: '1px solid #c8e6c9', display: 'flex', alignItems: 'center', gap: 10
+              }}>
+                <span style={{ fontSize: 18 }}>&#128196;</span>
+                <div style={{ flex: 1 }}>
+                  <Text variant="smallPlus" style={{ fontWeight: 600, display: 'block' }}>Linked Document</Text>
+                  <Text variant="small" style={{ color: '#2e7d32', wordBreak: 'break-all' }}>{docName}</Text>
+                </div>
+              </div>
+            ) : (
+              <MessageBar messageBarType={MessageBarType.warning}>
+                No document is linked to the selected policy. Please go to the Settings tab and select a policy that has a linked document, or add a document URL to the policy first.
+              </MessageBar>
+            );
+          })()}
+
           {/* Azure Function URL */}
           <TextField
             label="Azure Function URL"
             value={aiFunctionUrl}
-            onChange={(_e, v) => this.setState({ aiFunctionUrl: v || '' })}
+            onChange={(_e, v) => {
+              const url = v || '';
+              this.setState({ aiFunctionUrl: url });
+              // Persist to localStorage so the URL survives page refreshes
+              try { localStorage.setItem('PM_AI_FunctionUrl', url); } catch { /* ignore */ }
+            }}
             placeholder="https://your-func.azurewebsites.net/api/generate-quiz-questions?code=..."
             description="Enter your deployed Azure Function endpoint URL with the function key"
             required
@@ -3062,6 +3256,228 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
     );
   }
 
+  private renderSummary(): JSX.Element {
+    const {
+      quizId, title, description, policyId, passingScore, timeLimit, maxAttempts,
+      status, category, difficultyLevel, randomizeQuestions, showCorrectAnswers,
+      allowPartialCredit, shuffleWithinSections, requireSequentialCompletion, allowReview,
+      generateCertificate, isScheduled, scheduledStartDate, scheduledEndDate,
+      questions, policies
+    } = this.state;
+
+    const linkedPolicy = policies.find(p => p.Id === policyId);
+    const questionsByType: Record<string, number> = {};
+    questions.forEach(q => {
+      const t = q.QuestionType || 'Unknown';
+      questionsByType[t] = (questionsByType[t] || 0) + 1;
+    });
+    const totalPoints = questions.reduce((sum, q) => sum + (q.Points || 0), 0);
+
+    const summaryCardStyle: React.CSSProperties = {
+      backgroundColor: '#fff',
+      padding: '20px',
+      borderRadius: '8px',
+      border: '1px solid #edebe9',
+      marginBottom: '16px'
+    };
+
+    const labelStyle: React.CSSProperties = { fontSize: '12px', color: '#605e5c', textTransform: 'uppercase' as const, fontWeight: 500, marginBottom: '4px' };
+    const valueStyle: React.CSSProperties = { fontSize: '15px', color: '#323130', fontWeight: 500 };
+    const gridStyle: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '16px' };
+
+    const statusColorMap: Record<string, string> = { Draft: '#8a6d00', Published: '#107c10', Scheduled: '#0078d4', Archived: '#605e5c' };
+    const statusBgMap: Record<string, string> = { Draft: '#fff4ce', Published: '#dff6dd', Scheduled: '#cce4f6', Archived: '#f3f2f1' };
+    const diffColorMap: Record<string, string> = { Easy: '#107c10', Medium: '#8a6d00', Hard: '#d83b01', Expert: '#a80000' };
+    const diffBgMap: Record<string, string> = { Easy: '#dff6dd', Medium: '#fff4ce', Hard: '#fed9cc', Expert: '#fde7e9' };
+
+    const boolBadge = (val: boolean) => (
+      <span style={{
+        fontSize: '12px', fontWeight: 500, padding: '2px 10px', borderRadius: '12px',
+        backgroundColor: val ? '#dff6dd' : '#f3f2f1', color: val ? '#107c10' : '#605e5c'
+      }}>
+        {val ? 'Yes' : 'No'}
+      </span>
+    );
+
+    return (
+      <div>
+        {/* Quiz Overview Card */}
+        <div style={summaryCardStyle}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+            <div>
+              <h2 style={{ fontSize: '22px', fontWeight: 600, color: '#323130', margin: '0 0 4px' }}>{title || 'Untitled Quiz'}</h2>
+              {description && <p style={{ fontSize: '14px', color: '#605e5c', margin: 0 }}>{description}</p>}
+            </div>
+            <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+              <span style={{
+                fontSize: '12px', fontWeight: 500, padding: '4px 12px', borderRadius: '12px',
+                backgroundColor: statusBgMap[status] || '#f3f2f1', color: statusColorMap[status] || '#605e5c'
+              }}>
+                {status}
+              </span>
+              <span style={{
+                fontSize: '12px', fontWeight: 500, padding: '4px 12px', borderRadius: '12px',
+                backgroundColor: diffBgMap[difficultyLevel] || '#f3f2f1', color: diffColorMap[difficultyLevel] || '#605e5c'
+              }}>
+                {difficultyLevel}
+              </span>
+            </div>
+          </div>
+
+          {/* KPI Stats Row */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px' }}>
+            {[
+              { label: 'Questions', value: questions.length, color: '#0078d4' },
+              { label: 'Total Points', value: totalPoints, color: '#0d9488' },
+              { label: 'Passing Score', value: `${passingScore}%`, color: '#107c10' },
+              { label: 'Time Limit', value: `${timeLimit} min`, color: '#8764b8' },
+              { label: 'Max Attempts', value: maxAttempts, color: '#d83b01' },
+              { label: 'Quiz ID', value: quizId || 'Unsaved', color: '#605e5c' }
+            ].map((stat, idx) => (
+              <div key={idx} style={{
+                textAlign: 'center', padding: '12px', backgroundColor: '#f8f8f8', borderRadius: '6px'
+              }}>
+                <div style={{ fontSize: '24px', fontWeight: 700, color: stat.color }}>{stat.value}</div>
+                <div style={{ fontSize: '11px', color: '#605e5c', textTransform: 'uppercase', fontWeight: 500, marginTop: '2px' }}>{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Configuration Details */}
+        <div style={summaryCardStyle}>
+          <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#323130', margin: '0 0 16px' }}>Configuration</h3>
+          <div style={gridStyle}>
+            <div>
+              <div style={labelStyle}>Category</div>
+              <div style={valueStyle}>{category || 'General'}</div>
+            </div>
+            <div>
+              <div style={labelStyle}>Linked Policy</div>
+              <div style={valueStyle}>{linkedPolicy ? `${linkedPolicy.PolicyNumber} - ${linkedPolicy.PolicyName}` : 'None'}</div>
+            </div>
+            <div>
+              <div style={labelStyle}>Randomize Questions</div>
+              <div>{boolBadge(randomizeQuestions)}</div>
+            </div>
+            <div>
+              <div style={labelStyle}>Show Correct Answers</div>
+              <div>{boolBadge(showCorrectAnswers)}</div>
+            </div>
+            <div>
+              <div style={labelStyle}>Allow Partial Credit</div>
+              <div>{boolBadge(allowPartialCredit)}</div>
+            </div>
+            <div>
+              <div style={labelStyle}>Allow Review</div>
+              <div>{boolBadge(allowReview)}</div>
+            </div>
+            <div>
+              <div style={labelStyle}>Shuffle Within Sections</div>
+              <div>{boolBadge(shuffleWithinSections)}</div>
+            </div>
+            <div>
+              <div style={labelStyle}>Sequential Completion</div>
+              <div>{boolBadge(requireSequentialCompletion)}</div>
+            </div>
+            <div>
+              <div style={labelStyle}>Generate Certificate</div>
+              <div>{boolBadge(generateCertificate)}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Schedule (if enabled) */}
+        {isScheduled && (
+          <div style={{ ...summaryCardStyle, borderColor: '#ffb900', backgroundColor: '#fffdf5' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#323130', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Icon iconName="Calendar" style={{ color: '#ffb900' }} />
+              Schedule
+            </h3>
+            <div style={{ display: 'flex', gap: '32px' }}>
+              <div>
+                <div style={labelStyle}>Start Date</div>
+                <div style={valueStyle}>{scheduledStartDate ? scheduledStartDate.toLocaleDateString() : 'Not set'}</div>
+              </div>
+              <div>
+                <div style={labelStyle}>End Date</div>
+                <div style={valueStyle}>{scheduledEndDate ? scheduledEndDate.toLocaleDateString() : 'Not set'}</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Question Breakdown */}
+        <div style={summaryCardStyle}>
+          <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#323130', margin: '0 0 16px' }}>Question Breakdown</h3>
+          {questions.length === 0 ? (
+            <MessageBar messageBarType={MessageBarType.info}>
+              No questions added yet. Use the Questions tab to add questions manually or generate them with AI.
+            </MessageBar>
+          ) : (
+            <>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
+                {Object.entries(questionsByType).map(([type, count]) => (
+                  <div key={type} style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#f0f6ff',
+                    borderRadius: '6px',
+                    border: '1px solid #cce4f6',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <span style={{ fontSize: '18px', fontWeight: 700, color: '#0078d4' }}>{count}</span>
+                    <span style={{ fontSize: '13px', color: '#323130' }}>{type}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Question List Preview */}
+              <div style={{ maxHeight: '300px', overflow: 'auto' }}>
+                {questions.slice(0, 20).map((q, idx) => (
+                  <div key={idx} style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    padding: '8px 12px',
+                    borderBottom: '1px solid #f3f2f1',
+                    fontSize: '13px'
+                  }}>
+                    <span style={{
+                      width: '24px', height: '24px', borderRadius: '50%', backgroundColor: '#0078d4',
+                      color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '12px', fontWeight: 600, flexShrink: 0
+                    }}>
+                      {idx + 1}
+                    </span>
+                    <span style={{ flex: 1, color: '#323130', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {q.QuestionText}
+                    </span>
+                    <span style={{
+                      fontSize: '11px', padding: '2px 8px', borderRadius: '12px',
+                      backgroundColor: '#e1dfdd', color: '#605e5c', flexShrink: 0
+                    }}>
+                      {q.QuestionType}
+                    </span>
+                    <span style={{ fontSize: '12px', color: '#0078d4', fontWeight: 500, flexShrink: 0 }}>
+                      {q.Points || 0} pts
+                    </span>
+                  </div>
+                ))}
+                {questions.length > 20 && (
+                  <div style={{ padding: '8px 12px', fontSize: '13px', color: '#605e5c', textAlign: 'center' }}>
+                    ... and {questions.length - 20} more questions
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   public render(): React.ReactElement<IQuizBuilderProps> {
     const { loading, saving, error, success, quizId, activeTab } = this.state;
 
@@ -3144,6 +3560,12 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
           <PivotItem headerText="Certificate" itemKey="certificate" itemIcon="Certificate">
             <div className={styles.tabContent}>
               {this.renderCertificateSettings()}
+            </div>
+          </PivotItem>
+
+          <PivotItem headerText="Summary" itemKey="summary" itemIcon="ViewAll">
+            <div className={styles.tabContent}>
+              {this.renderSummary()}
             </div>
           </PivotItem>
         </Pivot>

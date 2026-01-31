@@ -28,6 +28,8 @@ import {
 import { injectPortalStyles } from '../../../utils/injectPortalStyles';
 import { JmlAppLayout } from '../../../components/JmlAppLayout';
 import { PolicyService } from '../../../services/PolicyService';
+import { SPService } from '../../../services/SPService';
+import { ConfigKeys } from '../../../models/IJmlConfiguration';
 import { createDialogManager } from '../../../hooks/useDialog';
 import { IPolicyTemplate } from '../../../models/IPolicy';
 import styles from './PolicyAdmin.module.scss';
@@ -129,6 +131,7 @@ export interface IGeneralSettings {
   enablePolicyComments: boolean;
   maintenanceMode: boolean;
   maintenanceMessage: string;
+  aiFunctionUrl: string;
 }
 
 export interface IPolicyAdminState {
@@ -309,7 +312,8 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         enablePolicyRatings: true,
         enablePolicyComments: true,
         maintenanceMode: false,
-        maintenanceMessage: 'Policy Manager is currently undergoing scheduled maintenance. Please try again later.'
+        maintenanceMessage: 'Policy Manager is currently undergoing scheduled maintenance. Please try again later.',
+        aiFunctionUrl: ''
       },
       selectedProduct: null,
       showProductPanel: false,
@@ -330,11 +334,28 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     };
 
     this.policyService = new PolicyService(props.sp);
+    this.spService = new SPService(props.sp);
   }
+
+  private spService: SPService;
 
   public componentDidMount(): void {
     injectPortalStyles();
+    this.loadSavedSettings();
   }
+
+  private loadSavedSettings = async (): Promise<void> => {
+    try {
+      const aiUrl = await this.spService.getConfigValue(ConfigKeys.AI_FUNCTION_URL);
+      if (aiUrl) {
+        this.setState(prev => ({
+          generalSettings: { ...prev.generalSettings, aiFunctionUrl: aiUrl }
+        }));
+      }
+    } catch {
+      console.warn('[PolicyAdmin] Could not load saved settings from PM_Configuration');
+    }
+  };
 
   // ============================================================================
   // HANDLERS
@@ -1828,6 +1849,73 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               </Stack>
             </div>
           )}
+
+          {/* AI Quiz Generation */}
+          <div className={styles.adminCard} style={{ borderLeft: '4px solid #6366f1' }}>
+            <Stack tokens={{ childrenGap: 12 }}>
+              <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 10 }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: 8, backgroundColor: '#eef2ff',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                  <Icon iconName="Robot" style={{ fontSize: 18, color: '#6366f1' }} />
+                </div>
+                <div>
+                  <Text variant="medium" style={{ fontWeight: 600, display: 'block' }}>AI Quiz Generation</Text>
+                  <Text variant="small" style={{ color: '#605e5c' }}>Azure Function URL for AI-powered quiz question generation</Text>
+                </div>
+              </Stack>
+              <TextField
+                label="AI Function URL"
+                placeholder="https://your-function.azurewebsites.net/api/generate-quiz-questions?code=..."
+                value={generalSettings.aiFunctionUrl}
+                onChange={(_, val) => updateSetting('aiFunctionUrl', val || '')}
+                description="Full URL to the Azure Function endpoint including the ?code= function key. Used by the Quiz Builder's AI Generate feature."
+              />
+              <PrimaryButton
+                text="Save AI URL"
+                iconProps={{ iconName: 'Save' }}
+                styles={{ root: { marginTop: 4 } }}
+                onClick={async () => {
+                  let savedToSP = false;
+                  try {
+                    await this.spService.setConfigValue(
+                      ConfigKeys.AI_FUNCTION_URL,
+                      generalSettings.aiFunctionUrl,
+                      'Integration'
+                    );
+                    savedToSP = true;
+                  } catch {
+                    // PM_Configuration list may not exist — fall through to localStorage
+                  }
+
+                  // Always persist to localStorage as fallback / redundancy
+                  try {
+                    localStorage.setItem('PM_AI_FunctionUrl', generalSettings.aiFunctionUrl);
+                  } catch { /* storage unavailable */ }
+
+                  if (savedToSP) {
+                    void this.dialogManager.showAlert('AI Function URL has been saved.', { title: 'Saved', variant: 'success' });
+                  } else {
+                    void this.dialogManager.showAlert(
+                      'AI Function URL saved to browser storage. For permanent storage across all users, run the upgrade-quiz-questions-list.ps1 script to create the PM_Configuration list, then save again.',
+                      { title: 'Saved (Local Only)', variant: 'warning' }
+                    );
+                  }
+                }}
+              />
+              {generalSettings.aiFunctionUrl && (
+                <MessageBar messageBarType={MessageBarType.success}>
+                  AI Function URL configured. Quiz Builder will use this URL for AI question generation.
+                </MessageBar>
+              )}
+              {!generalSettings.aiFunctionUrl && (
+                <MessageBar messageBarType={MessageBarType.info}>
+                  No AI Function URL configured. Users can still enter it manually in the Quiz Builder.
+                </MessageBar>
+              )}
+            </Stack>
+          </div>
         </Stack>
       </div>
     );

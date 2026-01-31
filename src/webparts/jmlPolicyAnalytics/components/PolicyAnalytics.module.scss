@@ -24,20 +24,54 @@ $pm-font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-se
   padding: 0 40px 40px;
 }
 
+/* ──────────── Section Layout ──────────── */
+.section {
+  margin-bottom: 32px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid #e2e8f0;
+
+  &:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
+}
+
+.sectionInner {
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.sectionBgWhite {
+  background: #fff;
+}
+
+.sectionBgAlt {
+  background: #fafbfc;
+}
+
 /* ──────────── Section Headers ──────────── */
 .sectionHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin: 28px 0 16px;
+  margin: 0 0 18px;
   flex-wrap: wrap;
   gap: 12px;
+  border-left: 3px solid $pm-primary;
+  padding-left: 12px;
 
   h3 {
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 400;
-    color: #0f172a;
+    color: #1e293b;
     margin: 0;
+  }
+
+  small {
+    color: #94a3b8;
+    font-size: 12px;
+    margin-left: 8px;
   }
 }
 

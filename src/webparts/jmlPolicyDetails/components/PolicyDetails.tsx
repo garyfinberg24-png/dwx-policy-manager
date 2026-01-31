@@ -834,8 +834,13 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
   };
 
   private canGoNext(): boolean {
-    const { currentFlowStep, scrollProgress, hasReadPolicy, quizPassed, quizRequired } = this.state;
-    if (currentFlowStep === 'reading') return scrollProgress >= 95 || hasReadPolicy;
+    const { currentFlowStep, scrollProgress, hasReadPolicy, quizPassed, quizRequired, readDuration } = this.state;
+    if (currentFlowStep === 'reading') {
+      // scrollProgress tracks div scrolling (works for inline/placeholder docs).
+      // For iframe-based documents, scroll events don't bubble, so we also
+      // allow proceeding after a minimum read time of 30 seconds.
+      return scrollProgress >= 95 || hasReadPolicy || readDuration >= 30;
+    }
     if (currentFlowStep === 'quiz') return quizPassed;
     if (currentFlowStep === 'acknowledge') return false; // panel handles it
     return false;
@@ -1137,12 +1142,12 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
               )}
             </div>
             <div className={styles.scrollNotice}>
-              {scrollProgress >= 95 ? (
+              {scrollProgress >= 95 || readDuration >= 30 ? (
                 <span style={{ color: '#16a34a', fontWeight: 600 }}>
                   <Icon iconName="CheckMark" /> Document read complete — you may now proceed
                 </span>
               ) : (
-                <span>Please scroll through the entire document before proceeding</span>
+                <span>Please review the document before proceeding ({Math.max(0, 30 - readDuration)}s remaining)</span>
               )}
             </div>
           </div>

@@ -424,125 +424,130 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
     return (
       <div className={styles.executiveTab}>
         {/* KPI Cards */}
-        <div className={styles.sectionHeader}>
-          <h3>Key Performance Indicators</h3>
-        </div>
-        <div className={styles.kpiGrid}>
-          <div className={`${styles.kpiCard} ${styles.kpiPrimary}`}>
-            <div className={styles.kpiValue}>{overallCompliance}%</div>
-            <div className={styles.kpiLabel}>Overall Compliance</div>
-            <div className={styles.kpiTrend}>
-              <Icon iconName="CaretSolidUp" className={styles.trendUp} />
-              <span className={styles.trendUp}>+2.1% vs last month</span>
+        <div className={styles.section}>
+          <div className={`${styles.sectionInner} ${styles.sectionBgWhite}`}>
+            <div className={styles.sectionHeader}>
+              <h3>Key Performance Indicators</h3>
             </div>
-          </div>
-          <div className={styles.kpiCard}>
-            <div className={styles.kpiValue}>{activePolicies}</div>
-            <div className={styles.kpiLabel}>Active Policies</div>
-          </div>
-          <div className={`${styles.kpiCard} ${styles.kpiWarning}`}>
-            <div className={styles.kpiValue}>{pendingReviews}</div>
-            <div className={styles.kpiLabel}>Pending Reviews</div>
-          </div>
-          <div className={`${styles.kpiCard} ${styles.kpiDanger}`}>
-            <div className={styles.kpiValue}>{overdueAcks}</div>
-            <div className={styles.kpiLabel}>Overdue Acknowledgements</div>
-          </div>
-          <div className={`${styles.kpiCard} ${styles.kpiDanger}`}>
-            <div className={styles.kpiValue}>{criticalViolations}</div>
-            <div className={styles.kpiLabel}>Critical Violations</div>
-          </div>
-          <div className={styles.kpiCard}>
-            <div className={styles.kpiValue}>{avgResolutionDays}</div>
-            <div className={styles.kpiLabel}>Avg Resolution (Days)</div>
+            <div className={styles.kpiGrid}>
+              <div className={`${styles.kpiCard} ${styles.kpiPrimary}`}>
+                <div className={styles.kpiValue}>{overallCompliance}%</div>
+                <div className={styles.kpiLabel}>Overall Compliance</div>
+                <div className={styles.kpiTrend}>
+                  <Icon iconName="CaretSolidUp" className={styles.trendUp} />
+                  <span className={styles.trendUp}>+2.1% vs last month</span>
+                </div>
+              </div>
+              <div className={styles.kpiCard}>
+                <div className={styles.kpiValue}>{activePolicies}</div>
+                <div className={styles.kpiLabel}>Active Policies</div>
+              </div>
+              <div className={`${styles.kpiCard} ${styles.kpiWarning}`}>
+                <div className={styles.kpiValue}>{pendingReviews}</div>
+                <div className={styles.kpiLabel}>Pending Reviews</div>
+              </div>
+              <div className={`${styles.kpiCard} ${styles.kpiDanger}`}>
+                <div className={styles.kpiValue}>{overdueAcks}</div>
+                <div className={styles.kpiLabel}>Overdue Acknowledgements</div>
+              </div>
+              <div className={`${styles.kpiCard} ${styles.kpiDanger}`}>
+                <div className={styles.kpiValue}>{criticalViolations}</div>
+                <div className={styles.kpiLabel}>Critical Violations</div>
+              </div>
+              <div className={styles.kpiCard}>
+                <div className={styles.kpiValue}>{avgResolutionDays}</div>
+                <div className={styles.kpiLabel}>Avg Resolution (Days)</div>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Compliance Trend */}
-        <div className={styles.sectionHeader}>
-          <h3>Compliance Trend (12 Months)</h3>
-        </div>
-        <div className={styles.trendChart}>
-          <div className={styles.trendBars}>
-            {complianceTrend.map((pt, idx) => (
-              <div key={idx} className={styles.trendBarCol}>
-                <div className={styles.trendBarValue}>{pt.value}%</div>
-                <div className={styles.trendBar} style={{ height: `${(pt.value / 100) * 160}px` }} />
-                <div className={styles.trendBarLabel}>{pt.month}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Risk Indicators */}
-        <div className={styles.sectionHeader}>
-          <h3>Risk Indicators</h3>
-        </div>
-        <div className={styles.riskGrid}>
-          {riskIndicators.map((risk, idx) => (
-            <div key={idx} className={`${styles.riskCard} ${styles[`risk${risk.level.charAt(0).toUpperCase() + risk.level.slice(1)}`]}`}>
-              <div className={styles.riskHeader}>
-                <span className={styles.riskCategory}>{risk.category}</span>
-                <span className={`${styles.riskBadge} ${styles[`badge${risk.level.charAt(0).toUpperCase() + risk.level.slice(1)}`]}`}>
-                  {risk.level.toUpperCase()}
-                </span>
-              </div>
-              <div className={styles.riskScore}>
-                <div className={styles.riskScoreBar}>
-                  <div className={styles.riskScoreFill} style={{ width: `${risk.score}%` }} />
-                </div>
-                <span>{risk.score}/100</span>
-              </div>
-              <div className={styles.riskTrend}>
-                <Icon iconName={risk.trend === 'improving' ? 'CaretSolidDown' : risk.trend === 'worsening' ? 'CaretSolidUp' : 'Remove'} />
-                <span>{risk.trend.charAt(0).toUpperCase() + risk.trend.slice(1)}</span>
-              </div>
-              <div className={styles.riskMitigation}>{risk.mitigation}</div>
+        <div className={styles.section}>
+          <div className={`${styles.sectionInner} ${styles.sectionBgAlt}`}>
+            <div className={styles.sectionHeader}>
+              <h3>Compliance Trend <small>(12 Months)</small></h3>
             </div>
-          ))}
-        </div>
-
-        {/* Alerts & Deadlines — side by side */}
-        <div className={styles.twoColumnSection}>
-          <div className={styles.columnPanel}>
-            <div className={styles.sectionHeader}><h3>Executive Alerts</h3></div>
-            <div className={styles.alertList}>
-              {alerts.map((alert) => (
-                <div key={alert.id} className={`${styles.alertItem} ${styles[`alert${alert.type.charAt(0).toUpperCase() + alert.type.slice(1)}`]}`}>
-                  <Icon iconName={alert.type === 'critical' ? 'ErrorBadge' : alert.type === 'warning' ? 'Warning' : 'Info'} className={styles.alertIcon} />
-                  <div className={styles.alertContent}>
-                    <div className={styles.alertTitle}>{alert.title}</div>
-                    <div className={styles.alertMessage}>{alert.message}</div>
-                    <div className={styles.alertDate}>{alert.date}</div>
+            <div className={styles.trendChart}>
+              <div className={styles.trendBars}>
+                {complianceTrend.map((pt, idx) => (
+                  <div key={idx} className={styles.trendBarCol}>
+                    <div className={styles.trendBarValue}>{pt.value}%</div>
+                    <div className={styles.trendBar} style={{ height: `${(pt.value / 100) * 160}px` }} />
+                    <div className={styles.trendBarLabel}>{pt.month}</div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
-          <div className={styles.columnPanel}>
-            <div className={styles.sectionHeader}><h3>Upcoming Deadlines</h3></div>
-            <table className={styles.dataTable}>
-              <thead>
-                <tr>
-                  <th>Item</th>
-                  <th>Type</th>
-                  <th>Due Date</th>
-                  <th>Days Left</th>
-                  <th>Priority</th>
-                </tr>
-              </thead>
-              <tbody>
-                {deadlines.map((dl) => (
-                  <tr key={dl.id}>
-                    <td className={styles.cellTitle}>{dl.title}</td>
-                    <td>{dl.type.replace('_', ' ')}</td>
-                    <td>{dl.dueDate}</td>
-                    <td className={dl.daysRemaining <= 7 ? styles.cellDanger : ''}>{dl.daysRemaining}</td>
-                    <td><span className={`${styles.priorityBadge} ${styles[`priority${dl.priority.charAt(0).toUpperCase() + dl.priority.slice(1)}`]}`}>{dl.priority}</span></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        </div>
+
+        {/* Risk Indicators & Alerts */}
+        <div className={styles.section}>
+          <div className={`${styles.sectionInner} ${styles.sectionBgWhite}`}>
+            <div className={styles.twoColumnSection}>
+              <div className={styles.columnPanel}>
+                <div className={styles.sectionHeader}><h3>Risk Indicators</h3></div>
+                <div className={styles.riskGrid}>
+                  {riskIndicators.map((risk, idx) => (
+                    <div key={idx} className={`${styles.riskCard} ${styles[`risk${risk.level.charAt(0).toUpperCase() + risk.level.slice(1)}`]}`}>
+                      <div className={styles.riskHeader}>
+                        <span className={styles.riskCategory}>{risk.category}</span>
+                        <span className={`${styles.riskBadge} ${styles[`badge${risk.level.charAt(0).toUpperCase() + risk.level.slice(1)}`]}`}>
+                          {risk.level.toUpperCase()}
+                        </span>
+                      </div>
+                      <div className={styles.riskScore}>
+                        <div className={styles.riskScoreBar}>
+                          <div className={styles.riskScoreFill} style={{ width: `${risk.score}%` }} />
+                        </div>
+                        <span>{risk.score}/100</span>
+                      </div>
+                      <div className={styles.riskTrend}>
+                        <Icon iconName={risk.trend === 'improving' ? 'CaretSolidDown' : risk.trend === 'worsening' ? 'CaretSolidUp' : 'Remove'} />
+                        <span>{risk.trend.charAt(0).toUpperCase() + risk.trend.slice(1)}</span>
+                      </div>
+                      <div className={styles.riskMitigation}>{risk.mitigation}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className={styles.columnPanel}>
+                <div className={styles.sectionHeader}><h3>Alerts &amp; Upcoming Deadlines</h3></div>
+                <div className={styles.alertList}>
+                  {alerts.map((alert) => (
+                    <div key={alert.id} className={`${styles.alertItem} ${styles[`alert${alert.type.charAt(0).toUpperCase() + alert.type.slice(1)}`]}`}>
+                      <Icon iconName={alert.type === 'critical' ? 'ErrorBadge' : alert.type === 'warning' ? 'Warning' : 'Info'} className={styles.alertIcon} />
+                      <div className={styles.alertContent}>
+                        <div className={styles.alertTitle}>{alert.title}</div>
+                        <div className={styles.alertMessage}>{alert.message}</div>
+                        <div className={styles.alertDate}>{alert.date}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <table className={styles.dataTable} style={{ marginTop: 16 }}>
+                  <thead>
+                    <tr>
+                      <th>Item</th>
+                      <th>Due Date</th>
+                      <th>Days Left</th>
+                      <th>Priority</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {deadlines.map((dl) => (
+                      <tr key={dl.id}>
+                        <td className={styles.cellTitle}>{dl.title}</td>
+                        <td>{dl.dueDate}</td>
+                        <td className={dl.daysRemaining <= 7 ? styles.cellDanger : ''}>{dl.daysRemaining}</td>
+                        <td><span className={`${styles.priorityBadge} ${styles[`priority${dl.priority.charAt(0).toUpperCase() + dl.priority.slice(1)}`]}`}>{dl.priority}</span></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -560,82 +565,99 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
     return (
       <div className={styles.metricsTab}>
         {/* Policy by Status */}
-        <div className={styles.sectionHeader}><h3>Policies by Status</h3></div>
-        <div className={styles.statusRow}>
-          {policyByStatus.map((s, i) => (
-            <div key={i} className={styles.statusCard}>
-              <div className={styles.statusDot} style={{ background: s.color }} />
-              <div className={styles.statusInfo}>
-                <div className={styles.statusCount}>{s.count}</div>
-                <div className={styles.statusLabel}>{s.status}</div>
-              </div>
-              <div className={styles.statusPercent}>{((s.count / totalPolicies) * 100).toFixed(0)}%</div>
-            </div>
-          ))}
-        </div>
-        <div className={styles.statusBarContainer}>
-          {policyByStatus.map((s, i) => (
-            <div
-              key={i}
-              className={styles.statusBarSegment}
-              style={{ width: `${(s.count / totalPolicies) * 100}%`, background: s.color }}
-              title={`${s.status}: ${s.count}`}
-            />
-          ))}
-        </div>
-
-        {/* Policy by Category */}
-        <div className={styles.sectionHeader}><h3>Policies by Category</h3></div>
-        <div className={styles.categoryBars}>
-          {policyByCategory.map((cat, i) => {
-            const maxCount = policyByCategory[0].count;
-            return (
-              <div key={i} className={styles.categoryRow}>
-                <div className={styles.categoryName}>{cat.category}</div>
-                <div className={styles.categoryBarOuter}>
-                  <div className={styles.categoryBarInner} style={{ width: `${(cat.count / maxCount) * 100}%` }} />
-                </div>
-                <div className={styles.categoryCount}>{cat.count}</div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Two column: Most Viewed & Recently Published */}
-        <div className={styles.twoColumnSection}>
-          <div className={styles.columnPanel}>
-            <div className={styles.sectionHeader}><h3>Most Viewed Policies</h3></div>
-            <table className={styles.dataTable}>
-              <thead>
-                <tr><th>#</th><th>Policy</th><th>Category</th><th>Views</th></tr>
-              </thead>
-              <tbody>
-                {mostViewed.map((p, i) => (
-                  <tr key={i}>
-                    <td className={styles.cellRank}>{i + 1}</td>
-                    <td className={styles.cellTitle}>{p.title}</td>
-                    <td>{p.category}</td>
-                    <td className={styles.cellNumber}>{p.views.toLocaleString()}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className={styles.columnPanel}>
-            <div className={styles.sectionHeader}><h3>Recently Published</h3></div>
-            <div className={styles.timelineList}>
-              {recentlyPublished.map((p, i) => (
-                <div key={i} className={styles.timelineItem}>
-                  <div className={styles.timelineDot} />
-                  <div className={styles.timelineContent}>
-                    <div className={styles.timelineTitle}>{p.title}</div>
-                    <div className={styles.timelineMeta}>{p.date} by {p.author}</div>
+        <div className={styles.section}>
+          <div className={`${styles.sectionInner} ${styles.sectionBgWhite}`}>
+            <div className={styles.sectionHeader}><h3>Policy Status Breakdown</h3></div>
+            <div className={styles.statusRow}>
+              {policyByStatus.map((s, i) => (
+                <div key={i} className={styles.statusCard}>
+                  <div className={styles.statusDot} style={{ background: s.color }} />
+                  <div className={styles.statusInfo}>
+                    <div className={styles.statusCount}>{s.count}</div>
+                    <div className={styles.statusLabel}>{s.status}</div>
                   </div>
+                  <div className={styles.statusPercent}>{((s.count / totalPolicies) * 100).toFixed(0)}%</div>
                 </div>
               ))}
             </div>
+            <div className={styles.statusBarContainer}>
+              {policyByStatus.map((s, i) => (
+                <div
+                  key={i}
+                  className={styles.statusBarSegment}
+                  style={{ width: `${(s.count / totalPolicies) * 100}%`, background: s.color }}
+                  title={`${s.status}: ${s.count}`}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
 
-            <div className={styles.sectionHeader} style={{ marginTop: 24 }}><h3>Policy Aging</h3></div>
+        {/* Policy by Category */}
+        <div className={styles.section}>
+          <div className={`${styles.sectionInner} ${styles.sectionBgAlt}`}>
+            <div className={styles.sectionHeader}><h3>Policies by Category</h3></div>
+            <div className={styles.categoryBars}>
+              {policyByCategory.map((cat, i) => {
+                const maxCount = policyByCategory[0].count;
+                return (
+                  <div key={i} className={styles.categoryRow}>
+                    <div className={styles.categoryName}>{cat.category}</div>
+                    <div className={styles.categoryBarOuter}>
+                      <div className={styles.categoryBarInner} style={{ width: `${(cat.count / maxCount) * 100}%` }} />
+                    </div>
+                    <div className={styles.categoryCount}>{cat.count}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Most Viewed & Recently Published */}
+        <div className={styles.section}>
+          <div className={`${styles.sectionInner} ${styles.sectionBgWhite}`}>
+            <div className={styles.twoColumnSection}>
+              <div className={styles.columnPanel}>
+                <div className={styles.sectionHeader}><h3>Most Viewed Policies</h3></div>
+                <table className={styles.dataTable}>
+                  <thead>
+                    <tr><th>#</th><th>Policy</th><th>Category</th><th>Views</th></tr>
+                  </thead>
+                  <tbody>
+                    {mostViewed.map((p, i) => (
+                      <tr key={i}>
+                        <td className={styles.cellRank}>{i + 1}</td>
+                        <td className={styles.cellTitle}>{p.title}</td>
+                        <td>{p.category}</td>
+                        <td className={styles.cellNumber}>{p.views.toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className={styles.columnPanel}>
+                <div className={styles.sectionHeader}><h3>Recently Published</h3></div>
+                <div className={styles.timelineList}>
+                  {recentlyPublished.map((p, i) => (
+                    <div key={i} className={styles.timelineItem}>
+                      <div className={styles.timelineDot} />
+                      <div className={styles.timelineContent}>
+                        <div className={styles.timelineTitle}>{p.title}</div>
+                        <div className={styles.timelineMeta}>{p.date} by {p.author}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Policy Aging */}
+        <div className={styles.section}>
+          <div className={`${styles.sectionInner} ${styles.sectionBgAlt}`}>
+            <div className={styles.sectionHeader}><h3>Policy Aging</h3></div>
             <table className={styles.dataTable}>
               <thead>
                 <tr><th>Age Range</th><th>Count</th><th>Overdue</th></tr>
@@ -667,101 +689,117 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
     return (
       <div className={styles.ackTab}>
         {/* Big Rate Indicator */}
-        <div className={styles.ackHero}>
-          <div className={styles.ackRateCircle}>
-            <div className={styles.ackRateValue}>{overallAckRate}%</div>
-            <div className={styles.ackRateLabel}>Overall Acknowledgement Rate</div>
-          </div>
-          <div className={styles.ackTargetInfo}>
-            <div className={styles.ackTargetLine}>
-              <span>Target SLA:</span> <span>{ackTarget}%</span>
-            </div>
-            <div className={styles.ackTargetLine}>
-              <span>Gap to Target:</span>
-              <span className={styles.cellDanger}>{ackGap.toFixed(1)}%</span>
-            </div>
-            <div className={styles.ackTargetLine}>
-              <span>Status:</span>
-              <span className={`${styles.slaBadge} ${styles.slaAtRisk}`}>At Risk</span>
+        <div className={styles.section}>
+          <div className={`${styles.sectionInner} ${styles.sectionBgWhite}`}>
+            <div className={styles.ackHero}>
+              <div className={styles.ackRateCircle}>
+                <div className={styles.ackRateValue}>{overallAckRate}%</div>
+                <div className={styles.ackRateLabel}>Overall Acknowledgement Rate</div>
+              </div>
+              <div className={styles.ackTargetInfo}>
+                <div className={styles.ackTargetLine}>
+                  <span>Target SLA:</span> <span>{ackTarget}%</span>
+                </div>
+                <div className={styles.ackTargetLine}>
+                  <span>Gap to Target:</span>
+                  <span className={styles.cellDanger}>{ackGap.toFixed(1)}%</span>
+                </div>
+                <div className={styles.ackTargetLine}>
+                  <span>Status:</span>
+                  <span className={`${styles.slaBadge} ${styles.slaAtRisk}`}>At Risk</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Acknowledgement Funnel */}
-        <div className={styles.sectionHeader}><h3>Acknowledgement Funnel</h3></div>
-        <div className={styles.funnelContainer}>
-          {ackFunnel.map((stage, i) => (
-            <div key={i} className={styles.funnelStep}>
-              <div className={styles.funnelBar} style={{ width: `${stage.percent}%` }}>
-                <span className={styles.funnelLabel}>{stage.stage}</span>
-                <span className={styles.funnelValue}>{stage.count.toLocaleString()} ({stage.percent}%)</span>
-              </div>
+        <div className={styles.section}>
+          <div className={`${styles.sectionInner} ${styles.sectionBgAlt}`}>
+            <div className={styles.sectionHeader}><h3>Acknowledgement Funnel</h3></div>
+            <div className={styles.funnelContainer}>
+              {ackFunnel.map((stage, i) => (
+                <div key={i} className={styles.funnelStep}>
+                  <div className={styles.funnelBar} style={{ width: `${stage.percent}%` }}>
+                    <span className={styles.funnelLabel}>{stage.stage}</span>
+                    <span className={styles.funnelValue}>{stage.count.toLocaleString()} ({stage.percent}%)</span>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
 
         {/* Department Scorecard */}
-        <div className={styles.sectionHeader}><h3>Department Scorecard</h3></div>
-        <table className={styles.dataTable}>
-          <thead>
-            <tr>
-              <th>Department</th>
-              <th>Assigned</th>
-              <th>Acknowledged</th>
-              <th>Rate</th>
-              <th>SLA Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ackByDepartment.map((dept, i) => (
-              <tr key={i}>
-                <td className={styles.cellTitle}>{dept.department}</td>
-                <td className={styles.cellNumber}>{dept.assigned}</td>
-                <td className={styles.cellNumber}>{dept.acknowledged}</td>
-                <td className={styles.cellNumber}>
-                  <div className={styles.rateBar}>
-                    <div className={styles.rateBarFill} style={{ width: `${dept.rate}%`, background: dept.rate >= 95 ? '#10b981' : dept.rate >= 90 ? '#f59e0b' : '#ef4444' }} />
-                  </div>
-                  {dept.rate}%
-                </td>
-                <td>
-                  <span className={`${styles.slaBadge} ${styles[`sla${dept.slaStatus.replace(' ', '')}`]}`}>
-                    {dept.slaStatus}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className={styles.section}>
+          <div className={`${styles.sectionInner} ${styles.sectionBgWhite}`}>
+            <div className={styles.sectionHeader}><h3>Department Scorecard</h3></div>
+            <table className={styles.dataTable}>
+              <thead>
+                <tr>
+                  <th>Department</th>
+                  <th>Assigned</th>
+                  <th>Acknowledged</th>
+                  <th>Rate</th>
+                  <th>SLA Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ackByDepartment.map((dept, i) => (
+                  <tr key={i}>
+                    <td className={styles.cellTitle}>{dept.department}</td>
+                    <td className={styles.cellNumber}>{dept.assigned}</td>
+                    <td className={styles.cellNumber}>{dept.acknowledged}</td>
+                    <td className={styles.cellNumber}>
+                      <div className={styles.rateBar}>
+                        <div className={styles.rateBarFill} style={{ width: `${dept.rate}%`, background: dept.rate >= 95 ? '#10b981' : dept.rate >= 90 ? '#f59e0b' : '#ef4444' }} />
+                      </div>
+                      {dept.rate}%
+                    </td>
+                    <td>
+                      <span className={`${styles.slaBadge} ${styles[`sla${dept.slaStatus.replace(' ', '')}`]}`}>
+                        {dept.slaStatus}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
 
         {/* Overdue Acknowledgements */}
-        <div className={styles.sectionHeader}><h3>Overdue Acknowledgements</h3></div>
-        <table className={styles.dataTable}>
-          <thead>
-            <tr>
-              <th>User</th>
-              <th>Policy</th>
-              <th>Days Overdue</th>
-              <th>Department</th>
-              <th>Escalation</th>
-            </tr>
-          </thead>
-          <tbody>
-            {overdueAckList.map((item) => (
-              <tr key={item.id}>
-                <td className={styles.cellTitle}>{item.userName}</td>
-                <td>{item.policyTitle}</td>
-                <td className={styles.cellDanger}>{item.daysOverdue}</td>
-                <td>{item.department}</td>
-                <td>
-                  <span className={`${styles.escalationBadge} ${item.escalationStatus !== 'None' ? styles.escalationActive : ''}`}>
-                    {item.escalationStatus}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className={styles.section}>
+          <div className={`${styles.sectionInner} ${styles.sectionBgAlt}`}>
+            <div className={styles.sectionHeader}><h3>Overdue Acknowledgements</h3></div>
+            <table className={styles.dataTable}>
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Policy</th>
+                  <th>Days Overdue</th>
+                  <th>Department</th>
+                  <th>Escalation</th>
+                </tr>
+              </thead>
+              <tbody>
+                {overdueAckList.map((item) => (
+                  <tr key={item.id}>
+                    <td className={styles.cellTitle}>{item.userName}</td>
+                    <td>{item.policyTitle}</td>
+                    <td className={styles.cellDanger}>{item.daysOverdue}</td>
+                    <td>{item.department}</td>
+                    <td>
+                      <span className={`${styles.escalationBadge} ${item.escalationStatus !== 'None' ? styles.escalationActive : ''}`}>
+                        {item.escalationStatus}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     );
   }
@@ -776,88 +814,100 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
     return (
       <div className={styles.slaTab}>
         {/* SLA Summary Cards */}
-        <div className={styles.sectionHeader}><h3>SLA Performance Summary</h3></div>
-        <div className={styles.slaCardGrid}>
-          {slaMetrics.map((sla, i) => (
-            <div key={i} className={`${styles.slaCard} ${styles[`slaCard${sla.status.replace(' ', '')}`]}`}>
-              <div className={styles.slaCardHeader}>
-                <span className={styles.slaCardName}>{sla.name}</span>
-                <span className={`${styles.slaBadge} ${styles[`sla${sla.status.replace(' ', '')}`]}`}>{sla.status}</span>
-              </div>
-              <div className={styles.slaCardBody}>
-                <div className={styles.slaMetricRow}>
-                  <span>Target</span><span>{sla.targetDays} days</span>
+        <div className={styles.section}>
+          <div className={`${styles.sectionInner} ${styles.sectionBgWhite}`}>
+            <div className={styles.sectionHeader}><h3>SLA Summary</h3></div>
+            <div className={styles.slaCardGrid}>
+              {slaMetrics.map((sla, i) => (
+                <div key={i} className={`${styles.slaCard} ${styles[`slaCard${sla.status.replace(' ', '')}`]}`}>
+                  <div className={styles.slaCardHeader}>
+                    <span className={styles.slaCardName}>{sla.name}</span>
+                    <span className={`${styles.slaBadge} ${styles[`sla${sla.status.replace(' ', '')}`]}`}>{sla.status}</span>
+                  </div>
+                  <div className={styles.slaCardBody}>
+                    <div className={styles.slaMetricRow}>
+                      <span>Target</span><span>{sla.targetDays} days</span>
+                    </div>
+                    <div className={styles.slaMetricRow}>
+                      <span>Actual Avg</span><span>{sla.actualAvgDays} days</span>
+                    </div>
+                    <div className={styles.slaMetricRow}>
+                      <span>% Met</span>
+                      <span className={sla.percentMet >= 90 ? styles.textSuccess : sla.percentMet >= 80 ? styles.textWarning : styles.textDanger}>{sla.percentMet}%</span>
+                    </div>
+                  </div>
+                  <div className={styles.slaCardBar}>
+                    <div className={styles.slaCardBarFill} style={{ width: `${sla.percentMet}%`, background: sla.percentMet >= 90 ? '#10b981' : sla.percentMet >= 80 ? '#f59e0b' : '#ef4444' }} />
+                  </div>
                 </div>
-                <div className={styles.slaMetricRow}>
-                  <span>Actual Avg</span><span>{sla.actualAvgDays} days</span>
-                </div>
-                <div className={styles.slaMetricRow}>
-                  <span>% Met</span>
-                  <span className={sla.percentMet >= 90 ? styles.textSuccess : sla.percentMet >= 80 ? styles.textWarning : styles.textDanger}>{sla.percentMet}%</span>
-                </div>
-              </div>
-              <div className={styles.slaCardBar}>
-                <div className={styles.slaCardBarFill} style={{ width: `${sla.percentMet}%`, background: sla.percentMet >= 90 ? '#10b981' : sla.percentMet >= 80 ? '#f59e0b' : '#ef4444' }} />
-              </div>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
 
         {/* SLA Breach Log */}
-        <div className={styles.sectionHeader}><h3>SLA Breach Log</h3></div>
-        <table className={styles.dataTable}>
-          <thead>
-            <tr>
-              <th>Policy</th>
-              <th>Type</th>
-              <th>Target (Days)</th>
-              <th>Actual (Days)</th>
-              <th>Breached Date</th>
-              <th>Department</th>
-            </tr>
-          </thead>
-          <tbody>
-            {slaBreaches.map((breach) => (
-              <tr key={breach.id}>
-                <td className={styles.cellTitle}>{breach.policyTitle}</td>
-                <td>{breach.type}</td>
-                <td className={styles.cellNumber}>{breach.targetDays}</td>
-                <td className={styles.cellDanger}>{breach.actualDays}</td>
-                <td>{breach.breachedDate}</td>
-                <td>{breach.department}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className={styles.section}>
+          <div className={`${styles.sectionInner} ${styles.sectionBgAlt}`}>
+            <div className={styles.sectionHeader}><h3>SLA Breach Log</h3></div>
+            <table className={styles.dataTable}>
+              <thead>
+                <tr>
+                  <th>Policy</th>
+                  <th>Type</th>
+                  <th>Target (Days)</th>
+                  <th>Actual (Days)</th>
+                  <th>Breached Date</th>
+                  <th>Department</th>
+                </tr>
+              </thead>
+              <tbody>
+                {slaBreaches.map((breach) => (
+                  <tr key={breach.id}>
+                    <td className={styles.cellTitle}>{breach.policyTitle}</td>
+                    <td>{breach.type}</td>
+                    <td className={styles.cellNumber}>{breach.targetDays}</td>
+                    <td className={styles.cellDanger}>{breach.actualDays}</td>
+                    <td>{breach.breachedDate}</td>
+                    <td>{breach.department}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
 
         {/* Department SLA Comparison */}
-        <div className={styles.sectionHeader}><h3>Department SLA Comparison</h3></div>
-        <table className={styles.dataTable}>
-          <thead>
-            <tr>
-              <th>Department</th>
-              <th>Review SLA %</th>
-              <th>Acknowledgement SLA %</th>
-              <th>Approval SLA %</th>
-            </tr>
-          </thead>
-          <tbody>
-            {slaDeptComparison.map((dept, i) => (
-              <tr key={i}>
-                <td className={styles.cellTitle}>{dept.department}</td>
-                <td className={styles.cellNumber}>
-                  <span className={dept.reviewSla >= 90 ? styles.textSuccess : dept.reviewSla >= 80 ? styles.textWarning : styles.textDanger}>{dept.reviewSla}%</span>
-                </td>
-                <td className={styles.cellNumber}>
-                  <span className={dept.ackSla >= 90 ? styles.textSuccess : dept.ackSla >= 80 ? styles.textWarning : styles.textDanger}>{dept.ackSla}%</span>
-                </td>
-                <td className={styles.cellNumber}>
-                  <span className={dept.approvalSla >= 90 ? styles.textSuccess : dept.approvalSla >= 80 ? styles.textWarning : styles.textDanger}>{dept.approvalSla}%</span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className={styles.section}>
+          <div className={`${styles.sectionInner} ${styles.sectionBgWhite}`}>
+            <div className={styles.sectionHeader}><h3>Department SLA Comparison</h3></div>
+            <table className={styles.dataTable}>
+              <thead>
+                <tr>
+                  <th>Department</th>
+                  <th>Review SLA %</th>
+                  <th>Acknowledgement SLA %</th>
+                  <th>Approval SLA %</th>
+                </tr>
+              </thead>
+              <tbody>
+                {slaDeptComparison.map((dept, i) => (
+                  <tr key={i}>
+                    <td className={styles.cellTitle}>{dept.department}</td>
+                    <td className={styles.cellNumber}>
+                      <span className={dept.reviewSla >= 90 ? styles.textSuccess : dept.reviewSla >= 80 ? styles.textWarning : styles.textDanger}>{dept.reviewSla}%</span>
+                    </td>
+                    <td className={styles.cellNumber}>
+                      <span className={dept.ackSla >= 90 ? styles.textSuccess : dept.ackSla >= 80 ? styles.textWarning : styles.textDanger}>{dept.ackSla}%</span>
+                    </td>
+                    <td className={styles.cellNumber}>
+                      <span className={dept.approvalSla >= 90 ? styles.textSuccess : dept.approvalSla >= 80 ? styles.textWarning : styles.textDanger}>{dept.approvalSla}%</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     );
   }
@@ -882,100 +932,112 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
     return (
       <div className={styles.complianceTab}>
         {/* Compliance Heatmap */}
-        <div className={styles.sectionHeader}><h3>Compliance Heatmap — Departments vs Policy Categories</h3></div>
-        <div className={styles.heatmapContainer}>
-          <table className={styles.heatmapTable}>
-            <thead>
-              <tr>
-                <th>Department</th>
-                {categories.map((c) => <th key={c}>{c}</th>)}
-              </tr>
-            </thead>
-            <tbody>
-              {heatmapData.map((row, i) => (
-                <tr key={i}>
-                  <td className={styles.cellTitle}>{row.department}</td>
-                  <td style={{ background: getHeatColor(row.hr), color: '#fff', textAlign: 'center', fontWeight: 400 }}>{row.hr}%</td>
-                  <td style={{ background: getHeatColor(row.it), color: '#fff', textAlign: 'center', fontWeight: 400 }}>{row.it}%</td>
-                  <td style={{ background: getHeatColor(row.compliance), color: '#fff', textAlign: 'center', fontWeight: 400 }}>{row.compliance}%</td>
-                  <td style={{ background: getHeatColor(row.safety), color: '#fff', textAlign: 'center', fontWeight: 400 }}>{row.safety}%</td>
-                  <td style={{ background: getHeatColor(row.finance), color: '#fff', textAlign: 'center', fontWeight: 400 }}>{row.finance}%</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <div className={styles.heatmapLegend}>
-            <span className={styles.legendLabel}>Legend:</span>
-            <span className={styles.legendItem}><span style={{ background: '#ef4444' }} className={styles.legendDot} /> &lt;75%</span>
-            <span className={styles.legendItem}><span style={{ background: '#f97316' }} className={styles.legendDot} /> 75–79%</span>
-            <span className={styles.legendItem}><span style={{ background: '#f59e0b' }} className={styles.legendDot} /> 80–84%</span>
-            <span className={styles.legendItem}><span style={{ background: '#34d399' }} className={styles.legendDot} /> 85–89%</span>
-            <span className={styles.legendItem}><span style={{ background: '#10b981' }} className={styles.legendDot} /> 90–94%</span>
-            <span className={styles.legendItem}><span style={{ background: '#059669' }} className={styles.legendDot} /> 95%+</span>
+        <div className={styles.section}>
+          <div className={`${styles.sectionInner} ${styles.sectionBgWhite}`}>
+            <div className={styles.sectionHeader}><h3>Compliance Heatmap <small>Departments vs Categories</small></h3></div>
+            <div className={styles.heatmapContainer}>
+              <table className={styles.heatmapTable}>
+                <thead>
+                  <tr>
+                    <th>Department</th>
+                    {categories.map((c) => <th key={c}>{c}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {heatmapData.map((row, i) => (
+                    <tr key={i}>
+                      <td className={styles.cellTitle}>{row.department}</td>
+                      <td style={{ background: getHeatColor(row.hr), color: '#fff', textAlign: 'center', fontWeight: 400 }}>{row.hr}%</td>
+                      <td style={{ background: getHeatColor(row.it), color: '#fff', textAlign: 'center', fontWeight: 400 }}>{row.it}%</td>
+                      <td style={{ background: getHeatColor(row.compliance), color: '#fff', textAlign: 'center', fontWeight: 400 }}>{row.compliance}%</td>
+                      <td style={{ background: getHeatColor(row.safety), color: '#fff', textAlign: 'center', fontWeight: 400 }}>{row.safety}%</td>
+                      <td style={{ background: getHeatColor(row.finance), color: '#fff', textAlign: 'center', fontWeight: 400 }}>{row.finance}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div className={styles.heatmapLegend}>
+                <span className={styles.legendLabel}>Legend:</span>
+                <span className={styles.legendItem}><span style={{ background: '#ef4444' }} className={styles.legendDot} /> &lt;75%</span>
+                <span className={styles.legendItem}><span style={{ background: '#f97316' }} className={styles.legendDot} /> 75–79%</span>
+                <span className={styles.legendItem}><span style={{ background: '#f59e0b' }} className={styles.legendDot} /> 80–84%</span>
+                <span className={styles.legendItem}><span style={{ background: '#34d399' }} className={styles.legendDot} /> 85–89%</span>
+                <span className={styles.legendItem}><span style={{ background: '#10b981' }} className={styles.legendDot} /> 90–94%</span>
+                <span className={styles.legendItem}><span style={{ background: '#059669' }} className={styles.legendDot} /> 95%+</span>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Risk Cards */}
-        <div className={styles.sectionHeader}><h3>Risk Assessment</h3></div>
-        <div className={styles.riskGrid}>
-          {riskCards.map((risk, i) => (
-            <div key={i} className={`${styles.riskCard} ${styles[`risk${risk.level.charAt(0).toUpperCase() + risk.level.slice(1)}`]}`}>
-              <div className={styles.riskHeader}>
-                <span className={styles.riskCategory}>{risk.category}</span>
-                <span className={`${styles.riskBadge} ${styles[`badge${risk.level.charAt(0).toUpperCase() + risk.level.slice(1)}`]}`}>
-                  {risk.level.toUpperCase()}
-                </span>
-              </div>
-              <div className={styles.riskScore}>
-                <div className={styles.riskScoreBar}>
-                  <div className={styles.riskScoreFill} style={{ width: `${risk.score}%` }} />
+        <div className={styles.section}>
+          <div className={`${styles.sectionInner} ${styles.sectionBgAlt}`}>
+            <div className={styles.sectionHeader}><h3>Risk Assessment</h3></div>
+            <div className={styles.riskGrid}>
+              {riskCards.map((risk, i) => (
+                <div key={i} className={`${styles.riskCard} ${styles[`risk${risk.level.charAt(0).toUpperCase() + risk.level.slice(1)}`]}`}>
+                  <div className={styles.riskHeader}>
+                    <span className={styles.riskCategory}>{risk.category}</span>
+                    <span className={`${styles.riskBadge} ${styles[`badge${risk.level.charAt(0).toUpperCase() + risk.level.slice(1)}`]}`}>
+                      {risk.level.toUpperCase()}
+                    </span>
+                  </div>
+                  <div className={styles.riskScore}>
+                    <div className={styles.riskScoreBar}>
+                      <div className={styles.riskScoreFill} style={{ width: `${risk.score}%` }} />
+                    </div>
+                    <span>{risk.score}/100</span>
+                  </div>
+                  <div className={styles.riskFactors}>
+                    {risk.factors.map((f, fi) => (
+                      <div key={fi} className={styles.riskFactor}><Icon iconName="StatusCircleInner" style={{ fontSize: 6, marginRight: 6 }} />{f}</div>
+                    ))}
+                  </div>
+                  <div className={styles.riskMitigation}>
+                    <span>Mitigation:</span> {risk.mitigation}
+                  </div>
                 </div>
-                <span>{risk.score}/100</span>
-              </div>
-              <div className={styles.riskFactors}>
-                {risk.factors.map((f, fi) => (
-                  <div key={fi} className={styles.riskFactor}><Icon iconName="StatusCircleInner" style={{ fontSize: 6, marginRight: 6 }} />{f}</div>
-                ))}
-              </div>
-              <div className={styles.riskMitigation}>
-                <span>Mitigation:</span> {risk.mitigation}
-              </div>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
 
         {/* Violation Log */}
-        <div className={styles.sectionHeader}><h3>Violation Log</h3></div>
-        <table className={styles.dataTable}>
-          <thead>
-            <tr>
-              <th>Severity</th>
-              <th>Policy</th>
-              <th>Department</th>
-              <th>Status</th>
-              <th>Detected</th>
-            </tr>
-          </thead>
-          <tbody>
-            {violations.map((v) => (
-              <tr key={v.id}>
-                <td>
-                  <span className={`${styles.severityBadge} ${styles[`severity${v.severity}`]}`}>
-                    {v.severity}
-                  </span>
-                </td>
-                <td className={styles.cellTitle}>{v.policyTitle}</td>
-                <td>{v.department}</td>
-                <td>
-                  <span className={`${styles.statusBadge} ${styles[`status${v.status.replace(' ', '')}`]}`}>
-                    {v.status}
-                  </span>
-                </td>
-                <td>{v.detectedDate}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className={styles.section}>
+          <div className={`${styles.sectionInner} ${styles.sectionBgWhite}`}>
+            <div className={styles.sectionHeader}><h3>Violation Log</h3></div>
+            <table className={styles.dataTable}>
+              <thead>
+                <tr>
+                  <th>Severity</th>
+                  <th>Policy</th>
+                  <th>Department</th>
+                  <th>Status</th>
+                  <th>Detected</th>
+                </tr>
+              </thead>
+              <tbody>
+                {violations.map((v) => (
+                  <tr key={v.id}>
+                    <td>
+                      <span className={`${styles.severityBadge} ${styles[`severity${v.severity}`]}`}>
+                        {v.severity}
+                      </span>
+                    </td>
+                    <td className={styles.cellTitle}>{v.policyTitle}</td>
+                    <td>{v.department}</td>
+                    <td>
+                      <span className={`${styles.statusBadge} ${styles[`status${v.status.replace(' ', '')}`]}`}>
+                        {v.status}
+                      </span>
+                    </td>
+                    <td>{v.detectedDate}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     );
   }
@@ -994,91 +1056,107 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
     return (
       <div className={styles.auditTab}>
         {/* Audit Trail */}
-        <div className={styles.sectionHeader}>
-          <h3>Audit Trail</h3>
-          <div className={styles.auditFilters}>
-            {['all', 'policy', 'user', 'system', 'compliance', 'access'].map((cat) => (
-              <button
-                key={cat}
-                className={`${styles.filterBtn} ${auditFilter === cat ? styles.filterBtnActive : ''}`}
-                onClick={() => this.setState({ auditFilter: cat })}
-              >
-                {cat.charAt(0).toUpperCase() + cat.slice(1)}
-              </button>
-            ))}
+        <div className={styles.section}>
+          <div className={`${styles.sectionInner} ${styles.sectionBgWhite}`}>
+            <div className={styles.sectionHeader}>
+              <h3>Audit Trail</h3>
+              <div className={styles.auditFilters}>
+                {['all', 'policy', 'user', 'system', 'compliance', 'access'].map((cat) => (
+                  <button
+                    key={cat}
+                    className={`${styles.filterBtn} ${auditFilter === cat ? styles.filterBtnActive : ''}`}
+                    onClick={() => this.setState({ auditFilter: cat })}
+                  >
+                    {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <table className={styles.dataTable}>
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>User</th>
+                  <th>Action</th>
+                  <th>Category</th>
+                  <th>Resource</th>
+                  <th>Department</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredEntries.map((entry) => (
+                  <tr key={entry.id}>
+                    <td className={styles.cellMono}>{entry.timestamp}</td>
+                    <td className={styles.cellTitle}>{entry.userName}</td>
+                    <td>{entry.action}</td>
+                    <td>
+                      <span className={`${styles.categoryBadge} ${styles[`cat${entry.category.charAt(0).toUpperCase() + entry.category.slice(1)}`]}`}>
+                        {entry.category}
+                      </span>
+                    </td>
+                    <td>{entry.resourceTitle}</td>
+                    <td>{entry.department}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
-        <table className={styles.dataTable}>
-          <thead>
-            <tr>
-              <th>Timestamp</th>
-              <th>User</th>
-              <th>Action</th>
-              <th>Category</th>
-              <th>Resource</th>
-              <th>Department</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredEntries.map((entry) => (
-              <tr key={entry.id}>
-                <td className={styles.cellMono}>{entry.timestamp}</td>
-                <td className={styles.cellTitle}>{entry.userName}</td>
-                <td>{entry.action}</td>
-                <td>
-                  <span className={`${styles.categoryBadge} ${styles[`cat${entry.category.charAt(0).toUpperCase() + entry.category.slice(1)}`]}`}>
-                    {entry.category}
-                  </span>
-                </td>
-                <td>{entry.resourceTitle}</td>
-                <td>{entry.department}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
 
-        {/* Quick Report Buttons */}
-        <div className={styles.sectionHeader}><h3>Generate Reports</h3></div>
-        <div className={styles.reportButtons}>
-          <PrimaryButton iconProps={{ iconName: 'ReportDocument' }} text="Compliance Report" onClick={() => alert('Generating Compliance Report...')} />
-          <DefaultButton iconProps={{ iconName: 'DownloadDocument' }} text="Export Audit Log" onClick={() => alert('Exporting Audit Log...')} />
-          <DefaultButton iconProps={{ iconName: 'People' }} text="Department Report" onClick={() => alert('Generating Department Report...')} />
-          <DefaultButton iconProps={{ iconName: 'BarChartVertical' }} text="Trend Analysis" onClick={() => alert('Generating Trend Analysis...')} />
+        {/* Generate Reports */}
+        <div className={styles.section}>
+          <div className={`${styles.sectionInner} ${styles.sectionBgAlt}`}>
+            <div className={styles.sectionHeader}><h3>Generate Reports</h3></div>
+            <div className={styles.reportButtons}>
+              <PrimaryButton iconProps={{ iconName: 'ReportDocument' }} text="Compliance Report" onClick={() => alert('Generating Compliance Report...')} />
+              <DefaultButton iconProps={{ iconName: 'DownloadDocument' }} text="Export Audit Log" onClick={() => alert('Exporting Audit Log...')} />
+              <DefaultButton iconProps={{ iconName: 'People' }} text="Department Report" onClick={() => alert('Generating Department Report...')} />
+              <DefaultButton iconProps={{ iconName: 'BarChartVertical' }} text="Trend Analysis" onClick={() => alert('Generating Trend Analysis...')} />
+            </div>
+          </div>
         </div>
 
         {/* Scheduled Reports */}
-        <div className={styles.sectionHeader}><h3>Scheduled Reports</h3></div>
-        <table className={styles.dataTable}>
-          <thead>
-            <tr>
-              <th>Report Name</th>
-              <th>Type</th>
-              <th>Schedule</th>
-              <th>Last Run</th>
-              <th>Next Run</th>
-              <th>Format</th>
-            </tr>
-          </thead>
-          <tbody>
-            {scheduledReports.map((rpt) => (
-              <tr key={rpt.id}>
-                <td className={styles.cellTitle}>{rpt.title}</td>
-                <td>{rpt.type}</td>
-                <td>{rpt.schedule}</td>
-                <td>{rpt.lastRun}</td>
-                <td>{rpt.nextRun}</td>
-                <td><span className={styles.formatBadge}>{rpt.format}</span></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className={styles.section}>
+          <div className={`${styles.sectionInner} ${styles.sectionBgWhite}`}>
+            <div className={styles.sectionHeader}><h3>Scheduled Reports</h3></div>
+            <table className={styles.dataTable}>
+              <thead>
+                <tr>
+                  <th>Report Name</th>
+                  <th>Type</th>
+                  <th>Schedule</th>
+                  <th>Last Run</th>
+                  <th>Next Run</th>
+                  <th>Format</th>
+                </tr>
+              </thead>
+              <tbody>
+                {scheduledReports.map((rpt) => (
+                  <tr key={rpt.id}>
+                    <td className={styles.cellTitle}>{rpt.title}</td>
+                    <td>{rpt.type}</td>
+                    <td>{rpt.schedule}</td>
+                    <td>{rpt.lastRun}</td>
+                    <td>{rpt.nextRun}</td>
+                    <td><span className={styles.formatBadge}>{rpt.format}</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
 
         {/* Export Options */}
-        <div className={styles.sectionHeader}><h3>Export Options</h3></div>
-        <div className={styles.exportRow}>
-          <DefaultButton iconProps={{ iconName: 'ExcelDocument' }} text="Export to Excel" onClick={() => alert('Exporting to Excel...')} />
-          <DefaultButton iconProps={{ iconName: 'PDF' }} text="Export to PDF" onClick={() => alert('Exporting to PDF...')} />
-          <DefaultButton iconProps={{ iconName: 'TextDocument' }} text="Export to CSV" onClick={() => alert('Exporting to CSV...')} />
+        <div className={styles.section}>
+          <div className={`${styles.sectionInner} ${styles.sectionBgAlt}`}>
+            <div className={styles.sectionHeader}><h3>Export Options</h3></div>
+            <div className={styles.exportRow}>
+              <DefaultButton iconProps={{ iconName: 'ExcelDocument' }} text="Export to Excel" onClick={() => alert('Exporting to Excel...')} />
+              <DefaultButton iconProps={{ iconName: 'PDF' }} text="Export to PDF" onClick={() => alert('Exporting to PDF...')} />
+              <DefaultButton iconProps={{ iconName: 'TextDocument' }} text="Export to CSV" onClick={() => alert('Exporting to CSV...')} />
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -1104,145 +1182,93 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
     };
 
     return (
-      <div className={styles.executiveTab}>
+      <div className={styles.quizTab}>
         {/* Overview KPIs */}
-        <div className={styles.sectionHeader}><h3>Quiz Overview</h3></div>
-        <div className={styles.kpiGrid}>
-          <div className={`${styles.kpiCard} ${styles.kpiPrimary}`}>
-            <div className={styles.kpiValue}>{quizOverview.totalQuizzes}</div>
-            <div className={styles.kpiLabel}>Total Quizzes</div>
-          </div>
-          <div className={styles.kpiCard}>
-            <div className={styles.kpiValue}>{quizOverview.activeQuizzes}</div>
-            <div className={styles.kpiLabel}>Active Quizzes</div>
-          </div>
-          <div className={styles.kpiCard}>
-            <div className={styles.kpiValue}>{quizOverview.totalAttempts.toLocaleString()}</div>
-            <div className={styles.kpiLabel}>Total Attempts</div>
-          </div>
-          <div className={styles.kpiCard}>
-            <div className={styles.kpiValue}>{quizOverview.avgScore}%</div>
-            <div className={styles.kpiLabel}>Avg Score</div>
-          </div>
-          <div className={styles.kpiCard}>
-            <div className={styles.kpiValue}>{quizOverview.passRate}%</div>
-            <div className={styles.kpiLabel}>Pass Rate</div>
-          </div>
-          <div className={styles.kpiCard}>
-            <div className={styles.kpiValue}>{quizOverview.avgCompletionTime}</div>
-            <div className={styles.kpiLabel}>Avg Completion Time</div>
+        <div className={styles.section}>
+          <div className={`${styles.sectionInner} ${styles.sectionBgWhite}`}>
+            <div className={styles.sectionHeader}><h3>Quiz Overview</h3></div>
+            <div className={styles.kpiGrid}>
+              <div className={`${styles.kpiCard} ${styles.kpiPrimary}`}>
+                <div className={styles.kpiValue}>{quizOverview.totalQuizzes}</div>
+                <div className={styles.kpiLabel}>Total Quizzes</div>
+              </div>
+              <div className={styles.kpiCard}>
+                <div className={styles.kpiValue}>{quizOverview.activeQuizzes}</div>
+                <div className={styles.kpiLabel}>Active Quizzes</div>
+              </div>
+              <div className={styles.kpiCard}>
+                <div className={styles.kpiValue}>{quizOverview.totalAttempts.toLocaleString()}</div>
+                <div className={styles.kpiLabel}>Total Attempts</div>
+              </div>
+              <div className={styles.kpiCard}>
+                <div className={styles.kpiValue}>{quizOverview.avgScore}%</div>
+                <div className={styles.kpiLabel}>Avg Score</div>
+              </div>
+              <div className={styles.kpiCard}>
+                <div className={styles.kpiValue}>{quizOverview.passRate}%</div>
+                <div className={styles.kpiLabel}>Pass Rate</div>
+              </div>
+              <div className={styles.kpiCard}>
+                <div className={styles.kpiValue}>{quizOverview.avgCompletionTime}</div>
+                <div className={styles.kpiLabel}>Avg Completion Time</div>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Quiz Attempts Trend */}
-        <div className={styles.sectionHeader}><h3>Quiz Attempts Trend (12 Months)</h3></div>
-        <div className={styles.trendChart}>
-          <div className={styles.trendBars}>
-            {quizTrend.map((t, i) => (
-              <div key={i} className={styles.trendBarCol}>
-                <div className={styles.trendBarValue}>{t.attempts}</div>
-                <div className={styles.trendBar} style={{ height: `${(t.attempts / maxAttempts) * 160}px` }} />
-                <div className={styles.trendBarLabel}>{t.month}</div>
+        <div className={styles.section}>
+          <div className={`${styles.sectionInner} ${styles.sectionBgAlt}`}>
+            <div className={styles.sectionHeader}><h3>Quiz Attempts Trend <small>(12 Months)</small></h3></div>
+            <div className={styles.trendChart}>
+              <div className={styles.trendBars}>
+                {quizTrend.map((t, i) => (
+                  <div key={i} className={styles.trendBarCol}>
+                    <div className={styles.trendBarValue}>{t.attempts}</div>
+                    <div className={styles.trendBar} style={{ height: `${(t.attempts / maxAttempts) * 160}px` }} />
+                    <div className={styles.trendBarLabel}>{t.month}</div>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
           </div>
         </div>
 
         {/* Quiz Performance Table */}
-        <div className={styles.sectionHeader}><h3>Quiz Performance</h3></div>
-        <table className={styles.dataTable}>
-          <thead>
-            <tr>
-              <th>Quiz</th>
-              <th>Attempts</th>
-              <th>Avg Score</th>
-              <th>Pass Rate</th>
-              <th>Avg Time</th>
-              <th>Difficulty</th>
-            </tr>
-          </thead>
-          <tbody>
-            {quizPerformance.map((quiz, i) => (
-              <tr key={i}>
-                <td className={styles.cellTitle}>{quiz.title}</td>
-                <td className={styles.cellNumber}>{quiz.attempts}</td>
-                <td>
-                  <span className={styles.rateBar}>
-                    <span className={styles.rateBarFill} style={{ width: `${quiz.avgScore}%`, background: quiz.avgScore >= 80 ? '#10b981' : quiz.avgScore >= 60 ? '#f59e0b' : '#ef4444' }} />
-                  </span>
-                  {quiz.avgScore}%
-                </td>
-                <td className={quiz.passRate >= 85 ? styles.textSuccess : quiz.passRate >= 75 ? styles.textWarning : styles.textDanger}>
-                  {quiz.passRate}%
-                </td>
-                <td>{quiz.avgTime}</td>
-                <td>
-                  <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 4, backgroundColor: `${difficultyColor(quiz.difficulty)}15`, color: difficultyColor(quiz.difficulty) }}>
-                    {quiz.difficulty}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {/* Two Column: Department Performance + Top Performers */}
-        <div className={styles.twoColumnSection}>
-          <div className={styles.columnPanel}>
-            <div className={styles.sectionHeader}><h3>Performance by Department</h3></div>
+        <div className={styles.section}>
+          <div className={`${styles.sectionInner} ${styles.sectionBgWhite}`}>
+            <div className={styles.sectionHeader}><h3>Quiz Performance</h3></div>
             <table className={styles.dataTable}>
               <thead>
                 <tr>
-                  <th>Department</th>
+                  <th>Quiz</th>
                   <th>Attempts</th>
                   <th>Avg Score</th>
                   <th>Pass Rate</th>
-                  <th>Completion</th>
+                  <th>Avg Time</th>
+                  <th>Difficulty</th>
                 </tr>
               </thead>
               <tbody>
-                {quizByDepartment.map((dept, i) => (
+                {quizPerformance.map((quiz, i) => (
                   <tr key={i}>
-                    <td className={styles.cellTitle}>{dept.department}</td>
-                    <td className={styles.cellNumber}>{dept.attempts}</td>
-                    <td>{dept.avgScore}%</td>
-                    <td className={dept.passRate >= 85 ? styles.textSuccess : dept.passRate >= 75 ? styles.textWarning : styles.textDanger}>
-                      {dept.passRate}%
-                    </td>
+                    <td className={styles.cellTitle}>{quiz.title}</td>
+                    <td className={styles.cellNumber}>{quiz.attempts}</td>
                     <td>
                       <span className={styles.rateBar}>
-                        <span className={styles.rateBarFill} style={{ width: `${dept.completionRate}%`, background: '#0d9488' }} />
+                        <span className={styles.rateBarFill} style={{ width: `${quiz.avgScore}%`, background: quiz.avgScore >= 80 ? '#10b981' : quiz.avgScore >= 60 ? '#f59e0b' : '#ef4444' }} />
                       </span>
-                      {dept.completionRate}%
+                      {quiz.avgScore}%
                     </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className={styles.columnPanel}>
-            <div className={styles.sectionHeader}><h3>Top Performers</h3></div>
-            <table className={styles.dataTable}>
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Name</th>
-                  <th>Dept</th>
-                  <th>Quizzes</th>
-                  <th>Avg Score</th>
-                  <th>Perfect</th>
-                </tr>
-              </thead>
-              <tbody>
-                {quizTopPerformers.map((p, i) => (
-                  <tr key={i}>
-                    <td className={styles.cellRank}>{i + 1}</td>
-                    <td className={styles.cellTitle}>{p.name}</td>
-                    <td>{p.department}</td>
-                    <td className={styles.cellNumber}>{p.quizzesCompleted}</td>
-                    <td className={styles.textSuccess}>{p.avgScore}%</td>
-                    <td className={styles.cellNumber}>{p.perfectScores}</td>
+                    <td className={quiz.passRate >= 85 ? styles.textSuccess : quiz.passRate >= 75 ? styles.textWarning : styles.textDanger}>
+                      {quiz.passRate}%
+                    </td>
+                    <td>{quiz.avgTime}</td>
+                    <td>
+                      <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 4, backgroundColor: `${difficultyColor(quiz.difficulty)}15`, color: difficultyColor(quiz.difficulty) }}>
+                        {quiz.difficulty}
+                      </span>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -1250,39 +1276,111 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
           </div>
         </div>
 
-        {/* Hardest Questions */}
-        <div className={styles.sectionHeader}><h3>Question Difficulty Analysis</h3></div>
-        <table className={styles.dataTable}>
-          <thead>
-            <tr>
-              <th>Question</th>
-              <th>Quiz</th>
-              <th>Correct Rate</th>
-              <th>Avg Time</th>
-              <th>Difficulty</th>
-            </tr>
-          </thead>
-          <tbody>
-            {quizQuestionStats.map((q, i) => (
-              <tr key={i}>
-                <td className={styles.cellTitle}>{q.question}</td>
-                <td>{q.quizTitle}</td>
-                <td>
-                  <span className={styles.rateBar}>
-                    <span className={styles.rateBarFill} style={{ width: `${q.correctRate}%`, background: q.correctRate >= 80 ? '#10b981' : q.correctRate >= 60 ? '#f59e0b' : '#ef4444' }} />
-                  </span>
-                  {q.correctRate}%
-                </td>
-                <td>{q.avgTime}</td>
-                <td>
-                  <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 4, backgroundColor: `${difficultyColor(q.difficulty)}15`, color: difficultyColor(q.difficulty) }}>
-                    {q.difficulty}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        {/* Department Performance + Top Performers */}
+        <div className={styles.section}>
+          <div className={`${styles.sectionInner} ${styles.sectionBgAlt}`}>
+            <div className={styles.twoColumnSection}>
+              <div className={styles.columnPanel}>
+                <div className={styles.sectionHeader}><h3>Performance by Department</h3></div>
+                <table className={styles.dataTable}>
+                  <thead>
+                    <tr>
+                      <th>Department</th>
+                      <th>Attempts</th>
+                      <th>Avg Score</th>
+                      <th>Pass Rate</th>
+                      <th>Completion</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {quizByDepartment.map((dept, i) => (
+                      <tr key={i}>
+                        <td className={styles.cellTitle}>{dept.department}</td>
+                        <td className={styles.cellNumber}>{dept.attempts}</td>
+                        <td>{dept.avgScore}%</td>
+                        <td className={dept.passRate >= 85 ? styles.textSuccess : dept.passRate >= 75 ? styles.textWarning : styles.textDanger}>
+                          {dept.passRate}%
+                        </td>
+                        <td>
+                          <span className={styles.rateBar}>
+                            <span className={styles.rateBarFill} style={{ width: `${dept.completionRate}%`, background: '#0d9488' }} />
+                          </span>
+                          {dept.completionRate}%
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className={styles.columnPanel}>
+                <div className={styles.sectionHeader}><h3>Top Performers</h3></div>
+                <table className={styles.dataTable}>
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Name</th>
+                      <th>Dept</th>
+                      <th>Quizzes</th>
+                      <th>Avg Score</th>
+                      <th>Perfect</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {quizTopPerformers.map((p, i) => (
+                      <tr key={i}>
+                        <td className={styles.cellRank}>{i + 1}</td>
+                        <td className={styles.cellTitle}>{p.name}</td>
+                        <td>{p.department}</td>
+                        <td className={styles.cellNumber}>{p.quizzesCompleted}</td>
+                        <td className={styles.textSuccess}>{p.avgScore}%</td>
+                        <td className={styles.cellNumber}>{p.perfectScores}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Question Difficulty Analysis */}
+        <div className={styles.section}>
+          <div className={`${styles.sectionInner} ${styles.sectionBgWhite}`}>
+            <div className={styles.sectionHeader}><h3>Question Difficulty Analysis</h3></div>
+            <table className={styles.dataTable}>
+              <thead>
+                <tr>
+                  <th>Question</th>
+                  <th>Quiz</th>
+                  <th>Correct Rate</th>
+                  <th>Avg Time</th>
+                  <th>Difficulty</th>
+                </tr>
+              </thead>
+              <tbody>
+                {quizQuestionStats.map((q, i) => (
+                  <tr key={i}>
+                    <td className={styles.cellTitle}>{q.question}</td>
+                    <td>{q.quizTitle}</td>
+                    <td>
+                      <span className={styles.rateBar}>
+                        <span className={styles.rateBarFill} style={{ width: `${q.correctRate}%`, background: q.correctRate >= 80 ? '#10b981' : q.correctRate >= 60 ? '#f59e0b' : '#ef4444' }} />
+                      </span>
+                      {q.correctRate}%
+                    </td>
+                    <td>{q.avgTime}</td>
+                    <td>
+                      <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 4, backgroundColor: `${difficultyColor(q.difficulty)}15`, color: difficultyColor(q.difficulty) }}>
+                        {q.difficulty}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     );
   }

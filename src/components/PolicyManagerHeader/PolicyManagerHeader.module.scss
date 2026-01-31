@@ -36,7 +36,7 @@ $pm-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-se
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 // Top bar with logo, search, and user actions - Dark teal gradient
@@ -179,28 +179,27 @@ $pm-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-se
   }
 }
 
+// Outline button style (e.g. "Recently Viewed") — matches Contract Manager "Recent" button
 .quickActionBtn {
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 7px 16px;
-  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.12);
+  background: transparent;
   color: rgba(255, 255, 255, 0.9);
   font-family: $pm-font-family;
   font-size: 12.5px;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
   white-space: nowrap;
   line-height: 1;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.22);
-    border-color: rgba(255, 255, 255, 0.35);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.6);
     color: #ffffff;
   }
 
@@ -215,15 +214,16 @@ $pm-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-se
   }
 }
 
+// Solid green filled button style (e.g. "+ New Contract", "Request Contract") — matches Contract Manager action buttons
 .quickActionBtnPrimary {
-  background: rgba(255, 255, 255, 0.18);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: #22c55e;
+  border-color: #22c55e;
   color: #ffffff;
+  font-weight: 500;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.28);
-    border-color: rgba(255, 255, 255, 0.45);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+    background: #16a34a;
+    border-color: #16a34a;
   }
 }
 

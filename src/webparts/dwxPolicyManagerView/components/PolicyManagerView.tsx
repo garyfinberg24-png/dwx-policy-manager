@@ -32,6 +32,7 @@ import {
 } from '@fluentui/react';
 import { JmlAppLayout } from '../../../components/JmlAppLayout/JmlAppLayout';
 import { PageSubheader } from '../../../components/PageSubheader';
+import { PM_LISTS } from '../../../constants/SharePointListNames';
 import styles from './PolicyManagerView.module.scss';
 
 // ============================================================================
@@ -189,7 +190,17 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
   }
 
   public componentDidMount(): void {
-    setTimeout(() => {
+    this.loadLiveApprovals().then(liveApprovals => {
+      this.setState({
+        teamMembers: this.getSampleTeamMembers(),
+        approvals: liveApprovals,
+        delegations: this.getSampleDelegations(),
+        reviews: this.getSampleReviews(),
+        activities: this.getSampleActivities(),
+        loading: false
+      });
+    }).catch(err => {
+      console.error('Failed to load approvals from SP, falling back to sample data:', err);
       this.setState({
         teamMembers: this.getSampleTeamMembers(),
         approvals: this.getSampleApprovals(),
@@ -198,7 +209,52 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
         activities: this.getSampleActivities(),
         loading: false
       });
-    }, 500);
+    });
+  }
+
+  private async loadLiveApprovals(): Promise<IManagerApproval[]> {
+    const items: any[] = await this.props.sp.web.lists
+      .getByTitle(PM_LISTS.POLICIES)
+      .items
+      .filter("PolicyStatus eq 'In Review' or PolicyStatus eq 'Pending Approval' or PolicyStatus eq 'Approved' or PolicyStatus eq 'Rejected'")
+      .select(
+        'Id', 'PolicyName', 'PolicyNumber', 'PolicyCategory', 'PolicyDescription',
+        'PolicyStatus', 'ComplianceRisk', 'SubmittedForReviewDate',
+        'Author/Title', 'Author/EMail'
+      )
+      .expand('Author')
+      .top(50)();
+
+    const liveApprovals: IManagerApproval[] = items.map((item: any) => {
+      let status: 'Pending' | 'Approved' | 'Rejected' | 'Returned' = 'Pending';
+      if (item.PolicyStatus === 'Approved' || item.PolicyStatus === 'Published') status = 'Approved';
+      else if (item.PolicyStatus === 'Rejected') status = 'Rejected';
+
+      const submittedDate = item.SubmittedForReviewDate
+        ? new Date(item.SubmittedForReviewDate).toISOString()
+        : new Date(item.Created || Date.now()).toISOString();
+      const dueDate = new Date(new Date(submittedDate).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+      return {
+        Id: item.Id,
+        PolicyTitle: item.PolicyName || item.Title || 'Untitled Policy',
+        Version: '1.0',
+        SubmittedBy: item.Author?.Title || 'Unknown',
+        SubmittedByEmail: item.Author?.EMail || '',
+        Department: '',
+        Category: item.PolicyCategory || 'General',
+        SubmittedDate: submittedDate,
+        DueDate: dueDate,
+        Status: status,
+        Priority: item.ComplianceRisk === 'Critical' || item.ComplianceRisk === 'High' ? 'Urgent' : 'Normal',
+        Comments: '',
+        ChangeSummary: item.PolicyDescription || ''
+      };
+    });
+
+    // Merge with sample data so the tab isn't empty if no real policies are in review
+    const sampleApprovals = this.getSampleApprovals();
+    return [...liveApprovals, ...sampleApprovals];
   }
 
   public render(): JSX.Element {
@@ -1684,7 +1740,25 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
   }
 
   private updateApprovalStatus(id: number, status: 'Approved' | 'Rejected' | 'Returned'): void {
+    // Update local state immediately for responsive UI
     this.setState({ approvals: this.state.approvals.map(a => a.Id === id ? { ...a, Status: status } : a) });
+
+    // Persist to SharePoint — map approval status to PolicyStatus
+    const spStatus = status === 'Approved' ? 'Approved' : status === 'Rejected' ? 'Rejected' : 'Draft';
+    const dateField = status === 'Approved' ? 'ApprovedDate' : undefined;
+    const updateData: Record<string, unknown> = { PolicyStatus: spStatus };
+    if (dateField) updateData[dateField] = new Date().toISOString();
+
+    this.props.sp.web.lists
+      .getByTitle(PM_LISTS.POLICIES)
+      .items.getById(id)
+      .update(updateData)
+      .then(() => console.log(`Policy ${id} status updated to ${spStatus}`))
+      .catch((err: Error) => {
+        console.error(`Failed to update policy ${id} status:`, err);
+        // Revert local state on failure
+        this.setState({ approvals: this.state.approvals.map(a => a.Id === id ? { ...a, Status: 'Pending' } : a) });
+      });
   }
 
   private updateDelegationForm(partial: Partial<IDelegationForm>): void {

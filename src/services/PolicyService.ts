@@ -1488,8 +1488,15 @@ export class PolicyService {
    * Map SharePoint item to Policy interface
    */
   private mapPolicyItem(item: any): IPolicy {
+    // Normalize DocumentURL — SP URL fields return { Url, Description } objects
+    const rawDocUrl = item.DocumentURL;
+    const documentUrl: string | undefined = typeof rawDocUrl === 'string' ? rawDocUrl
+      : (rawDocUrl && typeof rawDocUrl === 'object' && rawDocUrl.Url) ? rawDocUrl.Url
+      : undefined;
+
     return {
       ...item,
+      DocumentURL: documentUrl,
       Tags: item.Tags ? JSON.parse(item.Tags) : [],
       RelatedPolicyIds: item.RelatedPolicyIds ? JSON.parse(item.RelatedPolicyIds) : [],
       Created: item.Created ? new Date(item.Created) : undefined,

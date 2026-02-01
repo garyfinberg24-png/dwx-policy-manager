@@ -103,7 +103,7 @@ interface IActiveFilter {
 }
 
 // Sort options
-type SortOption = 'name-asc' | 'name-desc' | 'date-newest' | 'date-oldest' | 'most-read' | 'category' | 'risk';
+type SortOption = 'most-recent' | 'name-asc' | 'name-desc' | 'date-newest' | 'date-oldest' | 'most-read' | 'category' | 'risk';
 
 // Group by options
 type GroupByOption = 'none' | 'category' | 'status' | 'department' | 'timeline' | 'risk';
@@ -208,6 +208,7 @@ export interface IPolicyHubState {
 export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyHubState> {
   private hubService: PolicyHubService;
   private notificationProcessor: PolicyNotificationQueueProcessor;
+  private searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(props: IPolicyHubProps) {
     super(props);
@@ -259,7 +260,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
       featuredPolicies: [],
       recentlyViewedPolicies: [],
       activeFilters: [],
-      sortOption: 'name-asc',
+      sortOption: 'most-recent',
       groupBy: 'none',
       selectedTimeline: '',
       selectedReadTime: '',
@@ -301,6 +302,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
     if (this.notificationProcessor) {
       this.notificationProcessor.stop();
     }
+    if (this.searchDebounceTimer) clearTimeout(this.searchDebounceTimer);
   }
 
   /**
@@ -648,6 +650,14 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
     });
   };
 
+  private handleSearchAsYouType = (newValue?: string): void => {
+    if (this.searchDebounceTimer) clearTimeout(this.searchDebounceTimer);
+    this.setState({ searchText: newValue || '' });
+    this.searchDebounceTimer = setTimeout(() => {
+      this.setState({ currentPage: 1 }, () => this.loadPolicies());
+    }, 300);
+  };
+
   private handleFilterChange = (field: string, value: string): void => {
     // Using type assertion because this method handles both static state keys
     // and dynamic facet keys (e.g., "selectedCategory", "selectedDepartment")
@@ -702,6 +712,9 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
     this.setState({ sortOption: option }, () => {
       // Map sort option to existing sort mechanism
       switch (option) {
+        case 'most-recent':
+          this.setState({ sortBy: 'effectiveDate', sortDescending: true });
+          break;
         case 'name-asc':
           this.setState({ sortBy: 'title', sortDescending: false });
           break;
@@ -1589,6 +1602,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
     ];
 
     const sortOptions: IDropdownOption[] = [
+      { key: 'most-recent', text: 'Sort: Most Recent' },
       { key: 'name-asc', text: 'Sort: Name A-Z' },
       { key: 'name-desc', text: 'Sort: Name Z-A' },
       { key: 'date-newest', text: 'Sort: Date Updated (Newest)' },
@@ -1658,8 +1672,22 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
           />
         </div>
 
-        {/* Row 2: Results count | Sort | Active filters | Actions */}
+        {/* Row 2: Search | Results count | Sort | Active filters | Actions */}
         <div className={styles.toolbarResultsRow}>
+          {/* Inline filter-as-you-type search */}
+          <SearchBox
+            placeholder="Filter policies..."
+            value={this.state.searchText}
+            onChange={(_, newValue) => this.handleSearchAsYouType(newValue || '')}
+            onSearch={this.handleSearch}
+            onClear={() => this.handleSearch('')}
+            iconProps={{ iconName: 'Filter' }}
+            styles={{ root: { minWidth: 200, maxWidth: 280 } }}
+          />
+
+          {/* Divider */}
+          <span className={styles.resultsDivider} />
+
           {/* Results count */}
           <Text className={styles.resultsCount}>
             Showing <strong>{displayedCount}</strong> of <strong>{totalCount}</strong> policies

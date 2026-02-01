@@ -427,6 +427,55 @@ npm run clean
 
 ---
 
+## DWx Standard Components
+
+All DWx suite applications (Policy Manager, Asset Manager, Contract Manager, and future apps) implement these **4 standard components** for consistency across the suite. Each app adapts them to its own theme color and domain.
+
+### 1. Breadcrumb Navigation (DWx Standard)
+- **Interface**: `IBreadcrumb { text: string; href?: string }` exported from the app header
+- **Location**: Rendered as a full-width strip below the navigation bar inside the header component
+- **Pattern**: `AppHeader` → breadcrumb bar (light bg) → `/` separated items → last item is current page (bold, no link)
+- **Policy Manager**: `PolicyManagerHeader` renders breadcrumbs, passed via `JmlAppLayout`
+
+### 2. Search Center (DWx Standard)
+- **Component**: `{App}Search.tsx` + `.module.scss`
+- **Pattern**: Hero section (gradient + search input + quick-filter chips) → sidebar filters + result cards
+- **Policy Manager**: `jmlPolicySearch` webpart with dedicated SharePoint page
+- **Asset Manager**: Embedded view within single webpart, searches across assets/vendors/contracts
+
+### 3. Admin Center (DWx Standard)
+- **Component**: `{App}AdminCenter.tsx` + `.module.scss`
+- **Pattern**: 280px sidebar (collapsible category groups → nav items) + content area (switch/case on `activeSection`)
+- **Standard sections**: Navigation toggles, General Settings, Notifications, Data Export, Audit Log, System Info
+- **Navigation persistence**: `{prefix}_nav_visibility` localStorage key (e.g., `am_nav_visibility`, `pm_nav_visibility`)
+- **Policy Manager**: `jmlPolicyAdmin` webpart — 21 admin sections with full CRUD
+
+### 4. Help Center (DWx Standard)
+- **Component**: `{App}HelpCenter.tsx` + `.module.scss`
+- **Pattern**: Hero section + tab bar (Home, Articles, FAQs, Shortcuts, Support)
+- **Content**: Hardcoded initially, can be wired to SharePoint lists (`PM_HelpArticles`, `PM_Cheatsheets`, `PM_HelpTickets`)
+- **Policy Manager**: `jmlPolicyHelp` webpart with `HelpCenterService` for full SP list integration
+
+### DWx Standard Content Layout
+All DWx apps use the same content area layout:
+
+```css
+max-width: 1400px;
+width: 100%;
+margin: 0 auto;
+padding: 24px;
+box-sizing: border-box;
+```
+
+### DWx App Color Themes
+| App | Primary | Dark | Theme Name |
+|-----|---------|------|------------|
+| Policy Manager | #0d9488 | #0f766e | Forest Teal |
+| Asset Manager | #475569 | #334155 | Slate Blue |
+| Contract Manager | #475569 | #334155 | Slate Blue |
+
+---
+
 ## Azure Functions — AI Quiz Generator
 
 ### Architecture

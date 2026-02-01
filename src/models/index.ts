@@ -198,3 +198,7 @@ export {
   type IValidationResult,
 } from './IExternalSharing';
 export * from './ICVManagement';
+
+// Policy Author models
+export * from './IPolicyAuthor';
+export * from './IPolicyAuthorState';

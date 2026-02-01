@@ -40,7 +40,7 @@ Do NOT skip step 2 and jump straight to implementation. The user must confirm un
 - **Suite**: DWx (Digital Workplace Excellence)
 - **Company**: First Digital
 - **Tagline**: Policy Governance & Compliance
-- **Current Version**: 1.2.1
+- **Current Version**: 1.2.2
 - **Package ID**: `12538121-8a6b-4e41-8bc7-17f252d5c36e`
 - **SharePoint Site**: https://mf7m.sharepoint.com/sites/PolicyManager
 
@@ -468,11 +468,40 @@ box-sizing: border-box;
 ```
 
 ### DWx App Color Themes
+
 | App | Primary | Dark | Theme Name |
 |-----|---------|------|------------|
 | Policy Manager | #0d9488 | #0f766e | Forest Teal |
 | Asset Manager | #475569 | #334155 | Slate Blue |
 | Contract Manager | #475569 | #334155 | Slate Blue |
+
+### 5. DWx Hub Integration (Cross-App Services)
+
+Each DWx app optionally connects to a shared DWx Hub site for cross-app features. Integration uses graceful degradation — apps work fully standalone when Hub is unavailable.
+
+**Architecture:**
+
+```
+WebPart.onInit() → DwxHubService(context, sp)
+  → isHubAvailable() — checks if Hub site exists
+  → DwxAppRegistryService.heartbeat('AppName', version)
+  → Pass dwxHub to component props (undefined if unavailable)
+
+Component constructor → PolicyService.setDwxServices(notificationSvc, activitySvc)
+  → Cross-app notifications on policy publish
+  → Activity feed logging on approve/publish
+```
+
+**Key classes from `@dwx/core`:**
+
+| Class | Purpose |
+|-------|---------|
+| `DwxHubService` | Hub site detection and connection |
+| `DwxAppRegistryService` | App heartbeat/registration |
+| `DwxNotificationService` | Cross-app notification delivery |
+| `DwxActivityService` | Cross-app activity feed logging |
+
+**Props pattern:** `dwxHub?: DwxHubService` — optional on all component props interfaces. WebPart sets to `undefined` if Hub unavailable.
 
 ---
 
@@ -548,32 +577,60 @@ The QuizBuilder's "AI Generate" panel calls the Azure Function with:
 
 ---
 
-## Session State (Last Updated: 31 Jan 2026 — Session 5)
+## Session State (Last Updated: 1 Feb 2026 — Session 6)
 
-### Recently Completed (Session 5 — 31 Jan 2026)
+### Recently Completed (Session 6 — 1 Feb 2026)
 
-#### Quiz Builder UX Overhaul
-- **Quiz List/Management View** — Rewrote `QuizBuilderWrapper.tsx` as dual-mode component: quiz card grid (no quizId param) or quiz editor (with quizId). Status filter tabs (All/Draft/Published/Scheduled/Archived), search, Edit/Duplicate per card
-- **Quiz Summary Tab** — New "Summary" PivotItem in QuizBuilder with overview card, 6 KPI stats, 9-item config grid, conditional schedule section, question breakdown by type, scrollable question list preview
-- **Breadcrumbs** — Added breadcrumb navigation to Quiz Builder: Policy Manager > Quiz Builder > Quiz #ID / New Quiz
+#### Policy Builder — Image/Infographic Template Support
+- **Infographic/Image creation card** — New creation method on wizard Step 0 for image-based policies
+- **Image upload to SharePoint** — Image files uploaded to `PM_PolicySourceDocuments/Uploads` via PnPjs `addUsingPath`
+- **Image content card** — Thumbnail preview + "View Image" button + "Open in SharePoint" button + supplementary RichText editor
+- **Image Viewer Panel** — Full Fluent UI Panel (PanelType.large) with zoom controls (+25%, -25%, reset, fit-to-width), keyboard Escape to close
+- **Corporate template images** — Corporate Template panel also opens image viewer for PNG/JPG templates with 400ms delay to avoid Panel animation conflict
+- **URL fix** — `window.location.origin + ServerRelativeUrl` instead of `absoluteUrl + ServerRelativeUrl` to prevent double `/sites/PolicyManager/` path causing 404s
 
-#### App Header — Recently Viewed Dropdown
-- **Recently Viewed dropdown** — Converted the "Recently Viewed" nav button to a dropdown panel (same pattern as Notifications/Profile panels) showing 5 most recently viewed policies with category, timestamp, status badges
-- Click-outside detection via ref, "View All Recent Policies" footer link
+#### Policy Builder — Quiz Selection in Wizard (Step 3)
+- **Quiz checkbox + dropdown** — "Requires Quiz" checkbox loads published quizzes from PM_PolicyQuizzes
+- **Quiz dropdown** — Shows quiz title, question count, passing score for each available quiz
+- **QuizService integration** — `loadAvailableQuizzes()` method queries published quizzes
+- **Action buttons** — "Create New Quiz" navigates to QuizBuilder, "Go to Quiz Builder" opens in new tab
+- **State tracking** — `selectedQuizId` and `selectedQuizTitle` stored for submission
 
-#### Admin Settings — AI URL Save Fix
-- **localStorage fallback** — PolicyAdmin save handler now tries SP first, falls through to localStorage when PM_Configuration list doesn't exist, shows warning dialog for local-only save
-- **PM_Configuration list** — Added creation to `upgrade-quiz-questions-list.ps1` (ConfigKey, ConfigValue, Category, IsActive, IsSystemConfig)
+#### PolicyDetails — Fullscreen Document Viewer
+- **Fullscreen toggle** — IconButton in document viewer toolbar using native Fullscreen API
+- **Responsive iframe** — Height adjusts to `calc(100vh - 80px)` in fullscreen mode
+- **Exit handling** — BackToWindow icon or Escape key exits fullscreen, state synced via `fullscreenchange` event
 
-#### AI Pipeline Hardening
-- **Two-tier retry** — `createQuestion()` in QuizService uses core fields first, falls back to extended fields on failure
-- **Azure Function improvements** — Enhanced `generateQuizQuestions.ts` with better error handling
-- **QuizService enhancements** — Improved `getAllQuizzes()` and `createQuiz()` methods
+#### DWx Hub Integration (Graceful Degradation)
+- **WebPart detection** — PolicyAuthor and PolicyHub WebParts detect DWx Hub availability in `onInit()`
+- **Service wiring** — `DwxHubService`, `DwxNotificationService`, `DwxActivityService` from `@dwx/core`
+- **PolicyService.setDwxServices()** — Cross-app notification and activity feed integration
+- **Policy approve** — Logs activity to DWx activity feed (non-blocking)
+- **Policy publish** — Sends cross-app notification + activity feed entry (non-blocking)
+- **Standalone fallback** — All DWx calls wrapped in try/catch; app runs fully standalone when Hub unavailable
+
+#### New Files
+- `scripts/policy-management/10-CorporateTemplates.ps1` — Provisions PM_PolicySourceDocuments library with custom fields and starter template uploads
+- `docs/DWx-Decoupling-Strategy.md` — Architecture document for DWx suite decoupling approach
+- `src/models/IPolicyAuthor.ts` — Extracted type interfaces from PolicyAuthorEnhanced.tsx
+- `src/models/IPolicyAuthorState.ts` — Extracted state interface (151 properties)
+- `src/constants/PolicyAuthorConstants.ts` — Extracted magic values and constants
+- `src/utils/sanitizeHtml.ts` — DOMPurify wrapper for RichText XSS prevention
+- `src/components/ErrorBoundary/ErrorBoundary.tsx` — React error boundary with retry
+- `src/data/SouthAfricanDemoData.ts` — Consolidated sample/demo data
+- `src/webparts/jmlPolicyAuthor/components/PolicyAuthor.module.scss.d.ts` — SCSS module type declarations
 
 #### Version & Packaging
-- **Version bump** — 1.1.0 → 1.2.1, tagged `v1.2.1`
+- **Version bump** — 1.2.1 → 1.2.2, tagged `v1.2.2`
 - **Ship build** — Zero errors, all 14 webpart manifests
-- **Git tag** — `v1.2.1` pushed to origin
+- **Git tag** — `v1.2.2` pushed to origin
+
+### Previously Completed (Session 5 — 31 Jan 2026)
+- Quiz Builder UX overhaul — Card grid view, status filter tabs, Summary tab with KPIs
+- App Header Recently Viewed dropdown — 5 most recent policies with badges
+- Admin Settings AI URL save with localStorage fallback
+- AI pipeline hardening — Two-tier retry, Azure Function improvements
+- Version 1.1.0 → 1.2.1
 
 ### Previously Completed (Session 4 — 30 Jan 2026)
 - QuizTaker rewrite — All 11 question type renderers, timer leak fix, retake fix
@@ -595,16 +652,22 @@ The QuizBuilder's "AI Generate" panel calls the Azure Function with:
 - FOUC prevention, splash screen, layout enhancements
 
 ### Known Issues
+
 - PowerShell scripts starting with numbers need `.\` prefix to execute
 - Featured Policies and Recently Viewed sections hidden by default until Admin Navigation toggle is wired
 - SPFx CDN caching may require version bump + app catalog re-upload + hard refresh to see updates
 - `az` CLI not in PATH in VSCode terminal — use full path: `C:\Program Files (x86)\Microsoft SDKs\Azure\CLI2\wbin\az.cmd`
 - Recently Viewed dropdown currently uses mock data — needs wiring to actual user browse history
+- Image upload metadata (`DocumentType`, `FileStatus`, etc.) fails with 400 if PM_PolicySourceDocuments custom columns not provisioned — non-blocking, caught by try/catch
+- DWx Hub integration is experimental — `@dwx/core` services are wired but Hub site may not exist yet; all calls degrade gracefully
 
 ### Next Steps
+
 - Wire Recently Viewed dropdown to actual user browse history (track in localStorage or SP list)
+- Run `10-CorporateTemplates.ps1` to provision PM_PolicySourceDocuments custom columns (fixes metadata 400 error)
 - User testing of Quiz Builder AI generation with real policy documents
 - Wire remaining webparts to live SharePoint data (Analytics, Distribution)
 - Wire Admin Navigation toggles to control nav item visibility
 - Create remaining SharePoint pages if not already created
 - Connect Distribution webpart to live data from PolicyDistributionService
+- Deep code review plan (8 phases) — see `.claude/plans/wild-hopping-garden.md`

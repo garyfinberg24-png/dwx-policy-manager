@@ -1,6 +1,7 @@
 {
   "permissions": {
     "allow": [
+      "Bash(*)",
       "Bash(dir:*)",
       "Bash(if not exist \"c:\\\\Projects\\\\SPFx\\\\PolicyManager\\\\policy-manager\\\\docs\" mkdir \"c:\\\\Projects\\\\SPFx\\\\PolicyManager\\\\policy-manager\\\\docs\")",
       "Bash(copy \"C:\\\\Users\\\\gfinb\\\\Downloads\\\\DWx-Splash-Logo2-DigitalBlocks.pdf\" \"c:\\\\Projects\\\\SPFx\\\\PolicyManager\\\\policy-manager\\\\docs\\\\DWx-Brand-Guide.pdf\")",
@@ -62,7 +63,18 @@
       "Bash(npx:*)",
       "Bash(\"C:\\\\Program Files \\(x86\\)\\\\Microsoft SDKs\\\\Azure\\\\CLI2\\\\wbin\\\\az.cmd\" functionapp function list --name dwx-pm-quiz-func-prod --resource-group dwx-pm-quiz-rg-prod --output json)",
       "Bash(PATH=\"$PATH:/c/Program Files \\(x86\\)/Microsoft SDKs/Azure/CLI2/wbin\" npx:*)",
-      "Bash(git check-ignore:*)"
+      "Bash(git check-ignore:*)",
+      "Bash(git status:*)",
+      "Bash(npm ls:*)",
+      "Bash(wc:*)",
+      "Bash(test:*)",
+      "Bash(python3:*)",
+      "Bash(start \"\" \"C:\\\\Users\\\\gfinb\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Projects-SPFx-PolicyManager-policy-manager\\\\b80e2c4f-5d5a-4260-88e9-61aedf272499\\\\scratchpad\\\\dwx-hub-dashboard-mockup.html\")",
+      "Bash(start \"\" \"C:\\\\Users\\\\gfinb\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Projects-SPFx-PolicyManager-policy-manager\\\\b80e2c4f-5d5a-4260-88e9-61aedf272499\\\\scratchpad\\\\dwx-app-switcher-mockup.html\")",
+      "mcp__plugin_playwright_playwright__browser_resize",
+      "Bash(robocopy:*)",
+      "Bash(m365 status:*)",
+      "mcp__plugin_playwright_playwright__browser_file_upload"
     ]
   }
 }

@@ -21,6 +21,7 @@ import {
 import { PolicyLists } from '../constants/SharePointListNames';
 import { NotificationLists } from '../constants/SharePointListNames';
 import { logger } from './LoggingService';
+import { ValidationUtils } from '../utils/ValidationUtils';
 
 /**
  * Generates a unique reference number for a policy request.
@@ -155,7 +156,7 @@ export class PolicyRequestService {
       let items;
       if (status) {
         items = await this.sp.web.lists.getByTitle(this.LIST_NAME).items
-          .filter(`Status eq '${status}'`)
+          .filter(`Status eq '${ValidationUtils.sanitizeForOData(status)}'`)
           .orderBy('Created', false)
           .top(200)();
       } else {
@@ -203,7 +204,7 @@ export class PolicyRequestService {
   public async getMyRequests(email: string): Promise<IPolicyRequest[]> {
     try {
       const items = await this.sp.web.lists.getByTitle(this.LIST_NAME).items
-        .filter(`RequestedByEmail eq '${email}'`)
+        .filter(`RequestedByEmail eq '${ValidationUtils.sanitizeForOData(email)}'`)
         .orderBy('Created', false)
         .top(100)();
 

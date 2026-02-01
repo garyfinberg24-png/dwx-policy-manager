@@ -28,6 +28,7 @@ import {
 } from '../models/IPolicy';
 import { logger } from './LoggingService';
 import { PolicyLists, PolicyWorkflowLists } from '../constants/SharePointListNames';
+import { ValidationUtils } from '../utils/ValidationUtils';
 
 export class PolicyHubService {
   private sp: SPFI;
@@ -79,7 +80,7 @@ export class PolicyHubService {
       }
 
       // Get total count before pagination
-      const allPolicies = await policyQuery.top(5000)();
+      const allPolicies = await policyQuery.top(500)();
       const totalCount = allPolicies.length;
 
       // Apply pagination
@@ -345,7 +346,7 @@ export class PolicyHubService {
       const acknowledgements = await this.sp.web.lists
         .getByTitle(this.POLICY_ACKNOWLEDGEMENTS_LIST)
         .items.filter(`PolicyId eq ${policyId}`)
-        .top(5000)() as IPolicyAcknowledgement[];
+        .top(1000)() as IPolicyAcknowledgement[];
 
       // Calculate metrics
       const metrics = this.calculateReadTimeframeMetrics(acknowledgements, timeframeDays);
@@ -558,7 +559,7 @@ export class PolicyHubService {
       const allPolicies = await this.sp.web.lists
         .getByTitle(this.POLICIES_LIST)
         .items.filter('IsActive eq true')
-        .top(5000)() as IPolicy[];
+        .top(500)() as IPolicy[];
 
       const activePolicies = allPolicies.filter(p => p.PolicyStatus === PolicyStatus.Published);
 
@@ -988,7 +989,7 @@ export class PolicyHubService {
       // Get all policies
       const policies = await this.sp.web.lists
         .getByTitle(this.POLICIES_LIST)
-        .items.top(5000)() as IPolicy[];
+        .items.top(500)() as IPolicy[];
 
       // Calculate metrics
       const totalPolicies = policies.length;
@@ -1023,7 +1024,7 @@ export class PolicyHubService {
       // Get all acknowledgements for compliance calculation
       const allAcknowledgements = await this.sp.web.lists
         .getByTitle(this.POLICY_ACKNOWLEDGEMENTS_LIST)
-        .items.top(5000)() as IPolicyAcknowledgement[];
+        .items.top(500)() as IPolicyAcknowledgement[];
 
       // Calculate overall compliance rate
       const totalAcks = allAcknowledgements.length;

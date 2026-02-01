@@ -225,7 +225,7 @@ export class PolicyReportExportService {
           'PublishedDate', 'Tags', 'PolicyOwner/Title', 'PolicyOwner/EMail'
         )
         .expand('PolicyOwner')
-        .top(5000);
+        .top(500);
 
       if (filters.length > 0) {
         query = query.filter(filters.join(' and '));
@@ -340,7 +340,7 @@ export class PolicyReportExportService {
           'User/Title', 'User/EMail'
         )
         .expand('User')
-        .top(5000);
+        .top(500);
 
       if (filters.length > 0) {
         query = query.filter(filters.join(' and '));
@@ -443,14 +443,14 @@ export class PolicyReportExportService {
           'AssignedDate', 'AcknowledgedDate', 'IsCompliant', 'IsExempted',
           'OverdueDays'
         )
-        .top(5000)();
+        .top(500)();
 
       // Fetch policies for risk levels
       const policies = await this.sp.web.lists
         .getByTitle(this.POLICY_LIST)
         .items
         .select('Id', 'PolicyNumber', 'PolicyName', 'ComplianceRisk')
-        .top(5000)();
+        .top(500)();
 
       const policyRiskMap = new Map<number, string>();
       policies.forEach((p: any) => policyRiskMap.set(p.Id, p.ComplianceRisk));
@@ -605,7 +605,7 @@ export class PolicyReportExportService {
         )
         .expand('User')
         .filter("AckStatus eq 'Overdue' or AckStatus eq 'Sent' or AckStatus eq 'InProgress'")
-        .top(5000)();
+        .top(500)();
 
       // Filter to only include truly overdue items
       const now = new Date();
@@ -624,7 +624,7 @@ export class PolicyReportExportService {
         .items
         .select('Id', 'ComplianceRisk')
         .filter(policyIds.map(id => `Id eq ${id}`).join(' or '))
-        .top(5000)();
+        .top(500)();
 
       const policyRiskMap = new Map<number, string>();
       policies.forEach((p: any) => policyRiskMap.set(p.Id, p.ComplianceRisk));
@@ -729,7 +729,7 @@ export class PolicyReportExportService {
           'User/Title', 'User/EMail', 'User/Department'
         )
         .expand('User')
-        .top(5000);
+        .top(500);
 
       if (filters.length > 0) {
         query = query.filter(filters.join(' and '));
@@ -838,14 +838,14 @@ export class PolicyReportExportService {
           'TotalDistributed', 'TotalAcknowledged', 'CompliancePercentage',
           'ExpiryDate', 'NextReviewDate'
         )
-        .top(5000)();
+        .top(500)();
 
       // Fetch all acknowledgements
       const acknowledgements = await this.sp.web.lists
         .getByTitle(this.ACKNOWLEDGEMENT_LIST)
         .items
         .select('Id', 'Status', 'IsCompliant', 'OverdueDays', 'UserDepartment')
-        .top(5000)();
+        .top(500)();
 
       // Calculate metrics
       const now = new Date();

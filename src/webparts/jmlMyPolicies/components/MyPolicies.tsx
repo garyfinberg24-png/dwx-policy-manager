@@ -11,6 +11,7 @@ import {
   DefaultButton
 } from '@fluentui/react';
 import { JmlAppLayout } from '../../../components/JmlAppLayout';
+import { ErrorBoundary } from '../../../components/ErrorBoundary/ErrorBoundary';
 import { PageSubheader } from '../../../components/PageSubheader';
 import { PM_LISTS } from '../../../constants/SharePointListNames';
 
@@ -567,6 +568,7 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
     const filteredPolicies = this.getFilteredPolicies();
 
     return (
+      <ErrorBoundary fallbackMessage="An error occurred in My Policies. Please try again.">
       <JmlAppLayout
         context={this.props.context}
         sp={this.props.sp}
@@ -592,6 +594,7 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
           </div>
         </div>
       </JmlAppLayout>
+      </ErrorBoundary>
     );
   }
 }

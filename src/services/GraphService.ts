@@ -16,6 +16,7 @@ import {
   IIntegrationResponse
 } from '../models/IIntegration';
 import { logger } from './LoggingService';
+import { ValidationUtils } from '../utils/ValidationUtils';
 
 export class GraphService {
   private graph: GraphFI;
@@ -93,7 +94,7 @@ export class GraphService {
   public async searchUsers(searchTerm: string): Promise<any[]> {
     try {
       const users = await this.graph.users
-        .filter(`startswith(displayName,'${searchTerm}') or startswith(mail,'${searchTerm}')`)
+        .filter(`startswith(displayName,'${ValidationUtils.sanitizeForOData(searchTerm)}') or startswith(mail,'${ValidationUtils.sanitizeForOData(searchTerm)}')`)
         .top(10)();
       return users;
     } catch (error) {

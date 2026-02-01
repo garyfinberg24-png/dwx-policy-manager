@@ -1,4 +1,3 @@
-// @ts-nocheck
 // Policy Service
 // Comprehensive service for enterprise policy management
 // Enhanced with server-side validation, audit logging, and retention management
@@ -17,8 +16,6 @@ import {
   IPolicyAcknowledgement,
   IPolicyExemption,
   IPolicyDistribution,
-  IPolicyTemplate,
-  IPolicyFeedback,
   IPolicyAuditLog,
   IPolicyPublishRequest,
   IPolicyAcknowledgeRequest,
@@ -35,7 +32,7 @@ import {
 } from '../models/IPolicy';
 import { ValidationUtils } from '../utils/ValidationUtils';
 import { logger } from './LoggingService';
-import { PolicyValidationService, PolicyOperation, IValidationResult, PolicyRole } from './PolicyValidationService';
+import { PolicyValidationService, PolicyOperation, PolicyRole } from './PolicyValidationService';
 import { PolicyAuditService, AuditEventType, AuditSeverity } from './PolicyAuditService';
 import { PolicyRetentionService } from './PolicyRetentionService';
 import {
@@ -60,7 +57,6 @@ export class PolicyService {
   private readonly POLICY_ACKNOWLEDGEMENTS_LIST = PolicyLists.POLICY_ACKNOWLEDGEMENTS;
   private readonly POLICY_EXEMPTIONS_LIST = PolicyLists.POLICY_EXEMPTIONS;
   private readonly POLICY_DISTRIBUTIONS_LIST = PolicyLists.POLICY_DISTRIBUTIONS;
-  private readonly POLICY_TEMPLATES_LIST = PolicyLists.POLICY_TEMPLATES;
   private readonly POLICY_FEEDBACK_LIST = PolicyLists.POLICY_FEEDBACK;
   private readonly POLICY_AUDIT_LOG_LIST = PolicyLists.POLICY_AUDIT_LOG;
   private currentUserId: number = 0;
@@ -317,6 +313,26 @@ export class PolicyService {
    */
   public async updatePolicy(policyId: number, updates: Partial<IPolicy>): Promise<IPolicy> {
     try {
+      // Authorization check: Verify user has permission to update this policy
+      const userRole = await this.getCurrentUserRole();
+      const canUpdate = await this.validationService.canPerformOperation(
+        PolicyOperation.Update,
+        policyId,
+        { userRoles: [userRole], userId: this.currentUserId }
+      );
+
+      if (!canUpdate.isValid) {
+        await this.auditService.logEvent({
+          EventType: AuditEventType.UnauthorizedAccess,
+          Severity: AuditSeverity.Security,
+          EntityType: 'Policy',
+          EntityId: policyId,
+          ActionDescription: `Unauthorized policy update attempt by user ${this.currentUserEmail}`,
+          Metadata: JSON.stringify({ userRole, operation: PolicyOperation.Update, policyId })
+        });
+        throw new Error(canUpdate.errors?.map(e => e.message).join(', ') || 'Unauthorized to update this policy');
+      }
+
       const updateData: Record<string, unknown> = { ...updates };
 
       // Handle array fields
@@ -360,6 +376,26 @@ export class PolicyService {
    */
   public async deletePolicy(policyId: number): Promise<void> {
     try {
+      // Authorization check: Verify user has permission to delete this policy
+      const userRole = await this.getCurrentUserRole();
+      const canDelete = await this.validationService.canPerformOperation(
+        PolicyOperation.Delete,
+        policyId,
+        { userRoles: [userRole], userId: this.currentUserId }
+      );
+
+      if (!canDelete.isValid) {
+        await this.auditService.logEvent({
+          EventType: AuditEventType.UnauthorizedAccess,
+          Severity: AuditSeverity.Security,
+          EntityType: 'Policy',
+          EntityId: policyId,
+          ActionDescription: `Unauthorized policy delete attempt by user ${this.currentUserEmail}`,
+          Metadata: JSON.stringify({ userRole, operation: PolicyOperation.Delete, policyId })
+        });
+        throw new Error(canDelete.errors?.map(e => e.message).join(', ') || 'Unauthorized to delete this policy');
+      }
+
       await this.updatePolicy(policyId, {
         PolicyStatus: PolicyStatus.Archived,
         IsActive: false
@@ -433,7 +469,7 @@ export class PolicyService {
         query = query.filter(filterConditions.join(' and '));
       }
 
-      const items = await query.top(5000)();
+      const items = await query.top(500)();
       const policies = items.map(item => this.mapPolicyItem(item));
 
       // Cache the results
@@ -733,6 +769,7 @@ export class PolicyService {
       // DWx activity feed — policy approval (non-blocking)
       if (this.dwxActivityService) {
         try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           await this.dwxActivityService.logActivity({
             Title: `Policy approved: ${currentPolicy.PolicyName}`,
             AppId: 'PolicyManager',
@@ -743,7 +780,7 @@ export class PolicyService {
             ActorEmail: this.currentUserEmail,
             ActorName: this.currentUserName,
             Details: JSON.stringify({ policyId, approverComments }),
-          });
+          } as any);
         } catch (dwxErr) {
           logger.warn('PolicyService', 'DWx activity log failed (non-critical):', dwxErr);
         }
@@ -847,6 +884,7 @@ export class PolicyService {
       // DWx activity feed (non-blocking)
       if (this.dwxActivityService) {
         try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           await this.dwxActivityService.logActivity({
             Title: `Policy published: ${policy.PolicyName}`,
             AppId: 'PolicyManager',
@@ -861,7 +899,7 @@ export class PolicyService {
               targetCount: targetUsers.length,
               distributionScope: request.distributionScope,
             }),
-          });
+          } as any);
         } catch (dwxErr) {
           logger.warn('PolicyService', 'DWx activity log failed (non-critical):', dwxErr);
         }
@@ -966,7 +1004,7 @@ export class PolicyService {
           // Check if acknowledgement already exists
           const existing = await this.sp.web.lists
             .getByTitle(this.POLICY_ACKNOWLEDGEMENTS_LIST)
-            .items.filter(`PolicyId eq ${policyId} and AckUserId eq ${userId} and PolicyVersionNumber eq '${versionNumber}'`)
+            .items.filter(`PolicyId eq ${policyId} and AckUserId eq ${userId} and PolicyVersionNumber eq '${ValidationUtils.sanitizeForOData(versionNumber)}'`)
             .top(1)();
 
           if (existing.length === 0) {
@@ -1291,7 +1329,7 @@ export class PolicyService {
       const acknowledgements = await this.sp.web.lists
         .getByTitle(this.POLICY_ACKNOWLEDGEMENTS_LIST)
         .items.filter(`PolicyId eq ${policyId}`)
-        .top(5000)();
+        .top(1000)();
 
       const acks = acknowledgements as IPolicyAcknowledgement[];
       const acknowledged = acks.filter(a => a.AckStatus === AcknowledgementStatus.Acknowledged);
@@ -1346,7 +1384,7 @@ export class PolicyService {
 
       const allAcknowledgements = await this.sp.web.lists
         .getByTitle(this.POLICY_ACKNOWLEDGEMENTS_LIST)
-        .items.top(5000)();
+        .items.top(500)();
 
       const acks = allAcknowledgements as IPolicyAcknowledgement[];
       const acknowledged = acks.filter(a => a.AckStatus === AcknowledgementStatus.Acknowledged);

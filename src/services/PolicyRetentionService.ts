@@ -374,7 +374,7 @@ export class PolicyRetentionService {
       const policies = await this.sp.web.lists
         .getByTitle(this.POLICIES_LIST)
         .items.select('*')
-        .top(5000)() as IPolicy[];
+        .top(500)() as IPolicy[];
 
       // Get all legal holds
       const legalHolds = await this.getActiveLegalHolds();

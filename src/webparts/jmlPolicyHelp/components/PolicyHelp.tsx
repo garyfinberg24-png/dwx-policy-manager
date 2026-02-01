@@ -15,6 +15,7 @@ import {
   MessageBar,
   MessageBarType
 } from '@fluentui/react';
+import { sanitizeHtml } from '../../../utils/sanitizeHtml';
 import { JmlAppLayout } from '../../../components/JmlAppLayout';
 
 // Help article interface
@@ -347,7 +348,7 @@ export default class PolicyHelp extends React.Component<IPolicyHelpProps, IPolic
         <div className={styles.articleContent}>
           <h1 style={{ marginTop: 0, marginBottom: '8px' }}>{selectedArticle.title}</h1>
           <p style={{ color: '#605e5c', marginBottom: '24px' }}>Category: {selectedArticle.category}</p>
-          <div dangerouslySetInnerHTML={{ __html: selectedArticle.content }} />
+          <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(selectedArticle.content || '') }} />
         </div>
       </div>
     );

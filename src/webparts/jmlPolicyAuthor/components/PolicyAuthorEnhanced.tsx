@@ -307,9 +307,14 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
   public async componentDidMount(): Promise<void> {
     injectPortalStyles();
-    await this.policyService.initialize();
-    await this.loadTemplates();
-    await this.loadMetadataProfiles();
+    window.addEventListener('beforeunload', this.handleBeforeUnload);
+
+    // Parallelize independent service calls for faster initial load
+    await Promise.all([
+      this.policyService.initialize(),
+      this.loadTemplates(),
+      this.loadMetadataProfiles()
+    ]);
 
     if (this.state.policyId) {
       await this.loadPolicy(this.state.policyId);
@@ -318,8 +323,6 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     if (this.props.enableAutoSave) {
       this.startAutoSave();
     }
-
-    window.addEventListener('beforeunload', this.handleBeforeUnload);
   }
 
   public componentWillUnmount(): void {
@@ -5786,7 +5789,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         const items = await this.props.sp.web.lists
           .getByTitle(PM_LISTS.DELEGATIONS)
           .items
-          .filter(`AssignedToEmail eq '${currentUser}'`)
+          .filter(`AssignedToEmail eq '${ValidationUtils.sanitizeForOData(currentUser)}'`)
           .orderBy('DueDate', true)
           .top(50)();
 

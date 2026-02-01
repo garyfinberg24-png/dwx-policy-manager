@@ -27,6 +27,7 @@ import {
 } from '@fluentui/react';
 import { injectPortalStyles } from '../../../utils/injectPortalStyles';
 import { JmlAppLayout } from '../../../components/JmlAppLayout';
+import { ErrorBoundary } from '../../../components/ErrorBoundary/ErrorBoundary';
 import { PolicyService } from '../../../services/PolicyService';
 import { SPService } from '../../../services/SPService';
 import { ConfigKeys } from '../../../models/IJmlConfiguration';
@@ -2918,6 +2919,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     const showSaveButton = ['workflows', 'compliance', 'notifications', 'naming', 'sla', 'lifecycle', 'navigation', 'settings', 'emailTemplates', 'usersRoles', 'appSecurity', 'rolePermissions'].includes(this.state.activeSection);
 
     return (
+      <ErrorBoundary fallbackMessage="An error occurred in Policy Administration. Please try again.">
       <JmlAppLayout
         context={this.props.context}
         sp={this.props.sp}
@@ -2975,6 +2977,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           <this.dialogManager.DialogComponent />
         </section>
       </JmlAppLayout>
+      </ErrorBoundary>
     );
   }
 }

@@ -27,7 +27,9 @@ import {
   ProgressIndicator
 } from '@fluentui/react';
 import { injectPortalStyles } from '../../../utils/injectPortalStyles';
+import { sanitizeHtml } from '../../../utils/sanitizeHtml';
 import { JmlAppLayout } from '../../../components/JmlAppLayout';
+import { ErrorBoundary } from '../../../components/ErrorBoundary/ErrorBoundary';
 import { PageSubheader } from '../../../components/PageSubheader';
 import { PolicyService } from '../../../services/PolicyService';
 import { PolicySocialService } from '../../../services/PolicySocialService';
@@ -1291,7 +1293,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
               Policy Overview
             </Text>
             {policy.PolicySummary && <Text style={{ marginBottom: 12, display: 'block' }}>{policy.PolicySummary}</Text>}
-            <div dangerouslySetInnerHTML={{ __html: policy.PolicyContent }} />
+            <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(policy.PolicyContent || '') }} />
           </div>
         )}
 
@@ -1840,6 +1842,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
     const isActiveFlow = !browseMode && (!acknowledgement || acknowledgement.AckStatus !== 'Acknowledged');
 
     return (
+      <ErrorBoundary fallbackMessage="An error occurred loading policy details. Please try again.">
       <JmlAppLayout
         context={this.props.context}
         sp={this.props.sp}
@@ -1918,6 +1921,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
           <this.dialogManager.DialogComponent />
         </section>
       </JmlAppLayout>
+      </ErrorBoundary>
     );
   }
 }

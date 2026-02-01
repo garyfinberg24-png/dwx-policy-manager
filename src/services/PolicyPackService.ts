@@ -22,6 +22,7 @@ import {
 } from '../models/IPolicy';
 import { logger } from './LoggingService';
 import { PolicyLists, PolicyPackLists, SocialLists } from '../constants/SharePointListNames';
+import { ValidationUtils } from '../utils/ValidationUtils';
 
 export class PolicyPackService {
   private sp: SPFI;
@@ -126,7 +127,7 @@ export class PolicyPackService {
         .items.filter('IsActive eq true');
 
       if (packType) {
-        query = query.filter(`PackType eq '${packType}'`);
+        query = query.filter(`PackType eq '${ValidationUtils.sanitizeForOData(packType)}'`);
       }
 
       const packs = await query.top(1000)();
@@ -627,7 +628,7 @@ export class PolicyPackService {
         // Get policies for user's department that haven't been assigned
         const deptPolicies = await this.sp.web.lists
           .getByTitle(this.POLICIES_LIST)
-          .items.filter(`PolicyStatus eq 'Published' and (TargetDepartments eq '${userDept}' or TargetDepartments eq 'All')`)
+          .items.filter(`PolicyStatus eq 'Published' and (TargetDepartments eq '${ValidationUtils.sanitizeForOData(userDept)}' or TargetDepartments eq 'All')`)
           .select('Id', 'Title', 'PolicyName', 'PolicyCategory', 'ComplianceRisk')
           .top(10)();
 
@@ -646,7 +647,7 @@ export class PolicyPackService {
         const assignedPolicyIds = allAcks.map(a => a.PolicyId);
 
         if (assignedCategories.length > 0) {
-          const categoryFilter = assignedCategories.map(c => `PolicyCategory eq '${c}'`).join(' or ');
+          const categoryFilter = assignedCategories.map(c => `PolicyCategory eq '${ValidationUtils.sanitizeForOData(c)}'`).join(' or ');
           const catPolicies = await this.sp.web.lists
             .getByTitle(this.POLICIES_LIST)
             .items.filter(`PolicyStatus eq 'Published' and (${categoryFilter})`)
@@ -830,7 +831,7 @@ export class PolicyPackService {
       const assignments = await this.sp.web.lists
         .getByTitle(this.POLICY_PACK_ASSIGNMENTS_LIST)
         .items.filter(`PackId eq ${packId}`)
-        .top(5000)() as IPolicyPackAssignment[];
+        .top(1000)() as IPolicyPackAssignment[];
 
       const completed = assignments.filter(a => a.Status === 'Completed');
       const completionDays = completed

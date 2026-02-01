@@ -1035,7 +1035,7 @@ export class PolicyAnalyticsService {
         query = query.filter(`ActivityDate le '${filters.endDate.toISOString()}'`);
       }
 
-      const items = await query.top(5000)();
+      const items = await query.top(500)();
       return items;
     } catch (error) {
       console.error("Failed to get activities:", error);

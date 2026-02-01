@@ -677,7 +677,7 @@ export class PolicyAuditService {
       }
 
       // Get total count
-      const allItems = await query.top(5000)();
+      const allItems = await query.top(500)();
       const totalCount = allItems.length;
 
       // Apply pagination
@@ -925,7 +925,7 @@ export class PolicyAuditService {
       const oldEntries = await this.sp.web.lists
         .getByTitle(this.AUDIT_LOG_LIST)
         .items.filter(`EventTimestamp lt datetime'${cutoffDate.toISOString()}'`)
-        .top(5000)();
+        .top(1000)();
 
       let archivedCount = 0;
       for (const entry of oldEntries) {

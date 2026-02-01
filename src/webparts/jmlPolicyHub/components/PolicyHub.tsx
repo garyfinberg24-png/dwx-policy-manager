@@ -45,6 +45,7 @@ import {
 } from '@fluentui/react';
 import { injectPortalStyles } from '../../../utils/injectPortalStyles';
 import { JmlAppLayout } from '../../../components/JmlAppLayout';
+import { ErrorBoundary } from '../../../components/ErrorBoundary/ErrorBoundary';
 import { PageSubheader } from '../../../components/PageSubheader';
 import { PolicyHubService } from '../../../services/PolicyHubService';
 import { PolicyNotificationQueueProcessor } from '../../../services/PolicyNotificationQueueProcessor';
@@ -289,11 +290,14 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
   public async componentDidMount(): Promise<void> {
     injectPortalStyles();
     await this.initializeUserContext();
-    await this.initializeFeaturedAndRecent();
-    await this.loadPolicies();
 
-    // Start the notification queue processor
-    // Only runs when Policy Hub is active - stops when component unmounts
+    // Parallelize independent data loads for faster initial render
+    await Promise.all([
+      this.initializeFeaturedAndRecent(),
+      this.loadPolicies()
+    ]);
+
+    // Start the notification queue processor after data is loaded
     this.notificationProcessor.start();
   }
 
@@ -2713,6 +2717,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
     };
 
     return (
+      <ErrorBoundary fallbackMessage="An error occurred in the Policy Hub. Please try again.">
       <JmlAppLayout
         context={this.props.context}
         sp={this.props.sp}
@@ -2757,6 +2762,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
           {this.renderDelegationDialog()}
         </section>
       </JmlAppLayout>
+      </ErrorBoundary>
     );
   }
 }

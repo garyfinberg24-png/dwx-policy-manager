@@ -35,3 +35,10 @@ obj
 
 # MCP configuration (contains API keys)
 .mcp.json
+
+# Azure Functions local settings and deploy artifacts
+azure-functions/**/local.settings.json
+azure-functions/**/*.zip
+
+# Playwright MCP
+.playwright-mcp/

@@ -15,6 +15,7 @@ import { IPolicyAuthorProps } from './components/IPolicyAuthorProps';
 import { SPFI } from '@pnp/sp';
 import { getSP } from '../../utils/pnpConfig';
 import { injectSharePointOverrides } from '../../utils/SharePointOverrides';
+import { DwxHubService, DwxAppRegistryService } from '@dwx/core';
 
 export interface IDwxPolicyAuthorWebPartProps {
   title: string;
@@ -25,6 +26,7 @@ export interface IDwxPolicyAuthorWebPartProps {
 export default class DwxPolicyAuthorWebPart extends BaseClientSideWebPart<IDwxPolicyAuthorWebPartProps> {
   private _isDarkTheme: boolean = false;
   private _sp: SPFI;
+  private _dwxHub: DwxHubService | undefined;
 
   public render(): void {
     const element: React.ReactElement<IPolicyAuthorProps> = React.createElement(
@@ -36,7 +38,8 @@ export default class DwxPolicyAuthorWebPart extends BaseClientSideWebPart<IDwxPo
         isDarkTheme: this._isDarkTheme,
         hasTeamsContext: !!this.context.sdks.microsoftTeams,
         sp: this._sp,
-        context: this.context
+        context: this.context,
+        dwxHub: this._dwxHub
       }
     );
 
@@ -47,6 +50,18 @@ export default class DwxPolicyAuthorWebPart extends BaseClientSideWebPart<IDwxPo
     injectSharePointOverrides();
     await super.onInit();
     this._sp = getSP(this.context);
+
+    // DWx Core integration (graceful degradation)
+    try {
+      this._dwxHub = new DwxHubService(this.context, this._sp);
+      if (await this._dwxHub.isHubAvailable()) {
+        const registry = new DwxAppRegistryService(this._dwxHub);
+        await registry.heartbeat('PolicyManager', '1.2.1');
+      }
+    } catch (err) {
+      console.warn('[PolicyAuthor] DWx Hub unavailable, running standalone:', err);
+      this._dwxHub = undefined;
+    }
   }
 
   protected onThemeChanged(currentTheme: IReadonlyTheme | undefined): void {

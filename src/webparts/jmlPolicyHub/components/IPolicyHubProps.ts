@@ -1,5 +1,6 @@
 import { WebPartContext } from '@microsoft/sp-webpart-base';
 import { SPFI } from '@pnp/sp';
+import { DwxHubService } from '@dwx/core';
 
 export interface IPolicyHubProps {
   title: string;
@@ -13,4 +14,6 @@ export interface IPolicyHubProps {
   hasTeamsContext: boolean;
   sp: SPFI;
   context: WebPartContext;
+  /** DWx Hub service — undefined when Hub is unavailable (standalone mode) */
+  dwxHub?: DwxHubService;
 }

@@ -134,6 +134,8 @@ export interface IPolicyDetailsState {
   // Live quiz integration
   liveQuizId: number | null;
   currentUserId: number;
+  // Fullscreen document viewer
+  isFullscreen: boolean;
 }
 
 // Mock quiz questions (will be replaced by QuizTaker integration)
@@ -176,10 +178,12 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
   private readTimer: NodeJS.Timeout | null = null;
   private dialogManager = createDialogManager();
   private documentViewerRef: React.RefObject<HTMLDivElement>;
+  private viewerWrapperRef: React.RefObject<HTMLDivElement>;
 
   constructor(props: IPolicyDetailsProps) {
     super(props);
     this.documentViewerRef = React.createRef();
+    this.viewerWrapperRef = React.createRef();
     this.state = {
       loading: true,
       error: null,
@@ -228,7 +232,8 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
       browseMode: this.getBrowseModeFromUrl(),
       // Live quiz integration
       liveQuizId: null,
-      currentUserId: 0
+      currentUserId: 0,
+      isFullscreen: false
     };
     this.policyService = new PolicyService(props.sp);
     this.socialService = new PolicySocialService(props.sp);
@@ -238,11 +243,32 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
     injectPortalStyles();
     await this.loadPolicyDetails();
     this.startReadTracking();
+    document.addEventListener('fullscreenchange', this.handleFullscreenChange);
   }
 
   public componentWillUnmount(): void {
     this.stopReadTracking();
+    document.removeEventListener('fullscreenchange', this.handleFullscreenChange);
   }
+
+  private handleFullscreenChange = (): void => {
+    this.setState({ isFullscreen: !!document.fullscreenElement });
+  };
+
+  private toggleFullscreen = async (): Promise<void> => {
+    const wrapper = this.viewerWrapperRef.current;
+    if (!wrapper) return;
+
+    try {
+      if (!document.fullscreenElement) {
+        await wrapper.requestFullscreen();
+      } else {
+        await document.exitFullscreen();
+      }
+    } catch (err) {
+      console.warn('Fullscreen not supported:', err);
+    }
+  };
 
   private getPolicyIdFromUrl(): number | null {
     const urlParams = new URLSearchParams(window.location.search);
@@ -1098,7 +1124,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
 
         {/* Document Viewer */}
         {hasDocuments && documentUrl && (
-          <div className={styles.documentViewerWrapper}>
+          <div className={styles.documentViewerWrapper} ref={this.viewerWrapperRef} style={this.state.isFullscreen ? { background: '#fff', padding: 0 } : undefined}>
             <div className={styles.viewerToolbar}>
               <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
                 <Icon iconName={this.getDocumentIcon(documentUrl)} style={{ fontSize: 16, color: '#0d9488' }} />
@@ -1110,6 +1136,13 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                 </Text>
               </Stack>
               <Stack horizontal tokens={{ childrenGap: 8 }}>
+                <IconButton
+                  iconProps={{ iconName: this.state.isFullscreen ? 'BackToWindow' : 'FullScreen' }}
+                  title={this.state.isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+                  ariaLabel={this.state.isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+                  onClick={this.toggleFullscreen}
+                  styles={{ root: { height: 28, width: 28 }, icon: { fontSize: 14, color: '#0d9488' } }}
+                />
                 <DefaultButton
                   iconProps={{ iconName: 'OpenInNewTab' }}
                   text="Open"
@@ -1138,9 +1171,10 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                   <img src={viewerUrl} alt={policy.Title} style={{ maxWidth: '100%', maxHeight: 600, borderRadius: 4 }} />
                 </div>
               ) : (
-                <iframe src={viewerUrl} style={{ width: '100%', height: '100%', border: 'none' }} title={`${policy.Title} Document Viewer`} />
+                <iframe src={viewerUrl} style={{ width: '100%', height: this.state.isFullscreen ? 'calc(100vh - 80px)' : '100%', border: 'none' }} title={`${policy.Title} Document Viewer`} />
               )}
             </div>
+            {!this.state.isFullscreen && (
             <div className={styles.scrollNotice}>
               {scrollProgress >= 95 || readDuration >= 30 ? (
                 <span style={{ color: '#16a34a', fontWeight: 600 }}>
@@ -1150,6 +1184,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                 <span>Please review the document before proceeding ({Math.max(0, 30 - readDuration)}s remaining)</span>
               )}
             </div>
+            )}
           </div>
         )}
 

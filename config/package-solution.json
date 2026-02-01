@@ -3,7 +3,7 @@
   "solution": {
     "name": "dwx-policy-manager",
     "id": "12538121-8a6b-4e41-8bc7-17f252d5c36e",
-    "version": "1.2.1.0",
+    "version": "1.2.2.0",
     "includeClientSideAssets": true,
     "skipFeatureDeployment": true,
     "isDomainIsolated": false,
@@ -30,7 +30,7 @@
         "title": "DWx Policy Manager Feature",
         "description": "Enterprise Policy Lifecycle Management with authoring, approvals, distribution, and acknowledgement tracking",
         "id": "e21e3afd-4f41-4b1b-98a1-c29d63f075c4",
-        "version": "1.2.1.0"
+        "version": "1.2.2.0"
       }
     ],
     "webApiPermissionRequests": [

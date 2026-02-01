@@ -38,6 +38,8 @@ import { injectPortalStyles } from '../../../utils/injectPortalStyles';
 import { JmlAppLayout } from '../../../components/JmlAppLayout';
 import { PageSubheader } from '../../../components/PageSubheader';
 import { PolicyService } from '../../../services/PolicyService';
+import { QuizService } from '../../../services/QuizService';
+import { DwxNotificationService, DwxActivityService } from '@dwx/core';
 import { ValidationUtils } from '../../../utils/ValidationUtils';
 import { sanitizeHtml } from '../../../utils/sanitizeHtml';
 import { createBlankDocx, createBlankXlsx, createBlankPptx } from '../../../utils/blankOfficeDocuments';
@@ -78,6 +80,7 @@ import { IPolicyAuthorEnhancedState } from '../../../models/IPolicyAuthorState';
 
 export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorProps, IPolicyAuthorEnhancedState> {
   private policyService: PolicyService;
+  private quizService: QuizService;
   private autoSaveTimer: ReturnType<typeof setInterval> | null = null;
   private dialogManager = createDialogManager();
 
@@ -105,6 +108,10 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       readTimeframeDays: 7,
       requiresAcknowledgement: true,
       requiresQuiz: false,
+      selectedQuizId: null,
+      selectedQuizTitle: '',
+      availableQuizzes: [],
+      availableQuizzesLoading: false,
       effectiveDate: new Date().toISOString().split('T')[0],
       expiryDate: '',
 
@@ -118,6 +125,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       templates: [],
       metadataProfiles: [],
       corporateTemplates: [],
+      corporateTemplatesLive: false,
       selectedTemplate: null,
       selectedProfile: null,
 
@@ -141,6 +149,12 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       autoSaveEnabled: props.enableAutoSave,
       lastSaved: null,
       creationMethod: 'blank',
+
+      // Image viewer panel
+      showImageViewerPanel: false,
+      imageViewerUrl: '',
+      imageViewerTitle: '',
+      imageViewerZoom: 100,
 
       // Wizard state - start at step 0 (creation method)
       currentStep: 0,
@@ -248,6 +262,15 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     };
 
     this.policyService = new PolicyService(props.sp);
+    this.quizService = new QuizService(props.sp);
+
+    // Wire DWx cross-app services if Hub is available
+    if (props.dwxHub) {
+      this.policyService.setDwxServices(
+        new DwxNotificationService(props.dwxHub),
+        new DwxActivityService(props.dwxHub)
+      );
+    }
   }
 
   // Sample data generators
@@ -541,6 +564,68 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     this.setState({ uploadingFiles: true });
 
     try {
+      // Check if this is an image file — upload to SharePoint and show image viewer
+      const ext = file.name.split('.').pop()?.toLowerCase() || '';
+      const imageExtensions = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'svg', 'webp'];
+      const isImage = imageExtensions.includes(ext);
+
+      if (isImage) {
+        // Upload image to PM_PolicySourceDocuments/Uploads
+        const policyNameFromFile = file.name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ');
+        const policyName = this.state.policyName || policyNameFromFile;
+        const libraryName = PM_LISTS.POLICY_SOURCE_DOCUMENTS;
+        const siteRelativeUrl = this.props.context.pageContext.web.serverRelativeUrl;
+        const folderPath = `${siteRelativeUrl}/${libraryName}/Uploads`;
+
+        try {
+          const result = await this.props.sp.web
+            .getFolderByServerRelativePath(folderPath)
+            .files.addUsingPath(file.name, file, { Overwrite: true });
+
+          const fileUrl = result.data.ServerRelativeUrl;
+
+          // Try to set metadata — non-blocking
+          try {
+            const item = await result.file.getItem();
+            await item.update({
+              DocumentType: 'Image',
+              FileStatus: 'Draft',
+              PolicyTitle: policyName,
+              CreatedByWizard: true,
+              UploadDate: new Date().toISOString()
+            });
+          } catch (metaError) {
+            console.warn('Could not set image metadata:', metaError);
+          }
+
+          this.setState({
+            uploadingFiles: false,
+            showFileUploadPanel: false,
+            linkedDocumentUrl: fileUrl,
+            linkedDocumentType: 'Image',
+            creationMethod: 'infographic',
+            policyName: policyName,
+            currentStep: 1,
+            policyContent: ''
+          });
+
+          // Open image viewer after a short delay
+          setTimeout(() => {
+            this.setState({
+              showImageViewerPanel: true,
+              imageViewerUrl: `${window.location.origin}${fileUrl}`,
+              imageViewerTitle: file.name,
+              imageViewerZoom: 100
+            } as Partial<IPolicyAuthorEnhancedState> as IPolicyAuthorEnhancedState);
+          }, 400);
+
+          return;
+        } catch (uploadError) {
+          console.warn('Failed to upload image to SharePoint, falling back to local handling:', uploadError);
+          // Fall through to standard file handling below
+        }
+      }
+
       const extractedContent = await this.readFileAsText(file, file.name);
       const policyNameFromFile = file.name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ');
 
@@ -1492,11 +1577,81 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
               <Checkbox
                 label="Requires Quiz"
                 checked={requiresQuiz}
-                onChange={(e, checked) => this.setState({ requiresQuiz: checked || false })}
+                onChange={(e, checked) => {
+                  this.setState({ requiresQuiz: checked || false });
+                  if (checked) {
+                    this.loadAvailableQuizzes();
+                  }
+                }}
               />
               <Text variant="small" style={{ marginLeft: 26, color: '#605e5c' }}>
                 Employees must pass a quiz to demonstrate understanding
               </Text>
+
+              {requiresQuiz && (
+                <div style={{ marginLeft: 26, marginTop: 8, padding: 16, background: '#f0fdfa', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                  <Text variant="medium" style={{ fontWeight: 600, color: '#0f172a', display: 'block', marginBottom: 12 }}>
+                    Quiz Selection
+                  </Text>
+
+                  {this.state.availableQuizzesLoading ? (
+                    <Spinner size={SpinnerSize.small} label="Loading quizzes..." />
+                  ) : this.state.availableQuizzes.length > 0 ? (
+                    <>
+                      <Dropdown
+                        label="Select an existing quiz"
+                        placeholder="Choose a quiz..."
+                        selectedKey={this.state.selectedQuizId ?? undefined}
+                        options={[
+                          { key: '', text: '— No quiz selected —' },
+                          ...this.state.availableQuizzes.map(q => ({
+                            key: q.Id,
+                            text: `${q.Title} (${q.QuestionCount} questions, ${q.PassingScore}% to pass)`
+                          }))
+                        ]}
+                        onChange={(_e, option) => {
+                          if (option && option.key !== '') {
+                            this.setState({
+                              selectedQuizId: option.key as number,
+                              selectedQuizTitle: this.state.availableQuizzes.find(q => q.Id === option.key)?.Title || ''
+                            });
+                          } else {
+                            this.setState({ selectedQuizId: null, selectedQuizTitle: '' });
+                          }
+                        }}
+                        styles={{ root: { maxWidth: 450, marginBottom: 12 } }}
+                      />
+                      {this.state.selectedQuizId && (
+                        <MessageBar messageBarType={MessageBarType.success} styles={{ root: { borderRadius: 4 } }}>
+                          Quiz "{this.state.selectedQuizTitle}" will be assigned to this policy.
+                        </MessageBar>
+                      )}
+                    </>
+                  ) : (
+                    <MessageBar messageBarType={MessageBarType.info} styles={{ root: { borderRadius: 4, marginBottom: 12 } }}>
+                      No published quizzes found. You can create one after the policy is published.
+                    </MessageBar>
+                  )}
+
+                  <Stack horizontal tokens={{ childrenGap: 8 }} style={{ marginTop: 12 }}>
+                    <DefaultButton
+                      iconProps={{ iconName: 'Refresh' }}
+                      text="Refresh Quizzes"
+                      onClick={() => this.loadAvailableQuizzes()}
+                      styles={{ root: { height: 32 }, label: { fontSize: 12 } }}
+                    />
+                    <DefaultButton
+                      iconProps={{ iconName: 'Add' }}
+                      text="Create New Quiz"
+                      onClick={() => {
+                        const siteUrl = this.props.context.pageContext.web.absoluteUrl;
+                        window.open(`${siteUrl}/SitePages/QuizBuilder.aspx`, '_blank');
+                      }}
+                      styles={{ root: { height: 32 }, label: { fontSize: 12 } }}
+                    />
+                  </Stack>
+                </div>
+              )}
             </Stack>
           </Stack>
         </div>
@@ -1972,6 +2127,10 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       readTimeframeDays: 7,
       requiresAcknowledgement: true,
       requiresQuiz: false,
+      selectedQuizId: null,
+      selectedQuizTitle: '',
+      availableQuizzes: [],
+      availableQuizzesLoading: false,
       effectiveDate: new Date().toISOString().split('T')[0],
       expiryDate: '',
       reviewers: [],
@@ -1980,7 +2139,11 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       selectedProfile: null,
       linkedDocumentUrl: null,
       linkedDocumentType: null,
-      creationMethod: 'blank'
+      creationMethod: 'blank',
+      showImageViewerPanel: false,
+      imageViewerUrl: '',
+      imageViewerTitle: '',
+      imageViewerZoom: 100
     });
   };
 
@@ -2028,9 +2191,9 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       if (docType === 'infographic') {
         this.setState({
           creatingDocument: false,
-          linkedDocumentType: contentType,
+          linkedDocumentType: 'Image',
           creationMethod: 'infographic',
-          policyContent: `<p><strong>Infographic Policy</strong></p><p>This policy uses a visual infographic format (e.g., floor plan, process diagram). Upload your infographic using "From File Upload".</p>`
+          policyContent: ''
         });
         this.setState({ showFileUploadPanel: true });
         return;
@@ -2159,23 +2322,6 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
   }
 
   /**
-   * Generate Office Online URL (opens in browser tab)
-   */
-  private getOfficeOnlineUrl(fileUrl: string): string {
-    const siteUrl = this.props.context.pageContext.web.absoluteUrl;
-    return `${siteUrl}/_layouts/15/Doc.aspx?sourcedoc=${encodeURIComponent(fileUrl)}&action=edit`;
-  }
-
-  /**
-   * Generate embedded Office Online URL (for iframe)
-   */
-  private getEmbeddedEditorUrl(fileUrl: string): string {
-    const siteUrl = this.props.context.pageContext.web.absoluteUrl;
-    // WopiFrame provides the embeddable editor experience
-    return `${siteUrl}/_layouts/15/WopiFrame.aspx?sourcedoc=${encodeURIComponent(fileUrl)}&action=edit`;
-  }
-
-  /**
    * Generate desktop Office app URL using protocol handlers
    * These URLs launch the native Office application
    */
@@ -2214,42 +2360,6 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         return 'powerpoint';
       default:
         return null;
-    }
-  }
-
-  /**
-   * Open document based on editor preference
-   */
-  private openDocumentInEditor(fileUrl: string, docType: 'word' | 'excel' | 'powerpoint', fileName: string): void {
-    const { editorPreference } = this.state;
-
-    switch (editorPreference) {
-      case 'embedded':
-        // Show embedded editor in the wizard
-        this.setState({
-          showEmbeddedEditor: true,
-          embeddedEditorUrl: this.getEmbeddedEditorUrl(fileUrl),
-          policyContent: `<p><strong>Editing Document:</strong> ${fileName}</p><p>Document is open in the embedded editor below.</p>`
-        });
-        break;
-
-      case 'desktop':
-        // Open in native Office app
-        const desktopUrl = this.getDesktopAppUrl(fileUrl, docType);
-        window.location.href = desktopUrl;
-        this.setState({
-          policyContent: `<p><strong>Linked Document:</strong> ${fileName}</p><p>Document opened in desktop ${docType.charAt(0).toUpperCase() + docType.slice(1)} application.</p><p><a href="${desktopUrl}">Re-open in desktop app</a> | <a href="${this.getOfficeOnlineUrl(fileUrl)}" target="_blank">Open in browser</a></p>`
-        });
-        break;
-
-      case 'browser':
-      default:
-        // Open in new browser tab
-        window.open(this.getOfficeOnlineUrl(fileUrl), '_blank');
-        this.setState({
-          policyContent: `<p><strong>Linked Document:</strong> <a href="${this.getOfficeOnlineUrl(fileUrl)}" target="_blank">${fileName}</a></p><p>Click to edit in Office Online.</p>`
-        });
-        break;
     }
   }
 
@@ -2451,29 +2561,71 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     }
   ];
 
+  private async loadAvailableQuizzes(): Promise<void> {
+    this.setState({ availableQuizzesLoading: true });
+    try {
+      const quizzes = await this.quizService.getAllQuizzes({ status: 'Published' as any });
+      this.setState({
+        availableQuizzes: quizzes.map(q => ({
+          Id: q.Id,
+          Title: q.Title,
+          QuestionCount: q.QuestionCount || 0,
+          PassingScore: q.PassingScore || 70,
+          Status: q.Status || 'Published'
+        })),
+        availableQuizzesLoading: false
+      });
+    } catch (error) {
+      console.warn('Failed to load available quizzes:', error);
+      this.setState({ availableQuizzes: [], availableQuizzesLoading: false });
+    }
+  }
+
   private async loadCorporateTemplates(): Promise<void> {
     try {
-      const items = await this.props.sp.web.lists
-        .getByTitle(PM_LISTS.CORPORATE_TEMPLATES)
-        .items.filter('IsActive eq true')
-        .select('Id', 'Title', 'TemplateType', 'FileRef', 'Description', 'Category', 'IsDefault')
+      // Query by URL path (not display title) since the library title is "Corporate Templates"
+      // but the URL is PM_CorporateTemplates
+      const siteRelUrl = this.props.context.pageContext.web.serverRelativeUrl;
+      const listUrl = `${siteRelUrl}/${PM_LISTS.CORPORATE_TEMPLATES}`;
+      const list = this.props.sp.web.getList(listUrl);
+
+      // Only select standard document library fields — custom columns (TemplateType, IsActive,
+      // Category, IsDefault) may not be provisioned if the script had errors
+      const items = await list.items
+        .select('Id', 'Title', 'FileRef', 'File_x0020_Type')
         .orderBy('Title', true)
         .top(100)();
 
-      const templates: ICorporateTemplate[] = items.map((item: any) => ({
-        Id: item.Id,
-        Title: item.Title,
-        TemplateType: item.TemplateType || 'Word',
-        TemplateUrl: item.FileRef,
-        Description: item.Description || '',
-        Category: item.Category || 'General',
-        IsDefault: item.IsDefault || false
-      }));
+      // Derive TemplateType from file extension since custom column may not exist
+      const extToType: Record<string, string> = {
+        'docx': 'Word', 'doc': 'Word',
+        'xlsx': 'Excel', 'xls': 'Excel',
+        'pptx': 'PowerPoint', 'ppt': 'PowerPoint',
+        'png': 'Image', 'jpg': 'Image', 'jpeg': 'Image'
+      };
 
-      this.setState({ corporateTemplates: templates.length > 0 ? templates : PolicyAuthorEnhanced.SAMPLE_CORPORATE_TEMPLATES });
+      const templates: ICorporateTemplate[] = items.map((item: any) => {
+        const fileRef: string = item.FileRef || '';
+        const ext = fileRef.split('.').pop()?.toLowerCase() || '';
+        return {
+          Id: item.Id,
+          Title: item.Title || fileRef.split('/').pop() || 'Template',
+          TemplateType: item.TemplateType || extToType[ext] || 'Word',
+          TemplateUrl: fileRef,
+          Description: item.Description || '',
+          Category: item.Category || 'General',
+          IsDefault: item.IsDefault || false
+        };
+      });
+
+      if (templates.length > 0) {
+        this.setState({ corporateTemplates: templates, corporateTemplatesLive: true });
+      } else {
+        this.setState({ corporateTemplates: PolicyAuthorEnhanced.SAMPLE_CORPORATE_TEMPLATES, corporateTemplatesLive: false });
+      }
     } catch (error) {
-      console.error('Failed to load corporate templates:', error);
-      this.setState({ corporateTemplates: PolicyAuthorEnhanced.SAMPLE_CORPORATE_TEMPLATES });
+      console.warn('PM_CorporateTemplates library not available — showing preview templates:', error);
+      this.setState({ corporateTemplates: PolicyAuthorEnhanced.SAMPLE_CORPORATE_TEMPLATES, corporateTemplatesLive: false });
     }
   }
 
@@ -2484,44 +2636,80 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const policyName = this.state.policyName || `Policy_${timestamp}`;
       const ext = template.TemplateUrl.split('.').pop() || 'docx';
-      const fileName = `${policyName}.${ext}`;
+      const fileName = `${policyName.replace(/[^a-zA-Z0-9_\- ]/g, '')}.${ext}`;
+
+      // Map template type to content type and subfolder (match blank document pattern)
+      const typeMap: Record<string, { contentType: string; folder: string }> = {
+        'Word': { contentType: 'Word Document', folder: 'Word' },
+        'Excel': { contentType: 'Excel Spreadsheet', folder: 'Excel' },
+        'PowerPoint': { contentType: 'PowerPoint Presentation', folder: 'PowerPoint' },
+        'Image': { contentType: 'Image', folder: 'Uploads' }
+      };
+      const mapped = typeMap[template.TemplateType] || typeMap['Word'];
+      const isImage = template.TemplateType === 'Image';
 
       const libraryName = PM_LISTS.POLICY_SOURCE_DOCUMENTS;
+      const siteRelativeUrl = this.props.context.pageContext.web.serverRelativeUrl;
+      const folderServerRelPath = `${siteRelativeUrl}/${libraryName}/${mapped.folder}`;
       const siteUrl = this.props.context.pageContext.web.absoluteUrl;
 
+      // Download the corporate template file as a blob
       const templateBlob = await this.props.sp.web
         .getFileByServerRelativePath(template.TemplateUrl)
         .getBlob();
 
-      const result = await this.props.sp.web.lists
-        .getByTitle(libraryName)
-        .rootFolder.files.addUsingPath(fileName, templateBlob, { Overwrite: true });
+      // Upload to type-specific subfolder (not rootFolder)
+      const result = await this.props.sp.web
+        .getFolderByServerRelativePath(folderServerRelPath)
+        .files.addUsingPath(fileName, templateBlob, { Overwrite: true });
 
       const fileUrl = result.data.ServerRelativeUrl;
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    // @ts-ignore
-      const _editUrl = `${siteUrl}/_layouts/15/Doc.aspx?sourcedoc=${encodeURIComponent(fileUrl)}&action=edit`;
 
-      const item = await result.file.getItem();
-      await item.update({
-        DocumentType: template.TemplateType,
-        FileStatus: 'Draft',
-        PolicyTitle: policyName,
-        SourceTemplate: template.Title
-      });
+      // Try to set metadata — non-blocking (custom columns may not be provisioned)
+      try {
+        const item = await result.file.getItem();
+        await item.update({
+          DocumentType: mapped.contentType,
+          FileStatus: 'Draft',
+          PolicyTitle: policyName,
+          SourceTemplate: template.Title,
+          CreatedByWizard: true,
+          UploadDate: new Date().toISOString()
+        });
+      } catch (metaError) {
+        console.warn('Could not set document metadata (custom columns may not exist yet):', metaError);
+      }
 
+      // Open the document — Office Online for Office files, image viewer panel for images
+      if (!isImage) {
+        const editUrl = `${siteUrl}/_layouts/15/Doc.aspx?sourcedoc=${encodeURIComponent(fileUrl)}&action=edit`;
+        window.open(editUrl, '_blank');
+      }
+
+      // Advance wizard to Step 2 (Content) and close corporate template panel
       this.setState({
         creatingDocument: false,
         linkedDocumentUrl: fileUrl,
-        linkedDocumentType: template.TemplateType,
+        linkedDocumentType: mapped.contentType,
         creationMethod: 'corporate',
-        showCorporateTemplatePanel: false
-      });
+        showCorporateTemplatePanel: false,
+        policyName: policyName,
+        currentStep: 1,  // Move to Step 2 (Content)
+        policyContent: ''
+      } as Partial<IPolicyAuthorEnhancedState> as IPolicyAuthorEnhancedState);
 
-      // Get doc type from template type
-      const docType = this.getDocTypeFromExtension(fileName);
-      if (docType) {
-        this.openDocumentInEditor(fileUrl, docType, fileName);
+      // For image templates, delay opening image viewer panel to avoid
+      // conflict with the corporate template panel's closing animation
+      if (isImage) {
+        setTimeout(() => {
+          console.log('[PolicyAuthor v1.2.2] Opening image viewer panel', { url: `${window.location.origin}${fileUrl}` });
+          this.setState({
+            showImageViewerPanel: true,
+            imageViewerUrl: `${window.location.origin}${fileUrl}`,
+            imageViewerTitle: template.Title,
+            imageViewerZoom: 100
+          } as Partial<IPolicyAuthorEnhancedState> as IPolicyAuthorEnhancedState);
+        }, 400);
       }
 
     } catch (error) {
@@ -2842,7 +3030,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
   }
 
   private renderCorporateTemplatePanel(): JSX.Element {
-    const { showCorporateTemplatePanel, corporateTemplates, creatingDocument } = this.state;
+    const { showCorporateTemplatePanel, corporateTemplates, creatingDocument, corporateTemplatesLive } = this.state;
 
     const getTemplateIcon = (type: string): string => {
       switch (type) {
@@ -2864,9 +3052,15 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         closeButtonAriaLabel="Close"
       >
         <Stack tokens={{ childrenGap: 16 }}>
-          <MessageBar messageBarType={MessageBarType.info}>
-            Select a corporate-approved template to create your policy document. These templates ensure brand compliance and include standard formatting.
-          </MessageBar>
+          {corporateTemplatesLive ? (
+            <MessageBar messageBarType={MessageBarType.info}>
+              Select a corporate-approved template to create your policy document. These templates ensure brand compliance and include standard formatting.
+            </MessageBar>
+          ) : (
+            <MessageBar messageBarType={MessageBarType.warning}>
+              The PM_CorporateTemplates library has not been provisioned yet. The templates shown below are previews only. Run the <strong>10-CorporateTemplates.ps1</strong> provisioning script to enable this feature.
+            </MessageBar>
+          )}
 
           {creatingDocument && (
             <Stack horizontalAlign="center" tokens={{ padding: 20 }}>
@@ -2881,9 +3075,9 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
           ) : (
             <Stack tokens={{ childrenGap: 12 }}>
               {corporateTemplates.map((template: ICorporateTemplate) => (
-                <div key={template.Id} className={styles.section} style={{ padding: 16, border: '1px solid #e1e1e1', borderRadius: 4 }}>
+                <div key={template.Id} className={styles.section} style={{ padding: 16, border: '1px solid #e1e1e1', borderRadius: 4, opacity: corporateTemplatesLive ? 1 : 0.7 }}>
                   <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 16 }}>
-                    <Icon iconName={getTemplateIcon(template.TemplateType)} style={{ fontSize: 32, color: '#0078d4' }} />
+                    <Icon iconName={getTemplateIcon(template.TemplateType)} style={{ fontSize: 32, color: corporateTemplatesLive ? '#0078d4' : '#a19f9d' }} />
                     <Stack grow tokens={{ childrenGap: 4 }}>
                       <Text variant="large" style={{ fontWeight: 600 }}>
                         {template.Title}
@@ -2896,16 +3090,114 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                       </Stack>
                     </Stack>
                     <PrimaryButton
-                      text="Use Template"
-                      iconProps={{ iconName: 'OpenFile' }}
+                      text={corporateTemplatesLive ? 'Use Template' : 'Preview Only'}
+                      iconProps={{ iconName: corporateTemplatesLive ? 'OpenFile' : 'Lock' }}
                       onClick={() => this.handleUseCorporateTemplate(template)}
-                      disabled={creatingDocument}
+                      disabled={creatingDocument || !corporateTemplatesLive}
                     />
                   </Stack>
                 </div>
               ))}
             </Stack>
           )}
+        </Stack>
+      </Panel>
+    );
+  }
+
+  private renderImageViewerPanel(): JSX.Element {
+    const { showImageViewerPanel, imageViewerUrl, imageViewerTitle, imageViewerZoom } = this.state;
+
+    return (
+      <Panel
+        isOpen={showImageViewerPanel}
+        onDismiss={() => this.setState({ showImageViewerPanel: false })}
+        type={PanelType.large}
+        headerText={`Corporate Image Template: ${imageViewerTitle}`}
+        styles={{
+          main: { background: '#f8fafc' },
+          headerText: { fontSize: 18, fontWeight: 600, color: '#0f172a' }
+        }}
+      >
+        <Stack tokens={{ childrenGap: 16 }} style={{ padding: '16px 0' }}>
+          {/* Toolbar */}
+          <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 12 }}
+            style={{ padding: '8px 16px', background: '#fff', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+            <Icon iconName="Photo2" style={{ fontSize: 18, color: '#0d9488' }} />
+            <Text variant="medium" style={{ fontWeight: 600, color: '#334155', flex: 1 }}>
+              {imageViewerTitle}
+            </Text>
+            <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 4 }}>
+              <IconButton
+                iconProps={{ iconName: 'ZoomOut' }}
+                title="Zoom Out"
+                disabled={imageViewerZoom <= 25}
+                onClick={() => this.setState({ imageViewerZoom: Math.max(25, imageViewerZoom - 25) })}
+                styles={{ root: { height: 32, width: 32 }, icon: { fontSize: 14 } }}
+              />
+              <Text variant="small" style={{ minWidth: 45, textAlign: 'center', color: '#64748b', fontWeight: 500 }}>
+                {imageViewerZoom}%
+              </Text>
+              <IconButton
+                iconProps={{ iconName: 'ZoomIn' }}
+                title="Zoom In"
+                disabled={imageViewerZoom >= 300}
+                onClick={() => this.setState({ imageViewerZoom: Math.min(300, imageViewerZoom + 25) })}
+                styles={{ root: { height: 32, width: 32 }, icon: { fontSize: 14 } }}
+              />
+              <IconButton
+                iconProps={{ iconName: 'FitPage' }}
+                title="Fit to View"
+                onClick={() => this.setState({ imageViewerZoom: 100 })}
+                styles={{ root: { height: 32, width: 32 }, icon: { fontSize: 14 } }}
+              />
+            </Stack>
+            <DefaultButton
+              iconProps={{ iconName: 'OpenInNewTab' }}
+              text="Open in SharePoint"
+              href={imageViewerUrl}
+              target="_blank"
+              styles={{ root: { height: 32 }, label: { fontSize: 12 } }}
+            />
+            <DefaultButton
+              iconProps={{ iconName: 'Download' }}
+              text="Download"
+              href={imageViewerUrl}
+              styles={{ root: { height: 32 }, label: { fontSize: 12 } }}
+            />
+          </Stack>
+
+          {/* Image display area */}
+          <div style={{
+            background: '#fff',
+            border: '1px solid #e2e8f0',
+            borderRadius: 8,
+            overflow: 'auto',
+            maxHeight: 'calc(100vh - 220px)',
+            textAlign: 'center',
+            padding: 16,
+            cursor: imageViewerZoom > 100 ? 'grab' : 'default'
+          }}>
+            {imageViewerUrl && (
+              <img
+                src={imageViewerUrl}
+                alt={imageViewerTitle}
+                style={{
+                  maxWidth: imageViewerZoom === 100 ? '100%' : 'none',
+                  width: imageViewerZoom !== 100 ? `${imageViewerZoom}%` : undefined,
+                  borderRadius: 4,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                  transition: 'width 0.2s ease'
+                }}
+              />
+            )}
+          </div>
+
+          {/* Info bar */}
+          <MessageBar messageBarType={MessageBarType.info} styles={{ root: { borderRadius: 4 } }}>
+            This corporate image template has been saved to your policy documents.
+            You can download it, edit it externally, and re-upload the final version using the file upload option.
+          </MessageBar>
         </Stack>
       </Panel>
     );
@@ -5140,6 +5432,68 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       );
     }
 
+    // When a linked image document exists, show image card with viewer button
+    if (linkedDocumentUrl && linkedDocumentType === 'Image') {
+      const imageUrl = `${window.location.origin}${linkedDocumentUrl}`;
+      const fileName = linkedDocumentUrl.split('/').pop() || 'Image';
+
+      return (
+        <div className={styles.section}>
+          <Label>Policy Content</Label>
+          <Stack tokens={{ childrenGap: 16 }}>
+            <MessageBar messageBarType={MessageBarType.info}>
+              This policy uses a corporate image template. The image has been uploaded to the document library. You can view it below or add supplementary text in the rich text editor.
+            </MessageBar>
+            <Stack
+              horizontal
+              verticalAlign="center"
+              tokens={{ childrenGap: 12 }}
+              styles={{ root: { padding: 16, background: '#f0fdfa', borderRadius: 8, border: '1px solid #99f6e4' } }}
+            >
+              <div style={{ width: 80, height: 60, borderRadius: 4, overflow: 'hidden', border: '1px solid #e2e8f0', flexShrink: 0 }}>
+                <img src={imageUrl} alt={fileName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
+              <Stack tokens={{ childrenGap: 4 }} styles={{ root: { flex: 1 } }}>
+                <Text variant="mediumPlus" style={{ fontWeight: 600, color: '#0f172a' }}>{fileName}</Text>
+                <Text variant="small" style={{ color: '#605e5c' }}>Corporate Image Template — uploaded to document library</Text>
+              </Stack>
+              <PrimaryButton
+                text="View Image"
+                iconProps={{ iconName: 'View' }}
+                onClick={() => this.setState({
+                  showImageViewerPanel: true,
+                  imageViewerUrl: imageUrl,
+                  imageViewerTitle: fileName,
+                  imageViewerZoom: 100
+                })}
+                styles={{ root: { background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+              />
+              <DefaultButton
+                text="Open in SharePoint"
+                iconProps={{ iconName: 'OpenInNewTab' }}
+                onClick={() => window.open(imageUrl, '_blank')}
+              />
+            </Stack>
+
+            {/* Optional supplementary text editor */}
+            <div style={{ marginTop: 8 }}>
+              <Label>Supplementary Policy Text (Optional)</Label>
+              <Text variant="small" style={{ color: '#605e5c', marginBottom: 8, display: 'block' }}>
+                Add any additional context, instructions, or notes that accompany this image policy.
+              </Text>
+              <div className={styles.richTextEditor}>
+                <RichText
+                  value={policyContent}
+                  onChange={(text) => { this.setState({ policyContent: text }); return text; }}
+                  placeholder="Add supplementary text for this image policy..."
+                />
+              </div>
+            </div>
+          </Stack>
+        </div>
+      );
+    }
+
     return (
       <div className={styles.section}>
         <Label>Policy Content</Label>
@@ -7215,6 +7569,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
           {this.renderFileUploadPanel()}
           {this.renderMetadataPanel()}
           {this.renderCorporateTemplatePanel()}
+          {this.renderImageViewerPanel()}
           {this.renderBulkImportPanel()}
           {this.renderEditorChoiceDialog()}
 

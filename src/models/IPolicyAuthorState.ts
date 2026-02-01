@@ -42,6 +42,10 @@ export interface IPolicyAuthorEnhancedState {
   readTimeframeDays: number;
   requiresAcknowledgement: boolean;
   requiresQuiz: boolean;
+  selectedQuizId: number | null;
+  selectedQuizTitle: string;
+  availableQuizzes: { Id: number; Title: string; QuestionCount: number; PassingScore: number; Status: string }[];
+  availableQuizzesLoading: boolean;
   effectiveDate: string;
   expiryDate: string;
 
@@ -56,6 +60,7 @@ export interface IPolicyAuthorEnhancedState {
   templates: IAuthorPolicyTemplate[];
   metadataProfiles: IPolicyMetadataProfile[];
   corporateTemplates: ICorporateTemplate[];
+  corporateTemplatesLive: boolean;
   selectedTemplate: IAuthorPolicyTemplate | null;
   selectedProfile: IPolicyMetadataProfile | null;
 
@@ -82,6 +87,12 @@ export interface IPolicyAuthorEnhancedState {
   autoSaveEnabled: boolean;
   lastSaved: Date | null;
   creationMethod: 'template' | 'upload' | 'blank' | 'word' | 'excel' | 'powerpoint' | 'infographic' | 'corporate';
+
+  // Image viewer panel
+  showImageViewerPanel: boolean;
+  imageViewerUrl: string;
+  imageViewerTitle: string;
+  imageViewerZoom: number;
 
   // Wizard state
   currentStep: number;

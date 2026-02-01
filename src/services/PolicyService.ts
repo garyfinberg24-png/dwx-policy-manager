@@ -47,6 +47,11 @@ import {
 } from './PolicyCacheService';
 import { PolicyNotificationService } from './PolicyNotificationService';
 import { PolicyLists, QuizLists } from '../constants/SharePointListNames';
+import {
+  DwxNotificationService,
+  DwxActivityService,
+  DwxNotificationType,
+} from '@dwx/core';
 
 export class PolicyService {
   private sp: SPFI;
@@ -74,6 +79,10 @@ export class PolicyService {
   private notificationService: PolicyNotificationService | null = null;
   private siteUrl: string = '';
 
+  // DWx cross-app services (optional — available when Hub is reachable)
+  private dwxNotificationService: DwxNotificationService | null = null;
+  private dwxActivityService: DwxActivityService | null = null;
+
   constructor(sp: SPFI, siteUrl?: string) {
     this.sp = sp;
     this.siteUrl = siteUrl || '';
@@ -87,6 +96,17 @@ export class PolicyService {
     if (this.siteUrl) {
       this.notificationService = new PolicyNotificationService(sp, this.siteUrl);
     }
+  }
+
+  /**
+   * Wire DWx cross-app services. Call after DwxHubService confirms Hub is available.
+   */
+  public setDwxServices(
+    notificationService?: DwxNotificationService,
+    activityService?: DwxActivityService
+  ): void {
+    if (notificationService) this.dwxNotificationService = notificationService;
+    if (activityService) this.dwxActivityService = activityService;
   }
 
   /**
@@ -710,6 +730,25 @@ export class PolicyService {
         ComplianceRelevant: true
       });
 
+      // DWx activity feed — policy approval (non-blocking)
+      if (this.dwxActivityService) {
+        try {
+          await this.dwxActivityService.logActivity({
+            Title: `Policy approved: ${currentPolicy.PolicyName}`,
+            AppId: 'PolicyManager',
+            ActivityType: 'Approved',
+            EntityType: 'Policy',
+            EntityTitle: currentPolicy.PolicyName,
+            EntityUrl: `${this.siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policyId}`,
+            ActorEmail: this.currentUserEmail,
+            ActorName: this.currentUserName,
+            Details: JSON.stringify({ policyId, approverComments }),
+          });
+        } catch (dwxErr) {
+          logger.warn('PolicyService', 'DWx activity log failed (non-critical):', dwxErr);
+        }
+      }
+
       return await this.getPolicyById(policyId);
     } catch (error) {
       logger.error('PolicyService', 'Failed to approve policy:', error);
@@ -781,6 +820,52 @@ export class PolicyService {
         ActionDate: new Date(),
         ComplianceRelevant: true
       });
+
+      // DWx cross-app notification (non-blocking — failures won't break publish)
+      if (this.dwxNotificationService) {
+        try {
+          const policyDetailsUrl = `${this.siteUrl}/SitePages/PolicyDetails.aspx?policyId=${request.policyId}`;
+          await this.dwxNotificationService.createNotification({
+            Title: `New Policy Published: ${policy.PolicyName}`,
+            MessageBody: `${policy.PolicyName} has been published and requires your acknowledgement.`,
+            NotificationType: DwxNotificationType.PolicyPublished,
+            Priority: 'Medium',
+            SourceApp: 'PolicyManager',
+            SourceItemId: request.policyId,
+            SourceItemTitle: policy.PolicyName,
+            SourceItemUrl: policyDetailsUrl,
+            RecipientEmail: this.currentUserEmail,
+            ActionUrl: policyDetailsUrl,
+            Category: 'Compliance',
+          });
+          logger.info('PolicyService', `DWx cross-app notification sent for policy ${policy.PolicyName}`);
+        } catch (dwxErr) {
+          logger.warn('PolicyService', 'DWx cross-app notification failed (non-critical):', dwxErr);
+        }
+      }
+
+      // DWx activity feed (non-blocking)
+      if (this.dwxActivityService) {
+        try {
+          await this.dwxActivityService.logActivity({
+            Title: `Policy published: ${policy.PolicyName}`,
+            AppId: 'PolicyManager',
+            ActivityType: 'Published',
+            EntityType: 'Policy',
+            EntityTitle: policy.PolicyName,
+            EntityUrl: `${this.siteUrl}/SitePages/PolicyDetails.aspx?policyId=${request.policyId}`,
+            ActorEmail: this.currentUserEmail,
+            ActorName: this.currentUserName,
+            Details: JSON.stringify({
+              policyId: request.policyId,
+              targetCount: targetUsers.length,
+              distributionScope: request.distributionScope,
+            }),
+          });
+        } catch (dwxErr) {
+          logger.warn('PolicyService', 'DWx activity log failed (non-critical):', dwxErr);
+        }
+      }
 
       return distribution;
     } catch (error) {

@@ -31,7 +31,8 @@ export const DwxAppHeader: React.FC<IJmlAppHeaderProps> = ({
   userRole,
   availableRoles,
   onRoleChange,
-  policyRole
+  policyRole,
+  dwxHub
 }) => {
   // Get current user info from context if available
   const userName = context?.pageContext?.user?.displayName || 'User';
@@ -79,6 +80,7 @@ export const DwxAppHeader: React.FC<IJmlAppHeaderProps> = ({
       pageStats={stats}
       showPageHeader={false}
       policyRole={policyRole}
+      dwxHub={dwxHub}
     />
   );
 };

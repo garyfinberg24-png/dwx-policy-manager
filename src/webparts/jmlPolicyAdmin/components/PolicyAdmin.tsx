@@ -296,10 +296,14 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         { key: 'policyHub', label: 'Policy Hub', icon: 'Home', description: 'Main policy dashboard and overview', isVisible: true },
         { key: 'myPolicies', label: 'My Policies', icon: 'ContactCard', description: 'User assigned policies and acknowledgements', isVisible: true },
         { key: 'policyBuilder', label: 'Policy Builder', icon: 'PageAdd', description: 'Create and edit policies', isVisible: true },
+        { key: 'policyAuthor', label: 'Policy Author', icon: 'EditNote', description: 'Author dashboard for policies, approvals, delegations', isVisible: true },
+        { key: 'policyPacks', label: 'Policy Packs', icon: 'FabricFolder', description: 'Policy bundling and pack management', isVisible: true },
         { key: 'policyDistribution', label: 'Distribution', icon: 'Send', description: 'Policy distribution and tracking', isVisible: true },
+        { key: 'policyManager', label: 'Policy Manager', icon: 'People', description: 'Manager compliance and team oversight', isVisible: true },
+        { key: 'policyAnalytics', label: 'Analytics', icon: 'BarChartVertical', description: 'Executive analytics and compliance dashboards', isVisible: true },
+        { key: 'quizBuilder', label: 'Quiz Builder', icon: 'Questionnaire', description: 'Create and manage policy quizzes', isVisible: true },
         { key: 'policySearch', label: 'Search Center', icon: 'Search', description: 'Advanced policy search', isVisible: true },
         { key: 'policyHelp', label: 'Help Center', icon: 'Help', description: 'Help articles and support', isVisible: true },
-        { key: 'policyReports', label: 'Reports', icon: 'BarChartVertical', description: 'Compliance and analytics reports', isVisible: true },
         { key: 'policyAdmin', label: 'Administration', icon: 'Admin', description: 'Admin settings and configuration', isVisible: true }
       ],
       // General Settings
@@ -356,7 +360,37 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     } catch {
       console.warn('[PolicyAdmin] Could not load saved settings from PM_Configuration');
     }
+
+    // Load saved navigation toggles from localStorage
+    try {
+      const saved = localStorage.getItem('pm_nav_visibility');
+      if (saved) {
+        const visibility: Record<string, boolean> = JSON.parse(saved);
+        this.setState(prev => ({
+          navToggles: prev.navToggles.map(t => ({
+            ...t,
+            isVisible: visibility[t.key] !== undefined ? visibility[t.key] : t.isVisible
+          }))
+        }));
+      }
+    } catch {
+      console.warn('[PolicyAdmin] Could not load saved navigation toggles');
+    }
   };
+
+  /**
+   * Persist navigation toggle visibility to localStorage.
+   * Key: pm_nav_visibility — shared with PolicyManagerHeader for cross-component sync.
+   */
+  private saveNavVisibility(toggles: INavToggleItem[]): void {
+    try {
+      const visibility: Record<string, boolean> = {};
+      toggles.forEach(t => { visibility[t.key] = t.isVisible; });
+      localStorage.setItem('pm_nav_visibility', JSON.stringify(visibility));
+    } catch {
+      console.warn('[PolicyAdmin] Could not save navigation toggles to localStorage');
+    }
+  }
 
   // ============================================================================
   // HANDLERS
@@ -1143,7 +1177,9 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                 text="Enable All"
                 iconProps={{ iconName: 'CheckboxComposite' }}
                 onClick={() => {
-                  this.setState({ navToggles: navToggles.map(t => ({ ...t, isVisible: true })) });
+                  const updated = navToggles.map(t => ({ ...t, isVisible: true }));
+                  this.setState({ navToggles: updated });
+                  this.saveNavVisibility(updated);
                 }}
               />
               <DefaultButton
@@ -1152,6 +1188,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                 onClick={() => {
                   const updated = navToggles.map(t => t.key === 'policyHub' || t.key === 'policyAdmin' ? t : { ...t, isVisible: false });
                   this.setState({ navToggles: updated });
+                  this.saveNavVisibility(updated);
                 }}
               />
             </Stack>
@@ -1219,6 +1256,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                           t.key === item.key ? { ...t, isVisible: !!checked } : t
                         );
                         this.setState({ navToggles: updated });
+                        this.saveNavVisibility(updated);
                       }}
                       styles={{
                         root: { marginBottom: 0 },

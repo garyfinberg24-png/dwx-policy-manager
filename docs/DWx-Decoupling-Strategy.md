@@ -207,10 +207,12 @@ yo @microsoft/sharepoint
 # Select: SharePoint Online only, Y for tenant-wide, WebPart
 # Framework: React, Name: dwx{AppName}
 
-# Initialize Git
+# Initialize Git (Azure DevOps — all DWx repos are in ADO, NOT GitHub)
 git init
-git remote add origin https://github.com/garyfinberg24-png/dwx-{app-slug}.git
+git remote add origin https://gfinberg@dev.azure.com/gfinberg/DWx/_git/{AppName}
 ```
+
+> **IMPORTANT**: All DWx repos use Azure DevOps (ADO) under the `DWx` project. GitHub is no longer used for DWx applications.
 
 #### Step 1.3 — Generate a Unique Solution ID
 Every app needs a unique GUID in `config/package-solution.json`:
@@ -489,12 +491,13 @@ Every app gets a comprehensive `CLAUDE.md` following the Policy Manager template
 #### Step 7.2 — Update README.md
 Standard readme with quick start, build commands, architecture overview.
 
-#### Step 7.3 — Git Tag & Release
+#### Step 7.3 — Git Tag & Release (Azure DevOps)
 ```bash
 git add -A
 git commit -m "Initial standalone DWx {App Name} extraction from JML monolith"
 git tag v1.0.0
-git push origin main --tags
+git push origin master --tags
+# Remote: https://gfinberg@dev.azure.com/gfinberg/DWx/_git/{AppName}
 ```
 
 ---
@@ -838,20 +841,23 @@ Once all 15 apps are extracted and verified:
 | Body Size | 16px / 400 weight |
 | Caption Size | 12px / 500 weight |
 
-## Appendix B: Git Repository Naming
+## Appendix B: Git Repository Naming (Azure DevOps)
 
-| App | Repo Name | GitHub URL |
-|-----|-----------|-----------|
-| Asset Manager | dwx-asset-manager | github.com/garyfinberg24-png/dwx-asset-manager |
-| CV Management | dwx-cv-management | github.com/garyfinberg24-png/dwx-cv-management |
-| Document Hub | dwx-document-hub | github.com/garyfinberg24-png/dwx-document-hub |
-| External Sharing Hub | dwx-external-sharing-hub | github.com/garyfinberg24-png/dwx-external-sharing-hub |
-| Gamification | dwx-gamification | github.com/garyfinberg24-png/dwx-gamification |
-| Integration Hub | dwx-integration-hub | github.com/garyfinberg24-png/dwx-integration-hub |
-| License Management | dwx-license-management | github.com/garyfinberg24-png/dwx-license-management |
-| Procurement Manager | dwx-procurement-manager | github.com/garyfinberg24-png/dwx-procurement-manager |
-| Reports Builder | dwx-reports-builder | github.com/garyfinberg24-png/dwx-reports-builder |
-| Survey Management | dwx-survey-management | github.com/garyfinberg24-png/dwx-survey-management |
-| Recruitment Manager | dwx-recruitment-manager | github.com/garyfinberg24-png/dwx-recruitment-manager |
-| Signing Service | dwx-signing-service | github.com/garyfinberg24-png/dwx-signing-service |
-| Training & Skills | dwx-training-skills | github.com/garyfinberg24-png/dwx-training-skills |
+> **All DWx repositories are hosted in Azure DevOps** under the `DWx` project: `https://dev.azure.com/gfinberg/DWx`
+> GitHub is **no longer used** for DWx applications.
+
+| App | ADO Repo Name | ADO URL |
+|-----|---------------|---------|
+| Asset Manager | AssetManager | `dev.azure.com/gfinberg/DWx/_git/AssetManager` |
+| CV Management | CVManagement | `dev.azure.com/gfinberg/DWx/_git/CVManagement` |
+| Document Hub | DocumentHub | `dev.azure.com/gfinberg/DWx/_git/DocumentHub` |
+| External Sharing Hub | ExternalSharingHub | `dev.azure.com/gfinberg/DWx/_git/ExternalSharingHub` |
+| Gamification | Gamification | `dev.azure.com/gfinberg/DWx/_git/Gamification` |
+| Integration Hub | IntegrationHub | `dev.azure.com/gfinberg/DWx/_git/IntegrationHub` |
+| License Management | LicenseManagement | `dev.azure.com/gfinberg/DWx/_git/LicenseManagement` |
+| Procurement Manager | ProcurementManager | `dev.azure.com/gfinberg/DWx/_git/ProcurementManager` |
+| Reports Builder | ReportsBuilder | `dev.azure.com/gfinberg/DWx/_git/ReportsBuilder` |
+| Survey Management | SurveyManagement | `dev.azure.com/gfinberg/DWx/_git/SurveyManagement` |
+| Recruitment Manager | RecruitmentManager | `dev.azure.com/gfinberg/DWx/_git/RecruitmentManager` |
+| Signing Service | SigningService | `dev.azure.com/gfinberg/DWx/_git/SigningService` |
+| Training & Skills | TrainingSkills | `dev.azure.com/gfinberg/DWx/_git/TrainingSkills` |

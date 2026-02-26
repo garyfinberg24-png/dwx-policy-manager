@@ -49,6 +49,7 @@ import { ErrorBoundary } from '../../../components/ErrorBoundary/ErrorBoundary';
 import { PageSubheader } from '../../../components/PageSubheader';
 import { PolicyHubService } from '../../../services/PolicyHubService';
 import { PolicyNotificationQueueProcessor } from '../../../services/PolicyNotificationQueueProcessor';
+import { RecentlyViewedService } from '../../../services/RecentlyViewedService';
 import {
   IPolicy,
   IPolicyHubSearchResult,
@@ -1874,7 +1875,10 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
             </div>
             <button
               className={styles.btnView}
-              onClick={() => { window.location.href = `/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${policy.Id}&mode=browse`; }}
+              onClick={() => {
+                RecentlyViewedService.trackView(policy.Id, policy.PolicyName || policy.Title, policy.PolicyCategory || '');
+                window.location.href = `/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${policy.Id}&mode=browse`;
+              }}
             >
               View →
             </button>
@@ -2734,6 +2738,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
         showSearch={true}
         showNotifications={true}
         compactFooter={true}
+        dwxHub={this.props.dwxHub}
       >
         <section className={styles.policyHub}>
           <Stack tokens={{ childrenGap: 0 }}>

@@ -2,6 +2,7 @@
 import { WebPartContext } from '@microsoft/sp-webpart-base';
 import { SPFI } from '@pnp/sp';
 import { PolicyManagerRole } from '../../services/PolicyRoleService';
+import { DwxHubService } from '@dwx/core';
 
 export interface INavItem {
   key: string;
@@ -72,6 +73,8 @@ export interface IJmlAppHeaderProps {
   onRoleChange?: (role: string) => void;
   /** Policy Manager role for nav/visibility filtering */
   policyRole?: PolicyManagerRole;
+  /** DWx Hub service instance for cross-app notifications */
+  dwxHub?: DwxHubService;
 }
 
 // Re-export types for backward compatibility

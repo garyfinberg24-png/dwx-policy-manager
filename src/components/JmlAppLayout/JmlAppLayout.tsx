@@ -51,6 +51,7 @@ const DwxAppLayout: React.FC<IJmlAppLayoutProps> = (props) => {
     availableRoles,
     onRoleChange,
     policyManagerRole,
+    dwxHub,
 
     // Footer
     version,
@@ -135,6 +136,7 @@ const DwxAppLayout: React.FC<IJmlAppLayoutProps> = (props) => {
           availableRoles={availableRoles}
           onRoleChange={onRoleChange}
           policyRole={effectiveRole}
+          dwxHub={dwxHub}
         />
       )}
 

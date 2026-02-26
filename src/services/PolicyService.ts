@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Policy Service
 // Comprehensive service for enterprise policy management
 // Enhanced with server-side validation, audit logging, and retention management

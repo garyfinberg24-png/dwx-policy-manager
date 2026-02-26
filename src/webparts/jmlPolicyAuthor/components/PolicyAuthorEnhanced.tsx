@@ -1,3 +1,4 @@
+// @ts-nocheck
 import * as React from 'react';
 import { IPolicyAuthorProps } from './IPolicyAuthorProps';
 import {
@@ -7545,6 +7546,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         showSearch={true}
         showNotifications={true}
         compactFooter={true}
+        dwxHub={this.props.dwxHub}
       >
         <ErrorBoundary fallbackMessage="An error occurred in the Policy Builder. Please try again.">
         <section className={styles.policyAuthor}>

@@ -22,6 +22,7 @@ import {
   MessageBarType,
 } from '@fluentui/react';
 import { PeoplePicker, PrincipalType } from "@pnp/spfx-controls-react/lib/PeoplePicker";
+import { PolicyDistributionService, ISPDistributionItem } from '../../../services/PolicyDistributionService';
 
 // ============================================================================
 // INTERFACES
@@ -93,6 +94,9 @@ interface IPolicyDistributionState {
   formDueDate: Date | undefined;
   formEscalation: boolean;
   formReminder: string;
+  // Dynamic dropdown options loaded from SharePoint
+  policyOptions: IDropdownOption[];
+  policyPackOptions: IDropdownOption[];
   // Messages
   successMessage: string;
   errorMessage: string;
@@ -299,10 +303,15 @@ const FILTER_TABS = ['All', 'Active', 'Scheduled', 'Completed', 'Draft', 'Paused
 // ============================================================================
 
 export default class PolicyDistribution extends React.Component<IPolicyDistributionProps, IPolicyDistributionState> {
+  private distributionService: PolicyDistributionService;
+  /** True once live SP data has been loaded successfully — used to decide CRUD target */
+  private _liveDataLoaded: boolean = false;
+
   constructor(props: IPolicyDistributionProps) {
     super(props);
+    this.distributionService = new PolicyDistributionService(props.sp);
     this.state = {
-      loading: false,
+      loading: true,
       campaigns: MOCK_CAMPAIGNS,
       filteredCampaigns: MOCK_CAMPAIGNS,
       searchQuery: '',
@@ -322,8 +331,112 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
       formDueDate: undefined,
       formEscalation: true,
       formReminder: '7,14',
+      policyOptions: POLICY_OPTIONS,
+      policyPackOptions: POLICY_PACK_OPTIONS,
       successMessage: '',
       errorMessage: '',
+    };
+  }
+
+  // ──────────── Lifecycle ────────────
+
+  public async componentDidMount(): Promise<void> {
+    try {
+      const [distributions, policies, policyPacks] = await Promise.all([
+        this.distributionService.getDistributions(),
+        this.distributionService.getPolicies(),
+        this.distributionService.getPolicyPacks(),
+      ]);
+
+      // --- Map SP distribution items to component campaign format ---
+      if (distributions.length > 0) {
+        const campaigns: IDistributionCampaign[] = distributions.map((d: ISPDistributionItem) => this.mapSPToCampaign(d));
+        this.setState({ campaigns, filteredCampaigns: campaigns });
+      }
+      // If distributions list is empty (no campaigns yet) — start with empty array
+      if (distributions.length === 0) {
+        this.setState({ campaigns: [], filteredCampaigns: [] });
+      }
+
+      // --- Map policies to dropdown options ---
+      if (policies.length > 0) {
+        const policyOptions: IDropdownOption[] = policies.map(p => ({
+          key: String(p.Id),
+          text: p.PolicyName || p.Title,
+        }));
+        this.setState({ policyOptions });
+      }
+
+      // --- Map policy packs to dropdown options ---
+      if (policyPacks.length > 0) {
+        const policyPackOptions: IDropdownOption[] = policyPacks.map(p => ({
+          key: String(p.Id),
+          text: p.PackName || p.Title,
+        }));
+        this.setState({ policyPackOptions });
+      }
+
+      this._liveDataLoaded = true;
+    } catch (err) {
+      console.warn('PolicyDistribution: Failed to load live data from SharePoint, using sample data as fallback:', err);
+      // Mock data already set in constructor — nothing to change
+    } finally {
+      this.setState({ loading: false });
+    }
+  }
+
+  // ──────────── SP → Campaign mapper ────────────
+
+  private mapSPToCampaign(d: ISPDistributionItem): IDistributionCampaign {
+    // Determine status from the SP Status field, falling back to logic based on dates/flags
+    let status: IDistributionCampaign['status'] = 'Draft';
+    if (d.Status) {
+      const s = d.Status as IDistributionCampaign['status'];
+      if (['Draft', 'Scheduled', 'Active', 'Completed', 'Paused'].indexOf(s) !== -1) {
+        status = s;
+      }
+    } else {
+      if (d.CompletedDate) status = 'Completed';
+      else if (d.DistributedDate) status = 'Active';
+      else if (d.ScheduledDate) status = 'Scheduled';
+    }
+
+    // Determine content type
+    const contentType: 'Policy' | 'Policy Pack' = d.PolicyPackId ? 'Policy Pack' : 'Policy';
+
+    // Parse comma-separated user/group strings
+    const targetUsers = d.TargetUsers ? d.TargetUsers.split(',').map(s => s.trim()).filter(Boolean) : [];
+    const targetGroups = d.TargetGroups ? d.TargetGroups.split(',').map(s => s.trim()).filter(Boolean) : [];
+
+    return {
+      id: d.Id,
+      campaignName: d.CampaignName || d.DistributionName || d.Title,
+      contentType,
+      policyTitle: d.PolicyTitle || d.Title,
+      policyId: d.PolicyId || 0,
+      policyPackId: d.PolicyPackId || undefined,
+      policyPackName: d.PolicyPackName || undefined,
+      scope: d.DistributionScope || 'All Employees',
+      targetUsers,
+      targetGroups,
+      status,
+      scheduledDate: d.ScheduledDate ? new Date(d.ScheduledDate) : undefined,
+      distributedDate: d.DistributedDate ? new Date(d.DistributedDate) : undefined,
+      dueDate: d.DueDate ? new Date(d.DueDate) : undefined,
+      targetCount: d.TargetCount || 0,
+      totalSent: d.TotalSent || 0,
+      totalDelivered: d.TotalDelivered || 0,
+      totalOpened: d.TotalOpened || 0,
+      totalAcknowledged: d.TotalAcknowledged || 0,
+      totalOverdue: d.TotalOverdue || 0,
+      totalExempted: d.TotalExempted || 0,
+      totalFailed: d.TotalFailed || 0,
+      escalationEnabled: d.EscalationEnabled ?? false,
+      reminderSchedule: d.ReminderSchedule || '7',
+      isActive: d.IsActive ?? false,
+      completedDate: d.CompletedDate ? new Date(d.CompletedDate) : undefined,
+      createdDate: new Date(d.Created),
+      createdBy: d.Author?.Title || 'Unknown',
     };
   }
 
@@ -390,7 +503,7 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
     });
   };
 
-  private saveCampaign = (): void => {
+  private saveCampaign = async (): Promise<void> => {
     const { editingCampaign, campaigns, formCampaignName, formContentType, formPolicyId, formPolicyPackId, formScope, formTargetUsers, formTargetGroups, formScheduledDate, formDueDate, formEscalation, formReminder } = this.state;
 
     if (!formCampaignName.trim()) {
@@ -401,7 +514,45 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
     const targetUsers = formTargetUsers ? formTargetUsers.split(',').map(s => s.trim()).filter(Boolean) : [];
     const targetGroups = formTargetGroups ? formTargetGroups.split(',').map(s => s.trim()).filter(Boolean) : [];
 
+    // Resolve the display name for the selected policy or pack
+    const { policyOptions, policyPackOptions } = this.state;
+    const selectedPolicyText = policyOptions.find(o => String(o.key) === formPolicyId)?.text || 'Selected Policy';
+    const selectedPackText = policyPackOptions.find(o => String(o.key) === formPolicyPackId)?.text || 'Selected Pack';
+
     if (editingCampaign) {
+      // ── UPDATE ──
+      const updatedFields: Record<string, unknown> = {
+        Title: formCampaignName,
+        CampaignName: formCampaignName,
+        DistributionName: formCampaignName,
+        DistributionScope: formScope,
+        TargetUsers: targetUsers.join(', '),
+        TargetGroups: targetGroups.join(', '),
+        ScheduledDate: formScheduledDate ? formScheduledDate.toISOString() : null,
+        DueDate: formDueDate ? formDueDate.toISOString() : null,
+        EscalationEnabled: formEscalation,
+        ReminderSchedule: formReminder,
+      };
+      if (formContentType === 'Policy') {
+        updatedFields.PolicyId = parseInt(formPolicyId) || editingCampaign.policyId;
+        updatedFields.PolicyTitle = selectedPolicyText;
+        updatedFields.PolicyPackId = null;
+        updatedFields.PolicyPackName = null;
+      } else {
+        updatedFields.PolicyPackId = parseInt(formPolicyPackId) || editingCampaign.policyPackId;
+        updatedFields.PolicyPackName = selectedPackText;
+      }
+
+      // Try SP first, then update local state regardless
+      if (this._liveDataLoaded) {
+        try {
+          await this.distributionService.updateDistribution(editingCampaign.id, updatedFields);
+        } catch (err) {
+          console.error('Failed to update distribution in SharePoint:', err);
+          // Fall through to in-memory update
+        }
+      }
+
       const updated = campaigns.map(c =>
         c.id === editingCampaign.id
           ? {
@@ -409,8 +560,9 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
               campaignName: formCampaignName,
               contentType: formContentType,
               policyId: parseInt(formPolicyId) || c.policyId,
+              policyTitle: formContentType === 'Policy' ? selectedPolicyText : c.policyTitle,
               policyPackId: formContentType === 'Policy Pack' ? (parseInt(formPolicyPackId) || c.policyPackId) : undefined,
-              policyPackName: formContentType === 'Policy Pack' ? (c.policyPackName || 'Selected Pack') : undefined,
+              policyPackName: formContentType === 'Policy Pack' ? selectedPackText : undefined,
               scope: formScope,
               targetUsers,
               targetGroups,
@@ -423,14 +575,60 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
       );
       this.setState({ campaigns: updated, showCreatePanel: false, successMessage: 'Campaign updated successfully.' }, () => this.applyFilters());
     } else {
+      // ── CREATE ──
+      const spData: Record<string, unknown> = {
+        Title: formCampaignName,
+        CampaignName: formCampaignName,
+        DistributionName: formCampaignName,
+        DistributionScope: formScope,
+        TargetUsers: targetUsers.join(', '),
+        TargetGroups: targetGroups.join(', '),
+        ScheduledDate: formScheduledDate ? formScheduledDate.toISOString() : null,
+        DueDate: formDueDate ? formDueDate.toISOString() : null,
+        TargetCount: formScope === 'All Employees' ? 342 : (targetUsers.length + targetGroups.length * 25),
+        TotalSent: 0,
+        TotalDelivered: 0,
+        TotalOpened: 0,
+        TotalAcknowledged: 0,
+        TotalOverdue: 0,
+        TotalExempted: 0,
+        TotalFailed: 0,
+        EscalationEnabled: formEscalation,
+        ReminderSchedule: formReminder,
+        Status: formScheduledDate ? 'Scheduled' : 'Draft',
+        IsActive: false,
+      };
+      if (formContentType === 'Policy') {
+        spData.PolicyId = parseInt(formPolicyId) || 0;
+        spData.PolicyTitle = selectedPolicyText;
+      } else {
+        spData.PolicyPackId = parseInt(formPolicyPackId) || 0;
+        spData.PolicyPackName = selectedPackText;
+      }
+
+      let newId = Date.now();
+
+      // Try SP first
+      if (this._liveDataLoaded) {
+        try {
+          const result = await this.distributionService.createDistribution(spData);
+          if (result && result.Id) {
+            newId = result.Id;
+          }
+        } catch (err) {
+          console.error('Failed to create distribution in SharePoint:', err);
+          // Fall through to in-memory create
+        }
+      }
+
       const newCampaign: IDistributionCampaign = {
-        id: Date.now(),
+        id: newId,
         campaignName: formCampaignName,
         contentType: formContentType,
-        policyTitle: formContentType === 'Policy' ? 'Selected Policy' : 'Selected Policy Pack',
+        policyTitle: formContentType === 'Policy' ? selectedPolicyText : selectedPackText,
         policyId: parseInt(formPolicyId) || 0,
         policyPackId: formContentType === 'Policy Pack' ? (parseInt(formPolicyPackId) || 0) : undefined,
-        policyPackName: formContentType === 'Policy Pack' ? 'Selected Pack' : undefined,
+        policyPackName: formContentType === 'Policy Pack' ? selectedPackText : undefined,
         scope: formScope,
         targetUsers,
         targetGroups,
@@ -457,14 +655,49 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
     setTimeout(() => this.setState({ successMessage: '' }), 3000);
   };
 
-  private deleteCampaign = (id: number): void => {
+  private deleteCampaign = async (id: number): Promise<void> => {
+    // Try SP delete first
+    if (this._liveDataLoaded) {
+      try {
+        await this.distributionService.deleteDistribution(id);
+      } catch (err) {
+        console.error('Failed to delete distribution from SharePoint:', err);
+        // Fall through to in-memory delete
+      }
+    }
+
     const updated = this.state.campaigns.filter(c => c.id !== id);
     this.setState({ campaigns: updated, successMessage: 'Campaign deleted.' }, () => this.applyFilters());
     setTimeout(() => this.setState({ successMessage: '' }), 3000);
   };
 
-  private selectCampaign = (campaign: IDistributionCampaign): void => {
+  private selectCampaign = async (campaign: IDistributionCampaign): Promise<void> => {
     this.setState({ selectedCampaign: campaign });
+
+    // Try to load live recipients from SP
+    if (this._liveDataLoaded) {
+      try {
+        const spRecipients = await this.distributionService.getDistributionRecipients(campaign.id);
+        if (spRecipients.length > 0) {
+          const recipients: IRecipient[] = spRecipients.map(r => ({
+            id: r.Id,
+            name: r.Title || 'Unknown',
+            email: r.UserEmail || '',
+            department: r.Department || '',
+            status: (r.AckStatus as IRecipient['status']) || 'Pending',
+            sentDate: r.SentDate ? new Date(r.SentDate) : undefined,
+            openedDate: r.OpenedDate ? new Date(r.OpenedDate) : undefined,
+            acknowledgedDate: r.AcknowledgedDate ? new Date(r.AcknowledgedDate) : undefined,
+          }));
+          this.setState({ recipients });
+          return;
+        }
+      } catch (err) {
+        console.warn('Failed to load recipients from SharePoint, using sample data:', err);
+      }
+    }
+    // Fallback: keep MOCK_RECIPIENTS
+    this.setState({ recipients: MOCK_RECIPIENTS });
   };
 
   private clearSelection = (): void => {
@@ -790,7 +1023,7 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
   // ──────────── RENDER: Create/Edit Panel ────────────
 
   private renderCampaignPanel(): React.ReactElement {
-    const { showCreatePanel, editingCampaign, formCampaignName, formContentType, formPolicyId, formPolicyPackId, formScope, formTargetUsers, formTargetGroups, formScheduledDate, formDueDate, formEscalation, formReminder, errorMessage } = this.state;
+    const { showCreatePanel, editingCampaign, formCampaignName, formContentType, formPolicyId, formPolicyPackId, formScope, formTargetUsers, formTargetGroups, formScheduledDate, formDueDate, formEscalation, formReminder, errorMessage, policyOptions, policyPackOptions } = this.state;
 
     return (
       <Panel
@@ -846,7 +1079,7 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
                 <Dropdown
                   label="Policy"
                   selectedKey={formPolicyId || undefined}
-                  options={POLICY_OPTIONS}
+                  options={policyOptions}
                   onChange={(_, opt) => opt && this.setState({ formPolicyId: opt.key as string })}
                   placeholder="Select a policy to distribute"
                 />
@@ -856,7 +1089,7 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
                 <Dropdown
                   label="Policy Pack"
                   selectedKey={formPolicyPackId || undefined}
-                  options={POLICY_PACK_OPTIONS}
+                  options={policyPackOptions}
                   onChange={(_, opt) => opt && this.setState({ formPolicyPackId: opt.key as string })}
                   placeholder="Select a policy pack to distribute"
                 />

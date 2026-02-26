@@ -5,6 +5,7 @@ import { IStatCard, IBreadcrumbItem, INavItem, IQuickLink } from '../JmlAppHeade
 import { UserRole } from '../../services/RoleDetectionService';
 import { PolicyManagerRole } from '../../services/PolicyRoleService';
 import { IFooterLinkGroup } from '../JmlAppFooter/IJmlAppFooterProps';
+import { DwxHubService } from '@dwx/core';
 
 /**
  * Props for the JML App Layout wrapper component
@@ -61,6 +62,8 @@ export interface IJmlAppLayoutProps {
   onRoleChange?: (role: UserRole) => void;
   /** Policy Manager role for navigation and visibility filtering */
   policyManagerRole?: PolicyManagerRole;
+  /** DWx Hub service instance for cross-app features (notifications, linked records) */
+  dwxHub?: DwxHubService;
 
   // Footer Configuration
   /** Application version string */

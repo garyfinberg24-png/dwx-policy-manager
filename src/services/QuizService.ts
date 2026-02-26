@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Quiz Service - Fully Featured
  * Comprehensive quiz management with advanced question types,

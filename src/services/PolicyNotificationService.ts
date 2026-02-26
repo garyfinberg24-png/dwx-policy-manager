@@ -12,6 +12,7 @@ import '@pnp/sp/items';
 import { IPolicy, IPolicyAcknowledgement, AcknowledgementStatus } from '../models/IPolicy';
 import { logger } from './LoggingService';
 import { NotificationLists, PolicyLists } from '../constants/SharePointListNames';
+import { DwxNotificationService } from '@dwx/core';
 
 /**
  * Policy notification types
@@ -62,12 +63,14 @@ export interface IReminderSchedule {
 export class PolicyNotificationService {
   private sp: SPFI;
   private siteUrl: string;
+  private dwxNotifications: DwxNotificationService | null;
   private readonly NOTIFICATION_LIST = NotificationLists.POLICY_NOTIFICATIONS;
   private readonly REMINDER_SCHEDULE_LIST = NotificationLists.REMINDER_SCHEDULE;
 
-  constructor(sp: SPFI, siteUrl: string) {
+  constructor(sp: SPFI, siteUrl: string, dwxNotificationService?: DwxNotificationService) {
     this.sp = sp;
     this.siteUrl = siteUrl;
+    this.dwxNotifications = dwxNotificationService || null;
   }
 
   // ============================================================================
@@ -967,13 +970,74 @@ export class PolicyNotificationService {
         subject: notification.subject
       });
 
-      // Store notification in list for audit trail
+      // Store notification in local list for audit trail
       await this.logNotification(notification);
+
+      // Fire cross-app notification to DWx Hub (if available)
+      if (notification.sendInApp && this.dwxNotifications) {
+        await this.sendCrossAppNotification(notification);
+      }
 
     } catch (error) {
       logger.error('PolicyNotificationService', 'Failed to send notification:', error);
       throw error;
     }
+  }
+
+  /**
+   * Send cross-app notification to DWx Hub DWX_Notifications list
+   */
+  private async sendCrossAppNotification(notification: IPolicyNotification): Promise<void> {
+    try {
+      const policyDetailsUrl = `${this.siteUrl}/SitePages/PolicyDetails.aspx?policyId=${notification.policyId}`;
+
+      await this.dwxNotifications.createNotification({
+        Title: notification.subject,
+        MessageBody: notification.body.replace(/<[^>]*>/g, '').substring(0, 500),
+        NotificationType: this.mapToDwxNotificationType(notification.notificationType),
+        Priority: this.mapToDwxPriority(notification.notificationType),
+        SourceApp: 'PolicyManager',
+        SourceItemId: notification.policyId || 0,
+        SourceItemTitle: notification.subject,
+        SourceItemUrl: policyDetailsUrl,
+        RecipientEmail: notification.recipientEmail,
+        Category: this.mapToDwxCategory(notification.notificationType),
+        ActionUrl: policyDetailsUrl,
+      });
+    } catch (error) {
+      // Non-blocking — cross-app notification failure should not break local flow
+      logger.warn('PolicyNotificationService', 'Failed to send cross-app notification to DWx Hub:', error);
+    }
+  }
+
+  private mapToDwxNotificationType(type: PolicyNotificationType): string {
+    const map = {
+      'NewPolicy': 'PolicyPublished',
+      'PolicyUpdated': 'PolicyPublished',
+      'AcknowledgementRequired': 'AcknowledgementDue',
+      'Reminder3Day': 'AcknowledgementDue',
+      'Reminder1Day': 'AcknowledgementDue',
+      'Overdue': 'ComplianceAlert',
+      'AcknowledgementComplete': 'ApprovalCompleted',
+      'PolicyExpiring': 'PolicyExpiring',
+      'PolicyApproved': 'ApprovalCompleted',
+      'PolicyRejected': 'ApprovalCompleted',
+      'DelegationRequest': 'ApprovalRequired',
+    };
+    return map[type] || 'SystemAlert';
+  }
+
+  private mapToDwxPriority(type: PolicyNotificationType): string {
+    if (['Overdue', 'PolicyExpiring', 'Reminder1Day'].includes(type)) return 'High';
+    if (['AcknowledgementRequired', 'Reminder3Day', 'PolicyApproved', 'PolicyRejected', 'DelegationRequest'].includes(type)) return 'Medium';
+    return 'Low';
+  }
+
+  private mapToDwxCategory(type: PolicyNotificationType): string {
+    if (['PolicyApproved', 'PolicyRejected', 'DelegationRequest'].includes(type)) return 'Approval';
+    if (['Overdue', 'PolicyExpiring', 'AcknowledgementRequired', 'Reminder3Day', 'Reminder1Day'].includes(type)) return 'Compliance';
+    if (['AcknowledgementComplete'].includes(type)) return 'Task';
+    return 'Info';
   }
 
   private async logNotification(notification: IPolicyNotification): Promise<void> {

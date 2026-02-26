@@ -3,7 +3,9 @@ import * as React from 'react';
 import styles from './PolicyManagerHeader.module.scss';
 import { SPFI } from '@pnp/sp';
 import { PolicyManagerRole, filterNavForRole, getHeaderVisibility } from '../../services/PolicyRoleService';
+import { RecentlyViewedService, IRecentlyViewedDisplay } from '../../services/RecentlyViewedService';
 import { PolicyRequestWizard } from './PolicyRequestWizard';
+import { DwxHubService, DwxNotificationService, DwxNotificationBell, DwxAppRegistryService, DwxAppSwitcher } from '@dwx/core';
 
 export interface INavItem {
   key: string;
@@ -97,6 +99,8 @@ export interface IPolicyManagerHeaderProps {
   policyRole?: PolicyManagerRole;
   /** PnPjs SPFI instance for SharePoint operations (wizard submit) */
   sp?: SPFI;
+  /** DWx Hub service instance for cross-app notifications */
+  dwxHub?: DwxHubService;
 }
 
 // Icon components for nav items
@@ -177,6 +181,23 @@ const NavIcons = {
   )
 };
 
+/**
+ * Mapping from header nav item keys to admin toggle keys in PolicyAdmin.
+ * Used to apply admin navigation visibility settings from localStorage (pm_nav_visibility).
+ * Nav items without a mapping are always shown (e.g. items added dynamically).
+ */
+const NAV_KEY_TO_TOGGLE_KEY: Record<string, string> = {
+  'browse': 'policyHub',
+  'my-policies': 'myPolicies',
+  'create': 'policyBuilder',
+  'author': 'policyAuthor',
+  'packs': 'policyPacks',
+  'distribution': 'policyDistribution',
+  'manager': 'policyManager',
+  'analytics': 'policyAnalytics',
+  'quiz': 'quizBuilder',
+};
+
 // Notification type icon mapping
 const getNotificationIcon = (type: string): string => {
   switch (type) {
@@ -240,38 +261,67 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
   showPageHeader = false,
   loginTime,
   policyRole,
-  sp
+  sp,
+  dwxHub
 }) => {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [showProfileDropdown, setShowProfileDropdown] = React.useState(false);
-  const [showNotificationDropdown, setShowNotificationDropdown] = React.useState(false);
   const [showRecentlyViewedDropdown, setShowRecentlyViewedDropdown] = React.useState(false);
 
   // Request Policy Wizard — extracted to PolicyRequestWizard.tsx
   const [showRequestWizard, setShowRequestWizard] = React.useState(false);
 
+  // Admin navigation visibility toggles (loaded from localStorage, set via PolicyAdmin)
+  const [navVisibility, setNavVisibility] = React.useState<Record<string, boolean>>({});
+
+  React.useEffect(() => {
+    try {
+      const saved = localStorage.getItem('pm_nav_visibility');
+      if (saved) {
+        setNavVisibility(JSON.parse(saved));
+      }
+    } catch { /* ignore corrupt data */ }
+  }, []);
+
+  // Cross-app notification service (from DWx Hub)
+  const dwxNotificationService = React.useMemo(() => {
+    if (dwxHub) {
+      try { return new DwxNotificationService(dwxHub); } catch { return null; }
+    }
+    return null;
+  }, [dwxHub]);
+
+  // Cross-app registry service (for App Switcher)
+  const dwxRegistryService = React.useMemo(() => {
+    if (dwxHub) {
+      try { return new DwxAppRegistryService(dwxHub); } catch { return null; }
+    }
+    return null;
+  }, [dwxHub]);
+
   // Refs for click-outside detection
   const profileRef = React.useRef<HTMLDivElement>(null);
-  const notificationRef = React.useRef<HTMLDivElement>(null);
   const recentlyViewedRef = React.useRef<HTMLDivElement>(null);
 
-  // Mock recently viewed policies
-  const recentlyViewedPolicies = [
-    { id: 1, title: 'Data Protection Policy v3.2', category: 'Data Privacy', time: '10m ago', status: 'Published' },
-    { id: 2, title: 'IT Security Policy', category: 'IT & Security', time: '1h ago', status: 'Published' },
-    { id: 3, title: 'Remote Work Policy v2.0', category: 'HR Policies', time: '2h ago', status: 'Published' },
-    { id: 4, title: 'GDPR Compliance Framework', category: 'Compliance', time: '3h ago', status: 'Published' },
-    { id: 5, title: 'Acceptable Use Policy', category: 'IT & Security', time: '1d ago', status: 'In Review' }
-  ];
+  // Recently viewed policies — loaded from localStorage via RecentlyViewedService
+  const [recentlyViewedPolicies, setRecentlyViewedPolicies] = React.useState<IRecentlyViewedDisplay[]>([]);
+
+  React.useEffect(() => {
+    setRecentlyViewedPolicies(RecentlyViewedService.getRecentlyViewed(5));
+  }, []);
+
+  // Refresh the list every time the dropdown is opened (picks up views from other pages)
+  React.useEffect(() => {
+    if (showRecentlyViewedDropdown) {
+      setRecentlyViewedPolicies(RecentlyViewedService.getRecentlyViewed(5));
+    }
+  }, [showRecentlyViewedDropdown]);
 
   // Click-outside handler to close dropdowns
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
         setShowProfileDropdown(false);
-      }
-      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
-        setShowNotificationDropdown(false);
       }
       if (recentlyViewedRef.current && !recentlyViewedRef.current.contains(event.target as Node)) {
         setShowRecentlyViewedDropdown(false);
@@ -301,10 +351,6 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
     }
   };
 
-  // Use provided notifications or defaults
-  const displayNotifications = notifications || defaultNotifications;
-  const unreadCount = notificationCount || displayNotifications.filter(n => !n.isRead).length;
-
   // Format login time
   const displayLoginTime = loginTime || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
@@ -323,7 +369,19 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
   ];
 
   const allNavItems = navItems.length > 0 ? navItems : defaultNavItems;
-  const displayNavItems = policyRole ? filterNavForRole(allNavItems, policyRole) : allNavItems;
+  const roleFiltered = policyRole ? filterNavForRole(allNavItems, policyRole) : allNavItems;
+
+  // Apply admin navigation toggles from localStorage (set via PolicyAdmin > Navigation)
+  const displayNavItems = roleFiltered.filter(item => {
+    // If no admin toggle settings saved yet, show everything (default)
+    if (Object.keys(navVisibility).length === 0) return true;
+    // Look up the toggle key for this nav item
+    const toggleKey = NAV_KEY_TO_TOGGLE_KEY[item.key];
+    // If no mapping exists for this nav key, always show it
+    if (!toggleKey) return true;
+    // Check admin toggle — default to visible if this specific toggle key isn't in the saved data
+    return navVisibility[toggleKey] !== false;
+  });
 
   // Override header visibility based on role
   const roleVisibility = policyRole ? getHeaderVisibility(policyRole) : null;
@@ -351,16 +409,9 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
     }
   };
 
-  // Handle notification bell click
-  const handleNotificationClick = () => {
-    setShowNotificationDropdown(!showNotificationDropdown);
-    setShowProfileDropdown(false);
-  };
-
   // Handle profile avatar click
   const handleProfileClick = () => {
     setShowProfileDropdown(!showProfileDropdown);
-    setShowNotificationDropdown(false);
   };
 
   return (
@@ -461,7 +512,6 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
                 onClick={() => {
                   setShowRecentlyViewedDropdown(!showRecentlyViewedDropdown);
                   setShowProfileDropdown(false);
-                  setShowNotificationDropdown(false);
                 }}
               >
                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -479,30 +529,36 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
                     <span className={styles.dropdownPanelBadge}>{recentlyViewedPolicies.length} policies</span>
                   </div>
                   <div className={styles.dropdownPanelBody}>
-                    {recentlyViewedPolicies.map(policy => (
-                      <a
-                        key={policy.id}
-                        href={`/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${policy.id}`}
-                        className={styles.notificationItem}
-                        style={{ textDecoration: 'none', color: 'inherit' }}
-                        onClick={() => setShowRecentlyViewedDropdown(false)}
-                      >
-                        <div
-                          className={styles.notificationItemIcon}
-                          style={{ background: '#0d9488' }}
+                    {recentlyViewedPolicies.length === 0 ? (
+                      <div style={{ padding: '16px 20px', textAlign: 'center', color: '#605e5c', fontSize: '13px' }}>
+                        No recently viewed policies yet. Browse or view a policy to see it here.
+                      </div>
+                    ) : (
+                      recentlyViewedPolicies.map(policy => (
+                        <a
+                          key={policy.id}
+                          href={`/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${policy.id}`}
+                          className={styles.notificationItem}
+                          style={{ textDecoration: 'none', color: 'inherit' }}
+                          onClick={() => setShowRecentlyViewedDropdown(false)}
                         >
-                          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 16, height: 16 }}>
-                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        </div>
-                        <div className={styles.notificationItemContent}>
-                          <span className={styles.notificationItemTitle}>{policy.title}</span>
-                          <span className={styles.notificationItemMessage}>{policy.category}</span>
-                        </div>
-                        <span className={styles.notificationItemTime}>{policy.time}</span>
-                      </a>
-                    ))}
+                          <div
+                            className={styles.notificationItemIcon}
+                            style={{ background: '#0d9488' }}
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 16, height: 16 }}>
+                              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          </div>
+                          <div className={styles.notificationItemContent}>
+                            <span className={styles.notificationItemTitle}>{policy.title}</span>
+                            <span className={styles.notificationItemMessage}>{policy.category}</span>
+                          </div>
+                          <span className={styles.notificationItemTime}>{policy.time}</span>
+                        </a>
+                      ))
+                    )}
                   </div>
                   <div className={styles.dropdownPanelFooter}>
                     <a href="/sites/PolicyManager/SitePages/PolicyHub.aspx?view=recent" className={styles.dropdownFooterLink}>
@@ -513,6 +569,15 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
               )}
             </div>
           </div>
+
+          {/* DWx App Switcher (waffle menu) */}
+          {dwxRegistryService && (
+            <DwxAppSwitcher
+              registryService={dwxRegistryService}
+              currentAppId="PolicyManager"
+              hubUrl="https://mf7m.sharepoint.com/sites/DWxHub"
+            />
+          )}
 
           {/* Search icon button */}
           <button
@@ -566,82 +631,12 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
             </button>
           )}
 
-          {/* Notifications with Dropdown */}
-          {showNotifications && (
-            <div className={styles.dropdownContainer} ref={notificationRef}>
-              <button
-                className={styles.actionButton}
-                onClick={handleNotificationClick}
-                type="button"
-                title="Notifications"
-                aria-label="Notifications"
-              >
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path
-                    d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                {unreadCount > 0 && (
-                  <span className={styles.notificationBadgeCount} style={{ border: 'none', outline: 'none', boxShadow: 'none' }}>
-                    {unreadCount > 99 ? '99+' : unreadCount}
-                  </span>
-                )}
-              </button>
-
-              {/* Notifications Dropdown Panel */}
-              {showNotificationDropdown && (
-                <div className={styles.dropdownPanel}>
-                  <div className={styles.dropdownArrow} />
-                  <div className={styles.dropdownPanelHeader}>
-                    <span className={styles.dropdownPanelTitle}>Notifications</span>
-                    <span className={styles.dropdownPanelBadge}>{unreadCount} new</span>
-                  </div>
-                  <div className={styles.dropdownPanelBody}>
-                    {displayNotifications.length === 0 ? (
-                      <div className={styles.dropdownEmpty}>
-                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 32, height: 32, color: '#c8c6c4' }}>
-                          <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                        <span>No new notifications</span>
-                      </div>
-                    ) : (
-                      displayNotifications.map(notification => (
-                        <div
-                          key={notification.id}
-                          className={`${styles.notificationItem} ${!notification.isRead ? styles.notificationUnread : ''}`}
-                        >
-                          <div
-                            className={styles.notificationItemIcon}
-                            style={{ background: getNotificationColor(notification.type) }}
-                          >
-                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 16, height: 16 }}>
-                              {notification.type === 'approval' && <path d="M20 6L9 17l-5-5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>}
-                              {notification.type === 'reminder' && <><circle cx="12" cy="12" r="10" stroke="white" strokeWidth="2"/><path d="M12 6v6l4 2" stroke="white" strokeWidth="2" strokeLinecap="round"/></>}
-                              {notification.type === 'alert' && <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v4M12 17h.01" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>}
-                              {notification.type === 'task' && <><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" stroke="white" strokeWidth="2" strokeLinecap="round"/><path d="M9 12l2 2 4-4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></>}
-                            </svg>
-                          </div>
-                          <div className={styles.notificationItemContent}>
-                            <span className={styles.notificationItemTitle}>{notification.title}</span>
-                            <span className={styles.notificationItemMessage}>{notification.message}</span>
-                          </div>
-                          <span className={styles.notificationItemTime}>{notification.time}</span>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                  <div className={styles.dropdownPanelFooter}>
-                    <a href="/sites/PolicyManager/SitePages/PolicyHub.aspx?view=notifications" className={styles.dropdownFooterLink}>
-                      View All Notifications
-                    </a>
-                  </div>
-                </div>
-              )}
-            </div>
+          {/* Cross-App Notifications (DWx Hub) */}
+          {showNotifications && dwxNotificationService && (
+            <DwxNotificationBell
+              notificationService={dwxNotificationService}
+              pollInterval={60000}
+            />
           )}
 
           {/* User Avatar with Profile Dropdown */}

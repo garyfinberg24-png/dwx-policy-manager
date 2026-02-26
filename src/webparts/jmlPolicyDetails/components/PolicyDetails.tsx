@@ -45,6 +45,8 @@ import styles from './PolicyDetails.module.scss';
 import { PM_LISTS } from '../../../constants/SharePointListNames';
 import { QuizService, IQuizResult } from '../../../services/QuizService';
 import { QuizTaker } from '../../../components/QuizTaker/QuizTaker';
+import { DwxLinkedRecordService, DwxLinkedRecordsPanel } from '@dwx/core';
+import { RecentlyViewedService } from '../../../services/RecentlyViewedService';
 
 // Read flow steps
 export type ReadFlowStep = 'reading' | 'quiz' | 'acknowledge' | 'complete';
@@ -177,6 +179,7 @@ const MOCK_QUIZ_QUESTIONS: IQuizQuestion[] = [
 export default class PolicyDetails extends React.Component<IPolicyDetailsProps, IPolicyDetailsState> {
   private policyService: PolicyService;
   private socialService: PolicySocialService;
+  private linkedRecordService: DwxLinkedRecordService | null = null;
   private readTimer: NodeJS.Timeout | null = null;
   private dialogManager = createDialogManager();
   private documentViewerRef: React.RefObject<HTMLDivElement>;
@@ -239,6 +242,9 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
     };
     this.policyService = new PolicyService(props.sp);
     this.socialService = new PolicySocialService(props.sp);
+    if (props.dwxHub) {
+      this.linkedRecordService = new DwxLinkedRecordService(props.dwxHub);
+    }
   }
 
   public async componentDidMount(): Promise<void> {
@@ -332,6 +338,13 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
         loading: false
       });
 
+      // Track this policy view in Recently Viewed (localStorage)
+      RecentlyViewedService.trackView(
+        policy.Id,
+        policy.PolicyName || policy.Title,
+        policy.PolicyCategory || ''
+      );
+
       if (acknowledgement && acknowledgement.AckStatus !== 'Acknowledged') {
         await this.policyService.trackPolicyOpen(acknowledgement.Id);
       }
@@ -392,6 +405,13 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
       loading: false,
       quizRequired: true
     });
+
+    // Track mock policy view in Recently Viewed (localStorage)
+    RecentlyViewedService.trackView(
+      mockPolicy.Id,
+      mockPolicy.PolicyName || mockPolicy.Title,
+      mockPolicy.PolicyCategory || ''
+    );
   }
 
   private startReadTracking(): void {
@@ -1123,6 +1143,17 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
             )}
           </div>
         </div>
+
+        {/* Cross-App Linked Records (DWx Hub) */}
+        {this.linkedRecordService && policy.Id && (
+          <DwxLinkedRecordsPanel
+            linkedRecordService={this.linkedRecordService}
+            appId="PolicyManager"
+            itemId={policy.Id}
+            itemTitle={`${policy.PolicyNumber} - ${policy.PolicyName}`}
+            compact={true}
+          />
+        )}
 
         {/* Document Viewer */}
         {hasDocuments && documentUrl && (
@@ -1859,6 +1890,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
         showSearch={true}
         showNotifications={true}
         compactFooter={true}
+        dwxHub={this.props.dwxHub}
       >
         <section className={styles.policyDetails}>
           {loading && (

@@ -145,40 +145,32 @@ $pm-light-teal: #14b8a6;
   }
 }
 
-// Main Content Grid
+// Main Content Grid - matches Contract Manager resultsArea styling
 .mainContent {
-  display: flex !important;
-  flex-direction: row !important;
-  flex-wrap: nowrap !important;
+  display: flex;
   gap: 24px;
-  align-items: flex-start;
-  width: 100%;
 
   @media (max-width: 768px) {
-    flex-direction: column !important;
+    flex-direction: column;
   }
 }
 
-// Filters Panel
+// Filters Panel - matches Contract Manager AssetSearch styling
 .filtersPanel {
-  width: 280px;
-  min-width: 280px;
-  max-width: 280px;
+  width: 260px;
   flex-shrink: 0;
-  background-color: #ffffff;
+  background-color: #f8fafc;
   border-radius: 8px;
   padding: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   height: fit-content;
   position: sticky;
   top: 20px;
-  border: 1px solid #edebe9;
+  border: 1px solid #e2e8f0;
   box-sizing: border-box;
+  align-self: flex-start;
 
   @media (max-width: 768px) {
     width: 100%;
-    min-width: unset;
-    max-width: unset;
     position: static;
   }
 }
@@ -228,14 +220,13 @@ $pm-light-teal: #14b8a6;
   }
 }
 
-// Results Panel
+// Results Panel - matches Contract Manager AssetSearch styling
 .resultsPanel {
-  flex: 1 1 0%;
+  flex: 1;
   min-width: 0;
-  max-width: calc(100% - 304px);
 
   @media (max-width: 768px) {
-    max-width: 100%;
+    width: 100%;
   }
 }
 

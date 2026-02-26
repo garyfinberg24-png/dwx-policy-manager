@@ -15,64 +15,120 @@ Enterprise-grade Policy Lifecycle Management system built on SharePoint Framewor
 | --- | --- |
 | DWx Policy Manager | First Digital / Gary Finberg |
 
-## Web Parts (9)
+## Web Parts (14)
 
 | Web Part | Description | Page |
 | --- | --- | --- |
 | **JmlPolicyHub** | Main policy browsing interface with KPI dashboard, advanced filtering, table/card views | `PolicyHub.aspx` |
-| **JmlPolicyDetails** | Full policy viewer with version history, acknowledgement, quiz, feedback | `PolicyDetails.aspx` |
-| **JmlPolicyAuthor** | Policy authoring and editing with rich text editor, metadata, workflow submission | `PolicyAuthor.aspx` |
-| **JmlPolicyAdmin** | Admin panel with sidebar navigation — templates, metadata, workflows, compliance, SLA, naming rules, lifecycle, navigation | `PolicyAdmin.aspx` |
-| **JmlPolicyPackManager** | Bundle policies into packs, assign to users/groups, track completion | `PolicyPacks.aspx` |
 | **JmlMyPolicies** | Personal dashboard showing assigned policies, due dates, completion status | `MyPolicies.aspx` |
-| **DwxQuizBuilder** | Quiz creation and management for policy comprehension testing | `QuizBuilder.aspx` |
-| **JmlPolicySearch** | Dedicated search center with filters, category chips, result cards | `PolicySearch.aspx` |
+| **JmlPolicyAdmin** | Admin panel with sidebar navigation — 21 sections including templates, metadata, workflows, compliance, SLA, naming rules, lifecycle, navigation toggles | `PolicyAdmin.aspx` |
+| **JmlPolicyAuthor** | Policy creation wizard with rich text editor, metadata, workflow submission | `PolicyBuilder.aspx` |
+| **DwxPolicyAuthorView** | Author dashboard — policies, approvals, delegations, activity tabs | `PolicyAuthor.aspx` |
+| **JmlPolicyDetails** | Full policy viewer with version history, acknowledgement, quiz, recently viewed tracking, cross-app record linking | `PolicyDetails.aspx` |
+| **JmlPolicyPackManager** | Bundle policies into packs, assign to users/groups, track completion | `PolicyPacks.aspx` |
+| **DwxQuizBuilder** | Quiz creation and management with AI-powered question generation (Azure OpenAI GPT-4o) | `QuizBuilder.aspx` |
+| **JmlPolicySearch** | Dedicated search center with hero section, sidebar filters, result cards | `PolicySearch.aspx` |
 | **JmlPolicyHelp** | Help center with articles, FAQs, shortcuts, videos, support tabs | `PolicyHelp.aspx` |
+| **JmlPolicyDistribution** | Distribution campaign management — create, track, and manage policy distribution with live SharePoint data | `PolicyDistribution.aspx` |
+| **JmlPolicyAnalytics** | Executive analytics dashboard (6 tabs: Executive, Policy Metrics, Acknowledgements, SLA, Compliance, Audit) with live SP data | `PolicyAnalytics.aspx` |
+| **DwxPolicyManagerView** | Manager compliance dashboard — team compliance, approvals, delegations, reviews, reports | `PolicyManagerView.aspx` |
 
 ## Architecture
 
 ```
 src/
-  webparts/                    # 9 SPFx web parts
-    jmlPolicyHub/              # Main hub - browsing & dashboard
-    jmlPolicyDetails/          # Policy detail viewer
-    jmlPolicyAuthor/           # Policy authoring
-    jmlPolicyAdmin/            # Admin panel (sidebar layout)
-    jmlPolicyPackManager/      # Policy pack management
+  webparts/                    # 14 SPFx web parts
+    jmlPolicyHub/              # Main hub — browsing & dashboard
     jmlMyPolicies/             # My assigned policies
-    dwxQuizBuilder/            # Quiz builder
+    jmlPolicyAdmin/            # Admin panel (sidebar layout, 21 sections)
+    jmlPolicyAuthor/           # Policy authoring wizard
+    dwxPolicyAuthorView/       # Author dashboard (4 tabs)
+    jmlPolicyDetails/          # Policy detail viewer + acknowledgement
+    jmlPolicyPackManager/      # Policy pack management
+    dwxQuizBuilder/            # Quiz builder + AI generation
     jmlPolicySearch/           # Search center
     jmlPolicyHelp/             # Help center
+    jmlPolicyDistribution/     # Distribution campaigns (live SP data)
+    jmlPolicyAnalytics/        # Executive analytics (6 tabs, live SP data)
+    dwxPolicyManagerView/      # Manager compliance dashboard
   components/                  # Shared components
-    JmlAppLayout/              # Shared header/footer layout wrapper
-    PolicyManagerHeader/       # Global header with nav icons
-    PolicyManagerFooter/       # Global footer
-  models/                      # TypeScript interfaces
+    JmlAppLayout/              # Full-page layout wrapper with role filtering
+    JmlAppHeader/              # App header with DWx Hub integration
+    PolicyManagerHeader/       # Global header with nav icons, admin toggle filtering
+    PageSubheader/             # Page subheader component
+    QuizBuilder/               # Quiz creation, AI generation, question management
+    QuizTaker/                 # Quiz-taking component (11 question types)
+    ErrorBoundary/             # React error boundary with retry
+  models/                      # 56+ TypeScript interfaces
     IPolicy.ts                 # Core policy models (80+ fields)
     IJmlApproval.ts            # Approval workflow models
-    ICommon.ts                 # Shared types (IUser, etc.)
-  services/                    # Service layer
-    PolicyService.ts           # SharePoint CRUD operations
+  services/                    # 145+ service layer
+    PolicyService.ts           # Core CRUD, versioning, authorization (type-checked)
+    PolicyDistributionService.ts  # Distribution campaigns — live SP CRUD
+    PolicyNotificationService.ts  # In-app + email + DWx cross-app notifications
+    RecentlyViewedService.ts   # localStorage recently viewed tracking
+    LoggingService.ts          # Dual-mode telemetry (console + Application Insights)
+    PolicyRoleService.ts       # 4-tier RBAC (User, Author, Manager, Admin)
+    QuizService.ts             # Quiz CRUD, results, AI generation
   constants/                   # Configuration
     SharePointListNames.ts     # All PM_ list name constants
   styles/                      # Shared styles
     fluent-mixins.scss         # SCSS mixins for full-bleed layouts
+  utils/                       # pnpConfig, SharePointOverrides, injectPortalStyles
+azure-functions/
+  quiz-generator/              # Azure Function — AI Quiz Question Generator (GPT-4o)
+    infra/                     # Bicep IaC + deployment script
+scripts/
+  policy-management/           # PnP PowerShell provisioning
+    Deploy-AllPolicyLists.ps1  # Master list deployment
+    Provision-SharePointPages.ps1  # Create all 13 SharePoint pages
+    Deploy-SampleData.ps1      # Sample data seeding
+  Seed-DwxAppRegistry.ps1      # DWx Hub app registry seeding
+docs/                          # Architecture docs, proposals, mockups
 ```
+
+## Key Services
+
+| Service | Purpose |
+| --- | --- |
+| `PolicyService` | Core CRUD, versioning, authorization checks (fully type-checked) |
+| `PolicyDistributionService` | Distribution campaign CRUD against PM_PolicyDistributions |
+| `PolicyNotificationService` | In-app + email notifications, optional DWx cross-app delivery |
+| `RecentlyViewedService` | localStorage-based recently viewed policies (max 10 items) |
+| `LoggingService` | Dual-mode: console-only or Azure Application Insights (Beacon API, no npm dep) |
+| `PolicyRoleService` | 4-tier RBAC: User → Author → Manager → Admin |
+| `QuizService` | Quiz CRUD, AI question generation pipeline |
+
+## Role-Based Access Control
+
+| Role | Access |
+| --- | --- |
+| **User** | Browse, My Policies, Policy Details |
+| **Author** | + Create, Policy Packs, Author Dashboard |
+| **Manager** | + Approvals, Distribution, Analytics, Manager Dashboard |
+| **Admin** | + Quiz Builder, Admin panel, all settings |
+
+## DWx Hub Integration
+
+Optional cross-app integration via `@dwx/core`. All apps work fully standalone when Hub is unavailable (graceful degradation).
+
+- **DwxNotificationBell** — Cross-app notification bell in header
+- **DwxAppSwitcher** — Switch between DWx suite apps
+- **DwxLinkedRecordService** — Cross-app record linking (PolicyDetails)
+- **DwxNotificationService** — Cross-app notification delivery on policy events
 
 ## SharePoint Lists
 
-All lists use the `PM_` prefix. Key list groups:
+All lists use the `PM_` prefix. Full definitions in `src/constants/SharePointListNames.ts`.
 
-- **Policy Core**: PM_Policies, PM_PolicyVersions, PM_PolicyAcknowledgements, PM_PolicyExemptions, PM_PolicyDistributions, PM_PolicyTemplates, PM_PolicyCategories
-- **Quiz**: PM_PolicyQuizzes, PM_PolicyQuizQuestions, PM_PolicyQuizResults, PM_QuizAttempts, PM_QuizCertificates
-- **Workflow**: PM_WorkflowTemplates, PM_WorkflowInstances, PM_ApprovalDecisions, PM_Delegations, PM_EscalationRules
-- **Analytics**: PM_PolicyAnalytics, PM_UserActivityLog, PM_ComplianceViolations, PM_AuditTrail, PM_AuditReports
-- **Social**: PM_PolicyRatings, PM_PolicyComments, PM_PolicyFollowers
+- **Policy Core**: PM_Policies, PM_PolicyVersions, PM_PolicyAcknowledgements, PM_PolicyExemptions, PM_PolicyDistributions, PM_PolicyTemplates
+- **Quiz**: PM_PolicyQuizzes, PM_PolicyQuizQuestions, PM_PolicyQuizResults, PM_PolicyQuizAttempts, PM_PolicyQuizAnswers
+- **Approval**: PM_Approvals, PM_ApprovalChains, PM_ApprovalHistory, PM_ApprovalDelegations, PM_ApprovalTemplates
+- **Analytics**: PM_PolicyAnalytics, PM_PolicyAuditLog, PM_PolicyFeedback
+- **Notifications**: PM_Notifications, PM_NotificationQueue
+- **Social**: PM_PolicyRatings, PM_PolicyComments, PM_PolicyCommentLikes, PM_PolicyShares, PM_PolicyFollowers
 - **Policy Packs**: PM_PolicyPacks, PM_PolicyPackAssignments
-- **Notifications**: PM_PolicyNotifications, PM_NotificationQueue, PM_ReminderSchedule
-- **Retention**: PM_RetentionPolicies, PM_LegalHolds, PM_RetentionArchive
-
-Full list definitions in `src/constants/SharePointListNames.ts`.
+- **Config**: PM_Configuration
 
 ## Design System
 
@@ -84,37 +140,50 @@ Full list definitions in `src/constants/SharePointListNames.ts`.
 | Primary Dark | `#0f766e` | Gradient endpoints, hover states |
 | Primary Light | `#ccfbf1` | Active backgrounds, highlights |
 | Sidebar BG | `#f1f5f9` | Left sidebar background |
-| Content BG | `#ffffff` | Main content areas |
 
 Gradient: `linear-gradient(135deg, #0d9488 0%, #0f766e 100%)`
 
-Font: Inter (fallback: Segoe UI, system fonts)
+Font: Segoe UI (system fallbacks)
 
-Full style guide: `docs/DWx-Style-Guide-Preview.html`
+## Admin Navigation Toggles
 
-## Policy Admin Sections
+Admin panel controls which nav items are visible across the app. Settings persist to `pm_nav_visibility` in localStorage and are read by `PolicyManagerHeader` to filter the navigation bar. Protected items (Policy Hub, Administration) cannot be disabled.
 
-The Admin panel uses a left sidebar (280px) + right content area layout with 12 sections:
+## Application Insights Telemetry
 
-**CONFIGURATION**: Templates, Metadata Profiles, Approval Workflows, Compliance Settings, Notifications, Naming Rules, SLA Targets, Data Lifecycle, Navigation
+`LoggingService` supports dual-mode telemetry:
 
-**MANAGEMENT**: Reviewers & Approvers, Audit Log, Data Export
+- **Console-only** (default) — all telemetry goes to `console.log/warn/error`
+- **Application Insights** — when initialized with a connection string, sends telemetry via Beacon API (zero npm dependencies)
+
+Methods: `trackPageView`, `trackEvent`, `trackException`, `trackMetric`, `trackDependency`
 
 ## Provisioning
 
-PowerShell scripts for SharePoint list creation:
+```powershell
+# Assumes you are already connected to SharePoint via Connect-PnPOnline
+cd scripts/policy-management
 
-| Script | Purpose |
-| --- | --- |
-| `scripts/provision-approval-lists.ps1` | Approval workflow lists (PnP PowerShell) |
-| `scripts/provision-notification-lists.ps1` | Notification lists (PnP PowerShell) |
+# Deploy all lists
+.\Deploy-AllPolicyLists.ps1
+
+# Create all 13 SharePoint pages
+.\Provision-SharePointPages.ps1
+
+# Seed sample data
+.\Deploy-SampleData.ps1
+
+# Seed DWx Hub registry (if Hub site exists)
+cd ../
+.\Seed-DwxAppRegistry.ps1
+```
 
 ## Prerequisites
 
-- Node.js 18.x LTS
+- Node.js 18.x, 20.x, or 22.x
 - SharePoint Online tenant with App Catalog
 - PnP PowerShell module (for provisioning)
-- Site URL: configured via web part properties
+- SharePoint Site: `https://mf7m.sharepoint.com/sites/PolicyManager`
 
 ## Build & Deploy
 
@@ -122,8 +191,8 @@ PowerShell scripts for SharePoint list creation:
 # Install dependencies
 npm install
 
-# Development (local workbench)
-gulp serve
+# Development build
+npm run build
 
 # Production build
 gulp clean && gulp bundle --ship && gulp package-solution --ship
@@ -133,12 +202,20 @@ gulp clean && gulp bundle --ship && gulp package-solution --ship
 
 Upload the `.sppkg` file to the SharePoint App Catalog, then add web parts to their respective pages.
 
+## Repository
+
+- **Azure DevOps**: `https://dev.azure.com/gfinberg/DWx/_git/dwx-policy-manager`
+- **GitHub (mirror)**: `https://github.com/garyfinberg24-png/dwx-policy-manager`
+
 ## Version History
 
 | Version | Date | Comments |
 | --- | --- | --- |
-| 2.0 | January 29, 2026 | 9 webparts, Forest Teal theme, admin sidebar, search/help centers, approval workflows |
-| 1.0 | January 2026 | Initial implementation — Policy Hub, Details, Author, Admin, Pack Manager, MyPolicies, QuizBuilder |
+| 1.2.3 | February 2026 | Live data wiring (Analytics, Distribution), Application Insights telemetry, admin nav toggles, DWx Hub expansion, RecentlyViewedService, provisioning scripts |
+| 1.2.2 | February 2026 | Image templates, quiz selection, fullscreen viewer, DWx Hub integration, enterprise hardening (9/10 security + performance fixes) |
+| 1.2.1 | January 2026 | Quiz Builder UX overhaul, AI pipeline hardening, Recently Viewed dropdown |
+| 1.1.0 | January 2026 | QuizTaker rewrite (11 question types), Azure Function AI quiz generation, deployed to production |
+| 1.0.0 | January 2026 | 14 webparts, Forest Teal theme, admin sidebar, search/help centers, approval workflows, role-based access |
 
 ## References
 
@@ -146,3 +223,7 @@ Upload the `.sppkg` file to the SharePoint App Catalog, then add web parts to th
 - [Fluent UI React v8](https://developer.microsoft.com/en-us/fluentui)
 - [PnP/PnPjs v3](https://pnp.github.io/pnpjs/)
 - [PnP PowerShell](https://pnp.github.io/powershell/)
+
+## License
+
+Proprietary — First Digital. All rights reserved.

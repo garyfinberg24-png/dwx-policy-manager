@@ -97,6 +97,8 @@ interface IPolicyDistributionState {
   // Dynamic dropdown options loaded from SharePoint
   policyOptions: IDropdownOption[];
   policyPackOptions: IDropdownOption[];
+  // Metrics
+  metricsLoading: boolean;
   // Messages
   successMessage: string;
   errorMessage: string;
@@ -333,6 +335,7 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
       formReminder: '7,14',
       policyOptions: POLICY_OPTIONS,
       policyPackOptions: POLICY_PACK_OPTIONS,
+      metricsLoading: false,
       successMessage: '',
       errorMessage: '',
     };
@@ -672,12 +675,16 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
   };
 
   private selectCampaign = async (campaign: IDistributionCampaign): Promise<void> => {
-    this.setState({ selectedCampaign: campaign });
+    this.setState({ selectedCampaign: campaign, metricsLoading: true });
 
-    // Try to load live recipients from SP
+    // Try to load live recipients + metrics from SP
     if (this._liveDataLoaded) {
       try {
-        const spRecipients = await this.distributionService.getDistributionRecipients(campaign.id);
+        const [spRecipients, metrics] = await Promise.all([
+          this.distributionService.getDistributionRecipients(campaign.id),
+          this.distributionService.calculateCampaignMetrics(campaign.id).catch(() => null),
+        ]);
+
         if (spRecipients.length > 0) {
           const recipients: IRecipient[] = spRecipients.map(r => ({
             id: r.Id,
@@ -689,7 +696,19 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
             openedDate: r.OpenedDate ? new Date(r.OpenedDate) : undefined,
             acknowledgedDate: r.AcknowledgedDate ? new Date(r.AcknowledgedDate) : undefined,
           }));
-          this.setState({ recipients });
+
+          // Merge real-time metrics into selected campaign
+          const updatedCampaign = metrics ? {
+            ...campaign,
+            totalSent: metrics.totalSent,
+            totalDelivered: metrics.totalDelivered,
+            totalOpened: metrics.totalOpened,
+            totalAcknowledged: metrics.totalAcknowledged,
+            totalOverdue: metrics.totalOverdue,
+            totalFailed: metrics.totalFailed,
+          } : campaign;
+
+          this.setState({ recipients, selectedCampaign: updatedCampaign, metricsLoading: false });
           return;
         }
       } catch (err) {
@@ -697,11 +716,68 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
       }
     }
     // Fallback: keep MOCK_RECIPIENTS
-    this.setState({ recipients: MOCK_RECIPIENTS });
+    this.setState({ recipients: MOCK_RECIPIENTS, metricsLoading: false });
   };
 
   private clearSelection = (): void => {
     this.setState({ selectedCampaign: null });
+  };
+
+  private refreshMetrics = async (): Promise<void> => {
+    const { selectedCampaign } = this.state;
+    if (!selectedCampaign || !this._liveDataLoaded) return;
+
+    this.setState({ metricsLoading: true });
+    try {
+      const metrics = await this.distributionService.calculateCampaignMetrics(selectedCampaign.id, true);
+      const updated = {
+        ...selectedCampaign,
+        totalSent: metrics.totalSent,
+        totalDelivered: metrics.totalDelivered,
+        totalOpened: metrics.totalOpened,
+        totalAcknowledged: metrics.totalAcknowledged,
+        totalOverdue: metrics.totalOverdue,
+        totalFailed: metrics.totalFailed,
+      };
+      // Also update in the master campaigns list
+      const campaigns = this.state.campaigns.map(c => c.id === updated.id ? updated : c);
+      this.setState({ selectedCampaign: updated, campaigns, metricsLoading: false, successMessage: 'Metrics refreshed from live data.' });
+      setTimeout(() => this.setState({ successMessage: '' }), 3000);
+    } catch (err) {
+      this.setState({ metricsLoading: false, errorMessage: 'Failed to refresh metrics.' });
+      setTimeout(() => this.setState({ errorMessage: '' }), 3000);
+    }
+  };
+
+  private handleEscalation = async (): Promise<void> => {
+    const { selectedCampaign, recipients } = this.state;
+    if (!selectedCampaign || !this._liveDataLoaded) return;
+
+    const overdueRecipients = recipients.filter(r => r.status === 'Overdue');
+    if (overdueRecipients.length === 0) return;
+
+    // Map component IRecipient to service ISPRecipientItem shape
+    const spRecipients = overdueRecipients.map(r => ({
+      Id: r.id,
+      Title: r.name,
+      UserEmail: r.email,
+      Department: r.department,
+      AckStatus: r.status,
+      DueDate: undefined as string | undefined,
+    }));
+
+    try {
+      const queued = await this.distributionService.sendEscalationNotifications(
+        selectedCampaign.id,
+        selectedCampaign.campaignName,
+        spRecipients as any
+      );
+      this.setState({ successMessage: `Escalation sent to ${queued} overdue recipient${queued !== 1 ? 's' : ''}.` });
+      setTimeout(() => this.setState({ successMessage: '' }), 4000);
+    } catch (err) {
+      this.setState({ errorMessage: 'Failed to send escalation notifications.' });
+      setTimeout(() => this.setState({ errorMessage: '' }), 3000);
+    }
   };
 
   // ──────────── Helpers ────────────
@@ -763,10 +839,31 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
 
   // ──────────── RENDER: KPI Dashboard ────────────
 
+  private reloadDistributions = async (): Promise<void> => {
+    try {
+      this.setState({ loading: true });
+      const distributions = await this.distributionService.getDistributions();
+      const campaigns = distributions.map((d: ISPDistributionItem) => this.mapSPToCampaign(d));
+      this.setState({ campaigns, loading: false }, () => this.applyFilters());
+    } catch (err) {
+      console.warn('Failed to reload distributions:', err);
+      this.setState({ loading: false });
+    }
+  };
+
   private renderKPIs(): React.ReactElement {
     const kpis = this.getKPIs();
     return (
       <div className={styles.kpiSection}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <span style={{ fontWeight: 600, fontSize: 14, color: '#334155' }}>Distribution Overview</span>
+          <IconButton
+            iconProps={{ iconName: 'Refresh' }}
+            title="Refresh distributions"
+            onClick={this.reloadDistributions}
+            styles={{ root: { color: '#0d9488' }, rootHovered: { color: '#0f766e' } }}
+          />
+        </div>
         <div className={styles.kpiGrid}>
           {kpis.map((kpi, idx) => (
             <div key={idx} className={`${styles.kpiCard} ${kpi.className || ''}`}>
@@ -929,6 +1026,21 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
               <DefaultButton text="Pause" iconProps={{ iconName: 'Pause' }} styles={{ root: { borderRadius: 6 } }} />
             )}
             <DefaultButton text="Send Reminder" iconProps={{ iconName: 'Ringer' }} styles={{ root: { borderRadius: 6 } }} />
+            <DefaultButton
+              text={this.state.metricsLoading ? 'Refreshing...' : 'Refresh Metrics'}
+              iconProps={{ iconName: 'Refresh' }}
+              disabled={this.state.metricsLoading}
+              onClick={this.refreshMetrics}
+              styles={{ root: { borderRadius: 6 } }}
+            />
+            {c.escalationEnabled && c.totalOverdue > 0 && (
+              <DefaultButton
+                text={`Escalate Overdue (${c.totalOverdue})`}
+                iconProps={{ iconName: 'Warning' }}
+                onClick={this.handleEscalation}
+                styles={{ root: { borderRadius: 6, borderColor: '#d97706', color: '#d97706' }, rootHovered: { background: '#fffbeb', borderColor: '#b45309', color: '#b45309' } }}
+              />
+            )}
             <IconButton iconProps={{ iconName: 'Edit' }} title="Edit Campaign" onClick={() => this.openEditPanel(c)} />
           </div>
         </div>

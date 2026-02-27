@@ -95,6 +95,10 @@ export interface IJMLEmployee {
   Notes?: string;
   /** Last sync timestamp */
   LastSyncedAt?: Date;
+  /** Policy Manager role override (Admin-assigned) */
+  PMRole?: 'User' | 'Author' | 'Manager' | 'Admin';
+  /** Manager email for cross-referencing */
+  ManagerEmail?: string;
 }
 
 /**

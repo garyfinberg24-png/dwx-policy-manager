@@ -47,7 +47,8 @@ import { injectPortalStyles } from '../../../utils/injectPortalStyles';
 import { JmlAppLayout } from '../../../components/JmlAppLayout';
 import { ErrorBoundary } from '../../../components/ErrorBoundary/ErrorBoundary';
 import { PageSubheader } from '../../../components/PageSubheader';
-import { PolicyHubService } from '../../../services/PolicyHubService';
+import { PolicyHubService, IUserVisibilityContext } from '../../../services/PolicyHubService';
+import { PolicyManagerRole } from '../../../services/PolicyRoleService';
 import { PolicyNotificationQueueProcessor } from '../../../services/PolicyNotificationQueueProcessor';
 import { RecentlyViewedService } from '../../../services/RecentlyViewedService';
 import {
@@ -205,6 +206,8 @@ export interface IPolicyHubState {
   showRecentSection: boolean;
   totalResults: number;
   expandedPolicyId: number | null;
+  // Visibility context
+  userVisibilityContext: IUserVisibilityContext | null;
 }
 
 export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyHubState> {
@@ -270,7 +273,8 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
       showFeaturedSection: true,
       showRecentSection: true,
       totalResults: 0,
-      expandedPolicyId: null
+      expandedPolicyId: null,
+      userVisibilityContext: null
     };
     this.hubService = new PolicyHubService(props.sp);
 
@@ -385,9 +389,37 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
       // Determine user role based on SharePoint groups
       const userRole = await this.determineUserRole(userId);
 
+      // Build visibility context from page context + groups
+      const legacyContext = (this.props.context.pageContext as any).legacyPageContext || {};
+      const department = legacyContext.department || legacyContext.Department || '';
+      const jobTitle = legacyContext.jobTitle || legacyContext.JobTitle || '';
+      const userEmail = currentUser.Email || currentUser.LoginName || '';
+
+      // Get group names for security group matching
+      const groups = await this.props.sp.web.currentUser.groups();
+      const groupNames = groups.map((g: { Title: string }) => g.Title);
+
+      // Map local role type to PolicyManagerRole enum for visibility filter
+      const roleMap: Record<PolicyUserRole, PolicyManagerRole> = {
+        'Employee': PolicyManagerRole.User,
+        'Author': PolicyManagerRole.Author,
+        'Manager': PolicyManagerRole.Manager,
+        'Admin': PolicyManagerRole.Admin
+      };
+
+      const visibilityContext: IUserVisibilityContext = {
+        userId,
+        userEmail,
+        department,
+        jobTitle,
+        role: roleMap[userRole],
+        groupNames
+      };
+
       this.setState({
         currentUserId: userId,
-        currentUserRole: userRole
+        currentUserRole: userRole,
+        userVisibilityContext: visibilityContext
       });
 
       // Load role-specific data
@@ -639,6 +671,14 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
       };
 
       const results = await this.hubService.searchPolicyHub(searchRequest);
+
+      // Apply visibility filtering based on user context
+      const { userVisibilityContext } = this.state;
+      if (userVisibilityContext && results.policies) {
+        results.policies = this.hubService.filterByVisibility(results.policies, userVisibilityContext);
+        results.totalCount = results.policies.length;
+      }
+
       this.setState({ searchResults: results, loading: false });
     } catch (error) {
       console.error('Failed to load policies:', error);
@@ -2222,7 +2262,113 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
           />
 
           {searchResults.facets && this.renderDynamicFacets(this.convertFacetsToArray(searchResults.facets))}
+
+          {/* Category Tree Navigation */}
+          {this.renderCategoryTree(searchResults.policies)}
         </Stack>
+      </div>
+    );
+  }
+
+  /**
+   * Renders a category/subcategory tree for folder-like navigation.
+   * Groups policies by Category > SubCategory with counts.
+   */
+  private renderCategoryTree(policies: IPolicy[]): JSX.Element {
+    if (!policies || policies.length === 0) return <></>;
+
+    const state = this.state as any;
+    const expandedCategories: Set<string> = state._expandedCategories || new Set();
+
+    // Build tree: Category → SubCategory[] → count
+    const tree: Record<string, { count: number; subCategories: Record<string, number> }> = {};
+    policies.forEach(p => {
+      const cat = p.PolicyCategory || 'Uncategorized';
+      if (!tree[cat]) tree[cat] = { count: 0, subCategories: {} };
+      tree[cat].count++;
+      const sub = (p as any).SubCategory;
+      if (sub) {
+        tree[cat].subCategories[sub] = (tree[cat].subCategories[sub] || 0) + 1;
+      }
+    });
+
+    const sortedCategories = Object.keys(tree).sort();
+    const selectedCat = this.state.selectedCategory;
+    const selectedSub = state._selectedSubCategory || '';
+
+    return (
+      <div style={{ marginTop: 8 }}>
+        <Text variant="medium" style={{ fontWeight: 600, display: 'block', marginBottom: 8 }}>
+          <Icon iconName="FolderList" style={{ marginRight: 6 }} />
+          Browse by Category
+        </Text>
+        {/* "All Policies" root */}
+        <div
+          onClick={() => {
+            this.setState({ selectedCategory: '', _selectedSubCategory: '' } as any, () => this.loadPolicies());
+          }}
+          style={{
+            padding: '6px 8px', cursor: 'pointer', borderRadius: 4,
+            backgroundColor: !selectedCat ? '#ccfbf1' : 'transparent',
+            fontWeight: !selectedCat ? 600 : 400, fontSize: 13
+          }}
+        >
+          All Policies ({policies.length})
+        </div>
+        {sortedCategories.map(cat => {
+          const node = tree[cat];
+          const hasSubs = Object.keys(node.subCategories).length > 0;
+          const isExpanded = expandedCategories.has(cat);
+          const isSelected = selectedCat === cat && !selectedSub;
+
+          return (
+            <div key={cat}>
+              <Stack horizontal verticalAlign="center" style={{
+                padding: '5px 8px', cursor: 'pointer', borderRadius: 4,
+                backgroundColor: isSelected ? '#ccfbf1' : 'transparent'
+              }}>
+                {hasSubs && (
+                  <Icon
+                    iconName={isExpanded ? 'ChevronDown' : 'ChevronRight'}
+                    style={{ fontSize: 10, marginRight: 4, cursor: 'pointer' }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const next = new Set(expandedCategories);
+                      isExpanded ? next.delete(cat) : next.add(cat);
+                      this.setState({ _expandedCategories: next } as any);
+                    }}
+                  />
+                )}
+                {!hasSubs && <span style={{ width: 14 }} />}
+                <Text
+                  style={{ fontSize: 13, fontWeight: isSelected ? 600 : 400, flex: 1 }}
+                  onClick={() => {
+                    this.setState({ selectedCategory: cat, _selectedSubCategory: '' } as any, () => this.loadPolicies());
+                  }}
+                >
+                  {cat}
+                </Text>
+                <Text style={{ fontSize: 11, color: '#94a3b8' }}>{node.count}</Text>
+              </Stack>
+              {hasSubs && isExpanded && Object.entries(node.subCategories).sort().map(([sub, count]) => (
+                <div
+                  key={sub}
+                  onClick={() => {
+                    this.setState({ selectedCategory: cat, _selectedSubCategory: sub } as any, () => this.loadPolicies());
+                  }}
+                  style={{
+                    padding: '4px 8px 4px 28px', cursor: 'pointer', borderRadius: 4, fontSize: 12,
+                    backgroundColor: selectedCat === cat && selectedSub === sub ? '#ccfbf1' : 'transparent',
+                    fontWeight: selectedCat === cat && selectedSub === sub ? 600 : 400
+                  }}
+                >
+                  <Icon iconName="FolderOpen" style={{ fontSize: 11, marginRight: 4, color: '#0d9488' }} />
+                  {sub} <span style={{ color: '#94a3b8', marginLeft: 4 }}>({count})</span>
+                </div>
+              ))}
+            </div>
+          );
+        })}
       </div>
     );
   }

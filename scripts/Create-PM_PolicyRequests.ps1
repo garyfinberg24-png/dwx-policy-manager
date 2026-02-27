@@ -1,54 +1,23 @@
 # ============================================================================
 # Policy Manager - Provision PM_PolicyRequests List
 # Creates the list for storing policy requests from the Request Policy wizard
-# Target: https://mf7m.sharepoint.com/sites/JML (Development)
+# Target: https://mf7m.sharepoint.com/sites/PolicyManager
 # ============================================================================
 #
 # USAGE:
+#   Connect-PnPOnline first, then:
 #   .\Create-PM_PolicyRequests.ps1
 #
 # PREREQUISITES:
 #   - PnP.PowerShell module installed
-#
-# This will open a browser for authentication.
+#   - Already connected to https://mf7m.sharepoint.com/sites/PolicyManager
 # ============================================================================
-
-$SiteUrl = "https://mf7m.sharepoint.com/sites/JML"
-$clientId = "d91b5b78-de72-424e-898b-8b5c9512ebd9"
-$tenantId = "03bbbdee-d78b-4613-9b99-c468398246b7"
 
 $ErrorActionPreference = "Continue"
 
 Write-Host "============================================================" -ForegroundColor Cyan
 Write-Host "  Policy Manager - Provision PM_PolicyRequests" -ForegroundColor Cyan
-Write-Host "  Target: $SiteUrl" -ForegroundColor Cyan
 Write-Host "============================================================" -ForegroundColor Cyan
-Write-Host ""
-
-# Check for PnP PowerShell module
-$module = Get-Module -ListAvailable -Name "PnP.PowerShell"
-if (-not $module) {
-    Write-Host "PnP.PowerShell module not found. Installing..." -ForegroundColor Yellow
-    Install-Module -Name PnP.PowerShell -Force -AllowClobber -Scope CurrentUser
-}
-
-Import-Module PnP.PowerShell -ErrorAction Stop
-Write-Host "PnP.PowerShell module loaded" -ForegroundColor Green
-
-# Connect to SharePoint
-Write-Host ""
-Write-Host "Connecting to SharePoint using Device Login..." -ForegroundColor Cyan
-Write-Host "Follow the instructions to authenticate in your browser." -ForegroundColor Yellow
-try {
-    Connect-PnPOnline -Url $SiteUrl -DeviceLogin -ClientId $clientId -Tenant $tenantId
-    Write-Host "Connected successfully!" -ForegroundColor Green
-} catch {
-    Write-Host "Failed to connect to SharePoint: $_" -ForegroundColor Red
-    exit 1
-}
-
-$web = Get-PnPWeb
-Write-Host "Connected to: $($web.Title)" -ForegroundColor Green
 Write-Host ""
 
 # ============================================================================
@@ -143,8 +112,4 @@ Write-Host "  List: $listName" -ForegroundColor White
 Write-Host "  Fields added: $added" -ForegroundColor Green
 Write-Host "  Fields skipped: $skipped (already existed)" -ForegroundColor Gray
 Write-Host "  Total fields: $($fields.Count)" -ForegroundColor White
-Write-Host ""
-Write-Host "  Site: $SiteUrl" -ForegroundColor Yellow
 Write-Host "============================================================" -ForegroundColor Cyan
-
-Disconnect-PnPOnline

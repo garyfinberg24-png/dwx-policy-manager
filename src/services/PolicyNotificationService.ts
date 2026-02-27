@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Policy Notification Service
  * Handles email notifications, reminders, and alerts for Policy Management
@@ -12,7 +11,7 @@ import '@pnp/sp/items';
 import { IPolicy, IPolicyAcknowledgement, AcknowledgementStatus } from '../models/IPolicy';
 import { logger } from './LoggingService';
 import { NotificationLists, PolicyLists } from '../constants/SharePointListNames';
-import { DwxNotificationService } from '@dwx/core';
+import { DwxNotificationService, DwxNotificationType, DwxNotificationPriority, DwxNotificationCategory } from '@dwx/core';
 
 /**
  * Policy notification types
@@ -989,6 +988,10 @@ export class PolicyNotificationService {
    */
   private async sendCrossAppNotification(notification: IPolicyNotification): Promise<void> {
     try {
+      if (!this.dwxNotifications) {
+        return;
+      }
+
       const policyDetailsUrl = `${this.siteUrl}/SitePages/PolicyDetails.aspx?policyId=${notification.policyId}`;
 
       await this.dwxNotifications.createNotification({
@@ -1000,7 +1003,7 @@ export class PolicyNotificationService {
         SourceItemId: notification.policyId || 0,
         SourceItemTitle: notification.subject,
         SourceItemUrl: policyDetailsUrl,
-        RecipientEmail: notification.recipientEmail,
+        RecipientEmail: notification.recipientEmail || '',
         Category: this.mapToDwxCategory(notification.notificationType),
         ActionUrl: policyDetailsUrl,
       });
@@ -1010,30 +1013,30 @@ export class PolicyNotificationService {
     }
   }
 
-  private mapToDwxNotificationType(type: PolicyNotificationType): string {
-    const map = {
-      'NewPolicy': 'PolicyPublished',
-      'PolicyUpdated': 'PolicyPublished',
-      'AcknowledgementRequired': 'AcknowledgementDue',
-      'Reminder3Day': 'AcknowledgementDue',
-      'Reminder1Day': 'AcknowledgementDue',
-      'Overdue': 'ComplianceAlert',
-      'AcknowledgementComplete': 'ApprovalCompleted',
-      'PolicyExpiring': 'PolicyExpiring',
-      'PolicyApproved': 'ApprovalCompleted',
-      'PolicyRejected': 'ApprovalCompleted',
-      'DelegationRequest': 'ApprovalRequired',
+  private mapToDwxNotificationType(type: PolicyNotificationType): DwxNotificationType {
+    const map: Record<PolicyNotificationType, DwxNotificationType> = {
+      'NewPolicy': DwxNotificationType.PolicyPublished,
+      'PolicyUpdated': DwxNotificationType.PolicyPublished,
+      'AcknowledgementRequired': DwxNotificationType.AcknowledgementDue,
+      'Reminder3Day': DwxNotificationType.AcknowledgementDue,
+      'Reminder1Day': DwxNotificationType.AcknowledgementDue,
+      'Overdue': DwxNotificationType.ComplianceAlert,
+      'AcknowledgementComplete': DwxNotificationType.ApprovalCompleted,
+      'PolicyExpiring': DwxNotificationType.PolicyExpiring,
+      'PolicyApproved': DwxNotificationType.ApprovalCompleted,
+      'PolicyRejected': DwxNotificationType.ApprovalCompleted,
+      'DelegationRequest': DwxNotificationType.ApprovalRequired,
     };
-    return map[type] || 'SystemAlert';
+    return map[type] || DwxNotificationType.SystemAlert;
   }
 
-  private mapToDwxPriority(type: PolicyNotificationType): string {
+  private mapToDwxPriority(type: PolicyNotificationType): DwxNotificationPriority {
     if (['Overdue', 'PolicyExpiring', 'Reminder1Day'].includes(type)) return 'High';
     if (['AcknowledgementRequired', 'Reminder3Day', 'PolicyApproved', 'PolicyRejected', 'DelegationRequest'].includes(type)) return 'Medium';
     return 'Low';
   }
 
-  private mapToDwxCategory(type: PolicyNotificationType): string {
+  private mapToDwxCategory(type: PolicyNotificationType): DwxNotificationCategory {
     if (['PolicyApproved', 'PolicyRejected', 'DelegationRequest'].includes(type)) return 'Approval';
     if (['Overdue', 'PolicyExpiring', 'AcknowledgementRequired', 'Reminder3Day', 'Reminder1Day'].includes(type)) return 'Compliance';
     if (['AcknowledgementComplete'].includes(type)) return 'Task';

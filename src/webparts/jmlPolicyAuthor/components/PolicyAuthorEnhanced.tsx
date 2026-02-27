@@ -47,11 +47,13 @@ import { createBlankDocx, createBlankXlsx, createBlankPptx } from '../../../util
 import { createDialogManager } from '../../../hooks/useDialog';
 import {
   IPolicy,
+  IPolicyVersion,
   PolicyCategory,
   PolicyStatus,
   ComplianceRisk,
   ReadTimeframe
 } from '../../../models/IPolicy';
+import { PolicyDocumentComparisonService } from '../../../services/PolicyDocumentComparisonService';
 import styles from './PolicyAuthor.module.scss';
 import { PM_LISTS } from '../../../constants/SharePointListNames';
 import {
@@ -78,10 +80,18 @@ import {
   IDepartmentCompliance,
 } from '../../../models/IPolicyAuthor';
 import { IPolicyAuthorEnhancedState } from '../../../models/IPolicyAuthorState';
+import {
+  PolicyRequestsTab,
+  DelegationsTab,
+  AnalyticsTab,
+  QuizBuilderTab,
+  PolicyPacksTab,
+} from './tabs';
 
 export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorProps, IPolicyAuthorEnhancedState> {
   private policyService: PolicyService;
   private quizService: QuizService;
+  private comparisonService: PolicyDocumentComparisonService;
   private autoSaveTimer: ReturnType<typeof setInterval> | null = null;
   private dialogManager = createDialogManager();
 
@@ -264,6 +274,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
     this.policyService = new PolicyService(props.sp);
     this.quizService = new QuizService(props.sp);
+    this.comparisonService = new PolicyDocumentComparisonService(props.sp, props.context.pageContext.web.absoluteUrl);
 
     // Wire DWx cross-app services if Hub is available
     if (props.dwxHub) {
@@ -486,10 +497,25 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         readTimeframeDays: policy.ReadTimeframeDays || 7,
         requiresAcknowledgement: policy.RequiresAcknowledgement,
         requiresQuiz: policy.RequiresQuiz || false,
+        selectedQuizId: policy.LinkedQuizId || null,
         effectiveDate: (typeof policy.EffectiveDate === 'string' ? policy.EffectiveDate : policy.EffectiveDate?.toISOString() || '').split('T')[0],
         expiryDate: policy.ExpiryDate ? (typeof policy.ExpiryDate === 'string' ? policy.ExpiryDate : policy.ExpiryDate.toISOString()).split('T')[0] : '',
         loading: false
       });
+
+      // Post-publish quiz reminder: if policy is Published, requires quiz, but no quiz linked
+      if (policy.PolicyStatus === 'Published' && policy.RequiresQuiz && !policy.LinkedQuizId) {
+        this.dialogManager.showDialog({
+          title: 'Quiz Required',
+          message: `This published policy requires a quiz but none is linked yet. Would you like to create one now? The AI can generate questions from the published document.`,
+          confirmText: 'Create Quiz',
+          cancelText: 'Later',
+          onConfirm: () => {
+            const siteUrl = this.props.context.pageContext.web.absoluteUrl;
+            window.open(`${siteUrl}/SitePages/QuizBuilder.aspx?policyId=${policyId}`, '_blank');
+          }
+        });
+      }
     } catch (error) {
       console.error('Failed to load policy:', error);
       this.setState({
@@ -738,6 +764,11 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         PolicyStatus: 'Draft',
         PolicyOwnerId: currentUserId
       };
+      // Persist linked quiz and source request
+      const { selectedQuizId } = this.state;
+      const sourceRequestId = (this.state as any).sourceRequestId;
+      if (selectedQuizId) { spData.LinkedQuizId = selectedQuizId; }
+      if (sourceRequestId) { spData.SourceRequestId = sourceRequestId; }
       if (effectiveDate) { spData.EffectiveDate = new Date(effectiveDate).toISOString(); }
       if (expiryDate) { spData.ExpiryDate = new Date(expiryDate).toISOString(); }
       if (keyPoints && keyPoints.length > 0) { spData.InternalNotes = JSON.stringify(keyPoints); }
@@ -1646,11 +1677,9 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                     />
                     <DefaultButton
                       iconProps={{ iconName: 'Add' }}
-                      text="Create New Quiz"
-                      onClick={() => {
-                        const siteUrl = this.props.context.pageContext.web.absoluteUrl;
-                        window.open(`${siteUrl}/SitePages/QuizBuilder.aspx`, '_blank');
-                      }}
+                      text="Create Quiz After Publish"
+                      title="Quizzes can be created after the policy is published, so the AI can analyze the document content"
+                      disabled={true}
                       styles={{ root: { height: 32 }, label: { fontSize: 12 } }}
                     />
                   </Stack>
@@ -4768,6 +4797,147 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     );
   }
 
+  // ============================================
+  // VERSION HISTORY (Author View)
+  // ============================================
+
+  private loadAuthorVersionHistory = async (policyId: number): Promise<void> => {
+    this.setState({ _showVersionHistoryPanel: true, _versionHistoryLoading: true } as any);
+    try {
+      const versions = await this.policyService.getPolicyVersions(policyId);
+      this.setState({ _policyVersions: versions, _versionHistoryLoading: false, _versionPolicyId: policyId } as any);
+    } catch (error) {
+      console.error('Failed to load version history:', error);
+      this.setState({ _versionHistoryLoading: false } as any);
+    }
+  }
+
+  private handleAuthorCompareWithCurrent = async (versionId: number): Promise<void> => {
+    this.setState({ _showVersionComparisonPanel: true, _versionComparisonLoading: true } as any);
+    try {
+      const policyId = (this.state as any)._versionPolicyId;
+      if (!policyId) return;
+      const comparison = await this.comparisonService.compareWithVersion(policyId, versionId);
+      const sideBySide = await this.comparisonService.getSideBySideView(comparison.sourceVersion?.Id || versionId, comparison.targetVersion?.Id || 0);
+      const html = this.comparisonService.generateSideBySideHtml(sideBySide);
+      this.setState({ _versionComparisonHtml: html, _versionComparisonLoading: false } as any);
+    } catch (error) {
+      console.error('Failed to compare versions:', error);
+      this.setState({
+        _versionComparisonHtml: '<div style="padding: 24px; color: #605e5c;">Version comparison data is not available for these versions.</div>',
+        _versionComparisonLoading: false
+      } as any);
+    }
+  }
+
+  private renderAuthorVersionHistoryPanel(): JSX.Element {
+    const state = this.state as any;
+    const showPanel = state._showVersionHistoryPanel || false;
+    const loading = state._versionHistoryLoading || false;
+    const versions: IPolicyVersion[] = state._policyVersions || [];
+
+    return (
+      <Panel
+        isOpen={showPanel}
+        onDismiss={() => this.setState({ _showVersionHistoryPanel: false } as any)}
+        type={PanelType.medium}
+        headerText="Version History"
+        closeButtonAriaLabel="Close"
+      >
+        <Stack tokens={{ childrenGap: 16 }} style={{ padding: '16px 0' }}>
+          {loading ? (
+            <Spinner size={SpinnerSize.large} label="Loading version history..." />
+          ) : versions.length === 0 ? (
+            <MessageBar messageBarType={MessageBarType.info}>
+              No previous versions found for this policy.
+            </MessageBar>
+          ) : (
+            versions.map((version: IPolicyVersion, index: number) => (
+              <div
+                key={version.Id || index}
+                style={{
+                  padding: 16,
+                  border: '1px solid #e2e8f0',
+                  borderRadius: 8,
+                  backgroundColor: version.IsCurrentVersion ? '#f0fdfa' : '#ffffff'
+                }}
+              >
+                <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
+                  <Stack tokens={{ childrenGap: 4 }}>
+                    <Stack horizontal tokens={{ childrenGap: 8 }} verticalAlign="center">
+                      <Text style={{ fontWeight: 600, fontSize: 16, color: '#0f172a' }}>
+                        v{version.VersionNumber}
+                      </Text>
+                      <span style={{
+                        padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600,
+                        backgroundColor: version.VersionType === 'Major' ? '#dcfce7' : '#e0f2fe',
+                        color: version.VersionType === 'Major' ? '#16a34a' : '#0284c7'
+                      }}>
+                        {version.VersionType}
+                      </span>
+                      {version.IsCurrentVersion && (
+                        <span style={{
+                          padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600,
+                          backgroundColor: '#ccfbf1', color: '#0d9488'
+                        }}>
+                          Current
+                        </span>
+                      )}
+                    </Stack>
+                    <Text style={{ color: '#605e5c', fontSize: 13 }}>
+                      {version.ChangeDescription || 'No description'}
+                    </Text>
+                    <Text style={{ color: '#94a3b8', fontSize: 12 }}>
+                      {version.EffectiveDate ? new Date(version.EffectiveDate).toLocaleDateString('en-US', {
+                        year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                      }) : 'Unknown date'}
+                    </Text>
+                  </Stack>
+                  {!version.IsCurrentVersion && (
+                    <DefaultButton
+                      text="Compare with Current"
+                      iconProps={{ iconName: 'BranchCompare' }}
+                      onClick={() => this.handleAuthorCompareWithCurrent(version.Id)}
+                      styles={{ root: { fontSize: 12 } }}
+                    />
+                  )}
+                </Stack>
+              </div>
+            ))
+          )}
+        </Stack>
+      </Panel>
+    );
+  }
+
+  private renderAuthorVersionComparisonPanel(): JSX.Element {
+    const state = this.state as any;
+    const showPanel = state._showVersionComparisonPanel || false;
+    const loading = state._versionComparisonLoading || false;
+    const html = state._versionComparisonHtml || '';
+
+    return (
+      <Panel
+        isOpen={showPanel}
+        onDismiss={() => this.setState({ _showVersionComparisonPanel: false, _versionComparisonHtml: '' } as any)}
+        type={PanelType.extraLarge}
+        headerText="Version Comparison"
+        closeButtonAriaLabel="Close"
+      >
+        <div style={{ padding: '16px 0' }}>
+          {loading ? (
+            <Spinner size={SpinnerSize.large} label="Generating comparison..." />
+          ) : (
+            <div
+              dangerouslySetInnerHTML={{ __html: html }}
+              style={{ border: '1px solid #e2e8f0', borderRadius: 8, overflow: 'auto' }}
+            />
+          )}
+        </div>
+      </Panel>
+    );
+  }
+
   private renderPolicyDetailsPanel(): JSX.Element {
     const { showPolicyDetailsPanel, selectedPolicyDetails, saving } = this.state;
 
@@ -4862,7 +5032,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             <DefaultButton
               text="Version History"
               iconProps={{ iconName: 'History' }}
-              onClick={() => alert('Version history will be loaded')}
+              onClick={() => this.loadAuthorVersionHistory(selectedPolicyDetails.Id)}
             />
             <DefaultButton
               text="Related Quizzes"
@@ -4994,7 +5164,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             <DefaultButton
               text="Compare Versions"
               iconProps={{ iconName: 'DiffSideBySide' }}
-              onClick={() => alert('Version comparison will be shown')}
+              onClick={() => this.loadAuthorVersionHistory(policy.Id)}
             />
           </Stack>
         </Stack>
@@ -5898,17 +6068,99 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       case 'approvals':
         return this.renderApprovalsTab();
       case 'delegations':
-        return this.renderDelegationsTab();
+        return (
+          <DelegationsTab
+            delegatedRequests={this.state.delegatedRequests}
+            delegationsLoading={this.state.delegationsLoading}
+            delegationKpis={this.state.delegationKpis}
+            styles={styles}
+            onNewDelegation={() => this.setState({ showNewDelegationPanel: true })}
+            onStartPolicy={(request) => {
+              this.setState({
+                activeTab: 'create',
+                policyName: request.Title,
+                policyCategory: request.PolicyType
+              });
+            }}
+          />
+        );
       case 'requests':
-        return this.renderPolicyRequestsTab();
+        return (
+          <PolicyRequestsTab
+            policyRequests={this.state.policyRequests}
+            policyRequestsLoading={this.state.policyRequestsLoading}
+            requestStatusFilter={this.state.requestStatusFilter}
+            selectedPolicyRequest={this.state.selectedPolicyRequest}
+            showPolicyRequestDetailPanel={this.state.showPolicyRequestDetailPanel}
+            styles={styles}
+            context={this.props.context}
+            onSetState={(update) => this.setState(update)}
+            onCreatePolicyFromRequest={(request) => {
+              // Map priority to compliance risk
+              const priorityToRisk: Record<string, string> = { 'Critical': 'Critical', 'High': 'High', 'Medium': 'Medium', 'Low': 'Low' };
+              const complianceRisk = priorityToRisk[request.Priority] || 'Medium';
+
+              // Parse target audience into departments array
+              const targetDepts = request.TargetAudience
+                ? request.TargetAudience.split(/[,;]/).map((s: string) => s.trim()).filter(Boolean)
+                : [];
+
+              this.setState({
+                showPolicyRequestDetailPanel: false,
+                policyName: request.Title,
+                policyCategory: request.PolicyCategory,
+                policySummary: request.BusinessJustification || '',
+                complianceRisk: complianceRisk as any,
+                readTimeframe: String(request.ReadTimeframeDays) + ' days',
+                readTimeframeDays: request.ReadTimeframeDays,
+                effectiveDate: request.DesiredEffectiveDate || '',
+                requiresAcknowledgement: request.RequiresAcknowledgement,
+                requiresQuiz: request.RequiresQuiz,
+                activeTab: 'create',
+                currentStep: 1,
+                // Dynamic state fields for request source tracking
+                sourceRequestId: request.Id,
+                sourceRequestNotes: request.AdditionalNotes || '',
+                sourceRequestAttachments: request.AttachmentUrls || []
+              } as any);
+            }}
+          />
+        );
       case 'analytics':
-        return this.renderAnalyticsTab();
+        return (
+          <AnalyticsTab
+            analyticsData={this.state.analyticsData}
+            analyticsLoading={this.state.analyticsLoading}
+            departmentCompliance={this.state.departmentCompliance}
+            styles={styles}
+            dialogManager={this.dialogManager}
+            onDateRangeChange={(days) => { void this.handleDateRangeChange(days); }}
+            onExportAnalytics={(format) => { void this.handleExportAnalytics(format); }}
+          />
+        );
       case 'admin':
         return this.renderAdminTab();
       case 'policyPacks':
-        return this.renderPolicyPacksTab();
+        return (
+          <PolicyPacksTab
+            policyPacks={this.state.policyPacks}
+            policyPacksLoading={this.state.policyPacksLoading}
+            styles={styles}
+            dialogManager={this.dialogManager}
+            onCreatePack={() => this.setState({ showCreatePackPanel: true })}
+          />
+        );
       case 'quizBuilder':
-        return this.renderQuizBuilderTab();
+        return (
+          <QuizBuilderTab
+            quizzes={this.state.quizzes}
+            quizzesLoading={this.state.quizzesLoading}
+            styles={styles}
+            dialogManager={this.dialogManager}
+            onCreateQuiz={() => this.setState({ showCreateQuizPanel: true })}
+            onEditQuiz={(quizId) => { void this.handleEditQuiz(quizId); }}
+          />
+        );
       default:
         return this.renderCreatePolicyTab();
     }
@@ -6125,13 +6377,52 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
   }
 
   private handleEditPolicy(policyId: number): void {
-    // Switch to create tab and load the policy for editing
-    this.setState({
-      activeTab: 'create',
-      policyId,
-      loading: true
-    }, async () => {
-      await this.loadPolicy(policyId);
+    // Check if the policy is Published — if so, show confirmation dialog for new version
+    this.policyService.getPolicyById(policyId).then(policy => {
+      if (policy.PolicyStatus === 'Published') {
+        this.dialogManager.showDialog({
+          title: 'Edit Published Policy',
+          message: `This policy "${policy.PolicyName}" is published. Editing will create a new draft version (the current published version will remain available). Continue?`,
+          confirmText: 'Create New Draft Version',
+          cancelText: 'Cancel',
+          onConfirm: async () => {
+            try {
+              this.setState({ saving: true } as any);
+              const result = await this.policyService.createEditableVersion(policyId, 'Edit of published policy');
+              this.setState({
+                activeTab: 'create',
+                policyId,
+                loading: true,
+                saving: false
+              } as any, async () => {
+                await this.loadPolicy(policyId);
+              });
+            } catch (err: any) {
+              console.error('Failed to create editable version:', err);
+              this.setState({ saving: false } as any);
+            }
+          }
+        });
+      } else {
+        // Non-published — just load directly into wizard
+        this.setState({
+          activeTab: 'create',
+          policyId,
+          loading: true
+        }, async () => {
+          await this.loadPolicy(policyId);
+        });
+      }
+    }).catch(err => {
+      console.error('Failed to check policy status:', err);
+      // Fallback — load directly
+      this.setState({
+        activeTab: 'create',
+        policyId,
+        loading: true
+      }, async () => {
+        await this.loadPolicy(policyId);
+      });
     });
   }
 
@@ -6141,8 +6432,17 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     const columns: IColumn[] = [
       { key: 'title', name: 'Policy', fieldName: 'Title', minWidth: 200, maxWidth: 300, isResizable: true },
       { key: 'number', name: 'Number', fieldName: 'PolicyNumber', minWidth: 100, maxWidth: 120, isResizable: true },
-      { key: 'status', name: 'Status', fieldName: 'Status', minWidth: 100, maxWidth: 120, isResizable: true,
-        onRender: (item: IPolicy) => this.renderStatusBadge(item.PolicyStatus) },
+      { key: 'status', name: 'Status', fieldName: 'Status', minWidth: 140, maxWidth: 180, isResizable: true,
+        onRender: (item: IPolicy) => (
+          <Stack horizontal tokens={{ childrenGap: 6 }} verticalAlign="center">
+            {this.renderStatusBadge(item.PolicyStatus)}
+            {item.RequiresQuiz && !item.LinkedQuizId && (
+              <span style={{ padding: '2px 6px', borderRadius: 4, fontSize: 10, fontWeight: 600, backgroundColor: '#fef3c7', color: '#d97706' }}>
+                Quiz Missing
+              </span>
+            )}
+          </Stack>
+        )},
       { key: 'category', name: 'Category', fieldName: 'Category', minWidth: 120, maxWidth: 150, isResizable: true },
       { key: 'modified', name: 'Last Modified', fieldName: 'Modified', minWidth: 120, maxWidth: 150, isResizable: true,
         onRender: (item: IPolicy) => new Date(item.Modified || '').toLocaleDateString() },
@@ -6393,123 +6693,16 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     );
   }
 
-  private renderDelegationsTab(): JSX.Element {
-    const { delegatedRequests, delegationsLoading, delegationKpis } = this.state;
-
-    return (
-      <>
-        <PageSubheader
-          iconName="Assign"
-          title="Policy Delegations"
-          description="Policies delegated to you for creation"
-          actions={
-            <PrimaryButton
-              text="New Delegation"
-              iconProps={{ iconName: 'Add' }}
-              onClick={() => this.setState({ showNewDelegationPanel: true })}
-            />
-          }
-        />
-
-        {/* KPI Summary Cards */}
-        <div className={styles.delegationKpiGrid}>
-          <div className={styles.delegationKpiCard}>
-            <div className={styles.delegationKpiIcon} style={{ background: '#e8f4fd' }}>
-              <Icon iconName="Assign" style={{ fontSize: 20, color: '#0078d4' }} />
-            </div>
-            <div className={styles.delegationKpiContent}>
-              <Text variant="xxLarge" style={{ fontWeight: 700, color: '#0078d4' }}>{delegationKpis.activeDelegations}</Text>
-              <Text variant="small" style={{ color: '#605e5c' }}>Active Delegations</Text>
-            </div>
-          </div>
-          <div className={styles.delegationKpiCard}>
-            <div className={styles.delegationKpiIcon} style={{ background: '#dff6dd' }}>
-              <Icon iconName="CheckMark" style={{ fontSize: 20, color: '#107c10' }} />
-            </div>
-            <div className={styles.delegationKpiContent}>
-              <Text variant="xxLarge" style={{ fontWeight: 700, color: '#107c10' }}>{delegationKpis.completedThisMonth}</Text>
-              <Text variant="small" style={{ color: '#605e5c' }}>Completed This Month</Text>
-            </div>
-          </div>
-          <div className={styles.delegationKpiCard}>
-            <div className={styles.delegationKpiIcon} style={{ background: '#fff4ce' }}>
-              <Icon iconName="Clock" style={{ fontSize: 20, color: '#8a6d3b' }} />
-            </div>
-            <div className={styles.delegationKpiContent}>
-              <Text variant="xxLarge" style={{ fontWeight: 700, color: '#8a6d3b' }}>{delegationKpis.averageCompletionTime}</Text>
-              <Text variant="small" style={{ color: '#605e5c' }}>Avg. Completion Time</Text>
-            </div>
-          </div>
-          <div className={styles.delegationKpiCard}>
-            <div className={styles.delegationKpiIcon} style={{ background: '#fde7e9' }}>
-              <Icon iconName="Warning" style={{ fontSize: 20, color: '#d13438' }} />
-            </div>
-            <div className={styles.delegationKpiContent}>
-              <Text variant="xxLarge" style={{ fontWeight: 700, color: '#d13438' }}>{delegationKpis.overdue}</Text>
-              <Text variant="small" style={{ color: '#605e5c' }}>Overdue</Text>
-            </div>
-          </div>
-        </div>
-
-        <div className={styles.editorContainer}>
-          {delegationsLoading ? (
-            <Stack horizontalAlign="center" tokens={{ padding: 40 }}>
-              <Spinner size={SpinnerSize.large} label="Loading delegations..." />
-            </Stack>
-          ) : delegatedRequests.length === 0 ? (
-            <Stack horizontalAlign="center" tokens={{ padding: 40 }}>
-              <Icon iconName="Assign" style={{ fontSize: 48, color: '#a19f9d', marginBottom: 16 }} />
-              <Text variant="large">No delegated policies</Text>
-              <Text>You don't have any policy creation requests assigned to you</Text>
-            </Stack>
-          ) : (
-            <div className={styles.delegationList}>
-              {delegatedRequests.map(request => (
-                <div key={request.Id} className={styles.delegationCard}>
-                  <Stack horizontal horizontalAlign="space-between" verticalAlign="start">
-                    <div>
-                      <Text variant="mediumPlus" style={{ fontWeight: 600 }}>{request.Title}</Text>
-                      <Text variant="small" style={{ color: '#605e5c', display: 'block', marginTop: 4 }}>
-                        Requested by {request.RequestedBy} • {request.PolicyType}
-                      </Text>
-                      <Text variant="small" style={{ marginTop: 8 }}>{request.Description}</Text>
-                    </div>
-                    <Stack horizontalAlign="end">
-                      <span className={styles.urgencyBadge} data-urgency={request.Urgency}>
-                        {request.Urgency}
-                      </span>
-                      <Text variant="small" style={{ color: '#605e5c', marginTop: 8 }}>
-                        Due: {new Date(request.DueDate).toLocaleDateString()}
-                      </Text>
-                    </Stack>
-                  </Stack>
-                  <Stack horizontal tokens={{ childrenGap: 8 }} style={{ marginTop: 12 }}>
-                    <PrimaryButton
-                      text="Start Policy"
-                      iconProps={{ iconName: 'Add' }}
-                      onClick={() => {
-                        this.setState({
-                          activeTab: 'create',
-                          policyName: request.Title,
-                          policyCategory: request.PolicyType
-                        });
-                      }}
-                    />
-                    <DefaultButton
-                      text="View Details"
-                      iconProps={{ iconName: 'Info' }}
-                    />
-                  </Stack>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </>
-    );
-  }
 
   // ============================================================================
+  // EXTRACTED TAB COMPONENTS (see ./tabs/ directory)
+  // renderDelegationsTab -> ./tabs/DelegationsTab.tsx
+  // renderPolicyRequestsTab -> ./tabs/PolicyRequestsTab.tsx
+  // renderAnalyticsTab, renderAnalyticsKpiCard -> ./tabs/AnalyticsTab.tsx
+  // renderQuizBuilderTab -> ./tabs/QuizBuilderTab.tsx
+  // renderPolicyPacksTab -> ./tabs/PolicyPacksTab.tsx
+  // ============================================================================
+
   // POLICY REQUESTS TAB — Requests submitted by Managers via Request Policy wizard
   // ============================================================================
 
@@ -6590,597 +6783,6 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     ];
   }
 
-  private getRequestStatusColor(status: string): string {
-    switch (status) {
-      case 'New': return '#0078d4';
-      case 'Assigned': return '#8764b8';
-      case 'InProgress': return '#f59e0b';
-      case 'Draft Ready': return '#14b8a6';
-      case 'Completed': return '#107c10';
-      case 'Rejected': return '#d13438';
-      default: return '#605e5c';
-    }
-  }
-
-  private getPriorityColor(priority: string): string {
-    switch (priority) {
-      case 'Critical': return '#d13438';
-      case 'High': return '#f97316';
-      case 'Medium': return '#f59e0b';
-      case 'Low': return '#64748b';
-      default: return '#605e5c';
-    }
-  }
-
-  private renderPolicyRequestsTab(): JSX.Element {
-    const { policyRequests, policyRequestsLoading, requestStatusFilter, selectedPolicyRequest, showPolicyRequestDetailPanel } = this.state;
-
-    const statusFilters = ['All', 'New', 'Assigned', 'InProgress', 'Draft Ready', 'Completed', 'Rejected'];
-    const filteredRequests = requestStatusFilter === 'All' ? policyRequests : policyRequests.filter(r => r.Status === requestStatusFilter);
-
-    // KPI counts
-    const newCount = policyRequests.filter(r => r.Status === 'New').length;
-    const assignedCount = policyRequests.filter(r => r.Status === 'Assigned').length;
-    const inProgressCount = policyRequests.filter(r => r.Status === 'InProgress').length;
-    const completedCount = policyRequests.filter(r => r.Status === 'Completed' || r.Status === 'Draft Ready').length;
-    const criticalCount = policyRequests.filter(r => r.Priority === 'Critical' && r.Status !== 'Completed').length;
-
-    return (
-      <>
-        <PageSubheader
-          iconName="PageAdd"
-          title="Policy Requests"
-          description="Review and manage policy creation requests submitted by managers"
-          actions={
-            <Stack horizontal tokens={{ childrenGap: 8 }}>
-              <DefaultButton text="Refresh" iconProps={{ iconName: 'Refresh' }} onClick={() => this.setState({ policyRequests: this.getSamplePolicyRequests() })} />
-            </Stack>
-          }
-        />
-
-        {/* KPI Summary Cards — including Critical as a card */}
-        <div className={styles.delegationKpiGrid}>
-          <div className={styles.delegationKpiCard} onClick={() => this.setState({ requestStatusFilter: 'New' })} style={{ cursor: 'pointer' }}>
-            <div className={styles.delegationKpiIcon} style={{ background: '#e8f4fd' }}>
-              <Icon iconName="NewMail" style={{ fontSize: 20, color: '#0078d4' }} />
-            </div>
-            <div className={styles.delegationKpiContent}>
-              <Text variant="xxLarge" style={{ fontWeight: 700, color: '#0078d4' }}>{newCount}</Text>
-              <Text variant="small" style={{ color: '#605e5c' }}>New Requests</Text>
-            </div>
-          </div>
-          <div className={styles.delegationKpiCard} onClick={() => this.setState({ requestStatusFilter: 'Assigned' })} style={{ cursor: 'pointer' }}>
-            <div className={styles.delegationKpiIcon} style={{ background: '#f3eefc' }}>
-              <Icon iconName="People" style={{ fontSize: 20, color: '#8764b8' }} />
-            </div>
-            <div className={styles.delegationKpiContent}>
-              <Text variant="xxLarge" style={{ fontWeight: 700, color: '#8764b8' }}>{assignedCount}</Text>
-              <Text variant="small" style={{ color: '#605e5c' }}>Assigned</Text>
-            </div>
-          </div>
-          <div className={styles.delegationKpiCard} onClick={() => this.setState({ requestStatusFilter: 'InProgress' })} style={{ cursor: 'pointer' }}>
-            <div className={styles.delegationKpiIcon} style={{ background: '#fff8e6' }}>
-              <Icon iconName="Edit" style={{ fontSize: 20, color: '#f59e0b' }} />
-            </div>
-            <div className={styles.delegationKpiContent}>
-              <Text variant="xxLarge" style={{ fontWeight: 700, color: '#f59e0b' }}>{inProgressCount}</Text>
-              <Text variant="small" style={{ color: '#605e5c' }}>In Progress</Text>
-            </div>
-          </div>
-          <div className={styles.delegationKpiCard} onClick={() => this.setState({ requestStatusFilter: 'All' })} style={{ cursor: 'pointer' }}>
-            <div className={styles.delegationKpiIcon} style={{ background: '#dff6dd' }}>
-              <Icon iconName="CheckMark" style={{ fontSize: 20, color: '#107c10' }} />
-            </div>
-            <div className={styles.delegationKpiContent}>
-              <Text variant="xxLarge" style={{ fontWeight: 700, color: '#107c10' }}>{completedCount}</Text>
-              <Text variant="small" style={{ color: '#605e5c' }}>Completed</Text>
-            </div>
-          </div>
-          <div className={styles.delegationKpiCard} onClick={() => this.setState({ requestStatusFilter: 'All' })} style={{ cursor: 'pointer' }}>
-            <div className={styles.delegationKpiIcon} style={{ background: '#fef2f2' }}>
-              <Icon iconName="ShieldAlert" style={{ fontSize: 20, color: '#d13438' }} />
-            </div>
-            <div className={styles.delegationKpiContent}>
-              <Text variant="xxLarge" style={{ fontWeight: 700, color: '#d13438' }}>{criticalCount}</Text>
-              <Text variant="small" style={{ color: '#605e5c' }}>Critical</Text>
-            </div>
-          </div>
-        </div>
-
-        {/* Status Filter Chips */}
-        <Stack horizontal tokens={{ childrenGap: 8 }} style={{ marginBottom: 16, flexWrap: 'wrap' }}>
-          {statusFilters.map(status => (
-            <DefaultButton
-              key={status}
-              text={status === 'All' ? `All (${policyRequests.length})` : `${status} (${policyRequests.filter(r => r.Status === status).length})`}
-              checked={requestStatusFilter === status}
-              styles={{
-                root: {
-                  borderRadius: 20,
-                  minWidth: 'auto',
-                  padding: '2px 14px',
-                  height: 32,
-                  border: requestStatusFilter === status ? '2px solid #0d9488' : '1px solid #e1dfdd',
-                  background: requestStatusFilter === status ? '#f0fdfa' : 'transparent',
-                  color: requestStatusFilter === status ? '#0d9488' : '#605e5c',
-                  fontWeight: requestStatusFilter === status ? 600 : 400
-                },
-                rootHovered: { borderColor: '#0d9488', color: '#0d9488' }
-              }}
-              onClick={() => this.setState({ requestStatusFilter: status })}
-            />
-          ))}
-        </Stack>
-
-        <div className={styles.editorContainer}>
-          {policyRequestsLoading ? (
-            <Stack horizontalAlign="center" tokens={{ padding: 40 }}>
-              <Spinner size={SpinnerSize.large} label="Loading policy requests..." />
-            </Stack>
-          ) : filteredRequests.length === 0 ? (
-            <Stack horizontalAlign="center" tokens={{ padding: 40 }}>
-              <Icon iconName="PageAdd" style={{ fontSize: 48, color: '#a19f9d', marginBottom: 16 }} />
-              <Text variant="large">No policy requests</Text>
-              <Text>No requests match the selected filter</Text>
-            </Stack>
-          ) : (
-            <div className={styles.delegationList}>
-              {filteredRequests.map(request => (
-                <div
-                  key={request.Id}
-                  className={styles.delegationCard}
-                  style={{ cursor: 'pointer', borderLeft: `4px solid ${this.getPriorityColor(request.Priority)}` }}
-                  onClick={() => this.setState({ selectedPolicyRequest: request, showPolicyRequestDetailPanel: true })}
-                >
-                  <Stack horizontal horizontalAlign="space-between" verticalAlign="start">
-                    <div style={{ flex: 1 }}>
-                      <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
-                        <Text variant="mediumPlus" style={{ fontWeight: 600 }}>{request.Title}</Text>
-                        {request.Priority === 'Critical' && (
-                          <span style={{ background: '#fde7e9', color: '#d13438', padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 700, textTransform: 'uppercase' as const }}>CRITICAL</span>
-                        )}
-                      </Stack>
-                      <Text variant="small" style={{ color: '#605e5c', display: 'block', marginTop: 4 }}>
-                        Requested by <strong>{request.RequestedBy}</strong> ({request.RequestedByDepartment}) &bull; {request.PolicyCategory} &bull; {request.PolicyType}
-                      </Text>
-                      <Text variant="small" style={{ marginTop: 8, display: 'block', color: '#323130' }}>
-                        {request.BusinessJustification.length > 150 ? request.BusinessJustification.substring(0, 150) + '...' : request.BusinessJustification}
-                      </Text>
-                      <Stack horizontal tokens={{ childrenGap: 16 }} style={{ marginTop: 10 }}>
-                        <Text variant="small" style={{ color: '#605e5c' }}>
-                          <Icon iconName="Calendar" style={{ marginRight: 4, fontSize: 12 }} />
-                          Target: {new Date(request.DesiredEffectiveDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                        </Text>
-                        <Text variant="small" style={{ color: '#605e5c' }}>
-                          <Icon iconName="Clock" style={{ marginRight: 4, fontSize: 12 }} />
-                          Read within: {request.ReadTimeframeDays} days
-                        </Text>
-                        {request.RequiresAcknowledgement && (
-                          <Text variant="small" style={{ color: '#0d9488' }}>
-                            <Icon iconName="CheckboxComposite" style={{ marginRight: 4, fontSize: 12 }} /> Acknowledgement
-                          </Text>
-                        )}
-                        {request.RequiresQuiz && (
-                          <Text variant="small" style={{ color: '#8764b8' }}>
-                            <Icon iconName="Questionnaire" style={{ marginRight: 4, fontSize: 12 }} /> Quiz Required
-                          </Text>
-                        )}
-                      </Stack>
-                    </div>
-                    <Stack horizontalAlign="end" tokens={{ childrenGap: 4 }}>
-                      <span style={{
-                        background: `${this.getRequestStatusColor(request.Status)}15`,
-                        color: this.getRequestStatusColor(request.Status),
-                        padding: '4px 12px', borderRadius: 12, fontSize: 12, fontWeight: 600
-                      }}>
-                        {request.Status === 'InProgress' ? 'In Progress' : request.Status}
-                      </span>
-                      <Text variant="tiny" style={{ color: '#a19f9d', marginTop: 4 }}>
-                        {new Date(request.Created).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                      </Text>
-                      {request.AssignedAuthor && (
-                        <Text variant="tiny" style={{ color: '#605e5c' }}>
-                          <Icon iconName="Contact" style={{ marginRight: 2, fontSize: 10 }} /> {request.AssignedAuthor}
-                        </Text>
-                      )}
-                    </Stack>
-                  </Stack>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Policy Request Detail Panel */}
-        {showPolicyRequestDetailPanel && selectedPolicyRequest && (
-          <Panel
-            isOpen={showPolicyRequestDetailPanel}
-            onDismiss={() => this.setState({ showPolicyRequestDetailPanel: false, selectedPolicyRequest: null })}
-            type={PanelType.medium}
-            headerText="Policy Request Details"
-            closeButtonAriaLabel="Close"
-          >
-            <div style={{ padding: '16px 0' }}>
-              {/* Status & Priority Header */}
-              <Stack horizontal tokens={{ childrenGap: 8 }} style={{ marginBottom: 20 }}>
-                <span style={{
-                  background: `${this.getRequestStatusColor(selectedPolicyRequest.Status)}15`,
-                  color: this.getRequestStatusColor(selectedPolicyRequest.Status),
-                  padding: '6px 16px', borderRadius: 16, fontSize: 13, fontWeight: 600
-                }}>
-                  {selectedPolicyRequest.Status === 'InProgress' ? 'In Progress' : selectedPolicyRequest.Status}
-                </span>
-                <span style={{
-                  background: `${this.getPriorityColor(selectedPolicyRequest.Priority)}15`,
-                  color: this.getPriorityColor(selectedPolicyRequest.Priority),
-                  padding: '6px 16px', borderRadius: 16, fontSize: 13, fontWeight: 600
-                }}>
-                  {selectedPolicyRequest.Priority} Priority
-                </span>
-              </Stack>
-
-              {/* Title */}
-              <Text variant="xLarge" style={{ fontWeight: 700, display: 'block', marginBottom: 16 }}>{selectedPolicyRequest.Title}</Text>
-
-              {/* Section: Request Details */}
-              <div style={{ background: '#f8f9fa', borderRadius: 8, padding: 16, marginBottom: 16 }}>
-                <Text variant="mediumPlus" style={{ fontWeight: 600, marginBottom: 12, display: 'block' }}>Request Information</Text>
-                <Stack tokens={{ childrenGap: 8 }}>
-                  <Stack horizontal tokens={{ childrenGap: 4 }}>
-                    <Text style={{ fontWeight: 600, minWidth: 140 }}>Requested By:</Text>
-                    <Text>{selectedPolicyRequest.RequestedBy} ({selectedPolicyRequest.RequestedByDepartment})</Text>
-                  </Stack>
-                  <Stack horizontal tokens={{ childrenGap: 4 }}>
-                    <Text style={{ fontWeight: 600, minWidth: 140 }}>Email:</Text>
-                    <Text>{selectedPolicyRequest.RequestedByEmail}</Text>
-                  </Stack>
-                  <Stack horizontal tokens={{ childrenGap: 4 }}>
-                    <Text style={{ fontWeight: 600, minWidth: 140 }}>Category:</Text>
-                    <Text>{selectedPolicyRequest.PolicyCategory}</Text>
-                  </Stack>
-                  <Stack horizontal tokens={{ childrenGap: 4 }}>
-                    <Text style={{ fontWeight: 600, minWidth: 140 }}>Type:</Text>
-                    <Text>{selectedPolicyRequest.PolicyType}</Text>
-                  </Stack>
-                  <Stack horizontal tokens={{ childrenGap: 4 }}>
-                    <Text style={{ fontWeight: 600, minWidth: 140 }}>Submitted:</Text>
-                    <Text>{new Date(selectedPolicyRequest.Created).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</Text>
-                  </Stack>
-                </Stack>
-              </div>
-
-              {/* Section: Business Justification */}
-              <div style={{ background: '#fffbeb', borderRadius: 8, padding: 16, marginBottom: 16, borderLeft: '4px solid #f59e0b' }}>
-                <Text variant="mediumPlus" style={{ fontWeight: 600, marginBottom: 8, display: 'block' }}>Business Justification</Text>
-                <Text style={{ lineHeight: '1.6' }}>{selectedPolicyRequest.BusinessJustification}</Text>
-              </div>
-
-              {/* Section: Regulatory Driver */}
-              {selectedPolicyRequest.RegulatoryDriver && (
-                <div style={{ background: '#fef2f2', borderRadius: 8, padding: 16, marginBottom: 16, borderLeft: '4px solid #ef4444' }}>
-                  <Text variant="mediumPlus" style={{ fontWeight: 600, marginBottom: 8, display: 'block' }}>Regulatory / Compliance Driver</Text>
-                  <Text>{selectedPolicyRequest.RegulatoryDriver}</Text>
-                </div>
-              )}
-
-              {/* Section: Policy Requirements */}
-              <div style={{ background: '#f0fdfa', borderRadius: 8, padding: 16, marginBottom: 16, borderLeft: '4px solid #0d9488' }}>
-                <Text variant="mediumPlus" style={{ fontWeight: 600, marginBottom: 12, display: 'block' }}>Policy Requirements</Text>
-                <Stack tokens={{ childrenGap: 8 }}>
-                  <Stack horizontal tokens={{ childrenGap: 4 }}>
-                    <Text style={{ fontWeight: 600, minWidth: 180 }}>Target Audience:</Text>
-                    <Text>{selectedPolicyRequest.TargetAudience}</Text>
-                  </Stack>
-                  <Stack horizontal tokens={{ childrenGap: 4 }}>
-                    <Text style={{ fontWeight: 600, minWidth: 180 }}>Desired Effective Date:</Text>
-                    <Text>{new Date(selectedPolicyRequest.DesiredEffectiveDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</Text>
-                  </Stack>
-                  <Stack horizontal tokens={{ childrenGap: 4 }}>
-                    <Text style={{ fontWeight: 600, minWidth: 180 }}>Read Timeframe:</Text>
-                    <Text>{selectedPolicyRequest.ReadTimeframeDays} days</Text>
-                  </Stack>
-                  <Stack horizontal tokens={{ childrenGap: 4 }}>
-                    <Text style={{ fontWeight: 600, minWidth: 180 }}>Requires Acknowledgement:</Text>
-                    <Text style={{ color: selectedPolicyRequest.RequiresAcknowledgement ? '#107c10' : '#605e5c' }}>
-                      {selectedPolicyRequest.RequiresAcknowledgement ? 'Yes' : 'No'}
-                    </Text>
-                  </Stack>
-                  <Stack horizontal tokens={{ childrenGap: 4 }}>
-                    <Text style={{ fontWeight: 600, minWidth: 180 }}>Requires Quiz:</Text>
-                    <Text style={{ color: selectedPolicyRequest.RequiresQuiz ? '#8764b8' : '#605e5c' }}>
-                      {selectedPolicyRequest.RequiresQuiz ? 'Yes' : 'No'}
-                    </Text>
-                  </Stack>
-                </Stack>
-              </div>
-
-              {/* Section: Additional Notes */}
-              {selectedPolicyRequest.AdditionalNotes && (
-                <div style={{ background: '#f8f9fa', borderRadius: 8, padding: 16, marginBottom: 16 }}>
-                  <Text variant="mediumPlus" style={{ fontWeight: 600, marginBottom: 8, display: 'block' }}>Additional Notes</Text>
-                  <Text style={{ lineHeight: '1.6', fontStyle: 'italic' }}>{selectedPolicyRequest.AdditionalNotes}</Text>
-                </div>
-              )}
-
-              {/* Section: Assignment */}
-              <div style={{ background: '#f3eefc', borderRadius: 8, padding: 16, marginBottom: 20 }}>
-                <Text variant="mediumPlus" style={{ fontWeight: 600, marginBottom: 8, display: 'block' }}>Assignment</Text>
-                {selectedPolicyRequest.AssignedAuthor ? (
-                  <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#8764b8', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: 14 }}>
-                      {selectedPolicyRequest.AssignedAuthor.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                    </div>
-                    <div>
-                      <Text style={{ fontWeight: 600 }}>{selectedPolicyRequest.AssignedAuthor}</Text>
-                      <Text variant="small" style={{ display: 'block', color: '#605e5c' }}>{selectedPolicyRequest.AssignedAuthorEmail}</Text>
-                    </div>
-                  </Stack>
-                ) : (
-                  <Text style={{ color: '#a19f9d', fontStyle: 'italic' }}>Not yet assigned — click "Accept & Start" below</Text>
-                )}
-              </div>
-
-              {/* Action Buttons */}
-              <Stack horizontal tokens={{ childrenGap: 8 }}>
-                {(selectedPolicyRequest.Status === 'New' || selectedPolicyRequest.Status === 'Assigned') && (
-                  <PrimaryButton
-                    text="Accept & Start Drafting"
-                    iconProps={{ iconName: 'Play' }}
-                    onClick={() => {
-                      const updated = { ...selectedPolicyRequest, Status: 'InProgress' as const, AssignedAuthor: this.props.context.pageContext.user.displayName, AssignedAuthorEmail: this.props.context.pageContext.user.email };
-                      this.setState({
-                        selectedPolicyRequest: updated,
-                        policyRequests: this.state.policyRequests.map(r => r.Id === updated.Id ? updated : r)
-                      });
-                    }}
-                  />
-                )}
-                {selectedPolicyRequest.Status === 'InProgress' && (
-                  <PrimaryButton
-                    text="Mark as Draft Ready"
-                    iconProps={{ iconName: 'CheckMark' }}
-                    styles={{ root: { background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
-                    onClick={() => {
-                      const updated = { ...selectedPolicyRequest, Status: 'Draft Ready' as const };
-                      this.setState({
-                        selectedPolicyRequest: updated,
-                        policyRequests: this.state.policyRequests.map(r => r.Id === updated.Id ? updated : r)
-                      });
-                    }}
-                  />
-                )}
-                <DefaultButton
-                  text="Create Policy from Request"
-                  iconProps={{ iconName: 'PageAdd' }}
-                  onClick={() => {
-                    this.setState({
-                      showPolicyRequestDetailPanel: false,
-                      policyName: selectedPolicyRequest.Title,
-                      policyCategory: selectedPolicyRequest.PolicyCategory,
-                      readTimeframe: `${selectedPolicyRequest.ReadTimeframeDays} days`,
-                      readTimeframeDays: selectedPolicyRequest.ReadTimeframeDays,
-                      requiresAcknowledgement: selectedPolicyRequest.RequiresAcknowledgement,
-                      requiresQuiz: selectedPolicyRequest.RequiresQuiz,
-                      activeTab: 'create',
-                      currentStep: 1
-                    });
-                  }}
-                />
-                <DefaultButton
-                  text="Close"
-                  onClick={() => this.setState({ showPolicyRequestDetailPanel: false, selectedPolicyRequest: null })}
-                />
-              </Stack>
-            </div>
-          </Panel>
-        )}
-      </>
-    );
-  }
-
-  private renderAnalyticsTab(): JSX.Element {
-    const { analyticsData, analyticsLoading, departmentCompliance } = this.state;
-
-    return (
-      <>
-        <PageSubheader
-          iconName="BarChartVertical"
-          title="Policy Analytics"
-          description="Insights and metrics for your policy library"
-          actions={
-            <Stack horizontal tokens={{ childrenGap: 8 }}>
-              <DefaultButton
-                text="Date Range"
-                iconProps={{ iconName: 'Calendar' }}
-                menuProps={{
-                  items: [
-                    { key: 'last7', text: 'Last 7 Days', onClick: () => { void this.handleDateRangeChange(7); } },
-                    { key: 'last30', text: 'Last 30 Days', onClick: () => { void this.handleDateRangeChange(30); } },
-                    { key: 'last90', text: 'Last 90 Days', onClick: () => { void this.handleDateRangeChange(90); } },
-                    { key: 'thisYear', text: 'This Year', onClick: () => { void this.handleDateRangeChange(365); } },
-                    { key: 'allTime', text: 'All Time', onClick: () => { void this.handleDateRangeChange(0); } }
-                  ]
-                }}
-              />
-              <PrimaryButton
-                text="Export Report"
-                iconProps={{ iconName: 'Download' }}
-                menuProps={{
-                  items: [
-                    { key: 'csv', text: 'Export as CSV', iconProps: { iconName: 'ExcelDocument' }, onClick: () => { void this.handleExportAnalytics('csv'); } },
-                    { key: 'pdf', text: 'Export as PDF', iconProps: { iconName: 'PDF' }, onClick: () => { void this.handleExportAnalytics('pdf'); } },
-                    { key: 'json', text: 'Export as JSON', iconProps: { iconName: 'Code' }, onClick: () => { void this.handleExportAnalytics('json'); } }
-                  ]
-                }}
-              />
-            </Stack>
-          }
-        />
-
-        <div className={styles.editorContainer}>
-          {analyticsLoading ? (
-            <Stack horizontalAlign="center" tokens={{ padding: 40 }}>
-              <Spinner size={SpinnerSize.large} label="Loading analytics..." />
-            </Stack>
-          ) : (() => {
-            // Single render path — use live data or fallback sample data
-            const data: IPolicyAnalytics = analyticsData || {
-              totalPolicies: 48, publishedPolicies: 35, draftPolicies: 8, pendingApproval: 5,
-              expiringSoon: 3, averageReadTime: 15, complianceRate: 89, acknowledgementRate: 78,
-              policiesByCategory: [
-                { category: 'HR', count: 12 }, { category: 'IT Security', count: 8 },
-                { category: 'Finance', count: 6 }, { category: 'Compliance', count: 10 }, { category: 'Operations', count: 7 }
-              ],
-              policiesByStatus: [
-                { status: 'Published', count: 35 }, { status: 'Draft', count: 8 },
-                { status: 'In Review', count: 5 }
-              ],
-              policiesByRisk: [
-                { risk: 'Low', count: 18 }, { risk: 'Medium', count: 20 },
-                { risk: 'High', count: 8 }, { risk: 'Critical', count: 2 }
-              ],
-              monthlyTrends: []
-            };
-            const riskColors: Record<string, string> = {
-              'Low': '#107c10', 'Medium': '#ca5010', 'High': '#d13438', 'Critical': '#750b1c'
-            };
-            return (
-            <>
-              {/* KPI Cards */}
-              <div className={styles.analyticsKpiGrid}>
-                {this.renderAnalyticsKpiCard('Total Policies', data.totalPolicies, 'DocumentSet', '#0078d4')}
-                {this.renderAnalyticsKpiCard('Published', data.publishedPolicies, 'CheckMark', '#107c10')}
-                {this.renderAnalyticsKpiCard('Draft', data.draftPolicies, 'Edit', '#605e5c')}
-                {this.renderAnalyticsKpiCard('Pending Approval', data.pendingApproval, 'Clock', '#ca5010')}
-                {this.renderAnalyticsKpiCard('Expiring Soon', data.expiringSoon, 'Warning', '#d13438')}
-                {this.renderAnalyticsKpiCard('Compliance Rate', `${data.complianceRate}%`, 'Shield', '#0078d4')}
-              </div>
-
-              {/* Charts */}
-              <div className={styles.analyticsChartsGrid}>
-                {/* By Category */}
-                <div className={styles.analyticsChart}>
-                  <Text variant="large" style={{ fontWeight: 600, marginBottom: 16, display: 'block' }}>Policies by Category</Text>
-                  <div className={styles.barChart}>
-                    {data.policiesByCategory.map(item => (
-                      <div key={item.category} className={styles.barChartItem}>
-                        <Text style={{ width: 120 }}>{item.category}</Text>
-                        <div className={styles.barChartBar}>
-                          <div
-                            className={styles.barChartFill}
-                            style={{ width: `${(item.count / (data.totalPolicies || 1)) * 100}%` }}
-                          />
-                        </div>
-                        <Text style={{ width: 40, textAlign: 'right' }}>{item.count}</Text>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* By Status */}
-                <div className={styles.analyticsChart}>
-                  <Text variant="large" style={{ fontWeight: 600, marginBottom: 16, display: 'block' }}>Policies by Status</Text>
-                  <div className={styles.donutChartContainer}>
-                    {data.policiesByStatus.map((item, index) => (
-                      <div key={item.status} className={styles.donutLegendItem}>
-                        <span className={styles.donutLegendColor} style={{
-                          backgroundColor: ['#0078d4', '#107c10', '#ca5010', '#605e5c', '#d13438'][index % 5]
-                        }} />
-                        <Text>{item.status}: {item.count}</Text>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* By Risk */}
-                <div className={styles.analyticsChart}>
-                  <Text variant="large" style={{ fontWeight: 600, marginBottom: 16, display: 'block' }}>Policies by Risk Level</Text>
-                  <div className={styles.riskGrid}>
-                    {data.policiesByRisk.map(item => (
-                      <div key={item.risk} className={styles.riskCard} style={{ borderLeftColor: riskColors[item.risk] || '#605e5c' }}>
-                        <Text variant="xxLarge" style={{ fontWeight: 700 }}>{item.count}</Text>
-                        <Text>{item.risk}</Text>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Department Compliance Table */}
-              <div className={styles.analyticsChart} style={{ marginTop: 24 }}>
-                <Stack horizontal horizontalAlign="space-between" verticalAlign="center" style={{ marginBottom: 16 }}>
-                  <Text variant="large" style={{ fontWeight: 600 }}>Department Compliance</Text>
-                  <DefaultButton
-                    text="Send Reminders"
-                    iconProps={{ iconName: 'Mail' }}
-                    onClick={() => void this.dialogManager.showAlert('Reminder emails will be sent to non-compliant employees', { variant: 'info' })}
-                  />
-                </Stack>
-                <div className={styles.complianceTable}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                      <tr style={{ background: '#f3f2f1', borderBottom: '2px solid #edebe9' }}>
-                        <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600 }}>Department</th>
-                        <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600 }}>Total</th>
-                        <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600 }}>Compliant</th>
-                        <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600 }}>Non-Compliant</th>
-                        <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600 }}>Pending</th>
-                        <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600 }}>Rate</th>
-                        <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600 }}>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {departmentCompliance.map((dept, index) => (
-                        <tr key={dept.Department} style={{ borderBottom: '1px solid #edebe9', background: index % 2 === 0 ? '#ffffff' : '#faf9f8' }}>
-                          <td style={{ padding: '12px 16px', fontWeight: 500 }}>{dept.Department}</td>
-                          <td style={{ padding: '12px 16px', textAlign: 'center' }}>{dept.TotalEmployees}</td>
-                          <td style={{ padding: '12px 16px', textAlign: 'center', color: '#107c10' }}>{dept.Compliant}</td>
-                          <td style={{ padding: '12px 16px', textAlign: 'center', color: '#d13438' }}>{dept.NonCompliant}</td>
-                          <td style={{ padding: '12px 16px', textAlign: 'center', color: '#ca5010' }}>{dept.Pending}</td>
-                          <td style={{ padding: '12px 16px', textAlign: 'center' }}>
-                            <span style={{
-                              display: 'inline-block',
-                              padding: '4px 12px',
-                              borderRadius: '12px',
-                              fontSize: '12px',
-                              fontWeight: 600,
-                              background: dept.ComplianceRate >= 90 ? '#dff6dd' : dept.ComplianceRate >= 80 ? '#fff4ce' : '#fde7e9',
-                              color: dept.ComplianceRate >= 90 ? '#107c10' : dept.ComplianceRate >= 80 ? '#8a6d3b' : '#d13438'
-                            }}>
-                              {dept.ComplianceRate}%
-                            </span>
-                          </td>
-                          <td style={{ padding: '12px 16px', textAlign: 'center' }}>
-                            <IconButton
-                              iconProps={{ iconName: 'View' }}
-                              title="View Details"
-                              onClick={() => void this.dialogManager.showAlert(`Viewing compliance details for ${dept.Department}`, { variant: 'info' })}
-                            />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </>
-            );
-          })()}
-        </div>
-      </>
-    );
-  }
-
-  private renderAnalyticsKpiCard(title: string, value: string | number, icon: string, color: string): JSX.Element {
-    return (
-      <div className={styles.analyticsKpiCard}>
-        <Icon iconName={icon} style={{ fontSize: 24, color, marginBottom: 8 }} />
-        <Text variant="xxLarge" style={{ fontWeight: 700 }}>{value}</Text>
-        <Text variant="small" style={{ color: '#605e5c' }}>{title}</Text>
-      </div>
-    );
-  }
-
   private renderAdminTab(): JSX.Element {
     return (
       <>
@@ -7223,301 +6825,6 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
               <Text variant="small" style={{ color: '#605e5c' }}>Configure email templates</Text>
             </div>
           </div>
-        </div>
-      </>
-    );
-  }
-
-  private renderPolicyPacksTab(): JSX.Element {
-    const { policyPacks, policyPacksLoading } = this.state;
-
-    return (
-      <>
-        <PageSubheader
-          iconName="Package"
-          title="Policy Packs"
-          description="Manage bundled policy collections"
-          actions={
-            <PrimaryButton
-              text="Create New Pack"
-              iconProps={{ iconName: 'Add' }}
-              onClick={() => this.setState({ showCreatePackPanel: true })}
-            />
-          }
-        />
-
-        <div className={styles.editorContainer}>
-          {policyPacksLoading ? (
-            <Stack horizontalAlign="center" tokens={{ padding: 40 }}>
-              <Spinner size={SpinnerSize.large} label="Loading policy packs..." />
-            </Stack>
-          ) : policyPacks.length === 0 ? (
-            <Stack horizontalAlign="center" tokens={{ padding: 40 }}>
-              <Icon iconName="Package" style={{ fontSize: 64, color: '#a19f9d', marginBottom: 16 }} />
-              <Text variant="xLarge" style={{ fontWeight: 600 }}>No Policy Packs</Text>
-              <Text style={{ color: '#605e5c', marginBottom: 24 }}>Create your first policy pack to bundle policies for easy distribution</Text>
-              <PrimaryButton
-                text="Create New Pack"
-                iconProps={{ iconName: 'Add' }}
-                onClick={() => this.setState({ showCreatePackPanel: true })}
-              />
-            </Stack>
-          ) : (
-            <>
-              {/* Stats Summary */}
-              <Stack horizontal tokens={{ childrenGap: 24 }} style={{ marginBottom: 24 }}>
-                <div style={{ background: '#e8f4fd', padding: '12px 20px', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <Icon iconName="Package" style={{ fontSize: 20, color: '#0078d4' }} />
-                  <div>
-                    <Text variant="xLarge" style={{ fontWeight: 700, color: '#0078d4' }}>{policyPacks.length}</Text>
-                    <Text variant="small" style={{ color: '#605e5c' }}>Total Packs</Text>
-                  </div>
-                </div>
-                <div style={{ background: '#dff6dd', padding: '12px 20px', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <Icon iconName="CheckMark" style={{ fontSize: 20, color: '#107c10' }} />
-                  <div>
-                    <Text variant="xLarge" style={{ fontWeight: 700, color: '#107c10' }}>{policyPacks.filter(p => p.Status === 'Active').length}</Text>
-                    <Text variant="small" style={{ color: '#605e5c' }}>Active</Text>
-                  </div>
-                </div>
-                <div style={{ background: '#fff4ce', padding: '12px 20px', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <Icon iconName="Edit" style={{ fontSize: 20, color: '#8a6d3b' }} />
-                  <div>
-                    <Text variant="xLarge" style={{ fontWeight: 700, color: '#8a6d3b' }}>{policyPacks.filter(p => p.Status === 'Draft').length}</Text>
-                    <Text variant="small" style={{ color: '#605e5c' }}>Draft</Text>
-                  </div>
-                </div>
-              </Stack>
-
-              {/* Policy Pack Cards Grid */}
-              <div className={styles.policyPackGrid}>
-                {policyPacks.map(pack => (
-                  <div key={pack.Id} className={styles.policyPackCard}>
-                    <div className={styles.policyPackCardHeader}>
-                      <Stack horizontal horizontalAlign="space-between" verticalAlign="start">
-                        <div>
-                          <Text variant="large" style={{ fontWeight: 600, display: 'block' }}>{pack.Title}</Text>
-                          <Text variant="small" style={{ color: '#605e5c', marginTop: 4, display: 'block' }}>{pack.Description}</Text>
-                        </div>
-                        <span style={{
-                          display: 'inline-block',
-                          padding: '4px 12px',
-                          borderRadius: '12px',
-                          fontSize: '11px',
-                          fontWeight: 600,
-                          textTransform: 'uppercase',
-                          background: pack.Status === 'Active' ? '#dff6dd' : '#fff4ce',
-                          color: pack.Status === 'Active' ? '#107c10' : '#8a6d3b'
-                        }}>
-                          {pack.Status}
-                        </span>
-                      </Stack>
-                    </div>
-                    <div className={styles.policyPackCardBody}>
-                      <Stack horizontal tokens={{ childrenGap: 24 }}>
-                        <div style={{ textAlign: 'center' }}>
-                          <Text variant="xLarge" style={{ fontWeight: 700, color: '#0078d4', display: 'block' }}>{pack.PoliciesCount}</Text>
-                          <Text variant="small" style={{ color: '#605e5c' }}>Policies</Text>
-                        </div>
-                        <div style={{ textAlign: 'center' }}>
-                          <Text variant="xLarge" style={{ fontWeight: 700, color: '#107c10', display: 'block' }}>{pack.AssignedTo}</Text>
-                          <Text variant="small" style={{ color: '#605e5c' }}>Assigned</Text>
-                        </div>
-                        <div style={{ textAlign: 'center' }}>
-                          <Text variant="xLarge" style={{ fontWeight: 700, color: '#8a6d3b', display: 'block' }}>{pack.CompletionRate}%</Text>
-                          <Text variant="small" style={{ color: '#605e5c' }}>Complete</Text>
-                        </div>
-                      </Stack>
-                      <div style={{ marginTop: 12 }}>
-                        <div style={{ height: 6, background: '#f3f2f1', borderRadius: 3, overflow: 'hidden' }}>
-                          <div style={{
-                            height: '100%',
-                            width: `${pack.CompletionRate}%`,
-                            background: pack.CompletionRate >= 80 ? '#107c10' : pack.CompletionRate >= 50 ? '#ca5010' : '#d13438',
-                            borderRadius: 3,
-                            transition: 'width 0.3s ease'
-                          }} />
-                        </div>
-                      </div>
-                    </div>
-                    <div className={styles.policyPackCardFooter}>
-                      <Stack horizontal tokens={{ childrenGap: 8 }} verticalAlign="center">
-                        <Icon iconName="People" style={{ fontSize: 14, color: '#605e5c' }} />
-                        <Text variant="small" style={{ color: '#605e5c' }}>{pack.TargetAudience}</Text>
-                      </Stack>
-                      <Stack horizontal tokens={{ childrenGap: 8 }}>
-                        <IconButton
-                          iconProps={{ iconName: 'Edit' }}
-                          title="Edit Pack"
-                          onClick={() => void this.dialogManager.showAlert(`Edit pack: ${pack.Title}`, { variant: 'info' })}
-                        />
-                        <IconButton
-                          iconProps={{ iconName: 'View' }}
-                          title="View Details"
-                          onClick={() => void this.dialogManager.showAlert(`View details for: ${pack.Title}`, { variant: 'info' })}
-                        />
-                        <IconButton
-                          iconProps={{ iconName: 'Send' }}
-                          title="Assign Pack"
-                          onClick={() => void this.dialogManager.showAlert(`Assign pack: ${pack.Title}`, { variant: 'info' })}
-                        />
-                      </Stack>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-      </>
-    );
-  }
-
-  private renderQuizBuilderTab(): JSX.Element {
-    const { quizzes, quizzesLoading } = this.state;
-
-    return (
-      <>
-        <PageSubheader
-          iconName="Questionnaire"
-          title="Quiz Builder"
-          description="Create quizzes to verify policy understanding"
-          actions={
-            <PrimaryButton
-              text="Create New Quiz"
-              iconProps={{ iconName: 'Add' }}
-              onClick={() => this.setState({ showCreateQuizPanel: true })}
-            />
-          }
-        />
-
-        <div className={styles.editorContainer}>
-          {quizzesLoading ? (
-            <Stack horizontalAlign="center" tokens={{ padding: 40 }}>
-              <Spinner size={SpinnerSize.large} label="Loading quizzes..." />
-            </Stack>
-          ) : (
-            <>
-              {/* Quick Create Section */}
-              <div className={styles.quickCreateSection}>
-                <Text variant="large" style={{ fontWeight: 600, marginBottom: 16, display: 'block' }}>Quick Create Quiz</Text>
-                <Stack horizontal tokens={{ childrenGap: 16 }} wrap>
-                  <div className={styles.quickCreateCard} onClick={() => this.setState({ showCreateQuizPanel: true })}>
-                    <div className={styles.quickCreateIcon} style={{ background: '#e8f4fd' }}>
-                      <Icon iconName="Questionnaire" style={{ fontSize: 24, color: '#0078d4' }} />
-                    </div>
-                    <div>
-                      <Text style={{ fontWeight: 600 }}>From Scratch</Text>
-                      <Text variant="small" style={{ color: '#605e5c' }}>Create a new quiz manually</Text>
-                    </div>
-                  </div>
-                  <div className={styles.quickCreateCard} onClick={() => window.location.href = '/sites/PolicyManager/SitePages/QuizBuilder.aspx'}>
-                    <div className={styles.quickCreateIcon} style={{ background: '#f3e8fd' }}>
-                      <Icon iconName="Robot" style={{ fontSize: 24, color: '#8764b8' }} />
-                    </div>
-                    <div>
-                      <Text style={{ fontWeight: 600 }}>AI Generated</Text>
-                      <Text variant="small" style={{ color: '#605e5c' }}>Auto-generate from policy content</Text>
-                    </div>
-                  </div>
-                  <div className={styles.quickCreateCard} onClick={() => void this.dialogManager.showAlert('Quiz template library coming soon. Use AI Generated or From Scratch.', { variant: 'info' })}>
-                    <div className={styles.quickCreateIcon} style={{ background: '#dff6dd' }}>
-                      <Icon iconName="DocumentSet" style={{ fontSize: 24, color: '#107c10' }} />
-                    </div>
-                    <div>
-                      <Text style={{ fontWeight: 600 }}>From Template</Text>
-                      <Text variant="small" style={{ color: '#605e5c' }}>Use an existing quiz template</Text>
-                    </div>
-                  </div>
-                </Stack>
-              </div>
-
-              {/* Quiz Table */}
-              <div style={{ marginTop: 24 }}>
-                <Text variant="large" style={{ fontWeight: 600, marginBottom: 16, display: 'block' }}>Existing Quizzes</Text>
-                <div className={styles.quizTable}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                      <tr style={{ background: '#f3f2f1', borderBottom: '2px solid #edebe9' }}>
-                        <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600 }}>Quiz Title</th>
-                        <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600 }}>Linked Policy</th>
-                        <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600 }}>Questions</th>
-                        <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600 }}>Pass Rate</th>
-                        <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600 }}>Status</th>
-                        <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600 }}>Completions</th>
-                        <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600 }}>Avg Score</th>
-                        <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600 }}>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {quizzes.map((quiz, index) => (
-                        <tr key={quiz.Id} style={{ borderBottom: '1px solid #edebe9', background: index % 2 === 0 ? '#ffffff' : '#faf9f8' }}>
-                          <td style={{ padding: '12px 16px', fontWeight: 500 }}>
-                            <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
-                              <Icon iconName="Questionnaire" style={{ color: '#0078d4' }} />
-                              <span>{quiz.Title}</span>
-                            </Stack>
-                          </td>
-                          <td style={{ padding: '12px 16px', color: '#605e5c' }}>{quiz.LinkedPolicy}</td>
-                          <td style={{ padding: '12px 16px', textAlign: 'center' }}>{quiz.Questions}</td>
-                          <td style={{ padding: '12px 16px', textAlign: 'center' }}>{quiz.PassRate}%</td>
-                          <td style={{ padding: '12px 16px', textAlign: 'center' }}>
-                            <span style={{
-                              display: 'inline-block',
-                              padding: '4px 12px',
-                              borderRadius: '12px',
-                              fontSize: '11px',
-                              fontWeight: 600,
-                              textTransform: 'uppercase',
-                              background: quiz.Status === 'Active' ? '#dff6dd' : quiz.Status === 'Draft' ? '#fff4ce' : '#f3f2f1',
-                              color: quiz.Status === 'Active' ? '#107c10' : quiz.Status === 'Draft' ? '#8a6d3b' : '#605e5c'
-                            }}>
-                              {quiz.Status}
-                            </span>
-                          </td>
-                          <td style={{ padding: '12px 16px', textAlign: 'center' }}>{quiz.Completions}</td>
-                          <td style={{ padding: '12px 16px', textAlign: 'center' }}>
-                            {quiz.AvgScore > 0 ? (
-                              <span style={{ color: quiz.AvgScore >= 80 ? '#107c10' : quiz.AvgScore >= 60 ? '#ca5010' : '#d13438' }}>
-                                {quiz.AvgScore}%
-                              </span>
-                            ) : '-'}
-                          </td>
-                          <td style={{ padding: '12px 16px', textAlign: 'center' }}>
-                            <Stack horizontal horizontalAlign="center" tokens={{ childrenGap: 4 }}>
-                              <IconButton
-                                iconProps={{ iconName: 'Edit' }}
-                                title="Edit Quiz"
-                                onClick={() => void this.handleEditQuiz(quiz.Id)}
-                              />
-                              <IconButton
-                                iconProps={{ iconName: 'View' }}
-                                title="Preview Quiz"
-                                onClick={() => void this.dialogManager.showAlert(`Preview quiz: ${quiz.Title}`, { variant: 'info' })}
-                              />
-                              <IconButton
-                                iconProps={{ iconName: 'BarChartVertical' }}
-                                title="View Results"
-                                onClick={() => void this.dialogManager.showAlert(`View results for: ${quiz.Title}`, { variant: 'info' })}
-                              />
-                            </Stack>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* Embedded Quiz Builder Placeholder */}
-              <div style={{ marginTop: 24, padding: 24, background: '#f3f2f1', borderRadius: 8, border: '2px dashed #c8c6c4' }}>
-                <Stack horizontalAlign="center" tokens={{ childrenGap: 12 }}>
-                  <Icon iconName="Frame" style={{ fontSize: 32, color: '#605e5c' }} />
-                  <Text variant="medium" style={{ color: '#605e5c' }}>Quiz Editor iframe will be embedded here when editing a quiz</Text>
-                </Stack>
-              </div>
-            </>
-          )}
         </div>
       </>
     );
@@ -7587,6 +6894,8 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
           {this.renderApprovalDetailsPanel()}
           {this.renderAdminSettingsPanel()}
           {this.renderFilterPanel()}
+          {this.renderAuthorVersionHistoryPanel()}
+          {this.renderAuthorVersionComparisonPanel()}
 
           <this.dialogManager.DialogComponent />
         </section>

@@ -116,6 +116,14 @@ export enum VersionType {
   Draft = 'Draft'
 }
 
+export enum PolicyVisibility {
+  AllEmployees = 'All Employees',
+  Department = 'Department',
+  Role = 'Role',
+  SecurityGroup = 'Security Group',
+  Custom = 'Custom'
+}
+
 export enum ComplianceRisk {
   Critical = 'Critical',
   High = 'High',
@@ -245,6 +253,8 @@ export interface IPolicy extends IBaseListItem {
   QuizPassingScore?: number; // Percentage
   AllowRetake: boolean;
   MaxRetakeAttempts?: number;
+  LinkedQuizId?: number;
+  SourceRequestId?: number;
 
   // Distribution
   DistributionScope: DistributionScope;
@@ -253,6 +263,13 @@ export interface IPolicy extends IBaseListItem {
   TargetRoles?: string[];
   TargetUserIds?: number[];
   ExcludeUserIds?: number[];
+
+  // Visibility / Security
+  Visibility?: PolicyVisibility;
+  TargetSecurityGroups?: string[];
+
+  // Folder / SubCategory
+  SubCategory?: string;
 
   // Analytics & Metrics
   TotalDistributed?: number;

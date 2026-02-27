@@ -38,6 +38,8 @@ export const PolicyLists = {
   POLICY_CATEGORIES: 'PM_PolicyCategories',
   /** Policy requests from users */
   POLICY_REQUESTS: 'PM_PolicyRequests',
+  /** Policy sub-categories for folder navigation */
+  POLICY_SUB_CATEGORIES: 'PM_PolicySubCategories',
 } as const;
 
 /**
@@ -186,6 +188,34 @@ export const TemplateLibraryLists = {
 } as const;
 
 /**
+ * Admin Configuration Lists
+ * Lists for admin panel settings and configuration
+ */
+export const AdminConfigLists = {
+  /** Naming convention rules */
+  NAMING_RULES: 'PM_NamingRules',
+  /** SLA target configurations */
+  SLA_CONFIGS: 'PM_SLAConfigs',
+  /** Data lifecycle/retention policies */
+  DATA_LIFECYCLE_POLICIES: 'PM_DataLifecyclePolicies',
+  /** Email notification templates */
+  EMAIL_TEMPLATES: 'PM_EmailTemplates',
+} as const;
+
+/**
+ * User Management Lists
+ * Lists for user directory, sync, and audience targeting
+ */
+export const UserManagementLists = {
+  /** Employee directory (synced from Entra ID) */
+  EMPLOYEES: 'PM_Employees',
+  /** Entra ID sync operation logs */
+  SYNC_LOG: 'PM_Sync_Log',
+  /** Custom audience definitions for targeting */
+  AUDIENCES: 'PM_Audiences',
+} as const;
+
+/**
  * System Lists
  * Lists for system operations
  */
@@ -215,6 +245,8 @@ export const PM_LISTS = {
   ...AnalyticsLists,
   ...ComparisonLists,
   ...TemplateLibraryLists,
+  ...AdminConfigLists,
+  ...UserManagementLists,
   ...SystemLists,
 } as const;
 
@@ -305,6 +337,8 @@ export type NotificationListName = typeof NotificationLists[keyof typeof Notific
 export type AnalyticsListName = typeof AnalyticsLists[keyof typeof AnalyticsLists];
 export type ComparisonListName = typeof ComparisonLists[keyof typeof ComparisonLists];
 export type TemplateLibraryListName = typeof TemplateLibraryLists[keyof typeof TemplateLibraryLists];
+export type AdminConfigListName = typeof AdminConfigLists[keyof typeof AdminConfigLists];
+export type UserManagementListName = typeof UserManagementLists[keyof typeof UserManagementLists];
 export type SystemListName = typeof SystemLists[keyof typeof SystemLists];
 export type PMListName = typeof PM_LISTS[keyof typeof PM_LISTS];
 

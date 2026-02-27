@@ -348,7 +348,7 @@ export class LoggingService {
       tags: {
         'ai.session.id': this.sessionId,
         'ai.user.id': this.userId || 'anonymous',
-        'ai.application.ver': '1.2.3',
+        'ai.application.ver': '1.2.4',
         'ai.cloud.roleName': 'PolicyManager-SPFx',
         'ai.device.type': 'Browser',
         'ai.operation.name': window.location.pathname,

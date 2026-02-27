@@ -1,4 +1,3 @@
-// @ts-nocheck
 // Approval Service
 // Manages approval workflows for JML processes
 
@@ -60,14 +59,12 @@ export class ApprovalService {
   private workflowInstanceService: WorkflowInstanceService;
   // INTEGRATION FIX: Add ApprovalNotificationService for email/Teams delivery
   private approvalNotificationService: ApprovalNotificationService | null = null;
-  private siteUrl: string = '';
 
   constructor(sp: SPFI, siteUrl?: string) {
     this.sp = sp;
     this.workflowInstanceService = new WorkflowInstanceService(sp);
     // INTEGRATION FIX: Initialize notification service if siteUrl provided
     if (siteUrl) {
-      this.siteUrl = siteUrl;
       this.approvalNotificationService = new ApprovalNotificationService(sp, siteUrl);
     }
   }
@@ -76,7 +73,6 @@ export class ApprovalService {
    * INTEGRATION FIX: Initialize notification service (can be called after construction)
    */
   public initializeNotificationService(siteUrl: string): void {
-    this.siteUrl = siteUrl;
     this.approvalNotificationService = new ApprovalNotificationService(this.sp, siteUrl);
   }
 
@@ -209,8 +205,8 @@ export class ApprovalService {
 
       // Build secure filter
       const userFilter = ValidationUtils.buildFilter('DelegatedById', 'eq', validUserId);
-      const startDateFilter = ValidationUtils.buildFilter('StartDate', 'le', now);
-      const endDateFilter = ValidationUtils.buildFilter('EndDate', 'ge', now);
+      const startDateFilter = ValidationUtils.buildFilter('StartDate', 'le', now.toISOString());
+      const endDateFilter = ValidationUtils.buildFilter('EndDate', 'ge', now.toISOString());
       const filter = `${userFilter} and IsActive eq 1 and ${startDateFilter} and ${endDateFilter}`;
 
       const delegations = await this.sp.web.lists
@@ -1050,9 +1046,6 @@ export class ApprovalService {
    */
   public async getMyPendingApprovals(): Promise<IJmlApproval[]> {
     try {
-      // Validate enum value
-      ValidationUtils.validateEnum(ApprovalStatus.Pending, ApprovalStatus, 'ApprovalStatus');
-
       // Build secure filter
       const approverFilter = ValidationUtils.buildFilter('ApproverId', 'eq', this.currentUserId);
       const statusFilter = ValidationUtils.buildFilter('Status', 'eq', ApprovalStatus.Pending);
@@ -1230,9 +1223,10 @@ export class ApprovalService {
    */
   public async getApprovalSummary(): Promise<IApprovalSummary> {
     try {
-      const allApprovals = await this.sp.web.lists
-        .getByTitle(this.APPROVALS_LIST)
-        .items.select('Status', 'ApproverId', 'IsOverdue', 'ResponseTime')();
+      const allApprovals: Array<{ Status: string; ApproverId: number; IsOverdue: boolean; ResponseTime: number }> =
+        await this.sp.web.lists
+          .getByTitle(this.APPROVALS_LIST)
+          .items.select('Status', 'ApproverId', 'IsOverdue', 'ResponseTime')();
 
       const myPending = allApprovals.filter(
         a => a.ApproverId === this.currentUserId && a.Status === ApprovalStatus.Pending
@@ -1277,9 +1271,6 @@ export class ApprovalService {
    */
   public async processEscalations(): Promise<void> {
     try {
-      // Validate enum value
-      ValidationUtils.validateEnum(ApprovalStatus.Pending, ApprovalStatus, 'ApprovalStatus');
-
       // Build secure filter
       const statusFilter = ValidationUtils.buildFilter('Status', 'eq', ApprovalStatus.Pending);
       const filter = `${statusFilter} and IsOverdue eq 0`;

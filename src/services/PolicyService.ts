@@ -812,6 +812,18 @@ export class PolicyService {
       // Create new version
       await this.createVersion(request.policyId, VersionType.Major, 'Policy published');
 
+      // Bump to next major version number on the policy record
+      const nextMajor = (policy.MajorVersion || 1) + 1;
+      await this.sp.web.lists
+        .getByTitle(this.POLICIES_LIST)
+        .items.getById(request.policyId)
+        .update({
+          VersionNumber: `${nextMajor}.0`,
+          MajorVersion: nextMajor,
+          MinorVersion: 0,
+          VersionType: 'Major'
+        });
+
       // Get target users
       const targetUsers = await this.resolveTargetUsers(
         request.distributionScope,
@@ -906,6 +918,19 @@ export class PolicyService {
         }
       }
 
+      // Auto-complete source request if this policy was created from a request
+      if (policy.SourceRequestId) {
+        try {
+          await this.sp.web.lists
+            .getByTitle('PM_PolicyRequests')
+            .items.getById(policy.SourceRequestId)
+            .update({ Status: 'Completed', ResultingPolicyId: request.policyId });
+          logger.info('PolicyService', `Auto-completed source request ${policy.SourceRequestId} on policy publish`);
+        } catch (reqErr) {
+          logger.warn('PolicyService', `Failed to auto-complete source request ${policy.SourceRequestId}:`, reqErr);
+        }
+      }
+
       return distribution;
     } catch (error) {
       logger.error('PolicyService', 'Failed to publish policy:', error);
@@ -920,7 +945,7 @@ export class PolicyService {
   /**
    * Create a new version of a policy
    */
-  private async createVersion(
+  public async createVersion(
     policyId: number,
     versionType: VersionType,
     changeDescription: string
@@ -979,6 +1004,98 @@ export class PolicyService {
     } catch (error) {
       logger.error('PolicyService', 'Failed to get policy versions:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Create a new editable draft version from a published policy.
+   * Snapshots current content as a version record, then sets policy to Draft
+   * with a bumped minor version (e.g., 1.0 → 1.1).
+   */
+  public async createEditableVersion(
+    policyId: number,
+    changeDescription: string
+  ): Promise<{ newVersionNumber: string }> {
+    try {
+      const policy = await this.getPolicyById(policyId);
+      const major = policy.MajorVersion || parseInt(policy.VersionNumber?.split('.')[0] || '1', 10);
+      const minor = (policy.MinorVersion || 0) + 1;
+      const newVersionNumber = `${major}.${minor}`;
+
+      // Snapshot the current published content as a version record
+      await this.createVersion(policyId, VersionType.Minor, changeDescription);
+
+      // Set the policy back to Draft with bumped minor version
+      await this.sp.web.lists
+        .getByTitle(this.POLICIES_LIST)
+        .items.getById(policyId)
+        .update({
+          PolicyStatus: 'Draft',
+          VersionNumber: newVersionNumber,
+          VersionType: 'Minor',
+          MajorVersion: major,
+          MinorVersion: minor
+        });
+
+      await this.logAudit({
+        EntityType: 'Policy',
+        EntityId: policyId,
+        PolicyId: policyId,
+        Action: 'VersionCreated',
+        ActionDescription: `New draft version ${newVersionNumber} created from published policy`,
+        PerformedById: this.currentUserId,
+        PerformedByEmail: this.currentUserEmail,
+        ActionDate: new Date(),
+        ComplianceRelevant: true
+      });
+
+      logger.info('PolicyService', `Created editable version ${newVersionNumber} for policy ${policyId}`);
+      return { newVersionNumber };
+    } catch (error) {
+      logger.error('PolicyService', 'Failed to create editable version:', error);
+      throw error;
+    }
+  }
+
+  // ============================================================================
+  // PER-POLICY DOCUMENT FOLDERS
+  // ============================================================================
+
+  /**
+   * Ensure a per-policy folder exists in PM_PolicySourceDocuments.
+   * Creates the folder if it doesn't exist, using PolicyNumber as the folder name.
+   */
+  public async ensurePolicyFolder(policyNumber: string): Promise<string> {
+    const libraryName = 'PM_PolicySourceDocuments';
+    const folderPath = `${libraryName}/${policyNumber}`;
+    try {
+      await this.sp.web.getFolderByServerRelativePath(folderPath).select('Exists')();
+      logger.info('PolicyService', `Policy folder already exists: ${folderPath}`);
+    } catch {
+      try {
+        await this.sp.web.folders.addUsingPath(folderPath);
+        logger.info('PolicyService', `Created policy folder: ${folderPath}`);
+      } catch (error) {
+        logger.warn('PolicyService', `Could not create policy folder: ${folderPath}`, error);
+      }
+    }
+    return folderPath;
+  }
+
+  /**
+   * Get documents from a policy's folder in PM_PolicySourceDocuments.
+   */
+  public async getPolicyDocuments(policyNumber: string): Promise<Array<{ Name: string; ServerRelativeUrl: string; Length: number; TimeLastModified: string }>> {
+    const libraryName = 'PM_PolicySourceDocuments';
+    const folderPath = `${libraryName}/${policyNumber}`;
+    try {
+      const files = await this.sp.web.getFolderByServerRelativePath(folderPath)
+        .files.select('Name', 'ServerRelativeUrl', 'Length', 'TimeLastModified')
+        .top(100)();
+      return files;
+    } catch {
+      // Folder doesn't exist yet — return empty
+      return [];
     }
   }
 

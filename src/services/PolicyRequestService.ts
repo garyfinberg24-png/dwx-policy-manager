@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Policy Request Service
  * Handles CRUD operations for policy requests submitted through the Request Policy wizard.
@@ -39,7 +38,6 @@ function generateReferenceNumber(): string {
 export class PolicyRequestService {
   private sp: SPFI;
   private readonly LIST_NAME = PolicyLists.POLICY_REQUESTS;
-  private currentUserId: number = 0;
   private currentUserEmail: string = '';
   private currentUserName: string = '';
 
@@ -53,7 +51,6 @@ export class PolicyRequestService {
   public async initCurrentUser(): Promise<void> {
     try {
       const user = await this.sp.web.currentUser();
-      this.currentUserId = user.Id;
       this.currentUserEmail = user.Email || '';
       this.currentUserName = user.Title || '';
     } catch (err) {
@@ -106,20 +103,21 @@ export class PolicyRequestService {
       };
 
       const result = await this.sp.web.lists.getByTitle(this.LIST_NAME).items.add(listItem);
+      const newItemId: number = result.data?.Id ?? 0;
 
       // Upload attachments if provided
       let attachmentUrls: string[] = [];
       if (attachments && attachments.length > 0) {
         attachmentUrls = await this.uploadAttachments(referenceNumber, attachments);
         if (attachmentUrls.length > 0) {
-          await this.sp.web.lists.getByTitle(this.LIST_NAME).items.getById(result.Id).update({
+          await this.sp.web.lists.getByTitle(this.LIST_NAME).items.getById(newItemId).update({
             AttachmentUrls: JSON.stringify(attachmentUrls)
           });
         }
       }
 
       logger.info('PolicyRequestService', `Policy request submitted: ${referenceNumber}`, {
-        itemId: result.Id,
+        itemId: newItemId,
         title: formData.policyTitle,
         requestedBy,
         attachmentCount: attachmentUrls.length
@@ -135,7 +133,7 @@ export class PolicyRequestService {
       return {
         success: true,
         referenceNumber,
-        itemId: result.Id
+        itemId: newItemId
       };
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
@@ -288,7 +286,7 @@ export class PolicyRequestService {
           const arrayBuffer = await file.arrayBuffer();
           const uploadResult = await this.sp.web.getFolderByServerRelativePath(folderPath)
             .files.addUsingPath(file.name, new Uint8Array(arrayBuffer), { Overwrite: true });
-          urls.push(uploadResult.ServerRelativeUrl);
+          urls.push(uploadResult.data?.ServerRelativeUrl ?? file.name);
         } catch (fileErr) {
           logger.warn('PolicyRequestService', `Failed to upload attachment: ${file.name}`, fileErr);
         }

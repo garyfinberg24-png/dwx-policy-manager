@@ -1,6 +1,6 @@
 # ============================================================================
 # Policy Manager - Master Deployment Script
-# Deploys all 20 Policy Management lists to SharePoint
+# Deploys all 29 Policy Management lists to SharePoint
 # Target: https://mf7m.sharepoint.com/sites/PolicyManager (Development)
 # ============================================================================
 #
@@ -57,7 +57,7 @@ Write-Host "Connected to: $($web.Title)" -ForegroundColor Green
 # PART 1: Core Policy Lists
 # ----------------------------------------------------------------------------
 Write-Host ""
-Write-Host "[1/7] Creating Core Policy Lists..." -ForegroundColor Yellow
+Write-Host "[1/9] Creating Core Policy Lists..." -ForegroundColor Yellow
 Write-Host "------------------------------------------------------------" -ForegroundColor Gray
 
 # PM_Policies
@@ -178,7 +178,7 @@ Write-Host "  Core Policy Lists completed" -ForegroundColor Green
 # PART 2: Quiz Lists
 # ----------------------------------------------------------------------------
 Write-Host ""
-Write-Host "[2/7] Creating Quiz Lists..." -ForegroundColor Yellow
+Write-Host "[2/9] Creating Quiz Lists..." -ForegroundColor Yellow
 Write-Host "------------------------------------------------------------" -ForegroundColor Gray
 
 # PM_PolicyQuizzes
@@ -244,7 +244,7 @@ Write-Host "  Quiz Lists completed" -ForegroundColor Green
 # PART 3: Exemption & Distribution Lists
 # ----------------------------------------------------------------------------
 Write-Host ""
-Write-Host "[3/7] Creating Exemption & Distribution Lists..." -ForegroundColor Yellow
+Write-Host "[3/9] Creating Exemption & Distribution Lists..." -ForegroundColor Yellow
 Write-Host "------------------------------------------------------------" -ForegroundColor Gray
 
 # PM_PolicyExemptions
@@ -306,7 +306,7 @@ Write-Host "  Exemption & Distribution Lists completed" -ForegroundColor Green
 # PART 4: Social Feature Lists
 # ----------------------------------------------------------------------------
 Write-Host ""
-Write-Host "[4/7] Creating Social Feature Lists..." -ForegroundColor Yellow
+Write-Host "[4/9] Creating Social Feature Lists..." -ForegroundColor Yellow
 Write-Host "------------------------------------------------------------" -ForegroundColor Gray
 
 # PM_PolicyRatings
@@ -393,7 +393,7 @@ Write-Host "  Social Feature Lists completed" -ForegroundColor Green
 # PART 5: Policy Pack Lists
 # ----------------------------------------------------------------------------
 Write-Host ""
-Write-Host "[5/7] Creating Policy Pack Lists..." -ForegroundColor Yellow
+Write-Host "[5/9] Creating Policy Pack Lists..." -ForegroundColor Yellow
 Write-Host "------------------------------------------------------------" -ForegroundColor Gray
 
 # PM_PolicyPacks
@@ -439,7 +439,7 @@ Write-Host "  Policy Pack Lists completed" -ForegroundColor Green
 # PART 6: Analytics & Audit Lists
 # ----------------------------------------------------------------------------
 Write-Host ""
-Write-Host "[6/7] Creating Analytics & Audit Lists..." -ForegroundColor Yellow
+Write-Host "[6/9] Creating Analytics & Audit Lists..." -ForegroundColor Yellow
 Write-Host "------------------------------------------------------------" -ForegroundColor Gray
 
 # PM_PolicyAuditLog
@@ -518,7 +518,7 @@ Write-Host "  Analytics & Audit Lists completed" -ForegroundColor Green
 # PART 7: Notification Lists
 # ----------------------------------------------------------------------------
 Write-Host ""
-Write-Host "[7/7] Creating Notification Lists..." -ForegroundColor Yellow
+Write-Host "[7/9] Creating Notification Lists..." -ForegroundColor Yellow
 Write-Host "------------------------------------------------------------" -ForegroundColor Gray
 
 # PM_NotificationQueue
@@ -578,6 +578,156 @@ Write-Host "    Fields added to PM_Notifications" -ForegroundColor Gray
 
 Write-Host "  Notification Lists completed" -ForegroundColor Green
 
+# ----------------------------------------------------------------------------
+# PART 8: Admin Configuration Lists
+# ----------------------------------------------------------------------------
+Write-Host ""
+Write-Host "[8/9] Creating Admin Configuration Lists..." -ForegroundColor Yellow
+Write-Host "------------------------------------------------------------" -ForegroundColor Gray
+
+# PM_NamingRules
+$listName = "PM_NamingRules"
+$list = Get-PnPList -Identity $listName -ErrorAction SilentlyContinue
+if ($null -eq $list) {
+    New-PnPList -Title $listName -Template GenericList -EnableVersioning | Out-Null
+    Write-Host "  Created: $listName" -ForegroundColor Green
+} else {
+    Write-Host "  Exists: $listName" -ForegroundColor Gray
+}
+
+Add-PnPField -List $listName -DisplayName "Pattern" -InternalName "Pattern" -Type Text -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "Segments" -InternalName "Segments" -Type Note -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "AppliesTo" -InternalName "AppliesTo" -Type Choice -Choices "All Policies","HR Policies","Compliance Policies","IT Policies","Finance Policies","Legal Policies","Operational Policies" -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "IsActive" -InternalName "IsActive" -Type Boolean -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "Example" -InternalName "Example" -Type Text -ErrorAction SilentlyContinue | Out-Null
+Write-Host "    Fields added to $listName" -ForegroundColor Gray
+
+# PM_SLAConfigs
+$listName = "PM_SLAConfigs"
+$list = Get-PnPList -Identity $listName -ErrorAction SilentlyContinue
+if ($null -eq $list) {
+    New-PnPList -Title $listName -Template GenericList -EnableVersioning | Out-Null
+    Write-Host "  Created: $listName" -ForegroundColor Green
+} else {
+    Write-Host "  Exists: $listName" -ForegroundColor Gray
+}
+
+Add-PnPField -List $listName -DisplayName "ProcessType" -InternalName "ProcessType" -Type Choice -Choices "Review","Acknowledgement","Approval","Authoring","Audit","Distribution","Escalation" -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "TargetDays" -InternalName "TargetDays" -Type Number -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "WarningThresholdDays" -InternalName "WarningThresholdDays" -Type Number -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "IsActive" -InternalName "IsActive" -Type Boolean -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "Description" -InternalName "Description" -Type Note -ErrorAction SilentlyContinue | Out-Null
+Write-Host "    Fields added to $listName" -ForegroundColor Gray
+
+# PM_DataLifecyclePolicies
+$listName = "PM_DataLifecyclePolicies"
+$list = Get-PnPList -Identity $listName -ErrorAction SilentlyContinue
+if ($null -eq $list) {
+    New-PnPList -Title $listName -Template GenericList -EnableVersioning | Out-Null
+    Write-Host "  Created: $listName" -ForegroundColor Green
+} else {
+    Write-Host "  Exists: $listName" -ForegroundColor Gray
+}
+
+Add-PnPField -List $listName -DisplayName "EntityType" -InternalName "EntityType" -Type Choice -Choices "Policies","Drafts","Acknowledgements","AuditLogs","Approvals","Quizzes","Notifications","Analytics" -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "RetentionPeriodDays" -InternalName "RetentionPeriodDays" -Type Number -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "AutoDeleteEnabled" -InternalName "AutoDeleteEnabled" -Type Boolean -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "ArchiveBeforeDelete" -InternalName "ArchiveBeforeDelete" -Type Boolean -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "IsActive" -InternalName "IsActive" -Type Boolean -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "Description" -InternalName "Description" -Type Note -ErrorAction SilentlyContinue | Out-Null
+Write-Host "    Fields added to $listName" -ForegroundColor Gray
+
+# PM_EmailTemplates
+$listName = "PM_EmailTemplates"
+$list = Get-PnPList -Identity $listName -ErrorAction SilentlyContinue
+if ($null -eq $list) {
+    New-PnPList -Title $listName -Template GenericList -EnableVersioning | Out-Null
+    Write-Host "  Created: $listName" -ForegroundColor Green
+} else {
+    Write-Host "  Exists: $listName" -ForegroundColor Gray
+}
+
+Add-PnPField -List $listName -DisplayName "EventTrigger" -InternalName "EventTrigger" -Type Choice -Choices "Policy Published","Ack Overdue","Approval Needed","Policy Expiring","SLA Breached","Violation Found","Campaign Active","User Added","Policy Updated","Policy Retired" -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "Subject" -InternalName "Subject" -Type Text -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "Body" -InternalName "Body" -Type Note -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "Recipients" -InternalName "Recipients" -Type Choice -Choices "All Employees","Assigned Users","Approvers","Policy Owners","Managers","Compliance Officers","Target Groups","New Users","HR Team","IT Admins" -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "IsActive" -InternalName "IsActive" -Type Boolean -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "MergeTags" -InternalName "MergeTags" -Type Note -ErrorAction SilentlyContinue | Out-Null
+Write-Host "    Fields added to $listName" -ForegroundColor Gray
+
+Write-Host "  Admin Configuration Lists completed" -ForegroundColor Green
+
+# ----------------------------------------------------------------------------
+# PART 9: User Management Lists
+# ----------------------------------------------------------------------------
+Write-Host ""
+Write-Host "[9/9] Creating User Management Lists..." -ForegroundColor Yellow
+Write-Host "------------------------------------------------------------" -ForegroundColor Gray
+
+# PM_Employees
+$listName = "PM_Employees"
+$list = Get-PnPList -Identity $listName -ErrorAction SilentlyContinue
+if ($null -eq $list) {
+    New-PnPList -Title $listName -Template GenericList -EnableVersioning | Out-Null
+    Write-Host "  Created: $listName" -ForegroundColor Green
+} else {
+    Write-Host "  Exists: $listName" -ForegroundColor Gray
+}
+
+Add-PnPField -List $listName -DisplayName "FirstName" -InternalName "FirstName" -Type Text -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "LastName" -InternalName "LastName" -Type Text -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "Email" -InternalName "Email" -Type Text -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "EmployeeNumber" -InternalName "EmployeeNumber" -Type Text -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "JobTitle" -InternalName "JobTitle" -Type Text -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "Department" -InternalName "Department" -Type Text -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "Location" -InternalName "Location" -Type Text -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "OfficePhone" -InternalName "OfficePhone" -Type Text -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "MobilePhone" -InternalName "MobilePhone" -Type Text -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "ManagerEmail" -InternalName "ManagerEmail" -Type Text -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "Status" -InternalName "Status" -Type Choice -Choices "Active","Inactive","PreHire","OnLeave","Terminated","Retired" -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "EmploymentType" -InternalName "EmploymentType" -Type Choice -Choices "Full-Time","Part-Time","Contractor","Intern","Temporary" -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "CostCenter" -InternalName "CostCenter" -Type Text -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "EntraObjectId" -InternalName "EntraObjectId" -Type Text -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "PMRole" -InternalName "PMRole" -Type Choice -Choices "User","Author","Manager","Admin" -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "ProfilePhoto" -InternalName "ProfilePhoto" -Type URL -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "LastSyncedAt" -InternalName "LastSyncedAt" -Type DateTime -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "Notes" -InternalName "Notes" -Type Note -ErrorAction SilentlyContinue | Out-Null
+Write-Host "    Fields added to $listName" -ForegroundColor Gray
+
+# PM_Sync_Log
+$listName = "PM_Sync_Log"
+$list = Get-PnPList -Identity $listName -ErrorAction SilentlyContinue
+if ($null -eq $list) {
+    New-PnPList -Title $listName -Template GenericList -EnableVersioning | Out-Null
+    Write-Host "  Created: $listName" -ForegroundColor Green
+} else {
+    Write-Host "  Exists: $listName" -ForegroundColor Gray
+}
+
+Add-PnPField -List $listName -DisplayName "SyncId" -InternalName "SyncId" -Type Text -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "Status" -InternalName "Status" -Type Choice -Choices "Started","Running","Completed","CompletedWithErrors","Failed" -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "Message" -InternalName "Message" -Type Note -ErrorAction SilentlyContinue | Out-Null
+Write-Host "    Fields added to $listName" -ForegroundColor Gray
+
+# PM_Audiences
+$listName = "PM_Audiences"
+$list = Get-PnPList -Identity $listName -ErrorAction SilentlyContinue
+if ($null -eq $list) {
+    New-PnPList -Title $listName -Template GenericList -EnableVersioning | Out-Null
+    Write-Host "  Created: $listName" -ForegroundColor Green
+} else {
+    Write-Host "  Exists: $listName" -ForegroundColor Gray
+}
+
+Add-PnPField -List $listName -DisplayName "Description" -InternalName "Description" -Type Note -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "Criteria" -InternalName "Criteria" -Type Note -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "MemberCount" -InternalName "MemberCount" -Type Number -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "IsActive" -InternalName "IsActive" -Type Boolean -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "LastEvaluated" -InternalName "LastEvaluated" -Type DateTime -ErrorAction SilentlyContinue | Out-Null
+Write-Host "    Fields added to $listName" -ForegroundColor Gray
+
+Write-Host "  User Management Lists completed" -ForegroundColor Green
+
 # ============================================================================
 # SUMMARY
 # ============================================================================
@@ -586,7 +736,7 @@ Write-Host "============================================================" -Foreg
 Write-Host "  DEPLOYMENT COMPLETE!" -ForegroundColor Green
 Write-Host "============================================================" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "  22 Policy Management lists created:" -ForegroundColor White
+Write-Host "  29 Policy Management lists created:" -ForegroundColor White
 Write-Host ""
 Write-Host "  Core (3):        PM_Policies, PM_PolicyVersions, PM_PolicyAcknowledgements" -ForegroundColor Gray
 Write-Host "  Quiz (3):        PM_PolicyQuizzes, PM_PolicyQuizQuestions, PM_PolicyQuizResults" -ForegroundColor Gray
@@ -597,6 +747,9 @@ Write-Host "  Packs (2):       PM_PolicyPacks, PM_PolicyPackAssignments" -Foregr
 Write-Host "  Analytics (4):   PM_PolicyAuditLog, PM_PolicyAnalytics, PM_PolicyFeedback," -ForegroundColor Gray
 Write-Host "                   PM_PolicyDocuments" -ForegroundColor Gray
 Write-Host "  Notifications (2): PM_NotificationQueue, PM_Notifications" -ForegroundColor Gray
+Write-Host "  Admin Config (4): PM_NamingRules, PM_SLAConfigs," -ForegroundColor Gray
+Write-Host "                   PM_DataLifecyclePolicies, PM_EmailTemplates" -ForegroundColor Gray
+Write-Host "  User Mgmt (3):   PM_Employees, PM_Sync_Log, PM_Audiences" -ForegroundColor Gray
 Write-Host ""
 Write-Host "  Site: $SiteUrl" -ForegroundColor Yellow
 Write-Host ""

@@ -39,8 +39,10 @@ import {
   IPolicyAcknowledgement,
   IPolicyRating,
   IPolicyComment,
-  IPolicyAcknowledgeRequest
+  IPolicyAcknowledgeRequest,
+  IPolicyVersion
 } from '../../../models/IPolicy';
+import { PolicyDocumentComparisonService } from '../../../services/PolicyDocumentComparisonService';
 import styles from './PolicyDetails.module.scss';
 import { PM_LISTS } from '../../../constants/SharePointListNames';
 import { QuizService, IQuizResult } from '../../../services/QuizService';
@@ -140,6 +142,13 @@ export interface IPolicyDetailsState {
   currentUserId: number;
   // Fullscreen document viewer
   isFullscreen: boolean;
+  // Version history
+  showVersionHistoryPanel: boolean;
+  versionHistoryLoading: boolean;
+  policyVersions: IPolicyVersion[];
+  showVersionComparisonPanel: boolean;
+  versionComparisonHtml: string;
+  versionComparisonLoading: boolean;
 }
 
 // Mock quiz questions (will be replaced by QuizTaker integration)
@@ -180,6 +189,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
   private policyService: PolicyService;
   private socialService: PolicySocialService;
   private linkedRecordService: DwxLinkedRecordService | null = null;
+  private comparisonService: PolicyDocumentComparisonService;
   private readTimer: NodeJS.Timeout | null = null;
   private dialogManager = createDialogManager();
   private documentViewerRef: React.RefObject<HTMLDivElement>;
@@ -238,10 +248,18 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
       // Live quiz integration
       liveQuizId: null,
       currentUserId: 0,
-      isFullscreen: false
+      isFullscreen: false,
+      // Version history
+      showVersionHistoryPanel: false,
+      versionHistoryLoading: false,
+      policyVersions: [],
+      showVersionComparisonPanel: false,
+      versionComparisonHtml: '',
+      versionComparisonLoading: false
     };
     this.policyService = new PolicyService(props.sp);
     this.socialService = new PolicySocialService(props.sp);
+    this.comparisonService = new PolicyDocumentComparisonService(props.sp, props.context.pageContext.web.absoluteUrl);
     if (props.dwxHub) {
       this.linkedRecordService = new DwxLinkedRecordService(props.dwxHub);
     }
@@ -1110,6 +1128,12 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                 <span>{this.formatDuration(readDuration)}</span>
               </div>
               <IconButton
+                iconProps={{ iconName: 'History' }}
+                title="Version History"
+                onClick={this.loadVersionHistory}
+                styles={{ root: { color: '#0d9488' } }}
+              />
+              <IconButton
                 iconProps={{ iconName: isFollowing ? 'FavoriteStarFill' : 'FavoriteStar' }}
                 title={isFollowing ? 'Unfollow' : 'Follow'}
                 onClick={this.handleFollow}
@@ -1346,6 +1370,80 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                 );
               })}
             </Stack>
+          </div>
+        )}
+
+        {/* Per-Policy Documents Section */}
+        {this.renderPolicyDocumentsSection(policy)}
+      </div>
+    );
+  }
+
+  /**
+   * Renders the per-policy documents section (files from PM_PolicySourceDocuments/{PolicyNumber}/)
+   */
+  private renderPolicyDocumentsSection(policy: IPolicy): JSX.Element {
+    const state = this.state as any;
+    const policyDocs = state._policyDocuments || [];
+    const docsLoading = state._policyDocsLoading || false;
+    const docsLoaded = state._policyDocsLoaded || false;
+    const docsExpanded = state._policyDocsExpanded || false;
+
+    // Lazy-load documents on first expand
+    const handleToggle = async (): Promise<void> => {
+      const newExpanded = !docsExpanded;
+      this.setState({ _policyDocsExpanded: newExpanded } as any);
+      if (newExpanded && !docsLoaded) {
+        this.setState({ _policyDocsLoading: true } as any);
+        try {
+          const docs = await this.policyService.getPolicyDocuments(policy.PolicyNumber);
+          this.setState({ _policyDocuments: docs, _policyDocsLoaded: true, _policyDocsLoading: false } as any);
+        } catch {
+          this.setState({ _policyDocsLoaded: true, _policyDocsLoading: false } as any);
+        }
+      }
+    };
+
+    return (
+      <div style={{ marginTop: 16, border: '1px solid #e2e8f0', borderRadius: 8, overflow: 'hidden' }}>
+        <Stack
+          horizontal
+          verticalAlign="center"
+          tokens={{ childrenGap: 8 }}
+          onClick={handleToggle}
+          style={{ padding: '12px 16px', cursor: 'pointer', backgroundColor: '#f8fafc' }}
+        >
+          <Icon iconName={docsExpanded ? 'ChevronDown' : 'ChevronRight'} style={{ fontSize: 12 }} />
+          <Icon iconName="FolderOpen" style={{ fontSize: 16, color: '#0d9488' }} />
+          <Text style={{ fontWeight: 600, flex: 1 }}>Policy Documents</Text>
+          {docsLoaded && <Text style={{ color: '#94a3b8', fontSize: 12 }}>{policyDocs.length} file{policyDocs.length !== 1 ? 's' : ''}</Text>}
+        </Stack>
+        {docsExpanded && (
+          <div style={{ padding: '0 16px 12px' }}>
+            {docsLoading ? (
+              <Spinner size={SpinnerSize.small} label="Loading documents..." />
+            ) : policyDocs.length === 0 ? (
+              <Text style={{ color: '#605e5c', fontSize: 13 }}>No documents uploaded for this policy.</Text>
+            ) : (
+              <Stack tokens={{ childrenGap: 6 }}>
+                {policyDocs.map((doc: any, i: number) => (
+                  <Stack key={i} horizontal verticalAlign="center" tokens={{ childrenGap: 8 }} style={{ padding: '4px 0' }}>
+                    <Icon iconName={this.getDocumentIcon(doc.Name)} style={{ fontSize: 14, color: '#0d9488' }} />
+                    <a
+                      href={doc.ServerRelativeUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: '#0d9488', textDecoration: 'none', fontSize: 13, flex: 1 }}
+                    >
+                      {doc.Name}
+                    </a>
+                    <Text style={{ color: '#94a3b8', fontSize: 11 }}>
+                      {doc.Length ? `${Math.round(doc.Length / 1024)} KB` : ''}
+                    </Text>
+                  </Stack>
+                ))}
+              </Stack>
+            )}
           </div>
         )}
       </div>
@@ -1648,6 +1746,151 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
   }
 
   // ============================================
+  // VERSION HISTORY
+  // ============================================
+
+  private loadVersionHistory = async (): Promise<void> => {
+    this.setState({ showVersionHistoryPanel: true, versionHistoryLoading: true });
+    try {
+      const { policyId } = this.state;
+      if (!policyId) return;
+      const versions = await this.policyService.getPolicyVersions(policyId);
+      this.setState({ policyVersions: versions, versionHistoryLoading: false });
+    } catch (error) {
+      console.error('Failed to load version history:', error);
+      this.setState({ versionHistoryLoading: false });
+    }
+  }
+
+  private handleCompareWithCurrent = async (versionId: number): Promise<void> => {
+    this.setState({ showVersionComparisonPanel: true, versionComparisonLoading: true });
+    try {
+      const { policyId } = this.state;
+      if (!policyId) return;
+      const comparison = await this.comparisonService.compareWithVersion(policyId, versionId);
+      const sideBySide = await this.comparisonService.getSideBySideView(comparison.sourceVersion?.Id || versionId, comparison.targetVersion?.Id || 0);
+      const html = this.comparisonService.generateSideBySideHtml(sideBySide);
+      this.setState({ versionComparisonHtml: html, versionComparisonLoading: false });
+    } catch (error) {
+      console.error('Failed to compare versions:', error);
+      // Fallback: show a simple message
+      this.setState({
+        versionComparisonHtml: '<div style="padding: 24px; color: #605e5c;">Version comparison data is not available for these versions. Ensure both versions have HTML content saved.</div>',
+        versionComparisonLoading: false
+      });
+    }
+  }
+
+  private renderVersionHistoryPanel(): JSX.Element {
+    const { showVersionHistoryPanel, versionHistoryLoading, policyVersions, policy } = this.state;
+
+    return (
+      <Panel
+        isOpen={showVersionHistoryPanel}
+        onDismiss={() => this.setState({ showVersionHistoryPanel: false })}
+        type={PanelType.medium}
+        headerText="Version History"
+        closeButtonAriaLabel="Close"
+      >
+        <Stack tokens={{ childrenGap: 16 }} style={{ padding: '16px 0' }}>
+          {versionHistoryLoading ? (
+            <Spinner size={SpinnerSize.large} label="Loading version history..." />
+          ) : policyVersions.length === 0 ? (
+            <MessageBar messageBarType={MessageBarType.info}>
+              No previous versions found for this policy.
+            </MessageBar>
+          ) : (
+            policyVersions.map((version, index) => (
+              <div
+                key={version.Id || index}
+                style={{
+                  padding: 16,
+                  border: '1px solid #e2e8f0',
+                  borderRadius: 8,
+                  backgroundColor: version.IsCurrentVersion ? '#f0fdfa' : '#ffffff'
+                }}
+              >
+                <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
+                  <Stack tokens={{ childrenGap: 4 }}>
+                    <Stack horizontal tokens={{ childrenGap: 8 }} verticalAlign="center">
+                      <Text style={{ fontWeight: 600, fontSize: 16, color: '#0f172a' }}>
+                        v{version.VersionNumber}
+                      </Text>
+                      <span style={{
+                        padding: '2px 8px',
+                        borderRadius: 4,
+                        fontSize: 11,
+                        fontWeight: 600,
+                        backgroundColor: version.VersionType === 'Major' ? '#dcfce7' : '#e0f2fe',
+                        color: version.VersionType === 'Major' ? '#16a34a' : '#0284c7'
+                      }}>
+                        {version.VersionType}
+                      </span>
+                      {version.IsCurrentVersion && (
+                        <span style={{
+                          padding: '2px 8px',
+                          borderRadius: 4,
+                          fontSize: 11,
+                          fontWeight: 600,
+                          backgroundColor: '#ccfbf1',
+                          color: '#0d9488'
+                        }}>
+                          Current
+                        </span>
+                      )}
+                    </Stack>
+                    <Text style={{ color: '#605e5c', fontSize: 13 }}>
+                      {version.ChangeDescription || 'No description'}
+                    </Text>
+                    <Text style={{ color: '#94a3b8', fontSize: 12 }}>
+                      {version.EffectiveDate ? new Date(version.EffectiveDate).toLocaleDateString('en-US', {
+                        year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                      }) : 'Unknown date'}
+                    </Text>
+                  </Stack>
+                  {!version.IsCurrentVersion && (
+                    <DefaultButton
+                      text="Compare with Current"
+                      iconProps={{ iconName: 'BranchCompare' }}
+                      onClick={() => this.handleCompareWithCurrent(version.Id)}
+                      styles={{ root: { fontSize: 12 } }}
+                    />
+                  )}
+                </Stack>
+              </div>
+            ))
+          )}
+        </Stack>
+      </Panel>
+    );
+  }
+
+  private renderVersionComparisonPanel(): JSX.Element {
+    const { showVersionComparisonPanel, versionComparisonLoading, versionComparisonHtml } = this.state;
+
+    return (
+      <Panel
+        isOpen={showVersionComparisonPanel}
+        onDismiss={() => this.setState({ showVersionComparisonPanel: false, versionComparisonHtml: '' })}
+        type={PanelType.extraLarge}
+        headerText="Version Comparison"
+        closeButtonAriaLabel="Close"
+      >
+        <div style={{ padding: '16px 0' }}>
+          {versionComparisonLoading ? (
+            <Spinner size={SpinnerSize.large} label="Generating comparison..." />
+          ) : (
+            <div
+              dangerouslySetInnerHTML={{ __html: versionComparisonHtml }}
+              style={{ border: '1px solid #e2e8f0', borderRadius: 8, overflow: 'auto' }}
+            />
+          )}
+        </div>
+      </Panel>
+    );
+  }
+
+  // ============================================
   // RENDER: ACKNOWLEDGE PANEL (fly-in)
   // ============================================
 
@@ -1927,6 +2170,8 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
               {/* Panels */}
               {this.renderAcknowledgePanel()}
               {this.renderReadReceiptPanel()}
+              {this.renderVersionHistoryPanel()}
+              {this.renderVersionComparisonPanel()}
 
               {/* Sticky Footer */}
               {isActiveFlow && this.renderWizardFooter()}

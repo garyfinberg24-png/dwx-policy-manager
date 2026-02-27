@@ -1,4 +1,3 @@
-// @ts-nocheck
 // GraphService - Microsoft Graph API access
 // For user profiles, Teams, Planner, Exchange integrations
 
@@ -54,22 +53,22 @@ export class GraphService {
       }
 
       const employee: IEntraIDEmployee = {
-        id: user.id,
-        userPrincipalName: user.userPrincipalName,
-        displayName: user.displayName,
-        givenName: user.givenName,
-        surname: user.surname,
-        mail: user.mail,
-        mobilePhone: user.mobilePhone,
-        jobTitle: user.jobTitle,
-        department: user.department,
-        officeLocation: user.officeLocation,
-        employeeId: user.employeeId,
-        companyName: user.companyName,
+        id: user.id || '',
+        userPrincipalName: user.userPrincipalName || '',
+        displayName: user.displayName || '',
+        givenName: user.givenName || '',
+        surname: user.surname || '',
+        mail: user.mail || '',
+        mobilePhone: user.mobilePhone || undefined,
+        jobTitle: user.jobTitle || undefined,
+        department: user.department || undefined,
+        officeLocation: user.officeLocation || undefined,
+        employeeId: user.employeeId || undefined,
+        companyName: user.companyName || undefined,
         manager: manager ? {
-          id: manager.id,
-          displayName: manager.displayName,
-          mail: manager.mail
+          id: (manager as { id?: string; displayName?: string; mail?: string }).id || '',
+          displayName: (manager as { id?: string; displayName?: string; mail?: string }).displayName || '',
+          mail: (manager as { id?: string; displayName?: string; mail?: string }).mail || ''
         } : undefined
       };
 

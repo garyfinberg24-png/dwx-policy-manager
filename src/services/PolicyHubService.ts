@@ -1,4 +1,3 @@
-// @ts-nocheck
 // Policy Hub Service
 // Advanced policy document center with rich metadata, filtering, and read timeframe tracking
 
@@ -23,12 +22,13 @@ import {
   IReadTimeframeMetric,
   ReadTimeframe,
   PolicyStatus,
+  PolicyVisibility,
   AcknowledgementStatus,
   IPolicyAcknowledgement
 } from '../models/IPolicy';
+import { PolicyManagerRole } from './PolicyRoleService';
 import { logger } from './LoggingService';
 import { PolicyLists, PolicyWorkflowLists } from '../constants/SharePointListNames';
-import { ValidationUtils } from '../utils/ValidationUtils';
 
 export class PolicyHubService {
   private sp: SPFI;
@@ -1067,4 +1067,84 @@ export class PolicyHubService {
       throw error;
     }
   }
+
+  // ============================================================================
+  // VISIBILITY FILTERING
+  // ============================================================================
+
+  /**
+   * Filter policies by visibility rules based on user context.
+   * Admin/Manager roles bypass filtering. Authors always see their own policies.
+   */
+  public filterByVisibility(
+    policies: IPolicy[],
+    ctx: IUserVisibilityContext
+  ): IPolicy[] {
+    // Admin and Manager bypass visibility — they see everything
+    if (ctx.role === PolicyManagerRole.Admin || ctx.role === PolicyManagerRole.Manager) {
+      return policies;
+    }
+
+    return policies.filter(policy => {
+      const visibility = (policy.Visibility as string) || PolicyVisibility.AllEmployees;
+
+      // Authors always see their own policies
+      if (policy.PolicyOwnerId === ctx.userId || (policy.PolicyAuthorIds || []).includes(ctx.userId)) {
+        return true;
+      }
+
+      switch (visibility) {
+        case PolicyVisibility.AllEmployees:
+          return true;
+
+        case PolicyVisibility.Department: {
+          const targets = policy.TargetDepartments || [];
+          if (targets.length === 0) return true; // No targets = visible to all
+          return targets.some(dept =>
+            dept.toLowerCase() === ctx.department.toLowerCase()
+          );
+        }
+
+        case PolicyVisibility.Role: {
+          const targets = policy.TargetRoles || [];
+          if (targets.length === 0) return true;
+          return targets.some(role =>
+            ctx.jobTitle.toLowerCase().includes(role.toLowerCase())
+          );
+        }
+
+        case PolicyVisibility.SecurityGroup: {
+          const targets = policy.TargetSecurityGroups || [];
+          if (targets.length === 0) return true;
+          return targets.some(group =>
+            ctx.groupNames.some(userGroup =>
+              userGroup.toLowerCase() === group.toLowerCase()
+            )
+          );
+        }
+
+        case PolicyVisibility.Custom: {
+          const targets = policy.TargetUserIds || [];
+          if (targets.length === 0) return true;
+          return targets.includes(ctx.userId);
+        }
+
+        default:
+          return true; // Unknown visibility → safe default = visible
+      }
+    });
+  }
+}
+
+/**
+ * User context for visibility filtering.
+ * Built once during PolicyHub initialization from SPFx page context + SP groups.
+ */
+export interface IUserVisibilityContext {
+  userId: number;
+  userEmail: string;
+  department: string;
+  jobTitle: string;
+  role: PolicyManagerRole;
+  groupNames: string[];
 }

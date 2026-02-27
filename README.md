@@ -21,7 +21,7 @@ Enterprise-grade Policy Lifecycle Management system built on SharePoint Framewor
 | --- | --- | --- |
 | **JmlPolicyHub** | Main policy browsing interface with KPI dashboard, category tree sidebar, visibility filtering, advanced filtering, table/card views | `PolicyHub.aspx` |
 | **JmlMyPolicies** | Personal dashboard showing assigned policies, due dates, completion status | `MyPolicies.aspx` |
-| **JmlPolicyAdmin** | Admin panel with sidebar navigation — 21+ sections including templates, metadata, workflows, compliance, SLA, naming rules, lifecycle, navigation toggles, sub-categories | `PolicyAdmin.aspx` |
+| **JmlPolicyAdmin** | Admin panel with sidebar navigation — 22+ sections including templates, metadata, workflows, compliance, SLA, naming rules, lifecycle, navigation toggles, sub-categories, AI Assistant config | `PolicyAdmin.aspx` |
 | **JmlPolicyAuthor** | Policy creation wizard with rich text editor, metadata, workflow submission, version history, edit-published-policy flow, request-to-policy mapping | `PolicyBuilder.aspx` |
 | **DwxPolicyAuthorView** | Author dashboard — policies, approvals, delegations, activity tabs | `PolicyAuthor.aspx` |
 | **JmlPolicyDetails** | Full policy viewer with version history + comparison panels, per-policy documents, acknowledgement, quiz, recently viewed tracking, cross-app record linking | `PolicyDetails.aspx` |
@@ -56,7 +56,8 @@ src/
   components/                  # Shared components
     JmlAppLayout/              # Full-page layout wrapper with role filtering
     JmlAppHeader/              # App header with DWx Hub integration
-    PolicyManagerHeader/       # Global header with nav icons, admin toggle filtering
+    PolicyManagerHeader/       # Global header with nav icons, admin toggle filtering, AI chat button
+    PolicyChatPanel/           # AI Chat Assistant — Fluent UI Panel (3 modes)
     PageSubheader/             # Page subheader component
     QuizBuilder/               # Quiz creation, AI generation, question management
     QuizTaker/                 # Quiz-taking component (11 question types)
@@ -74,7 +75,9 @@ src/
     RecentlyViewedService.ts   # localStorage recently viewed tracking
     LoggingService.ts          # Dual-mode telemetry (console + Application Insights)
     PolicyRoleService.ts       # 4-tier RBAC (User, Author, Manager, Admin)
+    PolicyChatService.ts       # Client-side RAG orchestrator for AI chat
     QuizService.ts             # Quiz CRUD, results, AI generation
+    UserManagementService.ts   # User CRUD, role assignment, managed departments
     __tests__/                 # 6 unit test suites
   constants/                   # Configuration
     SharePointListNames.ts     # All PM_ list name constants
@@ -85,6 +88,8 @@ src/
 azure-functions/
   quiz-generator/              # Azure Function — AI Quiz Question Generator (GPT-4o)
     infra/                     # Bicep IaC + deployment script
+  policy-chat/                 # Azure Function — AI Chat Assistant (GPT-4o)
+    infra/                     # Bicep IaC + deployment script (cross-RG Key Vault)
   email-sender/                # Azure Logic App — PM_EmailQueue email processor
     infra/                     # Bicep IaC + deployment script
 scripts/
@@ -109,6 +114,8 @@ docs/                          # Architecture docs, proposals, mockups
 | `RecentlyViewedService` | localStorage-based recently viewed policies (max 10 items) |
 | `LoggingService` | Dual-mode: console-only or Azure Application Insights (Beacon API, no npm dep) |
 | `PolicyRoleService` | 4-tier RBAC: User → Author → Manager → Admin |
+| `PolicyChatService` | Client-side RAG orchestrator — searches policies, builds context, calls Azure Function for AI chat |
+| `UserManagementService` | User CRUD, role assignment with managed departments (semicolon-delimited) |
 | `QuizService` | Quiz CRUD, AI question generation pipeline |
 
 ## Role-Based Access Control
@@ -166,6 +173,46 @@ Font: Segoe UI (system fallbacks)
 - **Per-Policy Document Folders** — Auto-created folders in `PM_PolicySourceDocuments` library per policy number. Documents listed in collapsible section on PolicyDetails.
 - **Quiz Sequencing** — Quiz creation disabled during policy drafting (Step 3) — only available after publish. Post-publish reminder dialog when quiz required but not linked. "Quiz Missing" badge in Author View.
 - **Request-to-Policy Flow** — Expanded field mapping (7 fields) from policy requests to wizard state. "Accept & Start Drafting" opens wizard with pre-filled data. Auto-complete source request on publish.
+
+## AI Chat Assistant
+
+AI-powered chat assistant accessible from the header bar (speech bubble icon), opening as a Fluent UI Panel from the right.
+
+```text
+SPFx App → PolicyChatService (client-side RAG)
+         → searches published policies via PolicyHubService
+         → builds compact context (summaries + key points, ≤20K chars)
+         → POST to Azure Function (policyChatCompletion)
+         → Azure OpenAI GPT-4o (reuses quiz-generator deployment)
+         → structured JSON response with citations + suggested actions
+```
+
+**Three conversation modes:**
+
+| Mode | Persona | Available to |
+| --- | --- | --- |
+| **Policy Q&A** | Policy Advisor — answers from provided context, cites policy names | All users |
+| **Author Assistant** | Writing Coach — drafting help, clarity checks, compliance advice | Author, Manager, Admin |
+| **General Help** | App Guide — navigation, features, role-based guidance | All users |
+
+**Configuration** (Admin → AI Assistant):
+
+- Enable/disable toggle, function URL + test connection, max response tokens (500–2000)
+- Config stored in `PM_Configuration` list with `localStorage` fallback
+
+**Deployed resources** (Resource Group: `dwx-pm-chat-rg-prod`):
+
+- Function App: `dwx-pm-chat-func-prod` (Node 18, Y1 Consumption)
+- Reuses existing: Azure OpenAI (`dwx-pm-openai-prod`), Key Vault (`dwx-pm-kv-ziqv6cfh2ck3o`)
+- Cross-RG RBAC via `kvRbac.bicep` module for Key Vault Secrets User
+
+```powershell
+# Deploy AI Chat Function
+cd azure-functions/policy-chat/infra
+.\deploy.ps1                    # Deploy prod
+.\deploy.ps1 -Environment dev   # Deploy dev
+.\deploy.ps1 -WhatIf            # Dry run
+```
 
 ## Email Pipeline
 
@@ -257,7 +304,7 @@ Upload the `.sppkg` file to the SharePoint App Catalog, then add web parts to th
 
 | Version | Date | Comments |
 | --- | --- | --- |
-| 1.2.4 | February 2026 | Enterprise features: policy versioning + comparison, visibility/security filtering, subcategory tree navigation, per-policy document folders, quiz sequencing fix, request-to-policy flow, admin config CRUD, component decomposition (6 extracted tabs), 6 unit test suites, test infrastructure, Forest Teal branded email templates (12 templates), Logic App email sender (Bicep IaC) |
+| 1.2.4 | February 2026 | AI Chat Assistant (Azure Function + SPFx panel + 3 modes), managed departments for user roles, enterprise features (versioning, visibility, subcategories, document folders, quiz sequencing, request-to-policy), email pipeline (12 templates + Logic App), component decomposition, 6 unit test suites |
 | 1.2.3 | February 2026 | Live data wiring (Analytics, Distribution), Application Insights telemetry, admin nav toggles, DWx Hub expansion, RecentlyViewedService, provisioning scripts |
 | 1.2.2 | February 2026 | Image templates, quiz selection, fullscreen viewer, DWx Hub integration, enterprise hardening (9/10 security + performance fixes) |
 | 1.2.1 | January 2026 | Quiz Builder UX overhaul, AI pipeline hardening, Recently Viewed dropdown |

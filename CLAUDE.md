@@ -40,7 +40,7 @@ Do NOT skip step 2 and jump straight to implementation. The user must confirm un
 - **Suite**: DWx (Digital Workplace Excellence)
 - **Company**: First Digital
 - **Tagline**: Policy Governance & Compliance
-- **Current Version**: 1.2.3
+- **Current Version**: 1.2.4
 - **Package ID**: `12538121-8a6b-4e41-8bc7-17f252d5c36e`
 - **SharePoint Site**: https://mf7m.sharepoint.com/sites/PolicyManager
 
@@ -127,9 +127,17 @@ policy-manager/
 │   ├── styles/            # Centralized styling (fluent-mixins.scss)
 │   └── utils/             # pnpConfig, injectPortalStyles, etc.
 ├── azure-functions/
-│   └── quiz-generator/    # Azure Function — AI Quiz Question Generator
-│       ├── src/functions/  # generateQuizQuestions.ts (HTTP trigger)
-│       ├── infra/          # Bicep IaC + deploy.ps1 deployment script
+│   ├── quiz-generator/    # Azure Function — AI Quiz Question Generator
+│   │   ├── src/functions/  # generateQuizQuestions.ts (HTTP trigger)
+│   │   ├── infra/          # Bicep IaC + deploy.ps1 deployment script
+│   │   ├── host.json
+│   │   ├── package.json
+│   │   └── tsconfig.json
+│   └── policy-chat/       # Azure Function — AI Chat Assistant (GPT-4o)
+│       ├── src/functions/  # policyChatCompletion.ts (HTTP trigger)
+│       ├── src/prompts/    # systemPrompts.ts (3 modes)
+│       ├── src/types/      # chatTypes.ts (request/response interfaces)
+│       ├── infra/          # Bicep IaC + kvRbac.bicep (cross-RG module) + deploy.ps1
 │       ├── host.json
 │       ├── package.json
 │       └── tsconfig.json
@@ -571,6 +579,66 @@ cd azure-functions/quiz-generator/infra
 
 ---
 
+## Azure Functions — AI Chat Assistant
+
+### Architecture
+The AI Chat Assistant uses a client-side RAG pattern: SPFx searches policies, builds compact context, and sends to an Azure Function which proxies to Azure OpenAI GPT-4o. Reuses the existing OpenAI + Key Vault from the quiz-generator deployment.
+
+```
+PolicyManagerHeader → PolicyChatPanel (Fluent UI Panel)
+  → PolicyChatService (client-side RAG)
+  → searches published policies via PolicyHubService
+  → builds context (summaries + key points, ≤20K chars)
+  → POST to Azure Function (policyChatCompletion)
+  → Azure OpenAI GPT-4o → structured JSON response
+```
+
+### Three Conversation Modes
+
+| Mode | Persona | System Prompt Focus |
+| ---- | ------- | ------------------- |
+| `policy-qa` | Policy Advisor | Answer ONLY from provided context, cite policy names, never fabricate |
+| `author-assist` | Writing Coach | Help draft sections, improve clarity, check compliance |
+| `general-help` | App Guide | Navigate the app, explain features, hardcoded page map |
+
+### Deployed Resources (Resource Group: `dwx-pm-chat-rg-prod`)
+| Resource | Name | Region |
+|----------|------|--------|
+| Function App | `dwx-pm-chat-func-prod` | swedencentral |
+| Storage Account | (auto-generated) | swedencentral |
+| App Insights | `dwx-pm-chat-insights-prod` | swedencentral |
+| App Service Plan | `dwx-pm-chat-plan-prod` (Y1 Consumption) | swedencentral |
+| Azure OpenAI | `dwx-pm-openai-prod` (REUSED) | swedencentral |
+| Key Vault | `dwx-pm-kv-ziqv6cfh2ck3o` (REUSED, cross-RG) | swedencentral |
+
+### Function Endpoint
+```
+POST https://dwx-pm-chat-func-prod.azurewebsites.net/api/policyChatCompletion?code=<function-key>
+```
+
+### Chat Infrastructure as Code
+
+- **Bicep template**: `azure-functions/policy-chat/infra/main.bicep`
+- **Cross-RG RBAC module**: `azure-functions/policy-chat/infra/kvRbac.bicep`
+- **Parameters**: `azure-functions/policy-chat/infra/main.parameters.json`
+- **Deployment script**: `azure-functions/policy-chat/infra/deploy.ps1`
+
+### Redeployment
+```powershell
+cd azure-functions/policy-chat/infra
+.\deploy.ps1 -Environment prod -Location swedencentral
+```
+
+### Admin Configuration
+
+Configure in PolicyAdmin → AI Assistant section:
+
+- Enable/disable toggle → `Integration.AI.Chat.Enabled` in PM_Configuration
+- Function URL → `Integration.AI.Chat.FunctionUrl` (with localStorage fallback `PM_AI_ChatFunctionUrl`)
+- Max tokens → `Integration.AI.Chat.MaxTokens` (500/1000/1500/2000)
+
+---
+
 ## Azure Logic App — Email Queue Processor
 
 ### Architecture
@@ -644,9 +712,37 @@ The QuizBuilder's "AI Generate" panel calls the Azure Function with:
 
 ---
 
-## Session State (Last Updated: 27 Feb 2026 — Session 10)
+## Session State (Last Updated: 27 Feb 2026 — Session 11)
 
-### Recently Completed (Session 10 — 27 Feb 2026)
+### Recently Completed (Session 11 — 27 Feb 2026)
+
+#### AI Chat Assistant — Full Stack Implementation
+
+- **Azure Function (policy-chat)** — `policyChatCompletion.ts` HTTP trigger (POST), Azure OpenAI GPT-4o integration with 3 mode-specific system prompts (policy-qa, author-assist, general-help), input validation (message ≤2000 chars, history ≤10, context ≤5 policies), structured JSON responses with citations + suggested actions
+- **Bicep IaC** — `main.bicep` provisions Function App, Storage, App Insights, App Service Plan (Y1 Consumption); reuses existing OpenAI + Key Vault via `kvRbac.bicep` cross-resource-group RBAC module; `deploy.ps1` full deployment script
+- **Deployed** — `dwx-pm-chat-func-prod` in `dwx-pm-chat-rg-prod` resource group; function live and tested with GPT-4o responses
+- **PolicyChatService.ts** — Client-side RAG orchestrator (~427 lines); searches published policies via `PolicyHubService.searchPolicyHub()`, builds compact context (summaries + key points, ≤20K chars), calls Azure Function; session persistence via `sessionStorage` (`pm_chat_session`); config from PM_Configuration with localStorage fallback
+- **PolicyChatPanel.tsx** — Fluent UI Panel (PanelType.medium) with 3 mode tabs; Forest Teal message bubbles (user=teal, assistant=white); citation pills linking to `PolicyDetails.aspx?policyId=X`; typing indicator with bounce animation; markdown rendering; suggested prompts per mode/role; Author Assistant tab hidden for User role
+- **PolicyManagerHeader.tsx** — Chat button (speech bubble SVG) after search icon; `showChatPanel` state; `PolicyChatPanel` render with sp/role/userName props
+- **PolicyAdmin.tsx** — "AI Assistant" sidebar item in CONFIGURATION group; Enable toggle, Function URL field, Test Connection button, Max Tokens dropdown (500/1000/1500/2000); save to PM_Configuration via `AdminConfigService.saveConfigByCategory('AI')` + localStorage fallback
+- **IJmlConfiguration.ts** — Added 3 config keys: `AI_CHAT_ENABLED`, `AI_CHAT_FUNCTION_URL`, `AI_CHAT_MAX_TOKENS`
+
+#### Managed Departments — User Role Management
+
+- **UserManagementService.ts** — `updateUserRole()` now accepts optional `managedDepartments` string array, stored semicolon-delimited in `ManagedDepartments` SP column
+- **PolicyAdmin.tsx** — Multi-select Managed Departments dropdown in user edit panel; department chips in user list column; `_editingManagedDepts` state threaded through panel open/save/dismiss
+- **15-ManagedDepartments-Column.ps1** — Provisioning script for SP column
+
+#### Fixes
+
+- **PolicyAdmin.tsx** — Fixed 4 subcategory service calls from `this.configService` (undefined) to `this.adminConfigService` (correct reference)
+
+#### Build & Push
+
+- **Ship build** — Zero errors, all 14 webpart manifests, v1.2.4
+- **Commit** — `c66ac90` — pushed to both ADO and GitHub remotes
+
+### Previously Completed (Session 10 — 27 Feb 2026)
 
 #### Email Pipeline — End-to-End Delivery
 
@@ -746,7 +842,7 @@ The QuizBuilder's "AI Generate" panel calls the Azure Function with:
 | Code Quality | 7/10 | Types extracted, tab decomposition started (6 tabs extracted from god component), AdminConfigService. Remaining: complete decomposition |
 | Testing | 3.5/10 | Jest config + mocks + 6 unit test suites. Remaining: integration tests, component tests, E2E |
 | Accessibility | 3/10 | Basic Fluent UI a11y only. No ARIA roles, keyboard nav, screen reader testing |
-| Overall | ~75/100 | Up from 74/100. Email pipeline live, branded templates, Logic App IaC |
+| Overall | ~76/100 | Up from 75/100. AI Chat Assistant live (3 modes, client-side RAG), managed departments, admin config fixes |
 
 ### Known Issues
 
@@ -763,13 +859,12 @@ The QuizBuilder's "AI Generate" panel calls the Azure Function with:
 
 ### Next Steps
 
+- Configure AI Chat Assistant in Admin → paste function URL, enable, test connection in SharePoint
+- User testing of AI Chat: Policy Q&A mode with real policies, Author Assist mode for drafting, Help mode for navigation
+- Run `15-ManagedDepartments-Column.ps1` to provision ManagedDepartments column on PM_UserProfiles
 - Test email pipeline end-to-end: queue email via SPFx → verify Logic App sends → check inbox
-- Provision PM_EmailQueue list if not already done (EmailQueueService writes to it)
-- User testing of versioning: create draft → publish → edit published → version history → comparison
-- User testing of visibility: set policy visibility to Department/SecurityGroup, verify non-matching users don't see it
-- User testing of subcategories: create subcategories in admin, assign to policies, verify tree navigation in PolicyHub
+- User testing of versioning, visibility, subcategories in live SharePoint
 - Run `Provision-SharePointPages.ps1` to create all 13 SharePoint pages
-- Run `10-CorporateTemplates.ps1` to provision PM_PolicySourceDocuments custom columns (fixes metadata 400 error)
 - Initialize Application Insights in production — set connection string in PM_Configuration or Admin Settings
 - Wire remaining webparts to live SharePoint data (MyPolicies featured/stats, PolicyHub featured section)
 - Continue @ts-nocheck removal from critical services (ApprovalService, QuizService, PolicyHubService)

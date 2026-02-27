@@ -361,6 +361,7 @@ Request -> Review -> Approve/Deny -> [Active] -> [Expired/Revoked]
 
 #### AI & Machine Learning
 - **AI Quiz Generation** (Implemented) - Azure OpenAI GPT-4o generates quiz questions from policy documents via Azure Function
+- **AI Chat Assistant** (Implemented) - Three-mode conversational AI (Policy Q&A, Author Assistant, General Help) via client-side RAG pipeline. SPFx searches policies, builds context, sends to Azure Function which proxies to GPT-4o. Fluent UI Panel in header bar with citations, suggested actions, and session persistence.
 - **Sentiment analysis** (Future) - Gauge employee policy sentiment
 - **Predictive non-compliance** (Future) - Identify at-risk employees
 - **Policy optimization** (Future) - Recommend improvements

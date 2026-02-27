@@ -319,10 +319,21 @@ All 14 webparts must be registered in `config/config.json`:
 | PM_PolicyFeedback | User feedback |
 | PM_PolicyDocuments | Supporting documents |
 
-### Configuration List
+### Configuration & Admin Lists
+
 | List Name | Purpose |
 |-----------|---------|
 | PM_Configuration | Key-value configuration store (ConfigKey, ConfigValue, Category, IsActive, IsSystemConfig) |
+| PM_PolicySubCategories | Subcategory definitions (SubCategoryName, ParentCategoryId, ParentCategoryName, IconName, Description, SortOrder, IsActive) |
+| PM_PolicyRequests | Policy creation requests with status tracking |
+| PM_PolicySourceDocuments | Document library with per-policy folders (auto-created by PolicyService) |
+
+### User Management Lists
+
+| List Name        | Purpose                |
+|------------------|------------------------|
+| PM_UserProfiles  | User profile data      |
+| PM_UserGroups    | User group definitions |
 
 ### Provisioning Scripts
 Located in `scripts/policy-management/`:
@@ -334,14 +345,18 @@ Located in `scripts/policy-management/`:
 | `Create-PolicyTemplatesLibrary.ps1` | Templates document library |
 | `07-Notification-Lists.ps1` | PM_Notifications, PM_NotificationQueue |
 | `08-Approval-Lists.ps1` | 5 approval-related lists |
-| `Deploy-AllPolicyLists.ps1` | Master deployment script |
+| `11-AdminConfig-Lists.ps1` | Admin configuration lists |
+| `12-UserManagement-Lists.ps1` | User management lists |
+| `13-Visibility-Columns.ps1` | Visibility + TargetSecurityGroups columns on PM_Policies |
+| `14-SubCategory-And-Folders.ps1` | PM_PolicySubCategories list + SubCategory, LinkedQuizId, SourceRequestId on PM_Policies |
+| `Deploy-AllPolicyLists.ps1` | Master deployment script (runs all numbered scripts) |
 | `Seed-ApprovalAndNotificationData.ps1` | Sample data for approvals + notifications |
 | `Deploy-SampleData.ps1` | Master sample data deployment |
 
 Located in `scripts/` (root):
-| Script | Purpose |
-|--------|---------|
-| `upgrade-quiz-questions-list.ps1` | Adds all Quiz Builder columns to PM_PolicyQuizQuestions + creates PM_Configuration list (idempotent) |
+
+- `upgrade-quiz-questions-list.ps1` — Adds Quiz Builder columns to PM_PolicyQuizQuestions + creates PM_Configuration (idempotent)
+- `Create-PM_PolicyRequests.ps1` — Creates PM_PolicyRequests list with status tracking fields
 
 ---
 
@@ -350,8 +365,14 @@ Located in `scripts/` (root):
 ### IPolicy (src/models/IPolicy.ts)
 - 80+ fields covering all policy aspects
 - Supports versioning, acknowledgement, quizzes
+- `PolicyVisibility` enum (AllEmployees, Department, Role, SecurityGroup, Custom)
+- `Visibility`, `TargetSecurityGroups`, `SubCategory`, `LinkedQuizId`, `SourceRequestId` fields
 - Data classification and retention
 - Regulatory compliance mapping
+
+### IAdminConfig (src/models/IAdminConfig.ts)
+
+- 15+ interfaces: IPolicySubCategory, INamingRule, ISLAConfig, IDataLifecyclePolicy, INavToggleItem, IComplianceSetting, IMetadataProfile, etc.
 
 ### IJmlApproval (src/models/IJmlApproval.ts)
 - IJmlApproval, IJmlApprovalChain, IJmlApprovalLevel
@@ -418,6 +439,7 @@ npm run clean
 1. **Always assume the user is already connected to SharePoint** — never include `Connect-PnPOnline` or `Disconnect-PnPOnline` in scripts
 2. When a SharePoint site URL is needed, use: `https://mf7m.sharepoint.com/sites/PolicyManager`
 3. Scripts should be idempotent — check for existing lists/fields before creating
+4. `Add-PnPField` does NOT support `-DefaultValue` — use `Set-PnPField -Values @{DefaultValue="..."}` separately after creating the field
 
 ### Adding a New Webpart
 1. Create webpart folder under `src/webparts/`
@@ -582,92 +604,95 @@ The QuizBuilder's "AI Generate" panel calls the Azure Function with:
 
 ---
 
-## Session State (Last Updated: 26 Feb 2026 — Session 8)
+## Session State (Last Updated: 27 Feb 2026 — Session 9)
 
-### Recently Completed (Session 8 — 26 Feb 2026)
+### Recently Completed (Session 9 — 27 Feb 2026)
 
-#### Live SharePoint Data Wiring
+#### Phase 1: Policy Versioning (Compliance)
 
-- **PolicyAnalytics** — `componentDidMount` loads real data from PM_Policies, PM_PolicyAcknowledgements, PM_PolicyAuditLog, PM_PolicyQuizzes, PM_PolicyQuizResults via `Promise.all`; computes executive dashboard KPIs, policy metrics, acknowledgement rates, SLA compliance, and audit stats from live data; falls back to constructor mock data on failure (~530 lines)
-- **PolicyDistribution** — Wired to new `PolicyDistributionService` for live campaigns, policies, and policy packs; `componentDidMount` with parallel loading; CRUD operations target SP when live data loaded; dynamic dropdown options for policies and packs (~255 lines)
-- **PolicyHub** — `RecentlyViewedService.trackView()` on policy "View" click for browse history tracking
-- **PolicyDetails** — `RecentlyViewedService.trackView()` on policy load; `DwxLinkedRecordService` for cross-app record linking
+- **PolicyService.ts** — `createVersion()` made public; added `createEditableVersion()` (snapshots content → bumps minor version → sets Draft); `publishPolicy()` bumps to next major version (1.1 → 2.0)
+- **PolicyDetails.tsx** — Version History panel (PanelType.medium) with version cards, type badges (Major green / Minor blue), date, description, "Current" badge, "Compare with Current" button; Version Comparison panel (PanelType.extraLarge) with `dangerouslySetInnerHTML` rendering LCS diff HTML via `PolicyDocumentComparisonService`
+- **PolicyAuthorEnhanced.tsx** — Wired version history/comparison buttons (replaced alert stubs); Edit Published Policy flow shows confirmation dialog → calls `createEditableVersion()` → loads new draft into wizard
 
-#### New Services
+#### Phase 2: Policy Security & Visibility
 
-- **PolicyDistributionService.ts** — Full CRUD against PM_PolicyDistributions, plus helper queries for PM_Policies and PM_PolicyPacks (dropdown options for create/edit form) (244 lines)
-- **RecentlyViewedService.ts** — localStorage-based recently viewed policies tracking (`pm_recently_viewed` key, max 10 items, most recent first); consumed by PolicyHub, PolicyDetails, and PolicyManagerHeader dropdown (138 lines)
+- **IPolicy.ts** — Added `PolicyVisibility` enum (AllEmployees, Department, Role, SecurityGroup, Custom), `Visibility` and `TargetSecurityGroups` fields
+- **PolicyHubService.ts** — Added `IUserVisibilityContext` interface and `filterByVisibility()` method; Admin/Manager bypass; Author sees own; 5 visibility modes with graceful defaults
+- **PolicyHub.tsx** — Enhanced `initializeUserContext()` to resolve department, jobTitle, groupNames from SPFx page context + SP groups; applied visibility filter after `searchPolicyHub()` results
+- **13-Visibility-Columns.ps1** — New provisioning script; Visibility (Choice) + TargetSecurityGroups (Note) columns on PM_Policies; uses `Set-PnPField` for default value (not `-DefaultValue` param)
 
-#### Application Insights Telemetry (LoggingService)
+#### Phase 3: Virtual Folders (Subcategories) + Per-Policy Documents
 
-- Removed `@ts-nocheck` from LoggingService.ts — now fully type-checked
-- Rewrote with real Azure Application Insights support via Beacon API (no npm dependency)
-- Dual mode: console-only (default) or App Insights when initialized with connection string
-- Connection string parsing (extracts InstrumentationKey + IngestionEndpoint)
-- Envelope building, batched flushing, session/user tracking
-- Methods: `trackPageView`, `trackEvent`, `trackException`, `trackMetric`, `trackDependency`
-- Fixed `isProduction` detection logic (was inverted — excluded .sharepoint.com hosts) (~317 new lines)
+- **IAdminConfig.ts** — Added `IPolicySubCategory` interface (Id, SubCategoryName, ParentCategoryId, ParentCategoryName, IconName, Description, SortOrder, IsActive)
+- **SharePointListNames.ts** — Added `POLICY_SUB_CATEGORIES: 'PM_PolicySubCategories'`
+- **AdminConfigService.ts** — New service (818 lines); full admin configuration CRUD for templates, metadata, compliance, naming rules, SLA targets, subcategories
+- **PolicyAdmin.tsx** — Major expansion (+2,288 lines); Sub-Categories management section in sidebar with DetailsList, create/edit Panel, parent category dropdown filter; all 21+ admin sections wired to AdminConfigService
+- **PolicyHub.tsx** — Category tree navigation in facets panel with expand/collapse, policy counts per node, click-to-filter
+- **PolicyService.ts** — `ensurePolicyFolder(policyNumber)` and `getPolicyDocuments(policyNumber)` for per-policy document folders in PM_PolicySourceDocuments
+- **PolicyDetails.tsx** — Collapsible Documents section with lazy-loaded file list
+- **14-SubCategory-And-Folders.ps1** — New provisioning script; PM_PolicySubCategories list (7 columns) + SubCategory, LinkedQuizId, SourceRequestId on PM_Policies
 
-#### Admin Navigation Toggles (Wired End-to-End)
+#### Phase 4: Quiz Sequencing + Request-to-Policy Improvements
 
-- **PolicyAdmin** — Added 6 missing nav toggle items (Author, Packs, Manager, Analytics, Quiz Builder); removed stale `policyReports` item; load/save from `pm_nav_visibility` localStorage; Enable All / Disable All buttons now persist changes via `saveNavVisibility()`
-- **PolicyManagerHeader** — `NAV_KEY_TO_TOGGLE_KEY` mapping reads `pm_nav_visibility` from localStorage and filters header nav items; nav items without a mapping are always shown
+- **PolicyAuthorEnhanced.tsx** — Disabled "Create New Quiz" in wizard Step 3 → "Create Quiz After Publish" (disabled + tooltip); post-publish quiz reminder dialog when RequiresQuiz && !LinkedQuizId; "Quiz Missing" amber badge in Author View; expanded `onCreatePolicyFromRequest` field mapping (7 new fields: BusinessJustification→policySummary, Priority→complianceRisk, DesiredEffectiveDate→effectiveDate, TargetAudience→departments, AdditionalNotes, AttachmentUrls, Id→sourceRequestId)
+- **PolicyRequestsTab.tsx** — "Accept & Start Drafting" now also calls `onCreatePolicyFromRequest()` to open wizard with pre-filled data
+- **PolicyService.ts** — Auto-complete source request on publish (updates PM_PolicyRequests status to 'Completed' with ResultingPolicyId)
+- **IPolicy.ts** — Added `LinkedQuizId` and `SourceRequestId` fields, persisted in `handleSaveDraft()`
 
-#### DWx Hub Integration Expansion
+#### Component Decomposition & Refactoring
 
-- **PolicyManagerHeader** — Imports `DwxNotificationBell`, `DwxAppSwitcher` from `@dwx/core`; accepts `dwxHub` prop for cross-app notification bell and app switching
-- **JmlAppHeader/JmlAppLayout** — `dwxHub` prop threaded through component tree
-- **PolicyDetails WebPart** — `DwxHubService` init in `onInit()` with graceful degradation; `DwxLinkedRecordService` for cross-app record linking
-- **PolicyNotificationService** — Accepts optional `DwxNotificationService` in constructor; fires cross-app notifications alongside local SP list storage on policy events
-- **PolicyHub, PolicyAuthorEnhanced** — `dwxHub` prop passed through to `JmlAppLayout`
+- Extracted 6 tab components from PolicyAuthorEnhanced.tsx: AnalyticsTab, DelegationsTab, PolicyPacksTab, PolicyRequestsTab, QuizBuilderTab + shared types.ts and index.ts barrel export
+- Extracted PolicyWizard.tsx wizard component
+- Net reduction: ~1,500 lines removed from PolicyAuthorEnhanced.tsx
 
-#### Styling & UX
+#### New Services & Infrastructure
 
-- **PolicySearch** — Filter panel restyled to match Contract Manager AssetSearch pattern (260px width, #f8fafc bg, cleaner borders, removed `!important` overrides)
+- **AdminConfigService.ts** — Full admin configuration CRUD (818 lines)
+- **UserManagementService.ts** — User/group management against PM_UserProfiles, PM_UserGroups (336 lines)
+- **AudienceService.ts** — Audience targeting and resolution (291 lines)
+- **retryUtils.ts** — Exponential backoff retry utility with configurable attempts
+- **pnp-sp-augmentations.d.ts** — PnP/SP type augmentations
 
-#### Docs & Scripts
+#### Test Infrastructure
 
-- **DWx-Decoupling-Strategy.md** — Updated all repo URLs from GitHub to Azure DevOps (ADO); corrected git remote, push, and release commands
-- **Seed-DwxAppRegistry.ps1** — Seeds DWX_AppRegistry + DWX_Notifications lists on DWx Hub site (201 lines)
-- **Provision-SharePointPages.ps1** — Creates all 13 SharePoint SitePages for Policy Manager webparts, idempotent (101 lines)
+- **jest.config.js** — Jest configuration for SPFx project
+- 5 mock files: dwxCoreMock.js, pnpMock.js, setupGlobals.js, spfxMock.js, styleMock.js
+- 6 unit test suites: AudienceService, LoggingService, PolicyDistributionService, PolicyRoleService, RecentlyViewedService, UserManagementService
 
 #### Build & Push
 
-- **Ship build** — Zero errors, all 14 webpart manifests
-- **Commit** — `611553a` — pushed to both ADO and GitHub remotes
+- **Ship build** — Zero errors, all 14 webpart manifests, v1.2.4
+- **Commit** — `3a383b1` — pushed to both ADO and GitHub remotes
+- **Provisioning** — 13-Visibility-Columns.ps1 and 14-SubCategory-And-Folders.ps1 run successfully on live site
 
-### Previously Completed (Session 7 — 1 Feb 2026)
+### Previously Completed (Session 8 — 26 Feb 2026)
 
-- Enterprise hardening — 9/10 critical fixes from deep code review (65→70/100)
-- Security: XSS prevention (sanitizeHtml), OData injection (9 HIGH RISK sites), authorization checks (updatePolicy/deletePolicy), .gitignore hardened
-- Performance: Parallelized componentDidMount (PolicyAuthorEnhanced, PolicyHub), reduced .top(5000) across 7 services, removed unused @fluentui dependencies
-- Reliability: Error boundaries on 5 main webparts, @ts-nocheck removed from PolicyService.ts
-- Version 1.2.2 → 1.2.3, tagged `v1.2.3`
+- Live data wiring: PolicyAnalytics (5 SP lists), PolicyDistribution (3 SP lists), PolicyHub + PolicyDetails recently viewed tracking
+- New services: PolicyDistributionService.ts, RecentlyViewedService.ts
+- Application Insights telemetry via Beacon API (LoggingService rewrite)
+- Admin nav toggles wired end-to-end (PolicyAdmin ↔ PolicyManagerHeader via localStorage)
+- DWx Hub integration expansion (NotificationBell, AppSwitcher, LinkedRecords)
+- Provisioning scripts: Seed-DwxAppRegistry.ps1, Provision-SharePointPages.ps1
 
-### Previously Completed (Session 6 — 1 Feb 2026)
+### Previously Completed (Sessions 1-7)
 
-- Policy Builder — Image/Infographic template support, quiz selection in wizard Step 3
-- PolicyDetails — Fullscreen document viewer toggle
-- DWx Hub integration with graceful degradation (@dwx/core services)
-- Version 1.2.1 → 1.2.2
-
-### Previously Completed (Sessions 1-5)
-
+- Enterprise hardening — 9/10 critical security + performance fixes (Session 7)
+- Image templates, quiz selection, fullscreen viewer, DWx Hub integration (Session 6)
 - QuizBuilder UX overhaul, AI pipeline hardening, Recently Viewed dropdown (Session 5)
 - QuizTaker rewrite (11 question types), Azure Function AI quiz generation (Session 4)
-- PolicyRoleService, role-based nav, Author View, Manager View, Distribution, Analytics, Search, Help webparts, MyPolicies rewrite, Admin restructure, approval lists (Sessions 1-3)
+- PolicyRoleService, role-based nav, Author/Manager Views, Distribution, Analytics, Search, Help webparts, MyPolicies rewrite, Admin restructure, approval lists (Sessions 1-3)
 
 ### Enterprise Readiness Assessment
 
 | Area | Score | Notes |
 | ------ | ------- | ------- |
-| Security | 8/10 | XSS fixed, OData sanitized, auth checks added. Remaining: expand sanitization to all 100+ filter sites |
-| Performance | 7.5/10 | Parallelized loads, reduced query limits, Analytics + Distribution on live data. Remaining: React.lazy, virtualization |
-| Reliability | 8/10 | Error boundaries, Application Insights telemetry ready, LoggingService type-checked. Remaining: @ts-nocheck removal from ~198 files |
-| Code Quality | 6/10 | Types extracted, PolicyService + LoggingService type-checked. Remaining: decompose 7,500-line god component |
-| Testing | 2/10 | No unit/integration tests. Critical gap for enterprise readiness |
+| Security | 8/10 | XSS fixed, OData sanitized, auth checks, visibility filtering. Remaining: expand sanitization to all 100+ filter sites |
+| Performance | 7.5/10 | Parallelized loads, reduced query limits, live data. Remaining: React.lazy, virtualization |
+| Reliability | 8/10 | Error boundaries, Application Insights ready, LoggingService type-checked. Remaining: @ts-nocheck removal from ~198 files |
+| Code Quality | 7/10 | Types extracted, tab decomposition started (6 tabs extracted from god component), AdminConfigService. Remaining: complete decomposition |
+| Testing | 3.5/10 | Jest config + mocks + 6 unit test suites. Remaining: integration tests, component tests, E2E |
 | Accessibility | 3/10 | Basic Fluent UI a11y only. No ARIA roles, keyboard nav, screen reader testing |
-| Overall | ~72/100 | Up from 70/100. Live data wiring, telemetry, and nav toggles improvements |
+| Overall | ~74/100 | Up from 72/100. Versioning, visibility, subcategories, test infrastructure, component decomposition |
 
 ### Known Issues
 
@@ -678,19 +703,19 @@ The QuizBuilder's "AI Generate" panel calls the Azure Function with:
 - DWx Hub integration is experimental — `@dwx/core` services are wired but Hub site may not exist yet; all calls degrade gracefully
 - OData sanitization covers 9 HIGH RISK sites; ~90+ MEDIUM/LOW risk sites remain (numeric IDs, enum constants — lower priority)
 - `@ts-nocheck` remains in ~198 files — PolicyService.ts and LoggingService.ts are fully type-checked
-- PolicyAnalytics and PolicyDistribution live data loading may show empty dashboards if SP lists are not provisioned yet — falls back to mock data gracefully
+- PnP PowerShell `Add-PnPField` does NOT support `-DefaultValue` — use `Set-PnPField -Values @{DefaultValue="..."}` separately
 - Disk space on dev machine was critically low (162MB free / 879GB) during Session 8 — may need cleanup
 
 ### Next Steps
 
+- User testing of versioning: create draft → publish → edit published → version history → comparison
+- User testing of visibility: set policy visibility to Department/SecurityGroup, verify non-matching users don't see it
+- User testing of subcategories: create subcategories in admin, assign to policies, verify tree navigation in PolicyHub
 - Run `Provision-SharePointPages.ps1` to create all 13 SharePoint pages
 - Run `10-CorporateTemplates.ps1` to provision PM_PolicySourceDocuments custom columns (fixes metadata 400 error)
 - Initialize Application Insights in production — set connection string in PM_Configuration or Admin Settings
-- User testing of Analytics and Distribution dashboards with live SharePoint data
-- User testing of Quiz Builder AI generation with real policy documents
-- Wire remaining webparts to live SharePoint data (MyPolicies, PolicyHub featured/stats)
+- Wire remaining webparts to live SharePoint data (MyPolicies featured/stats, PolicyHub featured section)
 - Continue @ts-nocheck removal from critical services (ApprovalService, QuizService, PolicyHubService)
-- Add unit/integration tests (critical gap — 2/10 enterprise readiness)
+- Expand unit test coverage (currently 6 suites — need component tests, integration tests)
 - Add accessibility improvements (ARIA roles, keyboard navigation, screen reader support)
-- Component decomposition — extract tabs from PolicyAuthorEnhanced.tsx (7,500-line god component)
-- Version bump to 1.2.4 when next feature batch is ready
+- Continue component decomposition — extract remaining sections from PolicyAuthorEnhanced.tsx

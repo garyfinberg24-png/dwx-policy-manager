@@ -19,12 +19,12 @@ Enterprise-grade Policy Lifecycle Management system built on SharePoint Framewor
 
 | Web Part | Description | Page |
 | --- | --- | --- |
-| **JmlPolicyHub** | Main policy browsing interface with KPI dashboard, advanced filtering, table/card views | `PolicyHub.aspx` |
+| **JmlPolicyHub** | Main policy browsing interface with KPI dashboard, category tree sidebar, visibility filtering, advanced filtering, table/card views | `PolicyHub.aspx` |
 | **JmlMyPolicies** | Personal dashboard showing assigned policies, due dates, completion status | `MyPolicies.aspx` |
-| **JmlPolicyAdmin** | Admin panel with sidebar navigation — 21 sections including templates, metadata, workflows, compliance, SLA, naming rules, lifecycle, navigation toggles | `PolicyAdmin.aspx` |
-| **JmlPolicyAuthor** | Policy creation wizard with rich text editor, metadata, workflow submission | `PolicyBuilder.aspx` |
+| **JmlPolicyAdmin** | Admin panel with sidebar navigation — 21+ sections including templates, metadata, workflows, compliance, SLA, naming rules, lifecycle, navigation toggles, sub-categories | `PolicyAdmin.aspx` |
+| **JmlPolicyAuthor** | Policy creation wizard with rich text editor, metadata, workflow submission, version history, edit-published-policy flow, request-to-policy mapping | `PolicyBuilder.aspx` |
 | **DwxPolicyAuthorView** | Author dashboard — policies, approvals, delegations, activity tabs | `PolicyAuthor.aspx` |
-| **JmlPolicyDetails** | Full policy viewer with version history, acknowledgement, quiz, recently viewed tracking, cross-app record linking | `PolicyDetails.aspx` |
+| **JmlPolicyDetails** | Full policy viewer with version history + comparison panels, per-policy documents, acknowledgement, quiz, recently viewed tracking, cross-app record linking | `PolicyDetails.aspx` |
 | **JmlPolicyPackManager** | Bundle policies into packs, assign to users/groups, track completion | `PolicyPacks.aspx` |
 | **DwxQuizBuilder** | Quiz creation and management with AI-powered question generation (Azure OpenAI GPT-4o) | `QuizBuilder.aspx` |
 | **JmlPolicySearch** | Dedicated search center with hero section, sidebar filters, result cards | `PolicySearch.aspx` |
@@ -35,13 +35,15 @@ Enterprise-grade Policy Lifecycle Management system built on SharePoint Framewor
 
 ## Architecture
 
-```
+```text
 src/
   webparts/                    # 14 SPFx web parts
     jmlPolicyHub/              # Main hub — browsing & dashboard
     jmlMyPolicies/             # My assigned policies
-    jmlPolicyAdmin/            # Admin panel (sidebar layout, 21 sections)
-    jmlPolicyAuthor/           # Policy authoring wizard
+    jmlPolicyAdmin/            # Admin panel (sidebar layout, 21+ sections, sub-categories)
+    jmlPolicyAuthor/           # Policy authoring wizard + version history
+      components/tabs/         # Extracted tab components (6 tabs)
+      components/wizard/       # Extracted PolicyWizard component
     dwxPolicyAuthorView/       # Author dashboard (4 tabs)
     jmlPolicyDetails/          # Policy detail viewer + acknowledgement
     jmlPolicyPackManager/      # Policy pack management
@@ -59,22 +61,27 @@ src/
     QuizBuilder/               # Quiz creation, AI generation, question management
     QuizTaker/                 # Quiz-taking component (11 question types)
     ErrorBoundary/             # React error boundary with retry
-  models/                      # 56+ TypeScript interfaces
-    IPolicy.ts                 # Core policy models (80+ fields)
+  models/                      # 58+ TypeScript interfaces
+    IPolicy.ts                 # Core policy models (80+ fields, versioning, visibility)
+    IAdminConfig.ts            # Admin config interfaces (15+ types)
     IJmlApproval.ts            # Approval workflow models
-  services/                    # 145+ service layer
-    PolicyService.ts           # Core CRUD, versioning, authorization (type-checked)
+  services/                    # 150+ service layer
+    PolicyService.ts           # Core CRUD, versioning, document folders, authorization (type-checked)
+    PolicyHubService.ts        # Hub search, visibility filtering (IUserVisibilityContext)
     PolicyDistributionService.ts  # Distribution campaigns — live SP CRUD
     PolicyNotificationService.ts  # In-app + email + DWx cross-app notifications
+    AdminConfigService.ts      # Admin config CRUD (templates, SLA, naming, subcategories)
     RecentlyViewedService.ts   # localStorage recently viewed tracking
     LoggingService.ts          # Dual-mode telemetry (console + Application Insights)
     PolicyRoleService.ts       # 4-tier RBAC (User, Author, Manager, Admin)
     QuizService.ts             # Quiz CRUD, results, AI generation
+    __tests__/                 # 6 unit test suites
   constants/                   # Configuration
     SharePointListNames.ts     # All PM_ list name constants
   styles/                      # Shared styles
     fluent-mixins.scss         # SCSS mixins for full-bleed layouts
-  utils/                       # pnpConfig, SharePointOverrides, injectPortalStyles
+  types/                       # TypeScript type augmentations
+  utils/                       # pnpConfig, retryUtils, SharePointOverrides, injectPortalStyles
 azure-functions/
   quiz-generator/              # Azure Function — AI Quiz Question Generator (GPT-4o)
     infra/                     # Bicep IaC + deployment script
@@ -91,7 +98,9 @@ docs/                          # Architecture docs, proposals, mockups
 
 | Service | Purpose |
 | --- | --- |
-| `PolicyService` | Core CRUD, versioning, authorization checks (fully type-checked) |
+| `PolicyService` | Core CRUD, versioning (createEditableVersion, version bumps), per-policy document folders, authorization checks (fully type-checked) |
+| `PolicyHubService` | Hub search, visibility filtering (filterByVisibility — 5 modes with Admin/Manager bypass) |
+| `AdminConfigService` | Admin configuration CRUD — templates, metadata, compliance, naming rules, SLA, subcategories |
 | `PolicyDistributionService` | Distribution campaign CRUD against PM_PolicyDistributions |
 | `PolicyNotificationService` | In-app + email notifications, optional DWx cross-app delivery |
 | `RecentlyViewedService` | localStorage-based recently viewed policies (max 10 items) |
@@ -121,14 +130,15 @@ Optional cross-app integration via `@dwx/core`. All apps work fully standalone w
 
 All lists use the `PM_` prefix. Full definitions in `src/constants/SharePointListNames.ts`.
 
-- **Policy Core**: PM_Policies, PM_PolicyVersions, PM_PolicyAcknowledgements, PM_PolicyExemptions, PM_PolicyDistributions, PM_PolicyTemplates
+- **Policy Core**: PM_Policies, PM_PolicyVersions, PM_PolicyAcknowledgements, PM_PolicyExemptions, PM_PolicyDistributions, PM_PolicyTemplates, PM_PolicySourceDocuments (library)
 - **Quiz**: PM_PolicyQuizzes, PM_PolicyQuizQuestions, PM_PolicyQuizResults, PM_PolicyQuizAttempts, PM_PolicyQuizAnswers
 - **Approval**: PM_Approvals, PM_ApprovalChains, PM_ApprovalHistory, PM_ApprovalDelegations, PM_ApprovalTemplates
 - **Analytics**: PM_PolicyAnalytics, PM_PolicyAuditLog, PM_PolicyFeedback
 - **Notifications**: PM_Notifications, PM_NotificationQueue
 - **Social**: PM_PolicyRatings, PM_PolicyComments, PM_PolicyCommentLikes, PM_PolicyShares, PM_PolicyFollowers
 - **Policy Packs**: PM_PolicyPacks, PM_PolicyPackAssignments
-- **Config**: PM_Configuration
+- **Admin/Config**: PM_Configuration, PM_PolicySubCategories, PM_PolicyRequests
+- **User Management**: PM_UserProfiles, PM_UserGroups
 
 ## Design System
 
@@ -144,6 +154,15 @@ All lists use the `PM_` prefix. Full definitions in `src/constants/SharePointLis
 Gradient: `linear-gradient(135deg, #0d9488 0%, #0f766e 100%)`
 
 Font: Segoe UI (system fallbacks)
+
+## Enterprise Features (v1.2.4)
+
+- **Policy Versioning** — Full compliance versioning with version history panels, side-by-side LCS diff comparison, minor version bumps on edit (1.0 → 1.1), major version bumps on publish (1.1 → 2.0), and "Edit Published Policy" flow that creates a new draft version.
+- **Policy Visibility & Security** — Client-side visibility filtering with 5 modes: All Employees, Department, Role, Security Group, Custom. Admin/Manager bypass all filters. Authors always see their own policies. Built on `IUserVisibilityContext` resolved from SPFx page context + SP groups.
+- **Category Tree Navigation** — Hierarchical browsing via Category > SubCategory in PolicyHub facets panel. Managed through `PM_PolicySubCategories` list with full CRUD in Admin panel.
+- **Per-Policy Document Folders** — Auto-created folders in `PM_PolicySourceDocuments` library per policy number. Documents listed in collapsible section on PolicyDetails.
+- **Quiz Sequencing** — Quiz creation disabled during policy drafting (Step 3) — only available after publish. Post-publish reminder dialog when quiz required but not linked. "Quiz Missing" badge in Author View.
+- **Request-to-Policy Flow** — Expanded field mapping (7 fields) from policy requests to wizard state. "Accept & Start Drafting" opens wizard with pre-filled data. Auto-complete source request on publish.
 
 ## Admin Navigation Toggles
 
@@ -211,6 +230,7 @@ Upload the `.sppkg` file to the SharePoint App Catalog, then add web parts to th
 
 | Version | Date | Comments |
 | --- | --- | --- |
+| 1.2.4 | February 2026 | Enterprise features: policy versioning + comparison, visibility/security filtering, subcategory tree navigation, per-policy document folders, quiz sequencing fix, request-to-policy flow, admin config CRUD, component decomposition (6 extracted tabs), 6 unit test suites, test infrastructure |
 | 1.2.3 | February 2026 | Live data wiring (Analytics, Distribution), Application Insights telemetry, admin nav toggles, DWx Hub expansion, RecentlyViewedService, provisioning scripts |
 | 1.2.2 | February 2026 | Image templates, quiz selection, fullscreen viewer, DWx Hub integration, enterprise hardening (9/10 security + performance fixes) |
 | 1.2.1 | January 2026 | Quiz Builder UX overhaul, AI pipeline hardening, Recently Viewed dropdown |

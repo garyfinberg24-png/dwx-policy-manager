@@ -1,0 +1,514 @@
+// ============================================================================
+// PolicyChatPanel — AI Chat Assistant Styles
+// ============================================================================
+// Forest Teal theme consistent with Policy Manager design system.
+// ============================================================================
+
+// ── Variables ──
+
+$teal: #0d9488;
+$tealDark: #0f766e;
+$tealLight: #ccfbf1;
+$tealPale: #f0fdfa;
+$tealBorder: #99f6e4;
+$textPrimary: #0f172a;
+$textSecondary: #334155;
+$textMuted: #94a3b8;
+$border: #e2e8f0;
+$bgPanel: #f8fafc;
+$white: #ffffff;
+$danger: #dc2626;
+
+// ── Panel Layout ──
+
+.chatPanelContent {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 56px); // account for panel header
+  background: $bgPanel;
+}
+
+// ── Mode Tabs ──
+
+.modeTabs {
+  display: flex;
+  gap: 6px;
+  padding: 12px 20px;
+  border-bottom: 1px solid $border;
+  background: $white;
+  flex-shrink: 0;
+}
+
+.modeTab {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid $border;
+  background: $white;
+  color: $textSecondary;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+
+  &:hover {
+    border-color: $teal;
+    color: $teal;
+  }
+}
+
+.modeTabActive {
+  background: $teal;
+  color: $white;
+  border-color: $teal;
+
+  &:hover {
+    background: $tealDark;
+    border-color: $tealDark;
+    color: $white;
+  }
+}
+
+// ── Message Thread ──
+
+.messageThread {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+// ── Welcome / Empty State ──
+
+.welcomeSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  text-align: center;
+  padding: 24px;
+}
+
+.welcomeIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, $teal, $tealDark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+
+  svg {
+    width: 24px;
+    height: 24px;
+    color: $white;
+  }
+}
+
+.welcomeTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: $textPrimary;
+  margin-bottom: 6px;
+}
+
+.welcomeSubtitle {
+  font-size: 13px;
+  color: $textMuted;
+  margin-bottom: 20px;
+  max-width: 320px;
+}
+
+.suggestedPrompts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 360px;
+}
+
+.suggestedPrompt {
+  display: block;
+  padding: 10px 14px;
+  border: 1px solid $border;
+  border-radius: 10px;
+  font-size: 13px;
+  color: $textSecondary;
+  background: $white;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+  width: 100%;
+
+  &:hover {
+    border-color: $teal;
+    color: $teal;
+    background: $tealPale;
+  }
+}
+
+// ── Message Bubbles ──
+
+.messageRow {
+  display: flex;
+  gap: 8px;
+  max-width: 90%;
+}
+
+.messageRowUser {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.messageRowAssistant {
+  align-self: flex-start;
+}
+
+.messageAvatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.avatarUser {
+  background: $teal;
+  color: $white;
+}
+
+.avatarAssistant {
+  background: linear-gradient(135deg, $teal, $tealDark);
+  color: $white;
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+.messageBubble {
+  padding: 10px 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  word-wrap: break-word;
+}
+
+.bubbleUser {
+  background: $teal;
+  color: $white;
+  border-radius: 16px 16px 4px 16px;
+}
+
+.bubbleAssistant {
+  background: $white;
+  color: $textPrimary;
+  border: 1px solid $border;
+  border-radius: 16px 16px 16px 4px;
+}
+
+.messageContent {
+  p {
+    margin: 0 0 8px;
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  strong {
+    font-weight: 600;
+  }
+
+  ul, ol {
+    margin: 4px 0 8px;
+    padding-left: 18px;
+  }
+
+  li {
+    margin-bottom: 2px;
+  }
+
+  code {
+    background: rgba(0, 0, 0, 0.06);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 12px;
+  }
+}
+
+// ── Citations ──
+
+.citations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.citationPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  background: $tealPale;
+  color: $teal;
+  border: 1px solid $tealBorder;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: $tealLight;
+    color: $tealDark;
+  }
+
+  svg {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+// ── Suggested Actions ──
+
+.suggestedActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.actionChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  background: $white;
+  color: $textSecondary;
+  border: 1px solid $border;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.15s ease;
+
+  &:hover {
+    border-color: $teal;
+    color: $teal;
+  }
+}
+
+// ── Typing Indicator ──
+
+.typingIndicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+  padding: 8px 0;
+}
+
+.typingDots {
+  display: flex;
+  gap: 4px;
+  padding: 10px 14px;
+  background: $white;
+  border: 1px solid $border;
+  border-radius: 16px 16px 16px 4px;
+}
+
+.typingDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: $textMuted;
+  animation: bounce 1.2s infinite ease-in-out;
+
+  &:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+
+  &:nth-child(3) {
+    animation-delay: 0.4s;
+  }
+}
+
+@keyframes bounce {
+  0%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-6px);
+  }
+}
+
+// ── Error Banner ──
+
+.errorBanner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  margin: 0 20px 8px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  font-size: 12px;
+  color: $danger;
+
+  svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
+}
+
+.errorDismiss {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: $danger;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0 2px;
+  line-height: 1;
+}
+
+// ── Input Bar ──
+
+.inputBar {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 12px 20px;
+  border-top: 1px solid $border;
+  background: $white;
+  flex-shrink: 0;
+}
+
+.clearButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid $border;
+  border-radius: 6px;
+  background: $white;
+  color: $textMuted;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+
+  &:hover {
+    border-color: $danger;
+    color: $danger;
+  }
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+.inputWrapper {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  border: 1px solid $border;
+  border-radius: 8px;
+  background: $bgPanel;
+  transition: border-color 0.15s ease;
+
+  &:focus-within {
+    border-color: $teal;
+  }
+}
+
+.inputField {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  color: $textPrimary;
+  resize: none;
+  min-height: 18px;
+  max-height: 80px;
+  line-height: 18px;
+  font-family: 'Segoe UI', -apple-system, sans-serif;
+
+  &::placeholder {
+    color: $textMuted;
+  }
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.sendButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  background: $teal;
+  color: $white;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: $tealDark;
+  }
+
+  &:disabled {
+    background: $border;
+    cursor: not-allowed;
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+// ── Not Available State ──
+
+.notAvailable {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  text-align: center;
+  padding: 40px 24px;
+  color: $textMuted;
+
+  svg {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 16px;
+    opacity: 0.4;
+  }
+
+  p {
+    font-size: 13px;
+    line-height: 1.5;
+    margin: 4px 0;
+  }
+}

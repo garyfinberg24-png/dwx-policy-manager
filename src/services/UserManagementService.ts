@@ -60,7 +60,7 @@ export class UserManagementService {
     'Id', 'Title', 'FirstName', 'LastName', 'Email', 'EmployeeNumber',
     'JobTitle', 'Department', 'Location', 'OfficePhone', 'MobilePhone',
     'ManagerEmail', 'Status', 'EmploymentType', 'CostCenter',
-    'EntraObjectId', 'PMRole', 'LastSyncedAt', 'Notes', 'Created', 'Modified'
+    'EntraObjectId', 'PMRole', 'ManagedDepartments', 'LastSyncedAt', 'Notes', 'Created', 'Modified'
   ];
 
   constructor(sp: SPFI) {
@@ -158,12 +158,16 @@ export class UserManagementService {
   }
 
   /**
-   * Update PM role for a user
+   * Update PM role for a user, optionally with managed departments
    */
-  public async updateUserRole(employeeId: number, role: string): Promise<void> {
+  public async updateUserRole(employeeId: number, role: string, managedDepartments?: string[]): Promise<void> {
+    const updates: Record<string, any> = { PMRole: role };
+    if (managedDepartments !== undefined) {
+      updates.ManagedDepartments = managedDepartments.length > 0 ? managedDepartments.join(';') : '';
+    }
     await this.sp.web.lists.getByTitle(this.EMPLOYEES_LIST).items
       .getById(employeeId)
-      .update({ PMRole: role });
+      .update(updates);
   }
 
   /**

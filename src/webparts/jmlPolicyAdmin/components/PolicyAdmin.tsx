@@ -124,6 +124,7 @@ const NAV_SECTIONS: INavSection[] = [
       { key: 'sla', label: 'SLA Targets', icon: 'Timer', description: 'Service level agreements for policy processes' },
       { key: 'lifecycle', label: 'Data Lifecycle', icon: 'History', description: 'Data retention and archival policies' },
       { key: 'navigation', label: 'Navigation', icon: 'Nav2DMapView', description: 'Toggle navigation items and app sections' },
+      { key: 'aiAssistant', label: 'AI Assistant', icon: 'Robot', description: 'Configure AI chat assistant and function URL' },
       { key: 'settings', label: 'General Settings', icon: 'Settings', description: 'Application display and feature toggles' }
     ]
   },
@@ -259,7 +260,8 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         metadataProfiles,
         policyCategories,
         generalSettingsPartial,
-        aiUrl
+        aiUrl,
+        aiChatConfig
       ] = await Promise.all([
         this.adminConfigService.getNamingRules().catch(() => []),
         this.adminConfigService.getSLAConfigs().catch(() => []),
@@ -269,7 +271,8 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         this.adminConfigService.getMetadataProfiles().catch(() => []),
         this.adminConfigService.getCategories().catch(() => []),
         this.adminConfigService.getGeneralSettings().catch(() => ({})),
-        this.spService.getConfigValue(ConfigKeys.AI_FUNCTION_URL).catch(() => null)
+        this.spService.getConfigValue(ConfigKeys.AI_FUNCTION_URL).catch(() => null),
+        this.adminConfigService.getConfigByCategory('AI').catch(() => ({}))
       ]);
 
       // Merge general settings from SP with defaults
@@ -288,8 +291,12 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         metadataProfiles,
         policyCategories,
         generalSettings: mergedSettings,
-        loading: false
-      });
+        loading: false,
+        // AI Chat config
+        _aiChatEnabled: (aiChatConfig as any)['Integration.AI.Chat.Enabled'] === 'true',
+        _aiChatFunctionUrl: (aiChatConfig as any)['Integration.AI.Chat.FunctionUrl'] || '',
+        _aiChatMaxTokens: (aiChatConfig as any)['Integration.AI.Chat.MaxTokens'] || '1000'
+      } as any);
     } catch (error) {
       console.error('[PolicyAdmin] loadSavedSettings failed:', error);
       this.setState({ loading: false, error: 'Failed to load admin settings. Some sections may show default values.' });
@@ -582,7 +589,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     // Load sub-categories on first render
     if (!state._subCatLoaded && !subCatLoading) {
       this.setState({ _subCatLoading: true } as any);
-      this.configService.getSubCategories().then(items => {
+      this.adminConfigService.getSubCategories().then(items => {
         this.setState({ _subCategories: items, _subCatLoaded: true, _subCatLoading: false } as any);
       }).catch(() => {
         this.setState({ _subCatLoaded: true, _subCatLoading: false } as any);
@@ -636,7 +643,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                       confirmText: 'Delete',
                       cancelText: 'Cancel',
                       onConfirm: async () => {
-                        await this.configService.deleteSubCategory(item.Id);
+                        await this.adminConfigService.deleteSubCategory(item.Id);
                         const updated = subCategories.filter((s: any) => s.Id !== item.Id);
                         this.setState({ _subCategories: updated } as any);
                       }
@@ -665,11 +672,11 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                 try {
                   this.setState({ saving: true } as any);
                   if (subCat.Id) {
-                    await this.configService.updateSubCategory(subCat.Id, subCat);
+                    await this.adminConfigService.updateSubCategory(subCat.Id, subCat);
                     const updated = subCategories.map((s: any) => s.Id === subCat.Id ? subCat : s);
                     this.setState({ _subCategories: updated, _showSubCatPanel: false, saving: false } as any);
                   } else {
-                    const created = await this.configService.createSubCategory(subCat);
+                    const created = await this.adminConfigService.createSubCategory(subCat);
                     this.setState({ _subCategories: [...subCategories, created], _showSubCatPanel: false, saving: false } as any);
                   }
                 } catch {
@@ -3586,11 +3593,13 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       if (!editingEmployee?.Id || !st._editingRole) return;
       this.setState({ _userSaving: true } as any);
       try {
-        await this.userManagementService.updateUserRole(editingEmployee.Id, st._editingRole);
+        const managedDepts: string[] = st._editingManagedDepts || [];
+        await this.userManagementService.updateUserRole(editingEmployee.Id, st._editingRole, managedDepts);
         this.setState({
           _userSaving: false,
           _showUserPanel: false,
           _editingEmployee: null,
+          _editingManagedDepts: [],
           _userSaveMessage: `Role updated for ${editingEmployee.Title}`,
           _usersLoaded: false, // force reload to refresh counts + list
         } as any);
@@ -3616,6 +3625,17 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         const c = roleColors[role] || { bg: '#f1f5f9', fg: '#64748b' };
         return <span style={{ padding: '2px 10px', borderRadius: 4, fontSize: 11, fontWeight: 600, background: c.bg, color: c.fg }}>{role}</span>;
       }},
+      { key: 'managedDepts', name: 'Managed Depts', fieldName: 'ManagedDepartments', minWidth: 120, maxWidth: 200, onRender: (item: any) => {
+        const depts: string[] = item.ManagedDepartments ? item.ManagedDepartments.split(';').map((d: string) => d.trim()).filter(Boolean) : [];
+        if (depts.length === 0) return <Text style={{ color: '#94a3b8', fontSize: 12 }}>—</Text>;
+        return (
+          <Stack horizontal wrap tokens={{ childrenGap: 4 }}>
+            {depts.map((d, i) => (
+              <span key={i} style={{ padding: '1px 6px', borderRadius: 3, fontSize: 10, fontWeight: 500, background: '#f0fdfa', color: '#0d9488', border: '1px solid #99f6e4' }}>{d}</span>
+            ))}
+          </Stack>
+        );
+      }},
       { key: 'status', name: 'Status', fieldName: 'Status', minWidth: 80, maxWidth: 80, onRender: (item: any) => (
         <span style={{
           padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600,
@@ -3632,6 +3652,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           onClick={() => this.setState({
             _editingEmployee: item,
             _editingRole: item.PMRole || 'User',
+            _editingManagedDepts: item.ManagedDepartments ? item.ManagedDepartments.split(';').map((d: string) => d.trim()).filter(Boolean) : [],
             _showUserPanel: true,
           } as any)}
         />
@@ -3782,17 +3803,17 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         {/* User Detail Panel — Edit Role */}
         <Panel
           isOpen={showUserPanel}
-          onDismiss={() => this.setState({ _showUserPanel: false, _editingEmployee: null } as any)}
-          headerText={editingEmployee ? `Edit Role: ${editingEmployee.Title}` : 'User Details'}
+          onDismiss={() => this.setState({ _showUserPanel: false, _editingEmployee: null, _editingManagedDepts: [] } as any)}
+          headerText={editingEmployee ? `Edit User: ${editingEmployee.Title}` : 'User Details'}
           type={PanelType.medium}
           onRenderFooterContent={() => (
             <Stack horizontal tokens={{ childrenGap: 8 }} style={{ padding: '16px 0' }}>
               <PrimaryButton
-                text={st._userSaving ? 'Saving...' : 'Save Role'}
+                text={st._userSaving ? 'Saving...' : 'Save Changes'}
                 disabled={st._userSaving}
                 onClick={handleSaveRole}
               />
-              <DefaultButton text="Cancel" onClick={() => this.setState({ _showUserPanel: false, _editingEmployee: null } as any)} />
+              <DefaultButton text="Cancel" onClick={() => this.setState({ _showUserPanel: false, _editingEmployee: null, _editingManagedDepts: [] } as any)} />
             </Stack>
           )}
           isFooterAtBottom={true}
@@ -3837,6 +3858,31 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                 ]}
                 onChange={(_, opt) => this.setState({ _editingRole: opt?.key as string } as any)}
               />
+
+              {/* Managed departments — multi-select */}
+              <Dropdown
+                label="Managed Departments"
+                multiSelect
+                selectedKeys={st._editingManagedDepts || []}
+                options={departments.map(d => ({ key: d, text: d }))}
+                placeholder={departments.length === 0 ? 'No departments found' : 'Select departments...'}
+                disabled={departments.length === 0}
+                onChange={(_, opt) => {
+                  if (!opt) return;
+                  const current: string[] = [...(st._editingManagedDepts || [])];
+                  if (opt.selected) {
+                    if (!current.includes(opt.key as string)) current.push(opt.key as string);
+                  } else {
+                    const idx = current.indexOf(opt.key as string);
+                    if (idx >= 0) current.splice(idx, 1);
+                  }
+                  this.setState({ _editingManagedDepts: current } as any);
+                }}
+                styles={{ root: { marginTop: 8 } }}
+              />
+              <Text variant="small" style={{ color: '#64748b', marginTop: 4 }}>
+                Assign one or more departments this user is responsible for. Useful when a manager oversees multiple departments.
+              </Text>
 
               <MessageBar messageBarType={MessageBarType.info} styles={{ root: { marginTop: 8 } }}>
                 Role changes take effect immediately. The user will see updated navigation and permissions on their next page load.
@@ -4495,6 +4541,114 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     );
   }
 
+  // ============================================================================
+  // AI ASSISTANT CONFIGURATION
+  // ============================================================================
+
+  private renderAIAssistantContent(): JSX.Element {
+    const st = this.state as any;
+    const aiEnabled = st._aiChatEnabled ?? false;
+    const aiUrl = st._aiChatFunctionUrl ?? '';
+    const aiMaxTokens = st._aiChatMaxTokens ?? '1000';
+    const aiTestStatus = st._aiTestStatus as string | undefined; // 'testing' | 'success' | 'error'
+    const aiTestMessage = st._aiTestMessage as string | undefined;
+
+    return (
+      <div>
+        <Text variant="large" style={{ fontWeight: 600, color: '#0f172a', marginBottom: 8, display: 'block' }}>AI Chat Assistant</Text>
+        <Text variant="small" style={{ color: '#64748b', display: 'block', marginBottom: 20 }}>
+          Configure the AI-powered chat assistant. Users can ask questions about policies, get drafting help, and receive app guidance.
+        </Text>
+
+        <MessageBar messageBarType={MessageBarType.info} style={{ marginBottom: 20 }}>
+          The AI Assistant uses the existing Azure OpenAI deployment. Deploy the chat function first using the provided Bicep template, then paste the Function URL below.
+        </MessageBar>
+
+        <Stack tokens={{ childrenGap: 16 }}>
+          {/* Enable toggle */}
+          <Toggle
+            label="Enable AI Chat Assistant"
+            checked={aiEnabled}
+            onChange={(_, checked) => this.setState({ _aiChatEnabled: !!checked } as any)}
+            onText="Enabled — chat icon visible in header"
+            offText="Disabled — chat icon hidden"
+          />
+
+          {/* Function URL */}
+          <TextField
+            label="Chat Function URL"
+            placeholder="https://dwx-pm-chat-func-prod.azurewebsites.net/api/policy-chat?code=..."
+            value={aiUrl}
+            onChange={(_, val) => this.setState({ _aiChatFunctionUrl: val || '' } as any)}
+            description="Full URL including the function key (?code=...). Get this from the Azure Portal after deploying."
+          />
+
+          {/* Test Connection */}
+          <Stack horizontal tokens={{ childrenGap: 8 }} verticalAlign="center">
+            <PrimaryButton
+              text={aiTestStatus === 'testing' ? 'Testing...' : 'Test Connection'}
+              iconProps={{ iconName: aiTestStatus === 'success' ? 'CheckMark' : aiTestStatus === 'error' ? 'Cancel' : 'TestBeaker' }}
+              disabled={!aiUrl || aiTestStatus === 'testing'}
+              onClick={async () => {
+                this.setState({ _aiTestStatus: 'testing', _aiTestMessage: '' } as any);
+                try {
+                  const resp = await fetch(aiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      message: 'test',
+                      mode: 'general-help',
+                      conversationHistory: [],
+                      userRole: 'Admin'
+                    })
+                  });
+                  if (resp.ok) {
+                    this.setState({ _aiTestStatus: 'success', _aiTestMessage: 'Connection successful!' } as any);
+                  } else {
+                    this.setState({ _aiTestStatus: 'error', _aiTestMessage: `Failed: HTTP ${resp.status}` } as any);
+                  }
+                } catch (err: any) {
+                  this.setState({ _aiTestStatus: 'error', _aiTestMessage: `Error: ${err.message || 'Network error'}` } as any);
+                }
+              }}
+              styles={{
+                root: {
+                  background: aiTestStatus === 'success' ? '#059669' : aiTestStatus === 'error' ? '#dc2626' : '#0d9488',
+                  borderColor: aiTestStatus === 'success' ? '#059669' : aiTestStatus === 'error' ? '#dc2626' : '#0d9488',
+                },
+                rootHovered: {
+                  background: aiTestStatus === 'success' ? '#047857' : aiTestStatus === 'error' ? '#b91c1c' : '#0f766e',
+                  borderColor: aiTestStatus === 'success' ? '#047857' : aiTestStatus === 'error' ? '#b91c1c' : '#0f766e',
+                }
+              }}
+            />
+            {aiTestMessage && (
+              <Text style={{ color: aiTestStatus === 'success' ? '#059669' : '#dc2626', fontSize: 12 }}>
+                {aiTestMessage}
+              </Text>
+            )}
+          </Stack>
+
+          {/* Max Tokens */}
+          <Dropdown
+            label="Max Response Tokens"
+            selectedKey={aiMaxTokens}
+            options={[
+              { key: '500', text: '500 (concise)' },
+              { key: '1000', text: '1000 (default)' },
+              { key: '1500', text: '1500 (detailed)' },
+              { key: '2000', text: '2000 (comprehensive)' },
+            ]}
+            onChange={(_, opt) => {
+              if (opt) this.setState({ _aiChatMaxTokens: opt.key as string } as any);
+            }}
+            styles={{ root: { maxWidth: 300 } }}
+          />
+        </Stack>
+      </div>
+    );
+  }
+
   private renderActiveContent(): JSX.Element {
     switch (this.state.activeSection) {
       case 'categories': return this.renderCategoriesContent();
@@ -4516,6 +4670,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       case 'sla': return this.renderSLAContent();
       case 'lifecycle': return this.renderLifecycleContent();
       case 'navigation': return this.renderNavigationContent();
+      case 'aiAssistant': return this.renderAIAssistantContent();
       case 'settings': return this.renderSettingsContent();
       case 'systemInfo': return this.renderSystemInfoContent();
       case 'productShowcase': return this.renderProductShowcaseContent();
@@ -4530,7 +4685,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
   public render(): React.ReactElement<IPolicyAdminProps> {
     const { saving } = this.state;
     const activeItem = this.getActiveNavItem();
-    const showSaveButton = ['workflows', 'compliance', 'notifications', 'naming', 'sla', 'lifecycle', 'navigation', 'settings', 'emailTemplates', 'usersRoles', 'appSecurity', 'rolePermissions'].includes(this.state.activeSection);
+    const showSaveButton = ['workflows', 'compliance', 'notifications', 'naming', 'sla', 'lifecycle', 'navigation', 'aiAssistant', 'settings', 'emailTemplates', 'usersRoles', 'appSecurity', 'rolePermissions'].includes(this.state.activeSection);
 
     return (
       <ErrorBoundary fallbackMessage="An error occurred in Policy Administration. Please try again.">
@@ -4572,7 +4727,29 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                       text="Save Settings"
                       iconProps={{ iconName: 'Save' }}
                       disabled={saving}
-                      onClick={() => {
+                      onClick={async () => {
+                        // AI Assistant section — save to PM_Configuration + localStorage
+                        if (this.state.activeSection === 'aiAssistant') {
+                          try {
+                            this.setState({ saving: true } as any);
+                            const st = this.state as any;
+                            await this.adminConfigService.saveConfigByCategory('AI', {
+                              'Integration.AI.Chat.Enabled': String(st._aiChatEnabled ?? false),
+                              'Integration.AI.Chat.FunctionUrl': st._aiChatFunctionUrl || '',
+                              'Integration.AI.Chat.MaxTokens': st._aiChatMaxTokens || '1000'
+                            });
+                            // Also persist URL to localStorage as fallback
+                            if (st._aiChatFunctionUrl) {
+                              localStorage.setItem('PM_AI_ChatFunctionUrl', st._aiChatFunctionUrl);
+                            }
+                            void this.dialogManager.showAlert('AI Assistant configuration saved.', { title: 'Settings Saved', variant: 'success' });
+                          } catch (err: any) {
+                            void this.dialogManager.showAlert('Failed to save AI settings: ' + (err.message || 'Unknown error'), { title: 'Save Failed', variant: 'error' });
+                          } finally {
+                            this.setState({ saving: false } as any);
+                          }
+                          return;
+                        }
                         void this.dialogManager.showAlert('Administration settings have been updated.', { title: 'Settings Saved', variant: 'success' });
                       }}
                     />

@@ -1,0 +1,21 @@
+{
+  "name": "dwx-pm-policy-chat",
+  "version": "1.0.0",
+  "description": "DWx Policy Manager — AI Chat Assistant Azure Function",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "clean": "rimraf dist",
+    "prestart": "npm run build",
+    "start": "func start"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "typescript": "^5.2.0",
+    "rimraf": "^5.0.0"
+  },
+  "main": "dist/src/functions/*.js"
+}

@@ -1,0 +1,33 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "baseName": {
+      "value": "dwx-pm"
+    },
+    "location": {
+      "value": "swedencentral"
+    },
+    "environment": {
+      "value": "prod"
+    },
+    "sharePointSiteUrl": {
+      "value": "https://mf7m.sharepoint.com"
+    },
+    "nodeVersion": {
+      "value": "~18"
+    },
+    "existingOpenAiEndpoint": {
+      "value": "https://dwx-pm-openai-prod.openai.azure.com/"
+    },
+    "existingKeyVaultName": {
+      "value": "dwx-pm-kv-ziqv6cfh2ck3o"
+    },
+    "existingKeyVaultResourceGroup": {
+      "value": "dwx-pm-quiz-rg-prod"
+    },
+    "openAiDeploymentName": {
+      "value": "gpt-4o"
+    }
+  }
+}

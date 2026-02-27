@@ -6,6 +6,7 @@ import { PolicyManagerRole, filterNavForRole, getHeaderVisibility } from '../../
 import { RecentlyViewedService, IRecentlyViewedDisplay } from '../../services/RecentlyViewedService';
 import { PolicyRequestWizard } from './PolicyRequestWizard';
 import { DwxHubService, DwxNotificationService, DwxNotificationBell, DwxAppRegistryService, DwxAppSwitcher } from '@dwx/core';
+import { PolicyChatPanel } from '../PolicyChatPanel';
 
 export interface INavItem {
   key: string;
@@ -270,6 +271,9 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
 
   // Request Policy Wizard — extracted to PolicyRequestWizard.tsx
   const [showRequestWizard, setShowRequestWizard] = React.useState(false);
+
+  // AI Chat Assistant panel
+  const [showChatPanel, setShowChatPanel] = React.useState(false);
 
   // Admin navigation visibility toggles (loaded from localStorage, set via PolicyAdmin)
   const [navVisibility, setNavVisibility] = React.useState<Record<string, boolean>>({});
@@ -592,6 +596,19 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
             </svg>
           </button>
 
+          {/* AI Chat Assistant */}
+          <button
+            className={styles.actionButton}
+            type="button"
+            title="AI Assistant"
+            onClick={() => setShowChatPanel(true)}
+            aria-label="AI Assistant"
+          >
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+
           {/* Help */}
           {showHelp && (
             <button
@@ -825,6 +842,16 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
       userEmail={userEmail}
     />
 
+    {/* AI Chat Assistant Panel */}
+    {sp && (
+      <PolicyChatPanel
+        isOpen={showChatPanel}
+        onDismiss={() => setShowChatPanel(false)}
+        sp={sp}
+        userRole={policyRole || PolicyManagerRole.User}
+        userName={userName || ''}
+      />
+    )}
 
     </>
   );

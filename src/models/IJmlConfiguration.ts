@@ -43,6 +43,9 @@ export class ConfigKeys {
 
   // AI / Integration Settings
   static readonly AI_FUNCTION_URL = 'Integration.AI.FunctionUrl';
+  static readonly AI_CHAT_ENABLED = 'Integration.AI.Chat.Enabled';
+  static readonly AI_CHAT_FUNCTION_URL = 'Integration.AI.Chat.FunctionUrl';
+  static readonly AI_CHAT_MAX_TOKENS = 'Integration.AI.Chat.MaxTokens';
 
   // Business Rules
   static readonly APPROVAL_REQUIRED = 'BusinessRules.ApprovalRequired';

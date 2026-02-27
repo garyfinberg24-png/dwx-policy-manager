@@ -466,6 +466,41 @@ export class EmailQueueService {
   // PRIVATE METHODS - EMAIL TEMPLATES
   // ============================================================================
 
+  /**
+   * Shared email shell — Forest Teal branded, table-based layout for Outlook compatibility
+   */
+  private buildEmailShell(opts: {
+    headerGradient: string; headerIcon: string; headerTitle: string;
+    bodyBg?: string; content: string; footerText: string;
+    ctaUrl: string; ctaLabel: string; ctaColor: string;
+  }): string {
+    const bg = opts.bodyBg || '#ffffff';
+    return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>${opts.headerTitle}</title></head>
+<body style="margin:0;padding:0;background:#f0fdfa;font-family:'Segoe UI',Tahoma,Arial,sans-serif;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f0fdfa;padding:24px 0;">
+<tr><td align="center">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:${bg};border-radius:12px;box-shadow:0 4px 24px rgba(13,148,136,0.10);overflow:hidden;">
+  <tr><td style="background:${opts.headerGradient};padding:28px 32px;text-align:center;">
+    <div style="font-size:32px;margin-bottom:8px;">${opts.headerIcon}</div>
+    <div style="font-size:22px;font-weight:700;color:#ffffff;letter-spacing:0.3px;">${opts.headerTitle}</div>
+    <div style="width:40px;height:2px;background:rgba(255,255,255,0.5);margin:12px auto 4px;border-radius:1px;"></div>
+    <div style="font-size:12px;color:rgba(255,255,255,0.85);letter-spacing:0.5px;">DWx Policy Manager</div>
+  </td></tr>
+  <tr><td style="padding:28px 32px;">
+    ${opts.content}
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:24px;">
+    <tr><td align="center">
+      <a href="${opts.ctaUrl}" style="display:inline-block;background:${opts.ctaColor};color:#ffffff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;letter-spacing:0.3px;">${opts.ctaLabel}</a>
+    </td></tr></table>
+  </td></tr>
+  <tr><td style="background:#f8fafc;padding:16px 32px;text-align:center;border-top:1px solid #e2e8f0;">
+    <div style="font-size:12px;color:#64748b;">${opts.footerText}</div>
+    <div style="font-size:11px;color:#94a3b8;margin-top:4px;">First Digital &mdash; DWx Policy Manager</div>
+  </td></tr>
+</table>
+</td></tr></table></body></html>`;
+  }
+
   private buildTaskAssignmentEmail(
     taskTitle: string,
     taskDescription: string,
@@ -474,52 +509,28 @@ export class EmailQueueService {
     siteUrl: string
   ): string {
     const taskUrl = `${siteUrl}/SitePages/MyTasks.aspx`;
+    const content = `
+    <p style="font-size:15px;color:#334155;margin:0 0 16px;">You have been assigned a new task that requires your attention.</p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;border-left:4px solid #0d9488;">
+    <tr><td style="padding:16px 20px;">
+      <div style="font-size:17px;font-weight:600;color:#0f172a;margin-bottom:6px;">${taskTitle}</div>
+      ${taskDescription ? `<div style="font-size:14px;color:#475569;margin-bottom:8px;">${taskDescription}</div>` : ''}
+      <div style="font-size:13px;color:#64748b;">
+        Process ID: <strong>#${processId}</strong>
+        ${dueDate ? `<br>Due: <strong>${dueDate.toLocaleDateString()}</strong>` : ''}
+      </div>
+    </td></tr></table>`;
 
-    return `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <style>
-    body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; background: #f3f2f1; }
-    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .card { background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden; }
-    .header { background: #e7f3ff; border-left: 4px solid #0078d4; padding: 16px 20px; }
-    .header h1 { margin: 0; font-size: 18px; color: #004578; }
-    .content { padding: 20px; }
-    .task-card { background: #faf9f8; border: 1px solid #edebe9; border-radius: 4px; padding: 16px; margin: 16px 0; }
-    .task-title { font-size: 16px; font-weight: 600; color: #323130; margin-bottom: 8px; }
-    .task-desc { font-size: 14px; color: #605e5c; margin-bottom: 8px; }
-    .task-meta { font-size: 13px; color: #605e5c; }
-    .button { display: inline-block; background: #0078d4; color: #fff; padding: 10px 24px; border-radius: 4px; text-decoration: none; font-weight: 600; margin-top: 16px; }
-    .footer { padding: 16px 20px; background: #faf9f8; text-align: center; font-size: 12px; color: #605e5c; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="card">
-      <div class="header">
-        <h1>New Task Assigned</h1>
-      </div>
-      <div class="content">
-        <p>You have been assigned a new task that requires your attention.</p>
-        <div class="task-card">
-          <div class="task-title">${taskTitle}</div>
-          ${taskDescription ? `<div class="task-desc">${taskDescription}</div>` : ''}
-          <div class="task-meta">
-            Process ID: #${processId}
-            ${dueDate ? `<br>Due: ${dueDate.toLocaleDateString()}` : ''}
-          </div>
-        </div>
-        <a href="${taskUrl}" class="button">View My Tasks</a>
-      </div>
-      <div class="footer">
-        This is an automated notification from the JML Workflow System.
-      </div>
-    </div>
-  </div>
-</body>
-</html>`;
+    return this.buildEmailShell({
+      headerGradient: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
+      headerIcon: '\u{1F4CB}',
+      headerTitle: 'New Task Assigned',
+      content,
+      footerText: 'This is an automated notification from the DWx Workflow System.',
+      ctaUrl: taskUrl,
+      ctaLabel: 'View My Tasks',
+      ctaColor: '#0d9488'
+    });
   }
 
   private buildApprovalRequestEmail(
@@ -529,50 +540,27 @@ export class EmailQueueService {
     siteUrl: string
   ): string {
     const approvalUrl = `${siteUrl}/SitePages/ApprovalCenter.aspx`;
+    const content = `
+    <p style="font-size:15px;color:#334155;margin:0 0 16px;">Your approval is required for the following request.</p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;border-left:4px solid #d97706;">
+    <tr><td style="padding:16px 20px;">
+      <div style="font-size:17px;font-weight:600;color:#0f172a;margin-bottom:6px;">${approvalTitle}</div>
+      <div style="font-size:13px;color:#64748b;">
+        Process ID: <strong>#${processId}</strong>
+        ${dueDate ? `<br>Please respond by: <strong>${dueDate.toLocaleDateString()}</strong>` : ''}
+      </div>
+    </td></tr></table>`;
 
-    return `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <style>
-    body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; background: #f3f2f1; }
-    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .card { background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden; }
-    .header { background: #fff4ce; border-left: 4px solid #ff8c00; padding: 16px 20px; }
-    .header h1 { margin: 0; font-size: 18px; color: #8a6914; }
-    .content { padding: 20px; }
-    .approval-card { background: #faf9f8; border: 1px solid #edebe9; border-radius: 4px; padding: 16px; margin: 16px 0; }
-    .approval-title { font-size: 16px; font-weight: 600; color: #323130; margin-bottom: 8px; }
-    .approval-meta { font-size: 13px; color: #605e5c; }
-    .button { display: inline-block; background: #0078d4; color: #fff; padding: 10px 24px; border-radius: 4px; text-decoration: none; font-weight: 600; margin-top: 16px; }
-    .footer { padding: 16px 20px; background: #faf9f8; text-align: center; font-size: 12px; color: #605e5c; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="card">
-      <div class="header">
-        <h1>Approval Required</h1>
-      </div>
-      <div class="content">
-        <p>Your approval is required for the following request.</p>
-        <div class="approval-card">
-          <div class="approval-title">${approvalTitle}</div>
-          <div class="approval-meta">
-            Process ID: #${processId}
-            ${dueDate ? `<br>Please respond by: ${dueDate.toLocaleDateString()}` : ''}
-          </div>
-        </div>
-        <a href="${approvalUrl}" class="button">Review & Respond</a>
-      </div>
-      <div class="footer">
-        This is an automated notification from the JML Workflow System.
-      </div>
-    </div>
-  </div>
-</body>
-</html>`;
+    return this.buildEmailShell({
+      headerGradient: 'linear-gradient(135deg, #d97706 0%, #b45309 100%)',
+      headerIcon: '\u{2705}',
+      headerTitle: 'Approval Required',
+      content,
+      footerText: 'This is an automated notification from the DWx Workflow System.',
+      ctaUrl: approvalUrl,
+      ctaLabel: 'Review & Respond',
+      ctaColor: '#d97706'
+    });
   }
 
   private buildSLABreachEmail(
@@ -582,50 +570,32 @@ export class EmailQueueService {
     siteUrl: string
   ): string {
     const processUrl = `${siteUrl}/SitePages/ProcessDetails.aspx?processId=${processId}`;
+    const content = `
+    <p style="font-size:15px;color:#334155;margin:0 0 16px;">A workflow step has breached its SLA and requires <strong>immediate attention</strong>.</p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;border-left:4px solid #dc2626;">
+    <tr><td style="padding:16px 20px;">
+      <div style="font-size:17px;font-weight:600;color:#991b1b;margin-bottom:6px;">${stepName}</div>
+      <div style="font-size:14px;color:#7f1d1d;">
+        <strong>${hoursOverdue} hours overdue</strong><br>
+        <span style="color:#64748b;">Process ID: #${processId}</span>
+      </div>
+    </td></tr></table>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;margin-top:12px;">
+    <tr><td style="padding:12px 16px;font-size:13px;color:#991b1b;">
+      <strong>Action Required:</strong> Please investigate and resolve this SLA breach immediately to avoid compliance escalation.
+    </td></tr></table>`;
 
-    return `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <style>
-    body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; background: #f3f2f1; }
-    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .card { background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden; }
-    .header { background: #fde7e9; border-left: 4px solid #d13438; padding: 16px 20px; }
-    .header h1 { margin: 0; font-size: 18px; color: #a80000; }
-    .content { padding: 20px; }
-    .alert-card { background: #fde7e9; border: 1px solid #d13438; border-radius: 4px; padding: 16px; margin: 16px 0; }
-    .alert-title { font-size: 16px; font-weight: 600; color: #a80000; margin-bottom: 8px; }
-    .alert-meta { font-size: 14px; color: #605e5c; }
-    .button { display: inline-block; background: #d13438; color: #fff; padding: 10px 24px; border-radius: 4px; text-decoration: none; font-weight: 600; margin-top: 16px; }
-    .footer { padding: 16px 20px; background: #faf9f8; text-align: center; font-size: 12px; color: #605e5c; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="card">
-      <div class="header">
-        <h1>SLA BREACH ALERT</h1>
-      </div>
-      <div class="content">
-        <p>A workflow step has breached its SLA and requires immediate attention.</p>
-        <div class="alert-card">
-          <div class="alert-title">${stepName}</div>
-          <div class="alert-meta">
-            <strong>${hoursOverdue} hours overdue</strong><br>
-            Process ID: #${processId}
-          </div>
-        </div>
-        <a href="${processUrl}" class="button">View Process Details</a>
-      </div>
-      <div class="footer">
-        This is an urgent automated notification from the JML Workflow System.
-      </div>
-    </div>
-  </div>
-</body>
-</html>`;
+    return this.buildEmailShell({
+      headerGradient: 'linear-gradient(135deg, #991b1b 0%, #7f1d1d 100%)',
+      headerIcon: '\u{1F6A8}',
+      headerTitle: 'SLA BREACH ALERT',
+      bodyBg: '#ffffff',
+      content,
+      footerText: 'This is an urgent automated notification from the DWx Workflow System.',
+      ctaUrl: processUrl,
+      ctaLabel: 'View Process Details',
+      ctaColor: '#dc2626'
+    });
   }
 
   // ============================================================================

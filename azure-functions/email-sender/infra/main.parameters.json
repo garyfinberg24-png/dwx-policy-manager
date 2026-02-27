@@ -1,0 +1,33 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "baseName": {
+      "value": "dwx-pm"
+    },
+    "location": {
+      "value": "australiaeast"
+    },
+    "environment": {
+      "value": "prod"
+    },
+    "sharePointSiteUrl": {
+      "value": "https://mf7m.sharepoint.com/sites/PolicyManager"
+    },
+    "emailQueueListName": {
+      "value": "PM_EmailQueue"
+    },
+    "pollingIntervalMinutes": {
+      "value": 5
+    },
+    "batchSize": {
+      "value": 20
+    },
+    "maxRetryAttempts": {
+      "value": 3
+    },
+    "senderEmailAddress": {
+      "value": ""
+    }
+  }
+}

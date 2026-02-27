@@ -85,6 +85,8 @@ src/
 azure-functions/
   quiz-generator/              # Azure Function — AI Quiz Question Generator (GPT-4o)
     infra/                     # Bicep IaC + deployment script
+  email-sender/                # Azure Logic App — PM_EmailQueue email processor
+    infra/                     # Bicep IaC + deployment script
 scripts/
   policy-management/           # PnP PowerShell provisioning
     Deploy-AllPolicyLists.ps1  # Master list deployment
@@ -102,7 +104,8 @@ docs/                          # Architecture docs, proposals, mockups
 | `PolicyHubService` | Hub search, visibility filtering (filterByVisibility — 5 modes with Admin/Manager bypass) |
 | `AdminConfigService` | Admin configuration CRUD — templates, metadata, compliance, naming rules, SLA, subcategories |
 | `PolicyDistributionService` | Distribution campaign CRUD against PM_PolicyDistributions |
-| `PolicyNotificationService` | In-app + email notifications, optional DWx cross-app delivery |
+| `PolicyNotificationService` | In-app + email notifications, Forest Teal branded HTML templates, optional DWx cross-app delivery |
+| `EmailQueueService` | Queue-based email for background operations (workflows, reminders, SLA breaches) — writes to PM_EmailQueue |
 | `RecentlyViewedService` | localStorage-based recently viewed policies (max 10 items) |
 | `LoggingService` | Dual-mode: console-only or Azure Application Insights (Beacon API, no npm dep) |
 | `PolicyRoleService` | 4-tier RBAC: User → Author → Manager → Admin |
@@ -163,6 +166,30 @@ Font: Segoe UI (system fallbacks)
 - **Per-Policy Document Folders** — Auto-created folders in `PM_PolicySourceDocuments` library per policy number. Documents listed in collapsible section on PolicyDetails.
 - **Quiz Sequencing** — Quiz creation disabled during policy drafting (Step 3) — only available after publish. Post-publish reminder dialog when quiz required but not linked. "Quiz Missing" badge in Author View.
 - **Request-to-Policy Flow** — Expanded field mapping (7 fields) from policy requests to wizard state. "Accept & Start Drafting" opens wizard with pre-filled data. Auto-complete source request on publish.
+
+## Email Pipeline
+
+End-to-end email delivery using SharePoint queue + Azure Logic App:
+
+```text
+SPFx App → EmailQueueService → PM_EmailQueue (SP List)
+         → Logic App polls every 5 min
+         → Office 365 sends branded HTML email
+         → Status: Queued → Processing → Sent/Failed (retry up to 3x)
+```
+
+- **12 branded email templates** across PolicyNotificationService (9) and EmailQueueService (3)
+- **Forest Teal design system** — table-based layout for Outlook compatibility, color-coded by severity
+- **Logic App** (Consumption tier) — Bicep IaC at `azure-functions/email-sender/infra/`
+- **Deployed resources**: `dwx-pm-email-sender-prod` Logic App, Office 365 + SharePoint API connections
+
+```powershell
+# Deploy email sender Logic App
+cd azure-functions/email-sender/infra
+.\deploy.ps1                    # Deploy prod
+.\deploy.ps1 -Environment dev   # Deploy dev
+.\deploy.ps1 -WhatIf            # Dry run
+```
 
 ## Admin Navigation Toggles
 
@@ -230,7 +257,7 @@ Upload the `.sppkg` file to the SharePoint App Catalog, then add web parts to th
 
 | Version | Date | Comments |
 | --- | --- | --- |
-| 1.2.4 | February 2026 | Enterprise features: policy versioning + comparison, visibility/security filtering, subcategory tree navigation, per-policy document folders, quiz sequencing fix, request-to-policy flow, admin config CRUD, component decomposition (6 extracted tabs), 6 unit test suites, test infrastructure |
+| 1.2.4 | February 2026 | Enterprise features: policy versioning + comparison, visibility/security filtering, subcategory tree navigation, per-policy document folders, quiz sequencing fix, request-to-policy flow, admin config CRUD, component decomposition (6 extracted tabs), 6 unit test suites, test infrastructure, Forest Teal branded email templates (12 templates), Logic App email sender (Bicep IaC) |
 | 1.2.3 | February 2026 | Live data wiring (Analytics, Distribution), Application Insights telemetry, admin nav toggles, DWx Hub expansion, RecentlyViewedService, provisioning scripts |
 | 1.2.2 | February 2026 | Image templates, quiz selection, fullscreen viewer, DWx Hub integration, enterprise hardening (9/10 security + performance fixes) |
 | 1.2.1 | January 2026 | Quiz Builder UX overhaul, AI pipeline hardening, Recently Viewed dropdown |

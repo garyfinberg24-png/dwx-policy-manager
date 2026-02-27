@@ -571,6 +571,46 @@ cd azure-functions/quiz-generator/infra
 
 ---
 
+## Azure Logic App — Email Queue Processor
+
+### Architecture
+The email pipeline uses a SharePoint queue + Azure Logic App pattern for reliable email delivery without user context dependency.
+
+```
+SPFx App → EmailQueueService → PM_EmailQueue (SP List)
+         → Logic App polls every 5 min → Office 365 sends email
+         → Status: Queued → Processing → Sent/Failed (retry up to 3x)
+```
+
+### Deployed Resources (Resource Group: `dwx-pm-email-rg-prod`)
+| Resource | Name | Region |
+|----------|------|--------|
+| Logic App | `dwx-pm-email-sender-prod` | australiaeast |
+| API Connection | `office365-prod` | australiaeast |
+| API Connection | `sharepointonline-prod` | australiaeast |
+
+### Infrastructure as Code
+- **Bicep template**: `azure-functions/email-sender/infra/main.bicep`
+- **Parameters**: `azure-functions/email-sender/infra/main.parameters.json`
+- **Deployment script**: `azure-functions/email-sender/infra/deploy.ps1`
+
+### Redeployment
+```powershell
+cd azure-functions/email-sender/infra
+.\deploy.ps1 -Environment prod
+.\deploy.ps1 -SenderEmail "noreply@company.com"  # Use shared mailbox
+```
+
+### Email Templates (12 total)
+| Service | Templates | Color Scheme |
+|---------|-----------|-------------|
+| PolicyNotificationService | 9 (new policy, update, ack required, 3-day reminder, 1-day reminder, overdue, ack complete, expiring, approval) | Teal/amber/red/emerald per severity |
+| EmailQueueService | 3 (task assignment, approval request, SLA breach) | Teal/amber/dark red per severity |
+
+All templates use `buildEmailShell()` wrapper: table-based layout, Forest Teal brand, "First Digital — DWx Policy Manager" footer.
+
+---
+
 ## Quiz System
 
 ### Question Types (11 total)
@@ -604,9 +644,23 @@ The QuizBuilder's "AI Generate" panel calls the Azure Function with:
 
 ---
 
-## Session State (Last Updated: 27 Feb 2026 — Session 9)
+## Session State (Last Updated: 27 Feb 2026 — Session 10)
 
-### Recently Completed (Session 9 — 27 Feb 2026)
+### Recently Completed (Session 10 — 27 Feb 2026)
+
+#### Email Pipeline — End-to-End Delivery
+
+- **PolicyNotificationService.ts** — Replaced all 9 inline email templates with shared `buildEmailShell()` wrapper; table-based layout (`role="presentation"`) for Outlook/email client compatibility; Forest Teal branded headers, footers, CTA buttons; color-coded by severity (teal=info, amber=warning, red=urgent, emerald=success, dark red=overdue); helper methods `emailRow()`, `emailTable()`, `policyCard()`
+- **EmailQueueService.ts** — Replaced 3 inline templates (task, approval, SLA breach) with matching `buildEmailShell()` wrapper; removed old Microsoft blue (#0078d4) → Forest Teal (#0d9488); updated footer from "JML Workflow System" → "DWx Workflow System"
+- **Logic App (Bicep IaC)** — New `azure-functions/email-sender/infra/` with `main.bicep`, `main.parameters.json`, `deploy.ps1`; Logic App (Consumption) polls PM_EmailQueue every 5 min; sends via Office 365 connector; sequential processing with retry (up to 3 attempts); status flow: Queued → Processing → Sent/Failed
+- **Deployed** — `dwx-pm-email-sender-prod` Logic App in `dwx-pm-email-rg-prod` resource group; API connections authorized and first run successful
+
+#### Build & Push
+
+- **Ship build** — Zero errors, all 14 webpart manifests, v1.2.4
+- **Commit** — `df49eec` — pushed to both ADO and GitHub remotes
+
+### Previously Completed (Session 9 — 27 Feb 2026)
 
 #### Phase 1: Policy Versioning (Compliance)
 
@@ -692,7 +746,7 @@ The QuizBuilder's "AI Generate" panel calls the Azure Function with:
 | Code Quality | 7/10 | Types extracted, tab decomposition started (6 tabs extracted from god component), AdminConfigService. Remaining: complete decomposition |
 | Testing | 3.5/10 | Jest config + mocks + 6 unit test suites. Remaining: integration tests, component tests, E2E |
 | Accessibility | 3/10 | Basic Fluent UI a11y only. No ARIA roles, keyboard nav, screen reader testing |
-| Overall | ~74/100 | Up from 72/100. Versioning, visibility, subcategories, test infrastructure, component decomposition |
+| Overall | ~75/100 | Up from 74/100. Email pipeline live, branded templates, Logic App IaC |
 
 ### Known Issues
 
@@ -705,9 +759,12 @@ The QuizBuilder's "AI Generate" panel calls the Azure Function with:
 - `@ts-nocheck` remains in ~198 files — PolicyService.ts and LoggingService.ts are fully type-checked
 - PnP PowerShell `Add-PnPField` does NOT support `-DefaultValue` — use `Set-PnPField -Values @{DefaultValue="..."}` separately
 - Disk space on dev machine was critically low (162MB free / 879GB) during Session 8 — may need cleanup
+- Logic App API connections (Office 365 + SharePoint) require manual OAuth authorization in Azure Portal after deployment — ARM/Bicep cannot perform consent
 
 ### Next Steps
 
+- Test email pipeline end-to-end: queue email via SPFx → verify Logic App sends → check inbox
+- Provision PM_EmailQueue list if not already done (EmailQueueService writes to it)
 - User testing of versioning: create draft → publish → edit published → version history → comparison
 - User testing of visibility: set policy visibility to Department/SecurityGroup, verify non-matching users don't see it
 - User testing of subcategories: create subcategories in admin, assign to policies, verify tree navigation in PolicyHub

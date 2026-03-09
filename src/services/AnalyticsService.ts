@@ -590,9 +590,14 @@ export class AnalyticsService {
   private async getFilteredProcesses(filters?: IAnalyticsFilters): Promise<IJmlProcess[]> {
     try {
       let query = this.sp.web.lists.getByTitle('PM_Processes').items
-        .select('*', 'Manager/Title', 'Manager/EMail')
+        .select(
+          'Id', 'ProcessType', 'ProcessStatus', 'Department', 'EmployeeName',
+          'StartDate', 'ActualCompletionDate', 'TargetCompletionDate',
+          'ProgressPercentage', 'TotalTasks', 'CompletedTasks', 'ManagerId',
+          'Manager/Title', 'Manager/EMail'
+        )
         .expand('Manager')
-        .top(5000);
+        .top(2000);
 
       if (filters) {
         const filterParts: string[] = [];
@@ -638,9 +643,9 @@ export class AnalyticsService {
   private async getAllTasks(filters?: IAnalyticsFilters): Promise<IJmlTaskAssignment[]> {
     try {
       const items = await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
-        .select('*', 'Task/Title')
+        .select('Id', 'Title', 'DueDate', 'ActualCompletionDate', 'Task/Title')
         .expand('Task')
-        .top(5000)();
+        .top(2000)();
       return items as IJmlTaskAssignment[];
     } catch (error) {
       logger.error('AnalyticsService', 'Failed to get tasks:', error);

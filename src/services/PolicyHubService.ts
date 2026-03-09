@@ -63,10 +63,17 @@ export class PolicyHubService {
    */
   public async searchPolicyHub(request: IPolicyDocumentSearchRequest): Promise<IPolicyHubSearchResult> {
     try {
-      // Build base query
+      // Build base query with only needed columns
       let policyQuery = this.sp.web.lists
         .getByTitle(this.POLICIES_LIST)
-        .items.select('*');
+        .items.select(
+          'Id', 'Title', 'PolicyNumber', 'PolicyName', 'PolicyStatus', 'Category',
+          'SubCategory', 'Department', 'ComplianceRisk', 'Description', 'PolicySummary',
+          'EffectiveDate', 'ExpirationDate', 'ReviewDate', 'LastReviewDate',
+          'ReadTimeframe', 'RequiresQuiz', 'RequiresAcknowledgement',
+          'Visibility', 'TargetSecurityGroups', 'AuthorId', 'Modified', 'Created',
+          'IsActive', 'Version', 'Tags'
+        );
 
       // Apply filters
       const filterConditions = this.buildFilterConditions(request.filters);
@@ -79,19 +86,20 @@ export class PolicyHubService {
         policyQuery = this.applySorting(policyQuery, request.sort);
       }
 
-      // Get total count before pagination
+      // Fetch policies
       const allPolicies = await policyQuery.top(500)();
-      const totalCount = allPolicies.length;
 
-      // Apply pagination
-      const startIndex = (request.page - 1) * request.pageSize;
-      const paginatedPolicies = allPolicies.slice(startIndex, startIndex + request.pageSize);
-
-      // Search text filtering (client-side for now)
-      let filteredPolicies = paginatedPolicies;
+      // Apply text search BEFORE pagination (fixes search across all results)
+      let searchedPolicies = allPolicies;
       if (request.searchText) {
-        filteredPolicies = this.applyTextSearch(paginatedPolicies, request.searchText, request.filters?.searchFields);
+        searchedPolicies = this.applyTextSearch(allPolicies, request.searchText, request.filters?.searchFields);
       }
+
+      const totalCount = searchedPolicies.length;
+
+      // Apply pagination AFTER text search
+      const startIndex = (request.page - 1) * request.pageSize;
+      const filteredPolicies = searchedPolicies.slice(startIndex, startIndex + request.pageSize);
 
       // Get documents if requested
       let documents: IPolicyDocumentMetadata[] = [];
@@ -558,10 +566,15 @@ export class PolicyHubService {
     try {
       const targetUserId = userId || this.currentUserId;
 
-      // Get all active policies
+      // Get all active policies (dashboard only needs summary fields)
       const allPolicies = await this.sp.web.lists
         .getByTitle(this.POLICIES_LIST)
-        .items.filter('IsActive eq true')
+        .items.select(
+          'Id', 'Title', 'PolicyNumber', 'PolicyName', 'PolicyStatus', 'Category',
+          'PolicyCategory', 'Department', 'ComplianceRisk', 'EffectiveDate',
+          'ExpirationDate', 'IsActive', 'AuthorId', 'Modified'
+        )
+        .filter('IsActive eq true')
         .top(500)() as IPolicy[];
 
       const activePolicies = allPolicies.filter(p => p.PolicyStatus === PolicyStatus.Published);

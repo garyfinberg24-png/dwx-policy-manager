@@ -36,6 +36,7 @@ import { RichText } from "@pnp/spfx-controls-react/lib/RichText";
 import { PeoplePicker, PrincipalType } from "@pnp/spfx-controls-react/lib/PeoplePicker";
 import { FilePicker, IFilePickerResult } from "@pnp/spfx-controls-react/lib/FilePicker";
 import { injectPortalStyles } from '../../../utils/injectPortalStyles';
+import { TextStyles, IconStyles, LayoutStyles, Colors, ContainerStyles, BadgeStyles } from './PolicyAuthorStyles';
 import { JmlAppLayout } from '../../../components/JmlAppLayout';
 import { PageSubheader } from '../../../components/PageSubheader';
 import { PolicyService } from '../../../services/PolicyService';

@@ -31,6 +31,7 @@ import {
   Label
 } from '@fluentui/react';
 import { injectPortalStyles } from '../../../utils/injectPortalStyles';
+import { TextStyles, IconStyles, LayoutStyles, Colors, ContainerStyles } from './PolicyAdminStyles';
 import { PeoplePicker, PrincipalType } from "@pnp/spfx-controls-react/lib/PeoplePicker";
 import { JmlAppLayout } from '../../../components/JmlAppLayout';
 import { ErrorBoundary } from '../../../components/ErrorBoundary/ErrorBoundary';

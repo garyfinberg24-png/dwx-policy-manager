@@ -102,23 +102,67 @@ export class RoleDetectionService {
   private userRolesCache: Map<string, UserRole[]> = new Map();
   private cacheExpiration: number = 5 * 60 * 1000; // 5 minutes
 
+  /** sessionStorage key for cross-webpart role caching */
+  private static readonly SESSION_CACHE_KEY = 'pm_detected_roles';
+  private static readonly SESSION_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
   constructor(sp: SPFI, customRoleMappings?: IRoleMapping[]) {
     this.sp = sp;
     this.roleMappings = customRoleMappings || DEFAULT_ROLE_MAPPINGS;
   }
 
   /**
-   * Get all roles for the current user
+   * Get all roles for the current user.
+   * Uses sessionStorage to cache across webpart instances on the same page.
    */
   public async getCurrentUserRoles(): Promise<UserRole[]> {
     try {
+      // Check sessionStorage first (cross-webpart cache)
+      const sessionCached = this.getSessionCachedRoles();
+      if (sessionCached) {
+        return sessionCached;
+      }
+
       const currentUser = await this.sp.web.currentUser();
-      return await this.getUserRoles(currentUser.LoginName);
+      const roles = await this.getUserRoles(currentUser.LoginName);
+
+      // Cache in sessionStorage for other webparts
+      this.setSessionCachedRoles(roles);
+
+      return roles;
     } catch (error) {
       console.error('[RoleDetectionService] Error getting current user roles:', error);
       // Fallback to Employee role if detection fails
       return [UserRole.Employee];
     }
+  }
+
+  /**
+   * Read roles from sessionStorage if not expired
+   */
+  private getSessionCachedRoles(): UserRole[] | null {
+    try {
+      const raw = sessionStorage.getItem(RoleDetectionService.SESSION_CACHE_KEY);
+      if (!raw) return null;
+      const cached = JSON.parse(raw);
+      if (cached && cached.expiry > Date.now() && Array.isArray(cached.roles)) {
+        return cached.roles as UserRole[];
+      }
+      sessionStorage.removeItem(RoleDetectionService.SESSION_CACHE_KEY);
+    } catch { /* ignore parse errors */ }
+    return null;
+  }
+
+  /**
+   * Write roles to sessionStorage with TTL
+   */
+  private setSessionCachedRoles(roles: UserRole[]): void {
+    try {
+      sessionStorage.setItem(
+        RoleDetectionService.SESSION_CACHE_KEY,
+        JSON.stringify({ roles, expiry: Date.now() + RoleDetectionService.SESSION_CACHE_TTL })
+      );
+    } catch { /* ignore quota errors */ }
   }
 
   /**
@@ -235,6 +279,7 @@ export class RoleDetectionService {
    */
   public clearCache(): void {
     this.userRolesCache.clear();
+    try { sessionStorage.removeItem(RoleDetectionService.SESSION_CACHE_KEY); } catch { /* ignore */ }
   }
 
   /**

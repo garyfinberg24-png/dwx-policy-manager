@@ -238,6 +238,58 @@ if (failCount > 0) logger.error('Service', `${failCount}/${recipientIds.length} 
 
 Note: Do NOT use `Promise.allSettled()` — SPFx 1.20 targets ES2017 which doesn't support it.
 
+### Unmount Safety (_isMounted Pattern)
+
+All class components with async operations MUST use the `_isMounted` guard:
+
+```typescript
+private _isMounted = false;
+
+public componentDidMount(): void {
+  this._isMounted = true;
+  this.loadData();
+}
+
+public componentWillUnmount(): void {
+  this._isMounted = false;
+}
+
+private async loadData(): Promise<void> {
+  const data = await this.service.getData();
+  if (this._isMounted) {
+    this.setState({ data });
+  }
+}
+```
+
+**Applied to**: PolicyAnalytics, PolicyAuthor, PolicyAuthorEnhanced, PolicyDetails, PolicyDistribution, PolicyHub, PolicyPackManager, PolicySearch
+
+### ErrorBoundary Pattern
+
+All webpart component render methods MUST be wrapped with `<ErrorBoundary>`:
+
+```typescript
+import { ErrorBoundary } from '../../../components/ErrorBoundary/ErrorBoundary';
+
+public render(): React.ReactElement {
+  return (
+    <ErrorBoundary fallbackMessage="An error occurred in [ComponentName]. Please try again.">
+      {/* component JSX */}
+    </ErrorBoundary>
+  );
+}
+```
+
+ErrorBoundary logs to Application Insights via `LoggingService.trackException()` with `SeverityLevel.Critical`.
+
+### PII Redaction in Telemetry
+
+`LoggingService.enqueue()` automatically strips PII before sending to Application Insights:
+- Email addresses → `[REDACTED_EMAIL]`
+- Phone numbers → `[REDACTED_PHONE]`
+
+Never log raw user emails or phone numbers. Use `setUserId()` which auto-redacts.
+
 ---
 
 ## Policy Admin Structure
@@ -762,7 +814,19 @@ The QuizBuilder's "AI Generate" panel calls the Azure Function with:
 
 ## Session State (Last Updated: 9 Mar 2026 — Session 12)
 
-### Recently Completed (Session 12 — 9 Mar 2026)
+### Recently Completed (Session 13 — 9 Mar 2026)
+
+#### Reliability Hardening — ErrorBoundary, _isMounted, PII Redaction
+
+- **ErrorBoundary coverage** — Added `<ErrorBoundary>` wrapper to 8 remaining webpart components (PolicyAnalytics, PolicyDistribution, PolicyHelp, PolicyPackManager, PolicySearch, PolicyAuthorView, PolicyManagerView, QuizBuilderWrapper). All webparts now have error boundary protection.
+- **ErrorBoundary → App Insights** — Enhanced ErrorBoundary.tsx `componentDidCatch` to log caught errors to Application Insights via `LoggingService.trackException()` with `SeverityLevel.Critical`. Wrapped in try/catch to never break the error boundary itself.
+- **_isMounted guards** — Added `_isMounted` field + guard pattern to 8 class components (PolicyAnalytics, PolicyAuthor, PolicyAuthorEnhanced, PolicyDetails, PolicyDistribution, PolicyHub, PolicyPackManager, PolicySearch). 45+ `setState` calls wrapped to prevent setState-after-unmount warnings.
+- **PII redaction** — Enhanced LoggingService with `redactPII()` and `redactProperties()` methods. All telemetry (traces, exceptions, properties) sanitized before Application Insights ingestion. Email addresses → `[REDACTED_EMAIL]`, phone numbers → `[REDACTED_PHONE]`. `setUserId()` also auto-redacts.
+- **Telemetry version** — Updated `ai.application.ver` from `1.2.4` to `1.2.5` in LoggingService envelope tags.
+- **Build** — `gulp bundle --ship` zero errors, 18 files changed, 552 insertions, 403 deletions.
+- **Commit** — `55b9ee3` — pushed to both ADO and GitHub remotes.
+
+### Previously Completed (Session 12 — 9 Mar 2026)
 
 #### Security & Hardening Audit — 11 Critical/High Fixes
 
@@ -944,13 +1008,13 @@ Three parallel audit streams identified ~45 optimization opportunities:
 
 | Area | Score | Notes |
 | ------ | ------- | ------- |
-| Security | 8/10 | XSS fixed, OData sanitized, auth checks, visibility filtering. Remaining: expand sanitization to all 100+ filter sites |
-| Performance | 7.5/10 | Parallelized loads, reduced query limits, live data. Remaining: React.lazy, virtualization |
-| Reliability | 8/10 | Error boundaries, Application Insights ready, LoggingService type-checked. Remaining: @ts-nocheck removal from ~198 files |
+| Security | 8.5/10 | XSS fixed, OData sanitized, auth checks, visibility filtering, PII redaction in telemetry. Remaining: expand sanitization to all 100+ filter sites, npm audit |
+| Performance | 7.5/10 | Parallelized loads, reduced query limits, live data. Remaining: React.lazy, virtualization, server-side pagination |
+| Reliability | 8.5/10 | ErrorBoundary on all webparts + App Insights logging, _isMounted guards on 8 components, PII redaction. Remaining: @ts-nocheck removal from ~198 files |
 | Code Quality | 7/10 | Types extracted, tab decomposition started (6 tabs extracted from god component), AdminConfigService. Remaining: complete decomposition |
 | Testing | 3.5/10 | Jest config + mocks + 6 unit test suites. Remaining: integration tests, component tests, E2E |
 | Accessibility | 3/10 | Basic Fluent UI a11y only. No ARIA roles, keyboard nav, screen reader testing |
-| Overall | ~76/100 | Up from 75/100. AI Chat Assistant live (3 modes, client-side RAG), managed departments, admin config fixes |
+| Overall | ~78/100 | Up from 76/100. ErrorBoundary on all webparts, _isMounted guards, PII redaction, App Insights error logging |
 
 ### Known Issues
 

@@ -61,7 +61,7 @@ src/
     PageSubheader/             # Page subheader component
     QuizBuilder/               # Quiz creation, AI generation, question management
     QuizTaker/                 # Quiz-taking component (11 question types)
-    ErrorBoundary/             # React error boundary with retry
+    ErrorBoundary/             # React error boundary with retry + App Insights logging
   models/                      # 58+ TypeScript interfaces
     IPolicy.ts                 # Core policy models (80+ fields, versioning, visibility)
     IAdminConfig.ts            # Admin config interfaces (15+ types)
@@ -116,7 +116,7 @@ docs/                          # Architecture docs, proposals, mockups
 | `PolicyNotificationService` | In-app + email notifications, Forest Teal branded HTML templates, optional DWx cross-app delivery |
 | `EmailQueueService` | Queue-based email for background operations (workflows, reminders, SLA breaches) — writes to PM_EmailQueue |
 | `RecentlyViewedService` | localStorage-based recently viewed policies (max 10 items) |
-| `LoggingService` | Dual-mode: console-only or Azure Application Insights (Beacon API, no npm dep) |
+| `LoggingService` | Dual-mode: console-only or Azure Application Insights (Beacon API, no npm dep). PII redaction (emails/phones stripped before ingestion) |
 | `PolicyRoleService` | 4-tier RBAC: User → Author → Manager → Admin |
 | `PolicyChatService` | Client-side RAG orchestrator — searches policies, builds context, calls Azure Function for AI chat |
 | `UserManagementService` | User CRUD, role assignment with managed departments (semicolon-delimited) |
@@ -178,6 +178,15 @@ Comprehensive security audit and hardening pass applied across the entire codeba
 - **Infrastructure** — 30s AbortController timeout on Azure OpenAI calls, environment-conditional CORS (no localhost in prod), admin role guard on PolicyAdmin mount.
 - **Notification Resilience** — Per-recipient try/catch in notification loops (continues on failure, logs count), retry options with DLQ support.
 - **Upload Security** — Document upload limit reduced to 25MB (video stays 100MB), MIME-to-extension cross-validation map.
+
+## Reliability Hardening (v1.2.5)
+
+Runtime stability and telemetry improvements:
+
+- **ErrorBoundary Coverage** — All 10+ webpart components wrapped with `<ErrorBoundary>` to catch render errors and display user-friendly fallback UI with retry.
+- **ErrorBoundary → App Insights** — Caught errors logged to Application Insights via `LoggingService.trackException()` with Critical severity, component stack traces, and source metadata.
+- **Unmount Safety** — `_isMounted` guard pattern added to 8 class components (45+ `setState` calls wrapped) to prevent React "setState on unmounted component" warnings after async operations.
+- **PII Redaction** — `LoggingService` strips email addresses and phone numbers from all telemetry (traces, exceptions, properties) before Application Insights ingestion. Uses regex-based `redactPII()` and `redactProperties()` methods.
 
 ## Enterprise Features (v1.2.4)
 
@@ -318,7 +327,7 @@ Upload the `.sppkg` file to the SharePoint App Catalog, then add web parts to th
 
 | Version | Date | Comments |
 | --- | --- | --- |
-| 1.2.5 | March 2026 | Security hardening (XSS prevention, input validation, CORS, upload security), notification resilience (per-recipient error handling), Forest Teal theme alignment, admin panel expansion (approval/compliance/notification config), new Azure Function scaffolds (approval-escalation, notification-processor), DWx view expansions, shared date formatting utilities |
+| 1.2.5 | March 2026 | Security hardening (XSS prevention, input validation, CORS, upload security), reliability hardening (ErrorBoundary coverage on all webparts, _isMounted guards on 8 components, PII redaction in telemetry, ErrorBoundary→App Insights logging), notification resilience (per-recipient error handling), Forest Teal theme alignment, admin panel expansion (approval/compliance/notification config), new Azure Function scaffolds (approval-escalation, notification-processor), DWx view expansions, shared date formatting utilities |
 | 1.2.4 | February 2026 | AI Chat Assistant (Azure Function + SPFx panel + 3 modes), managed departments for user roles, enterprise features (versioning, visibility, subcategories, document folders, quiz sequencing, request-to-policy), email pipeline (12 templates + Logic App), component decomposition, 6 unit test suites |
 | 1.2.3 | February 2026 | Live data wiring (Analytics, Distribution), Application Insights telemetry, admin nav toggles, DWx Hub expansion, RecentlyViewedService, provisioning scripts |
 | 1.2.2 | February 2026 | Image templates, quiz selection, fullscreen viewer, DWx Hub integration, enterprise hardening (9/10 security + performance fixes) |

@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { MessageBar, MessageBarType, PrimaryButton, Stack, Text } from '@fluentui/react';
+import { LoggingService, SeverityLevel } from '../../services/LoggingService';
 
 interface IErrorBoundaryProps {
   children: React.ReactNode;
@@ -28,6 +29,15 @@ export class ErrorBoundary extends React.Component<IErrorBoundaryProps, IErrorBo
 
   public componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
+    try {
+      LoggingService.getInstance().trackException(error, SeverityLevel.Critical, {
+        source: 'ErrorBoundary',
+        componentStack: errorInfo.componentStack || '',
+        fallbackMessage: this.props.fallbackMessage || '',
+      });
+    } catch (_) {
+      // Never let telemetry break the error boundary itself
+    }
   }
 
   private handleRetry = (): void => {

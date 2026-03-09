@@ -25,6 +25,7 @@ import {
 } from '@fluentui/react';
 import { injectPortalStyles } from '../../../utils/injectPortalStyles';
 import { JmlAppLayout } from '../../../components/JmlAppLayout';
+import { ErrorBoundary } from '../../../components/ErrorBoundary/ErrorBoundary';
 import { PageSubheader } from '../../../components/PageSubheader';
 import { PolicyPackService } from '../../../services/PolicyPackService';
 import { PolicyService } from '../../../services/PolicyService';
@@ -69,6 +70,7 @@ export interface IPolicyPackManagerState {
 }
 
 export default class PolicyPackManager extends React.Component<IPolicyPackManagerProps, IPolicyPackManagerState> {
+  private _isMounted = false;
   private packService: PolicyPackService;
   private policyService: PolicyService;
   private dialogManager = createDialogManager();
@@ -107,8 +109,13 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
   }
 
   public async componentDidMount(): Promise<void> {
+    this._isMounted = true;
     injectPortalStyles();
     await this.loadData();
+  }
+
+  public componentWillUnmount(): void {
+    this._isMounted = false;
   }
 
   private async loadData(): Promise<void> {
@@ -121,17 +128,17 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
       const allPolicies = await this.policyService.getAllPolicies();
       const policies = allPolicies.filter((p: IPolicy) => p.PolicyStatus === PolicyStatus.Published);
 
-      this.setState({
+      if (this._isMounted) { this.setState({
         policyPacks: packs,
         allPolicies: policies,
         loading: false
-      });
+      }); }
     } catch (error) {
       console.error('Failed to load data:', error);
-      this.setState({
+      if (this._isMounted) { this.setState({
         error: 'Failed to load policy packs. Please try again later.',
         loading: false
-      });
+      }); }
     }
   }
 
@@ -899,6 +906,7 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
     const { loading, error } = this.state;
 
     return (
+      <ErrorBoundary fallbackMessage="An error occurred in Policy Pack Manager. Please try again.">
       <JmlAppLayout
         context={this.props.context}
         sp={this.props.sp}
@@ -937,6 +945,7 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
           <this.dialogManager.DialogComponent />
         </section>
       </JmlAppLayout>
+      </ErrorBoundary>
     );
   }
 }

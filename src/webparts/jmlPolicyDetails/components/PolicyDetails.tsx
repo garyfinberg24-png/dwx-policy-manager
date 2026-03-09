@@ -186,6 +186,7 @@ const MOCK_QUIZ_QUESTIONS: IQuizQuestion[] = [
 ];
 
 export default class PolicyDetails extends React.Component<IPolicyDetailsProps, IPolicyDetailsState> {
+  private _isMounted = false;
   private policyService: PolicyService;
   private socialService: PolicySocialService;
   private linkedRecordService: DwxLinkedRecordService | null = null;
@@ -266,6 +267,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
   }
 
   public async componentDidMount(): Promise<void> {
+    this._isMounted = true;
     injectPortalStyles();
     await this.loadPolicyDetails();
     this.startReadTracking();
@@ -273,6 +275,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
   }
 
   public componentWillUnmount(): void {
+    this._isMounted = false;
     this.stopReadTracking();
     document.removeEventListener('fullscreenchange', this.handleFullscreenChange);
   }
@@ -345,7 +348,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
         console.warn('Could not look up quiz for policy:', quizErr);
       }
 
-      this.setState({
+      if (this._isMounted) { this.setState({
         policy,
         acknowledgement,
         ratings,
@@ -354,7 +357,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
         liveQuizId,
         currentUserId: currentUser.Id,
         loading: false
-      });
+      }); }
 
       // Track this policy view in Recently Viewed (localStorage)
       RecentlyViewedService.trackView(

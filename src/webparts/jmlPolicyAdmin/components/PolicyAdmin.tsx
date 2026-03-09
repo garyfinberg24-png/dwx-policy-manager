@@ -479,8 +479,8 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       )},
       { key: 'name', name: 'Category', fieldName: 'CategoryName', minWidth: 180, maxWidth: 260, isResizable: true, onRender: (item: IPolicyCategory) => (
         <Stack>
-          <Text style={{ fontWeight: 600 }}>{item.CategoryName}</Text>
-          {item.Description && <Text variant="small" style={{ color: '#605e5c' }}>{item.Description}</Text>}
+          <Text style={TextStyles.semiBold}>{item.CategoryName}</Text>
+          {item.Description && <Text variant="small" style={TextStyles.secondary}>{item.Description}</Text>}
         </Stack>
       )},
       { key: 'color', name: 'Color', minWidth: 80, maxWidth: 100, onRender: (item: IPolicyCategory) => (
@@ -524,13 +524,13 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 16 }}>
           <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
-            <Text variant="mediumPlus" style={{ fontWeight: 600 }}>Policy Categories ({policyCategories.length})</Text>
+            <Text variant="mediumPlus" style={TextStyles.semiBold}>Policy Categories ({policyCategories.length})</Text>
             <PrimaryButton text="New Category" iconProps={{ iconName: 'Add' }} onClick={() => this.setState({
               editingCategory: { Id: 0, Title: '', CategoryName: '', IconName: 'Tag', Color: '#0d9488', Description: '', SortOrder: policyCategories.length + 1, IsActive: true, IsDefault: false },
               showCategoryPanel: true
             })} />
           </Stack>
-          <Text variant="small" style={{ color: '#605e5c' }}>
+          <Text variant="small" style={TextStyles.secondary}>
             Categories organize policies across the application. Default categories cannot be deleted but can be deactivated.
           </Text>
           {policyCategories.length === 0 ? (
@@ -585,7 +585,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           isFooterAtBottom={true}
         >
           {editingCategory && (
-            <Stack tokens={{ childrenGap: 16 }} style={{ paddingTop: 16 }}>
+            <Stack tokens={{ childrenGap: 16 }} style={LayoutStyles.paddingTop16}>
               <TextField label="Category Name" required value={editingCategory.CategoryName || ''} onChange={(_, v) => this.setState({ editingCategory: { ...editingCategory, CategoryName: v || '' } })} />
               <TextField label="Description" multiline rows={3} value={editingCategory.Description || ''} onChange={(_, v) => this.setState({ editingCategory: { ...editingCategory, Description: v || '' } })} />
               <TextField label="Icon Name" description="Fluent UI icon name (e.g. People, Shield, Health, Money)" value={editingCategory.IconName || ''} onChange={(_, v) => this.setState({ editingCategory: { ...editingCategory, IconName: v || '' } })} />
@@ -637,8 +637,8 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
 
     return (
       <div>
-        <Stack horizontal horizontalAlign="space-between" verticalAlign="center" style={{ marginBottom: 16 }}>
-          <Text variant="xLarge" style={{ fontWeight: 600 }}>Sub-Categories</Text>
+        <Stack horizontal horizontalAlign="space-between" verticalAlign="center" style={LayoutStyles.marginBottom16}>
+          <Text variant="xLarge" style={TextStyles.semiBold}>Sub-Categories</Text>
           <PrimaryButton
             text="Add Sub-Category"
             iconProps={{ iconName: 'Add' }}
@@ -649,7 +649,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           />
         </Stack>
 
-        <Text style={{ color: '#605e5c', marginBottom: 16, display: 'block' }}>
+        <Text style={{ color: Colors.textSecondary, marginBottom: 16, display: 'block' }}>
           Sub-categories create folder-like navigation in the Policy Hub. Each sub-category belongs to a parent category.
         </Text>
 
@@ -671,7 +671,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             items={subCategories}
             columns={[
               { key: 'icon', name: '', minWidth: 40, maxWidth: 40, onRender: (item: any) => (
-                <Icon iconName={item.IconName || 'FolderOpen'} style={{ fontSize: 18, color: '#0d9488' }} />
+                <Icon iconName={item.IconName || 'FolderOpen'} style={IconStyles.mediumTeal} />
               )},
               { key: 'name', name: 'Sub-Category', fieldName: 'SubCategoryName', minWidth: 160, maxWidth: 240, isResizable: true },
               { key: 'parent', name: 'Parent Category', fieldName: 'ParentCategoryName', minWidth: 140, maxWidth: 200, isResizable: true },
@@ -733,7 +733,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             </Stack>
           )}
         >
-          <Stack tokens={{ childrenGap: 16 }} style={{ padding: '16px 0' }}>
+          <Stack tokens={{ childrenGap: 16 }} style={LayoutStyles.paddingVertical16}>
             <TextField label="Sub-Category Name" required value={state._editSubCat?.SubCategoryName || ''}
               onChange={(e, v) => this.setState({ _editSubCat: { ...state._editSubCat, SubCategoryName: v || '', Title: v || '' } } as any)} />
             <Dropdown label="Parent Category" required selectedKey={state._editSubCat?.ParentCategoryId || 0}
@@ -783,7 +783,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 16 }}>
           <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
-            <Text variant="mediumPlus" style={{ fontWeight: 600 }}>Policy Templates ({templates.length})</Text>
+            <Text variant="mediumPlus" style={TextStyles.semiBold}>Policy Templates ({templates.length})</Text>
             <PrimaryButton text="New Template" iconProps={{ iconName: 'Add' }} onClick={() => this.setState({ _editingTemplate: { Id: 0, Title: '', TemplateName: '', TemplateCategory: 'HR Policies', TemplateDescription: '', HTMLTemplate: '', IsActive: true }, _showTemplatePanel: true } as any)} />
           </Stack>
           {templates.length === 0 ? (
@@ -833,7 +833,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           isFooterAtBottom={true}
         >
           {editingTemplate && (
-            <Stack tokens={{ childrenGap: 16 }} style={{ paddingTop: 16 }}>
+            <Stack tokens={{ childrenGap: 16 }} style={LayoutStyles.paddingTop16}>
               <TextField label="Template Name" required value={editingTemplate.TemplateName || ''} onChange={(_, v) => this.setState({ _editingTemplate: { ...editingTemplate, TemplateName: v || '' } } as any)} />
               <Dropdown label="Category" selectedKey={editingTemplate.TemplateCategory || ''} options={this.state.policyCategories.filter(c => c.IsActive).map(c => ({ key: c.CategoryName, text: c.CategoryName }))} onChange={(_, opt) => opt && this.setState({ _editingTemplate: { ...editingTemplate, TemplateCategory: opt.key as string } } as any)} placeholder="Select a category" />
               <TextField label="Description" multiline rows={3} value={editingTemplate.TemplateDescription || ''} onChange={(_, v) => this.setState({ _editingTemplate: { ...editingTemplate, TemplateDescription: v || '' } } as any)} />
@@ -855,7 +855,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 16 }}>
           <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
-            <Text variant="mediumPlus" style={{ fontWeight: 600 }}>Metadata Profiles ({metadataProfiles.length})</Text>
+            <Text variant="mediumPlus" style={TextStyles.semiBold}>Metadata Profiles ({metadataProfiles.length})</Text>
             <PrimaryButton text="New Profile" iconProps={{ iconName: 'Add' }} onClick={() => this.setState({ _editingProfile: { Id: 0, Title: '', ProfileName: '', PolicyCategory: 'HR Policies', ComplianceRisk: 'Medium', ReadTimeframe: 'Week 1', RequiresAcknowledgement: true, RequiresQuiz: false, TargetDepartments: '', TargetRoles: '' }, _showProfilePanel: true } as any)} />
           </Stack>
           <Text>Configure pre-defined metadata settings for policies:</Text>
@@ -866,10 +866,10 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           ) : (
             <Stack tokens={{ childrenGap: 12 }}>
               {metadataProfiles.map((profile: IPolicyMetadataProfile) => (
-                <div key={profile.Id} className={styles.adminCard} style={{ borderLeft: '4px solid #0d9488' }}>
+                <div key={profile.Id} className={styles.adminCard} style={ContainerStyles.tealBorderLeft}>
                   <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
                     <Stack tokens={{ childrenGap: 8 }}>
-                      <Text variant="mediumPlus" style={{ fontWeight: 600 }}>{profile.ProfileName || profile.Title}</Text>
+                      <Text variant="mediumPlus" style={TextStyles.semiBold}>{profile.ProfileName || profile.Title}</Text>
                       <Stack horizontal tokens={{ childrenGap: 16 }}>
                         <Text variant="small">Category: {profile.PolicyCategory}</Text>
                         <Text variant="small">Risk: {profile.ComplianceRisk}</Text>
@@ -932,7 +932,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           isFooterAtBottom={true}
         >
           {editingProfile && (
-            <Stack tokens={{ childrenGap: 16 }} style={{ paddingTop: 16 }}>
+            <Stack tokens={{ childrenGap: 16 }} style={LayoutStyles.paddingTop16}>
               <TextField label="Profile Name" required value={editingProfile.ProfileName || ''} onChange={(_, v) => this.setState({ _editingProfile: { ...editingProfile, ProfileName: v || '' } } as any)} />
               <Dropdown label="Policy Category" required selectedKey={editingProfile.PolicyCategory || ''} options={this.state.policyCategories.filter(c => c.IsActive).map(c => ({ key: c.CategoryName, text: c.CategoryName }))} onChange={(_, opt) => opt && this.setState({ _editingProfile: { ...editingProfile, PolicyCategory: opt.key as string } } as any)} placeholder="Select a category" />
               <Dropdown label="Compliance Risk" selectedKey={editingProfile.ComplianceRisk || ''} options={[
@@ -1078,11 +1078,11 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
 
           <div className={styles.section}>
             <Text variant="large" style={{ fontWeight: 600, marginBottom: 12, display: 'block' }}>Email Templates</Text>
-            <Text style={{ color: '#605e5c', marginBottom: 12, display: 'block' }}>
+            <Text style={{ color: Colors.textSecondary, marginBottom: 12, display: 'block' }}>
               Configure the content and recipients for each notification type in the Email Templates section.
             </Text>
             <Stack horizontal tokens={{ childrenGap: 12 }}>
-              <Text style={{ color: '#605e5c' }}>Active templates: {this.state.emailTemplates.filter(t => t.isActive).length} / {this.state.emailTemplates.length}</Text>
+              <Text style={TextStyles.secondary}>Active templates: {this.state.emailTemplates.filter(t => t.isActive).length} / {this.state.emailTemplates.length}</Text>
             </Stack>
             <DefaultButton
               text="Configure Email Templates"
@@ -1175,7 +1175,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
 
     const groupColumns: IColumn[] = [
       { key: 'title', name: 'Group Name', fieldName: 'Title', minWidth: 180, maxWidth: 280, isResizable: true, onRender: (item: any) => (
-        <Text style={{ fontWeight: 500, color: '#0f172a', cursor: 'pointer', textDecoration: 'underline' }}
+        <Text style={{ fontWeight: 500, color: Colors.textDark, cursor: 'pointer', textDecoration: 'underline' }}
           onClick={() => {
             this.setState({ _selectedGroup: item } as any);
             void loadMembers(item.Id);
@@ -1185,7 +1185,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         </Text>
       )},
       { key: 'description', name: 'Description', fieldName: 'Description', minWidth: 200, maxWidth: 350, isResizable: true, onRender: (item: any) => (
-        <Text style={{ color: '#64748b', fontSize: 12 }}>{item.Description || '—'}</Text>
+        <Text style={{ color: Colors.textTertiary, fontSize: 12 }}>{item.Description || '—'}</Text>
       )},
       { key: 'owner', name: 'Owner', fieldName: 'OwnerTitle', minWidth: 120, maxWidth: 180 },
     ];
@@ -1193,7 +1193,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     const memberColumns: IColumn[] = [
       { key: 'title', name: 'Name', fieldName: 'Title', minWidth: 150, maxWidth: 220 },
       { key: 'email', name: 'Email', fieldName: 'Email', minWidth: 180, maxWidth: 280, onRender: (item: any) => (
-        <Text style={{ color: '#64748b' }}>{item.Email || '—'}</Text>
+        <Text style={TextStyles.tertiary}>{item.Email || '—'}</Text>
       )},
       { key: 'admin', name: 'Site Admin', fieldName: 'IsSiteAdmin', minWidth: 80, maxWidth: 80, onRender: (item: any) => (
         item.IsSiteAdmin ? <Icon iconName="CheckMark" style={{ color: '#059669' }} /> : null
@@ -1234,7 +1234,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           </Stack>
 
           {/* Group list */}
-          <Text variant="mediumPlus" style={{ fontWeight: 600 }}>SharePoint Groups ({groups.length})</Text>
+          <Text variant="mediumPlus" style={TextStyles.semiBold}>SharePoint Groups ({groups.length})</Text>
           {groupsLoading ? (
             <ProgressIndicator label="Loading groups..." />
           ) : groups.length === 0 ? (
@@ -1255,9 +1255,9 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               <Separator />
               <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
                 <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
-                  <Icon iconName="Group" style={{ fontSize: 18, color: '#0d9488' }} />
-                  <Text variant="mediumPlus" style={{ fontWeight: 600 }}>{selectedGroup.Title}</Text>
-                  <Text style={{ color: '#64748b' }}>({groupMembers.length} members)</Text>
+                  <Icon iconName="Group" style={IconStyles.mediumTeal} />
+                  <Text variant="mediumPlus" style={TextStyles.semiBold}>{selectedGroup.Title}</Text>
+                  <Text style={TextStyles.tertiary}>({groupMembers.length} members)</Text>
                 </Stack>
                 <PrimaryButton
                   iconProps={{ iconName: 'AddFriend' }}
@@ -1292,14 +1292,14 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           headerText={`Add Member to ${selectedGroup?.Title || 'Group'}`}
           type={PanelType.smallFixedFar}
           onRenderFooterContent={() => (
-            <Stack horizontal tokens={{ childrenGap: 8 }} style={{ padding: '16px 0' }}>
+            <Stack horizontal tokens={{ childrenGap: 8 }} style={LayoutStyles.paddingVertical16}>
               <PrimaryButton text="Add to Group" disabled={!selectedLoginName} onClick={handleAddMember} />
               <DefaultButton text="Cancel" onClick={() => this.setState({ _showAddMemberPanel: false } as any)} />
             </Stack>
           )}
           isFooterAtBottom={true}
         >
-          <Stack tokens={{ childrenGap: 16 }} style={{ padding: '16px 0' }}>
+          <Stack tokens={{ childrenGap: 16 }} style={LayoutStyles.paddingVertical16}>
             <MessageBar messageBarType={MessageBarType.info}>
               Search for a user by name or email address to add them to this group.
             </MessageBar>
@@ -1330,14 +1330,14 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           headerText="Create SharePoint Group"
           type={PanelType.smallFixedFar}
           onRenderFooterContent={() => (
-            <Stack horizontal tokens={{ childrenGap: 8 }} style={{ padding: '16px 0' }}>
+            <Stack horizontal tokens={{ childrenGap: 8 }} style={LayoutStyles.paddingVertical16}>
               <PrimaryButton text="Create Group" disabled={!newGroupName} onClick={handleCreateGroup} />
               <DefaultButton text="Cancel" onClick={() => this.setState({ _showCreateGroupPanel: false } as any)} />
             </Stack>
           )}
           isFooterAtBottom={true}
         >
-          <Stack tokens={{ childrenGap: 16 }} style={{ padding: '16px 0' }}>
+          <Stack tokens={{ childrenGap: 16 }} style={LayoutStyles.paddingVertical16}>
             <TextField
               label="Group Name"
               placeholder="PM_PolicyReviewers"
@@ -1396,7 +1396,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 16 }}>
           <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
-            <Text variant="mediumPlus" style={{ fontWeight: 600 }}>Audit Log ({auditEntries.length} entries)</Text>
+            <Text variant="mediumPlus" style={TextStyles.semiBold}>Audit Log ({auditEntries.length} entries)</Text>
             <Stack horizontal tokens={{ childrenGap: 8 }}>
               <DefaultButton text="Refresh" iconProps={{ iconName: 'Sync' }} onClick={loadAuditLog} disabled={auditLoading} />
               <DefaultButton text="Export Log" iconProps={{ iconName: 'Download' }} />
@@ -1443,7 +1443,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     return (
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 16 }}>
-          <Text variant="mediumPlus" style={{ fontWeight: 600 }}>Data Export</Text>
+          <Text variant="mediumPlus" style={TextStyles.semiBold}>Data Export</Text>
           <Text>Export policy data and compliance reports in CSV format.</Text>
           <Stack horizontal tokens={{ childrenGap: 12 }} wrap>
             <DefaultButton
@@ -1499,7 +1499,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 20 }}>
           <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
-            <Text variant="mediumPlus" style={{ fontWeight: 600 }}>Naming Rules</Text>
+            <Text variant="mediumPlus" style={TextStyles.semiBold}>Naming Rules</Text>
             <Stack horizontal tokens={{ childrenGap: 8 }}>
               <DefaultButton
                 text={this.state.refreshingAllRules ? 'Refreshing...' : 'Refresh All Rules'}
@@ -1507,9 +1507,9 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                 disabled={this.state.refreshingAllRules || this.state.refreshingRuleId !== null}
                 onClick={() => void this.refreshAllNamingRules()}
                 styles={{
-                  root: { borderColor: '#0d9488', color: '#0d9488' },
+                  root: { borderColor: '#0d9488', color: Colors.tealPrimary },
                   rootHovered: { borderColor: '#0f766e', color: '#0f766e', background: '#f0fdfa' },
-                  rootDisabled: { borderColor: '#94a3b8', color: '#94a3b8' }
+                  rootDisabled: { borderColor: '#94a3b8', color: Colors.slateLight }
                 }}
               />
               <PrimaryButton
@@ -1535,7 +1535,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             </Stack>
           </Stack>
 
-          <Text variant="small" style={{ color: '#605e5c' }}>
+          <Text variant="small" style={TextStyles.secondary}>
             Define naming conventions to standardise policy document IDs. Rules are applied automatically when new policies are created.
           </Text>
 
@@ -1564,7 +1564,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                   <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
                     <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 10 }}>
                       <Icon iconName="Rename" style={{ fontSize: 18, color: rule.IsActive ? '#0d9488' : '#94a3b8' }} />
-                      <Text variant="mediumPlus" style={{ fontWeight: 600 }}>{rule.Title}</Text>
+                      <Text variant="mediumPlus" style={TextStyles.semiBold}>{rule.Title}</Text>
                     </Stack>
                     <Stack horizontal tokens={{ childrenGap: 8 }} verticalAlign="center">
                       <div style={{
@@ -1585,10 +1585,10 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                         text={this.state.refreshingRuleId === rule.Id ? 'Refreshing...' : 'Refresh'}
                         disabled={!rule.IsActive || this.state.refreshingRuleId !== null || this.state.refreshingAllRules}
                         styles={{
-                          root: { minWidth: 'auto', padding: '0 8px', height: 28, borderColor: '#0d9488', color: '#0d9488' },
+                          root: { minWidth: 'auto', padding: '0 8px', height: 28, borderColor: '#0d9488', color: Colors.tealPrimary },
                           label: { fontSize: 12 },
                           rootHovered: { borderColor: '#0f766e', color: '#0f766e', background: '#f0fdfa' },
-                          rootDisabled: { borderColor: '#e2e8f0', color: '#94a3b8' }
+                          rootDisabled: { borderColor: '#e2e8f0', color: Colors.slateLight }
                         }}
                         onClick={() => void this.refreshNamingRule(rule)}
                       />
@@ -1630,12 +1630,12 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                   </Stack>
 
                   <Stack horizontal tokens={{ childrenGap: 24 }}>
-                    <Text variant="small" style={{ color: '#605e5c' }}>
+                    <Text variant="small" style={TextStyles.secondary}>
                       <strong>Applies to:</strong> {rule.AppliesTo}
                     </Text>
-                    <Text variant="small" style={{ color: '#605e5c' }}>
+                    <Text variant="small" style={TextStyles.secondary}>
                       <strong>Example:</strong>{' '}
-                      <span style={{ fontFamily: 'monospace', color: '#0d9488', fontWeight: 600 }}>{rule.Example}</span>
+                      <span style={{ fontFamily: 'monospace', color: Colors.tealPrimary, fontWeight: 600 }}>{rule.Example}</span>
                     </Text>
                   </Stack>
                 </Stack>
@@ -1666,7 +1666,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 20 }}>
           <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
-            <Text variant="mediumPlus" style={{ fontWeight: 600 }}>SLA Targets</Text>
+            <Text variant="mediumPlus" style={TextStyles.semiBold}>SLA Targets</Text>
             <PrimaryButton
               text="New SLA Target"
               iconProps={{ iconName: 'Add' }}
@@ -1685,7 +1685,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             />
           </Stack>
 
-          <Text variant="small" style={{ color: '#605e5c' }}>
+          <Text variant="small" style={TextStyles.secondary}>
             Set target completion times for policy processes. Warnings are triggered when the remaining time falls below the threshold.
           </Text>
 
@@ -1711,7 +1711,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                         }}>
                           <Icon iconName={iconName} style={{ fontSize: 18, color: sla.IsActive ? '#0d9488' : '#94a3b8' }} />
                         </div>
-                        <Text variant="mediumPlus" style={{ fontWeight: 600 }}>{sla.Title}</Text>
+                        <Text variant="mediumPlus" style={TextStyles.semiBold}>{sla.Title}</Text>
                       </Stack>
                       <Stack horizontal tokens={{ childrenGap: 4 }}>
                         <DefaultButton
@@ -1729,23 +1729,23 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                       </Stack>
                     </Stack>
 
-                    <Text variant="small" style={{ color: '#605e5c' }}>{sla.Description}</Text>
+                    <Text variant="small" style={TextStyles.secondary}>{sla.Description}</Text>
 
                     {/* Target Display */}
                     <div style={{
                       display: 'flex', alignItems: 'center', gap: 16,
                       padding: '12px 16px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0'
                     }}>
-                      <div style={{ flex: 1 }}>
-                        <Text variant="small" style={{ color: '#64748b', display: 'block' }}>Target</Text>
-                        <Text variant="xLarge" style={{ fontWeight: 700, color: '#0f172a' }}>{sla.TargetDays}</Text>
-                        <Text variant="small" style={{ color: '#64748b' }}> days</Text>
+                      <div style={LayoutStyles.flex1}>
+                        <Text variant="small" style={{ color: Colors.textTertiary, display: 'block' }}>Target</Text>
+                        <Text variant="xLarge" style={{ fontWeight: 700, color: Colors.textDark }}>{sla.TargetDays}</Text>
+                        <Text variant="small" style={TextStyles.tertiary}> days</Text>
                       </div>
                       <div style={{ width: 1, height: 40, background: '#e2e8f0' }} />
-                      <div style={{ flex: 1 }}>
-                        <Text variant="small" style={{ color: '#64748b', display: 'block' }}>Warning at</Text>
+                      <div style={LayoutStyles.flex1}>
+                        <Text variant="small" style={{ color: Colors.textTertiary, display: 'block' }}>Warning at</Text>
                         <Text variant="xLarge" style={{ fontWeight: 700, color: '#d97706' }}>{sla.WarningThresholdDays}</Text>
-                        <Text variant="small" style={{ color: '#64748b' }}> days left</Text>
+                        <Text variant="small" style={TextStyles.tertiary}> days left</Text>
                       </div>
                     </div>
 
@@ -1758,7 +1758,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                     </div>
 
                     <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
-                      <Text variant="small" style={{ color: '#605e5c' }}>Process: {sla.ProcessType}</Text>
+                      <Text variant="small" style={TextStyles.secondary}>Process: {sla.ProcessType}</Text>
                       <div style={{
                         padding: '2px 10px', borderRadius: 12, fontSize: 12, fontWeight: 600,
                         backgroundColor: sla.IsActive ? '#ccfbf1' : '#f1f5f9',
@@ -1812,7 +1812,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 20 }}>
           <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
-            <Text variant="mediumPlus" style={{ fontWeight: 600 }}>Data Lifecycle Policies</Text>
+            <Text variant="mediumPlus" style={TextStyles.semiBold}>Data Lifecycle Policies</Text>
             <PrimaryButton
               text="New Retention Policy"
               iconProps={{ iconName: 'Add' }}
@@ -1832,7 +1832,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             />
           </Stack>
 
-          <Text variant="small" style={{ color: '#605e5c' }}>
+          <Text variant="small" style={TextStyles.secondary}>
             Configure data retention and archival policies for different types of policy data. Ensure compliance with organisational data governance requirements.
           </Text>
 
@@ -1842,25 +1842,25 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             background: 'linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%)',
             borderRadius: 8, border: '1px solid #a7f3d0'
           }}>
-            <div style={{ flex: 1, textAlign: 'center' }}>
-              <Text variant="xLarge" style={{ fontWeight: 700, color: '#0d9488', display: 'block' }}>
+            <div style={LayoutStyles.flex1Center}>
+              <Text variant="xLarge" style={IconStyles.boldTeal}>
                 {lifecyclePolicies.filter(p => p.IsActive).length}
               </Text>
-              <Text variant="small" style={{ color: '#064e3b' }}>Active Policies</Text>
+              <Text variant="small" style={{ color: Colors.greenDark }}>Active Policies</Text>
             </div>
             <div style={{ width: 1, background: '#a7f3d0' }} />
-            <div style={{ flex: 1, textAlign: 'center' }}>
-              <Text variant="xLarge" style={{ fontWeight: 700, color: '#0d9488', display: 'block' }}>
+            <div style={LayoutStyles.flex1Center}>
+              <Text variant="xLarge" style={IconStyles.boldTeal}>
                 {lifecyclePolicies.filter(p => p.AutoDeleteEnabled).length}
               </Text>
-              <Text variant="small" style={{ color: '#064e3b' }}>Auto-Delete Enabled</Text>
+              <Text variant="small" style={{ color: Colors.greenDark }}>Auto-Delete Enabled</Text>
             </div>
             <div style={{ width: 1, background: '#a7f3d0' }} />
-            <div style={{ flex: 1, textAlign: 'center' }}>
-              <Text variant="xLarge" style={{ fontWeight: 700, color: '#0d9488', display: 'block' }}>
+            <div style={LayoutStyles.flex1Center}>
+              <Text variant="xLarge" style={IconStyles.boldTeal}>
                 {lifecyclePolicies.filter(p => p.ArchiveBeforeDelete).length}
               </Text>
-              <Text variant="small" style={{ color: '#064e3b' }}>Archive Enabled</Text>
+              <Text variant="small" style={{ color: Colors.greenDark }}>Archive Enabled</Text>
             </div>
           </div>
 
@@ -1888,7 +1888,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                         </div>
                         <div>
                           <Text variant="mediumPlus" style={{ fontWeight: 600, display: 'block' }}>{policy.Title}</Text>
-                          <Text variant="small" style={{ color: '#605e5c' }}>{policy.Description}</Text>
+                          <Text variant="small" style={TextStyles.secondary}>{policy.Description}</Text>
                         </div>
                       </Stack>
                       <Stack horizontal tokens={{ childrenGap: 4 }}>
@@ -1913,7 +1913,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                         display: 'flex', alignItems: 'center', gap: 6,
                         padding: '4px 12px', borderRadius: 6, background: '#f8fafc', border: '1px solid #e2e8f0'
                       }}>
-                        <Icon iconName="Timer" style={{ fontSize: 14, color: '#64748b' }} />
+                        <Icon iconName="Timer" style={{ fontSize: 14, color: Colors.textTertiary }} />
                         <Text variant="small"><strong>Retention:</strong> {formatRetention(policy.RetentionPeriodDays)}</Text>
                       </div>
                       <div style={{
@@ -1963,7 +1963,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 20 }}>
           <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
-            <Text variant="mediumPlus" style={{ fontWeight: 600 }}>Navigation Settings</Text>
+            <Text variant="mediumPlus" style={TextStyles.semiBold}>Navigation Settings</Text>
             <Stack horizontal tokens={{ childrenGap: 8 }}>
               <DefaultButton
                 text="Enable All"
@@ -1986,7 +1986,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             </Stack>
           </Stack>
 
-          <Text variant="small" style={{ color: '#605e5c' }}>
+          <Text variant="small" style={TextStyles.secondary}>
             Control which navigation items are visible to users across the Policy Manager application. Administration and Policy Hub cannot be disabled.
           </Text>
 
@@ -1995,7 +1995,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             display: 'flex', gap: 12, padding: '12px 16px',
             background: '#f0fdfa', borderRadius: 8, border: '1px solid #99f6e4'
           }}>
-            <Text variant="small" style={{ color: '#064e3b' }}>
+            <Text variant="small" style={{ color: Colors.greenDark }}>
               <strong>{navToggles.filter(t => t.isVisible).length}</strong> of <strong>{navToggles.length}</strong> navigation items enabled
             </Text>
           </div>
@@ -2026,17 +2026,17 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                       </div>
                       <div>
                         <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
-                          <Text variant="medium" style={{ fontWeight: 600 }}>{item.label}</Text>
+                          <Text variant="medium" style={TextStyles.semiBold}>{item.label}</Text>
                           {isProtected && (
                             <div style={{
                               padding: '1px 8px', borderRadius: 8, fontSize: 11, fontWeight: 600,
-                              backgroundColor: '#f0fdfa', color: '#0d9488', border: '1px solid #99f6e4'
+                              backgroundColor: '#f0fdfa', color: Colors.tealPrimary, border: '1px solid #99f6e4'
                             }}>
                               Required
                             </div>
                           )}
                         </Stack>
-                        <Text variant="small" style={{ color: '#605e5c' }}>{item.description}</Text>
+                        <Text variant="small" style={TextStyles.secondary}>{item.description}</Text>
                       </div>
                     </Stack>
 
@@ -2285,7 +2285,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         )}
         isFooterAtBottom={true}
       >
-        <Stack tokens={{ childrenGap: 16 }} style={{ paddingTop: 16 }}>
+        <Stack tokens={{ childrenGap: 16 }} style={LayoutStyles.paddingTop16}>
           <TextField label="Rule Name" required value={editingNamingRule.Title} onChange={(_, v) => updateRule({ Title: v || '' })} />
           <Dropdown label="Applies To" selectedKey={editingNamingRule.AppliesTo || 'All Policies'} options={[
             { key: 'All Policies', text: 'All Policies' },
@@ -2299,17 +2299,17 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           />
 
           <Separator>Segments</Separator>
-          <Text variant="small" style={{ color: '#605e5c' }}>
+          <Text variant="small" style={TextStyles.secondary}>
             Build the naming pattern by adding and configuring segments below.
           </Text>
 
           {editingNamingRule.Segments.map((seg, i) => (
             <div key={seg.id} style={{ padding: 12, background: '#f8fafc', borderRadius: 6, border: '1px solid #e2e8f0' }}>
               <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
-                <Text variant="small" style={{ fontWeight: 600 }}>Segment {i + 1}</Text>
+                <Text variant="small" style={TextStyles.semiBold}>Segment {i + 1}</Text>
                 <IconButton iconProps={{ iconName: 'Delete' }} title="Remove" ariaLabel="Delete" onClick={() => removeSegment(i)} styles={{ root: { height: 28, width: 28 } }} />
               </Stack>
-              <Stack tokens={{ childrenGap: 8 }} style={{ marginTop: 8 }}>
+              <Stack tokens={{ childrenGap: 8 }} style={LayoutStyles.marginTop8}>
                 <Dropdown
                   label="Type"
                   selectedKey={seg.type}
@@ -2419,7 +2419,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         )}
         isFooterAtBottom={true}
       >
-        <Stack tokens={{ childrenGap: 16 }} style={{ paddingTop: 16 }}>
+        <Stack tokens={{ childrenGap: 16 }} style={LayoutStyles.paddingTop16}>
           <TextField label="SLA Name" required value={editingSLA.Title} onChange={(_, v) => updateSLA({ Title: v || '' })} />
           <TextField label="Description" multiline rows={2} value={editingSLA.Description} onChange={(_, v) => updateSLA({ Description: v || '' })} />
           <Dropdown
@@ -2458,8 +2458,8 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           <Separator>Preview</Separator>
           <div style={{ padding: 16, background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
             <Stack tokens={{ childrenGap: 8 }}>
-              <Text variant="medium" style={{ fontWeight: 600 }}>{editingSLA.Title || 'Untitled SLA'}</Text>
-              <Text variant="small" style={{ color: '#605e5c' }}>{editingSLA.Description}</Text>
+              <Text variant="medium" style={TextStyles.semiBold}>{editingSLA.Title || 'Untitled SLA'}</Text>
+              <Text variant="small" style={TextStyles.secondary}>{editingSLA.Description}</Text>
               <Stack horizontal tokens={{ childrenGap: 16 }}>
                 <Text variant="small"><strong>Target:</strong> {editingSLA.TargetDays} days</Text>
                 <Text variant="small"><strong>Warning at:</strong> {editingSLA.WarningThresholdDays} days remaining</Text>
@@ -2568,7 +2568,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         )}
         isFooterAtBottom={true}
       >
-        <Stack tokens={{ childrenGap: 16 }} style={{ paddingTop: 16 }}>
+        <Stack tokens={{ childrenGap: 16 }} style={LayoutStyles.paddingTop16}>
           <TextField label="Name" required value={editingLifecycle.Title} onChange={(_, v) => updateLifecycle({ Title: v || '' })} />
           <TextField label="Description" multiline rows={2} value={editingLifecycle.Description} onChange={(_, v) => updateLifecycle({ Description: v || '' })} />
           <Dropdown
@@ -2683,7 +2683,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 24 }}>
           <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
-            <Text variant="mediumPlus" style={{ fontWeight: 600 }}>General Settings</Text>
+            <Text variant="mediumPlus" style={TextStyles.semiBold}>General Settings</Text>
             <Stack horizontal tokens={{ childrenGap: 8 }}>
               <PrimaryButton
                 text="Save All Settings"
@@ -2724,23 +2724,23 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             </Stack>
           </Stack>
 
-          <Text variant="small" style={{ color: '#605e5c' }}>
+          <Text variant="small" style={TextStyles.secondary}>
             Configure application-wide display options, feature toggles, and system settings. Changes apply to all users.
           </Text>
 
           {/* Default View Mode & Pagination */}
-          <div className={styles.adminCard} style={{ borderLeft: '4px solid #0d9488' }}>
+          <div className={styles.adminCard} style={ContainerStyles.tealBorderLeft}>
             <Stack tokens={{ childrenGap: 16 }}>
               <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 10 }}>
                 <div style={{
                   width: 36, height: 36, borderRadius: 8, backgroundColor: '#ccfbf1',
                   display: 'flex', alignItems: 'center', justifyContent: 'center'
                 }}>
-                  <Icon iconName="ViewAll" style={{ fontSize: 18, color: '#0d9488' }} />
+                  <Icon iconName="ViewAll" style={IconStyles.mediumTeal} />
                 </div>
                 <div>
                   <Text variant="medium" style={{ fontWeight: 600, display: 'block' }}>Default View & Pagination</Text>
-                  <Text variant="small" style={{ color: '#605e5c' }}>Set the default list view and items per page</Text>
+                  <Text variant="small" style={TextStyles.secondary}>Set the default list view and items per page</Text>
                 </div>
               </Stack>
               <Stack horizontal tokens={{ childrenGap: 24 }}>
@@ -2772,18 +2772,18 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
 
           {/* Toggle Groups */}
           {settingGroups.map(group => (
-            <div key={group.title} className={styles.adminCard} style={{ borderLeft: '4px solid #0d9488' }}>
+            <div key={group.title} className={styles.adminCard} style={ContainerStyles.tealBorderLeft}>
               <Stack tokens={{ childrenGap: 16 }}>
                 <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 10 }}>
                   <div style={{
                     width: 36, height: 36, borderRadius: 8, backgroundColor: '#ccfbf1',
                     display: 'flex', alignItems: 'center', justifyContent: 'center'
                   }}>
-                    <Icon iconName={group.icon} style={{ fontSize: 18, color: '#0d9488' }} />
+                    <Icon iconName={group.icon} style={IconStyles.mediumTeal} />
                   </div>
                   <div>
                     <Text variant="medium" style={{ fontWeight: 600, display: 'block' }}>{group.title}</Text>
-                    <Text variant="small" style={{ color: '#605e5c' }}>{group.description}</Text>
+                    <Text variant="small" style={TextStyles.secondary}>{group.description}</Text>
                   </div>
                 </Stack>
 
@@ -2797,7 +2797,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                     }}>
                       <div>
                         <Text variant="medium" style={{ fontWeight: 600, display: 'block' }}>{setting.label}</Text>
-                        <Text variant="small" style={{ color: '#605e5c' }}>{setting.description}</Text>
+                        <Text variant="small" style={TextStyles.secondary}>{setting.description}</Text>
                       </div>
                       <Toggle
                         checked={setting.value}
@@ -2827,7 +2827,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                   </div>
                   <div>
                     <Text variant="medium" style={{ fontWeight: 600, display: 'block' }}>Maintenance Message</Text>
-                    <Text variant="small" style={{ color: '#605e5c' }}>Message displayed to users during maintenance</Text>
+                    <Text variant="small" style={TextStyles.secondary}>Message displayed to users during maintenance</Text>
                   </div>
                 </Stack>
                 <TextField
@@ -2855,7 +2855,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                 </div>
                 <div>
                   <Text variant="medium" style={{ fontWeight: 600, display: 'block' }}>AI Quiz Generation</Text>
-                  <Text variant="small" style={{ color: '#605e5c' }}>Azure Function URL for AI-powered quiz question generation</Text>
+                  <Text variant="small" style={TextStyles.secondary}>Azure Function URL for AI-powered quiz question generation</Text>
                 </div>
               </Stack>
               <TextField
@@ -3043,13 +3043,13 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       )},
       { key: 'name', name: 'Template Name', fieldName: 'name', minWidth: 180, maxWidth: 260, isResizable: true, onRender: (item: IEmailTemplate) => (
         <Stack tokens={{ childrenGap: 2 }}>
-          <Text style={{ fontWeight: 600, fontSize: 13, color: '#0f172a', cursor: 'pointer' }}
+          <Text style={{ fontWeight: 600, fontSize: 13, color: Colors.textDark, cursor: 'pointer' }}
             onClick={() => this.handleEditEmailTemplate(item)}>{item.name}</Text>
-          <Text style={{ fontSize: 11, color: '#94a3b8' }}>{item.event}</Text>
+          <Text style={{ fontSize: 11, color: Colors.slateLight }}>{item.event}</Text>
         </Stack>
       )},
       { key: 'subject', name: 'Subject Line', fieldName: 'subject', minWidth: 200, maxWidth: 340, isResizable: true, onRender: (item: IEmailTemplate) => (
-        <Text style={{ fontFamily: 'monospace', fontSize: 11, color: '#64748b' }}>{item.subject}</Text>
+        <Text style={{ fontFamily: 'monospace', fontSize: 11, color: Colors.textTertiary }}>{item.subject}</Text>
       )},
       { key: 'recipients', name: 'Recipients', fieldName: 'recipients', minWidth: 110, maxWidth: 140, onRender: (item: IEmailTemplate) => (
         <span style={{
@@ -3096,8 +3096,8 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)', border: '1px solid #e2e8f0'
             }}>
               <Stack tokens={{ childrenGap: 4 }}>
-                <Text style={{ fontSize: 24, fontWeight: 700, color: '#94a3b8' }}>{inactiveCount}</Text>
-                <Text style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>Inactive</Text>
+                <Text style={{ fontSize: 24, fontWeight: 700, color: Colors.slateLight }}>{inactiveCount}</Text>
+                <Text style={{ fontSize: 12, color: Colors.slateLight, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>Inactive</Text>
               </Stack>
             </div>
             <div style={{
@@ -3116,7 +3116,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           </MessageBar>
 
           <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
-            <Text variant="mediumPlus" style={{ fontWeight: 600 }}>Email Templates ({emailTemplates.length})</Text>
+            <Text variant="mediumPlus" style={TextStyles.semiBold}>Email Templates ({emailTemplates.length})</Text>
             <PrimaryButton iconProps={{ iconName: 'Add' }} text="New Template" onClick={this.handleNewEmailTemplate} />
           </Stack>
 
@@ -3137,7 +3137,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           headerText={editingEmailTemplate?.name ? `Edit: ${editingEmailTemplate.name}` : 'New Email Template'}
           isLightDismiss
           onRenderFooterContent={() => (
-            <Stack horizontal tokens={{ childrenGap: 8 }} style={{ padding: '16px 0' }}>
+            <Stack horizontal tokens={{ childrenGap: 8 }} style={LayoutStyles.paddingVertical16}>
               <PrimaryButton text="Save Template" onClick={this.handleSaveEmailTemplate}
                 disabled={!editingEmailTemplate?.name || !editingEmailTemplate?.subject} />
               <DefaultButton text="Cancel"
@@ -3202,7 +3202,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               {/* Merge Tags */}
               <Stack tokens={{ childrenGap: 8 }}>
                 <Text style={{ fontWeight: 600, fontSize: 13 }}>Insert Merge Tag</Text>
-                <Text style={{ fontSize: 11, color: '#64748b' }}>Click a tag to insert it at the end of the email body</Text>
+                <Text style={{ fontSize: 11, color: Colors.textTertiary }}>Click a tag to insert it at the end of the email body</Text>
                 <Stack horizontal tokens={{ childrenGap: 6 }} wrap>
                   {(editingEmailTemplate.mergeTags || []).map((tag, idx) => (
                     <DefaultButton key={idx} text={tag}
@@ -3235,7 +3235,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                     fontFamily: 'Segoe UI, sans-serif', fontSize: 13, lineHeight: '1.6', color: '#334155',
                     whiteSpace: 'pre-wrap', maxHeight: 200, overflow: 'auto'
                   }}>
-                    <div style={{ fontWeight: 600, marginBottom: 8, color: '#0f172a' }}>
+                    <div style={{ fontWeight: 600, marginBottom: 8, color: Colors.textDark }}>
                       Subject: {editingEmailTemplate.subject.replace(/\{\{(\w+)\}\}/g, '[$1]')}
                     </div>
                     {editingEmailTemplate.body.replace(/\{\{(\w+)\}\}/g, '[$1]')}
@@ -3453,7 +3453,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           )}
 
           <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
-            <Text variant="mediumPlus" style={{ fontWeight: 600 }}>Audience Definitions ({audiences.length})</Text>
+            <Text variant="mediumPlus" style={TextStyles.semiBold}>Audience Definitions ({audiences.length})</Text>
             <PrimaryButton iconProps={{ iconName: 'Add' }} text="Create Audience" onClick={openNewAudience} />
           </Stack>
 
@@ -3462,8 +3462,8 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           ) : audiences.length === 0 ? (
             <div className={styles.adminCard} style={{ textAlign: 'center', padding: 40 }}>
               <Icon iconName="Group" style={{ fontSize: 48, color: '#cbd5e1', marginBottom: 16 }} />
-              <Text variant="large" style={{ display: 'block', color: '#0f172a', fontWeight: 600, marginBottom: 8 }}>No Audiences Yet</Text>
-              <Text style={{ display: 'block', color: '#64748b', marginBottom: 16 }}>
+              <Text variant="large" style={{ display: 'block', color: Colors.textDark, fontWeight: 600, marginBottom: 8 }}>No Audiences Yet</Text>
+              <Text style={{ display: 'block', color: Colors.textTertiary, marginBottom: 16 }}>
                 Create audience definitions to target specific groups of employees for policy distribution.
               </Text>
               <PrimaryButton iconProps={{ iconName: 'Add' }} text="Create Your First Audience" onClick={openNewAudience} />
@@ -3473,9 +3473,9 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               {audiences.map((aud) => (
                 <div key={aud.Id} className={styles.adminCard} style={{ borderLeft: `3px solid ${aud.IsActive ? '#0d9488' : '#94a3b8'}` }}>
                   <Stack horizontal horizontalAlign="space-between" verticalAlign="start">
-                    <Stack tokens={{ childrenGap: 6 }} style={{ flex: 1 }}>
+                    <Stack tokens={{ childrenGap: 6 }} style={LayoutStyles.flex1}>
                       <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
-                        <Text style={{ fontWeight: 600, color: '#0f172a', fontSize: 15 }}>{aud.Title}</Text>
+                        <Text style={{ fontWeight: 600, color: Colors.textDark, fontSize: 15 }}>{aud.Title}</Text>
                         <span style={{
                           padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600,
                           background: aud.IsActive ? '#f0fdf4' : '#f1f5f9',
@@ -3484,18 +3484,18 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                           {aud.IsActive ? 'Active' : 'Inactive'}
                         </span>
                       </Stack>
-                      {aud.Description && <Text style={{ color: '#64748b', fontSize: 13 }}>{aud.Description}</Text>}
+                      {aud.Description && <Text style={{ color: Colors.textTertiary, fontSize: 13 }}>{aud.Description}</Text>}
                       <Stack horizontal tokens={{ childrenGap: 16 }}>
                         <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 4 }}>
-                          <Icon iconName="People" style={{ color: '#0d9488', fontSize: 14 }} />
-                          <Text style={{ fontWeight: 600, color: '#0d9488' }}>{aud.MemberCount}</Text>
-                          <Text style={{ color: '#64748b', fontSize: 12 }}>members</Text>
+                          <Icon iconName="People" style={{ color: Colors.tealPrimary, fontSize: 14 }} />
+                          <Text style={{ fontWeight: 600, color: Colors.tealPrimary }}>{aud.MemberCount}</Text>
+                          <Text style={{ color: Colors.textTertiary, fontSize: 12 }}>members</Text>
                         </Stack>
-                        <Text style={{ color: '#94a3b8', fontSize: 11 }}>
+                        <Text style={{ color: Colors.slateLight, fontSize: 11 }}>
                           {aud.Criteria.filters.length} filter{aud.Criteria.filters.length !== 1 ? 's' : ''} ({aud.Criteria.operator})
                         </Text>
                         {aud.LastEvaluated && (
-                          <Text style={{ color: '#94a3b8', fontSize: 11 }}>
+                          <Text style={{ color: Colors.slateLight, fontSize: 11 }}>
                             Evaluated: {new Date(aud.LastEvaluated).toLocaleDateString()}
                           </Text>
                         )}
@@ -3530,7 +3530,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           headerText={editingAudience ? 'Edit Audience' : 'Create Audience'}
           type={PanelType.large}
           onRenderFooterContent={() => (
-            <Stack horizontal tokens={{ childrenGap: 8 }} style={{ padding: '16px 0' }}>
+            <Stack horizontal tokens={{ childrenGap: 8 }} style={LayoutStyles.paddingVertical16}>
               <PrimaryButton
                 text={audienceSaving ? 'Saving...' : (editingAudience ? 'Update Audience' : 'Create Audience')}
                 disabled={audienceSaving || !audienceName}
@@ -3542,7 +3542,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           )}
           isFooterAtBottom={true}
         >
-          <Stack tokens={{ childrenGap: 20 }} style={{ padding: '16px 0' }}>
+          <Stack tokens={{ childrenGap: 20 }} style={LayoutStyles.paddingVertical16}>
             {/* Name & Description */}
             <TextField
               label="Audience Name"
@@ -3564,7 +3564,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
 
             {/* Filter Logic Operator */}
             <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 12 }}>
-              <Text style={{ fontWeight: 600 }}>Combine filters with:</Text>
+              <Text style={TextStyles.semiBold}>Combine filters with:</Text>
               <ChoiceGroup
                 selectedKey={audienceOperator}
                 options={[
@@ -3577,7 +3577,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             </Stack>
 
             {/* Filter Rows */}
-            <Text style={{ fontWeight: 600 }}>Filters</Text>
+            <Text style={TextStyles.semiBold}>Filters</Text>
             <Stack tokens={{ childrenGap: 8 }}>
               {audienceFilters.map((filter: IAudienceFilter, idx: number) => {
                 const suggestions = getValueSuggestions(filter.field);
@@ -3645,7 +3645,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             {/* Preview Section */}
             <Stack tokens={{ childrenGap: 8 }}>
               <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
-                <Text style={{ fontWeight: 600 }}>Preview</Text>
+                <Text style={TextStyles.semiBold}>Preview</Text>
                 <DefaultButton text="Evaluate" iconProps={{ iconName: 'View' }} onClick={handlePreview} disabled={previewLoading} />
               </Stack>
 
@@ -3655,18 +3655,18 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                 <div className={styles.adminCard} style={{ background: '#f0fdfa' }}>
                   <Stack tokens={{ childrenGap: 8 }}>
                     <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
-                      <Icon iconName="People" style={{ fontSize: 20, color: '#0d9488' }} />
-                      <Text style={{ fontSize: 20, fontWeight: 700, color: '#0d9488' }}>{previewResult.count}</Text>
-                      <Text style={{ color: '#475569' }}>matching employees</Text>
+                      <Icon iconName="People" style={{ fontSize: 20, color: Colors.tealPrimary }} />
+                      <Text style={{ fontSize: 20, fontWeight: 700, color: Colors.tealPrimary }}>{previewResult.count}</Text>
+                      <Text style={{ color: Colors.textSlate }}>matching employees</Text>
                     </Stack>
                     {previewResult.preview.length > 0 && (
                       <>
-                        <Text variant="small" style={{ color: '#64748b', fontWeight: 600 }}>First {previewResult.preview.length} matches:</Text>
+                        <Text variant="small" style={{ color: Colors.textTertiary, fontWeight: 600 }}>First {previewResult.preview.length} matches:</Text>
                         {previewResult.preview.map((p, i) => (
                           <Stack key={i} horizontal tokens={{ childrenGap: 12 }}>
                             <Text style={{ fontWeight: 500, minWidth: 160 }}>{p.Title}</Text>
-                            <Text style={{ color: '#64748b' }}>{p.Email}</Text>
-                            {p.Department && <Text style={{ color: '#94a3b8', fontSize: 12 }}>{p.Department}</Text>}
+                            <Text style={TextStyles.tertiary}>{p.Email}</Text>
+                            {p.Department && <Text style={{ color: Colors.slateLight, fontSize: 12 }}>{p.Department}</Text>}
                           </Stack>
                         ))}
                       </>
@@ -3801,8 +3801,8 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     const columns: IColumn[] = [
       { key: 'name', name: 'Name', fieldName: 'Title', minWidth: 150, maxWidth: 220, onRender: (item: any) => (
         <Stack>
-          <Text style={{ fontWeight: 500, color: '#0f172a' }}>{item.Title}</Text>
-          <Text style={{ fontSize: 11, color: '#94a3b8' }}>{item.Email}</Text>
+          <Text style={TextStyles.primaryDark}>{item.Title}</Text>
+          <Text style={{ fontSize: 11, color: Colors.slateLight }}>{item.Email}</Text>
         </Stack>
       )},
       { key: 'department', name: 'Department', fieldName: 'Department', minWidth: 100, maxWidth: 140 },
@@ -3814,11 +3814,11 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       }},
       { key: 'managedDepts', name: 'Managed Depts', fieldName: 'ManagedDepartments', minWidth: 120, maxWidth: 200, onRender: (item: any) => {
         const depts: string[] = item.ManagedDepartments ? item.ManagedDepartments.split(';').map((d: string) => d.trim()).filter(Boolean) : [];
-        if (depts.length === 0) return <Text style={{ color: '#94a3b8', fontSize: 12 }}>—</Text>;
+        if (depts.length === 0) return <Text style={{ color: Colors.slateLight, fontSize: 12 }}>—</Text>;
         return (
           <Stack horizontal wrap tokens={{ childrenGap: 4 }}>
             {depts.map((d, i) => (
-              <span key={i} style={{ padding: '1px 6px', borderRadius: 3, fontSize: 10, fontWeight: 500, background: '#f0fdfa', color: '#0d9488', border: '1px solid #99f6e4' }}>{d}</span>
+              <span key={i} style={{ padding: '1px 6px', borderRadius: 3, fontSize: 10, fontWeight: 500, background: '#f0fdfa', color: Colors.tealPrimary, border: '1px solid #99f6e4' }}>{d}</span>
             ))}
           </Stack>
         );
@@ -3875,7 +3875,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                       <span style={{ padding: '2px 10px', borderRadius: 4, fontSize: 11, fontWeight: 600, background: c.bg, color: c.fg }}>{r.role}</span>
                       <Text style={{ fontSize: 24, fontWeight: 700, color: c.fg }}>{r.count}</Text>
                     </Stack>
-                    <Text variant="small" style={{ color: '#64748b' }}>{r.description}</Text>
+                    <Text variant="small" style={TextStyles.tertiary}>{r.description}</Text>
                   </Stack>
                 </div>
               );
@@ -3942,7 +3942,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
 
           {/* User Table */}
           <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
-            <Text variant="mediumPlus" style={{ fontWeight: 600 }}>
+            <Text variant="mediumPlus" style={TextStyles.semiBold}>
               Users ({employeesTotal})
             </Text>
           </Stack>
@@ -3972,7 +3972,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                     disabled={employeesPage <= 1}
                     onClick={() => loadEmployees(employeesPage - 1)}
                   />
-                  <Text style={{ color: '#64748b' }}>
+                  <Text style={TextStyles.tertiary}>
                     Page {employeesPage} of {totalPages}
                   </Text>
                   <DefaultButton
@@ -3994,7 +3994,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           headerText={editingEmployee ? `Edit User: ${editingEmployee.Title}` : 'User Details'}
           type={PanelType.medium}
           onRenderFooterContent={() => (
-            <Stack horizontal tokens={{ childrenGap: 8 }} style={{ padding: '16px 0' }}>
+            <Stack horizontal tokens={{ childrenGap: 8 }} style={LayoutStyles.paddingVertical16}>
               <PrimaryButton
                 text={st._userSaving ? 'Saving...' : 'Save Changes'}
                 disabled={st._userSaving}
@@ -4006,27 +4006,27 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           isFooterAtBottom={true}
         >
           {editingEmployee && (
-            <Stack tokens={{ childrenGap: 16 }} style={{ padding: '16px 0' }}>
+            <Stack tokens={{ childrenGap: 16 }} style={LayoutStyles.paddingVertical16}>
               {/* Profile info (read-only) */}
               <div className={styles.adminCard}>
                 <Stack tokens={{ childrenGap: 8 }}>
-                  <Text style={{ fontSize: 18, fontWeight: 600, color: '#0f172a' }}>{editingEmployee.Title}</Text>
-                  <Text style={{ color: '#64748b' }}>{editingEmployee.Email}</Text>
-                  {editingEmployee.JobTitle && <Text style={{ color: '#475569' }}>{editingEmployee.JobTitle}</Text>}
+                  <Text style={{ fontSize: 18, fontWeight: 600, color: Colors.textDark }}>{editingEmployee.Title}</Text>
+                  <Text style={TextStyles.tertiary}>{editingEmployee.Email}</Text>
+                  {editingEmployee.JobTitle && <Text style={{ color: Colors.textSlate }}>{editingEmployee.JobTitle}</Text>}
                   {editingEmployee.Department && (
                     <Stack horizontal tokens={{ childrenGap: 6 }}>
-                      <Icon iconName="Org" style={{ color: '#94a3b8', fontSize: 14 }} />
-                      <Text style={{ color: '#475569' }}>{editingEmployee.Department}</Text>
+                      <Icon iconName="Org" style={{ color: Colors.slateLight, fontSize: 14 }} />
+                      <Text style={{ color: Colors.textSlate }}>{editingEmployee.Department}</Text>
                     </Stack>
                   )}
                   {editingEmployee.Location && (
                     <Stack horizontal tokens={{ childrenGap: 6 }}>
-                      <Icon iconName="MapPin" style={{ color: '#94a3b8', fontSize: 14 }} />
-                      <Text style={{ color: '#475569' }}>{editingEmployee.Location}</Text>
+                      <Icon iconName="MapPin" style={{ color: Colors.slateLight, fontSize: 14 }} />
+                      <Text style={{ color: Colors.textSlate }}>{editingEmployee.Location}</Text>
                     </Stack>
                   )}
                   {editingEmployee.EmployeeNumber && (
-                    <Text variant="small" style={{ color: '#94a3b8' }}>Employee #: {editingEmployee.EmployeeNumber}</Text>
+                    <Text variant="small" style={{ color: Colors.slateLight }}>Employee #: {editingEmployee.EmployeeNumber}</Text>
                   )}
                 </Stack>
               </div>
@@ -4067,7 +4067,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                 }}
                 styles={{ root: { marginTop: 8 } }}
               />
-              <Text variant="small" style={{ color: '#64748b', marginTop: 4 }}>
+              <Text variant="small" style={{ color: Colors.textTertiary, marginTop: 4 }}>
                 Assign one or more departments this user is responsible for. Useful when a manager oversees multiple departments.
               </Text>
 
@@ -4128,18 +4128,18 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     const warningEvents = securityEvents.filter((e: any) => e.AuditAction === 'Permission Change' || e.AuditAction === 'Bulk Export').length;
 
     const securityStats = [
-      { label: 'Total Events', value: String(totalEvents), icon: 'Shield', color: '#0d9488' },
+      { label: 'Total Events', value: String(totalEvents), icon: 'Shield', color: Colors.tealPrimary },
       { label: 'Warnings', value: String(warningEvents), icon: 'Warning', color: '#f59e0b' },
       { label: 'Security Settings', value: '6', icon: 'LockSolid', color: '#3b82f6' },
       { label: 'Config Status', value: st._securitySaved ? 'Saved' : 'Active', icon: 'SkypeCheck', color: '#059669' },
     ];
 
     const columns: IColumn[] = [
-      { key: 'timestamp', name: 'Timestamp', fieldName: 'ActionDate', minWidth: 130, maxWidth: 160, onRender: (item: any) => <Text style={{ fontFamily: 'monospace', fontSize: 12, color: '#64748b' }}>{item.ActionDate ? new Date(item.ActionDate).toLocaleString() : item.Created ? new Date(item.Created).toLocaleString() : '—'}</Text> },
-      { key: 'action', name: 'Action', fieldName: 'AuditAction', minWidth: 140, maxWidth: 180, onRender: (item: any) => <Text style={{ fontWeight: 500, color: '#0f172a' }}>{item.AuditAction || item.Title || '—'}</Text> },
+      { key: 'timestamp', name: 'Timestamp', fieldName: 'ActionDate', minWidth: 130, maxWidth: 160, onRender: (item: any) => <Text style={{ fontFamily: 'monospace', fontSize: 12, color: Colors.textTertiary }}>{item.ActionDate ? new Date(item.ActionDate).toLocaleString() : item.Created ? new Date(item.Created).toLocaleString() : '—'}</Text> },
+      { key: 'action', name: 'Action', fieldName: 'AuditAction', minWidth: 140, maxWidth: 180, onRender: (item: any) => <Text style={TextStyles.primaryDark}>{item.AuditAction || item.Title || '—'}</Text> },
       { key: 'user', name: 'User', fieldName: 'PerformedBy', minWidth: 120, maxWidth: 180, onRender: (item: any) => <Text>{(item.PerformedBy && item.PerformedBy.Title) || '—'}</Text> },
       { key: 'entity', name: 'Entity', fieldName: 'EntityType', minWidth: 100, maxWidth: 120 },
-      { key: 'details', name: 'Details', fieldName: 'ActionDescription', minWidth: 200, maxWidth: 350, isResizable: true, onRender: (item: any) => <Text style={{ fontSize: 12, color: '#475569' }}>{item.ActionDescription || '—'}</Text> },
+      { key: 'details', name: 'Details', fieldName: 'ActionDescription', minWidth: 200, maxWidth: 350, isResizable: true, onRender: (item: any) => <Text style={{ fontSize: 12, color: Colors.textSlate }}>{item.ActionDescription || '—'}</Text> },
     ];
 
     return (
@@ -4158,7 +4158,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                   </div>
                   <Stack>
                     <Text style={{ fontSize: 22, fontWeight: 700, color: stat.color }}>{stat.value}</Text>
-                    <Text variant="small" style={{ color: '#64748b' }}>{stat.label}</Text>
+                    <Text variant="small" style={TextStyles.tertiary}>{stat.label}</Text>
                   </Stack>
                 </Stack>
               </div>
@@ -4167,8 +4167,8 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
 
           {/* Security Settings — persisted to PM_Configuration */}
           <div className={styles.adminCard}>
-            <Stack horizontal horizontalAlign="space-between" verticalAlign="center" style={{ marginBottom: 16 }}>
-              <Text variant="mediumPlus" style={{ fontWeight: 600 }}>Security Settings</Text>
+            <Stack horizontal horizontalAlign="space-between" verticalAlign="center" style={LayoutStyles.marginBottom16}>
+              <Text variant="mediumPlus" style={TextStyles.semiBold}>Security Settings</Text>
               <PrimaryButton
                 text={this.state.saving ? 'Saving...' : 'Save Security Settings'}
                 iconProps={{ iconName: 'Save' }}
@@ -4208,7 +4208,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
 
           {/* Security Event Log — from audit service */}
           <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
-            <Text variant="mediumPlus" style={{ fontWeight: 600 }}>Security Event Log</Text>
+            <Text variant="mediumPlus" style={TextStyles.semiBold}>Security Event Log</Text>
             <Stack horizontal tokens={{ childrenGap: 8 }}>
               <DefaultButton
                 iconProps={{ iconName: 'Refresh' }}
@@ -4297,7 +4297,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     };
 
     const renderToggle = (item: any, role: string, index: number) => (
-      <div style={{ textAlign: 'center' }}>
+      <div style={LayoutStyles.textCenter}>
         {role === 'admin' ? (
           <Icon iconName="CheckMark" style={{ fontSize: 14, color: '#16a34a' }} />
         ) : (
@@ -4311,12 +4311,12 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     );
 
     const columns: IColumn[] = [
-      { key: 'feature', name: 'Feature', fieldName: 'feature', minWidth: 180, maxWidth: 240, onRender: (item) => <Text style={{ fontWeight: 500 }}>{item.feature}</Text> },
+      { key: 'feature', name: 'Feature', fieldName: 'feature', minWidth: 180, maxWidth: 240, onRender: (item) => <Text style={TextStyles.medium}>{item.feature}</Text> },
       { key: 'user', name: 'User', minWidth: 80, maxWidth: 80, onRender: (item, index) => renderToggle(item, 'user', index) },
       { key: 'author', name: 'Author', minWidth: 80, maxWidth: 80, onRender: (item, index) => renderToggle(item, 'author', index) },
       { key: 'manager', name: 'Manager', minWidth: 80, maxWidth: 80, onRender: (item, index) => renderToggle(item, 'manager', index) },
       { key: 'admin', name: 'Admin', minWidth: 80, maxWidth: 80, onRender: (item) => (
-        <div style={{ textAlign: 'center' }}>
+        <div style={LayoutStyles.textCenter}>
           <Icon iconName="CheckMark" style={{ fontSize: 14, color: '#16a34a' }} />
         </div>
       )},
@@ -4326,7 +4326,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 16 }}>
           <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
-            <Text variant="mediumPlus" style={{ fontWeight: 600 }}>Role Permissions</Text>
+            <Text variant="mediumPlus" style={TextStyles.semiBold}>Role Permissions</Text>
             <Stack horizontal tokens={{ childrenGap: 8 }}>
               <PrimaryButton
                 text="Save Permissions"
@@ -4403,11 +4403,11 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           {/* About Header */}
           <div>
             <Text variant="xLarge" style={{ fontWeight: 600, display: 'block', marginBottom: 4 }}>About DWx Policy Manager</Text>
-            <Text style={{ color: '#64748b' }}>Enterprise policy governance and compliance solution</Text>
+            <Text style={TextStyles.tertiary}>Enterprise policy governance and compliance solution</Text>
           </div>
 
           {/* Company Info Card */}
-          <div className={styles.adminCard} style={{ borderLeft: '4px solid #0d9488' }}>
+          <div className={styles.adminCard} style={ContainerStyles.tealBorderLeft}>
             <Stack horizontal tokens={{ childrenGap: 24 }} verticalAlign="start">
               <div style={{
                 width: 80, height: 80, borderRadius: 12,
@@ -4417,27 +4417,27 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               }}>
                 DWx
               </div>
-              <Stack tokens={{ childrenGap: 8 }} style={{ flex: 1 }}>
-                <Text variant="large" style={{ fontWeight: 600 }}>First Digital</Text>
-                <Text style={{ color: '#475569', lineHeight: '1.6' }}>
+              <Stack tokens={{ childrenGap: 8 }} style={LayoutStyles.flex1}>
+                <Text variant="large" style={TextStyles.semiBold}>First Digital</Text>
+                <Text style={{ color: Colors.textSlate, lineHeight: '1.6' }}>
                   Building innovative digital workplace solutions that streamline policy governance, compliance management, and employee engagement for modern organizations. DWx Policy Manager helps compliance teams automate policy lifecycles, track acknowledgements, and ensure regulatory adherence.
                 </Text>
-                <Stack horizontal tokens={{ childrenGap: 24 }} style={{ marginTop: 8 }}>
+                <Stack horizontal tokens={{ childrenGap: 24 }} style={LayoutStyles.marginTop8}>
                   <Stack tokens={{ childrenGap: 2 }}>
-                    <Text variant="small" style={{ color: '#94a3b8', fontWeight: 500 }}>Industry</Text>
-                    <Text style={{ fontWeight: 500 }}>HR Technology &amp; Software</Text>
+                    <Text variant="small" style={ContainerStyles.slateLabel}>Industry</Text>
+                    <Text style={TextStyles.medium}>HR Technology &amp; Software</Text>
                   </Stack>
                   <Stack tokens={{ childrenGap: 2 }}>
-                    <Text variant="small" style={{ color: '#94a3b8', fontWeight: 500 }}>Founded</Text>
-                    <Text style={{ fontWeight: 500 }}>2024</Text>
+                    <Text variant="small" style={ContainerStyles.slateLabel}>Founded</Text>
+                    <Text style={TextStyles.medium}>2024</Text>
                   </Stack>
                   <Stack tokens={{ childrenGap: 2 }}>
-                    <Text variant="small" style={{ color: '#94a3b8', fontWeight: 500 }}>Location</Text>
-                    <Text style={{ fontWeight: 500 }}>Worldwide</Text>
+                    <Text variant="small" style={ContainerStyles.slateLabel}>Location</Text>
+                    <Text style={TextStyles.medium}>Worldwide</Text>
                   </Stack>
                   <Stack tokens={{ childrenGap: 2 }}>
-                    <Text variant="small" style={{ color: '#94a3b8', fontWeight: 500 }}>Website</Text>
-                    <Text style={{ fontWeight: 500, color: '#0d9488' }}>www.firsttech.digital</Text>
+                    <Text variant="small" style={ContainerStyles.slateLabel}>Website</Text>
+                    <Text style={{ fontWeight: 500, color: Colors.tealPrimary }}>www.firsttech.digital</Text>
                   </Stack>
                 </Stack>
               </Stack>
@@ -4446,14 +4446,14 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
 
           {/* Version Info Card */}
           <div className={styles.adminCard}>
-            <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 10 }} style={{ marginBottom: 16 }}>
+            <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 10 }} style={LayoutStyles.marginBottom16}>
               <div style={{
                 width: 36, height: 36, borderRadius: 8,
                 background: '#f0fdfa', display: 'flex', alignItems: 'center', justifyContent: 'center'
               }}>
-                <Icon iconName="Info" style={{ fontSize: 18, color: '#0d9488' }} />
+                <Icon iconName="Info" style={IconStyles.mediumTeal} />
               </div>
-              <Text variant="mediumPlus" style={{ fontWeight: 600 }}>Version Information</Text>
+              <Text variant="mediumPlus" style={TextStyles.semiBold}>Version Information</Text>
             </Stack>
             <Stack tokens={{ childrenGap: 8 }}>
               {[
@@ -4464,8 +4464,8 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                 { label: 'Technology', value: 'React 17.0.1, TypeScript 5.3.3' },
               ].map((row, i) => (
                 <Stack key={i} horizontal tokens={{ childrenGap: 12 }} style={{ padding: '6px 0', borderBottom: i < 4 ? '1px solid #f1f5f9' : 'none' }}>
-                  <Text style={{ width: 140, color: '#64748b', fontWeight: 500 }}>{row.label}:</Text>
-                  <Text style={{ fontWeight: 500, color: '#0f172a' }}>{row.value}</Text>
+                  <Text style={{ width: 140, color: Colors.textTertiary, fontWeight: 500 }}>{row.label}:</Text>
+                  <Text style={TextStyles.primaryDark}>{row.value}</Text>
                 </Stack>
               ))}
             </Stack>
@@ -4473,14 +4473,14 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
 
           {/* Technology Stack */}
           <div>
-            <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 10 }} style={{ marginBottom: 16 }}>
-              <Icon iconName="Code" style={{ fontSize: 18, color: '#0d9488' }} />
-              <Text variant="mediumPlus" style={{ fontWeight: 600 }}>Technology Stack</Text>
+            <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 10 }} style={LayoutStyles.marginBottom16}>
+              <Icon iconName="Code" style={IconStyles.mediumTeal} />
+              <Text variant="mediumPlus" style={TextStyles.semiBold}>Technology Stack</Text>
             </Stack>
             <Stack horizontal tokens={{ childrenGap: 12 }} wrap>
               {techStack.map((cat, i) => (
                 <div key={i} className={styles.adminCard} style={{ flex: '1 1 280px', minWidth: 260 }}>
-                  <Text style={{ fontWeight: 600, color: '#0d9488', display: 'block', marginBottom: 8 }}>{cat.category}</Text>
+                  <Text style={{ fontWeight: 600, color: Colors.tealPrimary, display: 'block', marginBottom: 8 }}>{cat.category}</Text>
                   <Stack tokens={{ childrenGap: 4 }}>
                     {cat.items.map((item, j) => (
                       <Stack key={j} horizontal verticalAlign="center" tokens={{ childrenGap: 6 }}>
@@ -4496,15 +4496,15 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
 
           {/* Features */}
           <div>
-            <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 10 }} style={{ marginBottom: 16 }}>
-              <Icon iconName="AppIconDefaultList" style={{ fontSize: 18, color: '#0d9488' }} />
-              <Text variant="mediumPlus" style={{ fontWeight: 600 }}>Features ({features.length})</Text>
+            <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 10 }} style={LayoutStyles.marginBottom16}>
+              <Icon iconName="AppIconDefaultList" style={IconStyles.mediumTeal} />
+              <Text variant="mediumPlus" style={TextStyles.semiBold}>Features ({features.length})</Text>
             </Stack>
             <Stack horizontal tokens={{ childrenGap: 12 }} wrap>
               {features.map((f, i) => (
                 <div key={i} className={styles.adminCard} style={{ flex: '1 1 280px', minWidth: 260 }}>
                   <Text style={{ fontWeight: 600, display: 'block', marginBottom: 4 }}>{f.name}</Text>
-                  <Text variant="small" style={{ color: '#64748b' }}>{f.description}</Text>
+                  <Text variant="small" style={TextStyles.tertiary}>{f.description}</Text>
                 </div>
               ))}
             </Stack>
@@ -4512,7 +4512,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
 
           {/* Footer */}
           <div style={{ textAlign: 'center', padding: '16px 0', borderTop: '1px solid #e2e8f0' }}>
-            <Text variant="small" style={{ color: '#94a3b8' }}>First Digital — Digital Workplace Excellence</Text>
+            <Text variant="small" style={{ color: Colors.slateLight }}>First Digital — Digital Workplace Excellence</Text>
           </div>
         </Stack>
       </div>
@@ -4567,7 +4567,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       { id: 'contract', name: 'Contract Manager', tagline: 'Control lifecycle', description: 'Contract Lifecycle Management', version: 'v2.0.0', color: '#1a5a8a', icon: 'PageEdit',
         paragraph: 'DWx Contract Manager provides full contract lifecycle management from creation through to renewal or expiry. Manage obligations, track key dates, and ensure compliance with automated alerts and a complete audit trail of all contract activities.',
         usps: ['Full contract lifecycle from draft to renewal', 'Obligation tracking with automated reminders', 'Key date management with escalation workflows', 'Role-based access with redaction support', 'Complete audit trail and version history'] },
-      { id: 'policy', name: 'Policy Manager', tagline: 'Govern with confidence', description: 'Policy Governance & Compliance', version: 'v1.2.0', color: '#0d9488', icon: 'Shield', isCurrent: true,
+      { id: 'policy', name: 'Policy Manager', tagline: 'Govern with confidence', description: 'Policy Governance & Compliance', version: 'v1.2.0', color: Colors.tealPrimary, icon: 'Shield', isCurrent: true,
         paragraph: 'DWx Policy Manager is a comprehensive policy governance solution that manages the entire policy lifecycle — from authoring and approval through distribution, acknowledgement, and compliance tracking. Ensure every employee reads, understands, and acknowledges your critical policies.',
         usps: ['Complete policy lifecycle from draft to retirement', 'Multi-level approval workflows with delegation', 'Targeted distribution with acknowledgement tracking', 'Compliance analytics with SLA monitoring', 'Quiz integration for policy comprehension testing'] },
     ];
@@ -4648,16 +4648,16 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                       <Icon iconName={product.icon} style={{ fontSize: 22, color: '#ffffff' }} />
                     </div>
                     <Stack>
-                      <Text style={{ fontWeight: 600, fontSize: 14, color: '#0f172a' }}>{product.name}</Text>
+                      <Text style={{ fontWeight: 600, fontSize: 14, color: Colors.textDark }}>{product.name}</Text>
                       <Text style={{ fontSize: 11, color: product.color, fontWeight: 500 }}>{product.tagline}</Text>
                     </Stack>
                   </Stack>
-                  <Text variant="small" style={{ color: '#64748b' }}>{product.description}</Text>
+                  <Text variant="small" style={TextStyles.tertiary}>{product.description}</Text>
                   <Stack horizontal horizontalAlign="space-between" verticalAlign="center"
                     style={{ borderTop: '1px solid #f1f5f9', paddingTop: 10, marginTop: 2 }}>
-                    <Text style={{ fontSize: 11, color: '#94a3b8', fontWeight: 500 }}>{product.version}</Text>
+                    <Text style={{ fontSize: 11, color: Colors.slateLight, fontWeight: 500 }}>{product.version}</Text>
                     {product.isCurrent ? (
-                      <Text style={{ fontSize: 11, color: '#0d9488', fontWeight: 600 }}>You Are Here</Text>
+                      <Text style={{ fontSize: 11, color: Colors.tealPrimary, fontWeight: 600 }}>You Are Here</Text>
                     ) : (
                       <DefaultButton
                         text="Learn More"
@@ -4674,14 +4674,14 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           {/* Contact CTA */}
           <div className={styles.adminCard} style={{ textAlign: 'center', background: '#f8fffe', borderColor: '#99f6e4' }}>
             <Stack tokens={{ childrenGap: 8 }} horizontalAlign="center">
-              <Text variant="mediumPlus" style={{ fontWeight: 600 }}>Ready to unlock more?</Text>
-              <Text style={{ color: '#64748b' }}>Explore all 15 DWx products to supercharge your digital workplace</Text>
-              <Stack horizontal tokens={{ childrenGap: 12 }} horizontalAlign="center" style={{ marginTop: 8 }}>
+              <Text variant="mediumPlus" style={TextStyles.semiBold}>Ready to unlock more?</Text>
+              <Text style={TextStyles.tertiary}>Explore all 15 DWx products to supercharge your digital workplace</Text>
+              <Stack horizontal tokens={{ childrenGap: 12 }} horizontalAlign="center" style={LayoutStyles.marginTop8}>
                 <PrimaryButton text="Explore All" iconProps={{ iconName: 'OpenInNewWindow' }} />
                 <DefaultButton text="Contact Sales" iconProps={{ iconName: 'Mail' }} styles={{ root: { background: '#ef4444', color: '#fff', border: 'none' }, rootHovered: { background: '#dc2626', color: '#fff' } }} />
               </Stack>
-              <Text variant="small" style={{ color: '#94a3b8', marginTop: 8 }}>
-                Questions? Contact our sales team at <span style={{ color: '#0d9488', fontWeight: 500 }}>gopremium@firsttech.digital</span>
+              <Text variant="small" style={{ color: Colors.slateLight, marginTop: 8 }}>
+                Questions? Contact our sales team at <span style={{ color: Colors.tealPrimary, fontWeight: 500 }}>gopremium@firsttech.digital</span>
               </Text>
             </Stack>
           </div>
@@ -4696,7 +4696,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           isLightDismiss
         >
           {selectedProduct && (
-            <Stack tokens={{ childrenGap: 20 }} style={{ paddingTop: 16 }}>
+            <Stack tokens={{ childrenGap: 20 }} style={LayoutStyles.paddingTop16}>
               {/* Product Header */}
               <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 16 }}>
                 <div style={{
@@ -4707,7 +4707,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                   <Icon iconName={selectedProduct.icon} style={{ fontSize: 28, color: '#fff' }} />
                 </div>
                 <Stack>
-                  <Text style={{ fontSize: 20, fontWeight: 700, color: '#0f172a' }}>{selectedProduct.name}</Text>
+                  <Text style={{ fontSize: 20, fontWeight: 700, color: Colors.textDark }}>{selectedProduct.name}</Text>
                   <Text style={{ fontSize: 13, color: selectedProduct.color, fontWeight: 500, fontStyle: 'italic' }}>{selectedProduct.tagline}</Text>
                 </Stack>
               </Stack>
@@ -4732,15 +4732,15 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
 
               {/* Description */}
               <Stack tokens={{ childrenGap: 8 }}>
-                <Text style={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>Overview</Text>
-                <Text style={{ fontSize: 13, lineHeight: '1.7', color: '#475569' }}>{selectedProduct.paragraph}</Text>
+                <Text style={{ fontSize: 14, fontWeight: 600, color: Colors.textDark }}>Overview</Text>
+                <Text style={{ fontSize: 13, lineHeight: '1.7', color: Colors.textSlate }}>{selectedProduct.paragraph}</Text>
               </Stack>
 
               <Separator />
 
               {/* USPs */}
               <Stack tokens={{ childrenGap: 12 }}>
-                <Text style={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>Key Features</Text>
+                <Text style={{ fontSize: 14, fontWeight: 600, color: Colors.textDark }}>Key Features</Text>
                 {selectedProduct.usps.map((usp: string, idx: number) => (
                   <Stack key={idx} horizontal verticalAlign="start" tokens={{ childrenGap: 10 }}>
                     <div style={{
@@ -4767,8 +4767,8 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                 <DefaultButton text="Contact Sales" iconProps={{ iconName: 'Mail' }} />
               </Stack>
 
-              <Text variant="small" style={{ color: '#94a3b8', marginTop: 8 }}>
-                Contact us at <span style={{ color: '#0d9488', fontWeight: 500 }}>gopremium@firsttech.digital</span>
+              <Text variant="small" style={{ color: Colors.slateLight, marginTop: 8 }}>
+                Contact us at <span style={{ color: Colors.tealPrimary, fontWeight: 500 }}>gopremium@firsttech.digital</span>
               </Text>
             </Stack>
           )}
@@ -4791,8 +4791,8 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
 
     return (
       <div>
-        <Text variant="large" style={{ fontWeight: 600, color: '#0f172a', marginBottom: 8, display: 'block' }}>AI Chat Assistant</Text>
-        <Text variant="small" style={{ color: '#64748b', display: 'block', marginBottom: 20 }}>
+        <Text variant="large" style={{ fontWeight: 600, color: Colors.textDark, marginBottom: 8, display: 'block' }}>AI Chat Assistant</Text>
+        <Text variant="small" style={{ color: Colors.textTertiary, display: 'block', marginBottom: 20 }}>
           Configure the AI-powered chat assistant. Users can ask questions about policies, get drafting help, and receive app guidance.
         </Text>
 
@@ -4938,10 +4938,10 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         >
           <section style={{ maxWidth: 600, margin: '80px auto', textAlign: 'center', padding: 32 }}>
             <Icon iconName="Lock" styles={{ root: { fontSize: 48, color: '#dc2626', marginBottom: 16 } }} />
-            <Text variant="xLarge" block styles={{ root: { fontWeight: 600, marginBottom: 8, color: '#0f172a' } }}>
+            <Text variant="xLarge" block styles={{ root: { fontWeight: 600, marginBottom: 8, color: Colors.textDark } }}>
               Access Denied
             </Text>
-            <Text variant="medium" block styles={{ root: { color: '#64748b', marginBottom: 24 } }}>
+            <Text variant="medium" block styles={{ root: { color: Colors.textTertiary, marginBottom: 24 } }}>
               The Policy Administration panel requires an Administrator role. Contact your system administrator if you need access.
             </Text>
             <DefaultButton

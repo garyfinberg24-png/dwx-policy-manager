@@ -31,6 +31,7 @@ import {
   Separator
 } from '@fluentui/react';
 import { JmlAppLayout } from '../../../components/JmlAppLayout/JmlAppLayout';
+import { ErrorBoundary } from '../../../components/ErrorBoundary/ErrorBoundary';
 import { PageSubheader } from '../../../components/PageSubheader';
 import { PM_LISTS } from '../../../constants/SharePointListNames';
 import { PolicyService } from '../../../services/PolicyService';
@@ -281,6 +282,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
     // Access denied guard — Manager role required
     if (this.state.detectedRole !== null && !hasMinimumRole(this.state.detectedRole, PolicyManagerRole.Manager)) {
       return (
+        <ErrorBoundary fallbackMessage="An error occurred in Manager Dashboard. Please try again.">
         <JmlAppLayout
           title={this.props.title || 'Manager Dashboard'}
           context={this.props.context}
@@ -309,10 +311,12 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
             />
           </section>
         </JmlAppLayout>
+        </ErrorBoundary>
       );
     }
 
     return (
+      <ErrorBoundary fallbackMessage="An error occurred in Manager Dashboard. Please try again.">
       <JmlAppLayout
         title={this.props.title || 'Manager Dashboard'}
         context={this.props.context}
@@ -353,6 +357,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
 
         {this.renderDelegationPanel()}
       </JmlAppLayout>
+      </ErrorBoundary>
     );
   }
 

@@ -211,6 +211,7 @@ export interface IPolicyHubState {
 }
 
 export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyHubState> {
+  private _isMounted = false;
   private hubService: PolicyHubService;
   private notificationProcessor: PolicyNotificationQueueProcessor;
   private searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -293,6 +294,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
   }
 
   public async componentDidMount(): Promise<void> {
+    this._isMounted = true;
     injectPortalStyles();
     await this.initializeUserContext();
 
@@ -307,6 +309,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
   }
 
   public componentWillUnmount(): void {
+    this._isMounted = false;
     // Stop the notification processor when component unmounts
     if (this.notificationProcessor) {
       this.notificationProcessor.stop();
@@ -355,7 +358,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
         viewedDate: new Date(item.Modified)
       }));
 
-      this.setState({ featuredPolicies, recentlyViewedPolicies });
+      if (this._isMounted) { this.setState({ featuredPolicies, recentlyViewedPolicies }); }
     } catch (err) {
       console.warn('Could not load featured/recent from SharePoint, using sample data:', err);
       this.initializeSampleData();
@@ -377,7 +380,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
       { id: 7, title: 'Health & Safety', viewedDate: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000) },
       { id: 8, title: 'Anti-Bribery Policy', viewedDate: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000) }
     ];
-    this.setState({ featuredPolicies, recentlyViewedPolicies });
+    if (this._isMounted) { this.setState({ featuredPolicies, recentlyViewedPolicies }); }
   }
 
   private async initializeUserContext(): Promise<void> {
@@ -416,11 +419,11 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
         groupNames
       };
 
-      this.setState({
+      if (this._isMounted) { this.setState({
         currentUserId: userId,
         currentUserRole: userRole,
         userVisibilityContext: visibilityContext
-      });
+      }); }
 
       // Load role-specific data
       await this.loadRoleBasedData(userRole, userId);
@@ -486,11 +489,11 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
       // Get user's policy acknowledgements from the dashboard
       const dashboard = await this.hubService.getUserPolicyDashboard(userId);
 
-      this.setState({
+      if (this._isMounted) { this.setState({
         myPendingPolicies: dashboard.pendingPolicies || [],
         myCompletedPolicies: dashboard.completedPolicies || [],
         myOverduePolicies: dashboard.overduePolicies || []
-      });
+      }); }
     } catch (error) {
       console.error('Failed to load my policies:', error);
     }
@@ -500,7 +503,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
     try {
       // Get policies authored by this user
       const authoredPolicies = await this.hubService.getAuthoredPolicies(userId);
-      this.setState({ authoredPolicies });
+      if (this._isMounted) { this.setState({ authoredPolicies }); }
     } catch (error) {
       console.error('Failed to load authored policies:', error);
     }
@@ -510,11 +513,11 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
     try {
       // Get delegation requests for this manager
       const delegationRequests = await this.hubService.getDelegationRequests(userId);
-      this.setState({ delegationRequests });
+      if (this._isMounted) { this.setState({ delegationRequests }); }
 
       // Get available authors for delegation
       const availableAuthors = await this.hubService.getAvailableAuthors();
-      this.setState({ availableAuthors });
+      if (this._isMounted) { this.setState({ availableAuthors }); }
     } catch (error) {
       console.error('Failed to load delegation requests:', error);
     }
@@ -524,7 +527,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
     try {
       // Get policies pending approval
       const pendingApprovals = await this.hubService.getPendingApprovals(userId);
-      this.setState({ pendingApprovals });
+      if (this._isMounted) { this.setState({ pendingApprovals }); }
     } catch (error) {
       console.error('Failed to load pending approvals:', error);
     }
@@ -533,7 +536,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
   private async loadAnalyticsData(): Promise<void> {
     try {
       const analyticsData = await this.hubService.getPolicyAnalytics();
-      this.setState({ analyticsData });
+      if (this._isMounted) { this.setState({ analyticsData }); }
     } catch (error) {
       console.error('Failed to load analytics data:', error);
     }
@@ -679,13 +682,13 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
         results.totalCount = results.policies.length;
       }
 
-      this.setState({ searchResults: results, loading: false });
+      if (this._isMounted) { this.setState({ searchResults: results, loading: false }); }
     } catch (error) {
       console.error('Failed to load policies:', error);
-      this.setState({
+      if (this._isMounted) { this.setState({
         error: 'Failed to load policies. Please try again later.',
         loading: false
-      });
+      }); }
     }
   }
 

@@ -14,6 +14,7 @@ import {
   DefaultButton
 } from '@fluentui/react';
 import { JmlAppLayout } from '../../../components/JmlAppLayout';
+import { ErrorBoundary } from '../../../components/ErrorBoundary/ErrorBoundary';
 import { PolicyService } from '../../../services/PolicyService';
 import { SearchService } from '../../../services/SearchService';
 import { IPolicy, PolicyStatus, PolicyCategory } from '../../../models/IPolicy';
@@ -143,6 +144,7 @@ function mapPolicyToResult(policy: IPolicy): ISearchResult {
 }
 
 export default class PolicySearch extends React.Component<IPolicySearchProps, IPolicySearchState> {
+  private _isMounted = false;
   private policyService: PolicyService | null = null;
   private searchService: SearchService | null = null;
 
@@ -170,6 +172,7 @@ export default class PolicySearch extends React.Component<IPolicySearchProps, IP
   }
 
   public async componentDidMount(): Promise<void> {
+    this._isMounted = true;
     try {
       if (this.props.sp) {
         this.policyService = new PolicyService(this.props.sp);
@@ -177,26 +180,30 @@ export default class PolicySearch extends React.Component<IPolicySearchProps, IP
 
         this.searchService = new SearchService(this.props.sp);
         const recent = this.searchService.getRecentSearches();
-        this.setState({
+        if (this._isMounted) { this.setState({
           recentSearches: recent.map(r => r.searchText).slice(0, 5),
           isInitializing: false,
-        });
+        }); }
 
         // Check for search query in URL parameters (from header search bar)
         const urlParams = new URLSearchParams(window.location.search);
         const urlQuery = urlParams.get('q');
         if (urlQuery && urlQuery.trim()) {
-          this.setState({ searchQuery: urlQuery.trim() }, () => {
+          if (this._isMounted) { this.setState({ searchQuery: urlQuery.trim() }, () => {
             this.performSearch(urlQuery.trim());
-          });
+          }); }
         }
       } else {
-        this.setState({ isInitializing: false, error: 'SharePoint connection not available.' });
+        if (this._isMounted) { this.setState({ isInitializing: false, error: 'SharePoint connection not available.' }); }
       }
     } catch (err) {
       logger.error('PolicySearch', 'Failed to initialize services', err);
-      this.setState({ isInitializing: false, error: 'Failed to connect to SharePoint.' });
+      if (this._isMounted) { this.setState({ isInitializing: false, error: 'Failed to connect to SharePoint.' }); }
     }
+  }
+
+  public componentWillUnmount(): void {
+    this._isMounted = false;
   }
 
   private performSearch = async (query: string): Promise<void> => {
@@ -261,26 +268,26 @@ export default class PolicySearch extends React.Component<IPolicySearchProps, IP
         searchResults = searchResults.filter(r => r.lastModified.getTime() <= to);
       }
 
-      this.setState({
+      if (this._isMounted) { this.setState({
         results: searchResults,
         totalResults: searchResults.length,
         isSearching: false,
-      });
+      }); }
 
       // Save to recent searches
       if (query.trim() && this.searchService) {
         this.searchService.saveRecentSearch(query.trim(), undefined, searchResults.length);
         const recent = this.searchService.getRecentSearches();
-        this.setState({ recentSearches: recent.map(r => r.searchText).slice(0, 5) });
+        if (this._isMounted) { this.setState({ recentSearches: recent.map(r => r.searchText).slice(0, 5) }); }
       }
     } catch (err) {
       logger.error('PolicySearch', 'Search failed', err);
-      this.setState({
+      if (this._isMounted) { this.setState({
         isSearching: false,
         error: 'Search failed. Please try again.',
         results: [],
         totalResults: 0,
-      });
+      }); }
     }
   };
 
@@ -364,6 +371,7 @@ export default class PolicySearch extends React.Component<IPolicySearchProps, IP
     ];
 
     return (
+      <ErrorBoundary fallbackMessage="An error occurred in Policy Search. Please try again.">
       <JmlAppLayout context={this.props.context} breadcrumbs={[{ text: 'Policy Manager', url: this.props.context?.pageContext?.web?.absoluteUrl || '/sites/PolicyManager' }, { text: 'Search' }]}>
         <div className={styles.policySearch}>
           <div className={styles.contentWrapper}>
@@ -637,6 +645,7 @@ export default class PolicySearch extends React.Component<IPolicySearchProps, IP
           </div>
         </div>
       </JmlAppLayout>
+      </ErrorBoundary>
     );
   }
 }

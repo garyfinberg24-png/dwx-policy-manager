@@ -17,6 +17,7 @@ import {
 } from '@fluentui/react';
 import { sanitizeHtml } from '../../../utils/sanitizeHtml';
 import { JmlAppLayout } from '../../../components/JmlAppLayout';
+import { ErrorBoundary } from '../../../components/ErrorBoundary/ErrorBoundary';
 
 // Help article interface
 interface IHelpArticle {
@@ -597,6 +598,7 @@ export default class PolicyHelp extends React.Component<IPolicyHelpProps, IPolic
 
     if (selectedArticle) {
       return (
+        <ErrorBoundary fallbackMessage="An error occurred in the Help Center. Please try again.">
         <JmlAppLayout context={this.props.context} breadcrumbs={[{ text: 'Policy Manager', url: '/sites/PolicyManager' }, { text: 'Help', url: '#' }, { text: selectedArticle.title }]}>
           <div className={styles.policyHelp}>
             <div className={styles.contentWrapper}>
@@ -604,10 +606,12 @@ export default class PolicyHelp extends React.Component<IPolicyHelpProps, IPolic
             </div>
           </div>
         </JmlAppLayout>
+        </ErrorBoundary>
       );
     }
 
     return (
+      <ErrorBoundary fallbackMessage="An error occurred in the Help Center. Please try again.">
       <JmlAppLayout context={this.props.context} breadcrumbs={[{ text: 'Policy Manager', url: '/sites/PolicyManager' }, { text: 'Help' }]}>
         <div className={styles.policyHelp}>
           <div className={styles.contentWrapper}>
@@ -658,6 +662,7 @@ export default class PolicyHelp extends React.Component<IPolicyHelpProps, IPolic
           </div>
         </div>
       </JmlAppLayout>
+      </ErrorBoundary>
     );
   }
 }

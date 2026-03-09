@@ -64,6 +64,7 @@ export interface IPolicyAuthorState {
 }
 
 export default class PolicyAuthor extends React.Component<IPolicyAuthorProps, IPolicyAuthorState> {
+  private _isMounted = false;
   private policyService: PolicyService;
   private autoSaveTimer: NodeJS.Timeout | null = null;
   private dialogManager = createDialogManager();
@@ -102,6 +103,7 @@ export default class PolicyAuthor extends React.Component<IPolicyAuthorProps, IP
   }
 
   public async componentDidMount(): Promise<void> {
+    this._isMounted = true;
     injectPortalStyles();
     await this.policyService.initialize();
 
@@ -115,6 +117,7 @@ export default class PolicyAuthor extends React.Component<IPolicyAuthorProps, IP
   }
 
   public componentWillUnmount(): void {
+    this._isMounted = false;
     this.stopAutoSave();
   }
 
@@ -136,7 +139,7 @@ export default class PolicyAuthor extends React.Component<IPolicyAuthorProps, IP
       this.setState({ loading: true, error: null });
       const policy = await this.policyService.getPolicyById(policyId);
 
-      this.setState({
+      if (this._isMounted) { this.setState({
         policyNumber: policy.PolicyNumber,
         policyName: policy.PolicyName,
         policyCategory: policy.PolicyCategory,
@@ -151,13 +154,13 @@ export default class PolicyAuthor extends React.Component<IPolicyAuthorProps, IP
         effectiveDate: (typeof policy.EffectiveDate === 'string' ? policy.EffectiveDate : policy.EffectiveDate.toISOString()).split('T')[0],
         expiryDate: policy.ExpiryDate ? (typeof policy.ExpiryDate === 'string' ? policy.ExpiryDate : policy.ExpiryDate.toISOString()).split('T')[0] : '',
         loading: false
-      });
+      }); }
     } catch (error) {
       console.error('Failed to load policy:', error);
-      this.setState({
+      if (this._isMounted) { this.setState({
         error: 'Failed to load policy. Please try again.',
         loading: false
-      });
+      }); }
     }
   }
 
@@ -218,13 +221,13 @@ export default class PolicyAuthor extends React.Component<IPolicyAuthorProps, IP
         await this.policyService.updatePolicy(policyId, policyData);
       } else {
         const newPolicy = await this.policyService.createPolicy(policyData);
-        this.setState({ policyId: newPolicy.Id, policyNumber: newPolicy.PolicyNumber });
+        if (this._isMounted) { this.setState({ policyId: newPolicy.Id, policyNumber: newPolicy.PolicyNumber }); }
       }
 
-      this.setState({
+      if (this._isMounted) { this.setState({
         saving: false,
         lastSaved: new Date()
-      });
+      }); }
 
       if (!isAutoSave) {
         void this.dialogManager.showAlert('Draft saved successfully!', { variant: 'success' });
@@ -232,10 +235,10 @@ export default class PolicyAuthor extends React.Component<IPolicyAuthorProps, IP
     } catch (error) {
       console.error('Failed to save draft:', error);
       if (!isAutoSave) {
-        this.setState({
+        if (this._isMounted) { this.setState({
           error: 'Failed to save draft. Please try again.',
           saving: false
-        });
+        }); }
       }
     }
   };
@@ -254,15 +257,15 @@ export default class PolicyAuthor extends React.Component<IPolicyAuthorProps, IP
     try {
       this.setState({ saving: true });
       await this.policyService.submitForReview(policyId, reviewerIds);
-      this.setState({ saving: false });
+      if (this._isMounted) { this.setState({ saving: false }); }
       await this.dialogManager.showAlert('Policy submitted for review successfully!', { variant: 'success' });
       // Optionally redirect to policy list
     } catch (error) {
       console.error('Failed to submit for review:', error);
-      this.setState({
+      if (this._isMounted) { this.setState({
         error: 'Failed to submit for review. Please try again.',
         saving: false
-      });
+      }); }
     }
   };
 

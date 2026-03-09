@@ -10,8 +10,9 @@ import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
 import { IReadonlyTheme } from '@microsoft/sp-component-base';
 
 import * as strings from 'DwxQuizBuilderWebPartStrings';
-import { QuizBuilderWrapper } from './components/QuizBuilderWrapper';
-import { IQuizBuilderWrapperProps } from './components/IQuizBuilderWrapperProps';
+
+// Code-split: lazy-load the heavy component (~3,584 lines)
+const QuizBuilderWrapper = React.lazy(() => import(/* webpackChunkName: "quiz-builder" */ './components/QuizBuilderWrapper'));
 import { SPFI } from '@pnp/sp';
 import { getSP } from '../../utils/pnpConfig';
 import { injectSharePointOverrides } from '../../utils/SharePointOverrides';
@@ -28,18 +29,22 @@ export default class DwxQuizBuilderWebPart extends BaseClientSideWebPart<IDwxQui
   private _sp: SPFI;
 
   public render(): void {
-    const element: React.ReactElement<IQuizBuilderWrapperProps> = React.createElement(
-      QuizBuilderWrapper,
-      {
-        title: this.properties.title,
-        enableQuestionBanks: this.properties.enableQuestionBanks,
-        enableImportExport: this.properties.enableImportExport,
-        aiFunctionUrl: this.properties.aiFunctionUrl || '',
-        isDarkTheme: this._isDarkTheme,
-        hasTeamsContext: !!this.context.sdks.microsoftTeams,
-        sp: this._sp,
-        context: this.context
-      }
+    const element = React.createElement(
+      React.Suspense,
+      { fallback: React.createElement('div', { style: { padding: 40, textAlign: 'center' } }, 'Loading Quiz Builder...') },
+      React.createElement(
+        QuizBuilderWrapper,
+        {
+          title: this.properties.title,
+          enableQuestionBanks: this.properties.enableQuestionBanks,
+          enableImportExport: this.properties.enableImportExport,
+          aiFunctionUrl: this.properties.aiFunctionUrl || '',
+          isDarkTheme: this._isDarkTheme,
+          hasTeamsContext: !!this.context.sdks.microsoftTeams,
+          sp: this._sp,
+          context: this.context
+        }
+      )
     );
 
     ReactDom.render(element, this.domElement);

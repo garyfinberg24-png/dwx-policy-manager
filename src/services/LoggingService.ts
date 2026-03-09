@@ -281,9 +281,10 @@ export class LoggingService {
   }
 
   public setUserId(userId: string): void {
-    this.userId = userId;
+    // Store a hashed/redacted version for telemetry — never raw email
+    this.userId = this.redactPII(userId);
     if (this.isDevelopment) {
-      console.log(`[USER] Set user ID: ${userId}`);
+      console.log(`[USER] Set user ID: ${this.userId}`);
     }
   }
 
@@ -341,6 +342,23 @@ export class LoggingService {
   }
 
   private enqueue(name: string, baseType: string, baseData: Record<string, unknown>): void {
+    // Redact PII from properties and messages before enqueueing
+    const safeBaseData = { ...baseData };
+    if (typeof safeBaseData.message === 'string') {
+      safeBaseData.message = this.redactPII(safeBaseData.message);
+    }
+    if (safeBaseData.properties && typeof safeBaseData.properties === 'object') {
+      safeBaseData.properties = this.redactProperties(safeBaseData.properties as Record<string, unknown>);
+    }
+    // Redact exception messages
+    if (Array.isArray(safeBaseData.exceptions)) {
+      safeBaseData.exceptions = (safeBaseData.exceptions as Array<Record<string, unknown>>).map(ex => ({
+        ...ex,
+        message: typeof ex.message === 'string' ? this.redactPII(ex.message) : ex.message,
+        stack: typeof ex.stack === 'string' ? this.redactPII(ex.stack) : ex.stack,
+      }));
+    }
+
     const envelope: IAppInsightsEnvelope = {
       name,
       time: new Date().toISOString(),
@@ -348,12 +366,12 @@ export class LoggingService {
       tags: {
         'ai.session.id': this.sessionId,
         'ai.user.id': this.userId || 'anonymous',
-        'ai.application.ver': '1.2.4',
+        'ai.application.ver': '1.2.5',
         'ai.cloud.roleName': 'PolicyManager-SPFx',
         'ai.device.type': 'Browser',
         'ai.operation.name': window.location.pathname,
       },
-      data: { baseType, baseData },
+      data: { baseType, baseData: safeBaseData },
     };
 
     this.pendingEnvelopes.push(envelope);
@@ -370,6 +388,41 @@ export class LoggingService {
       const v = c === 'x' ? r : (r & 0x3) | 0x8;
       return v.toString(16);
     });
+  }
+
+  /**
+   * Redact PII from a string value.
+   * Replaces email addresses and common PII patterns with safe placeholders.
+   */
+  private redactPII(value: string): string {
+    if (!value) return value;
+    // Email addresses: user@domain.com → [REDACTED_EMAIL]
+    let redacted = value.replace(
+      /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g,
+      '[REDACTED_EMAIL]'
+    );
+    // Phone numbers (common formats): +1-234-567-8901, (234) 567-8901, etc.
+    redacted = redacted.replace(
+      /(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g,
+      '[REDACTED_PHONE]'
+    );
+    return redacted;
+  }
+
+  /**
+   * Redact PII from all string values in a properties object.
+   */
+  private redactProperties(props: Record<string, unknown>): Record<string, unknown> {
+    const redacted: Record<string, unknown> = {};
+    for (const key of Object.keys(props)) {
+      const val = props[key];
+      if (typeof val === 'string') {
+        redacted[key] = this.redactPII(val);
+      } else {
+        redacted[key] = val;
+      }
+    }
+    return redacted;
   }
 
   /**

@@ -3,6 +3,7 @@ import * as React from 'react';
 import styles from './PolicyAnalytics.module.scss';
 import { IPolicyAnalyticsProps } from './IPolicyAnalyticsProps';
 import { JmlAppLayout } from '../../../components/JmlAppLayout/JmlAppLayout';
+import { ErrorBoundary } from '../../../components/ErrorBoundary/ErrorBoundary';
 import { PM_LISTS } from '../../../constants/SharePointListNames';
 import {
   Pivot,
@@ -131,6 +132,8 @@ interface IPolicyAnalyticsState {
 // ============================================================================
 
 export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsProps, IPolicyAnalyticsState> {
+  private _isMounted = false;
+
   constructor(props: IPolicyAnalyticsProps) {
     super(props);
     this.state = {
@@ -375,6 +378,7 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
   // ============================================================================
 
   public async componentDidMount(): Promise<void> {
+    this._isMounted = true;
     this.setState({ loading: true });
     try {
       await this.loadLiveData();
@@ -382,8 +386,12 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
       console.warn('Analytics: Failed to load live data, using sample data:', err);
       // Mock data already set in constructor — nothing to do
     } finally {
-      this.setState({ loading: false });
+      if (this._isMounted) { this.setState({ loading: false }); }
     }
+  }
+
+  public componentWillUnmount(): void {
+    this._isMounted = false;
   }
 
   // ============================================================================
@@ -480,7 +488,7 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
       });
       const criticalViolations = (riskMap['Critical'] || 0);
 
-      this.setState({
+      if (this._isMounted) { this.setState({
         activePolicies,
         pendingReviews,
         policyByStatus: policyByStatus.length > 0 ? policyByStatus : this.state.policyByStatus,
@@ -489,7 +497,7 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
         policyAging: policyAging.length > 0 ? policyAging : this.state.policyAging,
         criticalViolations,
         deadlines: deadlines.length > 0 ? deadlines : this.state.deadlines,
-      });
+      }); }
     }
 
     // -------------------------------------------------------------------
@@ -565,7 +573,7 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
         approvalSla: Math.min(99, Math.round(dept.rate * 1.04)),   // Approvals typically ~4% above ack rate
       }));
 
-      this.setState({
+      if (this._isMounted) { this.setState({
         overallAckRate,
         overdueAcks,
         ackFunnel,
@@ -574,11 +582,11 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
         slaMetrics: slaMetrics.length > 0 ? slaMetrics : this.state.slaMetrics,
         slaBreaches: slaBreaches.length > 0 ? slaBreaches : this.state.slaBreaches,
         slaDeptComparison: slaDeptComparison.length > 0 ? slaDeptComparison : this.state.slaDeptComparison,
-      });
+      }); }
 
       // Calculate overall compliance from ack rate (weighted metric)
       if (overallAckRate > 0) {
-        this.setState({ overallCompliance: overallAckRate });
+        if (this._isMounted) { this.setState({ overallCompliance: overallAckRate }); }
       }
     }
 
@@ -598,9 +606,9 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
         department: item.Department || 'Unknown',
       }));
 
-      this.setState({
+      if (this._isMounted) { this.setState({
         auditEntries: auditEntries.length > 0 ? auditEntries : this.state.auditEntries,
-      });
+      }); }
     }
 
     // -------------------------------------------------------------------
@@ -659,10 +667,10 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
         })
         .sort((a, b) => b.attempts - a.attempts);
 
-      this.setState({
+      if (this._isMounted) { this.setState({
         quizOverview,
         quizPerformance: quizPerformance.length > 0 ? quizPerformance : this.state.quizPerformance,
-      });
+      }); }
     }
 
     // -------------------------------------------------------------------
@@ -689,7 +697,7 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
     }
 
     if (Object.keys(complianceRiskState).length > 0) {
-      this.setState(complianceRiskState);
+      if (this._isMounted) { this.setState(complianceRiskState); }
     }
   }
 
@@ -1080,6 +1088,7 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
     const { activeTab } = this.state;
 
     return (
+      <ErrorBoundary fallbackMessage="An error occurred in Policy Analytics. Please try again.">
       <JmlAppLayout
         title={this.props.title}
         context={this.props.context}
@@ -1129,6 +1138,7 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
           </div>
         </div>
       </JmlAppLayout>
+      </ErrorBoundary>
     );
   }
 

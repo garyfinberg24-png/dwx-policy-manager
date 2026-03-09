@@ -30,6 +30,7 @@ import {
   Separator
 } from '@fluentui/react';
 import { JmlAppLayout } from '../../../components/JmlAppLayout/JmlAppLayout';
+import { ErrorBoundary } from '../../../components/ErrorBoundary/ErrorBoundary';
 import { PageSubheader } from '../../../components/PageSubheader';
 import { RoleDetectionService } from '../../../services/RoleDetectionService';
 import { PolicyManagerRole, getHighestPolicyRole, hasMinimumRole } from '../../../services/PolicyRoleService';
@@ -197,6 +198,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
     // Access denied guard — Author role required
     if (this.state.detectedRole !== null && !hasMinimumRole(this.state.detectedRole, PolicyManagerRole.Author)) {
       return (
+        <ErrorBoundary fallbackMessage="An error occurred in Policy Author. Please try again.">
         <JmlAppLayout
           title={this.props.title || 'Policy Author'}
           context={this.props.context}
@@ -225,10 +227,12 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
             />
           </section>
         </JmlAppLayout>
+        </ErrorBoundary>
       );
     }
 
     return (
+      <ErrorBoundary fallbackMessage="An error occurred in Policy Author. Please try again.">
       <JmlAppLayout
         title={this.props.title || 'Policy Author'}
         context={this.props.context}
@@ -261,6 +265,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
         {this.state.activeTab === 'delegations' && this.renderDelegationsTab()}
         {this.renderDelegationPanel()}
       </JmlAppLayout>
+      </ErrorBoundary>
     );
   }
 

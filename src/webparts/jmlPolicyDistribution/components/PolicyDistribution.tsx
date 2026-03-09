@@ -2,6 +2,7 @@ import * as React from 'react';
 import styles from './PolicyDistribution.module.scss';
 import { IPolicyDistributionProps } from './IPolicyDistributionProps';
 import { JmlAppLayout } from '../../../components/JmlAppLayout/JmlAppLayout';
+import { ErrorBoundary } from '../../../components/ErrorBoundary/ErrorBoundary';
 import {
   PrimaryButton,
   DefaultButton,
@@ -305,6 +306,7 @@ const FILTER_TABS = ['All', 'Active', 'Scheduled', 'Completed', 'Draft', 'Paused
 // ============================================================================
 
 export default class PolicyDistribution extends React.Component<IPolicyDistributionProps, IPolicyDistributionState> {
+  private _isMounted = false;
   private distributionService: PolicyDistributionService;
   /** True once live SP data has been loaded successfully — used to decide CRUD target */
   private _liveDataLoaded: boolean = false;
@@ -344,6 +346,7 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
   // ──────────── Lifecycle ────────────
 
   public async componentDidMount(): Promise<void> {
+    this._isMounted = true;
     try {
       const [distributions, policies, policyPacks] = await Promise.all([
         this.distributionService.getDistributions(),
@@ -354,11 +357,11 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
       // --- Map SP distribution items to component campaign format ---
       if (distributions.length > 0) {
         const campaigns: IDistributionCampaign[] = distributions.map((d: ISPDistributionItem) => this.mapSPToCampaign(d));
-        this.setState({ campaigns, filteredCampaigns: campaigns });
+        if (this._isMounted) { this.setState({ campaigns, filteredCampaigns: campaigns }); }
       }
       // If distributions list is empty (no campaigns yet) — start with empty array
       if (distributions.length === 0) {
-        this.setState({ campaigns: [], filteredCampaigns: [] });
+        if (this._isMounted) { this.setState({ campaigns: [], filteredCampaigns: [] }); }
       }
 
       // --- Map policies to dropdown options ---
@@ -367,7 +370,7 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
           key: String(p.Id),
           text: p.PolicyName || p.Title,
         }));
-        this.setState({ policyOptions });
+        if (this._isMounted) { this.setState({ policyOptions }); }
       }
 
       // --- Map policy packs to dropdown options ---
@@ -376,7 +379,7 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
           key: String(p.Id),
           text: p.PackName || p.Title,
         }));
-        this.setState({ policyPackOptions });
+        if (this._isMounted) { this.setState({ policyPackOptions }); }
       }
 
       this._liveDataLoaded = true;
@@ -384,8 +387,12 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
       console.warn('PolicyDistribution: Failed to load live data from SharePoint, using sample data as fallback:', err);
       // Mock data already set in constructor — nothing to change
     } finally {
-      this.setState({ loading: false });
+      if (this._isMounted) { this.setState({ loading: false }); }
     }
+  }
+
+  public componentWillUnmount(): void {
+    this._isMounted = false;
   }
 
   // ──────────── SP → Campaign mapper ────────────
@@ -1362,6 +1369,7 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
     const { loading, selectedCampaign, successMessage } = this.state;
 
     return (
+      <ErrorBoundary fallbackMessage="An error occurred in Policy Distribution. Please try again.">
       <JmlAppLayout
         context={this.props.context}
         sp={this.props.sp}
@@ -1396,6 +1404,7 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
           {this.renderCampaignPanel()}
         </div>
       </JmlAppLayout>
+      </ErrorBoundary>
     );
   }
 }

@@ -10,8 +10,9 @@ import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
 import { IReadonlyTheme } from '@microsoft/sp-component-base';
 
 import * as strings from 'JmlPolicyAdminWebPartStrings';
-import PolicyAdmin from './components/PolicyAdmin';
-import { IPolicyAdminProps } from './components/IPolicyAdminProps';
+
+// Code-split: lazy-load the heavy component (~5,051 lines)
+const PolicyAdmin = React.lazy(() => import(/* webpackChunkName: "policy-admin" */ './components/PolicyAdmin'));
 import { SPFI } from '@pnp/sp';
 import { getSP } from '../../utils/pnpConfig';
 import { injectSharePointOverrides } from '../../utils/SharePointOverrides';
@@ -27,17 +28,21 @@ export default class DwxPolicyAdminWebPart extends BaseClientSideWebPart<IDwxPol
   private _sp: SPFI;
 
   public render(): void {
-    const element: React.ReactElement<IPolicyAdminProps> = React.createElement(
-      PolicyAdmin,
-      {
-        title: this.properties.title,
-        showAuditLog: this.properties.showAuditLog,
-        enableBulkOperations: this.properties.enableBulkOperations,
-        isDarkTheme: this._isDarkTheme,
-        hasTeamsContext: !!this.context.sdks.microsoftTeams,
-        sp: this._sp,
-        context: this.context
-      }
+    const element = React.createElement(
+      React.Suspense,
+      { fallback: React.createElement('div', { style: { padding: 40, textAlign: 'center' } }, 'Loading Policy Admin...') },
+      React.createElement(
+        PolicyAdmin,
+        {
+          title: this.properties.title,
+          showAuditLog: this.properties.showAuditLog,
+          enableBulkOperations: this.properties.enableBulkOperations,
+          isDarkTheme: this._isDarkTheme,
+          hasTeamsContext: !!this.context.sdks.microsoftTeams,
+          sp: this._sp,
+          context: this.context
+        }
+      )
     );
 
     ReactDom.render(element, this.domElement);

@@ -3,6 +3,7 @@ import * as React from 'react';
 import { IQuizBuilderWrapperProps } from './IQuizBuilderWrapperProps';
 import { QuizBuilder } from '../../../components/QuizBuilder';
 import { DwxAppLayout } from '../../../components/JmlAppLayout';
+import { ErrorBoundary } from '../../../components/ErrorBoundary/ErrorBoundary';
 import { QuizService, IQuiz, QuizStatus } from '../../../services/QuizService';
 import { RoleDetectionService } from '../../../services/RoleDetectionService';
 import { PolicyManagerRole, getHighestPolicyRole, hasMinimumRole } from '../../../services/PolicyRoleService';
@@ -154,6 +155,7 @@ export const QuizBuilderWrapper: React.FC<IQuizBuilderWrapperProps> = (props) =>
   // ====================================================================
   if (detectedRole !== null && !hasMinimumRole(detectedRole, PolicyManagerRole.Admin)) {
     return (
+      <ErrorBoundary fallbackMessage="An error occurred in Quiz Builder. Please try again.">
       <DwxAppLayout
         title={title}
         context={context}
@@ -183,6 +185,7 @@ export const QuizBuilderWrapper: React.FC<IQuizBuilderWrapperProps> = (props) =>
           />
         </section>
       </DwxAppLayout>
+      </ErrorBoundary>
     );
   }
 
@@ -191,6 +194,7 @@ export const QuizBuilderWrapper: React.FC<IQuizBuilderWrapperProps> = (props) =>
   // ====================================================================
   if (!quizId) {
     return (
+      <ErrorBoundary fallbackMessage="An error occurred in Quiz Builder. Please try again.">
       <DwxAppLayout
         title={title}
         context={context}
@@ -542,6 +546,7 @@ export const QuizBuilderWrapper: React.FC<IQuizBuilderWrapperProps> = (props) =>
           </div>
         </div>
       </DwxAppLayout>
+      </ErrorBoundary>
     );
   }
 
@@ -549,6 +554,7 @@ export const QuizBuilderWrapper: React.FC<IQuizBuilderWrapperProps> = (props) =>
   // QUIZ EDITOR VIEW (quizId present)
   // ====================================================================
   return (
+    <ErrorBoundary fallbackMessage="An error occurred in Quiz Builder. Please try again.">
     <DwxAppLayout
       title={title}
       context={context}
@@ -569,6 +575,7 @@ export const QuizBuilderWrapper: React.FC<IQuizBuilderWrapperProps> = (props) =>
         />
       </div>
     </DwxAppLayout>
+    </ErrorBoundary>
   );
 };
 

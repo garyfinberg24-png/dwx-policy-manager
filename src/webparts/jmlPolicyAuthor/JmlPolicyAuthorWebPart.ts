@@ -10,8 +10,9 @@ import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
 import { IReadonlyTheme } from '@microsoft/sp-component-base';
 
 import * as strings from 'JmlPolicyAuthorWebPartStrings';
-import PolicyAuthorEnhanced from './components/PolicyAuthorEnhanced';
-import { IPolicyAuthorProps } from './components/IPolicyAuthorProps';
+
+// Code-split: lazy-load the heavy component (~6,847 lines)
+const PolicyAuthorEnhanced = React.lazy(() => import(/* webpackChunkName: "policy-author" */ './components/PolicyAuthorEnhanced'));
 import { SPFI } from '@pnp/sp';
 import { getSP } from '../../utils/pnpConfig';
 import { injectSharePointOverrides } from '../../utils/SharePointOverrides';
@@ -29,18 +30,22 @@ export default class DwxPolicyAuthorWebPart extends BaseClientSideWebPart<IDwxPo
   private _dwxHub: DwxHubService | undefined;
 
   public render(): void {
-    const element: React.ReactElement<IPolicyAuthorProps> = React.createElement(
-      PolicyAuthorEnhanced,
-      {
-        title: this.properties.title,
-        enableTemplates: this.properties.enableTemplates,
-        enableAutoSave: this.properties.enableAutoSave,
-        isDarkTheme: this._isDarkTheme,
-        hasTeamsContext: !!this.context.sdks.microsoftTeams,
-        sp: this._sp,
-        context: this.context,
-        dwxHub: this._dwxHub
-      }
+    const element = React.createElement(
+      React.Suspense,
+      { fallback: React.createElement('div', { style: { padding: 40, textAlign: 'center' } }, 'Loading Policy Author...') },
+      React.createElement(
+        PolicyAuthorEnhanced,
+        {
+          title: this.properties.title,
+          enableTemplates: this.properties.enableTemplates,
+          enableAutoSave: this.properties.enableAutoSave,
+          isDarkTheme: this._isDarkTheme,
+          hasTeamsContext: !!this.context.sdks.microsoftTeams,
+          sp: this._sp,
+          context: this.context,
+          dwxHub: this._dwxHub
+        }
+      )
     );
 
     ReactDom.render(element, this.domElement);

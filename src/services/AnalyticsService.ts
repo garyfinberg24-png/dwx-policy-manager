@@ -597,7 +597,7 @@ export class AnalyticsService {
           'Manager/Title', 'Manager/EMail'
         )
         .expand('Manager')
-        .top(2000);
+        .top(500);
 
       if (filters) {
         const filterParts: string[] = [];
@@ -645,7 +645,7 @@ export class AnalyticsService {
       const items = await this.sp.web.lists.getByTitle('PM_TaskAssignments').items
         .select('Id', 'Title', 'DueDate', 'ActualCompletionDate', 'Task/Title')
         .expand('Task')
-        .top(2000)();
+        .top(500)();
       return items as IJmlTaskAssignment[];
     } catch (error) {
       logger.error('AnalyticsService', 'Failed to get tasks:', error);

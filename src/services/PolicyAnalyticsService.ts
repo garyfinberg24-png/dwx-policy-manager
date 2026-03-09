@@ -583,7 +583,7 @@ export class PolicyAnalyticsService {
       const sessionId = this.getSessionId();
       const deviceInfo = this.getDeviceInfo();
 
-      await this.sp.web.lists.getByTitle("AnalyticsLists.USER_ACTIVITY_LOG").items.add({
+      await this.sp.web.lists.getByTitle(AnalyticsLists.USER_ACTIVITY_LOG).items.add({
         Title: `${activityType} - ${policyTitle}`,
         UserIdId: userId,
         ActivityType: activityType,
@@ -1025,7 +1025,8 @@ export class PolicyAnalyticsService {
 
   private async getActivities(filters?: IReportFilters): Promise<any[]> {
     try {
-      let query = this.sp.web.lists.getByTitle("AnalyticsLists.USER_ACTIVITY_LOG").items;
+      let query = this.sp.web.lists.getByTitle(AnalyticsLists.USER_ACTIVITY_LOG).items
+        .select('Id', 'Title', 'ActivityType', 'PolicyId', 'PolicyTitle', 'ActivityDate', 'TimeSpent', 'UserIdId');
 
       if (filters?.startDate) {
         query = query.filter(`ActivityDate ge '${filters.startDate.toISOString()}'`);
@@ -1045,13 +1046,14 @@ export class PolicyAnalyticsService {
 
   private async getViolations(filters?: IReportFilters): Promise<any[]> {
     try {
-      let query = this.sp.web.lists.getByTitle("AnalyticsLists.COMPLIANCE_VIOLATIONS").items;
+      let query = this.sp.web.lists.getByTitle(AnalyticsLists.COMPLIANCE_VIOLATIONS).items
+        .select('Id', 'Title', 'DetectedDate', 'Severity', 'Status', 'PolicyId', 'PolicyTitle', 'Department', 'Description');
 
       if (filters?.startDate) {
         query = query.filter(`DetectedDate ge '${filters.startDate.toISOString()}'`);
       }
 
-      const items = await query.top(1000)();
+      const items = await query.top(500)();
       return items;
     } catch (error) {
       console.error("Failed to get violations:", error);
@@ -1062,8 +1064,10 @@ export class PolicyAnalyticsService {
   private async getDepartmentPerformance(filters?: IReportFilters): Promise<any[]> {
     try {
       const items = await this.sp.web.lists
-        .getByTitle("AnalyticsLists.DEPARTMENT_ANALYTICS")
-        .items.top(100)();
+        .getByTitle(AnalyticsLists.DEPARTMENT_ANALYTICS)
+        .items
+        .select('Id', 'Title', 'Department', 'ComplianceScore', 'TotalPolicies', 'AcknowledgedPolicies', 'OverduePolicies', 'AverageResponseDays')
+        .top(100)();
 
       return items;
     } catch (error) {
@@ -1602,8 +1606,8 @@ export class PolicyAnalyticsService {
   // PHASE 4: SCHEDULED REPORTS
   // ============================================================================
 
-  private readonly scheduledReportsListName = "AnalyticsLists.SCHEDULED_REPORTS";
-  private readonly reportExecutionsListName = "AnalyticsLists.REPORT_EXECUTIONS";
+  private readonly scheduledReportsListName = AnalyticsLists.SCHEDULED_REPORTS;
+  private readonly reportExecutionsListName = AnalyticsLists.REPORT_EXECUTIONS;
 
   /**
    * Get all scheduled reports
@@ -2439,8 +2443,8 @@ export class PolicyAnalyticsService {
   // PHASE 4: AUDIT REPORT GENERATOR
   // ============================================================================
 
-  private readonly auditReportsListName = "AnalyticsLists.AUDIT_REPORTS";
-  private readonly auditTrailListName = "AnalyticsLists.AUDIT_TRAIL";
+  private readonly auditReportsListName = AnalyticsLists.AUDIT_REPORTS;
+  private readonly auditTrailListName = AnalyticsLists.AUDIT_TRAIL;
 
   /**
    * Generate a comprehensive audit report
@@ -2797,7 +2801,9 @@ export class PolicyAnalyticsService {
     try {
       let query = this.sp.web.lists
         .getByTitle(this.auditTrailListName)
-        .items.orderBy("Timestamp", false);
+        .items
+        .select('Id', 'Timestamp', 'UserId', 'UserName', 'UserEmail', 'Action', 'ActionCategory', 'ResourceType', 'ResourceId', 'ResourceTitle', 'OldValue', 'NewValue', 'IpAddress', 'SessionId', 'Details')
+        .orderBy("Timestamp", false);
 
       if (filters?.startDate) {
         query = query.filter(`Timestamp ge datetime'${filters.startDate.toISOString()}'`);
@@ -2811,7 +2817,7 @@ export class PolicyAnalyticsService {
         query = query.filter(`UserId eq ${filters.userId}`);
       }
 
-      const items = await query.top(1000)();
+      const items = await query.top(500)();
 
       return items.map(item => ({
         Id: item.Id,

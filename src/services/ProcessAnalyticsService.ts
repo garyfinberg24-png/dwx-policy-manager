@@ -298,7 +298,7 @@ export class ProcessAnalyticsService {
           'ProgressPercentage', 'TotalTasks', 'CompletedTasks', 'OverdueTasks',
           'Created', 'Modified'
         )
-        .top(5000);
+        .top(500);
 
       if (filter?.startDate) {
         query = query.filter(`Created ge datetime'${filter.startDate.toISOString()}'`);

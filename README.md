@@ -84,13 +84,17 @@ src/
   styles/                      # Shared styles
     fluent-mixins.scss         # SCSS mixins for full-bleed layouts
   types/                       # TypeScript type augmentations
-  utils/                       # pnpConfig, retryUtils, SharePointOverrides, injectPortalStyles
+  utils/                       # pnpConfig, retryUtils, sanitizeHtml, formatDate, SharePointOverrides
 azure-functions/
   quiz-generator/              # Azure Function — AI Quiz Question Generator (GPT-4o)
     infra/                     # Bicep IaC + deployment script
   policy-chat/                 # Azure Function — AI Chat Assistant (GPT-4o)
     infra/                     # Bicep IaC + deployment script (cross-RG Key Vault)
   email-sender/                # Azure Logic App — PM_EmailQueue email processor
+    infra/                     # Bicep IaC + deployment script
+  approval-escalation/         # Azure Function — Approval timeout escalation
+    infra/                     # Bicep IaC + deployment script
+  notification-processor/      # Azure Function — Background notification processing
     infra/                     # Bicep IaC + deployment script
 scripts/
   policy-management/           # PnP PowerShell provisioning
@@ -164,6 +168,16 @@ All lists use the `PM_` prefix. Full definitions in `src/constants/SharePointLis
 Gradient: `linear-gradient(135deg, #0d9488 0%, #0f766e 100%)`
 
 Font: Segoe UI (system fallbacks)
+
+## Security Hardening (v1.2.5)
+
+Comprehensive security audit and hardening pass applied across the entire codebase:
+
+- **XSS Prevention** — `escapeHtml()` utility for HTML entity encoding in all email templates (PolicyNotificationService, ApprovalNotificationService). Blob URL pattern replaces `document.write` in PDF generation.
+- **Input Validation** — MIME type cross-validation for file uploads, HTTPS protocol enforcement for localStorage URLs, `JSON.parse` crash guards, `parseInt` NaN validation.
+- **Infrastructure** — 30s AbortController timeout on Azure OpenAI calls, environment-conditional CORS (no localhost in prod), admin role guard on PolicyAdmin mount.
+- **Notification Resilience** — Per-recipient try/catch in notification loops (continues on failure, logs count), retry options with DLQ support.
+- **Upload Security** — Document upload limit reduced to 25MB (video stays 100MB), MIME-to-extension cross-validation map.
 
 ## Enterprise Features (v1.2.4)
 
@@ -304,6 +318,7 @@ Upload the `.sppkg` file to the SharePoint App Catalog, then add web parts to th
 
 | Version | Date | Comments |
 | --- | --- | --- |
+| 1.2.5 | March 2026 | Security hardening (XSS prevention, input validation, CORS, upload security), notification resilience (per-recipient error handling), Forest Teal theme alignment, admin panel expansion (approval/compliance/notification config), new Azure Function scaffolds (approval-escalation, notification-processor), DWx view expansions, shared date formatting utilities |
 | 1.2.4 | February 2026 | AI Chat Assistant (Azure Function + SPFx panel + 3 modes), managed departments for user roles, enterprise features (versioning, visibility, subcategories, document folders, quiz sequencing, request-to-policy), email pipeline (12 templates + Logic App), component decomposition, 6 unit test suites |
 | 1.2.3 | February 2026 | Live data wiring (Analytics, Distribution), Application Insights telemetry, admin nav toggles, DWx Hub expansion, RecentlyViewedService, provisioning scripts |
 | 1.2.2 | February 2026 | Image templates, quiz selection, fullscreen viewer, DWx Hub integration, enterprise hardening (9/10 security + performance fixes) |

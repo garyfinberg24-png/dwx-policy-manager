@@ -40,7 +40,7 @@ Do NOT skip step 2 and jump straight to implementation. The user must confirm un
 - **Suite**: DWx (Digital Workplace Excellence)
 - **Company**: First Digital
 - **Tagline**: Policy Governance & Compliance
-- **Current Version**: 1.2.4
+- **Current Version**: 1.2.5
 - **Package ID**: `12538121-8a6b-4e41-8bc7-17f252d5c36e`
 - **SharePoint Site**: https://mf7m.sharepoint.com/sites/PolicyManager
 
@@ -189,6 +189,54 @@ background: linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%);
 
 ### Spacing Scale
 - XS: 4px | SM: 8px | MD: 12px | LG: 16px | XL: 20px | XXL: 24px
+
+---
+
+## Security Patterns & Conventions
+
+### HTML Sanitization (MANDATORY for all user-facing content)
+
+| Function | Import | Use Case |
+|----------|--------|----------|
+| `sanitizeHtml(html)` | `src/utils/sanitizeHtml.ts` | Rich text content — allows safe HTML tags through (p, b, i, a, table, img, etc.) |
+| `escapeHtml(text)` | `src/utils/sanitizeHtml.ts` | Plain text in HTML templates — converts ALL `&<>"'` to entities. Use in email templates. |
+
+**Rules:**
+- ALL user-controlled content in email templates MUST use `escapeHtml()` — never interpolate raw strings into HTML
+- Rich text from editors (policy body, descriptions) uses `sanitizeHtml()` via DOMPurify
+- Never use `document.write()` — use Blob URL pattern (`URL.createObjectURL` → `window.open`)
+- Always validate URLs from localStorage/sessionStorage before use (check `parsed.protocol === 'https:'`)
+- Always wrap `JSON.parse()` of external data in try/catch with safe fallback
+
+### Upload Validation
+
+- **Document limit**: 25MB (video: 100MB)
+- **MIME cross-validation**: File extension must match MIME type via `ALLOWED_MIME_MAP`
+- **Extension allowlist**: Defined in `BulkFileUploadService.ALLOWED_EXTENSIONS`
+
+### Infrastructure Security
+
+- **CORS**: Localhost origins only allowed when `environment != 'prod'` (Bicep parameter)
+- **Fetch timeouts**: All external API calls use `AbortController` with timeout (30s for Azure OpenAI)
+- **Admin guards**: Admin-only components check `userRole === 'Admin'` in `componentDidMount`
+
+### Notification Resilience Pattern
+
+```typescript
+// Per-recipient try/catch — continues on failure, logs count
+let failCount = 0;
+for (const recipientId of recipientIds) {
+  try {
+    await this.sendNotification({ ... });
+  } catch (err) {
+    failCount++;
+    logger.warn('Service', `Failed for ${recipientId}:`, err);
+  }
+}
+if (failCount > 0) logger.error('Service', `${failCount}/${recipientIds.length} failed`);
+```
+
+Note: Do NOT use `Promise.allSettled()` — SPFx 1.20 targets ES2017 which doesn't support it.
 
 ---
 
@@ -712,9 +760,69 @@ The QuizBuilder's "AI Generate" panel calls the Azure Function with:
 
 ---
 
-## Session State (Last Updated: 27 Feb 2026 — Session 11)
+## Session State (Last Updated: 9 Mar 2026 — Session 12)
 
-### Recently Completed (Session 11 — 27 Feb 2026)
+### Recently Completed (Session 12 — 9 Mar 2026)
+
+#### Security & Hardening Audit — 11 Critical/High Fixes
+
+- **escapeHtml()** — New utility in `sanitizeHtml.ts` for HTML entity encoding (`&`, `<`, `>`, `"`, `'`). Use for plain text in email templates; `sanitizeHtml()` is for rich text allowing safe HTML through.
+- **Email Template XSS** — All user-controlled content escaped in PolicyNotificationService (9 templates) and ApprovalNotificationService (5 templates) via `escapeHtml()` in `emailRow()`, `policyCard()`, and inline interpolations.
+- **document.write XSS** — Replaced in PolicyDetails.handleGeneratePdf with Blob URL pattern (`URL.createObjectURL` → `window.open` → `afterprint` revoke).
+- **localStorage URL injection** — PolicyChatService now validates HTTPS protocol on stored URLs before use.
+- **JSON.parse crash guard** — `parseDomainsSafely()` wrapper in useExternalSharing for all 3 `JSON.parse(org.AllowedDomains)` calls.
+- **CORS hardening** — Localhost origin conditional on `environment != 'prod'` in policy-chat and quiz-generator Bicep files.
+- **AbortController timeout** — 30s timeout on Azure OpenAI fetch with proper 504 response on abort.
+- **MIME validation** — Cross-validates MIME type against file extension in BulkFileUploadService; doc upload limit reduced to 25MB.
+- **parseInt guard** — `Number.isFinite(Number(policyId)) && Number(policyId) > 0` in PolicyAuthorEnhanced.
+- **Notification resilience** — Per-recipient try/catch loops in 3 notification methods (continues on failure, logs failure count).
+- **Admin role guard** — PolicyAdmin.componentDidMount checks `userRole === 'Admin'` before loading config.
+
+#### Admin Panel Expansion (PolicyAdmin.tsx)
+
+- Batched 7 sequential config API calls into single `Promise.all` (was waterfall, now parallel)
+- Added Approval Workflow config section (require approval on new/update, allow self-approval)
+- Added Compliance config section (require ack, default deadline, review frequency, reminders)
+- Added Notification config section (new policy, updates, daily digest toggles)
+- Added PeoplePicker integration for user role management
+- Added ariaLabel accessibility attributes to IconButtons
+
+#### New Azure Function Scaffolds
+
+- `azure-functions/approval-escalation/` — Bicep IaC + deploy.ps1 for approval timeout escalation
+- `azure-functions/notification-processor/` — Bicep IaC + deploy.ps1 for background notification processing
+
+#### DWx View Expansions
+
+- **PolicyAuthorView** — Delegation management, activity feed tabs
+- **PolicyManagerView** — Team compliance, review scheduling, reports tabs
+- **QuizBuilderWrapper** — Quiz analytics, template management tabs
+
+#### Forest Teal Theme Alignment
+
+- **FluentUIStyles.ts** — Replaced all Microsoft Blue (#0078d4) with Forest Teal (#0d9488) across theme tokens, icon colors, button styles, header gradients
+- **JmlViewStyles.ts** — Removed max-width: 1400px constraints, full-width layouts
+- **TabPanelStyles.ts, fluentV8Styles.ts** — Forest Teal color alignment
+- **SCSS files** — Theme updates across 8 component stylesheets
+
+#### New Utilities
+
+- **formatDate.ts** — `formatDate`, `formatDateTime`, `formatRelativeTime`, `isOverdue`, `getDaysUntil`
+- **retryUtils.ts** — Added `NOTIFICATION_RETRY_OPTIONS` and `notificationDLQ`
+
+#### Performance Audit (Completed — Findings Documented, Fixes Pending)
+
+Three parallel audit streams identified ~45 optimization opportunities:
+- **CRITICAL**: No code splitting (zero React.lazy), source maps in prod, PolicyAuthorEnhanced 6,847-line monolith, AnalyticsService `.top(5000) + select('*')`, PolicyHubService loads 500 items client-side
+- **HIGH**: Empty externals config (React bundled per webpart), AdminConfigService 7 sequential calls (now fixed), RoleDetectionService no cross-webpart cache, barrel file prevents tree-shaking, unvirtualized lists
+- See handoff document for full prioritized fix list
+
+#### Build & Push
+
+- **Commit** — `4248826` — pushed to both ADO and GitHub remotes
+- 55 files changed, 2268 insertions, 488 deletions
+
+### Previously Completed (Session 11 — 27 Feb 2026)
 
 #### AI Chat Assistant — Full Stack Implementation
 

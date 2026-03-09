@@ -33,6 +33,10 @@ import {
 import { JmlAppLayout } from '../../../components/JmlAppLayout/JmlAppLayout';
 import { PageSubheader } from '../../../components/PageSubheader';
 import { PM_LISTS } from '../../../constants/SharePointListNames';
+import { PolicyService } from '../../../services/PolicyService';
+import { logger } from '../../../services/LoggingService';
+import { RoleDetectionService } from '../../../services/RoleDetectionService';
+import { PolicyManagerRole, getHighestPolicyRole, hasMinimumRole } from '../../../services/PolicyRoleService';
 import styles from './PolicyManagerView.module.scss';
 
 // ============================================================================
@@ -139,6 +143,7 @@ interface IPolicyManagerViewState {
   showReportPreview: boolean;
   showReportFlyout: boolean;
   flyoutReportKey: string;
+  detectedRole: PolicyManagerRole | null;
 }
 
 // ============================================================================
@@ -146,9 +151,11 @@ interface IPolicyManagerViewState {
 // ============================================================================
 
 export default class PolicyManagerView extends React.Component<IPolicyManagerViewProps, IPolicyManagerViewState> {
+  private policyService: PolicyService;
 
   constructor(props: IPolicyManagerViewProps) {
     super(props);
+    this.policyService = new PolicyService(props.sp);
     const urlParams = new URLSearchParams(window.location.search);
     const tabParam = urlParams.get('tab');
     let initialTab: ManagerViewTab = 'dashboard';
@@ -185,11 +192,24 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
       selectedBuildReport: 'dept-compliance',
       showReportPreview: false,
       showReportFlyout: false,
-      flyoutReportKey: ''
+      flyoutReportKey: '',
+      detectedRole: null
     };
   }
 
   public componentDidMount(): void {
+    // Detect user role for access guard
+    const roleService = new RoleDetectionService(this.props.sp);
+    roleService.getCurrentUserRoles().then(userRoles => {
+      if (userRoles && userRoles.length > 0) {
+        this.setState({ detectedRole: getHighestPolicyRole(userRoles) });
+      } else {
+        this.setState({ detectedRole: PolicyManagerRole.User });
+      }
+    }).catch(() => {
+      this.setState({ detectedRole: PolicyManagerRole.User });
+    });
+
     this.loadLiveApprovals().then(liveApprovals => {
       this.setState({
         teamMembers: this.getSampleTeamMembers(),
@@ -258,6 +278,40 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
   }
 
   public render(): JSX.Element {
+    // Access denied guard — Manager role required
+    if (this.state.detectedRole !== null && !hasMinimumRole(this.state.detectedRole, PolicyManagerRole.Manager)) {
+      return (
+        <JmlAppLayout
+          title={this.props.title || 'Manager Dashboard'}
+          context={this.props.context}
+          sp={this.props.sp}
+          activeNavKey="manager"
+          breadcrumbs={[{ text: 'Policy Manager', url: '/sites/PolicyManager' }, { text: 'Policy Manager' }]}
+        >
+          <section style={{ maxWidth: 600, margin: '80px auto', textAlign: 'center', padding: 32 }}>
+            <Icon iconName="Lock" styles={{ root: { fontSize: 48, color: '#dc2626', marginBottom: 16 } }} />
+            <Text variant="xLarge" block styles={{ root: { fontWeight: 600, marginBottom: 8, color: '#0f172a' } }}>
+              Access Denied
+            </Text>
+            <Text variant="medium" block styles={{ root: { color: '#64748b', marginBottom: 24 } }}>
+              The Manager Dashboard requires a Manager role or higher. Contact your system administrator if you need access.
+            </Text>
+            <DefaultButton
+              text="Go to Policy Hub"
+              iconProps={{ iconName: 'Home' }}
+              href={`${this.props.context.pageContext.web.absoluteUrl}/SitePages/PolicyHub.aspx`}
+              styles={{ root: { marginRight: 8 } }}
+            />
+            <DefaultButton
+              text="Go Back"
+              iconProps={{ iconName: 'Back' }}
+              onClick={() => window.history.back()}
+            />
+          </section>
+        </JmlAppLayout>
+      );
+    }
+
     return (
       <JmlAppLayout
         title={this.props.title || 'Manager Dashboard'}
@@ -644,10 +698,15 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
                       <Stack horizontal tokens={{ childrenGap: 6 }}>
                         <PrimaryButton text="Approve" iconProps={{ iconName: 'CheckMark' }}
                           styles={{ root: { height: 28, padding: '0 10px', fontSize: 12, background: '#107c10', borderColor: '#107c10' }, rootHovered: { background: '#0e6b0e' } }}
-                          onClick={() => this.updateApprovalStatus(approval.Id, 'Approved')} />
+                          onClick={() => { if (window.confirm('Are you sure you want to approve this policy?')) { this.updateApprovalStatus(approval.Id, 'Approved'); } }} />
                         <DefaultButton text="Return" iconProps={{ iconName: 'Undo' }}
                           styles={{ root: { height: 28, padding: '0 10px', fontSize: 12 } }}
-                          onClick={() => this.updateApprovalStatus(approval.Id, 'Returned')} />
+                          onClick={() => {
+                            const reason = window.prompt('Please provide a reason for returning this policy for revision:');
+                            if (reason !== null && reason.trim()) {
+                              this.updateApprovalStatus(approval.Id, 'Returned', reason.trim());
+                            }
+                          }} />
                       </Stack>
                     )}
                   </Stack>
@@ -1739,26 +1798,25 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
     }
   }
 
-  private updateApprovalStatus(id: number, status: 'Approved' | 'Rejected' | 'Returned'): void {
+  private async updateApprovalStatus(id: number, status: 'Approved' | 'Rejected' | 'Returned', rejectionReason?: string): Promise<void> {
     // Update local state immediately for responsive UI
     this.setState({ approvals: this.state.approvals.map(a => a.Id === id ? { ...a, Status: status } : a) });
 
-    // Persist to SharePoint — map approval status to PolicyStatus
-    const spStatus = status === 'Approved' ? 'Approved' : status === 'Rejected' ? 'Rejected' : 'Draft';
-    const dateField = status === 'Approved' ? 'ApprovedDate' : undefined;
-    const updateData: Record<string, unknown> = { PolicyStatus: spStatus };
-    if (dateField) updateData[dateField] = new Date().toISOString();
-
-    this.props.sp.web.lists
-      .getByTitle(PM_LISTS.POLICIES)
-      .items.getById(id)
-      .update(updateData)
-      .then(() => console.log(`Policy ${id} status updated to ${spStatus}`))
-      .catch((err: Error) => {
-        console.error(`Failed to update policy ${id} status:`, err);
-        // Revert local state on failure
-        this.setState({ approvals: this.state.approvals.map(a => a.Id === id ? { ...a, Status: 'Pending' } : a) });
-      });
+    try {
+      if (status === 'Approved') {
+        await this.policyService.approvePolicy(id, 'Approved via Manager Dashboard');
+        logger.info('PolicyManagerView', `Policy ${id} approved`);
+      } else {
+        // Both 'Rejected' and 'Returned' go through rejectPolicy for proper audit trail
+        const reason = rejectionReason || (status === 'Returned' ? 'Returned for revision by manager' : 'Rejected by manager');
+        await this.policyService.rejectPolicy(id, reason);
+        logger.info('PolicyManagerView', `Policy ${id} returned/rejected: ${reason}`);
+      }
+    } catch (err) {
+      logger.error('PolicyManagerView', `Failed to update policy ${id} status:`, err);
+      // Revert local state on failure
+      this.setState({ approvals: this.state.approvals.map(a => a.Id === id ? { ...a, Status: 'Pending' } : a) });
+    }
   }
 
   private updateDelegationForm(partial: Partial<IDelegationForm>): void {

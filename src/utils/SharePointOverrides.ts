@@ -465,10 +465,9 @@ export function removeSharePointOverrides(): void {
     /* Skeleton content area */
     .jml-skel-content {
       flex: 1;
-      max-width: 1400px;
       width: 100%;
-      margin: 0 auto;
       padding: 32px 24px;
+      box-sizing: border-box;
     }
 
     .jml-skel-title {

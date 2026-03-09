@@ -6,16 +6,16 @@
  */
 
 export const FluentColors = {
-  // Primary Colors
-  themePrimary: '#0078d4',
-  themeLighterAlt: '#eff6fc',
-  themeLighter: '#deecf9',
-  themeLight: '#c7e0f4',
-  themeTertiary: '#71afe5',
-  themeSecondary: '#2b88d8',
-  themeDarkAlt: '#106ebe',
-  themeDark: '#005a9e',
-  themeDarker: '#004578',
+  // Primary Colors — Forest Teal theme
+  themePrimary: '#0d9488',
+  themeLighterAlt: '#f0fdfa',
+  themeLighter: '#ccfbf1',
+  themeLight: '#99f6e4',
+  themeTertiary: '#5eead4',
+  themeSecondary: '#2dd4bf',
+  themeDarkAlt: '#0f766e',
+  themeDark: '#115e59',
+  themeDarker: '#134e4a',
 
   // Neutral Colors
   neutralLighterAlt: '#faf9f8',
@@ -40,7 +40,7 @@ export const FluentColors = {
   warningLight: '#fff4ce',
   error: '#a80000',
   errorLight: '#fde7e9',
-  info: '#0078d4',
+  info: '#0d9488',
   infoLight: '#e1f5fe',
 
   // Action Colors
@@ -153,7 +153,7 @@ export const IconSizes = {
  * Icon Color Standards
  */
 export const IconColors = {
-  primary: '#0078d4',         // Primary actions, highlights
+  primary: '#0d9488',         // Primary actions, highlights (Forest Teal)
   success: '#107c10',         // Success states, completed
   warning: '#f7630c',         // Warning states, attention
   error: '#d13438',           // Error states, critical
@@ -261,7 +261,7 @@ export const getButtonStyle = (type: 'primary' | 'secondary' | 'default' | 'tert
     case 'primary':
       return {
         ...baseStyle,
-        backgroundColor: FluentColors.themePrimary,  // Microsoft Blue (#0078d4)
+        backgroundColor: FluentColors.themePrimary,  // Forest Teal
         color: FluentColors.white,
         border: 'none',
         ':hover': {
@@ -371,7 +371,7 @@ export const getProgressBarStyle = () => ({
  */
 export const getStandardHeaderStyles = () => ({
   container: {
-    background: 'linear-gradient(135deg, #0078d4 0%, #106ebe 100%)',
+    background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
     padding: FluentSpacing.xxl,
     marginBottom: FluentSpacing.xl,
     position: 'relative' as const,

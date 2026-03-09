@@ -43,15 +43,14 @@
 }
 
 .contentWrapper {
-  max-width: 1400px;
   width: 100%;
   margin: 0 auto;
-  padding: 24px;
+  padding: 8px 24px;
   overflow-x: visible;
   box-sizing: border-box;
 
   @media (max-width: 768px) {
-    padding: 16px;
+    padding: 8px 16px;
   }
 }
 

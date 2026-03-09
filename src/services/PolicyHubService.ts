@@ -229,7 +229,10 @@ export class PolicyHubService {
         return true;
       }
       if (fields.includes('keywords')) {
-        const keywords = policy.Keywords ? JSON.parse(policy.Keywords) : [];
+        let keywords: string[] = [];
+        try {
+          keywords = policy.Keywords ? JSON.parse(policy.Keywords) : [];
+        } catch { keywords = []; }
         if (keywords.some((k: string) => k.toLowerCase().includes(lowerSearch))) {
           return true;
         }

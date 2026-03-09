@@ -12,6 +12,7 @@ import { IPolicy, IPolicyAcknowledgement, AcknowledgementStatus } from '../model
 import { logger } from './LoggingService';
 import { NotificationLists, PolicyLists } from '../constants/SharePointListNames';
 import { DwxNotificationService, DwxNotificationType, DwxNotificationPriority, DwxNotificationCategory } from '@dwx/core';
+import { escapeHtml } from '../utils/sanitizeHtml';
 
 /**
  * Policy notification types
@@ -20,6 +21,7 @@ export type PolicyNotificationType =
   | 'NewPolicy'
   | 'PolicyUpdated'
   | 'AcknowledgementRequired'
+  | 'ApprovalRequired'
   | 'Reminder3Day'
   | 'Reminder1Day'
   | 'Overdue'
@@ -83,22 +85,27 @@ export class PolicyNotificationService {
     policy: IPolicy,
     recipientIds: number[]
   ): Promise<void> {
-    try {
-      for (const recipientId of recipientIds) {
-        const notification: IPolicyNotification = {
+    const emailBody = this.buildNewPolicyEmail(policy);
+    let failCount = 0;
+    for (const recipientId of recipientIds) {
+      try {
+        await this.sendNotification({
           recipientId,
           notificationType: 'NewPolicy',
           subject: `New Policy Published: ${policy.PolicyName}`,
-          body: this.buildNewPolicyEmail(policy),
+          body: emailBody,
           policyId: policy.Id,
           sendEmail: true,
           sendInApp: true
-        };
-
-        await this.sendNotification(notification);
+        });
+      } catch (err) {
+        failCount++;
+        logger.warn('PolicyNotificationService', `Failed to notify recipient ${recipientId}:`, err);
       }
-    } catch (error) {
-      logger.error('PolicyNotificationService', 'Failed to send new policy notification:', error);
+    }
+    if (failCount > 0) {
+      logger.error('PolicyNotificationService',
+        `Failed to send new policy notification to ${failCount}/${recipientIds.length} recipients`);
     }
   }
 
@@ -110,22 +117,27 @@ export class PolicyNotificationService {
     recipientIds: number[],
     changeDescription: string
   ): Promise<void> {
-    try {
-      for (const recipientId of recipientIds) {
-        const notification: IPolicyNotification = {
+    const emailBody = this.buildPolicyUpdateEmail(policy, changeDescription);
+    let failCount = 0;
+    for (const recipientId of recipientIds) {
+      try {
+        await this.sendNotification({
           recipientId,
           notificationType: 'PolicyUpdated',
           subject: `Policy Updated: ${policy.PolicyName}`,
-          body: this.buildPolicyUpdateEmail(policy, changeDescription),
+          body: emailBody,
           policyId: policy.Id,
           sendEmail: true,
           sendInApp: true
-        };
-
-        await this.sendNotification(notification);
+        });
+      } catch (err) {
+        failCount++;
+        logger.warn('PolicyNotificationService', `Failed to notify recipient ${recipientId}:`, err);
       }
-    } catch (error) {
-      logger.error('PolicyNotificationService', 'Failed to send policy update notification:', error);
+    }
+    if (failCount > 0) {
+      logger.error('PolicyNotificationService',
+        `Failed to send policy update notification to ${failCount}/${recipientIds.length} recipients`);
     }
   }
 
@@ -338,6 +350,38 @@ export class PolicyNotificationService {
     }
   }
 
+  /**
+   * Send notification to reviewers when a policy is submitted for review
+   */
+  public async sendSubmittedForReviewNotification(
+    policy: IPolicy,
+    reviewerIds: number[],
+    submitterName: string
+  ): Promise<void> {
+    const emailBody = this.buildSubmittedForReviewEmail(policy, submitterName);
+    let failCount = 0;
+    for (const reviewerId of reviewerIds) {
+      try {
+        await this.sendNotification({
+          recipientId: reviewerId,
+          notificationType: 'ApprovalRequired',
+          subject: `Review Required: ${policy.PolicyName}`,
+          body: emailBody,
+          policyId: policy.Id,
+          sendEmail: true,
+          sendInApp: true
+        });
+      } catch (err) {
+        failCount++;
+        logger.warn('PolicyNotificationService', `Failed to notify reviewer ${reviewerId}:`, err);
+      }
+    }
+    if (failCount > 0) {
+      logger.error('PolicyNotificationService',
+        `Failed to send review notification to ${failCount}/${reviewerIds.length} recipients`);
+    }
+  }
+
   // ============================================================================
   // REMINDER SCHEDULER
   // ============================================================================
@@ -522,11 +566,11 @@ export class PolicyNotificationService {
 </html>`;
   }
 
-  /** Builds a detail row for email tables */
+  /** Builds a detail row for email tables (auto-escapes label and value) */
   private emailRow(label: string, value: string, valueStyle?: string): string {
     return `<tr>
-      <td style="padding:10px 14px;background:#f8fafc;font-weight:600;color:#334155;font-size:13px;width:140px;border-bottom:1px solid #f1f5f9;">${label}</td>
-      <td style="padding:10px 14px;color:#0f172a;font-size:14px;border-bottom:1px solid #f1f5f9;${valueStyle || ''}">${value}</td>
+      <td style="padding:10px 14px;background:#f8fafc;font-weight:600;color:#334155;font-size:13px;width:140px;border-bottom:1px solid #f1f5f9;">${escapeHtml(label)}</td>
+      <td style="padding:10px 14px;color:#0f172a;font-size:14px;border-bottom:1px solid #f1f5f9;${valueStyle || ''}">${escapeHtml(value)}</td>
     </tr>`;
   }
 
@@ -535,12 +579,12 @@ export class PolicyNotificationService {
     return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin:20px 0;background:#ffffff;border-radius:8px;border:1px solid #e2e8f0;overflow:hidden;">${rows}</table>`;
   }
 
-  /** Builds a policy highlight card */
+  /** Builds a policy highlight card (auto-escapes text content) */
   private policyCard(policyNumber: string, policyName: string, accent: string, detail: string): string {
     return `<div style="background:#ffffff;padding:20px;border-radius:8px;border-left:4px solid ${accent};margin:20px 0;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
-      <p style="margin:0 0 4px;font-size:13px;color:#64748b;font-weight:600;letter-spacing:0.3px;text-transform:uppercase;">${policyNumber}</p>
-      <p style="margin:0;font-size:17px;font-weight:600;color:#0f172a;">${policyName}</p>
-      <p style="margin:10px 0 0;color:${accent};font-weight:600;font-size:14px;">${detail}</p>
+      <p style="margin:0 0 4px;font-size:13px;color:#64748b;font-weight:600;letter-spacing:0.3px;text-transform:uppercase;">${escapeHtml(policyNumber)}</p>
+      <p style="margin:0;font-size:17px;font-weight:600;color:#0f172a;">${escapeHtml(policyName)}</p>
+      <p style="margin:10px 0 0;color:${accent};font-weight:600;font-size:14px;">${escapeHtml(detail)}</p>
     </div>`;
   }
 
@@ -553,7 +597,7 @@ export class PolicyNotificationService {
     const summary = policy.Description
       ? `<div style="background:#f0fdfa;padding:16px;border-radius:8px;margin:16px 0;border:1px solid #ccfbf1;">
            <p style="margin:0 0 6px;font-weight:600;color:#0f766e;font-size:13px;">Summary</p>
-           <p style="margin:0;color:#334155;font-size:14px;line-height:1.6;">${policy.Description}</p>
+           <p style="margin:0;color:#334155;font-size:14px;line-height:1.6;">${escapeHtml(policy.Description)}</p>
          </div>` : '';
     return this.buildEmailShell({
       headerGradient: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
@@ -576,7 +620,7 @@ export class PolicyNotificationService {
         ${this.emailTable(rows)}
         <div style="background:#fef3c7;border-left:4px solid #d97706;padding:16px;border-radius:0 8px 8px 0;margin:20px 0;">
           <p style="margin:0 0 6px;font-weight:700;color:#92400e;font-size:13px;">What Changed</p>
-          <p style="margin:0;color:#451a03;font-size:14px;line-height:1.5;">${changeDescription || 'The policy has been revised. Please review the updated content.'}</p>
+          <p style="margin:0;color:#451a03;font-size:14px;line-height:1.5;">${escapeHtml(changeDescription || 'The policy has been revised. Please review the updated content.')}</p>
         </div>
         <p style="margin:16px 0 0;color:#dc2626;font-weight:600;font-size:14px;">\u26A0\uFE0F You may need to re-acknowledge this policy.</p>`,
       footerText: 'This is an automated notification from the DWx Policy Management System.',
@@ -718,17 +762,17 @@ export class PolicyNotificationService {
             <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background: white; border-radius: 8px;">
               <tr>
                 <td style="padding: 12px 16px; background: #f3f2f1; font-weight: 600;">Policy:</td>
-                <td style="padding: 12px 16px;">${policy.PolicyNumber} - ${policy.PolicyName}</td>
+                <td style="padding: 12px 16px;">${escapeHtml(policy.PolicyNumber || '')} - ${escapeHtml(policy.PolicyName)}</td>
               </tr>
               <tr>
                 <td style="padding: 12px 16px; background: #f3f2f1; font-weight: 600;">Reviewer:</td>
-                <td style="padding: 12px 16px;">${approverName}</td>
+                <td style="padding: 12px 16px;">${escapeHtml(approverName)}</td>
               </tr>
             </table>
 
             <div style="background: white; padding: 16px; border-radius: 8px; border-left: 4px solid #d13438; margin: 20px 0;">
               <strong>Feedback:</strong>
-              <p style="margin: 8px 0 0 0;">${reason || 'Please contact the reviewer for specific feedback.'}</p>
+              <p style="margin: 8px 0 0 0;">${escapeHtml(reason || 'Please contact the reviewer for specific feedback.')}</p>
             </div>
 
             <p style="text-align: center; margin: 24px 0;">
@@ -747,6 +791,25 @@ export class PolicyNotificationService {
         </body>
       </html>
     `;
+  }
+
+  private buildSubmittedForReviewEmail(policy: IPolicy, submitterName: string): string {
+    const policyUrl = `${this.siteUrl}/SitePages/PolicyManagerView.aspx?tab=approvals`;
+    const rows = ''
+      + this.emailRow('Policy', `${policy.PolicyNumber || ''} — ${policy.PolicyName}`)
+      + this.emailRow('Category', policy.PolicyCategory || 'General')
+      + this.emailRow('Submitted By', submitterName)
+      + this.emailRow('Risk Level', policy.ComplianceRisk || 'Medium')
+      + this.emailRow('Submitted', new Date().toLocaleDateString());
+    return this.buildEmailShell({
+      headerGradient: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
+      headerIcon: '📋', headerTitle: 'Policy Review Required',
+      bodyBg: '#f0fdfa',
+      content: `<p style="margin:0 0 16px;color:#334155;font-size:15px;line-height:1.6;">A policy has been submitted for your review and approval. Please review it at your earliest convenience.</p>
+        ${this.emailTable(rows)}`,
+      footerText: 'This is an automated notification from the DWx Policy Management System.',
+      ctaUrl: policyUrl, ctaLabel: 'Review Policy', ctaColor: '#0d9488',
+    });
   }
 
   // ============================================================================
@@ -823,6 +886,7 @@ export class PolicyNotificationService {
       'NewPolicy': DwxNotificationType.PolicyPublished,
       'PolicyUpdated': DwxNotificationType.PolicyPublished,
       'AcknowledgementRequired': DwxNotificationType.AcknowledgementDue,
+      'ApprovalRequired': DwxNotificationType.ApprovalRequired,
       'Reminder3Day': DwxNotificationType.AcknowledgementDue,
       'Reminder1Day': DwxNotificationType.AcknowledgementDue,
       'Overdue': DwxNotificationType.ComplianceAlert,
@@ -837,12 +901,12 @@ export class PolicyNotificationService {
 
   private mapToDwxPriority(type: PolicyNotificationType): DwxNotificationPriority {
     if (['Overdue', 'PolicyExpiring', 'Reminder1Day'].includes(type)) return 'High';
-    if (['AcknowledgementRequired', 'Reminder3Day', 'PolicyApproved', 'PolicyRejected', 'DelegationRequest'].includes(type)) return 'Medium';
+    if (['AcknowledgementRequired', 'ApprovalRequired', 'Reminder3Day', 'PolicyApproved', 'PolicyRejected', 'DelegationRequest'].includes(type)) return 'Medium';
     return 'Low';
   }
 
   private mapToDwxCategory(type: PolicyNotificationType): DwxNotificationCategory {
-    if (['PolicyApproved', 'PolicyRejected', 'DelegationRequest'].includes(type)) return 'Approval';
+    if (['PolicyApproved', 'PolicyRejected', 'ApprovalRequired', 'DelegationRequest'].includes(type)) return 'Approval';
     if (['Overdue', 'PolicyExpiring', 'AcknowledgementRequired', 'Reminder3Day', 'Reminder1Day'].includes(type)) return 'Compliance';
     if (['AcknowledgementComplete'].includes(type)) return 'Task';
     return 'Info';
@@ -905,11 +969,11 @@ export class PolicyNotificationService {
             <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background: white; border-radius: 8px;">
               <tr>
                 <td style="padding: 12px 16px; background: #f3f2f1; font-weight: 600;">Employee:</td>
-                <td style="padding: 12px 16px;">${employeeName}</td>
+                <td style="padding: 12px 16px;">${escapeHtml(employeeName)}</td>
               </tr>
               <tr>
                 <td style="padding: 12px 16px; background: #f3f2f1; font-weight: 600;">Policy:</td>
-                <td style="padding: 12px 16px;">${policy.PolicyNumber} - ${policy.PolicyName}</td>
+                <td style="padding: 12px 16px;">${escapeHtml(policy.PolicyNumber || '')} - ${escapeHtml(policy.PolicyName)}</td>
               </tr>
               <tr>
                 <td style="padding: 12px 16px; background: #f3f2f1; font-weight: 600;">Days Overdue:</td>

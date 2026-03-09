@@ -151,7 +151,9 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
     siteConfig: {
       nodeVersion: nodeVersion
       cors: {
-        allowedOrigins: [
+        allowedOrigins: environment == 'prod' ? [
+          sharePointSiteUrl
+        ] : [
           sharePointSiteUrl
           'https://localhost:4321'
         ]

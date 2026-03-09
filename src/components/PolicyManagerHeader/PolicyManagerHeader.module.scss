@@ -27,7 +27,7 @@ $pm-white: #ffffff;
 $pm-gradient-header: linear-gradient(135deg, $pm-dark-teal 0%, $pm-primary-teal 100%);
 
 // Font
-$pm-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+$pm-font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
 
 // Header container
 .headerContainer {
@@ -234,21 +234,22 @@ $pm-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-se
 }
 
 .actionButton {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: transparent;
-  border: none;
-  border-radius: 6px;
-  color: $pm-white;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.9);
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition: all 0.2s ease;
   position: relative;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.2);
   }
 
   svg {
@@ -269,10 +270,10 @@ $pm-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-se
 }
 
 .userAvatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -280,13 +281,13 @@ $pm-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-se
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  transition: border-color 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  transition: all 0.2s ease;
   overflow: hidden;
-  margin-left: 4px;
 
   &:hover {
-    border-color: rgba(255, 255, 255, 0.5);
+    border-color: rgba(255, 255, 255, 0.3);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.15));
   }
 
   img {
@@ -586,8 +587,7 @@ $pm-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-se
 }
 
 .pageHeaderContent {
-  max-width: 1400px;
-  margin: 0 auto;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -997,10 +997,8 @@ $pm-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-se
 .breadcrumbBar {
   display: flex;
   align-items: center;
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 8px 24px;
   width: 100%;
+  padding: 8px 24px;
   box-sizing: border-box;
   font-family: $pm-font-family;
   font-size: 13px;

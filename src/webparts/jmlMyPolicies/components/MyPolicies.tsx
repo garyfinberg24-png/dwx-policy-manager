@@ -576,7 +576,7 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
         activeNavKey="my-policies"
       >
         <div className={styles.myPolicies}>
-          <div style={{ maxWidth: '1400px', width: '100%', margin: '0 auto', padding: '24px', boxSizing: 'border-box' }}>
+          <div style={{ width: '100%', padding: '8px 24px', boxSizing: 'border-box' }}>
             {loading ? (
               <div style={{ padding: '60px', textAlign: 'center' }}>
                 <Spinner size={SpinnerSize.large} label="Loading your policies..." />

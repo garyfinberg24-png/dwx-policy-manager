@@ -4,7 +4,7 @@ $pm-primary: #0d9488;
 $pm-primary-dark: #0f766e;
 $pm-primary-light: #14b8a6;
 $pm-primary-bg: #ccfbf1;
-$pm-font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+$pm-font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
 
 .policyAnalytics {
   font-family: $pm-font-family;
@@ -80,7 +80,7 @@ $pm-font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-se
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 16px;
-  max-width: 1200px;
+  width: 100%;
 }
 
 .kpiCard {
@@ -1128,5 +1128,5 @@ $pm-font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-se
 .complianceTab,
 .auditTab,
 .quizTab {
-  max-width: 1200px;
+  width: 100%;
 }

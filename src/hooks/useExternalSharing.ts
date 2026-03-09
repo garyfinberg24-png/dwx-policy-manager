@@ -192,14 +192,23 @@ export function useExternalSharing(
   }, [autoLoadOrganizations, refreshOrganizations]);
 
   // Check if domain is trusted
+  const parseDomainsSafely = useCallback((domainsJson: string): string[] => {
+    try {
+      const parsed = JSON.parse(domainsJson);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }, []);
+
   const isDomainTrusted = useCallback((domain: string): boolean => {
     const normalizedDomain = domain.toLowerCase();
     return trustedOrganizations.some(org =>
       org.TenantDomain.toLowerCase() === normalizedDomain ||
       (org.AllowedDomains && typeof org.AllowedDomains === 'string' &&
-        JSON.parse(org.AllowedDomains).some((d: string) => d.toLowerCase() === normalizedDomain))
+        parseDomainsSafely(org.AllowedDomains).some((d: string) => d.toLowerCase() === normalizedDomain))
     );
-  }, [trustedOrganizations]);
+  }, [trustedOrganizations, parseDomainsSafely]);
 
   // Get organization by domain
   const getOrganizationByDomain = useCallback((domain: string): ITrustedOrganization | undefined => {
@@ -207,9 +216,9 @@ export function useExternalSharing(
     return trustedOrganizations.find(org =>
       org.TenantDomain.toLowerCase() === normalizedDomain ||
       (org.AllowedDomains && typeof org.AllowedDomains === 'string' &&
-        JSON.parse(org.AllowedDomains).some((d: string) => d.toLowerCase() === normalizedDomain))
+        parseDomainsSafely(org.AllowedDomains).some((d: string) => d.toLowerCase() === normalizedDomain))
     );
-  }, [trustedOrganizations]);
+  }, [trustedOrganizations, parseDomainsSafely]);
 
   // Validate sharing allowed
   const validateSharingAllowed = useCallback((
@@ -319,7 +328,7 @@ export function useExternalSharing(
         // Check allowed domains
         let domainAllowed = false;
         if (org.AllowedDomains && typeof org.AllowedDomains === 'string') {
-          const allowedDomains = JSON.parse(org.AllowedDomains);
+          const allowedDomains = parseDomainsSafely(org.AllowedDomains);
           domainAllowed = allowedDomains.some((d: string) => d.toLowerCase() === emailDomain);
         }
 

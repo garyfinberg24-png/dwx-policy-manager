@@ -21,10 +21,10 @@
 // =============================================================================
 // JML Design Tokens (matching JML-Official-Style-Guide.html)
 // =============================================================================
-$jml-primary: #0078d4;
-$jml-primary-dark: #106ebe;
-$jml-primary-darker: #005a9e;
-$jml-teal: #03787c;
+$jml-primary: #0d9488;
+$jml-primary-dark: #0f766e;
+$jml-primary-darker: #115e59;
+$jml-teal: #0d9488;
 
 $jml-neutral-primary: #323130;
 $jml-neutral-secondary: #605e5c;
@@ -40,8 +40,8 @@ $jml-warning: #ffb900;
 $jml-warning-light: #fff4ce;
 $jml-error: #d13438;
 $jml-error-light: #fde7e9;
-$jml-info: #0078d4;
-$jml-info-light: #deecf9;
+$jml-info: #0d9488;
+$jml-info-light: #ccfbf1;
 
 // Spacing (4px grid)
 $spacing-xs: 4px;
@@ -278,13 +278,13 @@ $spacing-xxl: 24px;
 .jmlStatusScheduled {
   @extend .jmlStatusBadge;
   background: $jml-info-light;
-  color: #004578;
+  color: #134e4a;
 }
 
 .jmlStatusInProgress {
   @extend .jmlStatusBadge;
   background: $jml-info-light;
-  color: #004578;
+  color: #134e4a;
 }
 
 // =============================================================================

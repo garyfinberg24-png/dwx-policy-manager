@@ -823,11 +823,15 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
   private handleGeneratePdf = (): void => {
     const { readReceipt } = this.state;
     if (!readReceipt) return;
-    const printWindow = window.open('', '_blank');
+    const html = this.generateReceiptEmailHtml(readReceipt);
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const printWindow = window.open(url, '_blank');
     if (printWindow) {
-      printWindow.document.write(this.generateReceiptEmailHtml(readReceipt));
-      printWindow.document.close();
-      printWindow.print();
+      printWindow.addEventListener('afterprint', () => URL.revokeObjectURL(url));
+      printWindow.addEventListener('load', () => printWindow.print());
+    } else {
+      URL.revokeObjectURL(url);
     }
   };
 
@@ -1881,7 +1885,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
             <Spinner size={SpinnerSize.large} label="Generating comparison..." />
           ) : (
             <div
-              dangerouslySetInnerHTML={{ __html: versionComparisonHtml }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(versionComparisonHtml || '') }}
               style={{ border: '1px solid #e2e8f0', borderRadius: 8, overflow: 'auto' }}
             />
           )}

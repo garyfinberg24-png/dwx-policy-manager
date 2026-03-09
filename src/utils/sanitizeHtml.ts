@@ -28,3 +28,17 @@ export function sanitizeHtml(dirty: string): string {
     ALLOW_DATA_ATTR: false,
   });
 }
+
+/**
+ * Escape HTML special characters for safe embedding in HTML templates.
+ * Use this for plain text content in email templates — converts &, <, >, ", ' to entities.
+ */
+export function escapeHtml(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}

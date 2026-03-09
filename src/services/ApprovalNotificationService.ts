@@ -16,6 +16,7 @@ import {
 } from '../models';
 import { Priority } from '../models/ICommon';
 import { logger } from './LoggingService';
+import { escapeHtml } from '../utils/sanitizeHtml';
 import {
   NotificationPreferencesService,
   NotificationEventType,
@@ -296,11 +297,11 @@ export class ApprovalNotificationService {
           <table style="border-collapse: collapse; width: 100%; max-width: 600px; margin: 20px 0;">
             <tr>
               <td style="padding: 10px; background-color: #f3f2f1; font-weight: 600;">Process:</td>
-              <td style="padding: 10px;">${approval.ProcessTitle}</td>
+              <td style="padding: 10px;">${escapeHtml(approval.ProcessTitle || '')}</td>
             </tr>
             <tr>
               <td style="padding: 10px; background-color: #f3f2f1; font-weight: 600;">Type:</td>
-              <td style="padding: 10px;">${approval.ProcessType}</td>
+              <td style="padding: 10px;">${escapeHtml(approval.ProcessType || '')}</td>
             </tr>
             <tr>
               <td style="padding: 10px; background-color: #f3f2f1; font-weight: 600;">Level:</td>
@@ -345,7 +346,7 @@ export class ApprovalNotificationService {
           <table style="border-collapse: collapse; width: 100%; max-width: 600px; margin: 20px 0;">
             <tr>
               <td style="padding: 10px; background-color: #f3f2f1; font-weight: 600;">Process:</td>
-              <td style="padding: 10px;">${approval.ProcessTitle}</td>
+              <td style="padding: 10px;">${escapeHtml(approval.ProcessTitle || '')}</td>
             </tr>
             <tr>
               <td style="padding: 10px; background-color: #f3f2f1; font-weight: 600;">Due Date:</td>
@@ -392,11 +393,11 @@ export class ApprovalNotificationService {
           <table style="border-collapse: collapse; width: 100%; max-width: 600px; margin: 20px 0;">
             <tr>
               <td style="padding: 10px; background-color: #f3f2f1; font-weight: 600;">Process:</td>
-              <td style="padding: 10px;">${approval.ProcessTitle}</td>
+              <td style="padding: 10px;">${escapeHtml(approval.ProcessTitle || '')}</td>
             </tr>
             <tr>
               <td style="padding: 10px; background-color: #f3f2f1; font-weight: 600;">Original Approver:</td>
-              <td style="padding: 10px;">${approval.OriginalApprover?.Title || approval.Approver.Title}</td>
+              <td style="padding: 10px;">${escapeHtml(approval.OriginalApprover?.Title || approval.Approver?.Title || '')}</td>
             </tr>
             <tr>
               <td style="padding: 10px; background-color: #f3f2f1; font-weight: 600;">Original Due Date:</td>
@@ -435,20 +436,20 @@ export class ApprovalNotificationService {
         <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #323130;">
           <h2 style="color: #0078d4;">Delegated Approval Request</h2>
 
-          <p>An approval has been delegated to you by ${approval.DelegatedBy?.Title || approval.OriginalApprover?.Title}.</p>
+          <p>An approval has been delegated to you by ${escapeHtml(approval.DelegatedBy?.Title || approval.OriginalApprover?.Title || '')}.</p>
 
           ${reason ? `<p style="background-color: #f3f2f1; padding: 12px; border-left: 4px solid #0078d4;">
-            <strong>Delegation Reason:</strong> ${reason}
+            <strong>Delegation Reason:</strong> ${escapeHtml(reason)}
           </p>` : ''}
 
           <table style="border-collapse: collapse; width: 100%; max-width: 600px; margin: 20px 0;">
             <tr>
               <td style="padding: 10px; background-color: #f3f2f1; font-weight: 600;">Process:</td>
-              <td style="padding: 10px;">${approval.ProcessTitle}</td>
+              <td style="padding: 10px;">${escapeHtml(approval.ProcessTitle || '')}</td>
             </tr>
             <tr>
               <td style="padding: 10px; background-color: #f3f2f1; font-weight: 600;">Original Approver:</td>
-              <td style="padding: 10px;">${approval.OriginalApprover?.Title || 'N/A'}</td>
+              <td style="padding: 10px;">${escapeHtml(approval.OriginalApprover?.Title || 'N/A')}</td>
             </tr>
             <tr>
               <td style="padding: 10px; background-color: #f3f2f1; font-weight: 600;">Due Date:</td>
@@ -484,12 +485,12 @@ export class ApprovalNotificationService {
         <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #323130;">
           <h2 style="color: ${statusColor};">Approval ${statusText}</h2>
 
-          <p>Your approval request has been ${statusText.toLowerCase()} by ${approval.Approver.Title}.</p>
+          <p>Your approval request has been ${statusText.toLowerCase()} by ${escapeHtml(approval.Approver?.Title || '')}.</p>
 
           <table style="border-collapse: collapse; width: 100%; max-width: 600px; margin: 20px 0;">
             <tr>
               <td style="padding: 10px; background-color: #f3f2f1; font-weight: 600;">Process:</td>
-              <td style="padding: 10px;">${approval.ProcessTitle}</td>
+              <td style="padding: 10px;">${escapeHtml(approval.ProcessTitle || '')}</td>
             </tr>
             <tr>
               <td style="padding: 10px; background-color: #f3f2f1; font-weight: 600;">Decision:</td>
@@ -497,7 +498,7 @@ export class ApprovalNotificationService {
             </tr>
             <tr>
               <td style="padding: 10px; background-color: #f3f2f1; font-weight: 600;">Approver:</td>
-              <td style="padding: 10px;">${approval.Approver.Title}</td>
+              <td style="padding: 10px;">${escapeHtml(approval.Approver?.Title || '')}</td>
             </tr>
             <tr>
               <td style="padding: 10px; background-color: #f3f2f1; font-weight: 600;">Date:</td>
@@ -506,7 +507,7 @@ export class ApprovalNotificationService {
           </table>
 
           ${approval.Notes ? `<p style="background-color: #f3f2f1; padding: 12px; border-left: 4px solid ${statusColor};">
-            <strong>Comments:</strong> ${approval.Notes}
+            <strong>Comments:</strong> ${escapeHtml(approval.Notes || '')}
           </p>` : ''}
 
           <p style="color: #605e5c; font-size: 12px; margin-top: 30px;">

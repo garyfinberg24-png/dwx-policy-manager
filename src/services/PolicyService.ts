@@ -591,8 +591,6 @@ export class PolicyService {
         SubmittedForReviewDate: new Date()
       });
 
-      // TODO: Send notifications to reviewers
-
       await this.logAudit({
         EntityType: 'Policy',
         EntityId: policyId,
@@ -605,7 +603,21 @@ export class PolicyService {
         ComplianceRelevant: true
       });
 
-      return await this.getPolicyById(policyId);
+      // Send notifications to reviewers (non-blocking)
+      const policy = await this.getPolicyById(policyId);
+      if (this.notificationService && reviewerIds.length > 0) {
+        try {
+          await this.notificationService.sendSubmittedForReviewNotification(
+            policy,
+            reviewerIds,
+            this.currentUserName || this.currentUserEmail || 'Unknown'
+          );
+        } catch (notifyErr) {
+          logger.warn('PolicyService', 'Failed to send review notifications (non-critical):', notifyErr);
+        }
+      }
+
+      return policy;
     } catch (error) {
       logger.error('PolicyService', 'Failed to submit for review:', error);
       throw error;
@@ -675,6 +687,20 @@ export class PolicyService {
         ActionDate: new Date(),
         ComplianceRelevant: true
       });
+
+      // Send rejection notification to the policy author (non-blocking)
+      if (this.notificationService && currentPolicy.PolicyOwnerId) {
+        try {
+          await this.notificationService.sendPolicyRejectionNotification(
+            currentPolicy,
+            currentPolicy.PolicyOwnerId,
+            this.currentUserName || this.currentUserEmail || 'Unknown',
+            rejectionReason
+          );
+        } catch (notifyErr) {
+          logger.warn('PolicyService', 'Failed to send rejection notification (non-critical):', notifyErr);
+        }
+      }
 
       return await this.getPolicyById(policyId);
     } catch (error) {
@@ -766,6 +792,19 @@ export class PolicyService {
         ActionDate: new Date(),
         ComplianceRelevant: true
       });
+
+      // Send approval notification to the policy author (non-blocking)
+      if (this.notificationService && currentPolicy.PolicyOwnerId) {
+        try {
+          await this.notificationService.sendPolicyApprovalNotification(
+            currentPolicy,
+            currentPolicy.PolicyOwnerId,
+            this.currentUserName || this.currentUserEmail || 'Unknown'
+          );
+        } catch (notifyErr) {
+          logger.warn('PolicyService', 'Failed to send approval notification (non-critical):', notifyErr);
+        }
+      }
 
       // DWx activity feed — policy approval (non-blocking)
       if (this.dwxActivityService) {
@@ -953,16 +992,18 @@ export class PolicyService {
     try {
       const policy = await this.getPolicyById(policyId);
 
-      // Mark all previous versions as not current
+      // Mark all previous versions as not current (batched)
       const versions = await this.getPolicyVersions(policyId);
+      const [batchedSP, execute] = this.sp.batched();
       for (const version of versions) {
         if (version.IsCurrentVersion) {
-          await this.sp.web.lists
+          batchedSP.web.lists
             .getByTitle(this.POLICY_VERSIONS_LIST)
             .items.getById(version.Id!)
             .update({ IsCurrentVersion: false });
         }
       }
+      await execute();
 
       // Create new version
       const versionData = {

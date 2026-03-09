@@ -13,6 +13,7 @@ import {
   IAudienceFilter,
   IAudienceEvalResult,
 } from '../models/IAudience';
+import { logger } from './LoggingService';
 
 // ============================================================================
 // SERVICE
@@ -51,7 +52,7 @@ export class AudienceService {
         LastEvaluated: item.LastEvaluated || undefined,
       }));
     } catch (err) {
-      console.warn('AudienceService.getAudiences failed:', err);
+      logger.error('AudienceService', 'getAudiences failed', err);
       return [];
     }
   }
@@ -75,7 +76,7 @@ export class AudienceService {
         LastEvaluated: item.LastEvaluated || undefined,
       };
     } catch (err) {
-      console.warn('AudienceService.getAudience failed:', err);
+      logger.error('AudienceService', 'getAudience failed', err);
       return null;
     }
   }
@@ -168,7 +169,7 @@ export class AudienceService {
         })),
       };
     } catch (err) {
-      console.warn('AudienceService.evaluateAudience failed:', err);
+      logger.error('AudienceService', 'evaluateAudience failed', err);
       return { count: 0, preview: [] };
     }
   }
@@ -284,7 +285,7 @@ export class AudienceService {
         operator: parsed.operator === 'OR' ? 'OR' : 'AND',
       };
     } catch {
-      console.warn('AudienceService: Failed to parse criteria JSON');
+      logger.error('AudienceService', 'Failed to parse criteria JSON');
       return { filters: [], operator: 'AND' };
     }
   }

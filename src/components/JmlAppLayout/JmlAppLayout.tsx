@@ -70,8 +70,8 @@ const DwxAppLayout: React.FC<IJmlAppLayoutProps> = (props) => {
 
   } = props;
 
-  // Auto-detect role if not explicitly provided
-  const [detectedRole, setDetectedRole] = React.useState<PolicyManagerRole>(PolicyManagerRole.Admin);
+  // Auto-detect role if not explicitly provided — default to least privilege (User)
+  const [detectedRole, setDetectedRole] = React.useState<PolicyManagerRole>(PolicyManagerRole.User);
 
   React.useEffect(() => {
     if (!policyManagerRole && context) {
@@ -85,13 +85,13 @@ const DwxAppLayout: React.FC<IJmlAppLayoutProps> = (props) => {
               setDetectedRole(getHighestPolicyRole(userRoles));
             }
           }).catch(() => {
-            // Default to Admin if detection fails (shows all nav items)
-            setDetectedRole(PolicyManagerRole.Admin);
+            // Default to User if detection fails (least privilege)
+            setDetectedRole(PolicyManagerRole.User);
           });
         }
       } catch {
-        // Default to Admin
-        setDetectedRole(PolicyManagerRole.Admin);
+        // Default to User (least privilege)
+        setDetectedRole(PolicyManagerRole.User);
       }
     }
   }, [policyManagerRole, context]);
@@ -103,11 +103,11 @@ const DwxAppLayout: React.FC<IJmlAppLayoutProps> = (props) => {
     signalAppReady();
   }, []);
 
-  // Custom content wrapper style
-  const contentWrapperStyle: React.CSSProperties = {
-    maxWidth: maxContentWidth,
-    padding: contentPadding
-  };
+  // Content wrapper style — only apply overrides if non-default values are passed
+  const contentWrapperStyle: React.CSSProperties | undefined =
+    (maxContentWidth !== '1400px' || contentPadding !== '24px')
+      ? { maxWidth: maxContentWidth, padding: contentPadding }
+      : undefined;
 
   return (
     <div className={styles.jmlAppLayout}>

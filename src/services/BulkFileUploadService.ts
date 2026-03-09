@@ -317,13 +317,32 @@ export class BulkFileUploadService {
   /**
    * Validate file before upload
    */
+  /** Maps allowed MIME types to their expected file extensions */
+  private static readonly ALLOWED_MIME_MAP: Record<string, string[]> = {
+    'application/msword': ['doc'],
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['docx'],
+    'application/vnd.ms-excel': ['xls'],
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['xlsx'],
+    'application/vnd.ms-powerpoint': ['ppt'],
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['pptx'],
+    'application/pdf': ['pdf'],
+    'image/jpeg': ['jpg', 'jpeg'],
+    'image/png': ['png'],
+    'image/gif': ['gif'],
+    'image/bmp': ['bmp'],
+    'video/mp4': ['mp4'],
+    'video/x-msvideo': ['avi'],
+    'video/quicktime': ['mov'],
+  };
+
   public static validateFile(file: File): { isValid: boolean; error?: string } {
-    // Check file size (max 100MB)
-    const maxSize = 100 * 1024 * 1024; // 100MB
+    // Check file size (max 25MB for documents, 100MB for video)
+    const isVideo = file.type?.startsWith('video/');
+    const maxSize = isVideo ? 100 * 1024 * 1024 : 25 * 1024 * 1024;
     if (file.size > maxSize) {
       return {
         isValid: false,
-        error: `File size exceeds maximum allowed size (100MB)`
+        error: `File size exceeds maximum allowed size (${isVideo ? '100MB' : '25MB'})`
       };
     }
 
@@ -357,6 +376,23 @@ export class BulkFileUploadService {
         isValid: false,
         error: `File type .${extension} is not allowed`
       };
+    }
+
+    // Validate MIME type matches extension (prevents renamed malicious files)
+    if (file.type) {
+      const expectedExtensions = this.ALLOWED_MIME_MAP[file.type];
+      if (!expectedExtensions) {
+        return {
+          isValid: false,
+          error: `File MIME type '${file.type}' is not allowed`
+        };
+      }
+      if (!expectedExtensions.includes(extension)) {
+        return {
+          isValid: false,
+          error: `File extension .${extension} does not match its MIME type (${file.type})`
+        };
+      }
     }
 
     return { isValid: true };

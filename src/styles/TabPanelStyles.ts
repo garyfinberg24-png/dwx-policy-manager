@@ -2,7 +2,7 @@
  * JML Standard Tab Panel Styles - Pill/Filled Style
  *
  * Consistent tab navigation styling following JML Design System
- * Features: White card background, pill-style active tab with blue fill
+ * Features: White card background, pill-style active tab with teal fill
  *
  * Usage: Import useTabPanelStyles in your component
  *
@@ -37,12 +37,12 @@ import { makeStyles, shorthands, tokens } from '@fluentui/react-components';
 
 /**
  * Primary Tab Panel Styles - JML Standard Pill/Filled Style
- * White background card with pill-style active tabs (blue fill)
+ * White background card with pill-style active tabs (teal fill)
  */
 export const useTabPanelStyles = makeStyles({
   // ============================================
   // TAB PANEL CONTAINER - White Card Style
-  // With blue accent bar on left border
+  // With teal accent bar on left border
   // ============================================
   tabPanel: {
     display: 'flex',
@@ -55,8 +55,8 @@ export const useTabPanelStyles = makeStyles({
     marginBottom: '20px', // Gap between tab panel and content below
     marginLeft: '24px',
     marginRight: '24px',
-    // Blue accent on left border with 8px border radius on all corners
-    borderLeft: '4px solid #0078d4',
+    // Teal accent on left border with 8px border radius on all corners
+    borderLeft: '4px solid #0d9488',
     borderTopLeftRadius: '8px',
     borderBottomLeftRadius: '8px',
     borderTopRightRadius: '8px',
@@ -114,15 +114,15 @@ export const useTabPanelStyles = makeStyles({
   },
 
   // ============================================
-  // ACTIVE TAB - Pill/Filled Style (Blue Background)
+  // ACTIVE TAB - Pill/Filled Style (Teal Background)
   // ============================================
   tabActive: {
     color: '#ffffff',
     fontWeight: tokens.fontWeightSemibold,
-    backgroundColor: '#0078d4',
+    backgroundColor: '#0d9488',
     ':hover': {
       color: '#ffffff',
-      backgroundColor: '#106ebe'
+      backgroundColor: '#0f766e'
     }
   },
 
@@ -186,7 +186,7 @@ export const useTabPanelStyles = makeStyles({
 
   // ============================================
   // TAB PANEL FULL WIDTH - For use when container already has padding
-  // With blue accent bar on left border
+  // With teal accent bar on left border
   // ============================================
   tabPanelFullWidth: {
     display: 'flex',
@@ -198,8 +198,8 @@ export const useTabPanelStyles = makeStyles({
     marginBottom: '20px',
     marginLeft: '24px',
     marginRight: '24px',
-    // Blue accent on left border with 8px border radius on all corners
-    borderLeft: '4px solid #0078d4',
+    // Teal accent on left border with 8px border radius on all corners
+    borderLeft: '4px solid #0d9488',
     borderTopLeftRadius: '8px',
     borderBottomLeftRadius: '8px',
     borderTopRightRadius: '8px',
@@ -214,14 +214,14 @@ export const useTabPanelStyles = makeStyles({
   },
 
   // ============================================
-  // TAB SUBHEADER - Style Option A (Blue Accent Bar)
+  // TAB SUBHEADER - Style Option A (Teal Accent Bar)
   // For wizard step indicators and section titles
   // Aligned with tab panel margins (24px from edges)
   // ============================================
   tabSubheader: {
-    backgroundColor: '#f0f6fc',
-    backgroundImage: 'linear-gradient(135deg, #f0f6fc 0%, #e8f4fd 100%)',
-    borderLeft: '4px solid #0078d4',
+    backgroundColor: '#f0fdfa',
+    backgroundImage: 'linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%)',
+    borderLeft: '4px solid #0d9488',
     ...shorthands.padding(tokens.spacingVerticalM, tokens.spacingHorizontalL),
     // Full width to match tab panel
     marginLeft: 0,
@@ -242,7 +242,7 @@ export const useTabPanelStyles = makeStyles({
   tabSubheaderTitle: {
     fontSize: tokens.fontSizeBase500,
     fontWeight: tokens.fontWeightSemibold,
-    color: '#0078d4',
+    color: '#0d9488',
     lineHeight: '1.3'
   },
 

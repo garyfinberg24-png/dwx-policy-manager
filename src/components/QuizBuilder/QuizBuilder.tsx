@@ -174,8 +174,8 @@ export interface IQuizBuilderState {
 const styles = mergeStyleSets({
   container: {
     padding: '20px',
-    maxWidth: '1400px',
-    margin: '0 auto',
+    width: '100%',
+    boxSizing: 'border-box',
     backgroundColor: '#faf9f8'
   },
   header: {

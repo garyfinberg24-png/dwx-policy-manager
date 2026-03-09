@@ -9,4 +9,5 @@ export interface IPolicyAdminProps {
   hasTeamsContext: boolean;
   sp: SPFI;
   context: WebPartContext;
+  userRole?: string;
 }

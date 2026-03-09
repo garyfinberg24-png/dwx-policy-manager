@@ -31,6 +31,8 @@ import {
 } from '@fluentui/react';
 import { JmlAppLayout } from '../../../components/JmlAppLayout/JmlAppLayout';
 import { PageSubheader } from '../../../components/PageSubheader';
+import { RoleDetectionService } from '../../../services/RoleDetectionService';
+import { PolicyManagerRole, getHighestPolicyRole, hasMinimumRole } from '../../../services/PolicyRoleService';
 import styles from './PolicyAuthorView.module.scss';
 
 // ============================================================================
@@ -123,6 +125,7 @@ interface IPolicyAuthorViewState {
   delegationFilter: 'All' | 'Pending' | 'InProgress' | 'Completed' | 'Overdue';
   showDelegationPanel: boolean;
   delegationForm: IDelegationForm;
+  detectedRole: PolicyManagerRole | null;
 }
 
 // ============================================================================
@@ -161,11 +164,24 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
         dueDate: '',
         priority: 'Medium',
         notes: ''
-      }
+      },
+      detectedRole: null
     };
   }
 
   public componentDidMount(): void {
+    // Detect user role for access guard
+    const roleService = new RoleDetectionService(this.props.sp);
+    roleService.getCurrentUserRoles().then(userRoles => {
+      if (userRoles && userRoles.length > 0) {
+        this.setState({ detectedRole: getHighestPolicyRole(userRoles) });
+      } else {
+        this.setState({ detectedRole: PolicyManagerRole.User });
+      }
+    }).catch(() => {
+      this.setState({ detectedRole: PolicyManagerRole.User });
+    });
+
     // Load sample data (replace with service calls when ready)
     setTimeout(() => {
       this.setState({
@@ -178,6 +194,40 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
   }
 
   public render(): JSX.Element {
+    // Access denied guard — Author role required
+    if (this.state.detectedRole !== null && !hasMinimumRole(this.state.detectedRole, PolicyManagerRole.Author)) {
+      return (
+        <JmlAppLayout
+          title={this.props.title || 'Policy Author'}
+          context={this.props.context}
+          sp={this.props.sp}
+          activeNavKey="author"
+          breadcrumbs={[{ text: 'Policy Manager', url: '/sites/PolicyManager' }, { text: 'Policy Author' }]}
+        >
+          <section style={{ maxWidth: 600, margin: '80px auto', textAlign: 'center', padding: 32 }}>
+            <Icon iconName="Lock" styles={{ root: { fontSize: 48, color: '#dc2626', marginBottom: 16 } }} />
+            <Text variant="xLarge" block styles={{ root: { fontWeight: 600, marginBottom: 8, color: '#0f172a' } }}>
+              Access Denied
+            </Text>
+            <Text variant="medium" block styles={{ root: { color: '#64748b', marginBottom: 24 } }}>
+              The Policy Author view requires an Author role or higher. Contact your system administrator if you need access.
+            </Text>
+            <DefaultButton
+              text="Go to Policy Hub"
+              iconProps={{ iconName: 'Home' }}
+              href={`${this.props.context.pageContext.web.absoluteUrl}/SitePages/PolicyHub.aspx`}
+              styles={{ root: { marginRight: 8 } }}
+            />
+            <DefaultButton
+              text="Go Back"
+              iconProps={{ iconName: 'Back' }}
+              onClick={() => window.history.back()}
+            />
+          </section>
+        </JmlAppLayout>
+      );
+    }
+
     return (
       <JmlAppLayout
         title={this.props.title || 'Policy Author'}

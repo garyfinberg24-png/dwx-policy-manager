@@ -4,6 +4,9 @@ import { IQuizBuilderWrapperProps } from './IQuizBuilderWrapperProps';
 import { QuizBuilder } from '../../../components/QuizBuilder';
 import { DwxAppLayout } from '../../../components/JmlAppLayout';
 import { QuizService, IQuiz, QuizStatus } from '../../../services/QuizService';
+import { RoleDetectionService } from '../../../services/RoleDetectionService';
+import { PolicyManagerRole, getHighestPolicyRole, hasMinimumRole } from '../../../services/PolicyRoleService';
+import { Icon, Text, DefaultButton } from '@fluentui/react';
 import styles from './QuizBuilderWrapper.module.scss';
 
 // Status badge colors
@@ -37,6 +40,22 @@ export const QuizBuilderWrapper: React.FC<IQuizBuilderWrapperProps> = (props) =>
   const [listError, setListError] = React.useState<string | null>(null);
   const [filterStatus, setFilterStatus] = React.useState<string>('all');
   const [searchText, setSearchText] = React.useState('');
+
+  // Role detection for access guard
+  const [detectedRole, setDetectedRole] = React.useState<PolicyManagerRole | null>(null);
+
+  React.useEffect(() => {
+    const roleService = new RoleDetectionService(sp);
+    roleService.getCurrentUserRoles().then(userRoles => {
+      if (userRoles && userRoles.length > 0) {
+        setDetectedRole(getHighestPolicyRole(userRoles));
+      } else {
+        setDetectedRole(PolicyManagerRole.User);
+      }
+    }).catch(() => {
+      setDetectedRole(PolicyManagerRole.User);
+    });
+  }, [sp]);
 
   const quizService = React.useMemo(() => new QuizService(sp), [sp]);
 
@@ -131,6 +150,43 @@ export const QuizBuilderWrapper: React.FC<IQuizBuilderWrapperProps> = (props) =>
       ];
 
   // ====================================================================
+  // ACCESS GUARD — Admin role required
+  // ====================================================================
+  if (detectedRole !== null && !hasMinimumRole(detectedRole, PolicyManagerRole.Admin)) {
+    return (
+      <DwxAppLayout
+        title={title}
+        context={context}
+        showBreadcrumb={true}
+        fullWidth={true}
+        breadcrumbs={breadcrumbs}
+        activeNavKey="quiz"
+      >
+        <section style={{ maxWidth: 600, margin: '80px auto', textAlign: 'center', padding: 32 }}>
+          <Icon iconName="Lock" styles={{ root: { fontSize: 48, color: '#dc2626', marginBottom: 16 } }} />
+          <Text variant="xLarge" block styles={{ root: { fontWeight: 600, marginBottom: 8, color: '#0f172a' } }}>
+            Access Denied
+          </Text>
+          <Text variant="medium" block styles={{ root: { color: '#64748b', marginBottom: 24 } }}>
+            The Quiz Builder requires an Administrator role. Contact your system administrator if you need access.
+          </Text>
+          <DefaultButton
+            text="Go to Policy Hub"
+            iconProps={{ iconName: 'Home' }}
+            href={`${context.pageContext.web.absoluteUrl}/SitePages/PolicyHub.aspx`}
+            styles={{ root: { marginRight: 8 } }}
+          />
+          <DefaultButton
+            text="Go Back"
+            iconProps={{ iconName: 'Back' }}
+            onClick={() => window.history.back()}
+          />
+        </section>
+      </DwxAppLayout>
+    );
+  }
+
+  // ====================================================================
   // QUIZ LIST VIEW (no quizId — show all quizzes)
   // ====================================================================
   if (!quizId) {
@@ -144,7 +200,7 @@ export const QuizBuilderWrapper: React.FC<IQuizBuilderWrapperProps> = (props) =>
         activeNavKey="quiz"
       >
         <div className={styles.quizBuilderWrapper}>
-          <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '20px' }}>
+          <div style={{ width: '100%', padding: '8px 24px', boxSizing: 'border-box' }}>
             {/* Header */}
             <div style={{
               display: 'flex',

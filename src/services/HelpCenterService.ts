@@ -10,6 +10,7 @@ import { IHelpArticle, IHelpArticleSearchResult, HelpArticleCategory, ArticleTyp
 import { ICheatsheet, CheatsheetCategory, ICheatsheetItem } from "../models/ICheatsheet";
 import { IHelpTicket, TicketCategory, TicketStatus, SeverityLevel } from "../models/IHelpTicket";
 import { logger } from "./LoggingService";
+import { ValidationUtils } from "../utils/ValidationUtils";
 
 export class HelpCenterService {
   private _sp: SPFI;
@@ -44,7 +45,7 @@ export class HelpCenterService {
         .top(500);
 
       if (category) {
-        query = query.filter(`Category eq '${category}'`);
+        query = query.filter(`Category eq '${ValidationUtils.sanitizeForOData(category)}'`);
       }
 
       const items = await query();
@@ -132,16 +133,17 @@ export class HelpCenterService {
    */
   public async searchArticles(searchTerm: string, category?: HelpArticleCategory, articleType?: ArticleType): Promise<IHelpArticleSearchResult[]> {
     try {
-      // Build search filter
-      const searchFilter = `(substringof('${searchTerm}', Title) or substringof('${searchTerm}', Summary) or substringof('${searchTerm}', Content) or substringof('${searchTerm}', Keywords))`;
+      // Build search filter (sanitize inputs to prevent OData injection)
+      const safeSearch = ValidationUtils.sanitizeForOData(searchTerm);
+      const searchFilter = `(substringof('${safeSearch}', Title) or substringof('${safeSearch}', Summary) or substringof('${safeSearch}', Content) or substringof('${safeSearch}', Keywords))`;
       let filter = `IsPublished eq 1 and ${searchFilter}`;
 
       if (category) {
-        filter += ` and Category eq '${category}'`;
+        filter += ` and Category eq '${ValidationUtils.sanitizeForOData(category)}'`;
       }
 
       if (articleType) {
-        filter += ` and ArticleType eq '${articleType}'`;
+        filter += ` and ArticleType eq '${ValidationUtils.sanitizeForOData(articleType)}'`;
       }
 
       const items = await this._sp.web.lists.getByTitle("PM_HelpArticles").items
@@ -245,7 +247,7 @@ export class HelpCenterService {
         .top(100);
 
       if (category) {
-        query = query.filter(`Category eq '${category}'`);
+        query = query.filter(`Category eq '${ValidationUtils.sanitizeForOData(category)}'`);
       }
 
       const items = await query();
@@ -588,7 +590,7 @@ export class HelpCenterService {
       // Get count of tickets this year
       const items = await this._sp.web.lists.getByTitle("PM_HelpTickets").items
         .select("Id")
-        .filter(`startswith(TicketNumber, '${prefix}')`)
+        .filter(`startswith(TicketNumber, '${ValidationUtils.sanitizeForOData(prefix)}')`)
         .top(5000)();
 
       const nextNumber = (items.length + 1).toString();

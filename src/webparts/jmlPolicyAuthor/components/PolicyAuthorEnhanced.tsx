@@ -106,7 +106,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       loading: !!policyId,
       error: null,
       saving: false,
-      policyId: policyId ? parseInt(policyId, 10) : null,
+      policyId: policyId ? (Number.isFinite(Number(policyId)) && Number(policyId) > 0 ? parseInt(policyId, 10) : null) : null,
       policyNumber: '',
       policyName: '',
       policyCategory: '',
@@ -1614,77 +1614,11 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                 checked={requiresQuiz}
                 onChange={(e, checked) => {
                   this.setState({ requiresQuiz: checked || false });
-                  if (checked) {
-                    this.loadAvailableQuizzes();
-                  }
                 }}
               />
               <Text variant="small" style={{ marginLeft: 26, color: '#605e5c' }}>
-                Employees must pass a quiz to demonstrate understanding
+                Employees must pass a quiz to demonstrate understanding. Quizzes can be created and assigned after the policy is published.
               </Text>
-
-              {requiresQuiz && (
-                <div style={{ marginLeft: 26, marginTop: 8, padding: 16, background: '#f0fdfa', borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                  <Text variant="medium" style={{ fontWeight: 600, color: '#0f172a', display: 'block', marginBottom: 12 }}>
-                    Quiz Selection
-                  </Text>
-
-                  {this.state.availableQuizzesLoading ? (
-                    <Spinner size={SpinnerSize.small} label="Loading quizzes..." />
-                  ) : this.state.availableQuizzes.length > 0 ? (
-                    <>
-                      <Dropdown
-                        label="Select an existing quiz"
-                        placeholder="Choose a quiz..."
-                        selectedKey={this.state.selectedQuizId ?? undefined}
-                        options={[
-                          { key: '', text: '— No quiz selected —' },
-                          ...this.state.availableQuizzes.map(q => ({
-                            key: q.Id,
-                            text: `${q.Title} (${q.QuestionCount} questions, ${q.PassingScore}% to pass)`
-                          }))
-                        ]}
-                        onChange={(_e, option) => {
-                          if (option && option.key !== '') {
-                            this.setState({
-                              selectedQuizId: option.key as number,
-                              selectedQuizTitle: this.state.availableQuizzes.find(q => q.Id === option.key)?.Title || ''
-                            });
-                          } else {
-                            this.setState({ selectedQuizId: null, selectedQuizTitle: '' });
-                          }
-                        }}
-                        styles={{ root: { maxWidth: 450, marginBottom: 12 } }}
-                      />
-                      {this.state.selectedQuizId && (
-                        <MessageBar messageBarType={MessageBarType.success} styles={{ root: { borderRadius: 4 } }}>
-                          Quiz "{this.state.selectedQuizTitle}" will be assigned to this policy.
-                        </MessageBar>
-                      )}
-                    </>
-                  ) : (
-                    <MessageBar messageBarType={MessageBarType.info} styles={{ root: { borderRadius: 4, marginBottom: 12 } }}>
-                      No published quizzes found. You can create one after the policy is published.
-                    </MessageBar>
-                  )}
-
-                  <Stack horizontal tokens={{ childrenGap: 8 }} style={{ marginTop: 12 }}>
-                    <DefaultButton
-                      iconProps={{ iconName: 'Refresh' }}
-                      text="Refresh Quizzes"
-                      onClick={() => this.loadAvailableQuizzes()}
-                      styles={{ root: { height: 32 }, label: { fontSize: 12 } }}
-                    />
-                    <DefaultButton
-                      iconProps={{ iconName: 'Add' }}
-                      text="Create Quiz After Publish"
-                      title="Quizzes can be created after the policy is published, so the AI can analyze the document content"
-                      disabled={true}
-                      styles={{ root: { height: 32 }, label: { fontSize: 12 } }}
-                    />
-                  </Stack>
-                </div>
-              )}
             </Stack>
           </Stack>
         </div>
@@ -1694,6 +1628,19 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
   private renderStep4_Audience(): JSX.Element {
     const { targetAllEmployees, targetDepartments, targetRoles, targetLocations, includeContractors } = this.state;
+    const st = this.state as any;
+    const savedAudiences: any[] = st._savedAudiences || [];
+
+    // Lazy-load admin-configured audiences
+    if (!st._audiencesLoaded) {
+      this.setState({ _audiencesLoaded: true } as any);
+      import('../../../services/AudienceService').then(({ AudienceService }) => {
+        const svc = new AudienceService(this.props.sp);
+        svc.getAudiences().then((audiences: any[]) => {
+          this.setState({ _savedAudiences: audiences } as any);
+        }).catch(() => { /* graceful degradation */ });
+      }).catch(() => { /* graceful degradation */ });
+    }
 
     return (
       <div className={styles.wizardStepContent}>
@@ -1707,6 +1654,30 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
             {!targetAllEmployees && (
               <>
+                {savedAudiences.length > 0 && (
+                  <Dropdown
+                    label="Select from configured audiences"
+                    placeholder="Choose a pre-configured audience..."
+                    options={[
+                      { key: '', text: '(Custom audience)' },
+                      ...savedAudiences.map((a: any) => ({ key: a.Id || a.Title, text: a.Title || a.Name || 'Unnamed' }))
+                    ]}
+                    onChange={(_, opt) => {
+                      if (opt && opt.key !== '') {
+                        const audience = savedAudiences.find((a: any) => (a.Id || a.Title) === opt.key);
+                        if (audience) {
+                          this.setState({
+                            targetDepartments: audience.Departments ? audience.Departments.split(',').map((d: string) => d.trim()) : targetDepartments,
+                            targetRoles: audience.Roles ? audience.Roles.split(',').map((r: string) => r.trim()) : targetRoles,
+                            targetLocations: audience.Locations ? audience.Locations.split(',').map((l: string) => l.trim()) : targetLocations,
+                          });
+                        }
+                      }
+                    }}
+                    styles={{ root: { maxWidth: 400 } }}
+                  />
+                )}
+
                 <TextField
                   label="Target Departments"
                   placeholder="e.g., HR, IT, Finance (comma-separated)"
@@ -1820,10 +1791,11 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
               label="Next Review Date"
               type="date"
               value={nextReviewDate}
-              onChange={(e, value) => this.setState({ nextReviewDate: value || '' })}
+              readOnly
+              disabled={reviewFrequency !== 'None'}
               description={effectiveDate && reviewFrequency && reviewFrequency !== 'None'
-                ? `Auto-calculated from effective date + ${reviewFrequency.toLowerCase()} frequency. You can override.`
-                : undefined}
+                ? `Auto-calculated from effective date + ${reviewFrequency.toLowerCase()} frequency`
+                : 'No review scheduled'}
               styles={{ root: { maxWidth: 200 } }}
             />
 
@@ -3846,11 +3818,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       }
     } catch (error) {
       console.error('Error deleting question:', error);
-      // For demo, remove from state
-      this.setState({
-        quizQuestions: this.state.quizQuestions.filter(q => q.Id !== questionId)
-      });
-      void this.dialogManager.showAlert('Question deleted.', { variant: 'success' });
+      void this.dialogManager.showAlert('Failed to delete question. Please try again.', { variant: 'error' });
     }
   };
 
@@ -4929,7 +4897,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             <Spinner size={SpinnerSize.large} label="Generating comparison..." />
           ) : (
             <div
-              dangerouslySetInnerHTML={{ __html: html }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(html) }}
               style={{ border: '1px solid #e2e8f0', borderRadius: 8, overflow: 'auto' }}
             />
           )}
@@ -5479,9 +5447,6 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       policyName,
       policyCategory,
       policySummary,
-      complianceRisk,
-      readTimeframe,
-      readTimeframeDays
     } = this.state;
 
     const categoryOptions: IDropdownOption[] = Object.values(PolicyCategory).map(cat => ({
@@ -5489,24 +5454,15 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       text: cat
     }));
 
-    const riskOptions: IDropdownOption[] = Object.values(ComplianceRisk).map(risk => ({
-      key: risk,
-      text: risk
-    }));
-
-    const timeframeOptions: IDropdownOption[] = Object.values(ReadTimeframe).map(tf => ({
-      key: tf,
-      text: tf
-    }));
-
     return (
       <div className={styles.section}>
         <Stack tokens={{ childrenGap: 16 }}>
           <TextField
             label="Policy Number"
-            value={policyNumber}
-            onChange={(e, value) => this.setState({ policyNumber: value || '' })}
-            placeholder="Auto-generated if left blank"
+            value={policyNumber || '(Auto-generated on save)'}
+            readOnly
+            disabled
+            description="Policy number is automatically generated based on naming rules"
           />
 
           <TextField
@@ -5534,34 +5490,19 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             placeholder="Brief summary of the policy (2-3 sentences)"
           />
 
-          <Dropdown
-            label="Compliance Risk"
-            selectedKey={complianceRisk}
-            options={riskOptions}
-            onChange={(e, option) => this.setState({ complianceRisk: option?.key as string })}
-          />
-
-          <Dropdown
-            label="Read Timeframe"
-            selectedKey={readTimeframe}
-            options={timeframeOptions}
-            onChange={(e, option) => {
-              const selected = option?.key as string;
-              this.setState({
-                readTimeframe: selected,
-                readTimeframeDays: selected === ReadTimeframe.Custom ? readTimeframeDays : 7
-              });
+          <PeoplePicker
+            context={this.props.context as any}
+            titleText="Policy Owner"
+            personSelectionLimit={1}
+            showtooltip={true}
+            principalTypes={[PrincipalType.User]}
+            resolveDelay={300}
+            defaultSelectedUsers={this.state.policyOwner || []}
+            onChange={(items: any[]) => {
+              this.setState({ policyOwner: items.map((i: any) => i.secondaryText || i.loginName || '') });
             }}
+            placeholder="Search for policy owner..."
           />
-
-          {readTimeframe === ReadTimeframe.Custom && (
-            <TextField
-              label="Custom Days"
-              type="number"
-              value={readTimeframeDays.toString()}
-              onChange={(e, value) => this.setState({ readTimeframeDays: parseInt(value || '7', 10) })}
-            />
-          )}
         </Stack>
       </div>
     );

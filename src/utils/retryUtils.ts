@@ -152,6 +152,21 @@ export const PROCESS_SYNC_RETRY_OPTIONS: IRetryOptions = {
  */
 export const workflowSyncDLQ = new InMemoryDeadLetterQueue();
 
+/**
+ * Default retry options for notification operations
+ */
+export const NOTIFICATION_RETRY_OPTIONS: IRetryOptions = {
+  maxRetries: 3,
+  initialDelayMs: 500,
+  maxDelayMs: 5000,
+  backoffMultiplier: 2
+};
+
+/**
+ * Shared DLQ instance for notification operations
+ */
+export const notificationDLQ = new InMemoryDeadLetterQueue();
+
 // ============================================================================
 // RETRY WITH DLQ
 // ============================================================================

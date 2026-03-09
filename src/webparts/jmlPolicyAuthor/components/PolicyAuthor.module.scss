@@ -126,7 +126,7 @@
     flex-wrap: wrap;
     background: #ffffff;
     border: 1px solid #edebe9;
-    border-left: 4px solid #0078d4; // Blue accent
+    border-left: 4px solid #0d9488; // Blue accent
     border-radius: 8px;
     padding: 8px 12px 8px 16px;
     margin-bottom: 16px;
@@ -180,13 +180,13 @@
 
   .moduleNavActive {
     // Blue block highlighting with 4px border radius
-    background: #0078d4 !important;
+    background: #0d9488 !important;
     color: #ffffff !important;
     font-weight: 600 !important;
     border-radius: 4px;
 
     &:hover {
-      background: #106ebe !important;
+      background: #0f766e !important;
       color: #ffffff !important;
     }
 
@@ -234,7 +234,7 @@
   }
 
   .embeddedEditorHeader {
-    background: linear-gradient(135deg, #004578 0%, #0078d4 100%);
+    background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
     color: white;
     padding: 12px 16px;
 
@@ -922,7 +922,7 @@
   .commandPanel {
     background: #ffffff;
     border: 1px solid #edebe9;
-    border-left: 4px solid #0078d4;
+    border-left: 4px solid #0d9488;
     border-radius: 0 8px 8px 0;
     padding: 12px 20px;
     margin-bottom: 16px;
@@ -943,7 +943,7 @@
     transition: all 0.2s ease;
 
     &:hover {
-      border-color: #0078d4;
+      border-color: #0d9488;
       box-shadow: 0 4px 12px rgba(0, 120, 212, 0.15);
     }
   }
@@ -1010,7 +1010,7 @@
     margin: -12px -12px 12px -12px;
     background: #ffffff;
     border-radius: 8px 8px 0 0;
-    border-top: 4px solid #0078d4;
+    border-top: 4px solid #0d9488;
     gap: 8px;
   }
 
@@ -1041,7 +1041,7 @@
     transition: all 0.2s ease;
 
     &:hover {
-      border-color: #0078d4;
+      border-color: #0d9488;
       box-shadow: 0 2px 8px rgba(0, 120, 212, 0.15);
     }
   }
@@ -1061,7 +1061,7 @@
     transition: all 0.2s ease;
 
     &:hover {
-      border-color: #0078d4;
+      border-color: #0d9488;
       box-shadow: 0 2px 8px rgba(0, 120, 212, 0.1);
     }
   }
@@ -1112,7 +1112,7 @@
     transition: all 0.2s ease;
 
     &:hover {
-      border-color: #0078d4;
+      border-color: #0d9488;
       box-shadow: 0 4px 12px rgba(0, 120, 212, 0.1);
     }
   }
@@ -1152,7 +1152,7 @@
 
   .barChartFill {
     height: 100%;
-    background: linear-gradient(90deg, #0078d4 0%, #106ebe 100%);
+    background: linear-gradient(90deg, #0d9488 0%, #0f766e 100%);
     border-radius: 4px;
     transition: width 0.5s ease;
   }
@@ -1184,7 +1184,7 @@
   .riskCard {
     background: #ffffff;
     border: 1px solid #edebe9;
-    border-left: 4px solid #0078d4;
+    border-left: 4px solid #0d9488;
     border-radius: 0 6px 6px 0;
     padding: 16px;
     text-align: center;
@@ -1207,7 +1207,7 @@
     transition: all 0.2s ease;
 
     &:hover {
-      border-color: #0078d4;
+      border-color: #0d9488;
       box-shadow: 0 4px 16px rgba(0, 120, 212, 0.15);
       transform: translateY(-2px);
     }
@@ -1242,7 +1242,7 @@
     transition: all 0.2s ease;
 
     &:hover {
-      border-color: #0078d4;
+      border-color: #0d9488;
       box-shadow: 0 2px 8px rgba(0, 120, 212, 0.1);
     }
   }
@@ -1285,7 +1285,7 @@
     min-width: 200px;
 
     &:hover {
-      border-color: #0078d4;
+      border-color: #0d9488;
       box-shadow: 0 4px 12px rgba(0, 120, 212, 0.15);
       transform: translateY(-2px);
     }
@@ -1342,7 +1342,7 @@
     transition: all 0.2s ease;
 
     &:hover {
-      border-color: #0078d4;
+      border-color: #0d9488;
       box-shadow: 0 4px 16px rgba(0, 120, 212, 0.15);
     }
   }

@@ -123,12 +123,21 @@ export class PolicyChatService {
       logger.warn('PolicyChatService', 'PM_Configuration load failed, checking localStorage:', error);
     }
 
-    // Fallback: localStorage
+    // Fallback: localStorage (validate URL before trusting)
     if (!this.functionUrl) {
       const localUrl = localStorage.getItem(LOCAL_STORAGE_URL_KEY);
       if (localUrl) {
-        this.functionUrl = localUrl;
-        this.isEnabled = true;
+        try {
+          const parsed = new URL(localUrl);
+          if (parsed.protocol === 'https:') {
+            this.functionUrl = localUrl;
+            this.isEnabled = true;
+          } else {
+            logger.warn('PolicyChatService', 'localStorage URL rejected — not HTTPS');
+          }
+        } catch {
+          logger.warn('PolicyChatService', 'localStorage URL rejected — invalid format');
+        }
       }
     }
 

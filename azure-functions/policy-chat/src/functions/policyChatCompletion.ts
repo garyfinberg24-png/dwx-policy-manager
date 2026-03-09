@@ -140,19 +140,35 @@ async function policyChatCompletion(
 
     context.log(`Calling Azure OpenAI: model=${deployment}, mode=${body.mode}, messages=${messages.length}, maxTokens=${maxTokens}`);
 
-    const openAiResponse = await fetch(openAiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'api-key': apiKey,
-      },
-      body: JSON.stringify({
-        messages,
-        temperature: 0.7,
-        max_tokens: maxTokens,
-        top_p: 0.95,
-      }),
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
+
+    let openAiResponse: Response;
+    try {
+      openAiResponse = await fetch(openAiUrl, {
+        method: 'POST',
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          'api-key': apiKey,
+        },
+        body: JSON.stringify({
+          messages,
+          temperature: 0.7,
+          max_tokens: maxTokens,
+          top_p: 0.95,
+        }),
+      });
+    } catch (fetchErr: unknown) {
+      clearTimeout(timeout);
+      if (fetchErr instanceof Error && fetchErr.name === 'AbortError') {
+        context.log('Azure OpenAI request timed out after 30s');
+        return { status: 504, jsonBody: { error: 'AI service request timed out. Please try again.' } };
+      }
+      throw fetchErr;
+    } finally {
+      clearTimeout(timeout);
+    }
 
     if (!openAiResponse.ok) {
       const errorText = await openAiResponse.text();

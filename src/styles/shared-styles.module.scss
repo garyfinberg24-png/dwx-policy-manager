@@ -22,7 +22,7 @@ $jml-color-primary-dark: #0f766e;
 $jml-color-success: #4caf50;
 $jml-color-warning: #f57c00;
 $jml-color-error: #f44336;
-$jml-color-info: #0078d4;
+$jml-color-info: #0d9488;
 
 /* Spacing (4px grid) */
 $jml-spacing-xxs: 4px;
@@ -383,5 +383,30 @@ $jml-breakpoint-desktop: 1440px;
 
   @media (max-width: $jml-breakpoint-mobile) {
     display: block;
+  }
+}
+
+/* ============================================
+   FOCUS STYLES (Accessibility)
+   ============================================ */
+
+@mixin jml-focus-ring {
+  &:focus-visible {
+    outline: 2px solid $jml-color-primary;
+    outline-offset: 2px;
+    border-radius: $jml-border-radius-small;
+  }
+}
+
+// Apply focus ring to common interactive elements
+:global {
+  button:focus-visible,
+  [role="button"]:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline: 2px solid $jml-color-primary;
+    outline-offset: 2px;
   }
 }

@@ -11,6 +11,7 @@ import { SPFI } from '@pnp/sp';
 import styles from './PolicyChatPanel.module.scss';
 import { PolicyChatService, ChatMode, IChatMessageLocal } from '../../services/PolicyChatService';
 import { PolicyManagerRole } from '../../services/PolicyRoleService';
+import { sanitizeHtml } from '../../utils/sanitizeHtml';
 
 // ── Props ──
 
@@ -227,7 +228,7 @@ export const PolicyChatPanel: React.FC<IPolicyChatPanelProps> = ({
       return `<ul>${items}</ul>`;
     });
 
-    return <div className={styles.messageContent} dangerouslySetInnerHTML={{ __html: html }} />;
+    return <div className={styles.messageContent} dangerouslySetInnerHTML={{ __html: sanitizeHtml(html) }} />;
   };
 
   // ── Render a single message ──

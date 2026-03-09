@@ -18,11 +18,11 @@ import { PEOPLE_PICKER } from '../../../../constants/PolicyAuthorConstants';
 // Step field descriptions for accordion sidebar
 const STEP_FIELDS: Record<number, string[]> = {
   0: ['Choose creation method', 'Template, blank, upload, or Office document'],
-  1: ['Policy number', 'Name & category', 'Summary', 'Risk level'],
+  1: ['Policy number (auto)', 'Name & category', 'Summary', 'Policy owner'],
   2: ['Rich text editor', 'Key points', 'Supporting documents'],
-  3: ['Compliance risk', 'Read timeframe', 'Acknowledgement', 'Quiz'],
+  3: ['Compliance risk', 'Read timeframe', 'Acknowledgement', 'Quiz requirement'],
   4: ['Target all or specific groups', 'Departments & roles', 'Contractors'],
-  5: ['Effective date', 'Expiry date', 'Review frequency', 'Supersedes'],
+  5: ['Effective date', 'Expiry date', 'Review frequency', 'Next review (auto)'],
   6: ['Reviewers', 'Approvers'],
   7: ['Final review', 'Submit or save draft'],
 };

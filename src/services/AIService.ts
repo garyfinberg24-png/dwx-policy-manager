@@ -964,7 +964,8 @@ Always respond in a friendly, professional tone.`;
         .orderBy('Created', false)();
 
       return processes;
-    } catch {
+    } catch (error) {
+      logger.error('AIService', 'Failed to get historical processes', error);
       return [];
     }
   }
@@ -995,7 +996,8 @@ Always respond in a friendly, professional tone.`;
         .top(50)();
 
       return processes;
-    } catch {
+    } catch (error) {
+      logger.error('AIService', 'Failed to get historical completion data', error);
       return [];
     }
   }

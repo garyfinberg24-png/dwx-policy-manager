@@ -28,7 +28,7 @@ $pm-gradient-main: linear-gradient(135deg, $pm-dark-teal 0%, $pm-primary-teal 50
 $pm-gradient-card: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 100%);
 
 // Font
-$pm-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+$pm-font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
 
 .splashContainer {
   display: flex;
@@ -76,8 +76,8 @@ $pm-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-se
 .contentWrapper {
   display: flex;
   width: 100%;
-  max-width: 1400px;
-  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
   padding: 40px;
   position: relative;
   z-index: 1;

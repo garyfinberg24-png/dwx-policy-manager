@@ -219,9 +219,11 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
     siteConfig: {
       nodeVersion: nodeVersion
       cors: {
-        allowedOrigins: [
+        allowedOrigins: environment == 'prod' ? [
           sharePointSiteUrl
-          'https://localhost:4321' // SPFx workbench
+        ] : [
+          sharePointSiteUrl
+          'https://localhost:4321' // SPFx workbench (dev/staging only)
         ]
         supportCredentials: false
       }

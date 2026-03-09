@@ -29,14 +29,14 @@ const footerStyles: Record<string, React.CSSProperties> = {
     width: '100%'
   },
   mainContent: {
-    maxWidth: 1400,
-    margin: '0 auto',
-    padding: '32px 40px 24px'
+    width: '100%',
+    padding: '32px 24px 24px',
+    boxSizing: 'border-box' as const
   },
   mainContentCompact: {
-    maxWidth: 1400,
-    margin: '0 auto',
-    padding: '16px 40px'
+    width: '100%',
+    padding: '16px 24px',
+    boxSizing: 'border-box' as const
   },
   topSection: {
     display: 'flex',

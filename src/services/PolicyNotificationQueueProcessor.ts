@@ -274,7 +274,9 @@ export class PolicyNotificationQueueProcessor {
           logger.error('PolicyNotificationQueueProcessor', `Failed to process notification ${item.Id}`, error);
 
           // Mark as failed
-          await this.markAsFailed(item.Id, errorMessage).catch(() => {});
+          await this.markAsFailed(item.Id, errorMessage).catch((markErr) => {
+            logger.error('PolicyNotificationQueueProcessor', `Failed to mark notification ${item.Id} as failed`, markErr);
+          });
         }
       }
 

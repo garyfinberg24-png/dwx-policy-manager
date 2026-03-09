@@ -10,6 +10,7 @@ import '@pnp/sp/items';
 import '@pnp/sp/site-groups/web';
 import '@pnp/sp/site-users/web';
 import { IJMLEmployee } from '../models/IEntraUser';
+import { logger } from './LoggingService';
 
 // ============================================================================
 // INTERFACES
@@ -119,7 +120,7 @@ export class UserManagementService {
 
       return { items, total };
     } catch (err) {
-      console.warn('UserManagementService.getEmployees failed:', err);
+      logger.error('UserManagementService', 'getEmployees failed', err);
       return { items: [], total: 0 };
     }
   }
@@ -138,7 +139,7 @@ export class UserManagementService {
         .orderBy('Title', true)
         .top(20)();
     } catch (err) {
-      console.warn('UserManagementService.searchEmployees failed:', err);
+      logger.error('UserManagementService', 'searchEmployees failed', err);
       return [];
     }
   }
@@ -152,7 +153,7 @@ export class UserManagementService {
         .getById(id)
         .select(...this.EMPLOYEE_FIELDS)();
     } catch (err) {
-      console.warn('UserManagementService.getEmployee failed:', err);
+      logger.error('UserManagementService', 'getEmployee failed', err);
       return null;
     }
   }
@@ -192,7 +193,7 @@ export class UserManagementService {
         { role: 'User', count: counts.User, description: 'Browse, read, acknowledge policies' },
       ];
     } catch (err) {
-      console.warn('UserManagementService.getRoleSummary failed:', err);
+      logger.error('UserManagementService', 'getRoleSummary failed', err);
       return [
         { role: 'Admin', count: 0, description: 'Full system access, all configuration' },
         { role: 'Manager', count: 0, description: 'Analytics, approvals, distribution, SLA' },
@@ -215,7 +216,7 @@ export class UserManagementService {
       const unique = Array.from(new Set(items.map((i: any) => i.Department).filter(Boolean)));
       return unique.sort();
     } catch (err) {
-      console.warn('UserManagementService.getDepartments failed:', err);
+      logger.error('UserManagementService', 'getDepartments failed', err);
       return [];
     }
   }
@@ -233,7 +234,7 @@ export class UserManagementService {
       const unique = Array.from(new Set(items.map((i: any) => i.JobTitle).filter(Boolean)));
       return unique.sort();
     } catch (err) {
-      console.warn('UserManagementService.getJobTitles failed:', err);
+      logger.error('UserManagementService', 'getJobTitles failed', err);
       return [];
     }
   }
@@ -251,7 +252,7 @@ export class UserManagementService {
       const unique = Array.from(new Set(items.map((i: any) => i.Location).filter(Boolean)));
       return unique.sort();
     } catch (err) {
-      console.warn('UserManagementService.getLocations failed:', err);
+      logger.error('UserManagementService', 'getLocations failed', err);
       return [];
     }
   }
@@ -281,7 +282,7 @@ export class UserManagementService {
 
       return result.sort((a, b) => a.Title.localeCompare(b.Title));
     } catch (err) {
-      console.warn('UserManagementService.getSiteGroups failed:', err);
+      logger.error('UserManagementService', 'getSiteGroups failed', err);
       return [];
     }
   }
@@ -302,7 +303,7 @@ export class UserManagementService {
         IsSiteAdmin: u.IsSiteAdmin || false,
       }));
     } catch (err) {
-      console.warn('UserManagementService.getGroupMembers failed:', err);
+      logger.error('UserManagementService', 'getGroupMembers failed', err);
       return [];
     }
   }

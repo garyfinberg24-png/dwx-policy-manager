@@ -2976,9 +2976,9 @@ export const JmlFooterStyles = {
    * Footer inner content
    */
   content: {
-    maxWidth: '1400px',
-    margin: '0 auto',
+    width: '100%',
     padding: '16px 24px',
+    boxSizing: 'border-box' as const,
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -4641,14 +4641,12 @@ export const JmlFullPageLayoutStyles = {
   },
 
   /**
-   * Content wrapper - centers and constrains content
-   * Max width 1400px with auto margins
+   * Content wrapper - full width with consistent padding
    */
   contentWrapper: {
-    maxWidth: '1400px',
     width: '100%',
-    margin: '0 auto',
-    padding: '24px',
+    padding: '8px 24px',
+    boxSizing: 'border-box' as const,
   },
 
   /**
@@ -4706,7 +4704,7 @@ export const JmlFullPageLayoutStyles = {
    * CSS Variables reference (for SCSS/CSS usage)
    */
   cssVariables: {
-    maxWidth: '1400px',
+    maxWidth: '100%',
     headerHeight: '56px',
     sidebarWidth: '280px',
     spacingXs: '4px',
@@ -4734,10 +4732,9 @@ export const JmlMainContentStyles = {
    * Centered with max-width constraint
    */
   container: {
-    maxWidth: '1400px',
     width: '100%',
-    margin: '0 auto',
-    padding: '24px',
+    padding: '8px 24px',
+    boxSizing: 'border-box' as const,
     boxSizing: 'border-box' as const,
   },
 

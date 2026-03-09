@@ -19,10 +19,10 @@ import { IDropdownStyles, IDialogStyles, IPanelStyles, ICalloutContentStyles } f
  * Color palette for consistent theming
  */
 export const fluentColors = {
-  // Primary
-  themePrimary: '#0078d4',
-  themeDark: '#106ebe',
-  themeLight: '#c7e0f4',
+  // Primary — Forest Teal
+  themePrimary: '#0d9488',
+  themeDark: '#0f766e',
+  themeLight: '#ccfbf1',
 
   // Neutrals
   white: '#ffffff',
@@ -42,11 +42,11 @@ export const fluentColors = {
   success: '#107c10',
   warning: '#ffb900',
   error: '#a4262c',
-  info: '#0078d4',
+  info: '#0d9488',
 
   // Selected states
-  selectedBackground: '#e5f1fb',
-  selectedBackgroundHover: '#cce4f7',
+  selectedBackground: '#f0fdfa',
+  selectedBackgroundHover: '#ccfbf1',
   hoverBackground: '#f3f2f1',
 
   // Disabled
@@ -65,7 +65,7 @@ export const fluentShadows = {
   // Dialog shadow
   elevation64: '0 25.6px 57.6px 0 rgba(0, 0, 0, 0.22), 0 4.8px 14.4px 0 rgba(0, 0, 0, 0.18)',
   // Primary button shadow
-  primaryButton: '0 2px 4px rgba(0, 120, 212, 0.3)'
+  primaryButton: '0 2px 4px rgba(13, 148, 136, 0.3)'
 };
 
 /**
@@ -86,7 +86,7 @@ export const fluentDropdownStyles: Partial<IDropdownStyles> = {
       },
       ':focus': {
         borderColor: fluentColors.themePrimary,
-        boxShadow: `0 0 0 2px rgba(0, 120, 212, 0.3)`
+        boxShadow: `0 0 0 2px rgba(13, 148, 136, 0.3)`
       },
       ':after': {
         borderRadius: '4px',
@@ -190,7 +190,7 @@ export const fluentDropdownCompactStyles: Partial<IDropdownStyles> = {
       },
       ':focus': {
         borderColor: fluentColors.themePrimary,
-        boxShadow: `0 0 0 2px rgba(0, 120, 212, 0.3)`
+        boxShadow: `0 0 0 2px rgba(13, 148, 136, 0.3)`
       },
       ':after': {
         borderRadius: '4px',

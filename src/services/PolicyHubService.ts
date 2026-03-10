@@ -87,7 +87,7 @@ export class PolicyHubService {
       }
 
       // Fetch policies
-      const allPolicies = await policyQuery.top(200)();
+      const allPolicies = await policyQuery.top(500)();
 
       // Apply text search BEFORE pagination (fixes search across all results)
       let searchedPolicies = allPolicies;
@@ -259,9 +259,8 @@ export class PolicyHubService {
       const filter = policyIds.map(id => `PolicyId eq ${id}`).join(' or ');
       const documents = await this.sp.web.lists
         .getByTitle(this.POLICY_DOCUMENTS_LIST)
-        .items.select('Id', 'Title', 'PolicyId', 'DocumentUrl', 'DocumentType', 'FileSize', 'IsActive')
-        .filter(`(${filter}) and IsActive eq true`)
-        .top(500)();
+        .items.filter(`(${filter}) and IsActive eq true`)
+        .top(1000)();
 
       return documents as IPolicyDocumentMetadata[];
     } catch (error) {
@@ -357,9 +356,8 @@ export class PolicyHubService {
       // Get all acknowledgements for this policy
       const acknowledgements = await this.sp.web.lists
         .getByTitle(this.POLICY_ACKNOWLEDGEMENTS_LIST)
-        .items.select('Id', 'PolicyId', 'AckUserId', 'AckStatus', 'AcknowledgedDate', 'DueDate', 'UserDepartment', 'UserRole', 'UserLocation')
-        .filter(`PolicyId eq ${policyId}`)
-        .top(500)() as IPolicyAcknowledgement[];
+        .items.filter(`PolicyId eq ${policyId}`)
+        .top(1000)() as IPolicyAcknowledgement[];
 
       // Calculate metrics
       const metrics = this.calculateReadTimeframeMetrics(acknowledgements, timeframeDays);
@@ -543,9 +541,8 @@ export class PolicyHubService {
       // Get all policies with read timeframes
       const policies = await this.sp.web.lists
         .getByTitle(this.POLICIES_LIST)
-        .items.select('Id', 'Title', 'PolicyNumber', 'ReadTimeframe', 'ReadTimeframeDays', 'IsActive')
-        .filter('ReadTimeframe ne null and IsActive eq true')
-        .top(500)() as IPolicy[];
+        .items.filter('ReadTimeframe ne null and IsActive eq true')
+        .top(1000)() as IPolicy[];
 
       const complianceReports = await Promise.all(
         policies.map(policy => this.getReadTimeframeCompliance(policy.Id!))
@@ -578,7 +575,7 @@ export class PolicyHubService {
           'ExpirationDate', 'IsActive', 'AuthorId', 'Modified'
         )
         .filter('IsActive eq true')
-        .top(200)() as IPolicy[];
+        .top(500)() as IPolicy[];
 
       const activePolicies = allPolicies.filter(p => p.PolicyStatus === PolicyStatus.Published);
 
@@ -780,9 +777,8 @@ export class PolicyHubService {
       // Get all acknowledgements for this user
       const acknowledgements = await this.sp.web.lists
         .getByTitle(this.POLICY_ACKNOWLEDGEMENTS_LIST)
-        .items.select('Id', 'PolicyId', 'AckUserId', 'AckStatus', 'AcknowledgedDate', 'DueDate')
-        .filter(`AckUserId eq ${userId}`)
-        .top(200)() as IPolicyAcknowledgement[];
+        .items.filter(`AckUserId eq ${userId}`)
+        .top(500)() as IPolicyAcknowledgement[];
 
       // Get all related policies
       const policyIds = Array.from(new Set(acknowledgements.map(a => a.PolicyId)));
@@ -794,9 +790,8 @@ export class PolicyHubService {
       const policyFilter = policyIds.map(id => `Id eq ${id}`).join(' or ');
       const policies = await this.sp.web.lists
         .getByTitle(this.POLICIES_LIST)
-        .items.select('Id', 'Title', 'PolicyNumber', 'PolicyStatus', 'PolicyCategory', 'ReadTimeframe', 'ReadTimeframeDays', 'EffectiveDate', 'ExpirationDate')
-        .filter(`(${policyFilter})`)
-        .top(200)() as IPolicy[];
+        .items.filter(`(${policyFilter})`)
+        .top(500)() as IPolicy[];
 
       // Create policy lookup map
       const policyMap = new Map<number, IPolicy>();
@@ -844,10 +839,9 @@ export class PolicyHubService {
     try {
       const policies = await this.sp.web.lists
         .getByTitle(this.POLICIES_LIST)
-        .items.select('Id', 'Title', 'PolicyNumber', 'PolicyStatus', 'PolicyCategory', 'Department', 'ComplianceRisk', 'EffectiveDate', 'Modified', 'AuthorId')
-        .filter(`AuthorId eq ${userId}`)
+        .items.filter(`AuthorId eq ${userId}`)
         .orderBy('Modified', false)
-        .top(200)() as IPolicy[];
+        .top(500)() as IPolicy[];
 
       return policies;
     } catch (error) {
@@ -1011,8 +1005,7 @@ export class PolicyHubService {
       // Get all policies
       const policies = await this.sp.web.lists
         .getByTitle(this.POLICIES_LIST)
-        .items.select('Id', 'Title', 'PolicyStatus', 'PolicyCategory', 'ExpiryDate', 'IsActive')
-        .top(200)() as IPolicy[];
+        .items.top(500)() as IPolicy[];
 
       // Calculate metrics
       const totalPolicies = policies.length;
@@ -1047,8 +1040,7 @@ export class PolicyHubService {
       // Get all acknowledgements for compliance calculation
       const allAcknowledgements = await this.sp.web.lists
         .getByTitle(this.POLICY_ACKNOWLEDGEMENTS_LIST)
-        .items.select('Id', 'PolicyId', 'AckStatus', 'AcknowledgedDate', 'UserDepartment')
-        .top(200)() as IPolicyAcknowledgement[];
+        .items.top(500)() as IPolicyAcknowledgement[];
 
       // Calculate overall compliance rate
       const totalAcks = allAcknowledgements.length;

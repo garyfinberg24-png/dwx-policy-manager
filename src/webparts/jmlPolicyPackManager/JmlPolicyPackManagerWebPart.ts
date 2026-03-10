@@ -9,8 +9,7 @@ import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
 import { IReadonlyTheme } from '@microsoft/sp-component-base';
 
 import * as strings from 'JmlPolicyPackManagerWebPartStrings';
-import PolicyPackManager from './components/PolicyPackManager';
-import { IPolicyPackManagerProps } from './components/IPolicyPackManagerProps';
+const PolicyPackManager = React.lazy(() => import(/* webpackChunkName: "policy-pack-manager" */ './components/PolicyPackManager'));
 import { SPFI } from '@pnp/sp';
 import { getSP } from '../../utils/pnpConfig';
 import { injectSharePointOverrides } from '../../utils/SharePointOverrides';
@@ -24,15 +23,19 @@ export default class DwxPolicyPackManagerWebPart extends BaseClientSideWebPart<I
   private _sp: SPFI;
 
   public render(): void {
-    const element: React.ReactElement<IPolicyPackManagerProps> = React.createElement(
-      PolicyPackManager,
-      {
-        title: this.properties.title,
-        isDarkTheme: this._isDarkTheme,
-        hasTeamsContext: !!this.context.sdks.microsoftTeams,
-        sp: this._sp,
-        context: this.context
-      }
+    const element = React.createElement(
+      React.Suspense,
+      { fallback: React.createElement('div', { style: { padding: 40, textAlign: 'center' } }, 'Loading Policy Pack Manager...') },
+      React.createElement(
+        PolicyPackManager,
+        {
+          title: this.properties.title,
+          isDarkTheme: this._isDarkTheme,
+          hasTeamsContext: !!this.context.sdks.microsoftTeams,
+          sp: this._sp,
+          context: this.context
+        }
+      )
     );
 
     ReactDom.render(element, this.domElement);

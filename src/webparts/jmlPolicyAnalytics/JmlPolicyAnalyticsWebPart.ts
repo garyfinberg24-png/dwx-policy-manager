@@ -9,8 +9,7 @@ import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
 import { IReadonlyTheme } from '@microsoft/sp-component-base';
 
 import * as strings from 'JmlPolicyAnalyticsWebPartStrings';
-import PolicyAnalytics from './components/PolicyAnalytics';
-import { IPolicyAnalyticsProps } from './components/IPolicyAnalyticsProps';
+const PolicyAnalytics = React.lazy(() => import(/* webpackChunkName: "policy-analytics" */ './components/PolicyAnalytics'));
 import { SPFI } from '@pnp/sp';
 import { getSP } from '../../utils/pnpConfig';
 import { injectSharePointOverrides } from '../../utils/SharePointOverrides';
@@ -24,15 +23,19 @@ export default class JmlPolicyAnalyticsWebPart extends BaseClientSideWebPart<IJm
   private _sp: SPFI;
 
   public render(): void {
-    const element: React.ReactElement<IPolicyAnalyticsProps> = React.createElement(
-      PolicyAnalytics,
-      {
-        title: this.properties.title,
-        isDarkTheme: this._isDarkTheme,
-        hasTeamsContext: !!this.context.sdks.microsoftTeams,
-        sp: this._sp,
-        context: this.context
-      }
+    const element = React.createElement(
+      React.Suspense,
+      { fallback: React.createElement('div', { style: { padding: 40, textAlign: 'center' } }, 'Loading Policy Analytics...') },
+      React.createElement(
+        PolicyAnalytics,
+        {
+          title: this.properties.title,
+          isDarkTheme: this._isDarkTheme,
+          hasTeamsContext: !!this.context.sdks.microsoftTeams,
+          sp: this._sp,
+          context: this.context
+        }
+      )
     );
 
     ReactDom.render(element, this.domElement);

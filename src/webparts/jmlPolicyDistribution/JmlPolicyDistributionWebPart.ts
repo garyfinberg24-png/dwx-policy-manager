@@ -9,8 +9,7 @@ import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
 import { IReadonlyTheme } from '@microsoft/sp-component-base';
 
 import * as strings from 'JmlPolicyDistributionWebPartStrings';
-import PolicyDistribution from './components/PolicyDistribution';
-import { IPolicyDistributionProps } from './components/IPolicyDistributionProps';
+const PolicyDistribution = React.lazy(() => import(/* webpackChunkName: "policy-distribution" */ './components/PolicyDistribution'));
 import { SPFI } from '@pnp/sp';
 import { getSP } from '../../utils/pnpConfig';
 import { injectSharePointOverrides } from '../../utils/SharePointOverrides';
@@ -24,15 +23,19 @@ export default class JmlPolicyDistributionWebPart extends BaseClientSideWebPart<
   private _sp: SPFI;
 
   public render(): void {
-    const element: React.ReactElement<IPolicyDistributionProps> = React.createElement(
-      PolicyDistribution,
-      {
-        title: this.properties.title,
-        isDarkTheme: this._isDarkTheme,
-        hasTeamsContext: !!this.context.sdks.microsoftTeams,
-        sp: this._sp,
-        context: this.context
-      }
+    const element = React.createElement(
+      React.Suspense,
+      { fallback: React.createElement('div', { style: { padding: 40, textAlign: 'center' } }, 'Loading Policy Distribution...') },
+      React.createElement(
+        PolicyDistribution,
+        {
+          title: this.properties.title,
+          isDarkTheme: this._isDarkTheme,
+          hasTeamsContext: !!this.context.sdks.microsoftTeams,
+          sp: this._sp,
+          context: this.context
+        }
+      )
     );
 
     ReactDom.render(element, this.domElement);

@@ -10,8 +10,7 @@ import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
 import { IReadonlyTheme } from '@microsoft/sp-component-base';
 
 import * as strings from 'JmlPolicyDetailsWebPartStrings';
-import PolicyDetails from './components/PolicyDetails';
-import { IPolicyDetailsProps } from './components/IPolicyDetailsProps';
+const PolicyDetails = React.lazy(() => import(/* webpackChunkName: "policy-details" */ './components/PolicyDetails'));
 import { SPFI } from '@pnp/sp';
 import { getSP } from '../../utils/pnpConfig';
 import { injectSharePointOverrides } from '../../utils/SharePointOverrides';
@@ -31,20 +30,24 @@ export default class DwxPolicyDetailsWebPart extends BaseClientSideWebPart<IDwxP
   private _dwxHub: DwxHubService | undefined;
 
   public render(): void {
-    const element: React.ReactElement<IPolicyDetailsProps> = React.createElement(
-      PolicyDetails,
-      {
-        title: this.properties.title,
-        showRelatedDocuments: this.properties.showRelatedDocuments,
-        showComments: this.properties.showComments,
-        showRatings: this.properties.showRatings,
-        enableQuiz: this.properties.enableQuiz,
-        isDarkTheme: this._isDarkTheme,
-        hasTeamsContext: !!this.context.sdks.microsoftTeams,
-        sp: this._sp,
-        context: this.context,
-        dwxHub: this._dwxHub
-      }
+    const element = React.createElement(
+      React.Suspense,
+      { fallback: React.createElement('div', { style: { padding: 40, textAlign: 'center' } }, 'Loading Policy Details...') },
+      React.createElement(
+        PolicyDetails,
+        {
+          title: this.properties.title,
+          showRelatedDocuments: this.properties.showRelatedDocuments,
+          showComments: this.properties.showComments,
+          showRatings: this.properties.showRatings,
+          enableQuiz: this.properties.enableQuiz,
+          isDarkTheme: this._isDarkTheme,
+          hasTeamsContext: !!this.context.sdks.microsoftTeams,
+          sp: this._sp,
+          context: this.context,
+          dwxHub: this._dwxHub
+        }
+      )
     );
 
     ReactDom.render(element, this.domElement);

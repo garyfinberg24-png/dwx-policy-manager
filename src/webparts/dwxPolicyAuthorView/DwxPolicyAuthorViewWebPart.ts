@@ -9,8 +9,7 @@ import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
 import { IReadonlyTheme } from '@microsoft/sp-component-base';
 
 import * as strings from 'DwxPolicyAuthorViewWebPartStrings';
-import PolicyAuthorView from './components/PolicyAuthorView';
-import { IPolicyAuthorViewProps } from './components/IPolicyAuthorViewProps';
+const PolicyAuthorView = React.lazy(() => import(/* webpackChunkName: "policy-author-view" */ './components/PolicyAuthorView'));
 import { SPFI } from '@pnp/sp';
 import { getSP } from '../../utils/pnpConfig';
 import { injectSharePointOverrides } from '../../utils/SharePointOverrides';
@@ -24,15 +23,19 @@ export default class DwxPolicyAuthorViewWebPart extends BaseClientSideWebPart<ID
   private _sp: SPFI;
 
   public render(): void {
-    const element: React.ReactElement<IPolicyAuthorViewProps> = React.createElement(
-      PolicyAuthorView,
-      {
-        title: this.properties.title,
-        isDarkTheme: this._isDarkTheme,
-        hasTeamsContext: !!this.context.sdks.microsoftTeams,
-        sp: this._sp,
-        context: this.context
-      }
+    const element = React.createElement(
+      React.Suspense,
+      { fallback: React.createElement('div', { style: { padding: 40, textAlign: 'center' } }, 'Loading Policy Author View...') },
+      React.createElement(
+        PolicyAuthorView,
+        {
+          title: this.properties.title,
+          isDarkTheme: this._isDarkTheme,
+          hasTeamsContext: !!this.context.sdks.microsoftTeams,
+          sp: this._sp,
+          context: this.context
+        }
+      )
     );
 
     ReactDom.render(element, this.domElement);

@@ -9,7 +9,8 @@ import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
 import { IReadonlyTheme } from '@microsoft/sp-component-base';
 
 import * as strings from 'JmlMyPoliciesWebPartStrings';
-const MyPolicies = React.lazy(() => import(/* webpackChunkName: "my-policies" */ './components/MyPolicies'));
+import MyPolicies from './components/MyPolicies';
+import { IMyPoliciesProps } from './components/IMyPoliciesProps';
 import { SPFI } from '@pnp/sp';
 import { getSP } from '../../utils/pnpConfig';
 import { injectSharePointOverrides } from '../../utils/SharePointOverrides';
@@ -26,22 +27,18 @@ export default class DwxMyPoliciesWebPart extends BaseClientSideWebPart<IDwxMyPo
   private _sp: SPFI;
 
   public render(): void {
-    const element = React.createElement(
-      React.Suspense,
-      { fallback: React.createElement('div', { style: { padding: 40, textAlign: 'center' } }, 'Loading My Policies...') },
-      React.createElement(
-        MyPolicies,
-        {
-          title: this.properties.title,
-          showComplianceScore: this.properties.showComplianceScore,
-          showPolicyPacks: this.properties.showPolicyPacks,
-          showJMLIntegration: this.properties.showJMLIntegration,
-          isDarkTheme: this._isDarkTheme,
-          hasTeamsContext: !!this.context.sdks.microsoftTeams,
-          sp: this._sp,
-          context: this.context
-        }
-      )
+    const element: React.ReactElement<IMyPoliciesProps> = React.createElement(
+      MyPolicies,
+      {
+        title: this.properties.title,
+        showComplianceScore: this.properties.showComplianceScore,
+        showPolicyPacks: this.properties.showPolicyPacks,
+        showJMLIntegration: this.properties.showJMLIntegration,
+        isDarkTheme: this._isDarkTheme,
+        hasTeamsContext: !!this.context.sdks.microsoftTeams,
+        sp: this._sp,
+        context: this.context
+      }
     );
 
     ReactDom.render(element, this.domElement);

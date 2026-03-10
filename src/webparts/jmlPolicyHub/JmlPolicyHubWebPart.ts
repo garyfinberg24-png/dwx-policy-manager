@@ -11,7 +11,8 @@ import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
 import { IReadonlyTheme } from '@microsoft/sp-component-base';
 
 import * as strings from 'JmlPolicyHubWebPartStrings';
-const PolicyHub = React.lazy(() => import(/* webpackChunkName: "policy-hub" */ './components/PolicyHub'));
+import PolicyHub from './components/PolicyHub';
+import { IPolicyHubProps } from './components/IPolicyHubProps';
 import { SPFI } from '@pnp/sp';
 import { getSP } from '../../utils/pnpConfig';
 import { injectSharePointOverrides } from '../../utils/SharePointOverrides';
@@ -33,26 +34,22 @@ export default class DwxPolicyHubWebPart extends BaseClientSideWebPart<IDwxPolic
   private _dwxHub: DwxHubService | undefined;
 
   public render(): void {
-    const element = React.createElement(
-      React.Suspense,
-      { fallback: React.createElement('div', { style: { padding: 40, textAlign: 'center' } }, 'Loading Policy Hub...') },
-      React.createElement(
-        PolicyHub,
-        {
-          title: this.properties.title,
-          showDocumentCenter: this.properties.showDocumentCenter,
-          enableAdvancedSearch: this.properties.enableAdvancedSearch,
-          itemsPerPage: this.properties.itemsPerPage,
-          showFacets: this.properties.showFacets,
-          enableFeaturedPolicies: this.properties.enableFeaturedPolicies === true,
-          enableRecentlyViewed: this.properties.enableRecentlyViewed === true,
-          isDarkTheme: this._isDarkTheme,
-          hasTeamsContext: !!this.context.sdks.microsoftTeams,
-          sp: this._sp,
-          context: this.context,
-          dwxHub: this._dwxHub
-        }
-      )
+    const element: React.ReactElement<IPolicyHubProps> = React.createElement(
+      PolicyHub,
+      {
+        title: this.properties.title,
+        showDocumentCenter: this.properties.showDocumentCenter,
+        enableAdvancedSearch: this.properties.enableAdvancedSearch,
+        itemsPerPage: this.properties.itemsPerPage,
+        showFacets: this.properties.showFacets,
+        enableFeaturedPolicies: this.properties.enableFeaturedPolicies === true,
+        enableRecentlyViewed: this.properties.enableRecentlyViewed === true,
+        isDarkTheme: this._isDarkTheme,
+        hasTeamsContext: !!this.context.sdks.microsoftTeams,
+        sp: this._sp,
+        context: this.context,
+        dwxHub: this._dwxHub
+      }
     );
 
     ReactDom.render(element, this.domElement);

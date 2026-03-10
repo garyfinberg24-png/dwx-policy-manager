@@ -9,7 +9,8 @@ import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
 import { IReadonlyTheme } from '@microsoft/sp-component-base';
 
 import * as strings from 'JmlPolicySearchWebPartStrings';
-const PolicySearch = React.lazy(() => import(/* webpackChunkName: "policy-search" */ './components/PolicySearch'));
+import PolicySearch from './components/PolicySearch';
+import { IPolicySearchProps } from './components/IPolicySearchProps';
 import { SPFI } from '@pnp/sp';
 import { getSP } from '../../utils/pnpConfig';
 import { injectSharePointOverrides } from '../../utils/SharePointOverrides';
@@ -23,19 +24,15 @@ export default class DwxPolicySearchWebPart extends BaseClientSideWebPart<IDwxPo
   private _sp: SPFI;
 
   public render(): void {
-    const element = React.createElement(
-      React.Suspense,
-      { fallback: React.createElement('div', { style: { padding: 40, textAlign: 'center' } }, 'Loading Policy Search...') },
-      React.createElement(
-        PolicySearch,
-        {
-          title: this.properties.title,
-          isDarkTheme: this._isDarkTheme,
-          hasTeamsContext: !!this.context.sdks.microsoftTeams,
-          sp: this._sp,
-          context: this.context
-        }
-      )
+    const element: React.ReactElement<IPolicySearchProps> = React.createElement(
+      PolicySearch,
+      {
+        title: this.properties.title,
+        isDarkTheme: this._isDarkTheme,
+        hasTeamsContext: !!this.context.sdks.microsoftTeams,
+        sp: this._sp,
+        context: this.context
+      }
     );
 
     ReactDom.render(element, this.domElement);

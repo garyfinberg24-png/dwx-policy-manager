@@ -9,7 +9,8 @@ import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
 import { IReadonlyTheme } from '@microsoft/sp-component-base';
 
 import * as strings from 'JmlPolicyHelpWebPartStrings';
-const PolicyHelp = React.lazy(() => import(/* webpackChunkName: "policy-help" */ './components/PolicyHelp'));
+import PolicyHelp from './components/PolicyHelp';
+import { IPolicyHelpProps } from './components/IPolicyHelpProps';
 import { SPFI } from '@pnp/sp';
 import { getSP } from '../../utils/pnpConfig';
 import { injectSharePointOverrides } from '../../utils/SharePointOverrides';
@@ -23,19 +24,15 @@ export default class DwxPolicyHelpWebPart extends BaseClientSideWebPart<IDwxPoli
   private _sp: SPFI;
 
   public render(): void {
-    const element = React.createElement(
-      React.Suspense,
-      { fallback: React.createElement('div', { style: { padding: 40, textAlign: 'center' } }, 'Loading Policy Help...') },
-      React.createElement(
-        PolicyHelp,
-        {
-          title: this.properties.title,
-          isDarkTheme: this._isDarkTheme,
-          hasTeamsContext: !!this.context.sdks.microsoftTeams,
-          sp: this._sp,
-          context: this.context
-        }
-      )
+    const element: React.ReactElement<IPolicyHelpProps> = React.createElement(
+      PolicyHelp,
+      {
+        title: this.properties.title,
+        isDarkTheme: this._isDarkTheme,
+        hasTeamsContext: !!this.context.sdks.microsoftTeams,
+        sp: this._sp,
+        context: this.context
+      }
     );
 
     ReactDom.render(element, this.domElement);

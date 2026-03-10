@@ -1125,8 +1125,8 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     return (
       <aside className={styles.v3Sidebar}>
         <div className={styles.v3SidebarHeader}>
-          <Text variant="mediumPlus" style={{ fontWeight: 700, color: '#111827', display: 'block' }}>New Policy Wizard</Text>
-          <Text variant="small" style={{ color: '#6b7280', marginTop: 2 }}>{WIZARD_STEPS.length} steps to complete</Text>
+          <Text variant="mediumPlus" style={TextStyles.boldDarkBlock}>New Policy Wizard</Text>
+          <Text variant="small" style={TextStyles.mutedSmallTop}>{WIZARD_STEPS.length} steps to complete</Text>
         </div>
         <div className={styles.v3Accordion}>
           {WIZARD_STEPS.map((step, index) => {
@@ -1153,7 +1153,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                     }}
                   >
                     {isCompleted ? (
-                      <Icon iconName="CheckMark" style={{ fontSize: 11 }} />
+                      <Icon iconName="CheckMark" style={IconStyles.xSmall} />
                     ) : (
                       <span>{index + 1}</span>
                     )}
@@ -1275,19 +1275,19 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       <aside className={styles.v3RightPanel}>
         {/* Tips & Guidance */}
         <div className={styles.v3PanelSection}>
-          <Text variant="small" style={{ fontWeight: 700, color: '#1f2937', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Text variant="small" style={TextStyles.sectionHeading}>
             <span style={{
               width: 18, height: 18, background: '#f0fdfa', borderRadius: 4,
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               color: Colors.tealPrimary, fontSize: 10
             }}>
-              <Icon iconName="Lightbulb" style={{ fontSize: 12 }} />
+              <Icon iconName="Lightbulb" style={IconStyles.small12} />
             </span>
             Tips & Guidance
           </Text>
           {tips.map((tip, i) => (
             <div key={i} className={styles.v3Tip}>
-              <Text style={{ display: 'block', marginBottom: 4, fontSize: 12, fontWeight: 600 }}>{tip.title}</Text>
+              <Text style={TextStyles.blockLabel}>{tip.title}</Text>
               <Text style={{ fontSize: 12, color: '#115e59', lineHeight: '1.5' }}>{tip.body}</Text>
             </div>
           ))}
@@ -1295,13 +1295,13 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
         {/* Related Policies */}
         <div className={styles.v3PanelSection}>
-          <Text variant="small" style={{ fontWeight: 700, color: '#1f2937', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Text variant="small" style={TextStyles.sectionHeading}>
             <span style={{
               width: 18, height: 18, background: '#f0fdfa', borderRadius: 4,
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               color: Colors.tealPrimary, fontSize: 10
             }}>
-              <Icon iconName="Page" style={{ fontSize: 12 }} />
+              <Icon iconName="Page" style={IconStyles.small12} />
             </span>
             Related Policies
           </Text>
@@ -1315,7 +1315,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                 <Icon iconName="Page" style={{ fontSize: 14 }} />
               </div>
               <div>
-                <Text style={{ fontWeight: 600, fontSize: 12, color: '#374151', display: 'block' }}>{pol.title}</Text>
+                <Text style={{ fontWeight: 600, fontSize: 12, color: '#374151', display: 'block' as const }}>{pol.title}</Text>
                 <Text style={{ fontSize: 11, color: '#9ca3af' }}>{pol.category} &bull; {pol.status}</Text>
               </div>
             </div>
@@ -1324,13 +1324,13 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
         {/* Compliance Notes */}
         <div className={styles.v3PanelSection}>
-          <Text variant="small" style={{ fontWeight: 700, color: '#1f2937', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Text variant="small" style={TextStyles.sectionHeading}>
             <span style={{
               width: 18, height: 18, background: '#f0fdfa', borderRadius: 4,
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               color: Colors.tealPrimary, fontSize: 10
             }}>
-              <Icon iconName="Warning" style={{ fontSize: 12 }} />
+              <Icon iconName="Warning" style={IconStyles.small12} />
             </span>
             Compliance Notes
           </Text>
@@ -1609,7 +1609,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                 checked={requiresAcknowledgement}
                 onChange={(e, checked) => this.setState({ requiresAcknowledgement: checked || false })}
               />
-              <Text variant="small" style={{ marginLeft: 26, color: Colors.textSecondary }}>
+              <Text variant="small" style={TextStyles.labelWithIconOffset}>
                 Employees must confirm they have read and understood the policy
               </Text>
 
@@ -1620,7 +1620,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                   this.setState({ requiresQuiz: checked || false });
                 }}
               />
-              <Text variant="small" style={{ marginLeft: 26, color: Colors.textSecondary }}>
+              <Text variant="small" style={TextStyles.labelWithIconOffset}>
                 Employees must pass a quiz to demonstrate understanding. Quizzes can be created and assigned after the policy is published.
               </Text>
             </Stack>
@@ -1924,7 +1924,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                     <Icon iconName={section.icon} style={{ marginRight: 8 }} />
                     {section.title}
                   </Text>
-                  <Icon iconName={isExpanded ? 'ChevronUp' : 'ChevronDown'} style={{ fontSize: 12, color: '#6b7280' }} />
+                  <Icon iconName={isExpanded ? 'ChevronUp' : 'ChevronDown'} style={IconStyles.small} />
                 </div>
                 <div className={isExpanded ? styles.reviewSectionBody : styles.reviewSectionBodyCollapsed}>
                   {section.content}
@@ -2815,7 +2815,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                             <Text variant="mediumPlus" style={{ fontWeight: 600, display: 'block' }}>{template.Title}</Text>
                             <Stack horizontal tokens={{ childrenGap: 6 }} verticalAlign="center">
                               <span style={{
-                                fontSize: 11, fontWeight: 600, padding: '1px 8px', borderRadius: 10,
+                                ...BadgeStyles.small,
                                 backgroundColor: `${riskColor}15`, color: riskColor
                               }}>
                                 {template.ComplianceRisk} Risk
@@ -2947,7 +2947,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
               }
             }}
           >
-            <Icon iconName="CloudUpload" style={{ fontSize: 40, color: Colors.tealPrimary, marginBottom: 12 }} />
+            <Icon iconName="CloudUpload" style={IconStyles.largeTeal} />
             <Text variant="mediumPlus" style={{ display: 'block', fontWeight: 600, marginBottom: 4 }}>
               Drag & drop a file here
             </Text>
@@ -3133,7 +3133,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
           <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 12 }}
             style={{ padding: '8px 16px', background: '#fff', borderRadius: 8, border: '1px solid #e2e8f0' }}>
             <Icon iconName="Photo2" style={IconStyles.mediumTeal} />
-            <Text variant="medium" style={{ fontWeight: 600, color: '#334155', flex: 1 }}>
+            <Text variant="medium" style={TextStyles.sectionLabel}>
               {imageViewerTitle}
             </Text>
             <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 4 }}>
@@ -4468,7 +4468,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         >
           <Stack tokens={{ childrenGap: 16 }}>
             {/* Quiz Info Header */}
-            <div style={{ padding: 16, background: '#f3f2f1', borderRadius: 8 }}>
+            <div style={ContainerStyles.infoBox}>
               <Stack horizontal tokens={{ childrenGap: 24 }}>
                 <Stack tokens={{ childrenGap: 4 }}>
                   <Text variant="small" style={TextStyles.secondary}>Linked Policy</Text>
@@ -4524,7 +4524,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                     <Stack horizontal horizontalAlign="space-between" verticalAlign="start">
                       <Stack tokens={{ childrenGap: 8 }} grow>
                         <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 12 }}>
-                          <Text variant="large" style={{ fontWeight: 600, color: Colors.textSecondary }}>Q{index + 1}</Text>
+                          <Text variant="large" style={{ ...TextStyles.semiBold, color: Colors.textSecondary }}>Q{index + 1}</Text>
                           <span style={{
                             padding: '2px 8px',
                             borderRadius: 4,
@@ -4542,12 +4542,12 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                           </span>
                           <Text variant="small" style={TextStyles.secondary}>{question.Points} point{question.Points !== 1 ? 's' : ''}</Text>
                           {question.IsMandatory && (
-                            <Icon iconName="AsteriskSolid" style={{ fontSize: 8, color: '#d13438' }} title="Required" />
+                            <Icon iconName="AsteriskSolid" style={IconStyles.requiredAsterisk} title="Required" />
                           )}
                         </Stack>
                         <Text>{question.QuestionText}</Text>
                         {question.Options.length > 0 && (
-                          <Stack tokens={{ childrenGap: 4 }} style={{ marginTop: 8 }}>
+                          <Stack tokens={{ childrenGap: 4 }} style={LayoutStyles.marginTop8}>
                             {question.Options.map((opt, optIdx) => {
                               const isCorrect = Array.isArray(question.CorrectAnswer)
                                 ? question.CorrectAnswer.includes(opt)
@@ -5099,8 +5099,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             <Text variant="small" style={{ color: Colors.textSecondary, display: 'block', marginBottom: 8 }}>Policy Content Preview</Text>
             <div
               style={{
-                maxHeight: 300,
-                overflow: 'auto',
+                ...ContainerStyles.contentPreview,
                 padding: 16,
                 border: '1px solid #e1e1e1',
                 borderRadius: 4,
@@ -5569,11 +5568,11 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
               tokens={{ childrenGap: 12 }}
               styles={{ root: { padding: 16, background: '#f0fdfa', borderRadius: 8, border: '1px solid #99f6e4' } }}
             >
-              <div style={{ width: 80, height: 60, borderRadius: 4, overflow: 'hidden', border: '1px solid #e2e8f0', flexShrink: 0 }}>
+              <div style={{ ...ContainerStyles.imageThumbnail, flexShrink: 0 }}>
                 <img src={imageUrl} alt={fileName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
               <Stack tokens={{ childrenGap: 4 }} styles={{ root: { flex: 1 } }}>
-                <Text variant="mediumPlus" style={{ fontWeight: 600, color: '#0f172a' }}>{fileName}</Text>
+                <Text variant="mediumPlus" style={{ ...TextStyles.semiBold, color: '#0f172a' }}>{fileName}</Text>
                 <Text variant="small" style={TextStyles.secondary}>Corporate Image Template — uploaded to document library</Text>
               </Stack>
               <PrimaryButton
@@ -5595,7 +5594,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             </Stack>
 
             {/* Optional supplementary text editor */}
-            <div style={{ marginTop: 8 }}>
+            <div style={LayoutStyles.marginTop8}>
               <Label>Supplementary Policy Text (Optional)</Label>
               <Text variant="small" style={{ color: Colors.textSecondary, marginBottom: 8, display: 'block' }}>
                 Add any additional context, instructions, or notes that accompany this image policy.
@@ -6142,7 +6141,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             <main className={styles.v3Center}>
               <div className={styles.v3CenterHeader}>
                 <div className={styles.v3HeaderLeft}>
-                  <Text variant="xLarge" style={{ fontWeight: 700, color: '#111827', display: 'block' }}>{currentStepConfig.title}</Text>
+                  <Text variant="xLarge" style={TextStyles.boldDarkBlock}>{currentStepConfig.title}</Text>
                   <Text style={{ fontSize: 14, color: '#6b7280', marginTop: 4 }}>{currentStepConfig.description}</Text>
                 </div>
                 <div className={styles.v3HeaderProgress}>
@@ -6382,7 +6381,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
           <Stack horizontal tokens={{ childrenGap: 6 }} verticalAlign="center">
             {this.renderStatusBadge(item.PolicyStatus)}
             {item.RequiresQuiz && !item.LinkedQuizId && (
-              <span style={{ padding: '2px 6px', borderRadius: 4, fontSize: 10, fontWeight: 600, backgroundColor: '#fef3c7', color: Colors.amber }}>
+              <span style={{ ...BadgeStyles.tiny, backgroundColor: '#fef3c7', color: Colors.amber }}>
                 Quiz Missing
               </span>
             )}
@@ -6548,7 +6547,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
     return (
       <div key={policy.Id} className={styles.kanbanCard}>
-        <Text variant="medium" style={{ fontWeight: 600, marginBottom: 4 }}>{policy.Title}</Text>
+        <Text variant="medium" style={{ ...TextStyles.semiBold, marginBottom: 4 }}>{policy.Title}</Text>
         <Text variant="small" style={{ color: Colors.textSecondary, marginBottom: 8 }}>
           {policy.PolicyNumber} • {policy.PolicyCategory}
         </Text>

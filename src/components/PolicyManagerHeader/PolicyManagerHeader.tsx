@@ -704,6 +704,16 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
                   </div>
                   <div className={styles.profileName}>{userName}</div>
                   {userEmail && <div className={styles.profileEmail}>{userEmail}</div>}
+                  {policyRole && (
+                    <span style={{
+                      display: 'inline-block', marginTop: 4,
+                      padding: '2px 10px', borderRadius: 4, fontSize: 11, fontWeight: 600,
+                      background: policyRole === 'Admin' ? '#fef2f2' : policyRole === 'Manager' ? '#fffbeb' : policyRole === 'Author' ? '#f0fdf4' : '#f0f9ff',
+                      color: policyRole === 'Admin' ? '#dc2626' : policyRole === 'Manager' ? '#d97706' : policyRole === 'Author' ? '#16a34a' : '#0284c7'
+                    }}>
+                      {policyRole}
+                    </span>
+                  )}
                   <div className={styles.profileLoginTime}>
                     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 12, height: 12 }}>
                       <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>

@@ -153,6 +153,7 @@ interface IPolicyManagerViewState {
 
 export default class PolicyManagerView extends React.Component<IPolicyManagerViewProps, IPolicyManagerViewState> {
   private policyService: PolicyService;
+  private _isMounted = false;
 
   constructor(props: IPolicyManagerViewProps) {
     super(props);
@@ -199,83 +200,471 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
   }
 
   public componentDidMount(): void {
+    this._isMounted = true;
+
     // Detect user role for access guard
     const roleService = new RoleDetectionService(this.props.sp);
     roleService.getCurrentUserRoles().then(userRoles => {
+      if (!this._isMounted) return;
       if (userRoles && userRoles.length > 0) {
         this.setState({ detectedRole: getHighestPolicyRole(userRoles) });
       } else {
         this.setState({ detectedRole: PolicyManagerRole.User });
       }
     }).catch(() => {
-      this.setState({ detectedRole: PolicyManagerRole.User });
+      if (this._isMounted) this.setState({ detectedRole: PolicyManagerRole.User });
     });
 
-    this.loadLiveApprovals().then(liveApprovals => {
-      this.setState({
-        teamMembers: this.getSampleTeamMembers(),
-        approvals: liveApprovals,
-        delegations: this.getSampleDelegations(),
-        reviews: this.getSampleReviews(),
-        activities: this.getSampleActivities(),
-        loading: false
-      });
-    }).catch(err => {
-      console.error('Failed to load approvals from SP, falling back to sample data:', err);
-      this.setState({
-        teamMembers: this.getSampleTeamMembers(),
-        approvals: this.getSampleApprovals(),
-        delegations: this.getSampleDelegations(),
-        reviews: this.getSampleReviews(),
-        activities: this.getSampleActivities(),
-        loading: false
-      });
-    });
+    this.loadAllData();
   }
 
+  public componentWillUnmount(): void {
+    this._isMounted = false;
+  }
+
+  // ==========================================================================
+  // LIVE DATA LOADING
+  // ==========================================================================
+
+  private async loadAllData(): Promise<void> {
+    try {
+      const [approvals, delegations, teamMembers, reviews, activities] = await Promise.all([
+        this.loadLiveApprovals(),
+        this.loadLiveDelegations(),
+        this.loadTeamCompliance(),
+        this.loadLiveReviews(),
+        this.loadLiveActivities()
+      ]);
+
+      if (this._isMounted) {
+        this.setState({
+          approvals,
+          delegations,
+          teamMembers,
+          reviews,
+          activities,
+          loading: false
+        });
+      }
+    } catch (err) {
+      logger.error('PolicyManagerView', 'Failed to load dashboard data:', err);
+      if (this._isMounted) {
+        this.setState({ loading: false });
+      }
+    }
+  }
+
+  /**
+   * Load approvals from PM_Approvals (pending items assigned to current user)
+   * and also from PM_Policies that are in review/pending approval status.
+   */
   private async loadLiveApprovals(): Promise<IManagerApproval[]> {
-    const items: any[] = await this.props.sp.web.lists
-      .getByTitle(PM_LISTS.POLICIES)
-      .items
-      .filter("PolicyStatus eq 'In Review' or PolicyStatus eq 'Pending Approval' or PolicyStatus eq 'Approved' or PolicyStatus eq 'Rejected'")
-      .select(
-        'Id', 'PolicyName', 'PolicyNumber', 'PolicyCategory', 'PolicyDescription',
-        'PolicyStatus', 'ComplianceRisk', 'SubmittedForReviewDate',
-        'Author/Title', 'Author/EMail'
-      )
-      .expand('Author')
-      .top(50)();
+    try {
+      // Query 1: From PM_Approvals list — items where current user is the approver
+      let approvalItems: any[] = [];
+      try {
+        approvalItems = await this.props.sp.web.lists
+          .getByTitle('PM_Approvals')
+          .items
+          .select(
+            'Id', 'ProcessID', 'Status', 'ApprovalLevel', 'RequestedDate', 'DueDate',
+            'Comments', 'CompletedDate',
+            'Approver/Title', 'Approver/EMail'
+          )
+          .expand('Approver')
+          .orderBy('RequestedDate', false)
+          .top(100)();
+      } catch (err) {
+        logger.warn('PolicyManagerView', 'PM_Approvals list not available:', err);
+      }
 
-    const liveApprovals: IManagerApproval[] = items.map((item: any) => {
-      let status: 'Pending' | 'Approved' | 'Rejected' | 'Returned' = 'Pending';
-      if (item.PolicyStatus === 'Approved' || item.PolicyStatus === 'Published') status = 'Approved';
-      else if (item.PolicyStatus === 'Rejected') status = 'Rejected';
+      // Query 2: From PM_Policies — policies in review/approval states
+      let policyItems: any[] = [];
+      try {
+        policyItems = await this.props.sp.web.lists
+          .getByTitle(PM_LISTS.POLICIES)
+          .items
+          .filter("PolicyStatus eq 'In Review' or PolicyStatus eq 'Pending Approval' or PolicyStatus eq 'Approved' or PolicyStatus eq 'Rejected'")
+          .select(
+            'Id', 'PolicyName', 'PolicyNumber', 'PolicyCategory', 'PolicyDescription',
+            'PolicyStatus', 'ComplianceRisk', 'SubmittedForReviewDate', 'Department',
+            'Author/Title', 'Author/EMail'
+          )
+          .expand('Author')
+          .top(50)();
+      } catch (err) {
+        logger.warn('PolicyManagerView', 'Failed to load policies for approvals:', err);
+      }
 
-      const submittedDate = item.SubmittedForReviewDate
-        ? new Date(item.SubmittedForReviewDate).toISOString()
-        : new Date(item.Created || Date.now()).toISOString();
-      const dueDate = new Date(new Date(submittedDate).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      // Build a map of policy IDs from approval items for cross-referencing
+      const policyIdSet = new Set(policyItems.map((p: any) => p.Id));
 
-      return {
-        Id: item.Id,
-        PolicyTitle: item.PolicyName || item.Title || 'Untitled Policy',
-        Version: '1.0',
-        SubmittedBy: item.Author?.Title || 'Unknown',
-        SubmittedByEmail: item.Author?.EMail || '',
-        Department: '',
-        Category: item.PolicyCategory || 'General',
-        SubmittedDate: submittedDate,
-        DueDate: dueDate,
-        Status: status,
-        Priority: item.ComplianceRisk === 'Critical' || item.ComplianceRisk === 'High' ? 'Urgent' : 'Normal',
-        Comments: '',
-        ChangeSummary: item.PolicyDescription || ''
-      };
-    });
+      // Map PM_Approvals items to IManagerApproval (link to policies where possible)
+      const fromApprovals: IManagerApproval[] = approvalItems.map((item: any) => {
+        let status: 'Pending' | 'Approved' | 'Rejected' | 'Returned' = 'Pending';
+        if (item.Status === 'Approved') status = 'Approved';
+        else if (item.Status === 'Rejected') status = 'Rejected';
+        else if (item.Status === 'Returned') status = 'Returned';
 
-    // Merge with sample data so the tab isn't empty if no real policies are in review
-    const sampleApprovals = this.getSampleApprovals();
-    return [...liveApprovals, ...sampleApprovals];
+        // Try to find the matching policy for more details
+        const matchedPolicy = policyItems.find((p: any) => p.Id === item.ProcessID);
+
+        return {
+          Id: item.Id,
+          PolicyTitle: matchedPolicy?.PolicyName || `Policy #${item.ProcessID || item.Id}`,
+          Version: '1.0',
+          SubmittedBy: item.Approver?.Title || 'Unknown',
+          SubmittedByEmail: item.Approver?.EMail || '',
+          Department: matchedPolicy?.Department || '',
+          Category: matchedPolicy?.PolicyCategory || 'General',
+          SubmittedDate: item.RequestedDate || new Date().toISOString(),
+          DueDate: item.DueDate || new Date(Date.now() + 7 * 86400000).toISOString(),
+          Status: status,
+          Priority: matchedPolicy?.ComplianceRisk === 'Critical' || matchedPolicy?.ComplianceRisk === 'High' ? 'Urgent' : 'Normal',
+          Comments: item.Comments || '',
+          ChangeSummary: matchedPolicy?.PolicyDescription || ''
+        };
+      });
+
+      // Map PM_Policies items that don't already have PM_Approvals records
+      const approvalProcessIds = new Set(approvalItems.map((a: any) => a.ProcessID));
+      const fromPolicies: IManagerApproval[] = policyItems
+        .filter((item: any) => !approvalProcessIds.has(item.Id))
+        .map((item: any) => {
+          let status: 'Pending' | 'Approved' | 'Rejected' | 'Returned' = 'Pending';
+          if (item.PolicyStatus === 'Approved' || item.PolicyStatus === 'Published') status = 'Approved';
+          else if (item.PolicyStatus === 'Rejected') status = 'Rejected';
+
+          const submittedDate = item.SubmittedForReviewDate
+            ? new Date(item.SubmittedForReviewDate).toISOString()
+            : new Date(item.Created || Date.now()).toISOString();
+          const dueDate = new Date(new Date(submittedDate).getTime() + 7 * 86400000).toISOString();
+
+          return {
+            Id: item.Id + 100000, // offset to avoid ID collisions with PM_Approvals
+            PolicyTitle: item.PolicyName || item.Title || 'Untitled Policy',
+            Version: '1.0',
+            SubmittedBy: item.Author?.Title || 'Unknown',
+            SubmittedByEmail: item.Author?.EMail || '',
+            Department: item.Department || '',
+            Category: item.PolicyCategory || 'General',
+            SubmittedDate: submittedDate,
+            DueDate: dueDate,
+            Status: status,
+            Priority: item.ComplianceRisk === 'Critical' || item.ComplianceRisk === 'High' ? 'Urgent' : 'Normal',
+            Comments: '',
+            ChangeSummary: item.PolicyDescription || ''
+          };
+        });
+
+      return [...fromApprovals, ...fromPolicies];
+    } catch (err) {
+      logger.error('PolicyManagerView', 'Failed to load approvals:', err);
+      return [];
+    }
+  }
+
+  /**
+   * Load delegations from PM_ApprovalDelegations
+   */
+  private async loadLiveDelegations(): Promise<IManagerDelegation[]> {
+    try {
+      const items: any[] = await this.props.sp.web.lists
+        .getByTitle('PM_ApprovalDelegations')
+        .items
+        .select(
+          'Id', 'DelegatedById', 'DelegatedToId', 'StartDate', 'EndDate',
+          'IsActive', 'Reason', 'ProcessTypes', 'AutoDelegate',
+          'DelegatedBy/Title', 'DelegatedBy/EMail',
+          'DelegatedTo/Title', 'DelegatedTo/EMail'
+        )
+        .expand('DelegatedBy', 'DelegatedTo')
+        .orderBy('StartDate', false)
+        .top(50)();
+
+      return items.map((item: any) => {
+        const now = new Date();
+        const endDate = item.EndDate ? new Date(item.EndDate) : null;
+        const startDate = item.StartDate ? new Date(item.StartDate) : new Date();
+
+        let status: 'Pending' | 'InProgress' | 'Completed' | 'Overdue' = 'Pending';
+        if (!item.IsActive) {
+          status = 'Completed';
+        } else if (endDate && endDate < now) {
+          status = 'Overdue';
+        } else if (startDate <= now) {
+          status = 'InProgress';
+        }
+
+        // Parse process types for task type
+        let taskType: 'Review' | 'Draft' | 'Approve' | 'Distribute' = 'Approve';
+        if (item.ProcessTypes) {
+          try {
+            const types = JSON.parse(item.ProcessTypes);
+            if (Array.isArray(types) && types.length > 0) {
+              const firstType = types[0].toLowerCase();
+              if (firstType.includes('review')) taskType = 'Review';
+              else if (firstType.includes('draft')) taskType = 'Draft';
+              else if (firstType.includes('distribut')) taskType = 'Distribute';
+            }
+          } catch { /* leave as default */ }
+        }
+
+        return {
+          Id: item.Id,
+          DelegatedTo: item.DelegatedTo?.Title || 'Unknown',
+          DelegatedToEmail: item.DelegatedTo?.EMail || '',
+          DelegatedBy: item.DelegatedBy?.Title || 'Unknown',
+          PolicyTitle: item.Reason || 'Delegation',
+          TaskType: taskType,
+          Department: '',
+          AssignedDate: item.StartDate || new Date().toISOString(),
+          DueDate: item.EndDate || new Date(Date.now() + 7 * 86400000).toISOString(),
+          Status: status,
+          Notes: item.Reason || '',
+          Priority: item.AutoDelegate ? 'High' : 'Medium'
+        };
+      });
+    } catch (err) {
+      logger.warn('PolicyManagerView', 'PM_ApprovalDelegations not available:', err);
+      return [];
+    }
+  }
+
+  /**
+   * Load team compliance data from PM_PolicyAcknowledgements.
+   * Groups acknowledgement records by user to build per-member compliance stats.
+   */
+  private async loadTeamCompliance(): Promise<ITeamMember[]> {
+    try {
+      // Get the current user's department for team scoping
+      const currentUser = this.props.context.pageContext.legacyPageContext;
+      const userDepartment = currentUser?.userDepartment || '';
+
+      // Load acknowledgement records
+      const ackItems: any[] = await this.props.sp.web.lists
+        .getByTitle(PM_LISTS.POLICY_ACKNOWLEDGEMENTS)
+        .items
+        .select(
+          'Id', 'Title', 'PolicyId', 'PolicyTitle', 'AckStatus',
+          'DueDate', 'AcknowledgedDate', 'Department',
+          'Author/Title', 'Author/EMail', 'Author/Id'
+        )
+        .expand('Author')
+        .top(500)();
+
+      // Group by user (Author)
+      const userMap = new Map<string, {
+        id: number;
+        name: string;
+        email: string;
+        department: string;
+        assigned: number;
+        acknowledged: number;
+        pending: number;
+        overdue: number;
+        lastActivity: string;
+      }>();
+
+      const now = new Date();
+
+      for (const item of ackItems) {
+        const userEmail = item.Author?.EMail || item.Title || 'unknown';
+        const userName = item.Author?.Title || item.Title || 'Unknown User';
+        const userId = item.Author?.Id || item.Id;
+
+        if (!userMap.has(userEmail)) {
+          userMap.set(userEmail, {
+            id: userId,
+            name: userName,
+            email: userEmail,
+            department: item.Department || '',
+            assigned: 0,
+            acknowledged: 0,
+            pending: 0,
+            overdue: 0,
+            lastActivity: ''
+          });
+        }
+
+        const user = userMap.get(userEmail)!;
+        user.assigned++;
+
+        const ackStatus = (item.AckStatus || '').toLowerCase();
+        if (ackStatus === 'acknowledged' || ackStatus === 'completed') {
+          user.acknowledged++;
+          // Track latest activity
+          if (item.AcknowledgedDate && (!user.lastActivity || new Date(item.AcknowledgedDate) > new Date(user.lastActivity))) {
+            user.lastActivity = item.AcknowledgedDate;
+          }
+        } else if (item.DueDate && new Date(item.DueDate) < now) {
+          user.overdue++;
+        } else {
+          user.pending++;
+        }
+      }
+
+      // Convert to ITeamMember array
+      const teamMembers: ITeamMember[] = [];
+      userMap.forEach((user) => {
+        const compliancePercent = user.assigned > 0
+          ? Math.round((user.acknowledged / user.assigned) * 100)
+          : 100;
+
+        // Format last activity as relative time
+        let lastActivityText = 'No activity';
+        if (user.lastActivity) {
+          const activityDate = new Date(user.lastActivity);
+          const diffMs = now.getTime() - activityDate.getTime();
+          const diffHours = Math.floor(diffMs / 3600000);
+          const diffDays = Math.floor(diffMs / 86400000);
+          if (diffHours < 1) lastActivityText = 'Just now';
+          else if (diffHours < 24) lastActivityText = `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+          else if (diffDays < 7) lastActivityText = `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+          else lastActivityText = `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) > 1 ? 's' : ''} ago`;
+        }
+
+        teamMembers.push({
+          Id: user.id,
+          Name: user.name,
+          Email: user.email,
+          Department: user.department,
+          PoliciesAssigned: user.assigned,
+          PoliciesAcknowledged: user.acknowledged,
+          PoliciesPending: user.pending,
+          PoliciesOverdue: user.overdue,
+          CompliancePercent: compliancePercent,
+          LastActivity: lastActivityText
+        });
+      });
+
+      return teamMembers;
+    } catch (err) {
+      logger.warn('PolicyManagerView', 'Failed to load team compliance:', err);
+      return [];
+    }
+  }
+
+  /**
+   * Load policy reviews from PM_Policies — policies with review dates.
+   * Calculates review status based on NextReviewDate relative to today.
+   */
+  private async loadLiveReviews(): Promise<IPolicyReview[]> {
+    try {
+      const items: any[] = await this.props.sp.web.lists
+        .getByTitle(PM_LISTS.POLICIES)
+        .items
+        .filter("PolicyStatus eq 'Published' or PolicyStatus eq 'Approved'")
+        .select(
+          'Id', 'PolicyName', 'PolicyNumber', 'PolicyCategory',
+          'LastReviewDate', 'NextReviewDate', 'ReviewCycleDays',
+          'PolicyStatus', 'AssignedReviewer'
+        )
+        .top(100)();
+
+      const now = new Date();
+
+      return items
+        .filter((item: any) => item.NextReviewDate) // Only policies with review dates
+        .map((item: any) => {
+          const nextReview = new Date(item.NextReviewDate);
+          const daysUntilReview = Math.ceil((nextReview.getTime() - now.getTime()) / 86400000);
+
+          let status: 'Due' | 'Overdue' | 'Upcoming' | 'Completed' = 'Upcoming';
+          if (daysUntilReview < -1) {
+            status = 'Overdue';
+          } else if (daysUntilReview <= 14) {
+            status = 'Due';
+          }
+          // Note: 'Completed' would be set if we had a review completion record;
+          // for now, published policies with future review dates are Upcoming
+
+          return {
+            Id: item.Id,
+            PolicyTitle: item.PolicyName || item.Title || 'Untitled',
+            PolicyNumber: item.PolicyNumber || `POL-${item.Id}`,
+            Category: item.PolicyCategory || 'General',
+            LastReviewDate: item.LastReviewDate || '',
+            NextReviewDate: item.NextReviewDate,
+            Status: status,
+            ReviewCycleDays: item.ReviewCycleDays || 180,
+            AssignedReviewer: item.AssignedReviewer || 'Unassigned',
+            Notes: ''
+          };
+        });
+    } catch (err) {
+      logger.warn('PolicyManagerView', 'Failed to load policy reviews:', err);
+      return [];
+    }
+  }
+
+  /**
+   * Load recent activities from PM_PolicyAuditLog.
+   * Maps audit log entries to the IActivityItem shape for the activity feed.
+   */
+  private async loadLiveActivities(): Promise<IActivityItem[]> {
+    try {
+      const items: any[] = await this.props.sp.web.lists
+        .getByTitle(PM_LISTS.POLICY_AUDIT_LOG)
+        .items
+        .select(
+          'Id', 'Title', 'ActionType', 'ActionCategory',
+          'PerformedBy', 'PerformedDate', 'ResourceTitle', 'Department'
+        )
+        .orderBy('PerformedDate', false)
+        .top(20)();
+
+      const now = new Date();
+
+      return items.map((item: any) => {
+        // Determine activity type from ActionType/ActionCategory
+        let type: 'acknowledgement' | 'approval' | 'review' | 'delegation' | 'overdue' = 'review';
+        const actionType = (item.ActionType || '').toLowerCase();
+        const actionCategory = (item.ActionCategory || '').toLowerCase();
+
+        if (actionType.includes('acknowledg') || actionCategory.includes('acknowledg')) {
+          type = 'acknowledgement';
+        } else if (actionType.includes('approv') || actionCategory.includes('approv')) {
+          type = 'approval';
+        } else if (actionType.includes('delegat') || actionCategory.includes('delegat')) {
+          type = 'delegation';
+        } else if (actionType.includes('overdue') || actionType.includes('escalat')) {
+          type = 'overdue';
+        }
+
+        // Build human-readable action string
+        let action = actionType || 'updated';
+        if (type === 'acknowledgement') action = 'acknowledged';
+        else if (type === 'approval' && actionType.includes('approved')) action = 'approved';
+        else if (type === 'approval' && actionType.includes('rejected')) action = 'rejected';
+        else if (type === 'delegation') action = 'delegated';
+
+        // Format timestamp as relative time
+        let timestamp = 'Recently';
+        if (item.PerformedDate) {
+          const performedDate = new Date(item.PerformedDate);
+          const diffMs = now.getTime() - performedDate.getTime();
+          const diffHours = Math.floor(diffMs / 3600000);
+          const diffDays = Math.floor(diffMs / 86400000);
+          if (diffHours < 1) timestamp = 'Just now';
+          else if (diffHours < 24) timestamp = `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+          else if (diffDays < 7) timestamp = `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+          else timestamp = `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) > 1 ? 's' : ''} ago`;
+        }
+
+        return {
+          Id: item.Id,
+          Action: action,
+          User: item.PerformedBy || 'Unknown',
+          PolicyTitle: item.ResourceTitle || item.Title || 'Unknown Policy',
+          Timestamp: timestamp,
+          Type: type
+        };
+      });
+    } catch (err) {
+      logger.warn('PolicyManagerView', 'Failed to load activities:', err);
+      return [];
+    }
   }
 
   public render(): JSX.Element {
@@ -1859,62 +2248,5 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
   // SAMPLE DATA
   // ==========================================================================
 
-  private getSampleTeamMembers(): ITeamMember[] {
-    return [
-      { Id: 1, Name: 'Lisa Chen', Email: 'lisa.chen@company.com', Department: 'Innovation', PoliciesAssigned: 12, PoliciesAcknowledged: 12, PoliciesPending: 0, PoliciesOverdue: 0, CompliancePercent: 100, LastActivity: '2 hours ago' },
-      { Id: 2, Name: 'Mark Davies', Email: 'mark.davies@company.com', Department: 'Procurement', PoliciesAssigned: 14, PoliciesAcknowledged: 11, PoliciesPending: 1, PoliciesOverdue: 2, CompliancePercent: 79, LastActivity: '1 day ago' },
-      { Id: 3, Name: 'Sarah Mitchell', Email: 'sarah.mitchell@company.com', Department: 'IT Security', PoliciesAssigned: 18, PoliciesAcknowledged: 16, PoliciesPending: 2, PoliciesOverdue: 0, CompliancePercent: 89, LastActivity: '4 hours ago' },
-      { Id: 4, Name: 'Emma Whitfield', Email: 'emma.whitfield@company.com', Department: 'Marketing', PoliciesAssigned: 10, PoliciesAcknowledged: 10, PoliciesPending: 0, PoliciesOverdue: 0, CompliancePercent: 100, LastActivity: '3 days ago' },
-      { Id: 5, Name: 'Robert Kumar', Email: 'robert.kumar@company.com', Department: 'Human Resources', PoliciesAssigned: 16, PoliciesAcknowledged: 12, PoliciesPending: 1, PoliciesOverdue: 3, CompliancePercent: 75, LastActivity: '5 days ago' },
-      { Id: 6, Name: 'James Wong', Email: 'james.wong@company.com', Department: 'Finance', PoliciesAssigned: 11, PoliciesAcknowledged: 9, PoliciesPending: 2, PoliciesOverdue: 0, CompliancePercent: 82, LastActivity: '1 day ago' },
-      { Id: 7, Name: 'Priya Sharma', Email: 'priya.sharma@company.com', Department: 'Legal', PoliciesAssigned: 20, PoliciesAcknowledged: 18, PoliciesPending: 2, PoliciesOverdue: 0, CompliancePercent: 90, LastActivity: '6 hours ago' },
-      { Id: 8, Name: 'David Thompson', Email: 'david.thompson@company.com', Department: 'Operations', PoliciesAssigned: 13, PoliciesAcknowledged: 8, PoliciesPending: 2, PoliciesOverdue: 3, CompliancePercent: 62, LastActivity: '1 week ago' }
-    ];
-  }
-
-  private getSampleApprovals(): IManagerApproval[] {
-    return [
-      { Id: 1, PolicyTitle: 'AI & Machine Learning Usage Policy', Version: '1.0', SubmittedBy: 'Lisa Chen', SubmittedByEmail: 'lisa.chen@company.com', Department: 'Innovation', Category: 'IT Security', SubmittedDate: '2026-01-25T14:00:00Z', DueDate: '2026-02-01T17:00:00Z', Status: 'Pending', Priority: 'Urgent', Comments: '', ChangeSummary: 'New policy covering acceptable AI tool usage, data handling with LLMs, and prohibited use cases.' },
-      { Id: 2, PolicyTitle: 'Vendor Risk Assessment Policy', Version: '3.2', SubmittedBy: 'Mark Davies', SubmittedByEmail: 'mark.davies@company.com', Department: 'Procurement', Category: 'Compliance', SubmittedDate: '2026-01-24T10:00:00Z', DueDate: '2026-02-07T17:00:00Z', Status: 'Pending', Priority: 'Normal', Comments: '', ChangeSummary: 'Updated SaaS vendor risk categories and ISO 27001 alignment.' },
-      { Id: 3, PolicyTitle: 'Employee Social Media Conduct Policy', Version: '1.0', SubmittedBy: 'Lisa Chen', SubmittedByEmail: 'lisa.chen@company.com', Department: 'Marketing', Category: 'HR Policies', SubmittedDate: '2026-01-20T09:00:00Z', DueDate: '2026-01-28T17:00:00Z', Status: 'Approved', Priority: 'Normal', Comments: 'Approved with minor suggestions.', ChangeSummary: 'New social media guidelines for confidential information sharing.' },
-      { Id: 4, PolicyTitle: 'Incident Response & Breach Notification', Version: '2.0', SubmittedBy: 'Sarah Mitchell', SubmittedByEmail: 'sarah.mitchell@company.com', Department: 'IT Security', Category: 'IT Security', SubmittedDate: '2026-01-26T16:00:00Z', DueDate: '2026-02-03T17:00:00Z', Status: 'Pending', Priority: 'Urgent', Comments: '', ChangeSummary: 'Major update for cloud incident playbooks and NIS2 compliance.' }
-    ];
-  }
-
-  private getSampleDelegations(): IManagerDelegation[] {
-    return [
-      { Id: 1, DelegatedTo: 'Lisa Chen', DelegatedToEmail: 'lisa.chen@company.com', DelegatedBy: 'John Peterson', PolicyTitle: 'AI & Machine Learning Usage Policy', TaskType: 'Draft', Department: 'Innovation', AssignedDate: '2026-01-22T09:00:00Z', DueDate: '2026-01-30T17:00:00Z', Status: 'InProgress', Notes: 'Board priority — use Legal and InfoSec talking points.', Priority: 'High' },
-      { Id: 2, DelegatedTo: 'Mark Davies', DelegatedToEmail: 'mark.davies@company.com', DelegatedBy: 'John Peterson', PolicyTitle: 'Vendor Risk Assessment Policy', TaskType: 'Draft', Department: 'Procurement', AssignedDate: '2026-01-15T10:00:00Z', DueDate: '2026-01-28T17:00:00Z', Status: 'Overdue', Notes: 'Coordinate with procurement team.', Priority: 'High' },
-      { Id: 3, DelegatedTo: 'Sarah Mitchell', DelegatedToEmail: 'sarah.mitchell@company.com', DelegatedBy: 'John Peterson', PolicyTitle: 'Data Retention for Cloud Storage', TaskType: 'Review', Department: 'IT Security', AssignedDate: '2026-01-27T09:00:00Z', DueDate: '2026-02-03T17:00:00Z', Status: 'Pending', Notes: 'Review against GDPR Article 5 requirements.', Priority: 'Medium' },
-      { Id: 4, DelegatedTo: 'Emma Whitfield', DelegatedToEmail: 'emma.whitfield@company.com', DelegatedBy: 'Lisa Chen', PolicyTitle: 'Employee Social Media Conduct Policy', TaskType: 'Distribute', Department: 'Marketing', AssignedDate: '2026-01-25T14:00:00Z', DueDate: '2026-02-10T17:00:00Z', Status: 'Pending', Notes: 'Distribute after final approval.', Priority: 'Low' },
-      { Id: 5, DelegatedTo: 'Robert Kumar', DelegatedToEmail: 'robert.kumar@company.com', DelegatedBy: 'John Peterson', PolicyTitle: 'Parental Leave & Return-to-Work Policy', TaskType: 'Review', Department: 'Human Resources', AssignedDate: '2026-01-26T10:00:00Z', DueDate: '2026-01-29T17:00:00Z', Status: 'Completed', Notes: 'Final legal review.', Priority: 'Low' }
-    ];
-  }
-
-  private getSampleReviews(): IPolicyReview[] {
-    return [
-      { Id: 1, PolicyTitle: 'Information Security Policy', PolicyNumber: 'POL-IT-001', Category: 'IT Security', LastReviewDate: '2025-07-15', NextReviewDate: '2026-01-15', Status: 'Overdue', ReviewCycleDays: 180, AssignedReviewer: 'Sarah Mitchell', Notes: 'Annual review — check against ISO 27001 updates.' },
-      { Id: 2, PolicyTitle: 'Data Privacy Policy', PolicyNumber: 'POL-DP-001', Category: 'Compliance', LastReviewDate: '2025-10-01', NextReviewDate: '2026-02-01', Status: 'Due', ReviewCycleDays: 120, AssignedReviewer: 'Priya Sharma', Notes: 'Update GDPR section with latest guidance.' },
-      { Id: 3, PolicyTitle: 'Anti-Bribery Policy', PolicyNumber: 'POL-CO-003', Category: 'Compliance', LastReviewDate: '2025-11-15', NextReviewDate: '2026-02-15', Status: 'Upcoming', ReviewCycleDays: 90, AssignedReviewer: 'James Wong', Notes: 'Check alignment with UK Bribery Act update.' },
-      { Id: 4, PolicyTitle: 'Remote Work Policy', PolicyNumber: 'POL-HR-005', Category: 'HR Policies', LastReviewDate: '2025-12-01', NextReviewDate: '2026-03-01', Status: 'Upcoming', ReviewCycleDays: 90, AssignedReviewer: 'Robert Kumar', Notes: 'Review hybrid working guidance.' },
-      { Id: 5, PolicyTitle: 'Acceptable Use of Technology', PolicyNumber: 'POL-IT-002', Category: 'IT Security', LastReviewDate: '2025-08-20', NextReviewDate: '2026-02-20', Status: 'Upcoming', ReviewCycleDays: 180, AssignedReviewer: 'Sarah Mitchell', Notes: 'Add AI tools section.' },
-      { Id: 6, PolicyTitle: 'Expense Policy', PolicyNumber: 'POL-FN-001', Category: 'Finance', LastReviewDate: '2025-06-01', NextReviewDate: '2025-12-01', Status: 'Overdue', ReviewCycleDays: 180, AssignedReviewer: 'James Wong', Notes: 'Update travel rates and approval thresholds.' },
-      { Id: 7, PolicyTitle: 'Code of Conduct', PolicyNumber: 'POL-HR-001', Category: 'HR Policies', LastReviewDate: '2026-01-10', NextReviewDate: '2026-07-10', Status: 'Completed', ReviewCycleDays: 180, AssignedReviewer: 'Robert Kumar', Notes: 'Reviewed and approved January 2026.' }
-    ];
-  }
-
-  private getSampleActivities(): IActivityItem[] {
-    return [
-      { Id: 1, Action: 'acknowledged', User: 'Lisa Chen', PolicyTitle: 'Code of Conduct', Timestamp: '2 hours ago', Type: 'acknowledgement' },
-      { Id: 2, Action: 'approved', User: 'You', PolicyTitle: 'Employee Social Media Policy', Timestamp: '4 hours ago', Type: 'approval' },
-      { Id: 3, Action: 'submitted draft of', User: 'Mark Davies', PolicyTitle: 'Vendor Risk Assessment Policy', Timestamp: '6 hours ago', Type: 'delegation' },
-      { Id: 4, Action: 'missed acknowledgement deadline for', User: 'David Thompson', PolicyTitle: 'Data Privacy Policy', Timestamp: '1 day ago', Type: 'overdue' },
-      { Id: 5, Action: 'acknowledged', User: 'Sarah Mitchell', PolicyTitle: 'Remote Work Policy', Timestamp: '1 day ago', Type: 'acknowledgement' },
-      { Id: 6, Action: 'completed review of', User: 'Robert Kumar', PolicyTitle: 'Parental Leave Policy', Timestamp: '2 days ago', Type: 'review' },
-      { Id: 7, Action: 'acknowledged', User: 'James Wong', PolicyTitle: 'Anti-Bribery Policy', Timestamp: '2 days ago', Type: 'acknowledgement' },
-      { Id: 8, Action: 'missed acknowledgement deadline for', User: 'Robert Kumar', PolicyTitle: 'Information Security Policy', Timestamp: '3 days ago', Type: 'overdue' },
-      { Id: 9, Action: 'delegated review to Sarah Mitchell for', User: 'You', PolicyTitle: 'Data Retention Policy', Timestamp: '3 days ago', Type: 'delegation' },
-      { Id: 10, Action: 'acknowledged', User: 'Priya Sharma', PolicyTitle: 'BYOD Policy', Timestamp: '4 days ago', Type: 'acknowledgement' }
-    ];
-  }
+  // Sample data methods removed — all data now loaded from SharePoint lists
 }

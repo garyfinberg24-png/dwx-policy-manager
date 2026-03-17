@@ -68,7 +68,7 @@ export class PolicyHubService {
       let policyQuery = this.sp.web.lists
         .getByTitle(this.POLICIES_LIST)
         .items.select(
-          'Id', 'Title', 'PolicyNumber', 'PolicyName', 'PolicyStatus', 'Category',
+          'Id', 'Title', 'PolicyNumber', 'PolicyName', 'PolicyStatus', 'PolicyCategory',
           'SubCategory', 'Department', 'ComplianceRisk', 'Description', 'PolicySummary',
           'EffectiveDate', 'ExpirationDate', 'ReviewDate', 'LastReviewDate',
           'ReadTimeframe', 'RequiresQuiz', 'RequiresAcknowledgement',
@@ -571,7 +571,7 @@ export class PolicyHubService {
       const allPolicies = await this.sp.web.lists
         .getByTitle(this.POLICIES_LIST)
         .items.select(
-          'Id', 'Title', 'PolicyNumber', 'PolicyName', 'PolicyStatus', 'Category',
+          'Id', 'Title', 'PolicyNumber', 'PolicyName', 'PolicyStatus',
           'PolicyCategory', 'Department', 'ComplianceRisk', 'EffectiveDate',
           'ExpirationDate', 'IsActive', 'AuthorId', 'Modified'
         )

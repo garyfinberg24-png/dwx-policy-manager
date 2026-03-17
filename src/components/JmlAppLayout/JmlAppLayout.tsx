@@ -75,22 +75,56 @@ const DwxAppLayout: React.FC<IJmlAppLayoutProps> = (props) => {
 
   React.useEffect(() => {
     if (!policyManagerRole && context) {
-      // Attempt auto-detection from SharePoint groups
+      // Attempt auto-detection: first from PM_UserProfiles (admin-assigned roles), then SP groups
       try {
         const sp = (context as any)._sp || null;
         if (sp) {
-          const roleService = new RoleDetectionService(sp);
-          roleService.getCurrentUserRoles().then(userRoles => {
-            if (userRoles && userRoles.length > 0) {
-              setDetectedRole(getHighestPolicyRole(userRoles));
-            }
-          }).catch(() => {
-            // Default to User if detection fails (least privilege)
-            setDetectedRole(PolicyManagerRole.User);
-          });
+          // Try admin-assigned roles from PM_UserProfiles first
+          const userEmail = context.pageContext?.user?.email || '';
+          if (userEmail) {
+            sp.web.lists.getByTitle('PM_UserProfiles')
+              .items.filter("Email eq '" + userEmail.replace(/'/g, "''") + "'")
+              .select('PMRole', 'PMRoles')
+              .top(1)()
+              .then((profiles: any[]) => {
+                if (profiles.length > 0) {
+                  const profile = profiles[0];
+                  // Multi-role: check PMRoles field (semicolon-delimited)
+                  const rolesStr = profile.PMRoles || profile.PMRole || 'User';
+                  const roles = rolesStr.split(';').map((r: string) => r.trim()).filter(Boolean);
+                  // Use highest role for nav filtering
+                  const LEVEL: Record<string, number> = { User: 0, Author: 1, Manager: 2, Admin: 3 };
+                  const highest = roles.reduce((a: string, b: string) => (LEVEL[b] || 0) > (LEVEL[a] || 0) ? b : a, 'User');
+                  setDetectedRole(highest as PolicyManagerRole);
+                  return;
+                }
+                // Fallback to SP group detection
+                const roleService = new RoleDetectionService(sp);
+                roleService.getCurrentUserRoles().then(userRoles => {
+                  if (userRoles && userRoles.length > 0) {
+                    setDetectedRole(getHighestPolicyRole(userRoles));
+                  }
+                }).catch(() => setDetectedRole(PolicyManagerRole.User));
+              })
+              .catch(() => {
+                // PM_UserProfiles may not exist — fall back to SP groups
+                const roleService = new RoleDetectionService(sp);
+                roleService.getCurrentUserRoles().then(userRoles => {
+                  if (userRoles && userRoles.length > 0) {
+                    setDetectedRole(getHighestPolicyRole(userRoles));
+                  }
+                }).catch(() => setDetectedRole(PolicyManagerRole.User));
+              });
+          } else {
+            const roleService = new RoleDetectionService(sp);
+            roleService.getCurrentUserRoles().then(userRoles => {
+              if (userRoles && userRoles.length > 0) {
+                setDetectedRole(getHighestPolicyRole(userRoles));
+              }
+            }).catch(() => setDetectedRole(PolicyManagerRole.User));
+          }
         }
       } catch {
-        // Default to User (least privilege)
         setDetectedRole(PolicyManagerRole.User);
       }
     }

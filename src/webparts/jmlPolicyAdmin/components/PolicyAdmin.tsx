@@ -4262,10 +4262,10 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           </Stack>
 
           {/* Toolbar */}
-          <Stack horizontal tokens={{ childrenGap: 12 }} verticalAlign="end" wrap>
+          <Stack horizontal tokens={{ childrenGap: 12 }} verticalAlign="center" wrap>
             <SearchBox
               placeholder="Search users..."
-              styles={{ root: { width: 220 } }}
+              styles={{ root: { width: 220, height: 32 } }}
               value={searchQuery}
               onChange={(_, val) => {
                 this.setState({ _userSearch: val || '' } as any);
@@ -4339,7 +4339,40 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                 columns={columns}
                 layoutMode={DetailsListLayoutMode.justified}
                 selectionMode={SelectionMode.none}
-                compact={true}
+                compact={false}
+                styles={{
+                  root: {
+                    border: '1px solid #e2e8f0',
+                    borderRadius: 4,
+                    overflow: 'hidden'
+                  },
+                  headerWrapper: {
+                    '& .ms-DetailsHeader': {
+                      background: '#f8fafc',
+                      borderBottom: '2px solid #e2e8f0',
+                      paddingTop: 0
+                    },
+                    '& .ms-DetailsHeader-cellTitle': {
+                      fontWeight: 600,
+                      color: '#334155',
+                      fontSize: 13
+                    }
+                  },
+                  contentWrapper: {
+                    '& .ms-DetailsRow': {
+                      borderBottom: '1px solid #f1f5f9',
+                      minHeight: 48
+                    },
+                    '& .ms-DetailsRow:hover': {
+                      background: '#f8fffe'
+                    },
+                    '& .ms-DetailsRow-cell': {
+                      display: 'flex',
+                      alignItems: 'center',
+                      fontSize: 13
+                    }
+                  }
+                }}
               />
 
               {/* Pagination */}

@@ -489,3 +489,92 @@
   white-space: nowrap;
   border: 0;
 }
+
+// =============================================================================
+// GLOBAL BORDER-RADIUS STANDARD — 4px for controls, 8px/12px for cards/containers
+// Applied via :global to ensure Fluent UI portal elements (dropdowns, panels) are covered.
+// This file is imported by ALL webparts via @import '../../../styles/fluent-mixins'.
+// =============================================================================
+:global {
+  // Text fields and text areas — 4px
+  .ms-TextField-fieldGroup,
+  .ms-TextField-field {
+    border-radius: 4px !important;
+  }
+
+  // Dropdowns (inline + portal callouts) — 4px
+  .ms-Dropdown-title,
+  .ms-Dropdown-caretDownWrapper,
+  .ms-Dropdown {
+    border-radius: 4px !important;
+  }
+  .ms-Dropdown-callout,
+  .ms-Dropdown-items-wrapper {
+    border-radius: 4px !important;
+  }
+
+  // Buttons — 4px
+  .ms-Button,
+  .ms-Button--primary,
+  .ms-Button--default,
+  .ms-Button--icon,
+  .ms-Button--compound {
+    border-radius: 4px !important;
+  }
+
+  // Toggle (pill shape for track — keep 10px)
+  .ms-Toggle-background {
+    border-radius: 10px !important;
+  }
+
+  // Search box — 4px
+  .ms-SearchBox {
+    border-radius: 4px !important;
+  }
+
+  // Spin button — 4px
+  .ms-SpinButton-input,
+  .ms-SpinButton-spinButtonWrapper {
+    border-radius: 4px !important;
+  }
+
+  // People Picker — 4px
+  .ms-BasePicker-text {
+    border-radius: 4px !important;
+  }
+
+  // Panels (slide-in — rounded left corners) — 4px
+  .ms-Panel-main {
+    border-radius: 4px 0 0 4px !important;
+  }
+
+  // DetailsList header — 4px top corners
+  .ms-DetailsHeader {
+    border-radius: 4px 4px 0 0 !important;
+  }
+
+  // MessageBar — 4px
+  .ms-MessageBar {
+    border-radius: 4px !important;
+  }
+
+  // Pivot (tabs) — 4px on tab items
+  .ms-Pivot-link {
+    border-radius: 4px 4px 0 0 !important;
+  }
+
+  // Dialog — 4px
+  .ms-Dialog-main {
+    border-radius: 4px !important;
+  }
+
+  // Callout (tooltips, flyouts) — 4px
+  .ms-Callout-main {
+    border-radius: 4px !important;
+  }
+
+  // CommandBar — 4px
+  .ms-CommandBar {
+    border-radius: 4px !important;
+  }
+}

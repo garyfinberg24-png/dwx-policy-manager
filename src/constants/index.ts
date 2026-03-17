@@ -3,4 +3,4 @@
 // ============================================================================
 
 export * from './SharePointListNames';
-export * from './PolicyManagerConfig';
+// PolicyManagerConfig removed — settings now managed via PM_Configuration (Admin Centre)

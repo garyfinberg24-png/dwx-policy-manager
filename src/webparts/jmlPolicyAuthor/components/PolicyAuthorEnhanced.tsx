@@ -324,6 +324,21 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     injectPortalStyles();
     window.addEventListener('beforeunload', this.handleBeforeUnload);
 
+    // Access guard — check if user has Author role
+    try {
+      const { RoleDetectionService } = await import('../../../services/RoleDetectionService');
+      const { getHighestPolicyRole, hasMinimumRole } = await import('../../../services/PolicyRoleService');
+      const roleService = new RoleDetectionService(this.props.sp);
+      const userRoles = await roleService.getCurrentUserRoles();
+      const policyRole = getHighestPolicyRole(userRoles);
+      if (!hasMinimumRole(policyRole, 'Author' as any)) {
+        if (this._isMounted) this.setState({ _accessDenied: true } as any);
+        return;
+      }
+    } catch {
+      // If role detection fails, allow access (least-disruptive fallback)
+    }
+
     // Parallelize independent service calls for faster initial load
     await Promise.all([
       this.policyService.initialize(),
@@ -6890,6 +6905,30 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
   public render(): React.ReactElement<IPolicyAuthorProps> {
     const { activeTab, error } = this.state;
+
+    // Access guard — Author role required
+    const st = this.state as any;
+    if (st._accessDenied) {
+      return (
+        <JmlAppLayout
+          context={this.props.context}
+          sp={this.props.sp}
+          pageTitle="Policy Builder"
+          pageDescription="Access Denied"
+          pageIcon="Lock"
+          breadcrumbs={[{ text: 'Policy Manager', url: '/sites/PolicyManager' }, { text: 'Policy Builder' }]}
+          activeNavKey="create"
+        >
+          <div style={{ textAlign: 'center', padding: '60px 24px' }}>
+            <Icon iconName="Lock" style={{ fontSize: 48, color: '#d97706', marginBottom: 16 }} />
+            <Text variant="xLarge" style={{ display: 'block', fontWeight: 600, color: '#0f172a', marginBottom: 8 }}>Access Restricted</Text>
+            <Text style={{ color: '#64748b', maxWidth: 400, margin: '0 auto', display: 'block' }}>
+              Policy Builder requires the Author role. Contact your administrator to request access.
+            </Text>
+          </div>
+        </JmlAppLayout>
+      );
+    }
 
     // Get tab config for current tab
     const currentTabConfig = POLICY_BUILDER_TABS.find(t => t.key === activeTab) || POLICY_BUILDER_TABS[0];

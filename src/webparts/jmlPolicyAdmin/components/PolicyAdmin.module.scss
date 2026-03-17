@@ -313,66 +313,76 @@
     }
   }
 
-  // ============================================
-  // FLUENT UI CONTROL OVERRIDES — 4px border-radius
-  // ============================================
-  :global {
-    // Text fields and text areas
-    .ms-TextField-fieldGroup,
-    .ms-TextField-field {
-      border-radius: 4px !important;
-    }
+}
 
-    // Dropdowns
-    .ms-Dropdown-title,
-    .ms-Dropdown-caretDownWrapper,
-    .ms-Dropdown {
-      border-radius: 4px !important;
-    }
-    .ms-Dropdown-callout {
-      border-radius: 4px !important;
-    }
+// ============================================
+// FLUENT UI CONTROL OVERRIDES — 4px border-radius
+// Must be at ROOT level (outside .policyAdmin) because
+// Fluent UI renders Dropdowns, Panels, Callouts into
+// portal elements on document.body, outside the webpart DOM.
+// ============================================
+:global {
+  // Text fields and text areas
+  .ms-TextField-fieldGroup,
+  .ms-TextField-field {
+    border-radius: 4px !important;
+  }
 
-    // Buttons
-    .ms-Button,
-    .ms-Button--primary,
-    .ms-Button--default,
-    .ms-Button--icon {
-      border-radius: 4px !important;
-    }
+  // Dropdowns (both inline and portal-rendered callout)
+  .ms-Dropdown-title,
+  .ms-Dropdown-caretDownWrapper,
+  .ms-Dropdown {
+    border-radius: 4px !important;
+  }
+  .ms-Dropdown-callout {
+    border-radius: 4px !important;
+  }
+  .ms-Dropdown-items-wrapper {
+    border-radius: 4px !important;
+  }
 
-    // Toggle
-    .ms-Toggle-background {
-      border-radius: 10px !important; // pill shape for toggle track
-    }
+  // Buttons
+  .ms-Button,
+  .ms-Button--primary,
+  .ms-Button--default,
+  .ms-Button--icon,
+  .ms-Button--compound {
+    border-radius: 4px !important;
+  }
 
-    // Search box
-    .ms-SearchBox {
-      border-radius: 4px !important;
-    }
+  // Toggle (pill shape for track)
+  .ms-Toggle-background {
+    border-radius: 10px !important;
+  }
 
-    // Spin button
-    .ms-SpinButton-input,
-    .ms-SpinButton-spinButtonWrapper {
-      border-radius: 4px !important;
-    }
+  // Search box
+  .ms-SearchBox {
+    border-radius: 4px !important;
+  }
 
-    // Choice group option circles — keep circular
-    // .ms-ChoiceField-field::before { border-radius: 50%; }
+  // Spin button
+  .ms-SpinButton-input,
+  .ms-SpinButton-spinButtonWrapper {
+    border-radius: 4px !important;
+  }
 
-    // Panels and dialogs
-    .ms-Panel-main {
-      border-radius: 4px 0 0 4px !important;
-    }
+  // Panels (slide from right — rounded left corners)
+  .ms-Panel-main {
+    border-radius: 4px 0 0 4px !important;
+  }
 
-    // DetailsList header
-    .ms-DetailsHeader {
-      border-radius: 4px 4px 0 0 !important;
-    }
+  // DetailsList header
+  .ms-DetailsHeader {
+    border-radius: 4px 4px 0 0 !important;
+  }
 
-    // MessageBar
-    .ms-MessageBar {
-      border-radius: 4px !important;
-    }
+  // MessageBar
+  .ms-MessageBar {
+    border-radius: 4px !important;
+  }
+
+  // People Picker
+  .ms-BasePicker-text {
+    border-radius: 4px !important;
   }
 }

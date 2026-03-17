@@ -159,11 +159,11 @@ export function filterNavForRole<T extends { key: string }>(
 
   return navItems.filter(item => {
     const permKey = NAV_KEY_TO_PERMISSION_KEY[item.key];
-    if (!permKey) return true; // Unknown nav keys default to visible
+    if (!permKey) return role === PolicyManagerRole.Admin; // Unknown nav keys hidden unless Admin
 
     // Find the permission entry for this feature
     const entry = permTable.find(p => p.key === permKey);
-    if (!entry) return true; // No permission entry = visible by default
+    if (!entry) return role === PolicyManagerRole.Admin; // No permission entry = hidden unless Admin
 
     // Admin always has access
     if (role === PolicyManagerRole.Admin) return true;

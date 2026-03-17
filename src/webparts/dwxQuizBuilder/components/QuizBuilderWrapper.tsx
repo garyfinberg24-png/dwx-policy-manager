@@ -151,9 +151,9 @@ export const QuizBuilderWrapper: React.FC<IQuizBuilderWrapperProps> = (props) =>
       ];
 
   // ====================================================================
-  // ACCESS GUARD — Admin role required
+  // ACCESS GUARD — Author role required (Authors create quizzes for their policies)
   // ====================================================================
-  if (detectedRole !== null && !hasMinimumRole(detectedRole, PolicyManagerRole.Admin)) {
+  if (detectedRole !== null && !hasMinimumRole(detectedRole, PolicyManagerRole.Author)) {
     return (
       <ErrorBoundary fallbackMessage="An error occurred in Quiz Builder. Please try again.">
       <DwxAppLayout

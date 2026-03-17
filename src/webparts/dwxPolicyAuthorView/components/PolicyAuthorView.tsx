@@ -34,6 +34,7 @@ import { ErrorBoundary } from '../../../components/ErrorBoundary/ErrorBoundary';
 import { PageSubheader } from '../../../components/PageSubheader';
 import { RoleDetectionService } from '../../../services/RoleDetectionService';
 import { PolicyManagerRole, getHighestPolicyRole, hasMinimumRole } from '../../../services/PolicyRoleService';
+import { PM_LISTS } from '../../../constants/SharePointListNames';
 import styles from './PolicyAuthorView.module.scss';
 
 // ============================================================================
@@ -135,6 +136,8 @@ interface IPolicyAuthorViewState {
 
 export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewProps, IPolicyAuthorViewState> {
 
+  private _isMounted = false;
+
   constructor(props: IPolicyAuthorViewProps) {
     super(props);
     // Read ?tab= query param to set initial tab
@@ -171,27 +174,263 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
   }
 
   public componentDidMount(): void {
+    this._isMounted = true;
+
     // Detect user role for access guard
     const roleService = new RoleDetectionService(this.props.sp);
     roleService.getCurrentUserRoles().then(userRoles => {
+      if (!this._isMounted) return;
       if (userRoles && userRoles.length > 0) {
         this.setState({ detectedRole: getHighestPolicyRole(userRoles) });
       } else {
         this.setState({ detectedRole: PolicyManagerRole.User });
       }
     }).catch(() => {
-      this.setState({ detectedRole: PolicyManagerRole.User });
+      if (this._isMounted) {
+        this.setState({ detectedRole: PolicyManagerRole.User });
+      }
     });
 
-    // Load sample data (replace with service calls when ready)
-    setTimeout(() => {
-      this.setState({
-        policyRequests: this.getSamplePolicyRequests(),
-        approvals: this.getSampleApprovals(),
-        delegations: this.getSampleDelegations(),
-        loading: false
+    // Load real data from SharePoint
+    this.loadData();
+  }
+
+  public componentWillUnmount(): void {
+    this._isMounted = false;
+  }
+
+  // ==========================================================================
+  // DATA LOADING — Real SharePoint queries
+  // ==========================================================================
+
+  private async loadData(): Promise<void> {
+    try {
+      // Get current user ID for filtering
+      let currentUserId = 0;
+      let currentUserName = '';
+      try {
+        const currentUser = await this.props.sp.web.currentUser();
+        currentUserId = currentUser.Id;
+        currentUserName = currentUser.Title || '';
+      } catch {
+        // Fall back to 0 — queries will return empty results
+      }
+
+      // Run all three queries in parallel
+      const [requests, approvals, delegations] = await Promise.all([
+        this.loadPolicyRequests(),
+        this.loadApprovals(currentUserId),
+        this.loadDelegations(currentUserId, currentUserName)
+      ]);
+
+      if (this._isMounted) {
+        this.setState({
+          policyRequests: requests,
+          approvals: approvals,
+          delegations: delegations,
+          loading: false
+        });
+      }
+    } catch (err) {
+      console.error('[PolicyAuthorView] loadData failed:', err);
+      if (this._isMounted) {
+        this.setState({ loading: false });
+      }
+    }
+  }
+
+  private async loadPolicyRequests(): Promise<IPolicyRequest[]> {
+    try {
+      const items = await this.props.sp.web.lists
+        .getByTitle(PM_LISTS.POLICY_REQUESTS)
+        .items.select(
+          'Id', 'Title', 'Status', 'RequestedBy', 'RequestedByEmail',
+          'RequestedByDepartment', 'PolicyCategory', 'PolicyType', 'Priority',
+          'TargetAudience', 'BusinessJustification', 'RegulatoryDriver',
+          'DesiredEffectiveDate', 'ReadTimeframeDays', 'RequiresAcknowledgement',
+          'RequiresQuiz', 'AdditionalNotes', 'AttachmentUrls',
+          'AssignedAuthor', 'AssignedAuthorEmail', 'Created', 'Modified'
+        )
+        .orderBy('Created', false)
+        .top(100)();
+
+      return items.map((item: any) => ({
+        Id: item.Id,
+        Title: item.Title || '',
+        RequestedBy: item.RequestedBy || '',
+        RequestedByEmail: item.RequestedByEmail || '',
+        RequestedByDepartment: item.RequestedByDepartment || '',
+        PolicyCategory: item.PolicyCategory || '',
+        PolicyType: item.PolicyType || 'New Policy',
+        Priority: item.Priority || 'Medium',
+        TargetAudience: item.TargetAudience || '',
+        BusinessJustification: item.BusinessJustification || '',
+        RegulatoryDriver: item.RegulatoryDriver || '',
+        DesiredEffectiveDate: item.DesiredEffectiveDate || '',
+        ReadTimeframeDays: item.ReadTimeframeDays || 7,
+        RequiresAcknowledgement: item.RequiresAcknowledgement || false,
+        RequiresQuiz: item.RequiresQuiz || false,
+        AdditionalNotes: item.AdditionalNotes || '',
+        AttachmentUrls: item.AttachmentUrls ? (typeof item.AttachmentUrls === 'string' ? item.AttachmentUrls.split(';').filter(Boolean) : []) : [],
+        Status: item.Status || 'New',
+        AssignedAuthor: item.AssignedAuthor || '',
+        AssignedAuthorEmail: item.AssignedAuthorEmail || '',
+        Created: item.Created || '',
+        Modified: item.Modified || ''
+      }));
+    } catch (err) {
+      console.warn('[PolicyAuthorView] loadPolicyRequests failed (list may not exist):', err);
+      return [];
+    }
+  }
+
+  private async loadApprovals(currentUserId: number): Promise<IPolicyApproval[]> {
+    try {
+      // Query approvals assigned to the current user
+      const filter = currentUserId > 0 ? `ApproverId eq ${currentUserId}` : '';
+      let query = this.props.sp.web.lists
+        .getByTitle('PM_Approvals')
+        .items.select(
+          'Id', 'Title', 'ProcessID', 'Status', 'RequestedDate', 'DueDate',
+          'Comments', 'Notes', 'ApprovalLevel'
+        )
+        .orderBy('RequestedDate', false)
+        .top(100);
+
+      if (filter) {
+        query = query.filter(filter);
+      }
+
+      const approvalItems = await query();
+
+      // Collect unique ProcessIDs to fetch related policies
+      const processIds = [...new Set(approvalItems.map((a: any) => a.ProcessID).filter(Boolean))];
+
+      // Batch-fetch policies by their IDs (ProcessID corresponds to Policy Id)
+      let policyMap: Record<number, any> = {};
+      if (processIds.length > 0) {
+        try {
+          // Fetch in batches of 20 to avoid filter length limits
+          for (let i = 0; i < processIds.length; i += 20) {
+            const batch = processIds.slice(i, i + 20);
+            const policyFilter = batch.map((id: number) => `Id eq ${id}`).join(' or ');
+            const policies = await this.props.sp.web.lists
+              .getByTitle(PM_LISTS.POLICIES)
+              .items.filter(policyFilter)
+              .select('Id', 'Title', 'PolicyName', 'PolicyCategory', 'PolicyVersion', 'Author/Title', 'Author/EMail', 'Author/Department')
+              .expand('Author')
+              .top(20)();
+            for (const p of policies) {
+              policyMap[p.Id] = p;
+            }
+          }
+        } catch {
+          // If policy lookup fails, continue with empty map
+        }
+      }
+
+      return approvalItems.map((item: any) => {
+        const policy = policyMap[item.ProcessID] || {};
+        return {
+          Id: item.Id,
+          PolicyTitle: policy.PolicyName || policy.Title || item.Title || `Policy #${item.ProcessID || '?'}`,
+          Version: policy.PolicyVersion || '1.0',
+          SubmittedBy: policy.Author ? policy.Author.Title : '',
+          SubmittedByEmail: policy.Author ? policy.Author.EMail : '',
+          Department: policy.Author ? (policy.Author.Department || '') : '',
+          Category: policy.PolicyCategory || '',
+          SubmittedDate: item.RequestedDate || item.Created || '',
+          DueDate: item.DueDate || '',
+          Status: this.mapApprovalStatus(item.Status),
+          Priority: (item.DueDate && new Date(item.DueDate) < new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)) ? 'Urgent' : 'Normal',
+          Comments: item.Comments || item.Notes || '',
+          ChangeSummary: item.Notes || ''
+        };
       });
-    }, 500);
+    } catch (err) {
+      console.warn('[PolicyAuthorView] loadApprovals failed (list may not exist):', err);
+      return [];
+    }
+  }
+
+  private mapApprovalStatus(spStatus: string): 'Pending' | 'Approved' | 'Rejected' | 'Returned' {
+    switch (spStatus) {
+      case 'Approved': return 'Approved';
+      case 'Rejected': return 'Rejected';
+      case 'Delegated':
+      case 'Escalated':
+      case 'Cancelled':
+      case 'Skipped':
+      case 'Expired':
+        return 'Returned';
+      default: return 'Pending'; // Pending, Queued, or unknown
+    }
+  }
+
+  private async loadDelegations(currentUserId: number, currentUserName: string): Promise<IDelegation[]> {
+    try {
+      // Query delegations where current user is either the delegator or the delegate
+      const filter = currentUserId > 0
+        ? `DelegatedById eq ${currentUserId} or DelegatedToId eq ${currentUserId}`
+        : '';
+
+      let query = this.props.sp.web.lists
+        .getByTitle('PM_ApprovalDelegations')
+        .items.select(
+          'Id', 'Title', 'DelegatedById', 'DelegatedToId', 'StartDate', 'EndDate',
+          'IsActive', 'Reason', 'ProcessTypes', 'Created',
+          'DelegatedBy/Title', 'DelegatedBy/EMail',
+          'DelegatedTo/Title', 'DelegatedTo/EMail'
+        )
+        .expand('DelegatedBy', 'DelegatedTo')
+        .orderBy('Created', false)
+        .top(50);
+
+      if (filter) {
+        query = query.filter(filter);
+      }
+
+      const items = await query();
+      const now = new Date();
+
+      return items.map((item: any) => {
+        const endDate = item.EndDate ? new Date(item.EndDate) : null;
+        const isActive = item.IsActive;
+        let status: 'Pending' | 'InProgress' | 'Completed' | 'Overdue' = 'Pending';
+        if (!isActive) {
+          status = 'Completed';
+        } else if (endDate && endDate < now) {
+          status = 'Overdue';
+        } else if (item.StartDate && new Date(item.StartDate) <= now) {
+          status = 'InProgress';
+        }
+
+        // Determine task type from ProcessTypes field
+        const processTypes = item.ProcessTypes || '';
+        let taskType: 'Review' | 'Draft' | 'Approve' | 'Distribute' = 'Review';
+        if (processTypes.toLowerCase().includes('draft')) taskType = 'Draft';
+        else if (processTypes.toLowerCase().includes('approv')) taskType = 'Approve';
+        else if (processTypes.toLowerCase().includes('distribut')) taskType = 'Distribute';
+
+        return {
+          Id: item.Id,
+          DelegatedTo: item.DelegatedTo ? item.DelegatedTo.Title : '',
+          DelegatedToEmail: item.DelegatedTo ? item.DelegatedTo.EMail : '',
+          DelegatedBy: item.DelegatedBy ? item.DelegatedBy.Title : '',
+          PolicyTitle: item.Title || 'Delegation',
+          TaskType: taskType,
+          Department: '',
+          AssignedDate: item.StartDate || item.Created || '',
+          DueDate: item.EndDate || '',
+          Status: status,
+          Notes: item.Reason || '',
+          Priority: (endDate && endDate < new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)) ? 'High' : 'Medium'
+        };
+      });
+    } catch (err) {
+      console.warn('[PolicyAuthorView] loadDelegations failed (list may not exist):', err);
+      return [];
+    }
   }
 
   public render(): JSX.Element {
@@ -368,7 +607,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
               onChange={(_, opt) => opt && this.setState({ sortBy: opt.key as any })}
               styles={{ root: { minWidth: 140 } }}
             />
-            <DefaultButton text="Refresh" iconProps={{ iconName: 'Refresh' }} onClick={() => this.setState({ policyRequests: this.getSamplePolicyRequests() })} />
+            <DefaultButton text="Refresh" iconProps={{ iconName: 'Refresh' }} onClick={() => { this.setState({ loading: true }); this.loadData(); }} />
           </div>
         </Stack>
 

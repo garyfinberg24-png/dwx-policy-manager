@@ -72,7 +72,7 @@ const NAV_KEY_MIN_ROLE: Record<string, PolicyManagerRole> = {
   'delegations': PolicyManagerRole.Manager,
   'distribution': PolicyManagerRole.Manager,
   'analytics': PolicyManagerRole.Manager,
-  'quiz': PolicyManagerRole.Admin,
+  'quiz': PolicyManagerRole.Author,
 };
 
 /**

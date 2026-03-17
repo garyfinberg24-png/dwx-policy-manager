@@ -34,6 +34,11 @@ export interface IRoleMapping {
  * These can be customized in the Launchpad property pane
  */
 export const DEFAULT_ROLE_MAPPINGS: IRoleMapping[] = [
+  // Policy Manager specific groups (PM_ prefix)
+  { groupName: 'PM_PolicyAuthors', role: UserRole.Recruiter },     // Maps to Author via PolicyRoleService
+  { groupName: 'PM_PolicyManagers', role: UserRole.Manager },
+  { groupName: 'PM_PolicyAdmins', role: UserRole.SiteAdmin },
+
   // Employee role - default for all users
   { groupName: 'All Users', role: UserRole.Employee },
   { groupName: 'Company Members', role: UserRole.Employee },

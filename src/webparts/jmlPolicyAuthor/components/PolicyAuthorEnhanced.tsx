@@ -530,11 +530,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
   }
 
   private handleSelectTemplate = (template: IPolicyTemplate): void => {
-    // Apply template to form
-    const keyPoints = template.KeyPointsTemplate
-      ? template.KeyPointsTemplate.split(';').map(k => k.trim())
-      : [];
-
+    // Apply template to form — key points left empty for manual entry
     this.setState({
       selectedTemplate: template,
       policyContent: template.TemplateContent,
@@ -543,7 +539,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       readTimeframe: template.SuggestedReadTimeframe,
       requiresAcknowledgement: template.RequiresAcknowledgement,
       requiresQuiz: template.RequiresQuiz,
-      keyPoints: keyPoints,
+      keyPoints: [],
       showTemplatePanel: false,
       creationMethod: 'template'
     });
@@ -1265,12 +1261,6 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       { title: 'Acceptable Use Policy', category: 'IT Security', status: 'Active' }
     ];
 
-    const complianceNotes = [
-      'All policies must comply with the organization\'s governance framework (GF-2025).',
-      'HR policies require additional sign-off from the Head of People & Culture.',
-      'Policies impacting external stakeholders need Legal review before publishing.'
-    ];
-
     return (
       <aside className={styles.v3RightPanel}>
         {/* Tips & Guidance */}
@@ -1322,31 +1312,6 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
           ))}
         </div>
 
-        {/* Compliance Notes */}
-        <div className={styles.v3PanelSection}>
-          <Text variant="small" style={TextStyles.sectionHeading}>
-            <span style={{
-              width: 18, height: 18, background: '#f0fdfa', borderRadius: 4,
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              color: Colors.tealPrimary, fontSize: 10
-            }}>
-              <Icon iconName="Warning" style={IconStyles.small12} />
-            </span>
-            Compliance Notes
-          </Text>
-          {complianceNotes.map((note, i) => (
-            <div key={i} style={{
-              fontSize: 12, color: '#4b5563', padding: '8px 0',
-              borderBottom: '1px solid #f3f4f6', display: 'flex', gap: 8
-            }}>
-              <span style={{
-                width: 6, height: 6, minWidth: 6, borderRadius: '50%',
-                background: '#0d9488', marginTop: 6
-              }} />
-              <span>{note}</span>
-            </div>
-          ))}
-        </div>
       </aside>
     );
   }
@@ -1514,16 +1479,10 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         this.setState({ showFileUploadPanel: true });
         break;
       case 'word':
-        await this.handleCreateBlankDocument('word');
-        break;
       case 'excel':
-        await this.handleCreateBlankDocument('excel');
-        break;
       case 'powerpoint':
-        await this.handleCreateBlankDocument('powerpoint');
-        break;
       case 'infographic':
-        await this.handleCreateBlankDocument('infographic');
+        // Just record the method — document creation is deferred until the content step
         break;
       case 'corporate':
         await this.loadCorporateTemplates();
@@ -1541,9 +1500,26 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
   }
 
   private renderStep2_Content(): JSX.Element {
+    const { creationMethod, linkedDocumentUrl, creatingDocument } = this.state;
+    // Deferred document creation: if user selected an Office type in Step 0 but doc hasn't been created yet
+    const isOfficeMethod = ['word', 'excel', 'powerpoint', 'infographic'].includes(creationMethod as string);
+    const needsDocCreation = isOfficeMethod && !linkedDocumentUrl && !creatingDocument;
+
     return (
       <div className={styles.wizardStepContent}>
         <Stack tokens={{ childrenGap: 24 }}>
+          {needsDocCreation && (
+            <MessageBar messageBarType={MessageBarType.info} isMultiline>
+              <Text>You selected <strong>{creationMethod}</strong> as your creation method. Click the button below to create and open the document.</Text>
+              <div style={{ marginTop: 8 }}>
+                <PrimaryButton
+                  text={`Create ${creationMethod === 'infographic' ? 'Infographic' : creationMethod?.charAt(0).toUpperCase() + creationMethod?.slice(1)} Document`}
+                  iconProps={{ iconName: creationMethod === 'word' ? 'WordDocument' : creationMethod === 'excel' ? 'ExcelDocument' : creationMethod === 'powerpoint' ? 'PowerPointDocument' : 'PictureFill' }}
+                  onClick={() => this.handleCreateBlankDocument(creationMethod as any)}
+                />
+              </div>
+            </MessageBar>
+          )}
           {this.renderContentEditor()}
           {this.renderEmbeddedEditor()}
           {this.renderKeyPoints()}
@@ -1558,10 +1534,6 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       requiresAcknowledgement, requiresQuiz
     } = this.state;
 
-    const riskOptions: IDropdownOption[] = Object.values(ComplianceRisk).map(risk => ({
-      key: risk, text: risk
-    }));
-
     const timeframeOptions: IDropdownOption[] = Object.values(ReadTimeframe).map(tf => ({
       key: tf, text: tf
     }));
@@ -1570,15 +1542,6 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       <div className={styles.wizardStepContent}>
         <div className={styles.section}>
           <Stack tokens={{ childrenGap: 20 }}>
-            <Dropdown
-              label="Compliance Risk Level"
-              required
-              selectedKey={complianceRisk}
-              options={riskOptions}
-              onChange={(e, option) => this.setState({ complianceRisk: option?.key as string })}
-              styles={{ root: { maxWidth: 300 } }}
-            />
-
             <Dropdown
               label="Read Timeframe"
               selectedKey={readTimeframe}
@@ -1613,15 +1576,8 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                 Employees must confirm they have read and understood the policy
               </Text>
 
-              <Checkbox
-                label="Requires Quiz"
-                checked={requiresQuiz}
-                onChange={(e, checked) => {
-                  this.setState({ requiresQuiz: checked || false });
-                }}
-              />
-              <Text variant="small" style={TextStyles.labelWithIconOffset}>
-                Employees must pass a quiz to demonstrate understanding. Quizzes can be created and assigned after the policy is published.
+              <Text variant="small" style={{ ...TextStyles.labelWithIconOffset, fontStyle: 'italic', color: '#64748b' }}>
+                Quizzes can be created and linked to this policy after it has been published.
               </Text>
             </Stack>
           </Stack>
@@ -1660,10 +1616,10 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
               <>
                 {savedAudiences.length > 0 && (
                   <Dropdown
-                    label="Select from configured audiences"
-                    placeholder="Choose a pre-configured audience..."
+                    label="Pre-configured Audiences"
+                    placeholder="Optionally select a pre-configured audience as a starting point..."
                     options={[
-                      { key: '', text: '(Custom audience)' },
+                      { key: '', text: '(Build custom audience below)' },
                       ...savedAudiences.map((a: any) => ({ key: a.Id || a.Title, text: a.Title || a.Name || 'Unnamed' }))
                     ]}
                     onChange={(_, opt) => {
@@ -1682,13 +1638,30 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                   />
                 )}
 
-                <TextField
+                <Dropdown
                   label="Target Departments"
-                  placeholder="e.g., HR, IT, Finance (comma-separated)"
-                  value={targetDepartments.join(', ')}
-                  onChange={(e, value) => this.setState({
-                    targetDepartments: value ? value.split(',').map(d => d.trim()) : []
-                  })}
+                  multiSelect
+                  selectedKeys={targetDepartments}
+                  options={[
+                    { key: 'Human Resources', text: 'Human Resources' },
+                    { key: 'IT', text: 'IT' },
+                    { key: 'Finance', text: 'Finance' },
+                    { key: 'Operations', text: 'Operations' },
+                    { key: 'Sales', text: 'Sales' },
+                    { key: 'Marketing', text: 'Marketing' },
+                    { key: 'Legal', text: 'Legal' },
+                    { key: 'Executive', text: 'Executive' },
+                    { key: 'Compliance', text: 'Compliance' },
+                    { key: 'Customer Service', text: 'Customer Service' }
+                  ]}
+                  onChange={(_, option) => {
+                    if (option) {
+                      const updated = option.selected
+                        ? [...targetDepartments, option.key as string]
+                        : targetDepartments.filter(d => d !== option.key);
+                      this.setState({ targetDepartments: updated });
+                    }
+                  }}
                 />
 
                 <TextField
@@ -1707,6 +1680,23 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                   onChange={(e, value) => this.setState({
                     targetLocations: value ? value.split(',').map(l => l.trim()) : []
                   })}
+                />
+
+                <PeoplePicker
+                  context={this.props.context as any}
+                  titleText="Additional Specific Users"
+                  personSelectionLimit={20}
+                  groupName=""
+                  showtooltip={true}
+                  showHiddenInUI={false}
+                  ensureUser={true}
+                  principalTypes={[PrincipalType.User]}
+                  resolveDelay={300}
+                  onChange={(items: any[]) => {
+                    this.setState({ targetSpecificUsers: items.map((i: any) => i.secondaryText || i.loginName || '') } as any);
+                  }}
+                  placeholder="Search for specific users to include..."
+                  webAbsoluteUrl={this.props.context.pageContext.web.absoluteUrl}
                 />
               </>
             )}
@@ -3367,8 +3357,26 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         Status: PolicyStatus.PendingApproval
       } as Partial<IPolicy>);
 
+      // Send approval notification to approvers
+      try {
+        const { ApprovalNotificationService } = await import('../../../services/ApprovalNotificationService');
+        const notifService = new ApprovalNotificationService(this.props.sp);
+        const policy = await this.policyService.getPolicy(policyId);
+        if (policy) {
+          await notifService.sendNewApprovalNotification({
+            Title: policy.PolicyName || policy.Title,
+            PolicyId: policyId,
+            RequestedBy: this.props.context.pageContext.user?.displayName || '',
+            RequestedByEmail: this.props.context.pageContext.user?.email || '',
+            Status: 'Pending'
+          } as any);
+        }
+      } catch (notifErr) {
+        console.warn('Approval notification failed (non-blocking):', notifErr);
+      }
+
       void this.dialogManager.showAlert(
-        'The policy has been submitted for approval.',
+        'The policy has been submitted for approval and approvers have been notified.',
         { title: 'Submitted for Review', variant: 'success' }
       );
 
@@ -5484,6 +5492,23 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             onChange={(e, option) => this.setState({ policyCategory: option?.key as string })}
           />
 
+          <Dropdown
+            label="Department"
+            selectedKey={(this.state as any).targetDepartments?.[0] || ''}
+            options={[
+              { key: '', text: '— Select department —' },
+              { key: 'Human Resources', text: 'Human Resources' },
+              { key: 'IT', text: 'IT' },
+              { key: 'Finance', text: 'Finance' },
+              { key: 'Operations', text: 'Operations' },
+              { key: 'Sales', text: 'Sales' },
+              { key: 'Marketing', text: 'Marketing' },
+              { key: 'Legal', text: 'Legal' },
+              { key: 'All Departments', text: 'All Departments' }
+            ]}
+            onChange={(e, option) => option && this.setState({ targetDepartments: option.key ? [option.key as string] : [] } as any)}
+          />
+
           <TextField
             label="Summary"
             multiline
@@ -5497,7 +5522,10 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             context={this.props.context as any}
             titleText="Policy Owner"
             personSelectionLimit={1}
+            groupName=""
             showtooltip={true}
+            showHiddenInUI={false}
+            ensureUser={true}
             principalTypes={[PrincipalType.User]}
             resolveDelay={300}
             defaultSelectedUsers={this.state.policyOwner || []}
@@ -5505,6 +5533,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
               this.setState({ policyOwner: items.map((i: any) => i.secondaryText || i.loginName || '') });
             }}
             placeholder="Search for policy owner..."
+            webAbsoluteUrl={this.props.context.pageContext.web.absoluteUrl}
           />
         </Stack>
       </div>
@@ -5670,6 +5699,20 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
   private renderReviewers(): JSX.Element {
     const { reviewers, approvers } = this.state;
+    const st = this.state as any;
+    const spGroups: any[] = st._reviewerGroups || [];
+
+    // Lazy-load SP groups for reviewers/approvers
+    if (!st._reviewerGroupsLoaded) {
+      this.setState({ _reviewerGroupsLoaded: true } as any);
+      this.props.sp.web.siteGroups
+        .filter("substringof('PM_', Title) or substringof('Reviewer', Title) or substringof('Approver', Title)")
+        .select('Id', 'Title')()
+        .then((groups: any[]) => {
+          this.setState({ _reviewerGroups: groups } as any);
+        })
+        .catch(() => { /* graceful degradation */ });
+    }
 
     return (
       <div className={styles.section}>
@@ -5677,7 +5720,31 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
           Reviewers and Approvers
         </Text>
 
+        {spGroups.length > 0 && (
+          <MessageBar messageBarType={MessageBarType.info} style={{ marginBottom: 12 }}>
+            Select from configured groups below, or search for individual users in the people pickers.
+          </MessageBar>
+        )}
+
         <Stack tokens={{ childrenGap: 16 }}>
+          {spGroups.length > 0 && (
+            <Dropdown
+              label="Add from configured group"
+              placeholder="Select a SharePoint group to add its members..."
+              options={spGroups.map((g: any) => ({ key: g.Title, text: g.Title }))}
+              onChange={async (_, opt) => {
+                if (!opt) return;
+                try {
+                  const members = await this.props.sp.web.siteGroups.getByName(opt.key as string).users();
+                  const emails = members.map((m: any) => m.Email).filter(Boolean);
+                  this.setState({
+                    reviewers: [...new Set([...reviewers, ...emails])],
+                  });
+                  void (this as any).dialogManager?.showAlert?.(`Added ${emails.length} members from ${opt.text}`, { title: 'Group Added', variant: 'success' });
+                } catch { /* ignore */ }
+              }}
+            />
+          )}
           <div>
             <Label>Technical Reviewers</Label>
             <PeoplePicker

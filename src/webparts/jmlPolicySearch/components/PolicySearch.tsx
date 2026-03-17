@@ -372,7 +372,7 @@ export default class PolicySearch extends React.Component<IPolicySearchProps, IP
 
     return (
       <ErrorBoundary fallbackMessage="An error occurred in Policy Search. Please try again.">
-      <JmlAppLayout context={this.props.context} breadcrumbs={[{ text: 'Policy Manager', url: this.props.context?.pageContext?.web?.absoluteUrl || '/sites/PolicyManager' }, { text: 'Search' }]}>
+      <JmlAppLayout context={this.props.context} sp={this.props.sp} breadcrumbs={[{ text: 'Policy Manager', url: this.props.context?.pageContext?.web?.absoluteUrl || '/sites/PolicyManager' }, { text: 'Search' }]}>
         <div className={styles.policySearch}>
           <div className={styles.contentWrapper}>
             {/* Hero Section */}

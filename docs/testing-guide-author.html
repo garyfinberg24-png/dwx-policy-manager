@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Policy Manager — Author Testing Guide</title>
+    <style>
+        :root {
+            --teal: #0d9488;
+            --teal-dark: #0f766e;
+            --teal-light: #ccfbf1;
+            --teal-pale: #f0fdfa;
+            --text-primary: #0f172a;
+            --text-secondary: #334155;
+            --text-muted: #605e5c;
+            --border: #e2e8f0;
+            --border-light: #edebe9;
+            --bg-sidebar: #f1f5f9;
+            --success: #059669;
+            --warning: #d97706;
+            --danger: #dc2626;
+            --info: #2563eb;
+            --author-accent: #0d9488;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif; color: var(--text-primary); line-height: 1.6; background: #f8fafc; }
+        @media print { body { background: white; } .no-print { display: none !important; } .page-break { page-break-before: always; } .test-scenario { break-inside: avoid; } header { position: static; } }
+
+        header { background: linear-gradient(135deg, var(--teal) 0%, var(--teal-dark) 100%); color: white; padding: 40px 0 32px; position: relative; overflow: hidden; }
+        header::before { content: ''; position: absolute; top: -50%; right: -10%; width: 400px; height: 400px; background: rgba(255,255,255,0.05); border-radius: 50%; }
+        .header-inner { max-width: 1100px; margin: 0 auto; padding: 0 32px; position: relative; z-index: 1; }
+        .header-suite { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; opacity: 0.8; margin-bottom: 8px; }
+        .header-title { font-size: 36px; font-weight: 700; margin-bottom: 4px; }
+        .header-subtitle { font-size: 18px; font-weight: 400; opacity: 0.9; margin-bottom: 16px; }
+        .header-meta { display: flex; gap: 24px; font-size: 13px; opacity: 0.85; flex-wrap: wrap; }
+        .header-meta span { display: flex; align-items: center; gap: 6px; }
+        .role-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); border-radius: 20px; padding: 6px 16px; font-size: 14px; font-weight: 600; margin-top: 12px; }
+        .role-badge .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--author-accent); }
+
+        .toc { max-width: 1100px; margin: -20px auto 32px; padding: 0 32px; position: relative; z-index: 2; }
+        .toc-card { background: white; border-radius: 12px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); padding: 24px 28px; }
+        .toc-title { font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 12px; }
+        .toc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; }
+        .toc-link { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 8px; text-decoration: none; color: var(--text-secondary); font-size: 14px; transition: all 0.15s; }
+        .toc-link:hover { background: var(--teal-pale); color: var(--teal); }
+        .toc-link .num { width: 24px; height: 24px; border-radius: 6px; background: var(--teal-light); color: var(--teal-dark); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+
+        main { max-width: 1100px; margin: 0 auto; padding: 0 32px 64px; }
+        .section { margin-bottom: 48px; }
+        .section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid var(--teal); }
+        .section-number { width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, var(--teal), var(--teal-dark)); color: white; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; flex-shrink: 0; }
+        .section-title { font-size: 24px; font-weight: 700; }
+        .section-desc { color: var(--text-secondary); margin-bottom: 20px; font-size: 15px; }
+
+        .info-box { border-radius: 10px; padding: 16px 20px; margin-bottom: 20px; font-size: 14px; display: flex; gap: 12px; align-items: flex-start; }
+        .info-box .icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+        .info-box.context { background: linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%); border: 1px solid #a7f3d0; color: #065f46; }
+        .info-box.navigate { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+        .info-box.warning { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
+        .info-box.prereq { background: #faf5ff; border: 1px solid #e9d5ff; color: #6b21a8; }
+        .info-box.important { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+
+        .nav-table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; font-size: 14px; }
+        .nav-table th { background: var(--teal); color: white; padding: 10px 14px; text-align: left; font-weight: 600; }
+        .nav-table th:first-child { border-radius: 8px 0 0 0; }
+        .nav-table th:last-child { border-radius: 0 8px 0 0; }
+        .nav-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+        .nav-table tr:nth-child(even) { background: #f8fafc; }
+        .nav-table tr:hover { background: var(--teal-pale); }
+        .visible { color: var(--success); font-weight: 600; }
+        .hidden { color: var(--text-muted); }
+        .new-badge { background: var(--teal-light); color: var(--teal-dark); padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-left: 6px; }
+
+        .test-scenario { background: white; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 20px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+        .test-scenario-header { display: flex; align-items: center; gap: 12px; padding: 16px 20px; background: #f8fafc; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+        .test-id { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--teal); background: var(--teal-light); padding: 3px 10px; border-radius: 4px; white-space: nowrap; }
+        .test-title { font-size: 16px; font-weight: 600; flex: 1; min-width: 200px; }
+        .priority-badge { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .priority-badge.p1 { background: #fef2f2; color: var(--danger); }
+        .priority-badge.p2 { background: #fffbeb; color: var(--warning); }
+        .priority-badge.p3 { background: #eff6ff; color: var(--info); }
+        .test-scenario-body { padding: 20px; }
+        .test-objective { color: var(--text-secondary); font-size: 14px; margin-bottom: 16px; padding-left: 16px; border-left: 3px solid var(--teal-light); }
+
+        .steps { counter-reset: step-counter; list-style: none; padding: 0; }
+        .step { counter-increment: step-counter; display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px dashed var(--border-light); }
+        .step:last-child { border-bottom: none; }
+        .step-num { width: 28px; height: 28px; border-radius: 50%; background: var(--teal); color: white; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+        .step-content { flex: 1; }
+        .step-action { font-size: 14px; font-weight: 500; color: var(--text-primary); margin-bottom: 4px; }
+        .step-detail { font-size: 13px; color: var(--text-muted); }
+
+        .expected { margin-top: 16px; padding: 14px 16px; background: linear-gradient(135deg, #f0fdfa, #ecfdf5); border: 1px solid #a7f3d0; border-radius: 8px; font-size: 13px; }
+        .expected-label { font-weight: 700; color: var(--success); text-transform: uppercase; font-size: 11px; letter-spacing: 1px; margin-bottom: 6px; }
+        .expected ul { margin: 4px 0 0 18px; color: #065f46; }
+        .expected li { margin-bottom: 3px; }
+
+        .checklist { list-style: none; padding: 0; margin: 16px 0; }
+        .checklist li { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; font-size: 14px; border-bottom: 1px solid var(--border-light); }
+        .checklist li:last-child { border-bottom: none; }
+        .checkbox { width: 18px; height: 18px; border: 2px solid var(--border); border-radius: 4px; flex-shrink: 0; margin-top: 2px; }
+
+        .page-ref { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; background: var(--bg-sidebar); border: 1px solid var(--border); border-radius: 6px; font-size: 13px; color: var(--text-secondary); font-weight: 600; }
+        .url-block { background: #1e293b; color: #94a3b8; font-family: 'Cascadia Code', 'Consolas', monospace; padding: 10px 16px; border-radius: 8px; font-size: 13px; margin: 8px 0; word-break: break-all; }
+        .url-block .highlight { color: #5eead4; }
+
+        .lifecycle { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 16px 0; font-size: 14px; }
+        .lifecycle-step { padding: 6px 14px; border-radius: 8px; font-weight: 600; font-size: 13px; }
+        .lifecycle-arrow { color: var(--text-muted); font-size: 18px; }
+        .lc-draft { background: #e2e8f0; color: #475569; }
+        .lc-review { background: #dbeafe; color: #1e40af; }
+        .lc-approved { background: #d1fae5; color: #065f46; }
+        .lc-published { background: var(--teal-light); color: var(--teal-dark); }
+        .lc-rejected { background: #fef2f2; color: var(--danger); }
+        .lc-archived { background: #f3f4f6; color: #6b7280; }
+
+        footer { background: var(--text-primary); color: #94a3b8; padding: 32px; text-align: center; font-size: 13px; }
+        footer strong { color: white; }
+        .mt-8 { margin-top: 8px; } .mt-16 { margin-top: 16px; } .mt-24 { margin-top: 24px; } .mb-8 { margin-bottom: 8px; } .mb-16 { margin-bottom: 16px; }
+        code { background: var(--bg-sidebar); padding: 2px 6px; border-radius: 4px; font-size: 13px; font-family: 'Cascadia Code', 'Consolas', monospace; }
+        kbd { background: #e2e8f0; border: 1px solid #cbd5e1; border-radius: 4px; padding: 1px 6px; font-size: 12px; box-shadow: 0 1px 0 #94a3b8; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-inner">
+        <div class="header-suite">DWx Digital Workplace Excellence</div>
+        <div class="header-title">Policy Manager — Author Testing Guide</div>
+        <div class="header-subtitle">Role-Based Testing Walkthrough for the Policy Author Experience</div>
+        <div class="role-badge">
+            <span class="dot"></span>
+            Author Role (Tier 2)
+        </div>
+        <div class="header-meta mt-8">
+            <span>&#128197; Version 1.2.3</span>
+            <span>&#128205; PolicyManager Site</span>
+            <span>&#128221; 10 Test Scenarios</span>
+            <span>&#128337; ~60 min estimated</span>
+        </div>
+    </div>
+</header>
+
+<nav class="toc no-print">
+    <div class="toc-card">
+        <div class="toc-title">Test Sections</div>
+        <div class="toc-grid">
+            <a class="toc-link" href="#overview"><span class="num">1</span> Role Overview &amp; Navigation</a>
+            <a class="toc-link" href="#lifecycle"><span class="num">2</span> Policy Lifecycle Overview</a>
+            <a class="toc-link" href="#create"><span class="num">3</span> Create a New Policy</a>
+            <a class="toc-link" href="#edit"><span class="num">4</span> Edit an Existing Policy</a>
+            <a class="toc-link" href="#submit"><span class="num">5</span> Submit for Review</a>
+            <a class="toc-link" href="#packs"><span class="num">6</span> Policy Packs</a>
+            <a class="toc-link" href="#authorview"><span class="num">7</span> Author Dashboard</a>
+            <a class="toc-link" href="#checklist"><span class="num">8</span> Final Checklist</a>
+        </div>
+    </div>
+</nav>
+
+<main>
+
+<!-- SECTION 1: ROLE OVERVIEW -->
+<section class="section" id="overview">
+    <div class="section-header">
+        <span class="section-number">1</span>
+        <h2 class="section-title">Role Overview &amp; Navigation</h2>
+    </div>
+
+    <div class="info-box context">
+        <span class="icon">&#9432;</span>
+        <div>
+            <strong>Who is the Author?</strong><br>
+            The Author role is assigned to <strong>policy writers</strong> — staff responsible for creating, editing, and maintaining policy documents. Authors have all Employee-level access <strong>plus</strong> the ability to create policies, manage policy packs, and view their authoring dashboard. Authors can draft and edit policies but <strong>cannot</strong> approve or publish them — that requires Manager or Admin privileges.
+        </div>
+    </div>
+
+    <div class="info-box prereq">
+        <span class="icon">&#9888;</span>
+        <div>
+            <strong>Pre-requisite:</strong> The test account must be assigned the <strong>Author</strong> role by an Admin via Settings &gt; Users and Roles, or be a member of a SharePoint group mapped to the Author role (e.g., PM_PolicyAuthors).
+        </div>
+    </div>
+
+    <h3 class="mb-8">Author Navigation Items</h3>
+    <p class="section-desc">Authors see all Employee nav items plus additional authoring tools. Items marked <span class="new-badge">Author+</span> are new compared to the Employee role.</p>
+
+    <table class="nav-table">
+        <thead>
+            <tr><th>Navigation Item</th><th>Page</th><th>Visible?</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><strong>Policy Hub</strong></td><td>PolicyHub.aspx</td><td class="visible">&#10003; Yes</td><td>Same as Employee</td></tr>
+            <tr><td><strong>My Policies</strong></td><td>MyPolicies.aspx</td><td class="visible">&#10003; Yes</td><td>Same as Employee</td></tr>
+            <tr><td><strong>Policy Builder</strong> <span class="new-badge">Author+</span></td><td>PolicyBuilder.aspx</td><td class="visible">&#10003; Yes</td><td>Create and edit policies using the wizard</td></tr>
+            <tr><td><strong>Policy Author</strong> <span class="new-badge">Author+</span></td><td>PolicyAuthor.aspx</td><td class="visible">&#10003; Yes</td><td>Author dashboard — policies, approvals, delegations, activity</td></tr>
+            <tr><td><strong>Policy Packs</strong> <span class="new-badge">Author+</span></td><td>PolicyPacks.aspx</td><td class="visible">&#10003; Yes</td><td>Bundle policies into packs for distribution</td></tr>
+            <tr><td>Distribution</td><td>PolicyDistribution.aspx</td><td class="hidden">&#10007; Hidden</td><td>Manager+ only</td></tr>
+            <tr><td>Analytics</td><td>PolicyAnalytics.aspx</td><td class="hidden">&#10007; Hidden</td><td>Manager+ only</td></tr>
+            <tr><td>Manager View</td><td>PolicyManagerView.aspx</td><td class="hidden">&#10007; Hidden</td><td>Manager+ only</td></tr>
+            <tr><td>Quiz Builder</td><td>QuizBuilder.aspx</td><td class="hidden">&#10007; Hidden</td><td>Admin only</td></tr>
+        </tbody>
+    </table>
+
+    <div class="test-scenario">
+        <div class="test-scenario-header">
+            <span class="test-id">AUT-01</span>
+            <span class="test-title">Verify Author Role Navigation</span>
+            <span class="priority-badge p1">P1 Critical</span>
+        </div>
+        <div class="test-scenario-body">
+            <div class="test-objective">
+                Confirm an Author sees the Employee nav items plus Policy Builder, Policy Author, and Policy Packs — but NOT Manager/Admin items.
+            </div>
+            <ol class="steps">
+                <li class="step"><span class="step-num">1</span><div class="step-content"><div class="step-action">Log in as an Author test account</div><div class="step-detail">Use an account assigned the Author role via Admin &gt; Users and Roles (e.g., PM_PolicyAuthors group).</div></div></li>
+                <li class="step"><span class="step-num">2</span><div class="step-content"><div class="step-action">Navigate to the Policy Hub page</div><div class="step-detail">Open <code>PolicyHub.aspx</code> and inspect the header navigation bar.</div></div></li>
+                <li class="step"><span class="step-num">3</span><div class="step-content"><div class="step-action">Verify Author-level nav items are present</div><div class="step-detail">You should see: <strong>Policy Hub</strong>, <strong>My Policies</strong>, <strong>Policy Builder</strong>, <strong>Policy Author</strong>, and <strong>Policy Packs</strong>.</div></div></li>
+                <li class="step"><span class="step-num">4</span><div class="step-content"><div class="step-action">Verify Manager/Admin items are NOT present</div><div class="step-detail">Distribution, Analytics, Manager View, Quiz Builder, and the Settings cog should NOT be visible.</div></div></li>
+            </ol>
+            <div class="expected">
+                <div class="expected-label">&#10003; Expected Results</div>
+                <ul>
+                    <li>5 nav items visible: Policy Hub, My Policies, Policy Builder, Policy Author, Policy Packs</li>
+                    <li>Settings cog NOT visible (Manager+ only)</li>
+                    <li>Distribution, Analytics, Manager View, Quiz Builder NOT visible</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- SECTION 2: POLICY LIFECYCLE -->
+<section class="section page-break" id="lifecycle">
+    <div class="section-header">
+        <span class="section-number">2</span>
+        <h2 class="section-title">Policy Lifecycle Overview</h2>
+    </div>
+
+    <div class="info-box context">
+        <span class="icon">&#9432;</span>
+        <div>
+            <strong>Understanding the Policy Lifecycle</strong><br>
+            Before testing, it's critical to understand the status progression of a policy. As an Author, you control the first two stages (Draft and Submit for Review). The remaining stages are handled by Managers and Admins.
+        </div>
+    </div>
+
+    <div class="lifecycle">
+        <span class="lifecycle-step lc-draft">Draft</span>
+        <span class="lifecycle-arrow">&#8594;</span>
+        <span class="lifecycle-step lc-review">In Review</span>
+        <span class="lifecycle-arrow">&#8594;</span>
+        <span class="lifecycle-step lc-approved">Approved</span>
+        <span class="lifecycle-arrow">&#8594;</span>
+        <span class="lifecycle-step lc-published">Published</span>
+        <span class="lifecycle-arrow">&#8594;</span>
+        <span class="lifecycle-step lc-archived">Archived</span>
+    </div>
+
+    <div class="lifecycle mt-8">
+        <span style="width: 180px; display: inline-block;"></span>
+        <span class="lifecycle-step lc-review">In Review</span>
+        <span class="lifecycle-arrow">&#8594;</span>
+        <span class="lifecycle-step lc-rejected">Rejected</span>
+        <span class="lifecycle-arrow">&#8594;</span>
+        <span class="lifecycle-step lc-draft">Draft (revision)</span>
+    </div>
+
+    <table class="nav-table mt-16">
+        <thead>
+            <tr><th>Status</th><th>Who Acts</th><th>What Happens</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><strong>Draft</strong></td><td>Author</td><td>Author creates/edits policy content, metadata, and settings. Version starts at 0.1.</td></tr>
+            <tr><td><strong>In Review</strong></td><td>Author → Reviewer</td><td>Author submits for review. Reviewers receive notifications and can approve or reject.</td></tr>
+            <tr><td><strong>Approved</strong></td><td>Manager/Admin</td><td>Reviewer approves. Policy is ready for publishing.</td></tr>
+            <tr><td><strong>Published</strong></td><td>Manager/Admin</td><td>Admin publishes. Creates version 1.0+, generates acknowledgements, sends notifications.</td></tr>
+            <tr><td><strong>Rejected</strong></td><td>Reviewer → Author</td><td>Reviewer rejects with reason. Policy returns to Draft for revision.</td></tr>
+            <tr><td><strong>Archived</strong></td><td>Admin</td><td>Policy no longer active. No new acknowledgements generated.</td></tr>
+        </tbody>
+    </table>
+</section>
+
+<!-- SECTION 3: CREATE A NEW POLICY -->
+<section class="section page-break" id="create">
+    <div class="section-header">
+        <span class="section-number">3</span>
+        <h2 class="section-title">Create a New Policy</h2>
+    </div>
+
+    <div class="info-box navigate">
+        <span class="icon">&#128640;</span>
+        <div>
+            <strong>Navigate to:</strong> <span class="page-ref">PolicyBuilder.aspx</span><br>
+            The Policy Builder is a multi-step wizard that guides the author through creating a new policy. It covers metadata, content, settings, quiz assignment, and review before submission.
+        </div>
+    </div>
+
+    <div class="test-scenario">
+        <div class="test-scenario-header">
+            <span class="test-id">AUT-02</span>
+            <span class="test-title">Create a New Policy — Wizard Step 1: Metadata</span>
+            <span class="priority-badge p1">P1 Critical</span>
+        </div>
+        <div class="test-scenario-body">
+            <div class="test-objective">
+                Test the first step of the policy creation wizard — entering basic metadata including title, category, department, and classification.
+            </div>
+            <ol class="steps">
+                <li class="step"><span class="step-num">1</span><div class="step-content"><div class="step-action">Click "Policy Builder" in the navigation</div><div class="step-detail">This navigates to <code>PolicyBuilder.aspx</code>. You should see the Policy Author Enhanced component with a wizard interface.</div></div></li>
+                <li class="step"><span class="step-num">2</span><div class="step-content"><div class="step-action">Click "Create New Policy" or similar button</div><div class="step-detail">This initialises a new policy wizard. Step 1 should display metadata fields.</div></div></li>
+                <li class="step"><span class="step-num">3</span><div class="step-content"><div class="step-action">Fill in the required metadata fields</div><div class="step-detail">
+                    Complete all required fields:<br>
+                    &bull; <strong>Policy Title</strong> — e.g., "Test Data Protection Policy"<br>
+                    &bull; <strong>Category</strong> — select from dropdown (HR, IT, Finance, Compliance, etc.)<br>
+                    &bull; <strong>Sub-Category</strong> — if available<br>
+                    &bull; <strong>Department</strong> — owning department<br>
+                    &bull; <strong>Policy Owner</strong> — person picker<br>
+                    &bull; <strong>Data Classification</strong> — Public, Internal, Confidential, Restricted, or Regulated<br>
+                    &bull; <strong>Compliance Risk Level</strong> — Critical, High, Medium, Low, or Informational<br>
+                    &bull; <strong>Effective Date</strong> — when the policy takes effect<br>
+                    &bull; <strong>Review Date</strong> — next review due date
+                </div></div></li>
+                <li class="step"><span class="step-num">4</span><div class="step-content"><div class="step-action">Test field validation</div><div class="step-detail">Try to proceed to Step 2 without filling required fields. Error messages should appear for each missing required field.</div></div></li>
+                <li class="step"><span class="step-num">5</span><div class="step-content"><div class="step-action">Click "Next" to proceed to Step 2</div><div class="step-detail">With all required fields filled, the wizard should advance to the content editing step.</div></div></li>
+            </ol>
+            <div class="expected">
+                <div class="expected-label">&#10003; Expected Results</div>
+                <ul>
+                    <li>Wizard displays Step 1 with all metadata fields</li>
+                    <li>Dropdowns populate with correct options</li>
+                    <li>Person picker allows searching and selecting users</li>
+                    <li>Validation prevents advancing with empty required fields</li>
+                    <li>Policy number auto-generated (e.g., "POL-0001")</li>
+                    <li>"Next" button advances to Step 2</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-scenario">
+        <div class="test-scenario-header">
+            <span class="test-id">AUT-03</span>
+            <span class="test-title">Create a New Policy — Wizard Step 2: Content Editor</span>
+            <span class="priority-badge p1">P1 Critical</span>
+        </div>
+        <div class="test-scenario-body">
+            <div class="test-objective">
+                Test the rich text content editor — the core of policy authoring. Verify formatting tools, template support, and image/infographic insertion.
+            </div>
+            <ol class="steps">
+                <li class="step"><span class="step-num">1</span><div class="step-content"><div class="step-action">Verify the rich text editor loads</div><div class="step-detail">Step 2 should present a rich text editor (similar to Word). The toolbar should include formatting controls: Bold, Italic, Underline, Headings, Lists, Links, Tables, and Image insertion.</div></div></li>
+                <li class="step"><span class="step-num">2</span><div class="step-content"><div class="step-action">Type policy content</div><div class="step-detail">Write a few paragraphs of test content. Use headings (H1, H2, H3), bullet lists, numbered lists, and bold/italic formatting to verify they work.</div></div></li>
+                <li class="step"><span class="step-num">3</span><div class="step-content"><div class="step-action">Test template selection (if available)</div><div class="step-detail">If a template selector exists, choose a template (e.g., "Standard Policy", "Image/Infographic Policy"). The editor should populate with the template structure.</div></div></li>
+                <li class="step"><span class="step-num">4</span><div class="step-content"><div class="step-action">Insert an image or table</div><div class="step-detail">Use the toolbar to insert an image and a table. Verify they render correctly in the editor.</div></div></li>
+                <li class="step"><span class="step-num">5</span><div class="step-content"><div class="step-action">Click "Next" to proceed to Step 3</div><div class="step-detail">Content should be preserved as the wizard advances.</div></div></li>
+            </ol>
+            <div class="expected">
+                <div class="expected-label">&#10003; Expected Results</div>
+                <ul>
+                    <li>Rich text editor loads with full formatting toolbar</li>
+                    <li>All formatting options (bold, italic, headings, lists) work correctly</li>
+                    <li>Templates populate the editor with pre-structured content</li>
+                    <li>Images and tables render in the editor</li>
+                    <li>Content is preserved when navigating between wizard steps</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-scenario">
+        <div class="test-scenario-header">
+            <span class="test-id">AUT-04</span>
+            <span class="test-title">Create a New Policy — Wizard Step 3: Settings &amp; Quiz</span>
+            <span class="priority-badge p2">P2 High</span>
+        </div>
+        <div class="test-scenario-body">
+            <div class="test-objective">
+                Test the settings step — acknowledgement requirements, read timeframes, distribution scope, and quiz assignment.
+            </div>
+            <ol class="steps">
+                <li class="step"><span class="step-num">1</span><div class="step-content"><div class="step-action">Verify settings fields</div><div class="step-detail">
+                    Step 3 should present configuration options:<br>
+                    &bull; <strong>Requires Acknowledgement</strong> — toggle on/off<br>
+                    &bull; <strong>Read Timeframe</strong> — dropdown: Immediate, Day 1, Day 3, Week 1, Week 2, Month 1, Month 3, Month 6, Custom<br>
+                    &bull; <strong>Distribution Scope</strong> — All Employees, Department, Location, Role, Custom, New Hires Only<br>
+                    &bull; <strong>Requires Quiz</strong> — toggle, with quiz selector if enabled<br>
+                    &bull; <strong>Retention Category</strong> — Standard (3yr), Extended (7yr), Regulatory, Legal, Permanent
+                </div></div></li>
+                <li class="step"><span class="step-num">2</span><div class="step-content"><div class="step-action">Enable "Requires Acknowledgement" and select a read timeframe</div><div class="step-detail">Toggle acknowledgement on. Select "Week 1" as the read timeframe. This means employees will have 7 days to read and acknowledge the policy.</div></div></li>
+                <li class="step"><span class="step-num">3</span><div class="step-content"><div class="step-action">Enable "Requires Quiz" and select a quiz</div><div class="step-detail">Toggle quiz on. A quiz selector should appear — select an existing published quiz from the dropdown. If no quizzes are available, note this for the Admin tester.</div></div></li>
+                <li class="step"><span class="step-num">4</span><div class="step-content"><div class="step-action">Click "Next" to proceed to review</div><div class="step-detail">The wizard should advance to a review/summary step.</div></div></li>
+            </ol>
+            <div class="expected">
+                <div class="expected-label">&#10003; Expected Results</div>
+                <ul>
+                    <li>All settings fields display and are interactive</li>
+                    <li>Read timeframe dropdown shows all options</li>
+                    <li>Quiz toggle reveals quiz selector when enabled</li>
+                    <li>Settings are preserved when moving between steps</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-scenario">
+        <div class="test-scenario-header">
+            <span class="test-id">AUT-05</span>
+            <span class="test-title">Save Policy as Draft</span>
+            <span class="priority-badge p1">P1 Critical</span>
+        </div>
+        <div class="test-scenario-body">
+            <div class="test-objective">
+                Verify the policy can be saved as a Draft and appears in the author's policy list for later editing.
+            </div>
+            <ol class="steps">
+                <li class="step"><span class="step-num">1</span><div class="step-content"><div class="step-action">Click "Save as Draft" on the review step</div><div class="step-detail">At the final wizard step (or at any step via a "Save Draft" button), save the policy. A success message should appear.</div></div></li>
+                <li class="step"><span class="step-num">2</span><div class="step-content"><div class="step-action">Verify the policy was created</div><div class="step-detail">Navigate to the Policy Author dashboard (<code>PolicyAuthor.aspx</code>). The newly created policy should appear in your policy list with status "Draft".</div></div></li>
+                <li class="step"><span class="step-num">3</span><div class="step-content"><div class="step-action">Open the draft and verify data integrity</div><div class="step-detail">Click on the draft policy. All metadata, content, and settings you entered should be preserved exactly as entered.</div></div></li>
+            </ol>
+            <div class="expected">
+                <div class="expected-label">&#10003; Expected Results</div>
+                <ul>
+                    <li>Policy saved with success message</li>
+                    <li>Policy appears in Author dashboard with "Draft" status</li>
+                    <li>Auto-generated policy number (e.g., POL-0001) is assigned</li>
+                    <li>Version shows as 0.1 (initial draft)</li>
+                    <li>All entered data (title, category, content, settings) is preserved</li>
+                    <li>Record created in <code>PM_Policies</code> SharePoint list</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- SECTION 4: EDIT A POLICY -->
+<section class="section page-break" id="edit">
+    <div class="section-header">
+        <span class="section-number">4</span>
+        <h2 class="section-title">Edit an Existing Policy</h2>
+    </div>
+
+    <div class="test-scenario">
+        <div class="test-scenario-header">
+            <span class="test-id">AUT-06</span>
+            <span class="test-title">Edit a Draft Policy</span>
+            <span class="priority-badge p2">P2 High</span>
+        </div>
+        <div class="test-scenario-body">
+            <div class="test-objective">
+                Verify an author can open and edit a draft policy they created, and that changes are saved correctly.
+            </div>
+            <ol class="steps">
+                <li class="step"><span class="step-num">1</span><div class="step-content"><div class="step-action">Navigate to Policy Author dashboard</div><div class="step-detail">Go to <code>PolicyAuthor.aspx</code>. Your draft policies should appear in the "Policies" tab.</div></div></li>
+                <li class="step"><span class="step-num">2</span><div class="step-content"><div class="step-action">Click "Edit" on the draft policy</div><div class="step-detail">Select the draft policy created in AUT-05. Click the edit action (pencil icon or "Edit" button).</div></div></li>
+                <li class="step"><span class="step-num">3</span><div class="step-content"><div class="step-action">Modify the title and content</div><div class="step-detail">Change the policy title (e.g., append " — Updated"). Edit some content in the rich text editor.</div></div></li>
+                <li class="step"><span class="step-num">4</span><div class="step-content"><div class="step-action">Save the changes</div><div class="step-detail">Click "Save" or "Save Draft". Confirm with the success message.</div></div></li>
+                <li class="step"><span class="step-num">5</span><div class="step-content"><div class="step-action">Re-open and verify changes persisted</div><div class="step-detail">Navigate away and come back. Open the policy again — your changes should be there.</div></div></li>
+            </ol>
+            <div class="expected">
+                <div class="expected-label">&#10003; Expected Results</div>
+                <ul>
+                    <li>Draft opens in edit mode with all existing data loaded</li>
+                    <li>Changes save successfully with confirmation</li>
+                    <li>Changes persist across page reloads</li>
+                    <li>Status remains "Draft" after editing</li>
+                    <li>Audit log entry created for the update</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- SECTION 5: SUBMIT FOR REVIEW -->
+<section class="section page-break" id="submit">
+    <div class="section-header">
+        <span class="section-number">5</span>
+        <h2 class="section-title">Submit for Review</h2>
+    </div>
+
+    <div class="info-box important">
+        <span class="icon">&#9888;</span>
+        <div>
+            <strong>Key Author Workflow:</strong> Submitting for review is the primary handoff point. Once submitted, the policy moves to "In Review" status and is locked for editing until the review is complete (approved or rejected). The Author cannot modify the policy while it's under review.
+        </div>
+    </div>
+
+    <div class="test-scenario">
+        <div class="test-scenario-header">
+            <span class="test-id">AUT-07</span>
+            <span class="test-title">Submit a Policy for Review</span>
+            <span class="priority-badge p1">P1 Critical</span>
+        </div>
+        <div class="test-scenario-body">
+            <div class="test-objective">
+                Test the submission workflow — submitting a draft policy for manager/reviewer approval.
+            </div>
+            <ol class="steps">
+                <li class="step"><span class="step-num">1</span><div class="step-content"><div class="step-action">Open the draft policy for editing</div><div class="step-detail">Navigate to the policy created in AUT-05 / AUT-06.</div></div></li>
+                <li class="step"><span class="step-num">2</span><div class="step-content"><div class="step-action">Click "Submit for Review"</div><div class="step-detail">Look for a "Submit for Review" button (may be on the review step of the wizard, or as an action button on the policy card). Click it.</div></div></li>
+                <li class="step"><span class="step-num">3</span><div class="step-content"><div class="step-action">Select reviewers (if prompted)</div><div class="step-detail">The system may prompt you to select reviewers using a people picker. Select at least one reviewer (use the Manager test account).</div></div></li>
+                <li class="step"><span class="step-num">4</span><div class="step-content"><div class="step-action">Confirm the submission</div><div class="step-detail">A confirmation dialog may appear. Confirm the submission.</div></div></li>
+                <li class="step"><span class="step-num">5</span><div class="step-content"><div class="step-action">Verify the status change</div><div class="step-detail">The policy status should change from "Draft" to "In Review". The policy card should update to show the new status with a blue badge.</div></div></li>
+                <li class="step"><span class="step-num">6</span><div class="step-content"><div class="step-action">Attempt to edit the policy while In Review</div><div class="step-detail">Try to edit the policy. The edit controls should be disabled or the system should prevent changes while the policy is under review.</div></div></li>
+            </ol>
+            <div class="expected">
+                <div class="expected-label">&#10003; Expected Results</div>
+                <ul>
+                    <li>"Submit for Review" action is available for Draft policies</li>
+                    <li>Policy status changes to "In Review" after submission</li>
+                    <li><code>SubmittedForReviewDate</code> is set to current timestamp</li>
+                    <li>Reviewers receive notification: "Policy submitted for your review"</li>
+                    <li>Policy is locked for editing while In Review</li>
+                    <li>Audit log records the submission event</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-scenario">
+        <div class="test-scenario-header">
+            <span class="test-id">AUT-08</span>
+            <span class="test-title">Handle a Rejected Policy</span>
+            <span class="priority-badge p2">P2 High</span>
+        </div>
+        <div class="test-scenario-body">
+            <div class="test-objective">
+                Test the rejection workflow — when a reviewer rejects the policy, the author should be notified and able to revise and resubmit.
+            </div>
+            <div class="info-box prereq">
+                <span class="icon">&#9888;</span>
+                <div><strong>Pre-requisite:</strong> Have the Manager tester reject the policy submitted in AUT-07 with a rejection reason (e.g., "Needs more detail in section 3"). This must happen before starting this test.</div>
+            </div>
+            <ol class="steps">
+                <li class="step"><span class="step-num">1</span><div class="step-content"><div class="step-action">Check notifications for a rejection alert</div><div class="step-detail">The notification bell should show a new notification: "Policy Rejected: [Title]" with the rejection reason.</div></div></li>
+                <li class="step"><span class="step-num">2</span><div class="step-content"><div class="step-action">Open the rejected policy</div><div class="step-detail">Navigate to your Author dashboard. The policy should now show "Draft" status (returned for revision). The rejection reason should be visible.</div></div></li>
+                <li class="step"><span class="step-num">3</span><div class="step-content"><div class="step-action">Edit the policy to address the feedback</div><div class="step-detail">Open the policy editor. Make changes to address the reviewer's feedback.</div></div></li>
+                <li class="step"><span class="step-num">4</span><div class="step-content"><div class="step-action">Resubmit for review</div><div class="step-detail">Save changes and submit for review again. The cycle repeats.</div></div></li>
+            </ol>
+            <div class="expected">
+                <div class="expected-label">&#10003; Expected Results</div>
+                <ul>
+                    <li>Author receives rejection notification with the reason</li>
+                    <li>Policy returns to "Draft" status and is editable again</li>
+                    <li>Rejection reason is visible on the policy detail/card</li>
+                    <li>Author can edit and resubmit the policy</li>
+                    <li>Resubmission follows the same workflow as initial submission</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- SECTION 6: POLICY PACKS -->
+<section class="section page-break" id="packs">
+    <div class="section-header">
+        <span class="section-number">6</span>
+        <h2 class="section-title">Policy Packs</h2>
+    </div>
+
+    <div class="info-box navigate">
+        <span class="icon">&#128640;</span>
+        <div>
+            <strong>Navigate to:</strong> <span class="page-ref">PolicyPacks.aspx</span><br>
+            Policy Packs allow authors to bundle multiple related policies together for grouped distribution. For example, a "New Employee Onboarding Pack" might include IT Security, HR Handbook, and Code of Conduct policies.
+        </div>
+    </div>
+
+    <div class="test-scenario">
+        <div class="test-scenario-header">
+            <span class="test-id">AUT-09</span>
+            <span class="test-title">Create and Manage a Policy Pack</span>
+            <span class="priority-badge p2">P2 High</span>
+        </div>
+        <div class="test-scenario-body">
+            <div class="test-objective">
+                Test the full lifecycle of a Policy Pack — create, add policies, and save.
+            </div>
+            <ol class="steps">
+                <li class="step"><span class="step-num">1</span><div class="step-content"><div class="step-action">Navigate to Policy Packs</div><div class="step-detail">Click "Policy Packs" in the navigation bar. The Policy Pack Manager should load with a list of existing packs (or an empty state).</div></div></li>
+                <li class="step"><span class="step-num">2</span><div class="step-content"><div class="step-action">Create a new pack</div><div class="step-detail">Click "Create Pack" or similar. A form or dialog should appear. Enter:<br>
+                    &bull; <strong>Pack Name</strong> — e.g., "New Employee Onboarding Pack"<br>
+                    &bull; <strong>Description</strong> — brief description of the pack's purpose<br>
+                    &bull; <strong>Target Audience</strong> — who this pack is for
+                </div></div></li>
+                <li class="step"><span class="step-num">3</span><div class="step-content"><div class="step-action">Add policies to the pack</div><div class="step-detail">Use the policy selector to search for and add published policies to the pack. Add at least 2-3 policies.</div></div></li>
+                <li class="step"><span class="step-num">4</span><div class="step-content"><div class="step-action">Save the pack</div><div class="step-detail">Click "Save". The pack should appear in the pack list with the correct policy count.</div></div></li>
+                <li class="step"><span class="step-num">5</span><div class="step-content"><div class="step-action">Edit the pack — add or remove a policy</div><div class="step-detail">Open the pack for editing. Remove one policy and add a different one. Save and verify the changes persist.</div></div></li>
+            </ol>
+            <div class="expected">
+                <div class="expected-label">&#10003; Expected Results</div>
+                <ul>
+                    <li>Pack creation form displays with required fields</li>
+                    <li>Policy selector shows published policies for adding</li>
+                    <li>Pack saves successfully and appears in the list</li>
+                    <li>Policy count on the pack card matches the number of policies added</li>
+                    <li>Editing the pack preserves existing data</li>
+                    <li>Record created in <code>PM_PolicyPacks</code> and <code>PM_PolicyPackAssignments</code> lists</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- SECTION 7: AUTHOR DASHBOARD -->
+<section class="section page-break" id="authorview">
+    <div class="section-header">
+        <span class="section-number">7</span>
+        <h2 class="section-title">Author Dashboard</h2>
+    </div>
+
+    <div class="info-box navigate">
+        <span class="icon">&#128640;</span>
+        <div>
+            <strong>Navigate to:</strong> <span class="page-ref">PolicyAuthor.aspx</span><br>
+            The Author Dashboard provides a centralised view of all policies you've authored, pending approvals, delegation settings, and recent activity. It has multiple tabs for different views of your authoring work.
+        </div>
+    </div>
+
+    <div class="test-scenario">
+        <div class="test-scenario-header">
+            <span class="test-id">AUT-10</span>
+            <span class="test-title">Author Dashboard — Tabs &amp; Content</span>
+            <span class="priority-badge p2">P2 High</span>
+        </div>
+        <div class="test-scenario-body">
+            <div class="test-objective">
+                Verify all tabs of the Author Dashboard load correctly and display accurate data.
+            </div>
+            <ol class="steps">
+                <li class="step"><span class="step-num">1</span><div class="step-content"><div class="step-action">Open the Policy Author page</div><div class="step-detail">Click "Policy Author" in the navigation bar, or go to <code>PolicyAuthor.aspx</code>.</div></div></li>
+                <li class="step"><span class="step-num">2</span><div class="step-content"><div class="step-action">Verify the tab bar</div><div class="step-detail">
+                    You should see tabs for:<br>
+                    &bull; <strong>Policies</strong> — your authored policies with status indicators<br>
+                    &bull; <strong>Approvals</strong> — pending approval requests on your policies<br>
+                    &bull; <strong>Delegations</strong> — delegation settings and history<br>
+                    &bull; <strong>Activity</strong> — recent activity log
+                </div></div></li>
+                <li class="step"><span class="step-num">3</span><div class="step-content"><div class="step-action">Check the Policies tab</div><div class="step-detail">This should list all policies you've created, with columns for: Title, Status (Draft/In Review/Approved/Published), Version, Category, Last Modified date. The draft from AUT-05 should be visible here.</div></div></li>
+                <li class="step"><span class="step-num">4</span><div class="step-content"><div class="step-action">Check the Approvals tab</div><div class="step-detail">If you have policies in review, they should appear here with the reviewer's name and submission date.</div></div></li>
+                <li class="step"><span class="step-num">5</span><div class="step-content"><div class="step-action">Check the Activity tab</div><div class="step-detail">Recent actions (created, edited, submitted) should appear in a timeline/log format with timestamps.</div></div></li>
+            </ol>
+            <div class="expected">
+                <div class="expected-label">&#10003; Expected Results</div>
+                <ul>
+                    <li>All tabs render without errors</li>
+                    <li>Policies tab shows accurate list with correct statuses</li>
+                    <li>Approvals tab shows pending reviews (if any)</li>
+                    <li>Activity tab shows a chronological log of recent actions</li>
+                    <li>Data is consistent across tabs (no mismatched statuses)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FINAL CHECKLIST -->
+<section class="section page-break" id="checklist">
+    <div class="section-header">
+        <span class="section-number">&#10003;</span>
+        <h2 class="section-title">Author Role — Final Test Checklist</h2>
+    </div>
+
+    <p class="section-desc">Print and tick off each item as verified.</p>
+
+    <h3 class="mb-8">Navigation &amp; Access Control</h3>
+    <ul class="checklist">
+        <li><span class="checkbox"></span> Author sees: Policy Hub, My Policies, Policy Builder, Policy Author, Policy Packs</li>
+        <li><span class="checkbox"></span> Author does NOT see: Distribution, Analytics, Manager View, Quiz Builder</li>
+        <li><span class="checkbox"></span> Settings cog NOT visible</li>
+    </ul>
+
+    <h3 class="mt-24 mb-8">Policy Creation</h3>
+    <ul class="checklist">
+        <li><span class="checkbox"></span> Wizard Step 1: All metadata fields present and functional</li>
+        <li><span class="checkbox"></span> Wizard Step 2: Rich text editor works (formatting, images, tables)</li>
+        <li><span class="checkbox"></span> Wizard Step 3: Settings and quiz assignment work</li>
+        <li><span class="checkbox"></span> Policy saves as Draft with auto-generated number</li>
+        <li><span class="checkbox"></span> All data preserved across wizard steps and page reloads</li>
+    </ul>
+
+    <h3 class="mt-24 mb-8">Policy Editing</h3>
+    <ul class="checklist">
+        <li><span class="checkbox"></span> Draft policy opens in edit mode with existing data</li>
+        <li><span class="checkbox"></span> Changes save and persist correctly</li>
+        <li><span class="checkbox"></span> Status remains Draft during editing</li>
+    </ul>
+
+    <h3 class="mt-24 mb-8">Submission &amp; Review</h3>
+    <ul class="checklist">
+        <li><span class="checkbox"></span> "Submit for Review" changes status from Draft to In Review</li>
+        <li><span class="checkbox"></span> Policy locked for editing while In Review</li>
+        <li><span class="checkbox"></span> Rejection returns policy to Draft with reason visible</li>
+        <li><span class="checkbox"></span> Author can revise and resubmit rejected policies</li>
+    </ul>
+
+    <h3 class="mt-24 mb-8">Policy Packs</h3>
+    <ul class="checklist">
+        <li><span class="checkbox"></span> Can create a new pack with name, description</li>
+        <li><span class="checkbox"></span> Can add/remove policies from a pack</li>
+        <li><span class="checkbox"></span> Pack appears in list with correct policy count</li>
+    </ul>
+
+    <h3 class="mt-24 mb-8">Author Dashboard</h3>
+    <ul class="checklist">
+        <li><span class="checkbox"></span> All tabs (Policies, Approvals, Delegations, Activity) load</li>
+        <li><span class="checkbox"></span> Policy list shows accurate statuses</li>
+        <li><span class="checkbox"></span> Activity log shows recent actions with timestamps</li>
+    </ul>
+
+    <div class="info-box context mt-24">
+        <span class="icon">&#9989;</span>
+        <div>
+            <strong>Testing Complete!</strong><br>
+            When all items above are ticked, the Author role testing is complete. Report any failures with the Test ID (e.g., AUT-03), the step that failed, and a screenshot.
+        </div>
+    </div>
+</section>
+
+</main>
+
+<footer>
+    <strong>Policy Manager v1.2.3</strong> — Author Testing Guide<br>
+    DWx Digital Workplace Excellence &bull; First Digital &bull; Generated February 2026<br>
+    <span style="color: #64748b;">For internal use only.</span>
+</footer>
+
+</body>
+</html>

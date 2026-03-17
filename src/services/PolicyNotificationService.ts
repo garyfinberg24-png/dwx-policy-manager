@@ -446,11 +446,31 @@ export class PolicyNotificationService {
 
     try {
       const now = new Date();
-      const threeDaysFromNow = new Date(now);
-      threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3);
 
-      const oneDayFromNow = new Date(now);
-      oneDayFromNow.setDate(oneDayFromNow.getDate() + 1);
+      // Load SLA targets from admin configuration (PM_Configuration)
+      // Acknowledgement SLA drives reminder thresholds
+      let warningDays = 3;  // default: 3 days before deadline
+      let urgentDays = 1;   // default: 1 day before deadline
+      try {
+        const slaItems = await this.sp.web.lists
+          .getByTitle('PM_Configuration')
+          .items.filter("substringof('Admin.SLA', ConfigKey)")
+          .select('ConfigKey', 'ConfigValue')
+          .top(10)() as any[];
+
+        // Look for acknowledgement SLA config
+        for (const item of slaItems) {
+          if (item.ConfigKey?.includes('Acknowledgement') && item.ConfigValue) {
+            try {
+              const sla = JSON.parse(item.ConfigValue);
+              if (sla.WarningThresholdDays) warningDays = Number(sla.WarningThresholdDays);
+              if (sla.UrgentThresholdDays) urgentDays = Number(sla.UrgentThresholdDays);
+            } catch { /* use defaults */ }
+          }
+        }
+      } catch {
+        // PM_Configuration may not exist — use hardcoded defaults
+      }
 
       // Get all pending schedules
       const schedules = await this.sp.web.lists
@@ -477,15 +497,15 @@ export class PolicyNotificationService {
           continue;
         }
 
-        // 3-day reminder
-        if (daysToDue <= 3 && daysToDue > 1 && !schedule.Reminder3DaySent) {
+        // Warning reminder (SLA-driven, default 3 days)
+        if (daysToDue <= warningDays && daysToDue > urgentDays && !schedule.Reminder3DaySent) {
           await this.sendReminder3DayNotification(policy, acknowledgement);
           await this.updateReminderSchedule(schedule.Id, { reminder3DaySent: true });
           stats.reminders3Day++;
         }
 
-        // 1-day reminder
-        if (daysToDue === 1 && !schedule.Reminder1DaySent) {
+        // Urgent reminder (SLA-driven, default 1 day)
+        if (daysToDue <= urgentDays && daysToDue >= 0 && !schedule.Reminder1DaySent) {
           await this.sendReminder1DayNotification(policy, acknowledgement);
           await this.updateReminderSchedule(schedule.Id, { reminder1DaySent: true });
           stats.reminders1Day++;

@@ -5,8 +5,9 @@ import { SPFI } from '@pnp/sp';
 import { PolicyManagerRole, filterNavForRole, getHeaderVisibility } from '../../services/PolicyRoleService';
 import { RecentlyViewedService, IRecentlyViewedDisplay } from '../../services/RecentlyViewedService';
 import { PolicyRequestWizard } from './PolicyRequestWizard';
-import { DwxHubService, DwxNotificationService, DwxNotificationBell, DwxAppRegistryService, DwxAppSwitcher } from '@dwx/core';
+import { DwxHubService, DwxNotificationService, DwxNotificationBell } from '@dwx/core';
 import { PolicyChatPanel } from '../PolicyChatPanel';
+import { PolicyHelpPanel } from '../PolicyHelpPanel';
 
 export interface INavItem {
   key: string;
@@ -275,6 +276,9 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
   // AI Chat Assistant panel
   const [showChatPanel, setShowChatPanel] = React.useState(false);
 
+  // Help Center panel
+  const [showHelpPanel, setShowHelpPanel] = React.useState(false);
+
   // Admin navigation visibility toggles (loaded from localStorage, set via PolicyAdmin)
   const [navVisibility, setNavVisibility] = React.useState<Record<string, boolean>>({});
 
@@ -291,14 +295,6 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
   const dwxNotificationService = React.useMemo(() => {
     if (dwxHub) {
       try { return new DwxNotificationService(dwxHub); } catch { return null; }
-    }
-    return null;
-  }, [dwxHub]);
-
-  // Cross-app registry service (for App Switcher)
-  const dwxRegistryService = React.useMemo(() => {
-    if (dwxHub) {
-      try { return new DwxAppRegistryService(dwxHub); } catch { return null; }
     }
     return null;
   }, [dwxHub]);
@@ -404,12 +400,12 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
     window.location.href = '/sites/PolicyManager/SitePages/PolicySearch.aspx';
   };
 
-  // Handle help icon click — navigate to help page
+  // Handle help icon click — open Help Center panel
   const handleHelpClick = () => {
     if (onHelpClick) {
       onHelpClick();
     } else {
-      window.location.href = '/sites/PolicyManager/SitePages/PolicyHelp.aspx';
+      setShowHelpPanel(true);
     }
   };
 
@@ -574,15 +570,6 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
             </div>
           </div>
 
-          {/* DWx App Switcher (waffle menu) */}
-          {dwxRegistryService && (
-            <DwxAppSwitcher
-              registryService={dwxRegistryService}
-              currentAppId="PolicyManager"
-              hubUrl="https://mf7m.sharepoint.com/sites/DWxHub"
-            />
-          )}
-
           {/* Search icon button */}
           <button
             className={styles.actionButton}
@@ -626,8 +613,8 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
             </button>
           )}
 
-          {/* Admin Settings (Cog) — visible if explicitly enabled OR if role allows it */}
-          {(showSettings || (roleVisibility ? roleVisibility.showSettings : false)) && (
+          {/* Admin Settings (Cog) — visible only if role allows it (role takes precedence over prop) */}
+          {(roleVisibility ? roleVisibility.showSettings : showSettings) && (
             <button
               className={styles.actionButton}
               onClick={() => {
@@ -853,6 +840,12 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
         userName={userName || ''}
       />
     )}
+
+    {/* Help Center Panel */}
+    <PolicyHelpPanel
+      isOpen={showHelpPanel}
+      onDismiss={() => setShowHelpPanel(false)}
+    />
 
     </>
   );

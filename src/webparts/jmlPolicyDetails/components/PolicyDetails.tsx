@@ -1110,6 +1110,9 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
     // In focused reader mode, the metadata is already in the compact bar above
     const isFocusedMode = !this.state.browseMode && (!this.state.acknowledgement || this.state.acknowledgement.AckStatus !== 'Acknowledged');
 
+    // If PolicyContent has converted HTML, render it natively (no iframe needed)
+    const hasConvertedHtml = policy.PolicyContent && policy.PolicyContent.length > 100 && policy.PolicyContent.includes('<');
+
     return (
       <div className={styles.stepContent}>
         {/* Policy Metadata Card — hidden in focused reader mode (shown in compact bar instead) */}
@@ -1190,8 +1193,30 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
           />
         )}
 
-        {/* Document Viewer */}
-        {hasDocuments && documentUrl && (
+        {/* Native HTML Reader — rendered when PolicyContent has converted HTML */}
+        {hasConvertedHtml && (
+          <div
+            ref={this.documentViewerRef}
+            onScroll={this.handleDocumentScroll}
+            style={{
+              background: '#fff',
+              padding: isFocusedMode ? '32px 48px 80px' : '24px 32px',
+              maxHeight: isFocusedMode ? 'calc(100vh - 140px)' : 520,
+              overflowY: 'auto',
+              border: isFocusedMode ? 'none' : '1px solid #e2e8f0',
+              borderRadius: 4,
+              position: 'relative'
+            }}
+          >
+            <div className={styles.scrollProgressBar}>
+              <div className={styles.scrollProgressFill} style={{ height: `${scrollProgress}%` }} />
+            </div>
+            <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(policy.PolicyContent || '') }} />
+          </div>
+        )}
+
+        {/* Document Viewer (iframe fallback — only when no converted HTML available) */}
+        {!hasConvertedHtml && hasDocuments && documentUrl && (
           <div className={styles.documentViewerWrapper} ref={this.viewerWrapperRef} style={{
             ...(this.state.isFullscreen ? { background: '#fff', padding: 0 } : {}),
             ...(isFocusedMode ? { marginBottom: 0 } : {})

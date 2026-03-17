@@ -1,0 +1,21 @@
+{
+  "name": "dwx-pm-doc-converter",
+  "version": "1.0.0",
+  "description": "Azure Function — converts .docx to clean HTML using mammoth.js",
+  "main": "dist/src/functions/*.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "start": "func start",
+    "prestart": "npm run build"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.0.0",
+    "@azure/msal-node": "^2.6.0",
+    "mammoth": "^1.8.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "@types/node": "^20.0.0"
+  }
+}

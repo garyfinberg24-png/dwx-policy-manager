@@ -848,6 +848,24 @@ export class PolicyService {
         EffectiveDate: request.effectiveDate || new Date()
       });
 
+      // Convert linked .docx to HTML for clean reader rendering
+      if (policy.DocumentURL) {
+        try {
+          const { DocumentConversionService } = await import('./DocumentConversionService');
+          const converter = new DocumentConversionService(this.sp);
+          const docUrl = typeof policy.DocumentURL === 'string' ? policy.DocumentURL
+            : (policy.DocumentURL as any)?.Url || '';
+          if (docUrl) {
+            const converted = await converter.convertAndSave(this.siteUrl, docUrl, request.policyId);
+            if (converted) {
+              logger.info('PolicyService', `Document converted to HTML for policy ${policy.PolicyName}`);
+            }
+          }
+        } catch (convErr) {
+          logger.warn('PolicyService', 'Document conversion skipped (non-blocking):', convErr);
+        }
+      }
+
       // Create new version
       await this.createVersion(request.policyId, VersionType.Major, 'Policy published');
 

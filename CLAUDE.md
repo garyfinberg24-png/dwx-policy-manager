@@ -812,9 +812,80 @@ The QuizBuilder's "AI Generate" panel calls the Azure Function with:
 
 ---
 
-## Session State (Last Updated: 9 Mar 2026 — Session 12)
+## Session State (Last Updated: 17 Mar 2026 — Session 14)
 
-### Recently Completed (Session 13 — 9 Mar 2026)
+### Recently Completed (Session 14 — 17 Mar 2026)
+
+#### Deep Assessment + Admin Centre Overhaul + Bulk Distribution Queue
+
+**Deep Assessment (159 findings across 9 categories):**
+- Full codebase audit by 5 parallel agents covering security, performance, a11y, UI/UX, dead code
+- Report: docs/deep-assessment-report.md
+- Overall score: 68/100 (down from previous 76 due to newly quantified issues)
+
+**Dead Code Cleanup:**
+- 92 orphaned files deleted (69 services, 14 models, 8 hooks, 1 data file) — **51,503 lines removed**
+- Barrel files (index.ts) cleaned of dead exports
+
+**Security Hardening:**
+- 59 OData injection sites fixed across 13 services (sanitizeForOData + validateInteger)
+- 10+ JSON.parse calls wrapped in try/catch (PolicyService, ApprovalService, QuizBuilder, PolicyHubService)
+
+**Performance:**
+- N+1 query in PolicyNotificationService.processReminders() → batch Map loading (1,500 → ~10 API calls)
+- Bulk distribution queue: DistributionQueueService + Azure Function (server-side, survives browser close)
+- Azure Function deployed: dwx-pm-dist-func-prod (australiaeast, timer every 2 min)
+
+**Admin Centre (renamed from "Admin Panel"):**
+- Sidebar reorganized: 6 groups (Policy Structure, Workflows & Compliance, Users & Access, System, Audit & Monitoring, DWx Suite)
+- New Provisioning section (checks 25 PM_ lists, shows status/item counts)
+- New settings: Branding (Company/Product name), Upload Limits (doc/video), Quiz Passing Score
+- Duplicate "Save Settings" / "Reset to Defaults" buttons removed
+- All borderRadius standardized to 4px (SCSS + ~40 inline styles)
+- Compliance Settings: override notice (global defaults vs policy-level)
+
+**Role Permissions — Explicit Model (No Hierarchy):**
+- filterNavForRole now uses explicit permission table, NOT role hierarchy
+- Manager does NOT inherit Author permissions — each role sees only what's toggled ON
+- Permissions loaded from PM_Configuration + localStorage cache
+
+**Template Fix:**
+- Admin form expanded: 5 → 10 fields (ComplianceRisk, ReadTimeframe, RequiresAck, RequiresQuiz, KeyPoints)
+- Wizard loadTemplates: field mapping (HTMLTemplate → TemplateContent)
+- Dual-write to both columns for compatibility
+
+**SLA Compliance Wired:**
+- SLAComplianceService: measures Acknowledgement, Approval, Review, Authoring from live SP data
+- Live compliance dashboard in Admin Centre > SLA Targets
+- Breach detection with per-item detail
+
+**Accessibility:**
+- 10 ariaLabels added to IconButtons
+- 19 div onClick → semantic role="button" + keyboard handlers
+- 11 focus-visible outlines added
+- Breadcrumbs uncommented and enabled
+- 30 date formatting calls standardized to formatDate()
+
+**UI/UX:**
+- 34 Microsoft Blue (#0078d4) → Forest Teal (#0d9488) in PolicyHub.module.scss
+- Metadata profile selector added to wizard Step 3 (Compliance)
+- Metadata Profiles: departments now multi-select dropdown, Target Roles removed
+- Naming Rules: inline validation (panel stays open on error)
+- Category sort order: unique enforcement on load
+- Data Management: custom retention period works, archive behaviour explained
+- Audit Log: direct SP query with error visibility
+
+**Testing Feedback (37 items from tester spreadsheet):**
+- Counter value field disabled, subcategory validation, category sort order fix
+- Author wizard: compliance risk removed, auto key points removed, quiz removed, doc creation deferred
+- Settings cog respects role, Quiz Builder access for Authors
+- PeoplePicker fixes (ensureUser, webAbsoluteUrl)
+- Multi-role checkboxes, audience full control, approval notifications wired
+
+**Build:** Zero errors, 14 webpart manifests, v1.2.4
+**Commits:** `88966e4` (checkpoint), `5e63936` (main changes)
+
+### Previously Completed (Session 13 — 9 Mar 2026)
 
 #### Reliability Hardening — ErrorBoundary, _isMounted, PII Redaction
 

@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Search Center — Final Design (Medium Hero, SVG Line Icons)</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f3f4f6; padding: 32px; color: #0f172a; }
+    h1 { text-align: center; margin-bottom: 8px; font-size: 24px; }
+    .subtitle { text-align: center; color: #605e5c; margin-bottom: 40px; font-size: 14px; }
+    .page-frame { border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: #fff; }
+    .page-label { background: #f1f5f9; padding: 12px 20px; font-weight: 600; font-size: 14px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+    .page-label .tag { background: #0d9488; color: #fff; padding: 2px 10px; border-radius: 10px; font-size: 12px; font-weight: 500; }
+    .page-wrapper { background: #fff; padding: 24px 40px; }
+
+    /* SVG icon base */
+    .icon { display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; }
+    .icon svg { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .icon-lg svg { width: 36px; height: 36px; stroke-width: 1.5; }
+    .icon-md svg { width: 18px; height: 18px; }
+    .icon-sm svg { width: 14px; height: 14px; }
+
+    /* Hero Styles */
+    .hero {
+      background: linear-gradient(135deg, #0f766e 0%, #0d9488 50%, #14b8a6 100%);
+      border-radius: 12px;
+      padding: 32px 40px;
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .hero-header { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+    .hero-title { font-size: 28px; font-weight: 500; margin-bottom: 4px; }
+    .hero-subtitle { font-size: 14px; opacity: 0.95; }
+    .search-row { display: flex; gap: 10px; max-width: 800px; }
+    .search-input {
+      flex: 1; padding: 8px 14px; border: none; border-radius: 6px; font-size: 15px;
+      outline: none; font-family: inherit; background: #fff; color: #323130;
+    }
+    .search-btn {
+      padding: 0 18px; height: 36px; background: #fff; color: #0f766e; border: 1px solid #fff;
+      border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; display: inline-flex;
+      align-items: center; gap: 6px; white-space: nowrap; font-family: inherit;
+    }
+    .quick-filters { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+    .chip {
+      padding: 5px 12px; border-radius: 16px; font-size: 12px; border: 1px solid rgba(255,255,255,0.3);
+      background: transparent; color: #fff; cursor: pointer; font-family: inherit;
+      display: inline-flex; align-items: center; gap: 5px;
+    }
+    .chip:hover { background: rgba(255,255,255,0.15); }
+
+    /* Main Content */
+    .main-content { display: flex; gap: 24px; margin-top: 24px; }
+    .filters-panel {
+      width: 260px; flex-shrink: 0; background: #f8fafc; border-radius: 8px; padding: 20px;
+      border: 1px solid #e2e8f0; align-self: flex-start;
+    }
+    .filters-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+    .filter-section { margin-bottom: 16px; }
+    .filter-label { font-size: 14px; font-weight: 500; margin-bottom: 8px; }
+    .filter-item { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 13px; color: #323130; }
+    .filter-item input[type="checkbox"] { accent-color: #0d9488; }
+    .clear-btn { color: #0d9488; font-size: 13px; cursor: pointer; background: none; border: none; margin-top: 12px; font-family: inherit; display: inline-flex; align-items: center; gap: 4px; }
+
+    .results-panel { flex: 1; min-width: 0; }
+    .results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .results-count { font-size: 14px; color: #605e5c; }
+    .sort-select { padding: 4px 8px; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 13px; font-family: inherit; }
+
+    .result-card {
+      background: #fff; border-radius: 8px; padding: 16px 20px; margin-bottom: 12px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 1px solid #edebe9; cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .result-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-color: #0d9488; }
+    .result-row { display: flex; align-items: flex-start; gap: 12px; }
+    .result-icon-box { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; }
+    .result-icon-box svg { width: 18px; height: 18px; fill: none; stroke: #fff; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .result-info { flex: 1; }
+    .result-title { font-size: 15px; font-weight: 500; color: #323130; margin-bottom: 2px; }
+    .result-sub { font-size: 12px; color: #605e5c; }
+    .status-badge { padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; text-transform: uppercase; flex-shrink: 0; }
+    .badge-active { background: #d1fae5; color: #059669; }
+    .badge-review { background: #fef3c7; color: #d97706; }
+    .result-desc { font-size: 13px; color: #605e5c; line-height: 1.5; margin-top: 10px; padding: 10px; background: #f9f9f9; border-radius: 4px; border-left: 3px solid #0d9488; }
+    .result-meta { display: flex; gap: 16px; font-size: 11px; color: #a19f9d; margin-top: 8px; }
+    .result-meta span { display: inline-flex; align-items: center; gap: 3px; }
+  </style>
+</head>
+<body>
+
+<h1>Policy Search Center — Final Design</h1>
+<p class="subtitle">Medium hero (32px padding), SVG line icons throughout. No emojis.</p>
+
+<div class="page-frame">
+  <div class="page-label">
+    <span>Search Center — Medium Hero + SVG Line Icons</span>
+    <span class="tag">Selected</span>
+  </div>
+  <div class="page-wrapper">
+
+    <!-- Hero Section -->
+    <div class="hero">
+      <div class="hero-header">
+        <!-- Search icon (white, line) -->
+        <span class="icon icon-lg" style="opacity: 0.9;">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </span>
+        <div>
+          <div class="hero-title">Search Policies</div>
+          <div class="hero-subtitle">Find policies by name, number, keywords, or category</div>
+        </div>
+      </div>
+
+      <div class="search-row">
+        <input class="search-input" placeholder="Search by policy name, number, keywords, category..." value="data protection" />
+        <button class="search-btn">
+          <span class="icon icon-sm" style="color: #0f766e;">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </span>
+          Search
+        </button>
+      </div>
+
+      <div class="quick-filters">
+        <button class="chip">
+          <span class="icon icon-sm"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+          HR Policies
+        </button>
+        <button class="chip">
+          <span class="icon icon-sm"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
+          IT &amp; Security
+        </button>
+        <button class="chip">
+          <span class="icon icon-sm"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
+          Compliance
+        </button>
+        <button class="chip">
+          <span class="icon icon-sm"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span>
+          Health &amp; Safety
+        </button>
+        <button class="chip">
+          <span class="icon icon-sm"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+          Financial
+        </button>
+      </div>
+    </div>
+
+    <!-- Results Area -->
+    <div class="main-content">
+
+      <!-- Filters Panel -->
+      <div class="filters-panel">
+        <div class="filters-title">Filters</div>
+
+        <div class="filter-section">
+          <div class="filter-label">Status</div>
+          <label class="filter-item"><input type="checkbox" checked /> Published (12)</label>
+          <label class="filter-item"><input type="checkbox" /> Draft (3)</label>
+          <label class="filter-item"><input type="checkbox" /> In Review (2)</label>
+          <label class="filter-item"><input type="checkbox" /> Archived (5)</label>
+        </div>
+
+        <div class="filter-section">
+          <div class="filter-label">Category</div>
+          <label class="filter-item"><input type="checkbox" checked /> IT (4)</label>
+          <label class="filter-item"><input type="checkbox" /> HR (3)</label>
+          <label class="filter-item"><input type="checkbox" /> Legal (2)</label>
+          <label class="filter-item"><input type="checkbox" /> Financial (3)</label>
+        </div>
+
+        <div class="filter-section">
+          <div class="filter-label">Date Range</div>
+          <div style="font-size: 12px; color: #a19f9d;">Last 30 days / Last 90 days / Custom</div>
+        </div>
+
+        <button class="clear-btn">
+          <span class="icon icon-sm"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
+          Clear all filters
+        </button>
+      </div>
+
+      <!-- Results Panel -->
+      <div class="results-panel">
+        <div class="results-header">
+          <span class="results-count">Showing 12 results for &ldquo;data protection&rdquo;</span>
+          <select class="sort-select"><option>Relevance</option><option>Newest</option><option>Title A-Z</option></select>
+        </div>
+
+        <!-- Result 1 — IT category -->
+        <div class="result-card">
+          <div class="result-row">
+            <div class="result-icon-box" style="background:#0d9488;">
+              <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <div class="result-info">
+              <div class="result-title">Data Protection &amp; Privacy Policy</div>
+              <div class="result-sub">POL-2024-001 &middot; IT</div>
+            </div>
+            <span class="status-badge badge-active">Published</span>
+          </div>
+          <div class="result-desc">Outlines the organization's commitment to <b>data protection</b> and privacy in accordance with GDPR and local regulations...</div>
+          <div class="result-meta">
+            <span>
+              <span class="icon icon-sm" style="color:#a19f9d;"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
+              Modified: 2 days ago
+            </span>
+            <span>v3.0</span>
+            <span>Ack: 87%</span>
+          </div>
+        </div>
+
+        <!-- Result 2 — HR category -->
+        <div class="result-card">
+          <div class="result-row">
+            <div class="result-icon-box" style="background:#475569;">
+              <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div class="result-info">
+              <div class="result-title">Employee Data Handling Guidelines</div>
+              <div class="result-sub">POL-2024-015 &middot; HR</div>
+            </div>
+            <span class="status-badge badge-review">In Review</span>
+          </div>
+          <div class="result-desc">Procedures for handling employee personal <b>data</b> including collection, storage, and <b>protection</b> requirements...</div>
+          <div class="result-meta">
+            <span>
+              <span class="icon icon-sm" style="color:#a19f9d;"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
+              Modified: 1 week ago
+            </span>
+            <span>v1.2</span>
+            <span>Ack: 45%</span>
+          </div>
+        </div>
+
+        <!-- Result 3 — Legal category -->
+        <div class="result-card">
+          <div class="result-row">
+            <div class="result-icon-box" style="background:#0f766e;">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            <div class="result-info">
+              <div class="result-title">Information Security Policy</div>
+              <div class="result-sub">POL-2024-003 &middot; Legal</div>
+            </div>
+            <span class="status-badge badge-active">Published</span>
+          </div>
+          <div class="result-desc">Comprehensive information security framework covering <b>data protection</b>, access controls, and incident response...</div>
+          <div class="result-meta">
+            <span>
+              <span class="icon icon-sm" style="color:#a19f9d;"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
+              Modified: 3 weeks ago
+            </span>
+            <span>v2.1</span>
+            <span>Ack: 92%</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

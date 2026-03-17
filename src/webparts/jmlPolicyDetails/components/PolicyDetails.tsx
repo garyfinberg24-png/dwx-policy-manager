@@ -1003,11 +1003,12 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
     const siteUrl = this.props.context.pageContext.web.absoluteUrl;
 
     if (['docx', 'doc', 'xlsx', 'xls', 'pptx', 'ppt'].includes(ext)) {
-      return `${siteUrl}/_layouts/15/WopiFrame.aspx?sourcedoc=${encodeURIComponent(documentUrl)}&action=view`;
+      // wdHideHeaders hides the Office Online toolbar (Edit Document, Print, Share, etc.)
+      return `${siteUrl}/_layouts/15/WopiFrame.aspx?sourcedoc=${encodeURIComponent(documentUrl)}&action=view&wdHideHeaders=1`;
     }
     if (ext === 'pdf') return documentUrl;
     if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp'].includes(ext)) return documentUrl;
-    return `${siteUrl}/_layouts/15/WopiFrame.aspx?sourcedoc=${encodeURIComponent(documentUrl)}&action=view`;
+    return `${siteUrl}/_layouts/15/WopiFrame.aspx?sourcedoc=${encodeURIComponent(documentUrl)}&action=view&wdHideHeaders=1`;
   }
 
   private getDocumentIcon(documentUrl: string): string {
@@ -1106,10 +1107,13 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
     const isImage = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp'].includes(ext);
     const viewerUrl = documentUrl ? this.getDocumentViewerUrl(documentUrl) : '';
 
+    // In focused reader mode, the metadata is already in the compact bar above
+    const isFocusedMode = !this.state.browseMode && (!this.state.acknowledgement || this.state.acknowledgement.AckStatus !== 'Acknowledged');
+
     return (
       <div className={styles.stepContent}>
-        {/* Policy Metadata Card */}
-        <div className={styles.wizardCard}>
+        {/* Policy Metadata Card — hidden in focused reader mode (shown in compact bar instead) */}
+        {!isFocusedMode && <div className={styles.wizardCard}>
           <div className={styles.cardHeader}>
             <div className={styles.cardIcon}>
               <Icon iconName="Document" styles={{ root: { fontSize: 18 } }} />
@@ -1173,10 +1177,10 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
               </div>
             )}
           </div>
-        </div>
+        </div>}
 
-        {/* Cross-App Linked Records (DWx Hub) */}
-        {this.linkedRecordService && policy.Id && (
+        {/* Cross-App Linked Records (DWx Hub) — hidden in focused mode */}
+        {!isFocusedMode && this.linkedRecordService && policy.Id && (
           <DwxLinkedRecordsPanel
             linkedRecordService={this.linkedRecordService}
             appId="PolicyManager"
@@ -1188,44 +1192,51 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
 
         {/* Document Viewer */}
         {hasDocuments && documentUrl && (
-          <div className={styles.documentViewerWrapper} ref={this.viewerWrapperRef} style={this.state.isFullscreen ? { background: '#fff', padding: 0 } : undefined}>
-            <div className={styles.viewerToolbar}>
-              <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
-                <Icon iconName={this.getDocumentIcon(documentUrl)} style={{ fontSize: 16, color: '#0d9488' }} />
-                <Text variant="small" style={{ fontWeight: 600, color: '#334155' }}>
-                  {documentUrl.split('/').pop()}
-                </Text>
-                <Text variant="tiny" style={{ color: '#94a3b8' }}>
-                  {this.getDocumentTypeLabel(documentUrl)}
-                </Text>
-              </Stack>
-              <Stack horizontal tokens={{ childrenGap: 8 }}>
-                <IconButton
-                  iconProps={{ iconName: this.state.isFullscreen ? 'BackToWindow' : 'FullScreen' }}
-                  title={this.state.isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
-                  ariaLabel={this.state.isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
-                  onClick={this.toggleFullscreen}
-                  styles={{ root: { height: 28, width: 28 }, icon: { fontSize: 14, color: '#0d9488' } }}
-                />
-                <DefaultButton
-                  iconProps={{ iconName: 'OpenInNewTab' }}
-                  text="Open"
-                  href={documentUrl}
-                  target="_blank"
-                  styles={{ root: { height: 28, padding: '0 10px' }, label: { fontSize: 11 } }}
-                />
-                <DefaultButton
-                  iconProps={{ iconName: 'Download' }}
-                  text="Download"
-                  href={documentUrl}
-                  styles={{ root: { height: 28, padding: '0 10px' }, label: { fontSize: 11 } }}
-                />
-              </Stack>
-            </div>
+          <div className={styles.documentViewerWrapper} ref={this.viewerWrapperRef} style={{
+            ...(this.state.isFullscreen ? { background: '#fff', padding: 0 } : {}),
+            ...(isFocusedMode ? { marginBottom: 0 } : {})
+          }}>
+            {/* Toolbar hidden in focused mode — title already in metadata strip */}
+            {!isFocusedMode && (
+              <div className={styles.viewerToolbar}>
+                <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
+                  <Icon iconName={this.getDocumentIcon(documentUrl)} style={{ fontSize: 16, color: '#0d9488' }} />
+                  <Text variant="small" style={{ fontWeight: 600, color: '#334155' }}>
+                    {documentUrl.split('/').pop()}
+                  </Text>
+                  <Text variant="tiny" style={{ color: '#94a3b8' }}>
+                    {this.getDocumentTypeLabel(documentUrl)}
+                  </Text>
+                </Stack>
+                <Stack horizontal tokens={{ childrenGap: 8 }}>
+                  <IconButton
+                    iconProps={{ iconName: this.state.isFullscreen ? 'BackToWindow' : 'FullScreen' }}
+                    title={this.state.isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+                    ariaLabel={this.state.isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+                    onClick={this.toggleFullscreen}
+                    styles={{ root: { height: 28, width: 28 }, icon: { fontSize: 14, color: '#0d9488' } }}
+                  />
+                  <DefaultButton
+                    iconProps={{ iconName: 'OpenInNewTab' }}
+                    text="Open"
+                    href={documentUrl}
+                    target="_blank"
+                    styles={{ root: { height: 28, padding: '0 10px' }, label: { fontSize: 11 } }}
+                  />
+                  <DefaultButton
+                    iconProps={{ iconName: 'Download' }}
+                    text="Download"
+                    href={documentUrl}
+                    styles={{ root: { height: 28, padding: '0 10px' }, label: { fontSize: 11 } }}
+                  />
+                </Stack>
+              </div>
+            )}
             <div
               className={styles.documentViewer}
               ref={this.documentViewerRef}
               onScroll={this.handleDocumentScroll}
+              style={isFocusedMode ? { height: 600 } : undefined}
             >
               <div className={styles.scrollProgressBar}>
                 <div className={styles.scrollProgressFill} style={{ height: `${scrollProgress}%` }} />
@@ -1234,11 +1245,23 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                 <div style={{ textAlign: 'center', padding: 20 }}>
                   <img src={viewerUrl} alt={policy.Title} style={{ maxWidth: '100%', maxHeight: 600, borderRadius: 4 }} />
                 </div>
+              ) : ext === 'pdf' ? (
+                /* PDF — native browser embed, zero chrome */
+                <object
+                  data={`${documentUrl}#toolbar=0&navpanes=0&scrollbar=1`}
+                  type="application/pdf"
+                  style={{ width: '100%', height: this.state.isFullscreen ? 'calc(100vh - 80px)' : '100%', border: 'none' }}
+                  title={`${policy.Title} PDF Viewer`}
+                >
+                  {/* Fallback if browser can't render PDF inline */}
+                  <iframe src={documentUrl} style={{ width: '100%', height: '100%', border: 'none' }} title={`${policy.Title} PDF Viewer`} />
+                </object>
               ) : (
+                /* Office docs — Office Online iframe with hidden headers */
                 <iframe src={viewerUrl} style={{ width: '100%', height: this.state.isFullscreen ? 'calc(100vh - 80px)' : '100%', border: 'none' }} title={`${policy.Title} Document Viewer`} />
               )}
             </div>
-            {!this.state.isFullscreen && (
+            {!this.state.isFullscreen && !isFocusedMode && (
             <div className={styles.scrollNotice}>
               {scrollProgress >= 95 || readDuration >= 30 ? (
                 <span style={{ color: '#16a34a', fontWeight: 600 }}>
@@ -1348,8 +1371,8 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
           </div>
         )}
 
-        {/* Policy Content (HTML/text fallback) */}
-        {policy.PolicyContent && (
+        {/* Policy Content (HTML/text fallback) — hidden in focused mode when document viewer is showing */}
+        {!(isFocusedMode && hasDocuments) && policy.PolicyContent && (
           <div className={styles.wizardCard}>
             <Text variant="large" style={{ fontWeight: 600, color: '#0d9488', marginBottom: 12, display: 'block' }}>
               Policy Overview
@@ -1359,8 +1382,8 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
           </div>
         )}
 
-        {/* Attachments */}
-        {attachments.length > 0 && (
+        {/* Attachments — hidden in focused mode */}
+        {!isFocusedMode && attachments.length > 0 && (
           <div className={styles.wizardCard}>
             <Text variant="medium" style={{ fontWeight: 600, marginBottom: 8, display: 'block' }}>
               Attachments ({attachments.length})
@@ -1380,8 +1403,8 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
           </div>
         )}
 
-        {/* Per-Policy Documents Section */}
-        {this.renderPolicyDocumentsSection(policy)}
+        {/* Per-Policy Documents Section — hidden in focused reader mode */}
+        {!isFocusedMode && this.renderPolicyDocumentsSection(policy)}
       </div>
     );
   }
@@ -1912,9 +1935,31 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
         isOpen={showAcknowledgePanel}
         onDismiss={this.handleCloseAcknowledgePanel}
         type={PanelType.medium}
-        headerText="Policy Acknowledgement"
+        hasCloseButton={false}
         closeButtonAriaLabel="Close"
         isFooterAtBottom={true}
+        onRenderHeader={() => (
+          <div style={{
+            background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
+            padding: '16px 24px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            width: '100%'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <Icon iconName="Shield" style={{ fontSize: 20, color: '#fff' }} />
+              <span style={{ fontSize: 18, fontWeight: 600, color: '#fff' }}>Policy Acknowledgement</span>
+            </div>
+            <button
+              onClick={this.handleCloseAcknowledgePanel}
+              style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.8)', cursor: 'pointer', fontSize: 16, padding: 4 }}
+              aria-label="Close"
+            >
+              <Icon iconName="ChromeClose" />
+            </button>
+          </div>
+        )}
         onRenderFooterContent={() => (
           <Stack horizontal tokens={{ childrenGap: 12 }}>
             <PrimaryButton
@@ -2122,6 +2167,158 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
     // Active flow = not browse mode AND either no acknowledgement yet OR acknowledgement is still pending
     const isActiveFlow = !browseMode && (!acknowledgement || acknowledgement.AckStatus !== 'Acknowledged');
 
+    // ─── VARIATION C: Focused Reader (active flow) ─────────────────
+    // No nav distractions. Minimal header. Reading progress bar.
+    // Floating action card. User follows guided process only.
+    if (isActiveFlow && policy && !loading) {
+      const flowSteps = this.getWizardSteps();
+      const currentStepIndex = flowSteps.findIndex(s => s.key === currentFlowStep);
+      const totalSteps = flowSteps.length;
+      const stepLabel = flowSteps[currentStepIndex]?.label || 'Read';
+      const scrollPct = (this.state as any).scrollProgress || 0;
+
+      return (
+        <ErrorBoundary fallbackMessage="An error occurred loading policy details. Please try again.">
+        <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#fff' }}>
+          {/* Minimal focused header — no nav items */}
+          <div style={{
+            background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
+            padding: '10px 24px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexShrink: 0
+          }}>
+            <a href="/sites/PolicyManager/SitePages/PolicyHub.aspx" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: '#fff' }}>
+              <div style={{
+                width: 32, height: 32, background: 'rgba(255,255,255,0.15)',
+                borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}>
+                <svg viewBox="0 0 24 24" fill="none" style={{ width: 18, height: 18 }}>
+                  <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <span style={{ fontWeight: 600, fontSize: 15 }}>Policy Manager</span>
+            </a>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13 }}>
+                Step {currentStepIndex + 1} of {totalSteps} — {stepLabel}
+              </span>
+              <a href="/sites/PolicyManager/SitePages/MyPolicies.aspx" style={{
+                color: 'rgba(255,255,255,0.8)', fontSize: 13, textDecoration: 'none',
+                padding: '6px 14px', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 4
+              }}>
+                Exit
+              </a>
+            </div>
+          </div>
+
+          {/* Reading progress bar */}
+          {currentFlowStep === 'reading' && (
+            <div style={{ height: 3, background: '#e2e8f0', flexShrink: 0 }}>
+              <div style={{ height: '100%', background: '#0d9488', width: `${scrollPct}%`, transition: 'width 0.3s' }} />
+            </div>
+          )}
+
+          {/* Compact metadata bar */}
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '10px 32px', background: '#fff', borderBottom: '1px solid #e2e8f0',
+            flexShrink: 0, fontSize: 13
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ fontWeight: 700, fontSize: 16, color: '#0f172a' }}>{policy.PolicyName}</span>
+              <span style={{ padding: '3px 10px', borderRadius: 4, fontSize: 11, fontWeight: 600, background: '#ecfdf5', color: '#059669' }}>{policy.PolicyStatus}</span>
+              <span style={{ padding: '3px 10px', borderRadius: 4, fontSize: 11, fontWeight: 600, background: '#f0fdfa', color: '#0d9488' }}>{policy.PolicyCategory}</span>
+              <span style={{ padding: '3px 10px', borderRadius: 4, fontSize: 11, fontWeight: 600, background: '#f1f5f9', color: '#64748b' }}>{policy.PolicyNumber}</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: '#64748b', fontSize: 12 }}>
+              <span>v{policy.VersionNumber}</span>
+              {policy.EffectiveDate && <span>Effective: {new Date(policy.EffectiveDate as any).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>}
+            </div>
+          </div>
+
+          {error && (
+            <MessageBar messageBarType={MessageBarType.error} isMultiline onDismiss={() => this.setState({ error: null })}>
+              {error}
+            </MessageBar>
+          )}
+
+          {/* Main content area */}
+          <div style={{ flex: 1, position: 'relative', overflow: 'auto' }}>
+            {currentFlowStep === 'reading' && this.renderReadStep()}
+            {currentFlowStep === 'quiz' && this.renderQuizStep()}
+            {currentFlowStep === 'acknowledge' && this.renderAcknowledgeStep()}
+            {currentFlowStep === 'complete' && this.renderCompleteStep()}
+
+            {/* Floating action card (bottom-right) — only during reading step */}
+            {currentFlowStep === 'reading' && (
+              <div style={{
+                position: 'fixed', bottom: 24, right: 24, width: 300,
+                background: '#fff', borderRadius: 8, boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+                border: '1px solid #e2e8f0', overflow: 'hidden', zIndex: 100
+              }}>
+                <div style={{ background: 'linear-gradient(135deg, #0d9488, #0f766e)', padding: '14px 18px', color: '#fff' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600 }}>Reading Progress</span>
+                    <span style={{ fontSize: 12, opacity: 0.8 }}>Step {currentStepIndex + 1} of {totalSteps}</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    {flowSteps.map((s, i) => (
+                      <div key={s.key} style={{
+                        flex: 1, height: 4, borderRadius: 2,
+                        background: i <= currentStepIndex ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.2)'
+                      }} />
+                    ))}
+                  </div>
+                </div>
+                <div style={{ padding: '16px 18px' }}>
+                  {scrollPct >= 95 ? (
+                    <div style={{ fontSize: 13, color: '#059669', marginBottom: 12, fontWeight: 500 }}>
+                      Document reviewed. Click below to proceed.
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 13, color: '#64748b', marginBottom: 12 }}>
+                      Scroll to the end of the document to continue.
+                    </div>
+                  )}
+                  <button
+                    onClick={() => this.handleMarkAsRead()}
+                    disabled={scrollPct < 95}
+                    style={{
+                      width: '100%', padding: '10px 16px', borderRadius: 4, border: 'none',
+                      background: scrollPct >= 95 ? '#0d9488' : '#94a3b8',
+                      color: '#fff', fontWeight: 600, fontSize: 14,
+                      cursor: scrollPct >= 95 ? 'pointer' : 'not-allowed',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8
+                    }}
+                  >
+                    I Have Read This Policy →
+                  </button>
+                  {this.state.readDuration > 0 && (
+                    <div style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center', marginTop: 8 }}>
+                      Reading time: {this.formatDuration(this.state.readDuration)}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Panels (acknowledgement, receipt, etc.) */}
+          {this.renderAcknowledgePanel()}
+          {this.renderReadReceiptPanel()}
+          {this.renderVersionHistoryPanel()}
+          {this.renderVersionComparisonPanel()}
+
+          {/* Wizard footer for non-reading steps */}
+          {currentFlowStep !== 'reading' && this.renderWizardFooter()}
+        </div>
+        </ErrorBoundary>
+      );
+    }
+
+    // ─── Standard layout (browse mode / already acknowledged) ────
     return (
       <ErrorBoundary fallbackMessage="An error occurred loading policy details. Please try again.">
       <JmlAppLayout
@@ -2162,26 +2359,14 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
 
           {!loading && !error && policy && (
             <>
-              {/* Wizard Progress Stepper */}
-              {isActiveFlow && this.renderWizardStepper()}
-
-              {/* Active wizard flow — step-driven content */}
-              {isActiveFlow && currentFlowStep === 'reading' && this.renderReadStep()}
-              {isActiveFlow && currentFlowStep === 'quiz' && this.renderQuizStep()}
-              {isActiveFlow && currentFlowStep === 'acknowledge' && this.renderAcknowledgeStep()}
-              {isActiveFlow && currentFlowStep === 'complete' && this.renderCompleteStep()}
-
-              {/* Non-active flow (browse mode or already acknowledged) — read-only view */}
-              {!isActiveFlow && this.renderReadStep()}
+              {/* Read-only view for browse mode or already acknowledged */}
+              {this.renderReadStep()}
 
               {/* Panels */}
               {this.renderAcknowledgePanel()}
               {this.renderReadReceiptPanel()}
               {this.renderVersionHistoryPanel()}
               {this.renderVersionComparisonPanel()}
-
-              {/* Sticky Footer */}
-              {isActiveFlow && this.renderWizardFooter()}
             </>
           )}
 

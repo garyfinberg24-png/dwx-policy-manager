@@ -65,16 +65,11 @@ export class PolicyHubService {
   public async searchPolicyHub(request: IPolicyDocumentSearchRequest): Promise<IPolicyHubSearchResult> {
     try {
       // Build base query with only needed columns
+      // No .select() — fetch all available columns to avoid 400 errors from missing columns
+      // Some columns (SubCategory, Department, etc.) may not be provisioned on all sites
       let policyQuery = this.sp.web.lists
         .getByTitle(this.POLICIES_LIST)
-        .items.select(
-          'Id', 'Title', 'PolicyNumber', 'PolicyName', 'PolicyStatus', 'PolicyCategory',
-          'SubCategory', 'Department', 'ComplianceRisk', 'Description', 'PolicySummary',
-          'EffectiveDate', 'ExpirationDate', 'ReviewDate', 'LastReviewDate',
-          'ReadTimeframe', 'RequiresQuiz', 'RequiresAcknowledgement',
-          'Visibility', 'TargetSecurityGroups', 'AuthorId', 'Modified', 'Created',
-          'IsActive', 'Version', 'Tags'
-        );
+        .items;
 
       // Apply filters
       const filterConditions = this.buildFilterConditions(request.filters);
@@ -570,11 +565,7 @@ export class PolicyHubService {
       // Get all active policies (dashboard only needs summary fields)
       const allPolicies = await this.sp.web.lists
         .getByTitle(this.POLICIES_LIST)
-        .items.select(
-          'Id', 'Title', 'PolicyNumber', 'PolicyName', 'PolicyStatus',
-          'PolicyCategory', 'Department', 'ComplianceRisk', 'EffectiveDate',
-          'ExpirationDate', 'IsActive', 'AuthorId', 'Modified'
-        )
+        .items
         .filter('IsActive eq true')
         .top(500)() as IPolicy[];
 

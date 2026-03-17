@@ -71,18 +71,33 @@ const DwxAppLayout: React.FC<IJmlAppLayoutProps> = (props) => {
   } = props;
 
   // Auto-detect role if not explicitly provided — default to least privilege (User)
-  const [detectedRole, setDetectedRole] = React.useState<PolicyManagerRole>(PolicyManagerRole.User);
+  // Initialize from localStorage cache for instant nav rendering (avoids flash of User-only nav)
+  const cachedRole = React.useMemo(() => {
+    try {
+      const cached = localStorage.getItem('pm_detected_role');
+      if (cached && ['User', 'Author', 'Manager', 'Admin'].includes(cached)) {
+        return cached as PolicyManagerRole;
+      }
+    } catch { /* ignore */ }
+    return PolicyManagerRole.User;
+  }, []);
+
+  const [detectedRole, setDetectedRoleRaw] = React.useState<PolicyManagerRole>(cachedRole);
+  const setDetectedRole = React.useCallback((role: PolicyManagerRole) => {
+    setDetectedRoleRaw(role);
+    try { localStorage.setItem('pm_detected_role', role); } catch { /* ignore */ }
+  }, []);
 
   React.useEffect(() => {
     if (!policyManagerRole && context) {
       // Attempt auto-detection: first from PM_UserProfiles (admin-assigned roles), then SP groups
       try {
-        const sp = (context as any)._sp || null;
-        if (sp) {
+        const spInstance = sp || (context as any)._sp || null;
+        if (spInstance) {
           // Try admin-assigned roles from PM_UserProfiles first
           const userEmail = context.pageContext?.user?.email || '';
           if (userEmail) {
-            sp.web.lists.getByTitle('PM_UserProfiles')
+            spInstance.web.lists.getByTitle('PM_UserProfiles')
               .items.filter("Email eq '" + userEmail.replace(/'/g, "''") + "'")
               .select('PMRole', 'PMRoles')
               .top(1)()
@@ -99,7 +114,7 @@ const DwxAppLayout: React.FC<IJmlAppLayoutProps> = (props) => {
                   return;
                 }
                 // Fallback to SP group detection
-                const roleService = new RoleDetectionService(sp);
+                const roleService = new RoleDetectionService(spInstance);
                 roleService.getCurrentUserRoles().then(userRoles => {
                   if (userRoles && userRoles.length > 0) {
                     setDetectedRole(getHighestPolicyRole(userRoles));
@@ -108,7 +123,7 @@ const DwxAppLayout: React.FC<IJmlAppLayoutProps> = (props) => {
               })
               .catch(() => {
                 // PM_UserProfiles may not exist — fall back to SP groups
-                const roleService = new RoleDetectionService(sp);
+                const roleService = new RoleDetectionService(spInstance);
                 roleService.getCurrentUserRoles().then(userRoles => {
                   if (userRoles && userRoles.length > 0) {
                     setDetectedRole(getHighestPolicyRole(userRoles));
@@ -116,7 +131,7 @@ const DwxAppLayout: React.FC<IJmlAppLayoutProps> = (props) => {
                 }).catch(() => setDetectedRole(PolicyManagerRole.User));
               });
           } else {
-            const roleService = new RoleDetectionService(sp);
+            const roleService = new RoleDetectionService(spInstance);
             roleService.getCurrentUserRoles().then(userRoles => {
               if (userRoles && userRoles.length > 0) {
                 setDetectedRole(getHighestPolicyRole(userRoles));

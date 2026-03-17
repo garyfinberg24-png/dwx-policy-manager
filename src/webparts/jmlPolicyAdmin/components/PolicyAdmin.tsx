@@ -4360,7 +4360,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                   },
                   contentWrapper: {
                     '& .ms-DetailsRow': {
-                      borderBottom: '1px solid #f1f5f9',
+                      borderBottom: '1px solid #d1d5db',
                       minHeight: 48
                     },
                     '& .ms-DetailsRow:hover': {

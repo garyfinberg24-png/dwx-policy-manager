@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DWx App Switcher — Header Placement Variations</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #f1f5f9;
+    padding: 32px;
+    color: #0f172a;
+  }
+
+  h1 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .page-subtitle {
+    font-size: 14px;
+    color: #64748b;
+    margin-bottom: 40px;
+  }
+
+  .variation {
+    margin-bottom: 48px;
+    background: #ffffff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+
+  .variation-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 24px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .variation-number {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #1a365d;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .variation-title {
+    font-size: 16px;
+    font-weight: 600;
+  }
+  .variation-desc {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 2px;
+  }
+  .variation-tag {
+    margin-left: auto;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 12px;
+  }
+  .tag-recommended { background: #ecfdf5; color: #059669; }
+  .tag-alternative { background: #f0f4ff; color: #2563eb; }
+  .tag-minimal { background: #fef3c7; color: #d97706; }
+
+  .variation-body {
+    padding: 0;
+  }
+
+  /* ============================================= */
+  /* SHARED HEADER STYLES                          */
+  /* ============================================= */
+
+  .pm-header {
+    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    height: 56px;
+    position: relative;
+  }
+
+  .pm-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .pm-header-center {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .pm-header-right {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+  }
+
+  .pm-logo-icon {
+    width: 28px;
+    height: 28px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 14px;
+  }
+
+  .pm-title {
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .pm-subtitle {
+    color: rgba(255,255,255,0.7);
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  .pm-nav {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    margin-left: 24px;
+  }
+
+  .pm-nav-item {
+    color: rgba(255,255,255,0.8);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .pm-nav-item:hover { background: rgba(255,255,255,0.15); color: #fff; }
+  .pm-nav-item.active {
+    background: rgba(255,255,255,0.2);
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .header-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: rgba(255,255,255,0.85);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+  .header-btn:hover { background: rgba(255,255,255,0.15); color: #fff; }
+
+  .header-btn .badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #dc2626;
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #0d9488;
+  }
+
+  .header-divider {
+    width: 1px;
+    height: 28px;
+    background: rgba(255,255,255,0.2);
+    margin: 0 8px;
+  }
+
+  .profile-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.25);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: 2px solid rgba(255,255,255,0.4);
+  }
+
+  /* Waffle button special */
+  .waffle-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: rgba(255,255,255,0.85);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+  .waffle-btn:hover { background: rgba(255,255,255,0.15); color: #fff; }
+
+  /* Waffle grid icon (3x3 dots) */
+  .waffle-icon {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 3px;
+    width: 18px;
+    height: 18px;
+  }
+  .waffle-icon span {
+    width: 4px;
+    height: 4px;
+    border-radius: 1px;
+    background: currentColor;
+  }
+
+  /* Hub badge on waffle */
+  .waffle-btn .hub-indicator {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #34d399;
+    border: 2px solid #0d9488;
+  }
+
+  /* DWx chip */
+  .dwx-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.15);
+    cursor: pointer;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+  .dwx-chip:hover { background: rgba(255,255,255,0.25); }
+  .dwx-chip .chip-icon {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    width: 12px;
+    height: 12px;
+  }
+  .dwx-chip .chip-icon span {
+    width: 3px;
+    height: 3px;
+    border-radius: 1px;
+    background: currentColor;
+  }
+
+  /* Breadcrumb strip */
+  .breadcrumb-strip {
+    background: #115e59;
+    padding: 6px 24px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.7);
+  }
+  .breadcrumb-strip a {
+    color: rgba(255,255,255,0.8);
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .breadcrumb-strip a:hover { color: #fff; text-decoration: underline; }
+  .breadcrumb-strip .bc-sep { color: rgba(255,255,255,0.4); }
+  .breadcrumb-strip .bc-current { color: #fff; font-weight: 600; }
+
+  /* Floating FAB */
+  .fab-container {
+    position: relative;
+    height: 80px;
+    background: #f8fafc;
+  }
+  .fab-btn {
+    position: absolute;
+    bottom: 16px;
+    left: 24px;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: #1a365d;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 16px rgba(26,54,93,0.3);
+    font-size: 20px;
+  }
+  .fab-btn:hover { background: #2563eb; }
+  .fab-label {
+    position: absolute;
+    bottom: 28px;
+    left: 82px;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+  }
+
+  /* App switcher dropdown preview */
+  .switcher-preview {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 280px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    border: 1px solid #e2e8f0;
+    z-index: 100;
+    margin-top: 4px;
+    overflow: hidden;
+  }
+  .sp-header {
+    padding: 10px 14px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #0f172a;
+  }
+  .sp-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    padding: 10px;
+  }
+  .sp-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 10px 6px;
+    border-radius: 8px;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .sp-tile:hover { background: #f1f5f9; }
+  .sp-tile.sp-active { background: #f0fdfa; border: 2px solid #0d9488; }
+  .sp-tile-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 15px;
+  }
+  .sp-tile-name {
+    font-size: 10px;
+    font-weight: 500;
+    color: #334155;
+    text-align: center;
+  }
+  .sp-footer {
+    padding: 8px 14px;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    text-align: center;
+  }
+  .sp-footer a {
+    font-size: 11px;
+    font-weight: 600;
+    color: #1a365d;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+
+  /* Fake page content below header */
+  .fake-content {
+    padding: 24px;
+    background: #f8fafc;
+    min-height: 60px;
+  }
+  .fake-content-bar {
+    display: flex;
+    gap: 16px;
+  }
+  .fake-content-card {
+    flex: 1;
+    height: 40px;
+    background: #e2e8f0;
+    border-radius: 6px;
+  }
+
+  /* Annotation callout */
+  .annotation {
+    padding: 12px 24px;
+    background: #fffbeb;
+    border-top: 1px solid #fcd34d;
+    font-size: 12px;
+    color: #92400e;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .annotation-icon {
+    font-size: 14px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  /* Comparison table at bottom */
+  .comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 32px;
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+  .comparison-table th {
+    background: #1a365d;
+    color: #fff;
+    padding: 12px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: left;
+  }
+  .comparison-table td {
+    padding: 10px 16px;
+    font-size: 13px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: top;
+  }
+  .comparison-table tr:last-child td { border-bottom: none; }
+  .check { color: #059669; font-weight: 700; }
+  .cross { color: #dc2626; font-weight: 700; }
+  .warn { color: #d97706; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<h1>DWx App Switcher — Policy Manager Header Placement</h1>
+<p class="page-subtitle">5 variations showing where the waffle/app-switcher could go in the existing Policy Manager teal header</p>
+
+<!-- ============================================================ -->
+<!-- VARIATION 1: Far-left waffle before logo (M365 pattern)       -->
+<!-- ============================================================ -->
+<div class="variation">
+  <div class="variation-label">
+    <div class="variation-number">1</div>
+    <div>
+      <div class="variation-title">Far-Left Waffle (Microsoft 365 Pattern)</div>
+      <div class="variation-desc">Waffle icon is the very first element, before the PM logo — exactly like Microsoft 365's top-left waffle</div>
+    </div>
+    <span class="variation-tag tag-recommended">Recommended</span>
+  </div>
+  <div class="variation-body">
+    <div class="pm-header">
+      <div class="pm-header-left">
+        <!-- WAFFLE FIRST -->
+        <button class="waffle-btn" title="DWx Apps" style="position:relative;">
+          <div class="waffle-icon">
+            <span></span><span></span><span></span>
+            <span></span><span></span><span></span>
+            <span></span><span></span><span></span>
+          </div>
+        </button>
+        <div class="header-divider"></div>
+        <div class="pm-logo-icon">&#x1F6E1;</div>
+        <div>
+          <div class="pm-title">Policy Manager</div>
+          <div class="pm-subtitle">Policy Governance & Compliance</div>
+        </div>
+      </div>
+      <div class="pm-nav">
+        <a class="pm-nav-item active">Hub</a>
+        <a class="pm-nav-item">My Policies</a>
+        <a class="pm-nav-item">Search</a>
+        <a class="pm-nav-item">Help</a>
+      </div>
+      <div class="pm-header-right">
+        <button class="header-btn" title="Notifications">
+          &#x1F514;
+          <span class="badge">3</span>
+        </button>
+        <div class="profile-avatar">GF</div>
+      </div>
+    </div>
+    <div class="fake-content">
+      <div class="fake-content-bar">
+        <div class="fake-content-card"></div>
+        <div class="fake-content-card"></div>
+        <div class="fake-content-card"></div>
+      </div>
+    </div>
+    <div class="annotation">
+      <span class="annotation-icon">&#x1F4A1;</span>
+      <div>
+        <strong>Standard pattern.</strong> Users already expect the waffle icon in the far-left. Separated from PM branding with a divider.
+        The waffle opens the DWx app grid dropdown. Minimal visual disruption to existing header layout.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- VARIATION 2: Right side, before notifications                 -->
+<!-- ============================================================ -->
+<div class="variation">
+  <div class="variation-label">
+    <div class="variation-number">2</div>
+    <div>
+      <div class="variation-title">Right Side — Before Notifications</div>
+      <div class="variation-desc">Waffle icon grouped with utility icons on the right side of the header</div>
+    </div>
+    <span class="variation-tag tag-alternative">Alternative</span>
+  </div>
+  <div class="variation-body">
+    <div class="pm-header">
+      <div class="pm-header-left">
+        <div class="pm-logo-icon">&#x1F6E1;</div>
+        <div>
+          <div class="pm-title">Policy Manager</div>
+          <div class="pm-subtitle">Policy Governance & Compliance</div>
+        </div>
+      </div>
+      <div class="pm-nav">
+        <a class="pm-nav-item active">Hub</a>
+        <a class="pm-nav-item">My Policies</a>
+        <a class="pm-nav-item">Search</a>
+        <a class="pm-nav-item">Help</a>
+      </div>
+      <div class="pm-header-right">
+        <!-- WAFFLE IN UTILITY AREA -->
+        <button class="waffle-btn" title="DWx Apps">
+          <div class="waffle-icon">
+            <span></span><span></span><span></span>
+            <span></span><span></span><span></span>
+            <span></span><span></span><span></span>
+          </div>
+        </button>
+        <div class="header-divider"></div>
+        <button class="header-btn" title="Notifications">
+          &#x1F514;
+          <span class="badge">3</span>
+        </button>
+        <div class="profile-avatar">GF</div>
+      </div>
+    </div>
+    <div class="fake-content">
+      <div class="fake-content-bar">
+        <div class="fake-content-card"></div>
+        <div class="fake-content-card"></div>
+        <div class="fake-content-card"></div>
+      </div>
+    </div>
+    <div class="annotation">
+      <span class="annotation-icon">&#x1F4A1;</span>
+      <div>
+        <strong>Doesn't touch the left side at all.</strong> PM branding stays untouched. Waffle grouped with notifications and profile.
+        The dropdown would open to the left (anchored right) to stay on screen. Less conventional placement.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- VARIATION 3: DWx branded chip/pill                            -->
+<!-- ============================================================ -->
+<div class="variation">
+  <div class="variation-label">
+    <div class="variation-number">3</div>
+    <div>
+      <div class="variation-title">Branded "DWx" Chip</div>
+      <div class="variation-desc">Instead of a bare waffle icon, use a branded pill/chip that says "DWx" with the waffle icon</div>
+    </div>
+    <span class="variation-tag tag-alternative">Alternative</span>
+  </div>
+  <div class="variation-body">
+    <div class="pm-header">
+      <div class="pm-header-left">
+        <!-- DWx CHIP -->
+        <div class="dwx-chip" title="DWx Suite Apps">
+          <div class="chip-icon">
+            <span></span><span></span><span></span>
+            <span></span><span></span><span></span>
+            <span></span><span></span><span></span>
+          </div>
+          DWx
+        </div>
+        <div class="header-divider"></div>
+        <div class="pm-logo-icon">&#x1F6E1;</div>
+        <div>
+          <div class="pm-title">Policy Manager</div>
+          <div class="pm-subtitle">Policy Governance & Compliance</div>
+        </div>
+      </div>
+      <div class="pm-nav">
+        <a class="pm-nav-item active">Hub</a>
+        <a class="pm-nav-item">My Policies</a>
+        <a class="pm-nav-item">Search</a>
+        <a class="pm-nav-item">Help</a>
+      </div>
+      <div class="pm-header-right">
+        <button class="header-btn" title="Notifications">
+          &#x1F514;
+          <span class="badge">3</span>
+        </button>
+        <div class="profile-avatar">GF</div>
+      </div>
+    </div>
+    <div class="fake-content">
+      <div class="fake-content-bar">
+        <div class="fake-content-card"></div>
+        <div class="fake-content-card"></div>
+        <div class="fake-content-card"></div>
+      </div>
+    </div>
+    <div class="annotation">
+      <span class="annotation-icon">&#x1F4A1;</span>
+      <div>
+        <strong>More discoverable than a plain waffle.</strong> The "DWx" label makes it clear this is a suite-level control.
+        Users who don't know the waffle convention will still understand what it does. Takes slightly more header space.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- VARIATION 4: Breadcrumb sub-strip                             -->
+<!-- ============================================================ -->
+<div class="variation">
+  <div class="variation-label">
+    <div class="variation-number">4</div>
+    <div>
+      <div class="variation-title">Breadcrumb Sub-Strip</div>
+      <div class="variation-desc">Don't modify the header at all — add a thin breadcrumb bar below it showing the suite context</div>
+    </div>
+    <span class="variation-tag tag-minimal">Minimal Change</span>
+  </div>
+  <div class="variation-body">
+    <div class="pm-header">
+      <div class="pm-header-left">
+        <div class="pm-logo-icon">&#x1F6E1;</div>
+        <div>
+          <div class="pm-title">Policy Manager</div>
+          <div class="pm-subtitle">Policy Governance & Compliance</div>
+        </div>
+      </div>
+      <div class="pm-nav">
+        <a class="pm-nav-item active">Hub</a>
+        <a class="pm-nav-item">My Policies</a>
+        <a class="pm-nav-item">Search</a>
+        <a class="pm-nav-item">Help</a>
+      </div>
+      <div class="pm-header-right">
+        <button class="header-btn" title="Notifications">
+          &#x1F514;
+          <span class="badge">3</span>
+        </button>
+        <div class="profile-avatar">GF</div>
+      </div>
+    </div>
+    <!-- BREADCRUMB STRIP BELOW HEADER -->
+    <div class="breadcrumb-strip">
+      <a href="#">DWx Hub</a>
+      <span class="bc-sep">&#x203A;</span>
+      <a href="#">Policy Manager</a>
+      <span class="bc-sep">&#x203A;</span>
+      <span class="bc-current">Policy Hub</span>
+      <span style="margin-left:auto; display:flex; align-items:center; gap:6px;">
+        <span style="color:rgba(255,255,255,0.5); font-size:11px;">Switch app:</span>
+        <a href="#" style="color:#34d399;">Contract Manager</a>
+        <span style="color:rgba(255,255,255,0.3);">|</span>
+        <a href="#" style="color:#818cf8;">Asset Manager</a>
+      </span>
+    </div>
+    <div class="fake-content">
+      <div class="fake-content-bar">
+        <div class="fake-content-card"></div>
+        <div class="fake-content-card"></div>
+        <div class="fake-content-card"></div>
+      </div>
+    </div>
+    <div class="annotation">
+      <span class="annotation-icon">&#x1F4A1;</span>
+      <div>
+        <strong>Zero changes to the existing header.</strong> A thin darker strip sits below with suite context breadcrumb + quick app links.
+        PM header is completely untouched. Adds 28px of vertical height. Works well if you want suite awareness without modifying the header component.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- VARIATION 5: No app switcher in PM                            -->
+<!-- ============================================================ -->
+<div class="variation">
+  <div class="variation-label">
+    <div class="variation-number">5</div>
+    <div>
+      <div class="variation-title">Hub-Only (No Change to PM)</div>
+      <div class="variation-desc">App Switcher lives only on the DWx Hub Dashboard — PM gets heartbeat + linked records only</div>
+    </div>
+    <span class="variation-tag tag-minimal">Minimal Change</span>
+  </div>
+  <div class="variation-body">
+    <div class="pm-header">
+      <div class="pm-header-left">
+        <div class="pm-logo-icon">&#x1F6E1;</div>
+        <div>
+          <div class="pm-title">Policy Manager</div>
+          <div class="pm-subtitle">Policy Governance & Compliance</div>
+        </div>
+      </div>
+      <div class="pm-nav">
+        <a class="pm-nav-item active">Hub</a>
+        <a class="pm-nav-item">My Policies</a>
+        <a class="pm-nav-item">Search</a>
+        <a class="pm-nav-item">Help</a>
+      </div>
+      <div class="pm-header-right">
+        <button class="header-btn" title="Notifications">
+          &#x1F514;
+          <span class="badge">3</span>
+        </button>
+        <div class="profile-avatar">GF</div>
+      </div>
+    </div>
+    <div class="fake-content">
+      <div class="fake-content-bar">
+        <div class="fake-content-card"></div>
+        <div class="fake-content-card"></div>
+        <div class="fake-content-card"></div>
+      </div>
+    </div>
+    <div class="annotation">
+      <span class="annotation-icon">&#x1F4A1;</span>
+      <div>
+        <strong>PM header stays exactly as-is.</strong> Users navigate between apps via the DWx Hub Dashboard (which already has the App Switcher).
+        PM only gets the invisible heartbeat call and linked records panel in PolicyDetails. Zero visual risk to PM.
+        Users bookmark the Hub as their entry point to the suite.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- COMPARISON TABLE                                               -->
+<!-- ============================================================ -->
+<table class="comparison-table">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Variation</th>
+      <th>Risk to PM</th>
+      <th>Discoverability</th>
+      <th>Header Change</th>
+      <th>Convention</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>1</strong></td>
+      <td>Far-Left Waffle</td>
+      <td><span class="warn">Medium</span> — touches header left</td>
+      <td><span class="check">High</span> — standard M365 pattern</td>
+      <td>Add waffle + divider before logo</td>
+      <td><span class="check">&#10003;</span> Microsoft standard</td>
+    </tr>
+    <tr>
+      <td><strong>2</strong></td>
+      <td>Right Side</td>
+      <td><span class="warn">Medium</span> — touches header right</td>
+      <td><span class="warn">Medium</span> — less expected placement</td>
+      <td>Add waffle to utility icons area</td>
+      <td><span class="cross">&#10007;</span> Non-standard</td>
+    </tr>
+    <tr>
+      <td><strong>3</strong></td>
+      <td>DWx Chip</td>
+      <td><span class="warn">Medium</span> — touches header left</td>
+      <td><span class="check">High</span> — labeled + iconized</td>
+      <td>Add branded chip before logo</td>
+      <td><span class="check">&#10003;</span> Custom but clear</td>
+    </tr>
+    <tr>
+      <td><strong>4</strong></td>
+      <td>Breadcrumb Strip</td>
+      <td><span class="check">Low</span> — header untouched</td>
+      <td><span class="check">High</span> — always visible</td>
+      <td>Add strip below header (+28px)</td>
+      <td><span class="check">&#10003;</span> Breadcrumb pattern</td>
+    </tr>
+    <tr>
+      <td><strong>5</strong></td>
+      <td>Hub-Only</td>
+      <td><span class="check">None</span> — no PM changes</td>
+      <td><span class="cross">Low</span> — must visit Hub</td>
+      <td>None</td>
+      <td>N/A</td>
+    </tr>
+  </tbody>
+</table>
+
+</body>
+</html>

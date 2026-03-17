@@ -450,7 +450,7 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
       {/* Top Bar - Dark teal gradient */}
       <div className={styles.topBar}>
         {/* Logo Section */}
-        <div className={styles.logoSection}>
+        <a href="/sites/PolicyManager/SitePages/PolicyHub.aspx" className={styles.logoSection} style={{ textDecoration: 'none', color: 'inherit' }}>
           <div className={styles.logoIcon}>
             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path
@@ -466,7 +466,7 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
             <span className={styles.appName}>Policy Manager</span>
             <span className={styles.appSubtitle}>Policy Governance & Compliance</span>
           </div>
-        </div>
+        </a>
 
         {/* Search Section */}
         {showSearch && (

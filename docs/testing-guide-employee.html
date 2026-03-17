@@ -1,0 +1,1718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Policy Manager — Employee Testing Guide</title>
+    <style>
+        :root {
+            --teal: #0d9488;
+            --teal-dark: #0f766e;
+            --teal-light: #ccfbf1;
+            --teal-pale: #f0fdfa;
+            --text-primary: #0f172a;
+            --text-secondary: #334155;
+            --text-muted: #605e5c;
+            --border: #e2e8f0;
+            --border-light: #edebe9;
+            --bg-sidebar: #f1f5f9;
+            --success: #059669;
+            --warning: #d97706;
+            --danger: #dc2626;
+            --info: #2563eb;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: var(--text-primary);
+            line-height: 1.6;
+            background: #f8fafc;
+        }
+
+        /* ── Print styles ── */
+        @media print {
+            body { background: white; }
+            .no-print { display: none !important; }
+            .page-break { page-break-before: always; }
+            .test-scenario { break-inside: avoid; }
+            header { position: static; }
+        }
+
+        /* ── Header ── */
+        header {
+            background: linear-gradient(135deg, var(--teal) 0%, var(--teal-dark) 100%);
+            color: white;
+            padding: 40px 0 32px;
+            position: relative;
+            overflow: hidden;
+        }
+        header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 400px;
+            height: 400px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50%;
+        }
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: -60%;
+            left: 5%;
+            width: 300px;
+            height: 300px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 50%;
+        }
+        .header-inner {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 32px;
+            position: relative;
+            z-index: 1;
+        }
+        .header-suite {
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            opacity: 0.8;
+            margin-bottom: 8px;
+        }
+        .header-title {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .header-subtitle {
+            font-size: 18px;
+            font-weight: 400;
+            opacity: 0.9;
+            margin-bottom: 16px;
+        }
+        .header-meta {
+            display: flex;
+            gap: 24px;
+            font-size: 13px;
+            opacity: 0.85;
+        }
+        .header-meta span { display: flex; align-items: center; gap: 6px; }
+
+        .role-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 20px;
+            padding: 6px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 12px;
+        }
+        .role-badge .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #64748b;
+        }
+
+        /* ── Navigation ── */
+        .toc {
+            max-width: 1100px;
+            margin: -20px auto 32px;
+            padding: 0 32px;
+            position: relative;
+            z-index: 2;
+        }
+        .toc-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+            padding: 24px 28px;
+        }
+        .toc-title {
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+        .toc-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 8px;
+        }
+        .toc-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-size: 14px;
+            transition: all 0.15s;
+        }
+        .toc-link:hover {
+            background: var(--teal-pale);
+            color: var(--teal);
+        }
+        .toc-link .num {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            background: var(--teal-light);
+            color: var(--teal-dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        /* ── Main content ── */
+        main {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 32px 64px;
+        }
+
+        /* ── Section ── */
+        .section {
+            margin-bottom: 48px;
+        }
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--teal);
+        }
+        .section-number {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--teal), var(--teal-dark));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .section-desc {
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+            font-size: 15px;
+        }
+
+        /* ── Info boxes ── */
+        .info-box {
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+        .info-box .icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+        .info-box.context {
+            background: linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%);
+            border: 1px solid #a7f3d0;
+            color: #065f46;
+        }
+        .info-box.navigate {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1e40af;
+        }
+        .info-box.warning {
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            color: #92400e;
+        }
+        .info-box.prereq {
+            background: #faf5ff;
+            border: 1px solid #e9d5ff;
+            color: #6b21a8;
+        }
+
+        /* ── Nav visibility table ── */
+        .nav-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0 24px;
+            font-size: 14px;
+        }
+        .nav-table th {
+            background: var(--teal);
+            color: white;
+            padding: 10px 14px;
+            text-align: left;
+            font-weight: 600;
+        }
+        .nav-table th:first-child { border-radius: 8px 0 0 0; }
+        .nav-table th:last-child { border-radius: 0 8px 0 0; }
+        .nav-table td {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border);
+        }
+        .nav-table tr:nth-child(even) { background: #f8fafc; }
+        .nav-table tr:hover { background: var(--teal-pale); }
+        .visible { color: var(--success); font-weight: 600; }
+        .hidden { color: var(--text-muted); }
+
+        /* ── Test scenarios ── */
+        .test-scenario {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+        }
+        .test-scenario-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 20px;
+            background: #f8fafc;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+        }
+        .test-id {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--teal);
+            background: var(--teal-light);
+            padding: 3px 10px;
+            border-radius: 4px;
+            white-space: nowrap;
+        }
+        .test-title {
+            font-size: 16px;
+            font-weight: 600;
+            flex: 1;
+        }
+        .priority-badge {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .priority-badge.p1 { background: #fef2f2; color: var(--danger); }
+        .priority-badge.p2 { background: #fffbeb; color: var(--warning); }
+        .priority-badge.p3 { background: #eff6ff; color: var(--info); }
+
+        .test-scenario-body {
+            padding: 20px;
+        }
+        .test-objective {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 16px;
+            padding-left: 16px;
+            border-left: 3px solid var(--teal-light);
+        }
+
+        /* ── Steps ── */
+        .steps {
+            counter-reset: step-counter;
+            list-style: none;
+            padding: 0;
+        }
+        .step {
+            counter-increment: step-counter;
+            display: flex;
+            gap: 14px;
+            padding: 12px 0;
+            border-bottom: 1px dashed var(--border-light);
+        }
+        .step:last-child { border-bottom: none; }
+        .step-num {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--teal);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .step-content { flex: 1; }
+        .step-action {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+        .step-detail {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        /* ── Expected result ── */
+        .expected {
+            margin-top: 16px;
+            padding: 14px 16px;
+            background: linear-gradient(135deg, #f0fdfa, #ecfdf5);
+            border: 1px solid #a7f3d0;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+        .expected-label {
+            font-weight: 700;
+            color: var(--success);
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+        .expected ul {
+            margin: 4px 0 0 18px;
+            color: #065f46;
+        }
+        .expected li { margin-bottom: 3px; }
+
+        /* ── Checklist ── */
+        .checklist {
+            list-style: none;
+            padding: 0;
+            margin: 16px 0;
+        }
+        .checklist li {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 8px 0;
+            font-size: 14px;
+            border-bottom: 1px solid var(--border-light);
+        }
+        .checklist li:last-child { border-bottom: none; }
+        .checkbox {
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--border);
+            border-radius: 4px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        /* ── Page reference ── */
+        .page-ref {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            background: var(--bg-sidebar);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-family: 'Segoe UI Semibold', sans-serif;
+        }
+
+        /* ── URL block ── */
+        .url-block {
+            background: #1e293b;
+            color: #94a3b8;
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin: 8px 0;
+            word-break: break-all;
+        }
+        .url-block .highlight { color: #5eead4; }
+
+        /* ── Footer ── */
+        footer {
+            background: var(--text-primary);
+            color: #94a3b8;
+            padding: 32px;
+            text-align: center;
+            font-size: 13px;
+        }
+        footer strong { color: white; }
+
+        /* ── Utilities ── */
+        .mt-8 { margin-top: 8px; }
+        .mt-16 { margin-top: 16px; }
+        .mt-24 { margin-top: 24px; }
+        .mb-8 { margin-bottom: 8px; }
+        .mb-16 { margin-bottom: 16px; }
+        .text-muted { color: var(--text-muted); }
+        .text-sm { font-size: 13px; }
+        .font-semibold { font-weight: 600; }
+        code {
+            background: var(--bg-sidebar);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+        }
+        kbd {
+            background: #e2e8f0;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            padding: 1px 6px;
+            font-size: 12px;
+            font-family: 'Segoe UI', sans-serif;
+            box-shadow: 0 1px 0 #94a3b8;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- HEADER                                                  -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<header>
+    <div class="header-inner">
+        <div class="header-suite">DWx Digital Workplace Excellence</div>
+        <div class="header-title">Policy Manager — Employee Testing Guide</div>
+        <div class="header-subtitle">Role-Based Testing Walkthrough for the Employee (User) Experience</div>
+        <div class="role-badge">
+            <span class="dot" style="background: #64748b;"></span>
+            Employee Role (User Tier)
+        </div>
+        <div class="header-meta mt-8">
+            <span>&#128197; Version 1.2.3</span>
+            <span>&#128205; PolicyManager Site</span>
+            <span>&#128221; 12 Test Scenarios</span>
+            <span>&#128337; ~45 min estimated</span>
+        </div>
+    </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- TABLE OF CONTENTS                                       -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<nav class="toc no-print">
+    <div class="toc-card">
+        <div class="toc-title">Test Sections</div>
+        <div class="toc-grid">
+            <a class="toc-link" href="#overview"><span class="num">1</span> Role Overview &amp; Navigation</a>
+            <a class="toc-link" href="#hub"><span class="num">2</span> Policy Hub — Browsing</a>
+            <a class="toc-link" href="#mypolicies"><span class="num">3</span> My Policies — Dashboard</a>
+            <a class="toc-link" href="#details"><span class="num">4</span> Policy Details &amp; Acknowledgement</a>
+            <a class="toc-link" href="#quiz"><span class="num">5</span> Quiz Taking</a>
+            <a class="toc-link" href="#search"><span class="num">6</span> Policy Search Center</a>
+            <a class="toc-link" href="#help"><span class="num">7</span> Help Center</a>
+            <a class="toc-link" href="#checklist"><span class="num">8</span> Final Checklist</a>
+        </div>
+    </div>
+</nav>
+
+<main>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 1: ROLE OVERVIEW                                -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section class="section" id="overview">
+    <div class="section-header">
+        <span class="section-number">1</span>
+        <h2 class="section-title">Role Overview &amp; Navigation</h2>
+    </div>
+
+    <div class="info-box context">
+        <span class="icon">&#9432;</span>
+        <div>
+            <strong>Who is the Employee?</strong><br>
+            The Employee role (internally called "User") is the <strong>default access tier</strong> for all staff members in the organisation. Every person who logs into the Policy Manager site automatically receives this role unless they are additionally assigned Author, Manager, or Admin privileges via SharePoint group membership. Employees are the primary <strong>consumers</strong> of policies — they browse, read, acknowledge, and complete quizzes on assigned policies.
+        </div>
+    </div>
+
+    <h3 class="mb-8">What the Employee Sees</h3>
+    <p class="section-desc">When an Employee opens the Policy Manager site, the header navigation bar shows only the items permitted for their role. Author, Manager, and Admin features are hidden.</p>
+
+    <table class="nav-table">
+        <thead>
+            <tr>
+                <th>Navigation Item</th>
+                <th>Page</th>
+                <th>Visible?</th>
+                <th>Purpose</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Policy Hub</strong></td>
+                <td>PolicyHub.aspx</td>
+                <td class="visible">&#10003; Yes</td>
+                <td>Central browsing, categories, recently viewed</td>
+            </tr>
+            <tr>
+                <td><strong>My Policies</strong></td>
+                <td>MyPolicies.aspx</td>
+                <td class="visible">&#10003; Yes</td>
+                <td>Personal dashboard with assigned policies</td>
+            </tr>
+            <tr>
+                <td><strong>Policy Details</strong></td>
+                <td>PolicyDetails.aspx</td>
+                <td class="visible">&#10003; Yes</td>
+                <td>Read policy content, acknowledge, take quiz</td>
+            </tr>
+            <tr>
+                <td>Policy Builder</td>
+                <td>PolicyBuilder.aspx</td>
+                <td class="hidden">&#10007; Hidden</td>
+                <td>Author+ only</td>
+            </tr>
+            <tr>
+                <td>Policy Author</td>
+                <td>PolicyAuthor.aspx</td>
+                <td class="hidden">&#10007; Hidden</td>
+                <td>Author+ only</td>
+            </tr>
+            <tr>
+                <td>Policy Packs</td>
+                <td>PolicyPacks.aspx</td>
+                <td class="hidden">&#10007; Hidden</td>
+                <td>Author+ only</td>
+            </tr>
+            <tr>
+                <td>Distribution</td>
+                <td>PolicyDistribution.aspx</td>
+                <td class="hidden">&#10007; Hidden</td>
+                <td>Manager+ only</td>
+            </tr>
+            <tr>
+                <td>Analytics</td>
+                <td>PolicyAnalytics.aspx</td>
+                <td class="hidden">&#10007; Hidden</td>
+                <td>Manager+ only</td>
+            </tr>
+            <tr>
+                <td>Quiz Builder</td>
+                <td>QuizBuilder.aspx</td>
+                <td class="hidden">&#10007; Hidden</td>
+                <td>Admin only</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3 class="mb-8">Header Action Buttons</h3>
+    <table class="nav-table">
+        <thead>
+            <tr>
+                <th>Action</th>
+                <th>Visible?</th>
+                <th>Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>&#128269; Search</td>
+                <td class="visible">&#10003; Yes</td>
+                <td>Opens search center or inline search</td>
+            </tr>
+            <tr>
+                <td>&#128276; Notifications</td>
+                <td class="visible">&#10003; Yes</td>
+                <td>In-app notification bell</td>
+            </tr>
+            <tr>
+                <td>&#10068; Help</td>
+                <td class="visible">&#10003; Yes</td>
+                <td>Opens help center</td>
+            </tr>
+            <tr>
+                <td>&#9881; Settings (Cog)</td>
+                <td class="hidden">&#10007; Hidden</td>
+                <td>Manager+ only — should NOT appear for employees</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- TEST: Verify navigation -->
+    <div class="test-scenario">
+        <div class="test-scenario-header">
+            <span class="test-id">EMP-01</span>
+            <span class="test-title">Verify Role-Based Navigation Visibility</span>
+            <span class="priority-badge p1">P1 Critical</span>
+        </div>
+        <div class="test-scenario-body">
+            <div class="test-objective">
+                Confirm that an Employee-level user sees only the permitted navigation items and that restricted pages are not accessible, even by direct URL.
+            </div>
+            <ol class="steps">
+                <li class="step">
+                    <span class="step-num">1</span>
+                    <div class="step-content">
+                        <div class="step-action">Log into the Policy Manager site as an Employee user</div>
+                        <div class="step-detail">Use a test account that is <strong>not</strong> a member of any elevated SharePoint groups (Authors, Managers, Admins). The account should only have standard site member permissions.</div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">2</span>
+                    <div class="step-content">
+                        <div class="step-action">Navigate to the Policy Hub page</div>
+                        <div class="step-detail">
+                            <div class="url-block"><span class="highlight">https://mf7m.sharepoint.com/sites/PolicyManager</span>/SitePages/PolicyHub.aspx</div>
+                        </div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">3</span>
+                    <div class="step-content">
+                        <div class="step-action">Inspect the header navigation bar</div>
+                        <div class="step-detail">Count the navigation items. You should see <strong>only</strong>: Policy Hub, My Policies. Optionally also the Search, Help, and Notifications icons.</div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">4</span>
+                    <div class="step-content">
+                        <div class="step-action">Confirm hidden items are NOT present</div>
+                        <div class="step-detail">Verify these items do <strong>not</strong> appear: Policy Builder, Policy Author, Policy Packs, Distribution, Analytics, Manager View, Quiz Builder.</div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">5</span>
+                    <div class="step-content">
+                        <div class="step-action">Confirm Settings cog is NOT visible</div>
+                        <div class="step-detail">The gear/cog icon should not appear in the header action area. Only Search, Notifications, and Help icons should be present.</div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">6</span>
+                    <div class="step-content">
+                        <div class="step-action">Attempt direct URL access to restricted pages</div>
+                        <div class="step-detail">
+                            Try navigating directly to each restricted page by entering the URL. The application should either redirect you or show limited/empty content:<br>
+                            <div class="url-block"><span class="highlight">.../SitePages/PolicyBuilder.aspx</span> — Author page</div>
+                            <div class="url-block"><span class="highlight">.../SitePages/PolicyAdmin.aspx</span> — Admin page</div>
+                            <div class="url-block"><span class="highlight">.../SitePages/PolicyAnalytics.aspx</span> — Manager page</div>
+                        </div>
+                    </div>
+                </li>
+            </ol>
+            <div class="expected">
+                <div class="expected-label">&#10003; Expected Results</div>
+                <ul>
+                    <li>Navigation bar shows only <strong>Policy Hub</strong> and <strong>My Policies</strong></li>
+                    <li>Header shows Search, Notifications, Help — but <strong>not</strong> the Settings cog</li>
+                    <li>Direct URL navigation to restricted pages either shows a "not authorised" message, an empty/blank webpart, or the page loads without the elevated features</li>
+                    <li>No JavaScript console errors related to permission denial</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 2: POLICY HUB                                   -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section class="section page-break" id="hub">
+    <div class="section-header">
+        <span class="section-number">2</span>
+        <h2 class="section-title">Policy Hub — Central Browsing</h2>
+    </div>
+
+    <div class="info-box navigate">
+        <span class="icon">&#128640;</span>
+        <div>
+            <strong>Navigate to:</strong> <span class="page-ref">PolicyHub.aspx</span><br>
+            The Policy Hub is the main landing page for policy discovery. It provides category browsing, recently viewed policies, featured policies, and quick search functionality.
+        </div>
+    </div>
+
+    <div class="test-scenario">
+        <div class="test-scenario-header">
+            <span class="test-id">EMP-02</span>
+            <span class="test-title">Policy Hub Page Load &amp; Layout</span>
+            <span class="priority-badge p1">P1 Critical</span>
+        </div>
+        <div class="test-scenario-body">
+            <div class="test-objective">
+                Verify the Policy Hub loads correctly, displays the Forest Teal branding, and shows the main content sections.
+            </div>
+            <ol class="steps">
+                <li class="step">
+                    <span class="step-num">1</span>
+                    <div class="step-content">
+                        <div class="step-action">Open the Policy Hub page</div>
+                        <div class="step-detail">Navigate to <code>PolicyHub.aspx</code>. The page should load within a few seconds, showing a loading spinner initially if data is being fetched.</div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">2</span>
+                    <div class="step-content">
+                        <div class="step-action">Verify the page header and branding</div>
+                        <div class="step-detail">The header should display the teal gradient (<code>#0d9488</code> → <code>#0f766e</code>), the Policy Manager logo/title, and the navigation bar. Breadcrumbs should show: <strong>Policy Manager / Policy Hub</strong>.</div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">3</span>
+                    <div class="step-content">
+                        <div class="step-action">Check the main content sections</div>
+                        <div class="step-detail">
+                            The page should display these sections:<br>
+                            &bull; <strong>Featured Policies</strong> — highlighted/promoted policies<br>
+                            &bull; <strong>Browse by Category</strong> — category cards with counts<br>
+                            &bull; <strong>Recently Viewed</strong> — your recently opened policies (may be empty on first visit)<br>
+                            &bull; <strong>Quick Search</strong> — search input for policy lookup
+                        </div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">4</span>
+                    <div class="step-content">
+                        <div class="step-action">Verify content area layout</div>
+                        <div class="step-detail">Content should be centred with a max width of 1400px, with 24px padding on each side. Cards should be properly spaced and aligned.</div>
+                    </div>
+                </li>
+            </ol>
+            <div class="expected">
+                <div class="expected-label">&#10003; Expected Results</div>
+                <ul>
+                    <li>Page loads without errors; loading spinner appears briefly then content renders</li>
+                    <li>Forest Teal gradient header is visible</li>
+                    <li>All content sections are present and properly laid out</li>
+                    <li>No "undefined" or "null" text visible in any section</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-scenario">
+        <div class="test-scenario-header">
+            <span class="test-id">EMP-03</span>
+            <span class="test-title">Browse Policies by Category</span>
+            <span class="priority-badge p2">P2 High</span>
+        </div>
+        <div class="test-scenario-body">
+            <div class="test-objective">
+                Test category-based browsing to ensure policies are grouped correctly and clickable.
+            </div>
+            <ol class="steps">
+                <li class="step">
+                    <span class="step-num">1</span>
+                    <div class="step-content">
+                        <div class="step-action">Locate the category cards section</div>
+                        <div class="step-detail">Look for "Browse by Category" or similar heading. Categories may include: HR, IT, Finance, Compliance, Health &amp; Safety, etc.</div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">2</span>
+                    <div class="step-content">
+                        <div class="step-action">Click on a category card</div>
+                        <div class="step-detail">Click on any category (e.g., "HR Policies"). The view should filter to show only policies in that category.</div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">3</span>
+                    <div class="step-content">
+                        <div class="step-action">Verify the filtered results</div>
+                        <div class="step-detail">Check that only policies tagged with the selected category are shown. Each policy card should display: title, category tag, status, version, and a brief description.</div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">4</span>
+                    <div class="step-content">
+                        <div class="step-action">Click on a policy to open it</div>
+                        <div class="step-detail">Click "View" or the policy title. This should navigate you to <code>PolicyDetails.aspx</code> with the policy ID as a URL parameter.</div>
+                    </div>
+                </li>
+            </ol>
+            <div class="expected">
+                <div class="expected-label">&#10003; Expected Results</div>
+                <ul>
+                    <li>Category cards display with names and policy counts</li>
+                    <li>Clicking a category filters the policy list correctly</li>
+                    <li>Policy cards in filtered view show accurate metadata</li>
+                    <li>Clicking a policy navigates to PolicyDetails.aspx</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-scenario">
+        <div class="test-scenario-header">
+            <span class="test-id">EMP-04</span>
+            <span class="test-title">Recently Viewed Tracking</span>
+            <span class="priority-badge p3">P3 Medium</span>
+        </div>
+        <div class="test-scenario-body">
+            <div class="test-objective">
+                Verify that the "Recently Viewed" section updates after viewing policies and persists across page loads (stored in localStorage).
+            </div>
+            <ol class="steps">
+                <li class="step">
+                    <span class="step-num">1</span>
+                    <div class="step-content">
+                        <div class="step-action">Note the current "Recently Viewed" state</div>
+                        <div class="step-detail">On a fresh browser session, the Recently Viewed section should be empty or show a "No recently viewed policies" message.</div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">2</span>
+                    <div class="step-content">
+                        <div class="step-action">Open a policy from the Hub</div>
+                        <div class="step-detail">Click "View" on any policy card. Wait for PolicyDetails to load. This triggers <code>RecentlyViewedService.trackView()</code> which stores the policy in localStorage under the key <code>pm_recently_viewed</code>.</div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">3</span>
+                    <div class="step-content">
+                        <div class="step-action">Navigate back to Policy Hub</div>
+                        <div class="step-detail">Use the navigation bar or browser back button.</div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">4</span>
+                    <div class="step-content">
+                        <div class="step-action">Verify the policy appears in Recently Viewed</div>
+                        <div class="step-detail">The policy you just viewed should now appear in the Recently Viewed section. It should show the most recently viewed first.</div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">5</span>
+                    <div class="step-content">
+                        <div class="step-action">View 2-3 more policies, then check ordering</div>
+                        <div class="step-detail">The most recently viewed should always be first. Maximum 10 items are stored.</div>
+                    </div>
+                </li>
+            </ol>
+            <div class="expected">
+                <div class="expected-label">&#10003; Expected Results</div>
+                <ul>
+                    <li>Recently Viewed starts empty on first visit</li>
+                    <li>After viewing a policy, it appears in the Recently Viewed section</li>
+                    <li>Most recent is shown first; max 10 items displayed</li>
+                    <li>Data persists across page reloads (stored in <code>pm_recently_viewed</code> localStorage)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 3: MY POLICIES                                  -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section class="section page-break" id="mypolicies">
+    <div class="section-header">
+        <span class="section-number">3</span>
+        <h2 class="section-title">My Policies — Personal Dashboard</h2>
+    </div>
+
+    <div class="info-box navigate">
+        <span class="icon">&#128640;</span>
+        <div>
+            <strong>Navigate to:</strong> <span class="page-ref">MyPolicies.aspx</span><br>
+            The My Policies page is the employee's personal compliance dashboard. It shows all policies assigned to them, their acknowledgement status, due dates, and overall compliance progress.
+        </div>
+    </div>
+
+    <div class="info-box prereq">
+        <span class="icon">&#9888;</span>
+        <div>
+            <strong>Pre-requisite:</strong> For meaningful testing, the test account should have at least 3-5 policies assigned via the <code>PM_PolicyAcknowledgements</code> list — including at least one unread, one due soon, and one already acknowledged. Ask an Admin tester to distribute policies to your test account before starting this section.
+        </div>
+    </div>
+
+    <div class="test-scenario">
+        <div class="test-scenario-header">
+            <span class="test-id">EMP-05</span>
+            <span class="test-title">My Policies Dashboard &amp; Compliance Progress</span>
+            <span class="priority-badge p1">P1 Critical</span>
+        </div>
+        <div class="test-scenario-body">
+            <div class="test-objective">
+                Verify the personal dashboard loads correctly, shows the compliance percentage, and displays all assigned policies with accurate status indicators.
+            </div>
+            <ol class="steps">
+                <li class="step">
+                    <span class="step-num">1</span>
+                    <div class="step-content">
+                        <div class="step-action">Open the My Policies page</div>
+                        <div class="step-detail">Click "My Policies" in the navigation bar, or navigate directly to <code>MyPolicies.aspx</code>.</div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">2</span>
+                    <div class="step-content">
+                        <div class="step-action">Verify the compliance progress indicator</div>
+                        <div class="step-detail">At the top of the page, you should see a compliance percentage (e.g., "87% Complete"). This is calculated as: <code>(Acknowledged Policies / Total Assigned) × 100</code>. If you have 5 assigned and 3 acknowledged, it should show 60%.</div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">3</span>
+                    <div class="step-content">
+                        <div class="step-action">Check the tab bar</div>
+                        <div class="step-detail">
+                            You should see 4 tabs:<br>
+                            &bull; <strong>All</strong> — all assigned policies<br>
+                            &bull; <strong>Unread</strong> — policies not yet opened<br>
+                            &bull; <strong>Due Soon</strong> — overdue or due within 7 days<br>
+                            &bull; <strong>Completed</strong> — fully acknowledged policies
+                        </div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">4</span>
+                    <div class="step-content">
+                        <div class="step-action">Click each tab and verify filtering</div>
+                        <div class="step-detail">Switch between each tab. The "All" tab should show all policies. "Unread" should only show policies with status "Unread" or "Sent". "Due Soon" should show policies where the due date is within 7 days or past. "Completed" should show only acknowledged policies.</div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">5</span>
+                    <div class="step-content">
+                        <div class="step-action">Inspect a policy card</div>
+                        <div class="step-detail">
+                            Each policy row or card should display:<br>
+                            &bull; <strong>Status badge</strong> (coloured): Unread, In Progress, Completed, Overdue<br>
+                            &bull; <strong>Title</strong> — clickable policy name<br>
+                            &bull; <strong>Category</strong> and <strong>Department</strong><br>
+                            &bull; <strong>Version</strong> number<br>
+                            &bull; <strong>Due Date</strong> — red if overdue<br>
+                            &bull; <strong>Priority</strong> — High (red), Medium (orange), Low (green)<br>
+                            &bull; <strong>Actions</strong>: View, Acknowledge, Quiz (if required)
+                        </div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">6</span>
+                    <div class="step-content">
+                        <div class="step-action">Test search functionality</div>
+                        <div class="step-detail">Use the search box to filter policies by name. Type part of a policy title — the list should filter in real-time.</div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">7</span>
+                    <div class="step-content">
+                        <div class="step-action">Toggle between list and card view</div>
+                        <div class="step-detail">If a view toggle exists, switch between list and card view. Both should display the same data in different layouts.</div>
+                    </div>
+                </li>
+            </ol>
+            <div class="expected">
+                <div class="expected-label">&#10003; Expected Results</div>
+                <ul>
+                    <li>Compliance percentage displays and is mathematically correct</li>
+                    <li>All 4 tabs work and filter policies correctly</li>
+                    <li>Policy cards show all required metadata without "undefined" values</li>
+                    <li>Overdue policies display due dates in red</li>
+                    <li>Search filters in real-time</li>
+                    <li>View toggle switches layout correctly</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 4: POLICY DETAILS & ACKNOWLEDGEMENT             -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section class="section page-break" id="details">
+    <div class="section-header">
+        <span class="section-number">4</span>
+        <h2 class="section-title">Policy Details &amp; Acknowledgement</h2>
+    </div>
+
+    <div class="info-box navigate">
+        <span class="icon">&#128640;</span>
+        <div>
+            <strong>Navigate to:</strong> <span class="page-ref">PolicyDetails.aspx?policyId=&lt;id&gt;</span><br>
+            This page displays the full content of a policy and allows the employee to acknowledge it. It is the most critical page for compliance — this is where the employee reads, understands, and formally acknowledges a policy.
+        </div>
+    </div>
+
+    <div class="test-scenario">
+        <div class="test-scenario-header">
+            <span class="test-id">EMP-06</span>
+            <span class="test-title">View Policy Content &amp; Metadata</span>
+            <span class="priority-badge p1">P1 Critical</span>
+        </div>
+        <div class="test-scenario-body">
+            <div class="test-objective">
+                Verify the full policy document renders correctly with all metadata, versioning info, and the document viewer.
+            </div>
+            <ol class="steps">
+                <li class="step">
+                    <span class="step-num">1</span>
+                    <div class="step-content">
+                        <div class="step-action">Open a policy from My Policies or Policy Hub</div>
+                        <div class="step-detail">Click on any assigned policy. The page should navigate to <code>PolicyDetails.aspx?policyId=X</code>.</div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">2</span>
+                    <div class="step-content">
+                        <div class="step-action">Verify the policy metadata panel</div>
+                        <div class="step-detail">
+                            The metadata section should display:<br>
+                            &bull; <strong>Policy Title</strong> — prominent heading<br>
+                            &bull; <strong>Policy Number</strong> — e.g., POL-0001<br>
+                            &bull; <strong>Category</strong> &amp; <strong>Sub-Category</strong><br>
+                            &bull; <strong>Department</strong> / Owner<br>
+                            &bull; <strong>Version</strong> — e.g., 2.0<br>
+                            &bull; <strong>Effective Date</strong> &amp; <strong>Expiry/Review Date</strong><br>
+                            &bull; <strong>Status</strong> — Published (green badge)<br>
+                            &bull; <strong>Compliance Risk Level</strong> — Critical, High, Medium, Low, or Informational<br>
+                            &bull; <strong>Data Classification</strong> — Public, Internal, Confidential, etc.
+                        </div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">3</span>
+                    <div class="step-content">
+                        <div class="step-action">Read the policy document content</div>
+                        <div class="step-detail">The main content area should display the policy body — either as rendered HTML content or an embedded document viewer. If the policy has an attached document (Word/PDF), the document viewer should render it.</div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">4</span>
+                    <div class="step-content">
+                        <div class="step-action">Test the fullscreen document viewer toggle</div>
+                        <div class="step-detail">If a fullscreen toggle button exists, click it to expand the document viewer to full screen. Click again or press <kbd>Esc</kbd> to exit fullscreen.</div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">5</span>
+                    <div class="step-content">
+                        <div class="step-action">Check for related information sections</div>
+                        <div class="step-detail">
+                            The page may also show:<br>
+                            &bull; <strong>Related Policies</strong> — links to associated policies<br>
+                            &bull; <strong>Version History</strong> — previous versions list<br>
+                            &bull; <strong>Comments/Discussion</strong> — if enabled<br>
+                            &bull; <strong>Ratings</strong> — policy rating widget
+                        </div>
+                    </div>
+                </li>
+            </ol>
+            <div class="expected">
+                <div class="expected-label">&#10003; Expected Results</div>
+                <ul>
+                    <li>All metadata fields display correctly — no "undefined", "null", or blank values</li>
+                    <li>Policy content renders as formatted HTML or document embed</li>
+                    <li>Fullscreen toggle works correctly</li>
+                    <li>Breadcrumbs update to show: Policy Manager / Policy Hub / [Policy Title]</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-scenario">
+        <div class="test-scenario-header">
+            <span class="test-id">EMP-07</span>
+            <span class="test-title">Acknowledge a Policy</span>
+            <span class="priority-badge p1">P1 Critical</span>
+        </div>
+        <div class="test-scenario-body">
+            <div class="test-objective">
+                This is the most important employee workflow — formally acknowledging a policy. This test verifies the end-to-end acknowledgement process including optional digital signature.
+            </div>
+
+            <div class="info-box warning">
+                <span class="icon">&#9888;</span>
+                <div>
+                    <strong>Important:</strong> Acknowledgement is a one-way action. Once acknowledged, it cannot be undone. The acknowledgement record is permanently stored in <code>PM_PolicyAcknowledgements</code> for compliance audit purposes. Use test data for this scenario.
+                </div>
+            </div>
+
+            <ol class="steps">
+                <li class="step">
+                    <span class="step-num">1</span>
+                    <div class="step-content">
+                        <div class="step-action">Open an unacknowledged policy</div>
+                        <div class="step-detail">From My Policies, select a policy with status "Unread" or "Opened". Navigate to its details page.</div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">2</span>
+                    <div class="step-content">
+                        <div class="step-action">Verify the acknowledgement panel appears</div>
+                        <div class="step-detail">At the bottom of the policy content, an acknowledgement section should be visible. It typically includes:<br>
+                            &bull; A statement like "I have read and understood this policy"<br>
+                            &bull; An "Acknowledge" button<br>
+                            &bull; Optional digital signature canvas<br>
+                            &bull; The due date for acknowledgement
+                        </div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">3</span>
+                    <div class="step-content">
+                        <div class="step-action">If a digital signature is offered, draw a signature</div>
+                        <div class="step-detail">Use the signature canvas to draw your name. This captures a base64 image stored in the acknowledgement record.</div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">4</span>
+                    <div class="step-content">
+                        <div class="step-action">Click the "Acknowledge" button</div>
+                        <div class="step-detail">Click to submit. A confirmation dialog may appear asking you to confirm.</div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">5</span>
+                    <div class="step-content">
+                        <div class="step-action">Verify the acknowledgement success</div>
+                        <div class="step-detail">After submission, you should see a success message (e.g., "Policy acknowledged successfully"). The acknowledgement panel should update to show "Acknowledged" with the timestamp.</div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">6</span>
+                    <div class="step-content">
+                        <div class="step-action">Return to My Policies and verify the status update</div>
+                        <div class="step-detail">Navigate back to My Policies. The policy should now appear under the "Completed" tab with a "Completed" status badge. The compliance percentage should increase.</div>
+                    </div>
+                </li>
+            </ol>
+            <div class="expected">
+                <div class="expected-label">&#10003; Expected Results</div>
+                <ul>
+                    <li>Acknowledgement panel visible with statement and button</li>
+                    <li>Digital signature (if offered) captures correctly</li>
+                    <li>"Acknowledge" button submits successfully with success feedback</li>
+                    <li>Policy status changes from "Unread/Opened" to "Acknowledged"</li>
+                    <li>Compliance percentage in My Policies updates correctly</li>
+                    <li>Acknowledgement record created in <code>PM_PolicyAcknowledgements</code> with date, user, and optional signature</li>
+                    <li>If policy requires quiz, user is prompted to take quiz after acknowledgement</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-scenario">
+        <div class="test-scenario-header">
+            <span class="test-id">EMP-08</span>
+            <span class="test-title">Already-Acknowledged Policy Display</span>
+            <span class="priority-badge p2">P2 High</span>
+        </div>
+        <div class="test-scenario-body">
+            <div class="test-objective">
+                Verify that when an employee revisits a policy they have already acknowledged, the acknowledgement panel shows the completed state rather than offering the option again.
+            </div>
+            <ol class="steps">
+                <li class="step">
+                    <span class="step-num">1</span>
+                    <div class="step-content">
+                        <div class="step-action">Open a previously acknowledged policy</div>
+                        <div class="step-detail">From My Policies → Completed tab, click on a policy you have already acknowledged.</div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">2</span>
+                    <div class="step-content">
+                        <div class="step-action">Check the acknowledgement panel state</div>
+                        <div class="step-detail">Instead of an "Acknowledge" button, the panel should show: "Acknowledged on [date]" with the timestamp and a green checkmark or similar indicator. The button should be disabled or replaced with a status display.</div>
+                    </div>
+                </li>
+            </ol>
+            <div class="expected">
+                <div class="expected-label">&#10003; Expected Results</div>
+                <ul>
+                    <li>No duplicate acknowledgement option — the button is gone or disabled</li>
+                    <li>The acknowledged date and status are displayed clearly</li>
+                    <li>The policy content is still fully readable</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 5: QUIZ TAKING                                  -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section class="section page-break" id="quiz">
+    <div class="section-header">
+        <span class="section-number">5</span>
+        <h2 class="section-title">Quiz Taking</h2>
+    </div>
+
+    <div class="info-box context">
+        <span class="icon">&#9432;</span>
+        <div>
+            <strong>Context:</strong> Some policies require employees to pass a quiz after reading the policy to demonstrate comprehension. The quiz system supports <strong>11 question types</strong>: Multiple Choice, True/False, Multiple Select, Short Answer, Fill in the Blank, Matching, Ordering, Rating Scale, Essay, Image Choice, and Hotspot. The quiz is typically accessible from the Policy Details page after acknowledgement, or via a direct link.
+        </div>
+    </div>
+
+    <div class="info-box prereq">
+        <span class="icon">&#9888;</span>
+        <div>
+            <strong>Pre-requisite:</strong> A published quiz must be associated with at least one policy assigned to the test employee. Ask the Admin tester to create a quiz using the Quiz Builder and assign it to a test policy before starting this section.
+        </div>
+    </div>
+
+    <div class="test-scenario">
+        <div class="test-scenario-header">
+            <span class="test-id">EMP-09</span>
+            <span class="test-title">Take a Policy Quiz — Full Workflow</span>
+            <span class="priority-badge p1">P1 Critical</span>
+        </div>
+        <div class="test-scenario-body">
+            <div class="test-objective">
+                Test the complete quiz-taking experience from start to result, including answering different question types, timer behaviour, and score calculation.
+            </div>
+            <ol class="steps">
+                <li class="step">
+                    <span class="step-num">1</span>
+                    <div class="step-content">
+                        <div class="step-action">Open a policy that has a required quiz</div>
+                        <div class="step-detail">In My Policies, look for a policy with a "Quiz" action button or a quiz icon. Click it to navigate to the policy, then look for the quiz prompt.</div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">2</span>
+                    <div class="step-content">
+                        <div class="step-action">Start the quiz</div>
+                        <div class="step-detail">Click "Start Quiz" or similar button. You should see:<br>
+                            &bull; Quiz title and description<br>
+                            &bull; Number of questions<br>
+                            &bull; Passing score (e.g., 70%)<br>
+                            &bull; Time limit (if set)<br>
+                            &bull; Attempt number (e.g., "Attempt 1 of 3")
+                        </div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">3</span>
+                    <div class="step-content">
+                        <div class="step-action">Answer questions of various types</div>
+                        <div class="step-detail">
+                            Work through each question. For each type, verify the UI renders correctly:<br>
+                            &bull; <strong>Multiple Choice</strong> — 4 radio buttons (A-D), select one<br>
+                            &bull; <strong>True/False</strong> — 2 radio buttons<br>
+                            &bull; <strong>Multiple Select</strong> — checkboxes, select multiple<br>
+                            &bull; <strong>Short Answer</strong> — text input field<br>
+                            &bull; <strong>Fill in the Blank</strong> — text input(s) within a sentence<br>
+                            &bull; <strong>Matching</strong> — drag-and-drop or dropdown pairs<br>
+                            &bull; <strong>Ordering</strong> — drag items into correct sequence
+                        </div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">4</span>
+                    <div class="step-content">
+                        <div class="step-action">Monitor the timer (if applicable)</div>
+                        <div class="step-detail">If a time limit is set, verify the countdown timer displays and counts down. When time runs out, the quiz should auto-submit.</div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">5</span>
+                    <div class="step-content">
+                        <div class="step-action">Submit the quiz</div>
+                        <div class="step-detail">After answering all questions, click "Submit Quiz" or similar. A confirmation dialog may appear.</div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">6</span>
+                    <div class="step-content">
+                        <div class="step-action">Review the results</div>
+                        <div class="step-detail">
+                            The results page should show:<br>
+                            &bull; <strong>Score</strong> — e.g., "8/10 (80%)"<br>
+                            &bull; <strong>Pass/Fail</strong> status — based on passing score threshold<br>
+                            &bull; <strong>Time taken</strong><br>
+                            &bull; <strong>Per-question breakdown</strong> — if "Show Correct Answers" is enabled<br>
+                            &bull; <strong>Correct/Incorrect feedback</strong> — if "Show Explanations" is enabled<br>
+                            &bull; <strong>Retake option</strong> — if failed and retakes remain
+                        </div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">7</span>
+                    <div class="step-content">
+                        <div class="step-action">If passed — verify certificate (if enabled)</div>
+                        <div class="step-detail">If the quiz has certificate generation enabled, a "Download Certificate" button should appear. Click it and verify a PDF or printable certificate is generated with your name, quiz title, score, and date.</div>
+                    </div>
+                </li>
+            </ol>
+            <div class="expected">
+                <div class="expected-label">&#10003; Expected Results</div>
+                <ul>
+                    <li>Quiz loads with all questions rendered correctly per their type</li>
+                    <li>Timer counts down (if time limit set)</li>
+                    <li>Score is calculated correctly after submission</li>
+                    <li>Pass/Fail displayed based on passing score threshold</li>
+                    <li>If passed: acknowledgement record updated with QuizStatus = Passed</li>
+                    <li>If failed + retakes remain: retake option visible with "Attempt 2 of 3" displayed</li>
+                    <li>If failed + no retakes: final failure message displayed</li>
+                    <li>Certificate downloadable (if enabled and passed)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 6: SEARCH CENTER                                -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section class="section page-break" id="search">
+    <div class="section-header">
+        <span class="section-number">6</span>
+        <h2 class="section-title">Policy Search Center</h2>
+    </div>
+
+    <div class="info-box navigate">
+        <span class="icon">&#128640;</span>
+        <div>
+            <strong>Navigate to:</strong> <span class="page-ref">PolicySearch.aspx</span><br>
+            The Search Center provides a dedicated full-page search experience with a hero section, quick-filter chips, sidebar filters, and result cards. It follows the DWx Standard Search pattern used across all Digital Workplace Excellence apps.
+        </div>
+    </div>
+
+    <div class="test-scenario">
+        <div class="test-scenario-header">
+            <span class="test-id">EMP-10</span>
+            <span class="test-title">Search for Policies Using Keywords &amp; Filters</span>
+            <span class="priority-badge p2">P2 High</span>
+        </div>
+        <div class="test-scenario-body">
+            <div class="test-objective">
+                Verify the search center returns accurate results for keyword queries and that sidebar filters narrow results correctly.
+            </div>
+            <ol class="steps">
+                <li class="step">
+                    <span class="step-num">1</span>
+                    <div class="step-content">
+                        <div class="step-action">Open the Policy Search page</div>
+                        <div class="step-detail">Click the Search icon in the header, or navigate to <code>PolicySearch.aspx</code>. You should see a hero section with a search input and quick-filter chips below it.</div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">2</span>
+                    <div class="step-content">
+                        <div class="step-action">Perform a keyword search</div>
+                        <div class="step-detail">Type a known policy name or keyword (e.g., "data protection") in the search box and press <kbd>Enter</kbd> or click search. Results should appear below.</div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">3</span>
+                    <div class="step-content">
+                        <div class="step-action">Verify search result cards</div>
+                        <div class="step-detail">Each result card should display: policy title (clickable), category, department, status, version, effective date, and a brief description or excerpt with the search term highlighted.</div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">4</span>
+                    <div class="step-content">
+                        <div class="step-action">Test quick-filter chips</div>
+                        <div class="step-detail">Click on a quick-filter chip (e.g., "HR", "IT", "Compliance"). Results should filter immediately to show only policies matching that category.</div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">5</span>
+                    <div class="step-content">
+                        <div class="step-action">Use sidebar filters</div>
+                        <div class="step-detail">
+                            The 260px sidebar filter panel should offer refinements:<br>
+                            &bull; <strong>Category</strong> — dropdown or checkboxes<br>
+                            &bull; <strong>Department</strong><br>
+                            &bull; <strong>Status</strong> — Published, Archived, etc.<br>
+                            &bull; <strong>Risk Level</strong> — Critical, High, Medium, Low<br>
+                            &bull; <strong>Date Range</strong> — effective date filter<br>
+                            Apply a combination of filters and verify results narrow correctly.
+                        </div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">6</span>
+                    <div class="step-content">
+                        <div class="step-action">Clear all filters and verify reset</div>
+                        <div class="step-detail">Click "Clear All" or remove all filters. Results should return to the unfiltered state.</div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">7</span>
+                    <div class="step-content">
+                        <div class="step-action">Click a search result to open the policy</div>
+                        <div class="step-detail">Click on a policy title in the results. You should be navigated to <code>PolicyDetails.aspx?policyId=X</code>.</div>
+                    </div>
+                </li>
+            </ol>
+            <div class="expected">
+                <div class="expected-label">&#10003; Expected Results</div>
+                <ul>
+                    <li>Hero section renders with search box and quick-filter chips</li>
+                    <li>Keyword search returns relevant results</li>
+                    <li>Quick-filter chips filter by category instantly</li>
+                    <li>Sidebar filters narrow results correctly (AND logic across filter types)</li>
+                    <li>Clear All resets to unfiltered state</li>
+                    <li>Zero-results state shows a friendly "No policies found" message</li>
+                    <li>Clicking a result navigates to the correct policy details page</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 7: HELP CENTER                                  -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section class="section page-break" id="help">
+    <div class="section-header">
+        <span class="section-number">7</span>
+        <h2 class="section-title">Help Center</h2>
+    </div>
+
+    <div class="info-box navigate">
+        <span class="icon">&#128640;</span>
+        <div>
+            <strong>Navigate to:</strong> <span class="page-ref">PolicyHelp.aspx</span><br>
+            The Help Center follows the DWx Standard Help pattern — a hero section with tab-based content. It provides articles, FAQs, keyboard shortcuts, and a support request form.
+        </div>
+    </div>
+
+    <div class="test-scenario">
+        <div class="test-scenario-header">
+            <span class="test-id">EMP-11</span>
+            <span class="test-title">Help Center Navigation &amp; Content</span>
+            <span class="priority-badge p3">P3 Medium</span>
+        </div>
+        <div class="test-scenario-body">
+            <div class="test-objective">
+                Verify all tabs in the Help Center load content correctly and that the support request form functions.
+            </div>
+            <ol class="steps">
+                <li class="step">
+                    <span class="step-num">1</span>
+                    <div class="step-content">
+                        <div class="step-action">Open the Help Center</div>
+                        <div class="step-detail">Click the Help icon (?) in the header, or navigate to <code>PolicyHelp.aspx</code>.</div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">2</span>
+                    <div class="step-content">
+                        <div class="step-action">Verify the hero section and tab bar</div>
+                        <div class="step-detail">
+                            The page should display a hero section with the title "Help Center" and a tab bar with 5 tabs:<br>
+                            &bull; <strong>Home</strong> — overview with getting started cards<br>
+                            &bull; <strong>Articles</strong> — help articles<br>
+                            &bull; <strong>FAQs</strong> — frequently asked questions (expandable)<br>
+                            &bull; <strong>Shortcuts</strong> — keyboard shortcuts reference<br>
+                            &bull; <strong>Support</strong> — submit a support request
+                        </div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">3</span>
+                    <div class="step-content">
+                        <div class="step-action">Click through each tab</div>
+                        <div class="step-detail">Click each tab and verify content loads. The "Home" tab should show onboarding cards. "FAQs" should have expandable accordion items. "Shortcuts" should list keyboard bindings.</div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">4</span>
+                    <div class="step-content">
+                        <div class="step-action">Expand an FAQ item</div>
+                        <div class="step-detail">Click on any FAQ question. The answer should expand smoothly below it.</div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">5</span>
+                    <div class="step-content">
+                        <div class="step-action">Test the Support tab — submit a request</div>
+                        <div class="step-detail">Switch to the "Support" tab. Fill in the support request form (subject, description, priority). Submit it and verify a success message appears.</div>
+                    </div>
+                </li>
+            </ol>
+            <div class="expected">
+                <div class="expected-label">&#10003; Expected Results</div>
+                <ul>
+                    <li>All 5 tabs render content without errors</li>
+                    <li>FAQ accordion expands/collapses smoothly</li>
+                    <li>Support form validates required fields and shows success on submit</li>
+                    <li>No blank or "coming soon" sections (unless by design)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 8: NOTIFICATIONS                                -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section class="section page-break" id="notifications">
+    <div class="section-header">
+        <span class="section-number">8</span>
+        <h2 class="section-title">Notifications</h2>
+    </div>
+
+    <div class="info-box context">
+        <span class="icon">&#9432;</span>
+        <div>
+            <strong>Context:</strong> The notification system alerts employees when new policies are assigned, acknowledgement deadlines approach, and quizzes need to be completed. Notifications are delivered both in-app (via the bell icon in the header) and via email.
+        </div>
+    </div>
+
+    <div class="test-scenario">
+        <div class="test-scenario-header">
+            <span class="test-id">EMP-12</span>
+            <span class="test-title">Notification Bell &amp; In-App Alerts</span>
+            <span class="priority-badge p2">P2 High</span>
+        </div>
+        <div class="test-scenario-body">
+            <div class="test-objective">
+                Verify the notification bell shows unread count, clicking opens the notification panel, and notifications are accurate.
+            </div>
+            <ol class="steps">
+                <li class="step">
+                    <span class="step-num">1</span>
+                    <div class="step-content">
+                        <div class="step-action">Check the notification bell in the header</div>
+                        <div class="step-detail">Look for the bell icon in the header action area. If there are unread notifications, a badge with the count should appear on the bell.</div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">2</span>
+                    <div class="step-content">
+                        <div class="step-action">Click the notification bell</div>
+                        <div class="step-detail">A panel or dropdown should appear showing your notifications. Each notification should include: type icon, title/message, timestamp, and priority indicator.</div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">3</span>
+                    <div class="step-content">
+                        <div class="step-action">Click on a notification</div>
+                        <div class="step-detail">Clicking a notification should navigate you to the relevant page (e.g., a "New Policy Assigned" notification should link to PolicyDetails.aspx for that policy).</div>
+                    </div>
+                </li>
+                <li class="step">
+                    <span class="step-num">4</span>
+                    <div class="step-content">
+                        <div class="step-action">Verify notification types</div>
+                        <div class="step-detail">
+                            Common employee notifications include:<br>
+                            &bull; "New Policy Published: [Name]" — when a policy is assigned<br>
+                            &bull; "Acknowledgement Due: [Name] — Due in 3 days" — reminder<br>
+                            &bull; "Overdue: [Name]" — past due date<br>
+                            &bull; "Quiz Required: [Name]" — quiz pending after acknowledgement
+                        </div>
+                    </div>
+                </li>
+            </ol>
+            <div class="expected">
+                <div class="expected-label">&#10003; Expected Results</div>
+                <ul>
+                    <li>Notification bell shows accurate unread count</li>
+                    <li>Panel displays notifications with correct metadata</li>
+                    <li>Clicking a notification navigates to the correct destination</li>
+                    <li>After viewing, unread count decreases</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- FINAL CHECKLIST                                         -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section class="section page-break" id="checklist">
+    <div class="section-header">
+        <span class="section-number">&#10003;</span>
+        <h2 class="section-title">Employee Role — Final Test Checklist</h2>
+    </div>
+
+    <p class="section-desc">Use this checklist to confirm all critical test scenarios have been completed. Print this page and tick off each item as you verify it.</p>
+
+    <h3 class="mb-8">Navigation &amp; Access Control</h3>
+    <ul class="checklist">
+        <li><span class="checkbox"></span> Employee sees only Policy Hub + My Policies in nav bar</li>
+        <li><span class="checkbox"></span> Settings cog is NOT visible</li>
+        <li><span class="checkbox"></span> Direct URL to Admin/Author/Manager pages does not grant access</li>
+        <li><span class="checkbox"></span> Search, Notifications, and Help icons are visible</li>
+    </ul>
+
+    <h3 class="mt-24 mb-8">Policy Hub</h3>
+    <ul class="checklist">
+        <li><span class="checkbox"></span> Page loads with Forest Teal branding</li>
+        <li><span class="checkbox"></span> Categories display with policy counts</li>
+        <li><span class="checkbox"></span> Category filtering works</li>
+        <li><span class="checkbox"></span> Recently Viewed updates after viewing a policy</li>
+        <li><span class="checkbox"></span> Clicking a policy navigates to PolicyDetails</li>
+    </ul>
+
+    <h3 class="mt-24 mb-8">My Policies</h3>
+    <ul class="checklist">
+        <li><span class="checkbox"></span> Compliance percentage displays and is accurate</li>
+        <li><span class="checkbox"></span> All 4 tabs (All, Unread, Due Soon, Completed) filter correctly</li>
+        <li><span class="checkbox"></span> Policy cards show status, due date, priority, category</li>
+        <li><span class="checkbox"></span> Search filters policies in real-time</li>
+        <li><span class="checkbox"></span> Overdue policies show red due dates</li>
+    </ul>
+
+    <h3 class="mt-24 mb-8">Policy Details &amp; Acknowledgement</h3>
+    <ul class="checklist">
+        <li><span class="checkbox"></span> Policy content and metadata render correctly</li>
+        <li><span class="checkbox"></span> Fullscreen document viewer works (if available)</li>
+        <li><span class="checkbox"></span> Acknowledgement panel appears for unacknowledged policies</li>
+        <li><span class="checkbox"></span> Acknowledgement submission succeeds with confirmation</li>
+        <li><span class="checkbox"></span> Already-acknowledged policies show completed state</li>
+        <li><span class="checkbox"></span> Status updates in My Policies after acknowledgement</li>
+    </ul>
+
+    <h3 class="mt-24 mb-8">Quiz Taking</h3>
+    <ul class="checklist">
+        <li><span class="checkbox"></span> Quiz prompt appears for policies that require quiz</li>
+        <li><span class="checkbox"></span> All question types render correctly</li>
+        <li><span class="checkbox"></span> Score calculated correctly after submission</li>
+        <li><span class="checkbox"></span> Pass/Fail displayed based on passing score</li>
+        <li><span class="checkbox"></span> Retake option available if failed and retakes remain</li>
+        <li><span class="checkbox"></span> Certificate downloadable if passed (when enabled)</li>
+    </ul>
+
+    <h3 class="mt-24 mb-8">Search Center</h3>
+    <ul class="checklist">
+        <li><span class="checkbox"></span> Keyword search returns relevant results</li>
+        <li><span class="checkbox"></span> Quick-filter chips work</li>
+        <li><span class="checkbox"></span> Sidebar filters narrow results</li>
+        <li><span class="checkbox"></span> Zero-results shows friendly message</li>
+    </ul>
+
+    <h3 class="mt-24 mb-8">Help Center &amp; Notifications</h3>
+    <ul class="checklist">
+        <li><span class="checkbox"></span> All 5 Help tabs display content</li>
+        <li><span class="checkbox"></span> FAQ accordion works</li>
+        <li><span class="checkbox"></span> Support request form submits</li>
+        <li><span class="checkbox"></span> Notification bell shows unread count</li>
+        <li><span class="checkbox"></span> Clicking notification navigates correctly</li>
+    </ul>
+
+    <div class="info-box context mt-24">
+        <span class="icon">&#9989;</span>
+        <div>
+            <strong>Testing Complete!</strong><br>
+            When all items above are ticked, the Employee role testing is complete. Report any failures with the Test ID (e.g., EMP-07), the step that failed, and a screenshot to the development team.
+        </div>
+    </div>
+</section>
+
+</main>
+
+<footer>
+    <strong>Policy Manager v1.2.3</strong> — Employee Testing Guide<br>
+    DWx Digital Workplace Excellence &bull; First Digital &bull; Generated February 2026<br>
+    <span style="color: #64748b;">For internal use only. Contact the Policy Manager development team for questions.</span>
+</footer>
+
+</body>
+</html>

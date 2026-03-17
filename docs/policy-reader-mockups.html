@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Policy Reader — 3 Layout Variations</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', -apple-system, sans-serif; background: #f1f5f9; color: #0f172a; }
+
+  .page-wrapper { max-width: 1400px; margin: 0 auto; padding: 40px 24px; }
+  h1.page-title { font-size: 28px; font-weight: 700; color: #0f172a; margin-bottom: 8px; text-align: center; }
+  p.page-subtitle { font-size: 15px; color: #64748b; text-align: center; margin-bottom: 48px; }
+
+  .variation { margin-bottom: 80px; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+  .variation-label { background: linear-gradient(135deg, #0d9488, #0f766e); color: #fff; padding: 16px 24px; font-size: 18px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+  .variation-label span { font-size: 13px; font-weight: 400; opacity: 0.85; }
+  .variation-body { min-height: 700px; }
+
+  /* ─── Shared Elements ─── */
+  .pm-header { background: linear-gradient(135deg, #0d9488, #0f766e); padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; color: #fff; }
+  .pm-header .logo { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 16px; text-decoration: none; color: #fff; }
+  .pm-header .logo-icon { width: 32px; height: 32px; background: rgba(255,255,255,0.15); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+  .pm-header .nav { display: flex; gap: 24px; font-size: 13px; }
+  .pm-header .nav a { color: rgba(255,255,255,0.8); text-decoration: none; }
+  .pm-header .nav a.active { color: #fff; font-weight: 600; border-bottom: 2px solid #fff; padding-bottom: 2px; }
+  .pm-header .actions { display: flex; gap: 8px; }
+  .pm-header .actions .btn { width: 36px; height: 36px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.9); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px; }
+
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .badge-green { background: #ecfdf5; color: #059669; }
+  .badge-teal { background: #f0fdfa; color: #0d9488; }
+  .badge-blue { background: #eff6ff; color: #2563eb; }
+  .badge-gray { background: #f1f5f9; color: #64748b; }
+
+  .btn-primary { background: #0d9488; color: #fff; border: none; padding: 10px 24px; border-radius: 4px; font-size: 14px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+  .btn-primary:hover { background: #0f766e; }
+  .btn-outline { background: #fff; color: #334155; border: 1px solid #d1d5db; padding: 10px 20px; border-radius: 4px; font-size: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+
+  .meta-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; font-weight: 600; }
+  .meta-value { font-size: 14px; color: #334155; font-weight: 500; margin-top: 2px; }
+
+  /* ─── Stepper ─── */
+  .stepper { display: flex; align-items: center; justify-content: center; gap: 0; padding: 16px 24px; background: #fafafa; border-bottom: 1px solid #e2e8f0; }
+  .stepper .step { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #94a3b8; }
+  .stepper .step.active { color: #0d9488; font-weight: 600; }
+  .stepper .step.done { color: #059669; }
+  .stepper .step-num { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; border: 2px solid #d1d5db; background: #fff; }
+  .stepper .step.active .step-num { border-color: #0d9488; background: #0d9488; color: #fff; }
+  .stepper .step.done .step-num { border-color: #059669; background: #059669; color: #fff; }
+  .stepper .step-line { width: 40px; height: 2px; background: #e2e8f0; margin: 0 8px; }
+  .stepper .step.done + .step-line, .stepper .step-line.done { background: #059669; }
+
+  /* ─── Content: Policy Document ─── */
+  .doc-content { font-size: 15px; line-height: 1.8; color: #334155; }
+  .doc-content h2 { font-size: 20px; font-weight: 700; color: #0f172a; margin: 24px 0 12px; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0; }
+  .doc-content h3 { font-size: 16px; font-weight: 600; color: #0f172a; margin: 20px 0 8px; }
+  .doc-content p { margin-bottom: 12px; }
+  .doc-content ul { margin: 8px 0 16px 20px; }
+  .doc-content ul li { margin-bottom: 6px; }
+
+  /* ─── Progress Bar (reading) ─── */
+  .reading-progress { position: sticky; top: 0; z-index: 10; height: 3px; background: #e2e8f0; }
+  .reading-progress .bar { height: 100%; background: #0d9488; width: 35%; transition: width 0.3s; }
+
+  /* ─── Annotations ─── */
+  .annotation-label { font-size: 11px; color: #dc2626; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 16px; }
+
+  /* Design notes */
+  .design-notes { padding: 20px 24px; background: #fffbeb; border-top: 1px solid #fde68a; }
+  .design-notes h4 { font-size: 14px; font-weight: 700; color: #92400e; margin-bottom: 8px; }
+  .design-notes ul { font-size: 13px; color: #78350f; margin-left: 16px; line-height: 1.6; }
+</style>
+</head>
+<body>
+<div class="page-wrapper">
+
+<h1 class="page-title">Policy Reader — Layout Variations</h1>
+<p class="page-subtitle">3 approaches to maximize reading space while keeping essential metadata accessible</p>
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- VARIATION A: IMMERSIVE READER (Document-first, metadata collapsed) -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<div class="variation">
+  <div class="variation-label">
+    Variation A: Immersive Reader
+    <span>Document-first. Metadata in collapsed header strip. Stepper minimized to progress bar.</span>
+  </div>
+  <div class="variation-body">
+    <!-- Compact header with inline metadata -->
+    <div class="pm-header" style="padding: 10px 24px;">
+      <a class="logo" href="#">
+        <div class="logo-icon">PM</div>
+        Policy Manager
+      </a>
+      <div class="actions">
+        <div class="btn" title="Search">Q</div>
+        <div class="btn" title="Help">?</div>
+        <div class="btn" style="border-radius: 8px; font-size: 12px; font-weight: 600;">GF</div>
+      </div>
+    </div>
+
+    <!-- Reading progress bar (replaces stepper) -->
+    <div class="reading-progress"><div class="bar" style="width: 35%;"></div></div>
+
+    <!-- Compact policy header strip — all metadata in ONE line -->
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 32px; background: #fff; border-bottom: 1px solid #e2e8f0;">
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <div>
+          <span style="font-size: 17px; font-weight: 700; color: #0f172a;">Employee Code of Conduct</span>
+          <div style="display: flex; gap: 8px; margin-top: 4px;">
+            <span class="badge badge-green">Published</span>
+            <span class="badge badge-teal">HR Policies</span>
+            <span class="badge badge-gray">POL-HR-001</span>
+            <span class="badge badge-gray">v3.0</span>
+          </div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <div style="text-align: center;">
+          <div class="meta-label">Step</div>
+          <div class="meta-value" style="color: #0d9488;">1 of 4 — Read</div>
+        </div>
+        <button class="btn-primary">I Have Read This Policy &rarr;</button>
+      </div>
+    </div>
+
+    <!-- FULL-WIDTH DOCUMENT AREA -->
+    <div style="max-width: 800px; margin: 0 auto; padding: 40px 32px;">
+      <div class="doc-content">
+        <h2>1. Purpose</h2>
+        <p>This policy establishes the framework for corporate governance across the organisation, ensuring accountability, transparency, and compliance with regulatory requirements.</p>
+
+        <h2>2. Scope</h2>
+        <p>This policy applies to all directors, officers, and employees of the organisation and its subsidiaries. External contractors and consultants are expected to comply with relevant sections during their engagement.</p>
+
+        <h2>3. Governance Framework</h2>
+        <h3>3.1 Board Responsibilities</h3>
+        <p>The Board of Directors is responsible for setting the strategic direction of the organisation, overseeing management, and ensuring fiduciary duties are fulfilled.</p>
+
+        <h3>3.2 Executive Accountability</h3>
+        <p>Executive leadership is accountable for implementing board-approved strategies, maintaining internal controls, and reporting to the board on performance.</p>
+
+        <h2>4. Compliance Requirements</h2>
+        <p>All activities must comply with applicable laws, regulations, and industry standards. Non-compliance must be reported immediately through the established escalation channels.</p>
+        <ul>
+          <li>All employees must ensure that documents are placed in official filing systems</li>
+          <li>Employees must not remove documents from official files</li>
+          <li>Records must be complete, up-to-date, and capable of providing organisational accountability</li>
+        </ul>
+
+        <h2>5. Review and Amendment</h2>
+        <p>This policy will be reviewed annually by the Governance Committee and amended as necessary to reflect changes in legislation or organisational structure.</p>
+      </div>
+    </div>
+
+    <!-- Sticky bottom action bar -->
+    <div style="position: sticky; bottom: 0; background: #fff; border-top: 1px solid #e2e8f0; padding: 12px 32px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 -2px 8px rgba(0,0,0,0.04);">
+      <div style="display: flex; align-items: center; gap: 12px; font-size: 13px; color: #64748b;">
+        <span>Reading time: ~5 min</span>
+        <span style="color: #d1d5db;">|</span>
+        <span>35% complete</span>
+      </div>
+      <div style="display: flex; gap: 12px;">
+        <button class="btn-outline">Back</button>
+        <button class="btn-primary">I Have Read This Policy &rarr;</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="design-notes">
+    <h4>Design Rationale</h4>
+    <ul>
+      <li><strong>Stepper replaced with reading progress bar</strong> — visual progress without taking vertical space</li>
+      <li><strong>Metadata compressed into single strip</strong> — policy name, badges, version all in one line</li>
+      <li><strong>Document centered at 800px max-width</strong> — optimal reading line length (65-75 characters)</li>
+      <li><strong>No sidebar, no linked records, no document viewer chrome</strong> — just the content</li>
+      <li><strong>Sticky bottom action bar</strong> — "I Have Read" button always visible without scrolling back up</li>
+      <li><strong>Reading time + completion %</strong> — gives user context without clutter</li>
+      <li><strong>~85% of screen is document content</strong> (vs ~40% in current layout)</li>
+    </ul>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- VARIATION B: SPLIT PANEL (Document + collapsible sidebar) -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<div class="variation">
+  <div class="variation-label">
+    Variation B: Split Panel with Collapsible Sidebar
+    <span>Document takes 75% width. Right sidebar has metadata, key points, linked docs — collapsible.</span>
+  </div>
+  <div class="variation-body">
+    <div class="pm-header" style="padding: 10px 24px;">
+      <a class="logo" href="#">
+        <div class="logo-icon">PM</div>
+        Policy Manager
+      </a>
+      <div class="nav">
+        <a href="#">My Policies</a>
+        <a href="#" class="active">Policy Hub</a>
+      </div>
+      <div class="actions">
+        <div class="btn">Q</div>
+        <div class="btn">?</div>
+        <div class="btn" style="font-size: 12px; font-weight: 600;">GF</div>
+      </div>
+    </div>
+
+    <!-- Mini stepper -->
+    <div style="display: flex; align-items: center; justify-content: center; gap: 4px; padding: 10px; background: #fafafa; border-bottom: 1px solid #e2e8f0; font-size: 12px;">
+      <span style="color: #059669; font-weight: 600;">1. Read</span>
+      <span style="color: #d1d5db; margin: 0 8px;">———</span>
+      <span style="color: #94a3b8;">2. Quiz</span>
+      <span style="color: #d1d5db; margin: 0 8px;">———</span>
+      <span style="color: #94a3b8;">3. Acknowledge</span>
+      <span style="color: #d1d5db; margin: 0 8px;">———</span>
+      <span style="color: #94a3b8;">4. Complete</span>
+    </div>
+
+    <!-- Split layout -->
+    <div style="display: flex; min-height: 580px;">
+      <!-- LEFT: Document (75%) -->
+      <div style="flex: 3; padding: 32px 40px; overflow-y: auto; border-right: 1px solid #e2e8f0;">
+        <!-- Policy title inline -->
+        <div style="margin-bottom: 24px;">
+          <h1 style="font-size: 24px; font-weight: 700; color: #0f172a; margin-bottom: 8px;">Employee Code of Conduct</h1>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <span class="badge badge-green">Published</span>
+            <span class="badge badge-teal">HR Policies</span>
+            <span class="badge badge-gray">POL-HR-001 &middot; v3.0</span>
+            <span style="color: #94a3b8; font-size: 12px; margin-left: 8px;">Effective: 12 Mar 2025</span>
+          </div>
+        </div>
+
+        <div class="doc-content">
+          <h2>1. Purpose</h2>
+          <p>This policy establishes the framework for corporate governance across the organisation, ensuring accountability, transparency, and compliance with regulatory requirements.</p>
+
+          <h2>2. Scope</h2>
+          <p>This policy applies to all directors, officers, and employees of the organisation and its subsidiaries.</p>
+
+          <h2>3. Governance Framework</h2>
+          <h3>3.1 Board Responsibilities</h3>
+          <p>The Board of Directors is responsible for setting the strategic direction of the organisation, overseeing management, and ensuring fiduciary duties are fulfilled.</p>
+
+          <h3>3.2 Executive Accountability</h3>
+          <p>Executive leadership is accountable for implementing board-approved strategies, maintaining internal controls, and reporting to the board on performance.</p>
+
+          <h2>4. Compliance Requirements</h2>
+          <p>All activities must comply with applicable laws, regulations, and industry standards. Non-compliance must be reported immediately.</p>
+          <ul>
+            <li>All employees must ensure documents are placed in official filing systems</li>
+            <li>Employees must not remove documents from official files</li>
+            <li>Records must be complete and up-to-date</li>
+          </ul>
+
+          <h2>5. Review and Amendment</h2>
+          <p>This policy will be reviewed annually by the Governance Committee.</p>
+        </div>
+      </div>
+
+      <!-- RIGHT: Sidebar (25%) -->
+      <div style="flex: 1; min-width: 280px; max-width: 320px; background: #fafafa; padding: 24px; font-size: 13px;">
+        <!-- Action card -->
+        <div style="background: #0d9488; color: #fff; padding: 16px; border-radius: 4px; margin-bottom: 20px; text-align: center;">
+          <div style="font-size: 12px; opacity: 0.8; margin-bottom: 4px;">Step 1 of 4</div>
+          <div style="font-size: 15px; font-weight: 600; margin-bottom: 12px;">Read the Policy</div>
+          <button style="background: #fff; color: #0d9488; border: none; padding: 10px 20px; border-radius: 4px; font-weight: 600; cursor: pointer; width: 100%;">
+            I Have Read This &rarr;
+          </button>
+        </div>
+
+        <!-- Key Points -->
+        <div style="margin-bottom: 20px;">
+          <div style="font-weight: 700; color: #0f172a; margin-bottom: 8px; font-size: 13px;">Key Points</div>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="padding: 8px 12px; background: #fff; border: 1px solid #e2e8f0; border-radius: 4px; border-left: 3px solid #0d9488;">Board oversight and fiduciary duties</div>
+            <div style="padding: 8px 12px; background: #fff; border: 1px solid #e2e8f0; border-radius: 4px; border-left: 3px solid #0d9488;">Regulatory compliance requirements</div>
+            <div style="padding: 8px 12px; background: #fff; border: 1px solid #e2e8f0; border-radius: 4px; border-left: 3px solid #0d9488;">Annual review cycle</div>
+          </div>
+        </div>
+
+        <!-- Quick Info -->
+        <div style="margin-bottom: 20px;">
+          <div style="font-weight: 700; color: #0f172a; margin-bottom: 8px; font-size: 13px;">Details</div>
+          <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 4px; padding: 12px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+              <span style="color: #64748b;">Department</span><span style="font-weight: 500;">HR Policies</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+              <span style="color: #64748b;">Version</span><span style="font-weight: 500;">v3.0</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+              <span style="color: #64748b;">Effective</span><span style="font-weight: 500;">12 Mar 2025</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: #64748b;">Review</span><span style="font-weight: 500;">12 Mar 2026</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Attachments -->
+        <div>
+          <div style="font-weight: 700; color: #0f172a; margin-bottom: 8px; font-size: 13px;">Attachments</div>
+          <div style="padding: 10px 12px; background: #fff; border: 1px solid #e2e8f0; border-radius: 4px; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <span style="color: #2b579a; font-size: 16px;">W</span>
+            <div>
+              <div style="font-weight: 500; font-size: 13px;">Code of Conduct.docx</div>
+              <div style="font-size: 11px; color: #94a3b8;">Word Document &middot; 245 KB</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="design-notes">
+    <h4>Design Rationale</h4>
+    <ul>
+      <li><strong>75/25 split</strong> — document gets most space, sidebar has everything else</li>
+      <li><strong>Sidebar is contextual</strong> — action card (CTA), key points, details, attachments</li>
+      <li><strong>Stepper minimized to single line</strong> — text-only, no circles/lines eating space</li>
+      <li><strong>Policy title is part of the document flow</strong> — not a separate header section</li>
+      <li><strong>Sidebar can collapse</strong> on mobile or via toggle button (not shown in mockup)</li>
+      <li><strong>~70% of screen is document content</strong> (vs ~40% in current layout)</li>
+    </ul>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- VARIATION C: CARD OVERLAY (Full-bleed document, floating action card) -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<div class="variation">
+  <div class="variation-label">
+    Variation C: Full-Bleed Document with Floating Action Card
+    <span>Document is 100% width. Floating card in bottom-right for actions. Metadata in expandable top bar.</span>
+  </div>
+  <div class="variation-body" style="position: relative;">
+    <div class="pm-header" style="padding: 10px 24px;">
+      <a class="logo" href="#">
+        <div class="logo-icon">PM</div>
+        Policy Manager
+      </a>
+      <div class="nav">
+        <a href="#">My Policies</a>
+        <a href="#" class="active">Policy Hub</a>
+      </div>
+      <div class="actions">
+        <div class="btn">Q</div>
+        <div class="btn">?</div>
+        <div class="btn" style="font-size: 12px; font-weight: 600;">GF</div>
+      </div>
+    </div>
+
+    <!-- Reading progress -->
+    <div class="reading-progress"><div class="bar" style="width: 65%;"></div></div>
+
+    <!-- Expandable metadata bar (click to expand) -->
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 32px; background: #fff; border-bottom: 1px solid #e2e8f0; font-size: 13px;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span style="font-weight: 700; font-size: 16px; color: #0f172a;">Employee Code of Conduct</span>
+        <span class="badge badge-green">Published</span>
+        <span class="badge badge-gray">POL-HR-001</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 16px; color: #64748b; font-size: 12px;">
+        <span>HR Policies</span>
+        <span>&middot;</span>
+        <span>v3.0</span>
+        <span>&middot;</span>
+        <span>Effective: 12 Mar 2025</span>
+        <button style="background: none; border: 1px solid #d1d5db; padding: 4px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; color: #334155;">
+          More Info &darr;
+        </button>
+      </div>
+    </div>
+
+    <!-- FULL-BLEED DOCUMENT -->
+    <div style="max-width: 760px; margin: 0 auto; padding: 40px 24px 120px;">
+      <div class="doc-content">
+        <h2>1. Purpose</h2>
+        <p>This policy establishes the framework for corporate governance across the organisation, ensuring accountability, transparency, and compliance with regulatory requirements.</p>
+
+        <h2>2. Scope</h2>
+        <p>This policy applies to all directors, officers, and employees of the organisation and its subsidiaries. External contractors and consultants are expected to comply with relevant sections during their engagement.</p>
+
+        <h2>3. Governance Framework</h2>
+        <h3>3.1 Board Responsibilities</h3>
+        <p>The Board of Directors is responsible for setting the strategic direction of the organisation, overseeing management, and ensuring fiduciary duties are fulfilled.</p>
+
+        <h3>3.2 Executive Accountability</h3>
+        <p>Executive leadership is accountable for implementing board-approved strategies, maintaining internal controls, and reporting to the board on performance.</p>
+
+        <h2>4. Compliance Requirements</h2>
+        <p>All activities must comply with applicable laws, regulations, and industry standards. Non-compliance must be reported immediately through the established escalation channels.</p>
+        <ul>
+          <li>All employees must ensure that documents are placed in official filing systems</li>
+          <li>Employees must not remove documents from official files</li>
+          <li>Records must be complete, up-to-date, and capable of providing organisational accountability when officially scrutinised</li>
+        </ul>
+
+        <h2>5. Review and Amendment</h2>
+        <p>This policy will be reviewed annually by the Governance Committee and amended as necessary to reflect changes in legislation or organisational structure.</p>
+      </div>
+    </div>
+
+    <!-- FLOATING ACTION CARD (bottom-right) -->
+    <div style="position: absolute; bottom: 24px; right: 24px; width: 300px; background: #fff; border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.12); border: 1px solid #e2e8f0; overflow: hidden;">
+      <!-- Step indicator -->
+      <div style="background: linear-gradient(135deg, #0d9488, #0f766e); padding: 14px 18px; color: #fff;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span style="font-size: 13px; font-weight: 600;">Reading Progress</span>
+          <span style="font-size: 12px; opacity: 0.8;">Step 1 of 4</span>
+        </div>
+        <div style="display: flex; gap: 4px;">
+          <div style="flex: 1; height: 4px; background: rgba(255,255,255,0.9); border-radius: 2px;"></div>
+          <div style="flex: 1; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px;"></div>
+          <div style="flex: 1; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px;"></div>
+          <div style="flex: 1; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px;"></div>
+        </div>
+      </div>
+      <!-- Actions -->
+      <div style="padding: 16px 18px;">
+        <div style="font-size: 13px; color: #64748b; margin-bottom: 12px;">
+          Read the policy document, then confirm below to proceed to the quiz.
+        </div>
+        <button class="btn-primary" style="width: 100%; justify-content: center;">
+          I Have Read This Policy &rarr;
+        </button>
+        <div style="display: flex; gap: 8px; margin-top: 8px;">
+          <button class="btn-outline" style="flex: 1; justify-content: center; font-size: 12px; padding: 8px;">
+            Download
+          </button>
+          <button class="btn-outline" style="flex: 1; justify-content: center; font-size: 12px; padding: 8px;">
+            Key Points
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="design-notes">
+    <h4>Design Rationale</h4>
+    <ul>
+      <li><strong>100% document width</strong> — no sidebar, no split, maximum reading space</li>
+      <li><strong>Floating action card</strong> — always visible in bottom-right, doesn't take layout space</li>
+      <li><strong>Step progress as 4 mini bars</strong> — visual and compact</li>
+      <li><strong>"More Info" expandable</strong> — metadata available on demand, not always shown</li>
+      <li><strong>Reading progress bar at top</strong> — user knows how far they've scrolled</li>
+      <li><strong>~90% of screen is document content</strong> (vs ~40% in current layout)</li>
+      <li>Inspiration: Medium.com / Notion reading experience</li>
+    </ul>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<!-- COMPARISON TABLE -->
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+<div style="background: #fff; border-radius: 8px; padding: 32px; box-shadow: 0 2px 12px rgba(0,0,0,0.06);">
+  <h2 style="font-size: 20px; font-weight: 700; margin-bottom: 16px;">Comparison</h2>
+  <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+    <thead>
+      <tr style="border-bottom: 2px solid #e2e8f0;">
+        <th style="text-align: left; padding: 10px 12px; color: #64748b; font-weight: 600;">Aspect</th>
+        <th style="text-align: center; padding: 10px 12px; color: #64748b;">Current</th>
+        <th style="text-align: center; padding: 10px 12px; color: #dc2626;">A: Immersive</th>
+        <th style="text-align: center; padding: 10px 12px; color: #2563eb;">B: Split Panel</th>
+        <th style="text-align: center; padding: 10px 12px; color: #7c3aed;">C: Floating Card</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="border-bottom: 1px solid #f1f5f9;">
+        <td style="padding: 10px 12px; font-weight: 500;">Document content area</td>
+        <td style="text-align: center; padding: 10px 12px; color: #dc2626;">~40%</td>
+        <td style="text-align: center; padding: 10px 12px; color: #059669; font-weight: 700;">~85%</td>
+        <td style="text-align: center; padding: 10px 12px; color: #059669;">~70%</td>
+        <td style="text-align: center; padding: 10px 12px; color: #059669; font-weight: 700;">~90%</td>
+      </tr>
+      <tr style="border-bottom: 1px solid #f1f5f9;">
+        <td style="padding: 10px 12px; font-weight: 500;">Metadata visibility</td>
+        <td style="text-align: center; padding: 10px 12px;">Always visible</td>
+        <td style="text-align: center; padding: 10px 12px;">Compact strip</td>
+        <td style="text-align: center; padding: 10px 12px;">Sidebar (always)</td>
+        <td style="text-align: center; padding: 10px 12px;">On-demand</td>
+      </tr>
+      <tr style="border-bottom: 1px solid #f1f5f9;">
+        <td style="padding: 10px 12px; font-weight: 500;">CTA button location</td>
+        <td style="text-align: center; padding: 10px 12px;">Bottom (scroll to find)</td>
+        <td style="text-align: center; padding: 10px 12px;">Sticky bottom bar</td>
+        <td style="text-align: center; padding: 10px 12px;">Sidebar top card</td>
+        <td style="text-align: center; padding: 10px 12px;">Floating card</td>
+      </tr>
+      <tr style="border-bottom: 1px solid #f1f5f9;">
+        <td style="padding: 10px 12px; font-weight: 500;">Step progress</td>
+        <td style="text-align: center; padding: 10px 12px;">Full stepper (60px)</td>
+        <td style="text-align: center; padding: 10px 12px;">3px progress bar</td>
+        <td style="text-align: center; padding: 10px 12px;">Text-only (30px)</td>
+        <td style="text-align: center; padding: 10px 12px;">4 mini bars in card</td>
+      </tr>
+      <tr style="border-bottom: 1px solid #f1f5f9;">
+        <td style="padding: 10px 12px; font-weight: 500;">Key points</td>
+        <td style="text-align: center; padding: 10px 12px;">Not shown</td>
+        <td style="text-align: center; padding: 10px 12px;">Not shown</td>
+        <td style="text-align: center; padding: 10px 12px;">Sidebar cards</td>
+        <td style="text-align: center; padding: 10px 12px;">Button in card</td>
+      </tr>
+      <tr>
+        <td style="padding: 10px 12px; font-weight: 500;">Best for</td>
+        <td style="text-align: center; padding: 10px 12px;">—</td>
+        <td style="text-align: center; padding: 10px 12px;">Long documents</td>
+        <td style="text-align: center; padding: 10px 12px;">Documents + context</td>
+        <td style="text-align: center; padding: 10px 12px;">Clean reading</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div style="margin-top: 24px; padding: 16px; background: #f0fdfa; border-radius: 4px; border: 1px solid #99f6e4;">
+    <strong style="color: #0d9488;">Recommendation:</strong>
+    <span style="color: #334155;"> Variation C (Floating Card) gives the cleanest reading experience with 90% document space. Variation B (Split Panel) is the safest choice if stakeholders want metadata always visible. Variation A is ideal for a "focus mode" toggle.</span>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

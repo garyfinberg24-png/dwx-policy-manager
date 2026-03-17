@@ -11,6 +11,7 @@ import '@pnp/sp/site-groups/web';
 import '@pnp/sp/site-users/web';
 import { IJMLEmployee } from '../models/IEntraUser';
 import { logger } from './LoggingService';
+import { ValidationUtils } from '../utils/ValidationUtils';
 
 // ============================================================================
 // INTERFACES
@@ -81,16 +82,16 @@ export class UserManagementService {
       let filterParts: string[] = [];
 
       if (filters?.role) {
-        filterParts.push(`PMRole eq '${filters.role}'`);
+        filterParts.push(`PMRole eq '${ValidationUtils.sanitizeForOData(filters.role)}'`);
       }
       if (filters?.department) {
-        filterParts.push(`Department eq '${filters.department}'`);
+        filterParts.push(`Department eq '${ValidationUtils.sanitizeForOData(filters.department)}'`);
       }
       if (filters?.status) {
-        filterParts.push(`Status eq '${filters.status}'`);
+        filterParts.push(`Status eq '${ValidationUtils.sanitizeForOData(filters.status)}'`);
       }
       if (filters?.search) {
-        const term = filters.search.replace(/'/g, "''");
+        const term = ValidationUtils.sanitizeForOData(filters.search);
         filterParts.push(
           `(substringof('${term}',Title) or substringof('${term}',Email) or substringof('${term}',Department))`
         );
@@ -130,7 +131,7 @@ export class UserManagementService {
    */
   public async searchEmployees(query: string): Promise<IJMLEmployee[]> {
     try {
-      const term = query.replace(/'/g, "''");
+      const term = ValidationUtils.sanitizeForOData(query);
       const filter = `(substringof('${term}',Title) or substringof('${term}',Email) or substringof('${term}',Department))`;
 
       return await this.sp.web.lists.getByTitle(this.EMPLOYEES_LIST).items

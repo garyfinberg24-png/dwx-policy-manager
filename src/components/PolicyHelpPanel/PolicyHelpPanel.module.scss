@@ -1,0 +1,335 @@
+// Policy Help Panel Styles
+// Large Fluent Panel — Forest Teal theme
+
+$pm-primary-teal: #0d9488;
+$pm-dark-teal: #0f766e;
+
+.helpPanelContent {
+  padding: 0;
+}
+
+// Panel Header Banner — rendered via onRenderHeader, full-width
+.panelBanner {
+  background: linear-gradient(135deg, $pm-dark-teal 0%, $pm-primary-teal 100%);
+  padding: 20px 24px;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+// Close button on banner
+.panelCloseButton {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: #ffffff;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+  }
+}
+
+.bannerIcon {
+  font-size: 32px;
+  opacity: 0.9;
+}
+
+.bannerTitle {
+  margin: 0 0 4px 0;
+  font-size: 22px;
+  font-weight: 500;
+}
+
+.bannerSubtitle {
+  margin: 0;
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+// Search
+.searchWrapper {
+  margin-bottom: 24px;
+}
+
+// Sections
+.section {
+  margin-bottom: 28px;
+}
+
+.sectionTitle {
+  font-size: 18px;
+  font-weight: 500;
+  color: #323130;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+// Card Grid
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.card {
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid #edebe9;
+
+  &:hover {
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+    border-color: $pm-primary-teal;
+  }
+}
+
+.cardIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+  font-size: 20px;
+  color: #ffffff;
+}
+
+.cardTitle {
+  font-size: 15px;
+  font-weight: 500;
+  color: #323130;
+  margin-bottom: 6px;
+}
+
+.cardSummary {
+  font-size: 13px;
+  color: #605e5c;
+  line-height: 1.5;
+}
+
+.cardCategory {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #a19f9d;
+}
+
+// Quick Links
+.quickLinks {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 24px;
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.quickLink {
+  padding: 20px;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+
+  &:hover {
+    transform: scale(1.02);
+  }
+}
+
+.quickLinkIcon {
+  font-size: 28px;
+  margin-bottom: 10px;
+}
+
+.quickLinkTitle {
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.quickLinkText {
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+// FAQ
+.faqItem {
+  background-color: #ffffff;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #edebe9;
+  overflow: hidden;
+}
+
+.faqQuestion {
+  padding: 14px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 14px;
+  color: #323130;
+
+  &:hover {
+    background-color: #f3f2f1;
+  }
+}
+
+.faqAnswer {
+  padding: 0 16px 14px;
+  color: #605e5c;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+// Shortcuts Table
+.shortcutTable {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.shortcutRow {
+  border-bottom: 1px solid #edebe9;
+
+  &:hover {
+    background-color: #f3f2f1;
+  }
+}
+
+.shortcutCell {
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 13px;
+}
+
+.shortcutKeys {
+  display: flex;
+  gap: 4px;
+}
+
+.keyBadge {
+  background-color: #f3f2f1;
+  padding: 3px 7px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: monospace;
+  font-weight: 500;
+  border: 1px solid #e1dfdd;
+}
+
+// Video Cards
+.videoCard {
+  background-color: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid #edebe9;
+
+  &:hover {
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+  }
+}
+
+.videoThumbnail {
+  height: 120px;
+  background: linear-gradient(135deg, $pm-dark-teal 0%, $pm-primary-teal 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 40px;
+}
+
+.videoInfo {
+  padding: 12px;
+}
+
+.videoTitle {
+  font-size: 13px;
+  font-weight: 500;
+  color: #323130;
+  margin-bottom: 4px;
+}
+
+.videoDuration {
+  font-size: 12px;
+  color: #605e5c;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+// Support Form
+.supportForm {
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border: 1px solid #edebe9;
+}
+
+.formField {
+  margin-bottom: 14px;
+}
+
+.formButtons {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+// Article Detail
+.backButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  cursor: pointer;
+  color: $pm-primary-teal;
+  font-weight: 500;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: 14px;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.articleContent {
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  line-height: 1.8;
+  border: 1px solid #edebe9;
+}

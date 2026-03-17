@@ -21,6 +21,7 @@ import {
 } from '../models/IPolicy';
 import { logger } from './LoggingService';
 import { PolicyLists } from '../constants/SharePointListNames';
+import { ValidationUtils } from '../utils/ValidationUtils';
 
 // ============================================================================
 // ENUMS & INTERFACES
@@ -430,7 +431,7 @@ export class PolicyValidationService {
         // Check for pending acknowledgements
         const pendingAcks = await this.sp.web.lists
           .getByTitle(this.ACKNOWLEDGEMENTS_LIST)
-          .items.filter(`PolicyId eq ${policy.Id} and AckStatus ne '${AcknowledgementStatus.Acknowledged}'`)
+          .items.filter(`PolicyId eq ${ValidationUtils.validateInteger(policy.Id, 'policyId', 1)} and AckStatus ne '${AcknowledgementStatus.Acknowledged}'`)
           .top(1)();
         if (pendingAcks.length > 0) {
           warnings.push({

@@ -9,6 +9,7 @@ import '@pnp/sp/items/get-all';
 import '@pnp/sp/search';
 import '@pnp/sp/files';
 import '@pnp/sp/folders';
+import { ValidationUtils } from '../utils/ValidationUtils';
 import {
   IPolicy,
   IPolicyDocumentMetadata,
@@ -145,7 +146,7 @@ export class PolicyHubService {
 
     // Status filters
     if (filters.statuses && filters.statuses.length > 0) {
-      const statusFilter = filters.statuses.map(s => `PolicyStatus eq '${s}'`).join(' or ');
+      const statusFilter = filters.statuses.map(s => `PolicyStatus eq '${ValidationUtils.sanitizeForOData(s)}'`).join(' or ');
       conditions.push(`(${statusFilter})`);
     }
 
@@ -163,13 +164,13 @@ export class PolicyHubService {
 
     // Category filters
     if (filters.policyCategories && filters.policyCategories.length > 0) {
-      const catFilter = filters.policyCategories.map(c => `PolicyCategory eq '${c}'`).join(' or ');
+      const catFilter = filters.policyCategories.map(c => `PolicyCategory eq '${ValidationUtils.sanitizeForOData(c)}'`).join(' or ');
       conditions.push(`(${catFilter})`);
     }
 
     // Compliance risk filters
     if (filters.complianceRisks && filters.complianceRisks.length > 0) {
-      const riskFilter = filters.complianceRisks.map(r => `ComplianceRisk eq '${r}'`).join(' or ');
+      const riskFilter = filters.complianceRisks.map(r => `ComplianceRisk eq '${ValidationUtils.sanitizeForOData(r)}'`).join(' or ');
       conditions.push(`(${riskFilter})`);
     }
 
@@ -197,7 +198,7 @@ export class PolicyHubService {
 
     // Read timeframe filters
     if (filters.readTimeframes && filters.readTimeframes.length > 0) {
-      const timeframeFilter = filters.readTimeframes.map(t => `ReadTimeframe eq '${t}'`).join(' or ');
+      const timeframeFilter = filters.readTimeframes.map(t => `ReadTimeframe eq '${ValidationUtils.sanitizeForOData(t)}'`).join(' or ');
       conditions.push(`(${timeframeFilter})`);
     }
 
@@ -256,7 +257,7 @@ export class PolicyHubService {
     try {
       if (policyIds.length === 0) return [];
 
-      const filter = policyIds.map(id => `PolicyId eq ${id}`).join(' or ');
+      const filter = policyIds.map(id => `PolicyId eq ${ValidationUtils.validateInteger(id, 'policyId', 1)}`).join(' or ');
       const documents = await this.sp.web.lists
         .getByTitle(this.POLICY_DOCUMENTS_LIST)
         .items.filter(`(${filter}) and IsActive eq true`)
@@ -356,7 +357,7 @@ export class PolicyHubService {
       // Get all acknowledgements for this policy
       const acknowledgements = await this.sp.web.lists
         .getByTitle(this.POLICY_ACKNOWLEDGEMENTS_LIST)
-        .items.filter(`PolicyId eq ${policyId}`)
+        .items.filter(`PolicyId eq ${ValidationUtils.validateInteger(policyId, 'policyId', 1)}`)
         .top(1000)() as IPolicyAcknowledgement[];
 
       // Calculate metrics
@@ -632,7 +633,7 @@ export class PolicyHubService {
       if (targetUserId) {
         const userAcks = await this.sp.web.lists
           .getByTitle(this.POLICY_ACKNOWLEDGEMENTS_LIST)
-          .items.filter(`AckUserId eq ${targetUserId} and AckStatus ne '${AcknowledgementStatus.Acknowledged}'`)
+          .items.filter(`AckUserId eq ${ValidationUtils.validateInteger(targetUserId, 'targetUserId', 1)} and AckStatus ne '${AcknowledgementStatus.Acknowledged}'`)
           .top(100)() as IPolicyAcknowledgement[];
 
         const pendingPolicyIds = userAcks.filter(a => a.AckStatus === AcknowledgementStatus.Sent || a.AckStatus === AcknowledgementStatus.Opened).map(a => a.PolicyId);
@@ -706,7 +707,7 @@ export class PolicyHubService {
       for (const policy of criticalPolicies) {
         const acks = await this.sp.web.lists
           .getByTitle(this.POLICY_ACKNOWLEDGEMENTS_LIST)
-          .items.filter(`PolicyId eq ${policy.Id} and AckStatus eq '${AcknowledgementStatus.Overdue}'`)
+          .items.filter(`PolicyId eq ${ValidationUtils.validateInteger(policy.Id, 'policyId', 1)} and AckStatus eq '${AcknowledgementStatus.Overdue}'`)
           .top(1)();
 
         if (acks.length > 0) {
@@ -777,7 +778,7 @@ export class PolicyHubService {
       // Get all acknowledgements for this user
       const acknowledgements = await this.sp.web.lists
         .getByTitle(this.POLICY_ACKNOWLEDGEMENTS_LIST)
-        .items.filter(`AckUserId eq ${userId}`)
+        .items.filter(`AckUserId eq ${ValidationUtils.validateInteger(userId, 'userId', 1)}`)
         .top(500)() as IPolicyAcknowledgement[];
 
       // Get all related policies
@@ -787,7 +788,7 @@ export class PolicyHubService {
         return { pendingPolicies: [], completedPolicies: [], overduePolicies: [] };
       }
 
-      const policyFilter = policyIds.map(id => `Id eq ${id}`).join(' or ');
+      const policyFilter = policyIds.map(id => `Id eq ${ValidationUtils.validateInteger(id, 'policyId', 1)}`).join(' or ');
       const policies = await this.sp.web.lists
         .getByTitle(this.POLICIES_LIST)
         .items.filter(`(${policyFilter})`)
@@ -839,7 +840,7 @@ export class PolicyHubService {
     try {
       const policies = await this.sp.web.lists
         .getByTitle(this.POLICIES_LIST)
-        .items.filter(`AuthorId eq ${userId}`)
+        .items.filter(`AuthorId eq ${ValidationUtils.validateInteger(userId, 'userId', 1)}`)
         .orderBy('Modified', false)
         .top(500)() as IPolicy[];
 
@@ -857,7 +858,7 @@ export class PolicyHubService {
     try {
       const requests = await this.sp.web.lists
         .getByTitle(PolicyWorkflowLists.DELEGATIONS)
-        .items.filter(`RequestedById eq ${managerId}`)
+        .items.filter(`RequestedById eq ${ValidationUtils.validateInteger(managerId, 'managerId', 1)}`)
         .orderBy('Created', false)
         .top(100)();
 

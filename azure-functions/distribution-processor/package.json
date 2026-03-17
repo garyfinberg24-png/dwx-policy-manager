@@ -1,0 +1,21 @@
+{
+  "name": "dwx-pm-distribution-processor",
+  "version": "1.0.0",
+  "description": "Azure Function — processes PM_DistributionQueue for bulk policy distribution",
+  "main": "dist/src/functions/*.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "start": "func start",
+    "prestart": "npm run build"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.0.0",
+    "@azure/msal-node": "^2.6.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "@types/node": "^20.0.0",
+    "azure-functions-core-tools": "^4.0.0"
+  }
+}

@@ -35,6 +35,7 @@ import { injectPortalStyles } from '../../../utils/injectPortalStyles';
 import { Colors, TextStyles, IconStyles, LayoutStyles, BadgeStyles, ContainerStyles, KPIStyles, CardBorderStyles, DividerStyles, EmailTemplateStyles } from './PolicyAdminStyles';
 import { PeoplePicker, PrincipalType } from "@pnp/spfx-controls-react/lib/PeoplePicker";
 import { JmlAppLayout } from '../../../components/JmlAppLayout';
+import { PolicyManagerRole } from '../../../services/PolicyRoleService';
 import { ErrorBoundary } from '../../../components/ErrorBoundary/ErrorBoundary';
 import { PolicyService } from '../../../services/PolicyService';
 import { SPService } from '../../../services/SPService';
@@ -117,50 +118,56 @@ type IEmailTemplate = IEmailTemplateModel;
 
 const NAV_SECTIONS: INavSection[] = [
   {
-    category: 'CONFIGURATION',
+    category: 'POLICY STRUCTURE',
     items: [
-      { key: 'categories', label: 'Categories', icon: 'BulletedList2', description: 'Manage policy categories' },
-      { key: 'subCategories', label: 'Sub-Categories', icon: 'FolderOpen', description: 'Manage sub-categories for folder navigation' },
-      { key: 'templates', label: 'Templates', icon: 'DocumentSet', description: 'Manage reusable policy templates' },
-      { key: 'metadata', label: 'Metadata Profiles', icon: 'Tag', description: 'Configure metadata presets for policies' },
-      { key: 'workflows', label: 'Approval Workflows', icon: 'Flow', description: 'Configure approval chains and routing' },
-      { key: 'compliance', label: 'Compliance Settings', icon: 'Shield', description: 'Risk levels, requirements, and compliance rules' },
-      { key: 'emailTemplates', label: 'Email Templates', icon: 'MailOptions', description: 'Customize email notifications and templates' },
-      { key: 'naming', label: 'Naming Rules', icon: 'Rename', description: 'Define naming conventions for policies' },
-      { key: 'sla', label: 'SLA Targets', icon: 'Timer', description: 'Service level agreements for policy processes' },
-      { key: 'lifecycle', label: 'Data Management', icon: 'History', description: 'Archival, retention, and data management' },
-      { key: 'navigation', label: 'Navigation', icon: 'Nav2DMapView', description: 'Toggle navigation items and app sections' },
-      { key: 'aiAssistant', label: 'AI Assistant', icon: 'Robot', description: 'Configure AI chat assistant and function URL' },
-      { key: 'settings', label: 'General Settings', icon: 'Settings', description: 'Application display and feature toggles' }
+      { key: 'categories', label: 'Categories', icon: 'BulletedList2', description: 'Manage policy categories and sub-categories' },
+      { key: 'subCategories', label: 'Sub-Categories', icon: 'FolderOpen', description: 'Folder navigation within categories' },
+      { key: 'templates', label: 'Templates', icon: 'DocumentSet', description: 'Reusable policy templates with defaults' },
+      { key: 'metadata', label: 'Metadata Profiles', icon: 'Tag', description: 'Compliance presets for quick policy setup' },
+      { key: 'naming', label: 'Naming Rules', icon: 'Rename', description: 'Auto-generated policy numbering conventions' }
     ]
   },
   {
-    category: 'MANAGEMENT',
+    category: 'WORKFLOWS & COMPLIANCE',
     items: [
-      { key: 'reviewers', label: 'Reviewers & Approvers', icon: 'People', description: 'Manage policy reviewers and approval groups' },
-      { key: 'usersRoles', label: 'Users & Roles', icon: 'PlayerSettings', description: 'Manage user roles and permissions' },
-      { key: 'audiences', label: 'Audience Targeting', icon: 'Group', description: 'Create audiences for policy distribution' },
-      { key: 'notifications', label: 'Notifications', icon: 'Mail', description: 'Configure notification rules and alerts' },
+      { key: 'workflows', label: 'Approval Workflows', icon: 'Flow', description: 'Approval chains and routing rules' },
+      { key: 'compliance', label: 'Compliance Settings', icon: 'Shield', description: 'Acknowledgement, review, and risk defaults' },
+      { key: 'sla', label: 'SLA Targets', icon: 'Timer', description: 'Target completion times and warning thresholds' },
+      { key: 'emailTemplates', label: 'Email Templates', icon: 'MailOptions', description: 'Notification email designs and content' },
+      { key: 'notifications', label: 'Notifications', icon: 'Mail', description: 'Notification rules and delivery settings' }
+    ]
+  },
+  {
+    category: 'USERS & ACCESS',
+    items: [
+      { key: 'usersRoles', label: 'Users & Roles', icon: 'PlayerSettings', description: 'User management and Entra ID sync' },
+      { key: 'rolePermissions', label: 'Role Permissions', icon: 'Permissions', description: 'Feature access per role (explicit, no inheritance)' },
+      { key: 'reviewers', label: 'Reviewers & Approvers', icon: 'People', description: 'SharePoint groups for policy workflows' },
+      { key: 'audiences', label: 'Audience Targeting', icon: 'Group', description: 'Target audiences for policy distribution' }
+    ]
+  },
+  {
+    category: 'SYSTEM',
+    items: [
+      { key: 'provisioning', label: 'Provisioning', icon: 'Database', description: 'SharePoint lists, seed data, and system setup' },
+      { key: 'navigation', label: 'Navigation', icon: 'Nav2DMapView', description: 'Toggle app navigation items' },
+      { key: 'aiAssistant', label: 'AI Assistant', icon: 'Robot', description: 'AI chat configuration and function URL' },
+      { key: 'lifecycle', label: 'Data Management', icon: 'History', description: 'Archival, retention, and cleanup rules' },
+      { key: 'settings', label: 'General Settings', icon: 'Settings', description: 'Display, feature toggles, and app config' },
       { key: 'export', label: 'Data Export', icon: 'Download', description: 'Export policy data and reports' }
     ]
   },
   {
-    category: 'ANALYTICS & SECURITY',
+    category: 'AUDIT & MONITORING',
     items: [
-      { key: 'audit', label: 'Audit Log', icon: 'ComplianceAudit', description: 'View policy change history and access logs' },
-      { key: 'rolePermissions', label: 'Role Permissions', icon: 'Permissions', description: 'Configure role-based access for features' }
+      { key: 'audit', label: 'Audit Manager', icon: 'ComplianceAudit', description: 'Change history, access logs, and alerts' },
+      { key: 'systemInfo', label: 'System Info', icon: 'Info', description: 'Version, technology stack, and diagnostics' }
     ]
   },
   {
-    category: 'ABOUT',
+    category: 'DWX SUITE',
     items: [
-      { key: 'systemInfo', label: 'System Info', icon: 'Info', description: 'System information, version, and technology stack' }
-    ]
-  },
-  {
-    category: 'PREMIUM',
-    items: [
-      { key: 'productShowcase', label: 'DWx Products', icon: 'WebAppBuilderModule', description: 'Browse available DWx products and premium add-ons' }
+      { key: 'productShowcase', label: 'DWx Products', icon: 'WebAppBuilderModule', description: 'Browse DWx suite products and add-ons' }
     ]
   }
 ];
@@ -273,7 +280,8 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         aiChatConfig,
         approvalConfig,
         complianceConfig,
-        notificationConfig
+        notificationConfig,
+        generalExtConfig
       ] = await Promise.all([
         this.adminConfigService.getNamingRules().catch(() => []),
         this.adminConfigService.getSLAConfigs().catch(() => []),
@@ -287,7 +295,8 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         this.adminConfigService.getConfigByCategory('AI').catch(() => ({})),
         this.adminConfigService.getConfigByCategory('Approval').catch(() => ({})),
         this.adminConfigService.getConfigByCategory('Compliance').catch(() => ({})),
-        this.adminConfigService.getConfigByCategory('Notifications').catch(() => ({}))
+        this.adminConfigService.getConfigByCategory('Notifications').catch(() => ({})),
+        this.adminConfigService.getConfigByCategory('General').catch(() => ({}))
       ]);
 
       // Merge general settings from SP with defaults
@@ -297,6 +306,25 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         aiFunctionUrl: aiUrl || this.state.generalSettings.aiFunctionUrl
       };
 
+      // Ensure unique sort orders on categories (fix duplicates from provisioning)
+      const sortedCategories = [...policyCategories].sort((a, b) => a.SortOrder - b.SortOrder);
+      const seenOrders = new Set<number>();
+      let hasDuplicates = false;
+      for (const cat of sortedCategories) {
+        if (seenOrders.has(cat.SortOrder)) {
+          hasDuplicates = true;
+          break;
+        }
+        seenOrders.add(cat.SortOrder);
+      }
+      if (hasDuplicates) {
+        // Renumber sequentially and persist
+        sortedCategories.forEach((cat, idx) => { cat.SortOrder = idx + 1; });
+        for (const cat of sortedCategories) {
+          this.adminConfigService.updateCategory(cat.Id, { SortOrder: cat.SortOrder } as any).catch(() => {/* best effort */});
+        }
+      }
+
       this.setState({
         namingRules,
         slaConfigs,
@@ -304,7 +332,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         emailTemplates,
         templates,
         metadataProfiles,
-        policyCategories,
+        policyCategories: hasDuplicates ? sortedCategories : policyCategories,
         generalSettings: mergedSettings,
         loading: false,
         // AI Chat config
@@ -334,6 +362,12 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         _notifyNewPolicies: (notificationConfig as any)[AdminConfigKeys.NOTIFY_NEW_POLICIES] !== 'false',
         _notifyPolicyUpdates: (notificationConfig as any)[AdminConfigKeys.NOTIFY_POLICY_UPDATES] !== 'false',
         _notifyDailyDigest: (notificationConfig as any)[AdminConfigKeys.NOTIFY_DAILY_DIGEST] === 'true',
+        // Extended general settings (branding, limits, quiz)
+        _brandCompanyName: (generalExtConfig as any)['Admin.General.CompanyName'] || 'First Digital',
+        _brandProductName: (generalExtConfig as any)['Admin.General.ProductName'] || 'DWx Policy Manager',
+        _maxDocSizeMB: Number((generalExtConfig as any)['Admin.General.MaxDocSizeMB']) || 25,
+        _maxVideoSizeMB: Number((generalExtConfig as any)['Admin.General.MaxVideoSizeMB']) || 100,
+        _quizPassingScore: Number((generalExtConfig as any)['Admin.General.QuizPassingScore']) || 80,
       } as any);
     } catch (error) {
       console.error('[PolicyAdmin] loadSavedSettings failed:', error);
@@ -419,7 +453,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         <div className={styles.sidebarHeader}>
           <div className={styles.sidebarTitle}>
             <Icon iconName="Admin" style={IconStyles.xLarge} />
-            <span>Admin Center</span>
+            <span>Admin Centre</span>
           </div>
           <div className={styles.sidebarSubtitle}>Policy Manager Configuration</div>
         </div>
@@ -811,7 +845,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         <Stack tokens={{ childrenGap: 16 }}>
           <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
             <Text variant="mediumPlus" style={TextStyles.semiBold}>Policy Templates ({templates.length})</Text>
-            <PrimaryButton text="New Template" iconProps={{ iconName: 'Add' }} onClick={() => this.setState({ _editingTemplate: { Id: 0, Title: '', TemplateName: '', TemplateCategory: 'HR Policies', TemplateDescription: '', HTMLTemplate: '', IsActive: true }, _showTemplatePanel: true } as any)} />
+            <PrimaryButton text="New Template" iconProps={{ iconName: 'Add' }} onClick={() => this.setState({ _editingTemplate: { Id: 0, Title: '', TemplateName: '', TemplateCategory: 'HR Policies', TemplateDescription: '', HTMLTemplate: '', TemplateContent: '', ComplianceRisk: 'Medium', SuggestedReadTimeframe: 'Week1', RequiresAcknowledgement: true, RequiresQuiz: false, KeyPointsTemplate: '', IsActive: true }, _showTemplatePanel: true } as any)} />
           </Stack>
           {templates.length === 0 ? (
             <MessageBar messageBarType={MessageBarType.info}>
@@ -842,7 +876,20 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                 }
                 this.setState({ saving: true });
                 try {
-                  const data = { Title: editingTemplate.TemplateName, TemplateName: editingTemplate.TemplateName, TemplateCategory: editingTemplate.TemplateCategory, TemplateDescription: editingTemplate.TemplateDescription, HTMLTemplate: editingTemplate.HTMLTemplate, IsActive: editingTemplate.IsActive };
+                  const data = {
+                    Title: editingTemplate.TemplateName,
+                    TemplateName: editingTemplate.TemplateName,
+                    TemplateCategory: editingTemplate.TemplateCategory,
+                    TemplateDescription: editingTemplate.TemplateDescription,
+                    HTMLTemplate: editingTemplate.HTMLTemplate || editingTemplate.TemplateContent || '',
+                    TemplateContent: editingTemplate.TemplateContent || editingTemplate.HTMLTemplate || '',
+                    ComplianceRisk: editingTemplate.ComplianceRisk || 'Medium',
+                    SuggestedReadTimeframe: editingTemplate.SuggestedReadTimeframe || 'Week1',
+                    RequiresAcknowledgement: editingTemplate.RequiresAcknowledgement ?? true,
+                    RequiresQuiz: editingTemplate.RequiresQuiz ?? false,
+                    KeyPointsTemplate: editingTemplate.KeyPointsTemplate || '',
+                    IsActive: editingTemplate.IsActive
+                  };
                   if (editingTemplate.Id) {
                     await this.adminConfigService.updateTemplate(editingTemplate.Id, data);
                     this.setState({ templates: templates.map(t => t.Id === editingTemplate.Id ? { ...t, ...editingTemplate } : t) });
@@ -862,9 +909,30 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           {editingTemplate && (
             <Stack tokens={{ childrenGap: 16 }} style={LayoutStyles.paddingTop16}>
               <TextField label="Template Name" required value={editingTemplate.TemplateName || ''} onChange={(_, v) => this.setState({ _editingTemplate: { ...editingTemplate, TemplateName: v || '' } } as any)} />
-              <Dropdown label="Category" selectedKey={editingTemplate.TemplateCategory || ''} options={this.state.policyCategories.filter(c => c.IsActive).map(c => ({ key: c.CategoryName, text: c.CategoryName }))} onChange={(_, opt) => opt && this.setState({ _editingTemplate: { ...editingTemplate, TemplateCategory: opt.key as string } } as any)} placeholder="Select a category" />
+              <Dropdown label="Category" required selectedKey={editingTemplate.TemplateCategory || ''} options={this.state.policyCategories.filter(c => c.IsActive).map(c => ({ key: c.CategoryName, text: c.CategoryName }))} onChange={(_, opt) => opt && this.setState({ _editingTemplate: { ...editingTemplate, TemplateCategory: opt.key as string } } as any)} placeholder="Select a category" />
               <TextField label="Description" multiline rows={3} value={editingTemplate.TemplateDescription || ''} onChange={(_, v) => this.setState({ _editingTemplate: { ...editingTemplate, TemplateDescription: v || '' } } as any)} />
-              <TextField label="HTML Content" multiline rows={8} value={editingTemplate.HTMLTemplate || ''} onChange={(_, v) => this.setState({ _editingTemplate: { ...editingTemplate, HTMLTemplate: v || '' } } as any)} />
+              <TextField label="Template Content (HTML)" multiline rows={8} value={editingTemplate.TemplateContent || editingTemplate.HTMLTemplate || ''} onChange={(_, v) => this.setState({ _editingTemplate: { ...editingTemplate, TemplateContent: v || '', HTMLTemplate: v || '' } } as any)} description="HTML content that pre-populates the policy editor when this template is selected" />
+
+              <Separator>Policy Defaults</Separator>
+              <Text variant="small" style={{ ...TextStyles.secondary, marginBottom: 8, display: 'block' }}>
+                These defaults are applied when an author selects this template in the Policy Builder wizard.
+              </Text>
+
+              <Dropdown label="Default Compliance Risk" selectedKey={editingTemplate.ComplianceRisk || 'Medium'} options={[
+                { key: 'Critical', text: 'Critical' }, { key: 'High', text: 'High' },
+                { key: 'Medium', text: 'Medium' }, { key: 'Low', text: 'Low' }, { key: 'Informational', text: 'Informational' }
+              ]} onChange={(_, opt) => opt && this.setState({ _editingTemplate: { ...editingTemplate, ComplianceRisk: opt.key as string } } as any)} />
+
+              <Dropdown label="Suggested Read Timeframe" selectedKey={editingTemplate.SuggestedReadTimeframe || 'Week1'} options={[
+                { key: 'Immediate', text: 'Immediate' }, { key: 'Day1', text: 'Day 1' }, { key: 'Day3', text: '3 Days' },
+                { key: 'Week1', text: '1 Week' }, { key: 'Week2', text: '2 Weeks' }, { key: 'Month1', text: '1 Month' }
+              ]} onChange={(_, opt) => opt && this.setState({ _editingTemplate: { ...editingTemplate, SuggestedReadTimeframe: opt.key as string } } as any)} />
+
+              <Toggle label="Requires Acknowledgement" checked={editingTemplate.RequiresAcknowledgement !== false} onText="Yes" offText="No" onChange={(_, c) => this.setState({ _editingTemplate: { ...editingTemplate, RequiresAcknowledgement: !!c } } as any)} />
+              <Toggle label="Requires Quiz" checked={editingTemplate.RequiresQuiz === true} onText="Yes" offText="No" onChange={(_, c) => this.setState({ _editingTemplate: { ...editingTemplate, RequiresQuiz: !!c } } as any)} />
+
+              <TextField label="Key Points (semicolon-separated)" value={editingTemplate.KeyPointsTemplate || ''} onChange={(_, v) => this.setState({ _editingTemplate: { ...editingTemplate, KeyPointsTemplate: v || '' } } as any)} placeholder="e.g., Data classification;Access control;Incident reporting" description="Key points authors can use as a starting point" />
+
               <Toggle label="Active" checked={editingTemplate.IsActive !== false} onText="Active" offText="Inactive" onChange={(_, c) => this.setState({ _editingTemplate: { ...editingTemplate, IsActive: !!c } } as any)} />
             </Stack>
           )}
@@ -883,7 +951,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         <Stack tokens={{ childrenGap: 16 }}>
           <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
             <Text variant="mediumPlus" style={TextStyles.semiBold}>Metadata Profiles ({metadataProfiles.length})</Text>
-            <PrimaryButton text="New Profile" iconProps={{ iconName: 'Add' }} onClick={() => this.setState({ _editingProfile: { Id: 0, Title: '', ProfileName: '', PolicyCategory: 'HR Policies', ComplianceRisk: 'Medium', ReadTimeframe: 'Week 1', RequiresAcknowledgement: true, RequiresQuiz: false, TargetDepartments: '', TargetRoles: '' }, _showProfilePanel: true } as any)} />
+            <PrimaryButton text="New Profile" iconProps={{ iconName: 'Add' }} onClick={() => this.setState({ _editingProfile: { Id: 0, Title: '', ProfileName: '', PolicyCategory: 'HR Policies', ComplianceRisk: 'Medium', ReadTimeframe: 'Week 1', RequiresAcknowledgement: true, RequiresQuiz: false, TargetDepartments: '' }, _showProfilePanel: true } as any)} />
           </Stack>
           <Text>Configure pre-defined metadata settings for policies:</Text>
           {metadataProfiles.length === 0 ? (
@@ -929,10 +997,9 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           headerText={editingProfile?.Id ? 'Edit Metadata Profile' : 'New Metadata Profile'}
           onRenderFooterContent={() => (
             <Stack horizontal tokens={{ childrenGap: 8 }}>
-              <PrimaryButton text="Save" disabled={this.state.saving} onClick={async () => {
+              <PrimaryButton text="Save" disabled={this.state.saving || !editingProfile?.ProfileName?.trim()} onClick={async () => {
                 if (!editingProfile) return;
                 if (!editingProfile.ProfileName?.trim()) {
-                  void this.dialogManager.showAlert('Profile name is required.', { title: 'Validation' });
                   return;
                 }
                 if (!editingProfile.PolicyCategory?.trim()) {
@@ -941,7 +1008,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                 }
                 this.setState({ saving: true });
                 try {
-                  const data = { Title: editingProfile.ProfileName, ProfileName: editingProfile.ProfileName, PolicyCategory: editingProfile.PolicyCategory, ComplianceRisk: editingProfile.ComplianceRisk, ReadTimeframe: editingProfile.ReadTimeframe, RequiresAcknowledgement: editingProfile.RequiresAcknowledgement, RequiresQuiz: editingProfile.RequiresQuiz, TargetDepartments: editingProfile.TargetDepartments, TargetRoles: editingProfile.TargetRoles };
+                  const data = { Title: editingProfile.ProfileName, ProfileName: editingProfile.ProfileName, PolicyCategory: editingProfile.PolicyCategory, ComplianceRisk: editingProfile.ComplianceRisk, ReadTimeframe: editingProfile.ReadTimeframe, RequiresAcknowledgement: editingProfile.RequiresAcknowledgement, RequiresQuiz: editingProfile.RequiresQuiz, TargetDepartments: editingProfile.TargetDepartments };
                   if (editingProfile.Id) {
                     await this.adminConfigService.updateMetadataProfile(editingProfile.Id, data);
                     this.setState({ metadataProfiles: metadataProfiles.map(p => p.Id === editingProfile.Id ? { ...p, ...editingProfile } : p) });
@@ -960,7 +1027,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         >
           {editingProfile && (
             <Stack tokens={{ childrenGap: 16 }} style={LayoutStyles.paddingTop16}>
-              <TextField label="Profile Name" required value={editingProfile.ProfileName || ''} onChange={(_, v) => this.setState({ _editingProfile: { ...editingProfile, ProfileName: v || '' } } as any)} />
+              <TextField label="Profile Name" required value={editingProfile.ProfileName || ''} onChange={(_, v) => this.setState({ _editingProfile: { ...editingProfile, ProfileName: v || '' } } as any)} errorMessage={editingProfile.ProfileName !== undefined && !editingProfile.ProfileName?.trim() ? 'Profile name is required' : undefined} />
               <Dropdown label="Policy Category" required selectedKey={editingProfile.PolicyCategory || ''} options={this.state.policyCategories.filter(c => c.IsActive).map(c => ({ key: c.CategoryName, text: c.CategoryName }))} onChange={(_, opt) => opt && this.setState({ _editingProfile: { ...editingProfile, PolicyCategory: opt.key as string } } as any)} placeholder="Select a category" />
               <Dropdown label="Compliance Risk" selectedKey={editingProfile.ComplianceRisk || ''} options={[
                 { key: 'Critical', text: 'Critical' }, { key: 'High', text: 'High' }, { key: 'Medium', text: 'Medium' }, { key: 'Low', text: 'Low' }, { key: 'Informational', text: 'Informational' }
@@ -970,8 +1037,34 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               ]} onChange={(_, opt) => opt && this.setState({ _editingProfile: { ...editingProfile, ReadTimeframe: opt.key as string } } as any)} />
               <Toggle label="Requires Acknowledgement" checked={editingProfile.RequiresAcknowledgement} onText="Yes" offText="No" onChange={(_, c) => this.setState({ _editingProfile: { ...editingProfile, RequiresAcknowledgement: !!c } } as any)} />
               <Toggle label="Requires Quiz" checked={editingProfile.RequiresQuiz} onText="Yes" offText="No" onChange={(_, c) => this.setState({ _editingProfile: { ...editingProfile, RequiresQuiz: !!c } } as any)} />
-              <TextField label="Target Departments" placeholder="Comma-separated (e.g., HR, IT, Finance)" value={editingProfile.TargetDepartments || ''} onChange={(_, v) => this.setState({ _editingProfile: { ...editingProfile, TargetDepartments: v || '' } } as any)} />
-              <TextField label="Target Roles" placeholder="Comma-separated (e.g., Manager, Executive)" value={editingProfile.TargetRoles || ''} onChange={(_, v) => this.setState({ _editingProfile: { ...editingProfile, TargetRoles: v || '' } } as any)} />
+              <Dropdown
+                label="Target Departments"
+                multiSelect
+                selectedKeys={editingProfile.TargetDepartments ? editingProfile.TargetDepartments.split(',').map((d: string) => d.trim()).filter(Boolean) : []}
+                options={[
+                  { key: 'Human Resources', text: 'Human Resources' },
+                  { key: 'IT', text: 'IT' },
+                  { key: 'Finance', text: 'Finance' },
+                  { key: 'Operations', text: 'Operations' },
+                  { key: 'Sales', text: 'Sales' },
+                  { key: 'Marketing', text: 'Marketing' },
+                  { key: 'Legal', text: 'Legal' },
+                  { key: 'Executive', text: 'Executive' },
+                  { key: 'Compliance', text: 'Compliance' },
+                  { key: 'Customer Service', text: 'Customer Service' },
+                  { key: 'All Departments', text: 'All Departments' }
+                ]}
+                onChange={(_, option) => {
+                  if (option) {
+                    const current = editingProfile.TargetDepartments ? editingProfile.TargetDepartments.split(',').map((d: string) => d.trim()).filter(Boolean) : [];
+                    const updated = option.selected
+                      ? [...current, option.key as string]
+                      : current.filter((d: string) => d !== option.key);
+                    this.setState({ _editingProfile: { ...editingProfile, TargetDepartments: updated.join(', ') } } as any);
+                  }
+                }}
+                placeholder="Select departments..."
+              />
             </Stack>
           )}
         </Panel>
@@ -1045,6 +1138,10 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               }}
             />
           </Stack>
+
+          <MessageBar messageBarType={MessageBarType.warning} isMultiline>
+            <strong>Global defaults only.</strong> These settings apply as defaults when creating new policies. If an author sets compliance options at the individual policy level (e.g., a different acknowledgement deadline or review frequency), the policy-level settings will take precedence over these global defaults.
+          </MessageBar>
 
           <div className={styles.section}>
             <Text variant="large" style={TextStyles.sectionHeader}>Acknowledgement Settings</Text>
@@ -1401,14 +1498,42 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     const auditLoading = this.state._auditLoading || false;
 
     const loadAuditLog = async (): Promise<void> => {
-      this.setState({ _auditLoading: true } as any);
+      this.setState({ _auditLoading: true, _auditError: '' } as any);
       try {
-        const { PolicyAuditService } = require('../../../services/PolicyAuditService');
-        const auditService = new PolicyAuditService(this.props.sp);
-        const result = await auditService.queryAuditLogs({}, 1, 100);
-        this.setState({ _auditEntries: result.entries, _auditLoading: false } as any);
-      } catch {
-        this.setState({ _auditEntries: [], _auditLoading: false } as any);
+        // Try direct SP list query first (more reliable than service import)
+        const items = await this.props.sp.web.lists
+          .getByTitle('PM_PolicyAuditLog')
+          .items
+          .orderBy('Created', false)
+          .select('Id', 'Title', 'EventType', 'EntityType', 'EntityName', 'PolicyId', 'Description', 'PerformedByName', 'PerformedByEmail', 'Severity', 'ComplianceRelevant', 'Created')
+          .top(100)();
+
+        // Map Created → Timestamp for display
+        const mapped = items.map((item: any) => ({
+          ...item,
+          Timestamp: item.Created || item.EventTimestamp
+        }));
+
+        this.setState({ _auditEntries: mapped, _auditLoading: false } as any);
+      } catch (err: any) {
+        console.error('[PolicyAdmin] Audit log load failed:', err);
+        // Fallback: try the service (may have different field mapping)
+        try {
+          const { PolicyAuditService } = require('../../../services/PolicyAuditService');
+          const auditService = new PolicyAuditService(this.props.sp);
+          const result = await auditService.queryAuditLogs({}, 1, 100);
+          this.setState({ _auditEntries: result.entries, _auditLoading: false } as any);
+        } catch (serviceErr: any) {
+          const errorMsg = serviceErr?.message || err?.message || 'Failed to load audit log';
+          const isListMissing = errorMsg.includes('does not exist') || errorMsg.includes('404') || errorMsg.includes('list');
+          this.setState({
+            _auditEntries: [],
+            _auditLoading: false,
+            _auditError: isListMissing
+              ? 'The PM_PolicyAuditLog list has not been provisioned. Please run the provisioning script (Create-PolicyManagementLists.ps1) to create it.'
+              : `Failed to load audit log: ${errorMsg}`
+          } as any);
+        }
       }
     };
 
@@ -1436,9 +1561,14 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               <DefaultButton text="Export Log" iconProps={{ iconName: 'Download' }} />
             </Stack>
           </Stack>
+          {(this.state as any)._auditError && (
+            <MessageBar messageBarType={MessageBarType.error} isMultiline>
+              {(this.state as any)._auditError}
+            </MessageBar>
+          )}
           {auditLoading ? (
             <MessageBar>Loading audit log entries...</MessageBar>
-          ) : auditEntries.length === 0 ? (
+          ) : auditEntries.length === 0 && !(this.state as any)._auditError ? (
             <MessageBar messageBarType={MessageBarType.info}>
               No audit log entries found. Entries will appear here as policies are created, modified, and acknowledged.
             </MessageBar>
@@ -1578,7 +1708,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             {Object.entries(segmentTypeLabels).map(([type, label]) => (
               <Stack key={type} horizontal verticalAlign="center" tokens={{ childrenGap: 6 }}>
                 <div style={{
-                  width: 12, height: 12, borderRadius: 3,
+                  width: 12, height: 12, borderRadius: 4,
                   backgroundColor: segmentTypeColors[type]
                 }} />
                 <Text variant="small">{label}</Text>
@@ -1605,7 +1735,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                         {rule.IsActive ? 'Active' : 'Inactive'}
                       </div>
                       <div style={{
-                        padding: '2px 10px', borderRadius: 12, fontSize: 12, fontWeight: 500,
+                        padding: '2px 10px', borderRadius: 4, fontSize: 12, fontWeight: 500,
                         backgroundColor: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd'
                       }}>
                         {this.getAffectedPolicyCount(rule)} policies
@@ -1719,6 +1849,69 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             Set target completion times for policy processes. Warnings are triggered when the remaining time falls below the threshold.
           </Text>
 
+          {/* Live SLA Compliance Dashboard */}
+          {(() => {
+            const st = this.state as any;
+            const dashboard = st._slaDashboard;
+            if (!st._slaMetricsLoaded) {
+              this.setState({ _slaMetricsLoaded: true } as any);
+              import('../../../services/SLAComplianceService').then(({ SLAComplianceService }) => {
+                const svc = new SLAComplianceService(this.props.sp);
+                svc.calculateDashboard().then((result: any) => {
+                  this.setState({ _slaDashboard: result } as any);
+                }).catch(() => { /* graceful degradation */ });
+              }).catch(() => { /* service import failed */ });
+            }
+            if (!dashboard) return (
+              <MessageBar>Calculating SLA compliance from live data...</MessageBar>
+            );
+            return (
+              <div style={{
+                display: 'flex', gap: 12, flexWrap: 'wrap' as const
+              }}>
+                {/* Overall compliance */}
+                <div style={{
+                  flex: '1 1 160px', padding: 16, borderRadius: 4, textAlign: 'center' as const,
+                  background: dashboard.overallCompliancePercent >= 90 ? '#f0fdf4' : dashboard.overallCompliancePercent >= 70 ? '#fffbeb' : '#fef2f2',
+                  border: `1px solid ${dashboard.overallCompliancePercent >= 90 ? '#a7f3d0' : dashboard.overallCompliancePercent >= 70 ? '#fde68a' : '#fecaca'}`
+                }}>
+                  <Text variant="xLarge" style={{ fontWeight: 700, color: dashboard.overallCompliancePercent >= 90 ? '#059669' : dashboard.overallCompliancePercent >= 70 ? '#d97706' : '#dc2626', display: 'block' }}>
+                    {dashboard.overallCompliancePercent}%
+                  </Text>
+                  <Text variant="small" style={{ color: '#64748b' }}>Overall SLA Compliance</Text>
+                </div>
+                {/* Per-process metrics */}
+                {(dashboard.metrics || []).map((m: any) => (
+                  <div key={m.processType} style={{
+                    flex: '1 1 160px', padding: 16, borderRadius: 4, textAlign: 'center' as const,
+                    background: m.status === 'Met' ? '#f0fdf4' : m.status === 'At Risk' ? '#fffbeb' : '#fef2f2',
+                    border: `1px solid ${m.status === 'Met' ? '#a7f3d0' : m.status === 'At Risk' ? '#fde68a' : '#fecaca'}`
+                  }}>
+                    <Text variant="large" style={{ fontWeight: 700, color: m.status === 'Met' ? '#059669' : m.status === 'At Risk' ? '#d97706' : '#dc2626', display: 'block' }}>
+                      {m.slaCompliancePercent}%
+                    </Text>
+                    <Text variant="small" style={{ fontWeight: 600, display: 'block' }}>{m.processType}</Text>
+                    <Text variant="small" style={{ color: '#64748b' }}>
+                      {m.currentlyBreached > 0 ? `${m.currentlyBreached} breached` : m.currentlyAtRisk > 0 ? `${m.currentlyAtRisk} at risk` : `${m.totalItems} tracked`}
+                    </Text>
+                  </div>
+                ))}
+                {/* Breaches count */}
+                {dashboard.totalBreaches > 0 && (
+                  <div style={{
+                    flex: '1 1 160px', padding: 16, borderRadius: 4, textAlign: 'center' as const,
+                    background: '#fef2f2', border: '1px solid #fecaca'
+                  }}>
+                    <Text variant="xLarge" style={{ fontWeight: 700, color: '#dc2626', display: 'block' }}>
+                      {dashboard.totalBreaches}
+                    </Text>
+                    <Text variant="small" style={{ color: '#dc2626' }}>Active Breaches</Text>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
           {/* SLA Cards Grid */}
           <div className={styles.adminCardGrid}>
             {slaConfigs.map(sla => {
@@ -1735,7 +1928,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                     <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
                       <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 10 }}>
                         <div style={{
-                          width: 36, height: 36, borderRadius: 8,
+                          width: 36, height: 36, borderRadius: 4,
                           backgroundColor: sla.IsActive ? '#ccfbf1' : '#f1f5f9',
                           display: 'flex', alignItems: 'center', justifyContent: 'center'
                         }}>
@@ -1764,7 +1957,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                     {/* Target Display */}
                     <div style={{
                       display: 'flex', alignItems: 'center', gap: 16,
-                      padding: '12px 16px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0'
+                      padding: '12px 16px', background: '#f8fafc', borderRadius: 4, border: '1px solid #e2e8f0'
                     }}>
                       <div style={LayoutStyles.flex1}>
                         <Text variant="small" style={{ color: Colors.textTertiary, display: 'block' }}>Target</Text>
@@ -1782,7 +1975,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                     {/* Progress bar visual */}
                     <div style={DividerStyles.progressContainer}>
                       <div style={{
-                        width: `${100 - percentage}%`, height: '100%', borderRadius: 3,
+                        width: `${100 - percentage}%`, height: '100%', borderRadius: 4,
                         background: sla.IsActive ? 'linear-gradient(90deg, #0d9488, #14b8a6)' : '#94a3b8'
                       }} />
                     </div>
@@ -1853,7 +2046,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                   IsActive: true,
                   Description: ''
                 };
-                this.setState({ editingLifecycle: newPolicy, showLifecyclePanel: true });
+                this.setState({ editingLifecycle: newPolicy, showLifecyclePanel: true, _lifecycleCustomMode: false } as any);
               }}
             />
           </Stack>
@@ -1866,7 +2059,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           <div style={{
             display: 'flex', gap: 16, padding: '16px 20px',
             background: 'linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%)',
-            borderRadius: 8, border: '1px solid #a7f3d0'
+            borderRadius: 4, border: '1px solid #a7f3d0'
           }}>
             <div style={LayoutStyles.flex1Center}>
               <Text variant="xLarge" style={IconStyles.boldTeal}>
@@ -1906,7 +2099,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                     <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
                       <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 10 }}>
                         <div style={{
-                          width: 36, height: 36, borderRadius: 8,
+                          width: 36, height: 36, borderRadius: 4,
                           backgroundColor: `${color}15`,
                           display: 'flex', alignItems: 'center', justifyContent: 'center'
                         }}>
@@ -1921,7 +2114,10 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                         <DefaultButton
                           iconProps={{ iconName: 'Edit' }}
                           styles={{ root: { minWidth: 'auto', padding: '0 8px', height: 28 }, label: { fontSize: 12 } }}
-                          onClick={() => this.setState({ editingLifecycle: { ...policy }, showLifecyclePanel: true })}
+                          onClick={() => {
+                            const isCustom = !['90','180','365','730','1825','2555','3650'].includes(String(policy.RetentionPeriodDays));
+                            this.setState({ editingLifecycle: { ...policy }, showLifecyclePanel: true, _lifecycleCustomMode: isCustom } as any);
+                          }}
                         />
                         <IconButton
                           iconProps={{ iconName: 'Delete' }}
@@ -1937,14 +2133,14 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                     <Stack horizontal tokens={{ childrenGap: 16 }} wrap>
                       <div style={{
                         display: 'flex', alignItems: 'center', gap: 6,
-                        padding: '4px 12px', borderRadius: 6, background: '#f8fafc', border: '1px solid #e2e8f0'
+                        padding: '4px 12px', borderRadius: 4, background: '#f8fafc', border: '1px solid #e2e8f0'
                       }}>
                         <Icon iconName="Timer" style={{ ...IconStyles.smallMedium, color: Colors.textTertiary }} />
                         <Text variant="small"><strong>Retention:</strong> {formatRetention(policy.RetentionPeriodDays)}</Text>
                       </div>
                       <div style={{
                         display: 'flex', alignItems: 'center', gap: 6,
-                        padding: '4px 12px', borderRadius: 6,
+                        padding: '4px 12px', borderRadius: 4,
                         background: policy.AutoDeleteEnabled ? '#fef2f2' : '#f8fafc',
                         border: `1px solid ${policy.AutoDeleteEnabled ? '#fecaca' : '#e2e8f0'}`
                       }}>
@@ -1953,7 +2149,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                       </div>
                       <div style={{
                         display: 'flex', alignItems: 'center', gap: 6,
-                        padding: '4px 12px', borderRadius: 6,
+                        padding: '4px 12px', borderRadius: 4,
                         background: policy.ArchiveBeforeDelete ? '#eff6ff' : '#f8fafc',
                         border: `1px solid ${policy.ArchiveBeforeDelete ? '#bfdbfe' : '#e2e8f0'}`
                       }}>
@@ -1961,7 +2157,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                         <Text variant="small">Archive: {policy.ArchiveBeforeDelete ? 'On' : 'Off'}</Text>
                       </div>
                       <div style={{
-                        padding: '4px 12px', borderRadius: 12, fontSize: 12, fontWeight: 600,
+                        padding: '4px 12px', borderRadius: 4, fontSize: 12, fontWeight: 600,
                         backgroundColor: policy.IsActive ? '#ccfbf1' : '#f1f5f9',
                         color: policy.IsActive ? '#0d9488' : '#64748b'
                       }}>
@@ -2019,7 +2215,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           {/* Summary */}
           <div style={{
             display: 'flex', gap: 12, padding: '12px 16px',
-            background: '#f0fdfa', borderRadius: 8, border: '1px solid #99f6e4'
+            background: '#f0fdfa', borderRadius: 4, border: '1px solid #99f6e4'
           }}>
             <Text variant="small" style={{ color: Colors.greenDark }}>
               <strong>{navToggles.filter(t => t.isVisible).length}</strong> of <strong>{navToggles.length}</strong> navigation items enabled
@@ -2044,7 +2240,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                   <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
                     <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 12 }}>
                       <div style={{
-                        width: 36, height: 36, borderRadius: 8,
+                        width: 36, height: 36, borderRadius: 4,
                         backgroundColor: item.isVisible ? '#ccfbf1' : '#f1f5f9',
                         display: 'flex', alignItems: 'center', justifyContent: 'center'
                       }}>
@@ -2055,7 +2251,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                           <Text variant="medium" style={TextStyles.semiBold}>{item.label}</Text>
                           {isProtected && (
                             <div style={{
-                              padding: '1px 8px', borderRadius: 8, fontSize: 11, fontWeight: 600,
+                              padding: '1px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600,
                               backgroundColor: '#f0fdfa', color: Colors.tealPrimary, border: '1px solid #99f6e4'
                             }}>
                               Required
@@ -2141,13 +2337,14 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     if (!editingNamingRule) return;
 
     if (!editingNamingRule.Title?.trim()) {
-      void this.dialogManager.showAlert('Rule name is required.', { title: 'Validation' });
+      this.setState({ _namingRuleError: 'Rule name is required.' } as any);
       return;
     }
     if (!editingNamingRule.Segments || editingNamingRule.Segments.length === 0) {
-      void this.dialogManager.showAlert('Please add at least one segment to the naming rule.', { title: 'Validation' });
+      this.setState({ _namingRuleError: 'Please add at least one segment.' } as any);
       return;
     }
+    this.setState({ _namingRuleError: '' } as any);
 
     // Auto-generate pattern and example before saving
     const preview = this.generateNamingPreview(editingNamingRule);
@@ -2312,7 +2509,12 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         isFooterAtBottom={true}
       >
         <Stack tokens={{ childrenGap: 16 }} style={LayoutStyles.paddingTop16}>
-          <TextField label="Rule Name" required value={editingNamingRule.Title} onChange={(_, v) => updateRule({ Title: v || '' })} />
+          {(this.state as any)._namingRuleError && (
+            <MessageBar messageBarType={MessageBarType.error} onDismiss={() => this.setState({ _namingRuleError: '' } as any)}>
+              {(this.state as any)._namingRuleError}
+            </MessageBar>
+          )}
+          <TextField label="Rule Name" required value={editingNamingRule.Title} onChange={(_, v) => { updateRule({ Title: v || '' }); this.setState({ _namingRuleError: '' } as any); }} errorMessage={editingNamingRule.Title !== undefined && !editingNamingRule.Title?.trim() ? 'Rule name is required' : undefined} />
           <Dropdown label="Applies To" selectedKey={editingNamingRule.AppliesTo || 'All Policies'} options={[
             { key: 'All Policies', text: 'All Policies' },
             ...this.state.policyCategories.filter(c => c.IsActive).map(c => ({ key: c.CategoryName, text: c.CategoryName }))
@@ -2591,7 +2793,8 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       this.setState({ editingLifecycle: { ...editingLifecycle, ...partial } });
     };
 
-    const isPreset = retentionPresets.some(p => p.key === String(editingLifecycle.RetentionPeriodDays));
+    const isCustomMode = (this.state as any)._lifecycleCustomMode === true;
+    const isPreset = !isCustomMode && retentionPresets.some(p => p.key === String(editingLifecycle.RetentionPeriodDays));
 
     return (
       <Panel
@@ -2624,7 +2827,10 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             selectedKey={isPreset ? String(editingLifecycle.RetentionPeriodDays) : 'custom'}
             options={retentionPresets}
             onChange={(_, opt) => {
-              if (opt && opt.key !== 'custom') {
+              if (opt && opt.key === 'custom') {
+                this.setState({ _lifecycleCustomMode: true } as any);
+              } else if (opt) {
+                this.setState({ _lifecycleCustomMode: false } as any);
                 updateLifecycle({ RetentionPeriodDays: Number(opt.key) });
               }
             }}
@@ -2667,6 +2873,11 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                 onChange={(_, checked) => updateLifecycle({ ArchiveBeforeDelete: !!checked, AutoDeleteEnabled: checked ? false : editingLifecycle.AutoDeleteEnabled })}
                 onText="Enabled" offText="Disabled"
               />
+              {editingLifecycle.ArchiveBeforeDelete && (
+                <MessageBar messageBarType={MessageBarType.info} isMultiline>
+                  <strong>Archive behaviour:</strong> When the retention period expires, items are moved to the <strong>Archived</strong> status in their original list (e.g., policies are set to "Archived" status in PM_Policies, quizzes are marked "Archived" in PM_PolicyQuizzes). Archived items remain searchable by admins but are hidden from regular users. They can be restored if needed.
+                </MessageBar>
+              )}
             </>
           )}
         </Stack>
@@ -2732,6 +2943,15 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                   this.setState({ saving: true });
                   try {
                     await this.adminConfigService.saveGeneralSettings(generalSettings);
+                    // Also save extended settings (branding, limits, quiz defaults)
+                    const st = this.state as any;
+                    await this.adminConfigService.saveConfigByCategory('General', {
+                      'Admin.General.CompanyName': st._brandCompanyName || 'First Digital',
+                      'Admin.General.ProductName': st._brandProductName || 'DWx Policy Manager',
+                      'Admin.General.MaxDocSizeMB': String(st._maxDocSizeMB || 25),
+                      'Admin.General.MaxVideoSizeMB': String(st._maxVideoSizeMB || 100),
+                      'Admin.General.QuizPassingScore': String(st._quizPassingScore || 80),
+                    });
                     void this.dialogManager.showAlert('General settings saved successfully.', { title: 'Saved', variant: 'success' });
                   } catch {
                     void this.dialogManager.showAlert('Failed to save general settings.', { title: 'Error' });
@@ -2772,7 +2992,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             <Stack tokens={{ childrenGap: 16 }}>
               <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 10 }}>
                 <div style={{
-                  width: 36, height: 36, borderRadius: 8, backgroundColor: '#ccfbf1',
+                  width: 36, height: 36, borderRadius: 4, backgroundColor: '#ccfbf1',
                   display: 'flex', alignItems: 'center', justifyContent: 'center'
                 }}>
                   <Icon iconName="ViewAll" style={IconStyles.mediumTeal} />
@@ -2815,7 +3035,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               <Stack tokens={{ childrenGap: 16 }}>
                 <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 10 }}>
                   <div style={{
-                    width: 36, height: 36, borderRadius: 8, backgroundColor: '#ccfbf1',
+                    width: 36, height: 36, borderRadius: 4, backgroundColor: '#ccfbf1',
                     display: 'flex', alignItems: 'center', justifyContent: 'center'
                   }}>
                     <Icon iconName={group.icon} style={IconStyles.mediumTeal} />
@@ -2830,7 +3050,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                   {group.settings.map(setting => (
                     <div key={setting.key} style={{
                       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                      padding: '12px 16px', borderRadius: 6,
+                      padding: '12px 16px', borderRadius: 4,
                       background: setting.value ? '#f8fffe' : '#fafafa',
                       border: `1px solid ${setting.value ? '#e6f7f5' : '#f0f0f0'}`
                     }}>
@@ -2859,7 +3079,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               <Stack tokens={{ childrenGap: 12 }}>
                 <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 10 }}>
                   <div style={{
-                    width: 36, height: 36, borderRadius: 8, backgroundColor: '#fef3c7',
+                    width: 36, height: 36, borderRadius: 4, backgroundColor: '#fef3c7',
                     display: 'flex', alignItems: 'center', justifyContent: 'center'
                   }}>
                     <Icon iconName="Warning" style={{ ...IconStyles.mediumLarge, color: '#d97706' }} />
@@ -2882,12 +3102,117 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             </div>
           )}
 
+          {/* Branding */}
+          <div className={styles.adminCard} style={ContainerStyles.tealBorderLeft}>
+            <Stack tokens={{ childrenGap: 16 }}>
+              <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 10 }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: 4, backgroundColor: '#ccfbf1',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                  <Icon iconName="Branding" style={IconStyles.mediumTeal} />
+                </div>
+                <div>
+                  <Text variant="medium" style={{ fontWeight: 600, display: 'block' }}>Branding</Text>
+                  <Text variant="small" style={TextStyles.secondary}>Company name and product name used in emails and headers</Text>
+                </div>
+              </Stack>
+              <Stack horizontal tokens={{ childrenGap: 16 }}>
+                <TextField
+                  label="Company Name"
+                  value={(this.state as any)._brandCompanyName ?? 'First Digital'}
+                  onChange={(_, v) => this.setState({ _brandCompanyName: v || '' } as any)}
+                  styles={{ root: { flex: 1 } }}
+                  description="Shown in email footers and system branding"
+                />
+                <TextField
+                  label="Product Name"
+                  value={(this.state as any)._brandProductName ?? 'DWx Policy Manager'}
+                  onChange={(_, v) => this.setState({ _brandProductName: v || '' } as any)}
+                  styles={{ root: { flex: 1 } }}
+                  description="Shown in email headers and page titles"
+                />
+              </Stack>
+            </Stack>
+          </div>
+
+          {/* Upload Limits */}
+          <div className={styles.adminCard} style={ContainerStyles.tealBorderLeft}>
+            <Stack tokens={{ childrenGap: 16 }}>
+              <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 10 }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: 4, backgroundColor: '#ccfbf1',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                  <Icon iconName="Upload" style={IconStyles.mediumTeal} />
+                </div>
+                <div>
+                  <Text variant="medium" style={{ fontWeight: 600, display: 'block' }}>Upload Limits</Text>
+                  <Text variant="small" style={TextStyles.secondary}>Maximum file sizes for policy documents and media</Text>
+                </div>
+              </Stack>
+              <Stack horizontal tokens={{ childrenGap: 16 }}>
+                <Dropdown
+                  label="Max Document Size"
+                  selectedKey={String((this.state as any)._maxDocSizeMB ?? 25)}
+                  options={[
+                    { key: '10', text: '10 MB' }, { key: '25', text: '25 MB' },
+                    { key: '50', text: '50 MB' }, { key: '100', text: '100 MB' }
+                  ]}
+                  onChange={(_, opt) => opt && this.setState({ _maxDocSizeMB: Number(opt.key) } as any)}
+                  styles={{ root: { width: 160 } }}
+                />
+                <Dropdown
+                  label="Max Video Size"
+                  selectedKey={String((this.state as any)._maxVideoSizeMB ?? 100)}
+                  options={[
+                    { key: '50', text: '50 MB' }, { key: '100', text: '100 MB' },
+                    { key: '200', text: '200 MB' }, { key: '500', text: '500 MB' }
+                  ]}
+                  onChange={(_, opt) => opt && this.setState({ _maxVideoSizeMB: Number(opt.key) } as any)}
+                  styles={{ root: { width: 160 } }}
+                />
+              </Stack>
+            </Stack>
+          </div>
+
+          {/* Quiz Defaults */}
+          <div className={styles.adminCard} style={ContainerStyles.tealBorderLeft}>
+            <Stack tokens={{ childrenGap: 16 }}>
+              <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 10 }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: 4, backgroundColor: '#ccfbf1',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                  <Icon iconName="Education" style={IconStyles.mediumTeal} />
+                </div>
+                <div>
+                  <Text variant="medium" style={{ fontWeight: 600, display: 'block' }}>Quiz Defaults</Text>
+                  <Text variant="small" style={TextStyles.secondary}>Default settings for policy quizzes</Text>
+                </div>
+              </Stack>
+              <Stack horizontal tokens={{ childrenGap: 16 }}>
+                <Dropdown
+                  label="Default Passing Score (%)"
+                  selectedKey={String((this.state as any)._quizPassingScore ?? 80)}
+                  options={[
+                    { key: '50', text: '50%' }, { key: '60', text: '60%' },
+                    { key: '70', text: '70%' }, { key: '80', text: '80%' },
+                    { key: '90', text: '90%' }, { key: '100', text: '100%' }
+                  ]}
+                  onChange={(_, opt) => opt && this.setState({ _quizPassingScore: Number(opt.key) } as any)}
+                  styles={{ root: { width: 160 } }}
+                />
+              </Stack>
+            </Stack>
+          </div>
+
           {/* AI Quiz Generation */}
           <div className={styles.adminCard} style={CardBorderStyles.indigoLeft}>
             <Stack tokens={{ childrenGap: 12 }}>
               <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 10 }}>
                 <div style={{
-                  width: 36, height: 36, borderRadius: 8, backgroundColor: '#eef2ff',
+                  width: 36, height: 36, borderRadius: 4, backgroundColor: '#eef2ff',
                   display: 'flex', alignItems: 'center', justifyContent: 'center'
                 }}>
                   <Icon iconName="Robot" style={{ ...IconStyles.mediumLarge, color: '#6366f1' }} />
@@ -3122,7 +3447,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           {/* Summary Cards */}
           <Stack horizontal tokens={{ childrenGap: 12 }} wrap>
             <div style={{
-              flex: '1 1 160px', padding: 16, borderRadius: 10,
+              flex: '1 1 160px', padding: 16, borderRadius: 4,
               background: 'linear-gradient(135deg, #f0fdf4, #ecfdf5)', border: '1px solid #bbf7d0'
             }}>
               <Stack tokens={{ childrenGap: 4 }}>
@@ -3131,7 +3456,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               </Stack>
             </div>
             <div style={{
-              flex: '1 1 160px', padding: 16, borderRadius: 10,
+              flex: '1 1 160px', padding: 16, borderRadius: 4,
               background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)', border: '1px solid #e2e8f0'
             }}>
               <Stack tokens={{ childrenGap: 4 }}>
@@ -3140,7 +3465,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               </Stack>
             </div>
             <div style={{
-              flex: '1 1 160px', padding: 16, borderRadius: 10,
+              flex: '1 1 160px', padding: 16, borderRadius: 4,
               background: 'linear-gradient(135deg, #f0f9ff, #e0f2fe)', border: '1px solid #bae6fd'
             }}>
               <Stack tokens={{ childrenGap: 4 }}>
@@ -3270,7 +3595,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                 <Stack tokens={{ childrenGap: 8 }}>
                   <Text style={{ fontWeight: 600, fontSize: 13 }}>Preview</Text>
                   <div style={{
-                    padding: 16, borderRadius: 8, background: '#f8fafc', border: '1px solid #e2e8f0',
+                    padding: 16, borderRadius: 4, background: '#f8fafc', border: '1px solid #e2e8f0',
                     fontFamily: 'Segoe UI, sans-serif', fontSize: 13, lineHeight: '1.6', color: '#334155',
                     whiteSpace: 'pre-wrap', maxHeight: 200, overflow: 'auto'
                   }}>
@@ -4103,7 +4428,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                   const isChecked = editingRoles.includes(r.key);
                   return (
                     <div key={r.key} style={{
-                      padding: '8px 12px', borderRadius: 6,
+                      padding: '8px 12px', borderRadius: 4,
                       border: `1px solid ${isChecked ? r.color : '#e2e8f0'}`,
                       background: isChecked ? `${r.color}08` : '#ffffff',
                       cursor: 'pointer'
@@ -4241,7 +4566,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               <div key={i} className={styles.adminCard} style={{ flex: '1 1 200px', minWidth: 180 }}>
                 <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 12 }}>
                   <div style={{
-                    width: 40, height: 40, borderRadius: 10,
+                    width: 40, height: 40, borderRadius: 4,
                     background: `${stat.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center'
                   }}>
                     <Icon iconName={stat.icon} style={{ ...IconStyles.large, color: stat.color }} />
@@ -4359,20 +4684,23 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
 
   private renderRolePermissionsContent(): JSX.Element {
     const st = this.state as any;
+    // Explicit permissions — NO hierarchy inheritance.
+    // A Manager does NOT automatically get Author permissions.
+    // Each role sees ONLY what's explicitly toggled ON for that role.
     const defaultPermissions = [
       { feature: 'Browse Policies', key: 'browse', user: true, author: true, manager: true, admin: true },
       { feature: 'My Policies', key: 'myPolicies', user: true, author: true, manager: true, admin: true },
       { feature: 'Policy Details', key: 'details', user: true, author: true, manager: true, admin: true },
-      { feature: 'Create Policy', key: 'create', user: false, author: true, manager: true, admin: true },
-      { feature: 'Edit Policy', key: 'edit', user: false, author: true, manager: true, admin: true },
+      { feature: 'Create Policy', key: 'create', user: false, author: true, manager: false, admin: true },
+      { feature: 'Edit Policy', key: 'edit', user: false, author: true, manager: false, admin: true },
       { feature: 'Delete Policy', key: 'delete', user: false, author: false, manager: false, admin: true },
-      { feature: 'Policy Packs', key: 'packs', user: false, author: true, manager: true, admin: true },
+      { feature: 'Policy Packs', key: 'packs', user: false, author: true, manager: false, admin: true },
       { feature: 'Approvals', key: 'approvals', user: false, author: false, manager: true, admin: true },
       { feature: 'Delegations', key: 'delegations', user: false, author: false, manager: true, admin: true },
       { feature: 'Distribution', key: 'distribution', user: false, author: false, manager: true, admin: true },
       { feature: 'Analytics', key: 'analytics', user: false, author: false, manager: true, admin: true },
-      { feature: 'Quiz Builder', key: 'quizBuilder', user: false, author: false, manager: false, admin: true },
-      { feature: 'Admin Panel', key: 'adminPanel', user: false, author: false, manager: true, admin: true },
+      { feature: 'Quiz Builder', key: 'quizBuilder', user: false, author: true, manager: false, admin: true },
+      { feature: 'Admin Centre', key: 'adminPanel', user: false, author: false, manager: false, admin: true },
       { feature: 'User Management', key: 'userMgmt', user: false, author: false, manager: false, admin: true },
       { feature: 'System Settings', key: 'settings', user: false, author: false, manager: false, admin: true },
     ];
@@ -4425,10 +4753,13 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                 onClick={async () => {
                   this.setState({ saving: true });
                   try {
+                    const permJson = JSON.stringify(permissions);
                     await this.adminConfigService.saveConfigByCategory('RolePermissions', {
-                      'Admin.RolePermissions.Config': JSON.stringify(permissions)
+                      'Admin.RolePermissions.Config': permJson
                     });
-                    void this.dialogManager.showAlert('Role permissions saved.', { title: 'Saved', variant: 'success' });
+                    // Cache to localStorage for instant effect across pages
+                    try { localStorage.setItem('pm_role_permissions', permJson); } catch { /* non-critical */ }
+                    void this.dialogManager.showAlert('Role permissions saved. Changes take effect immediately.', { title: 'Saved', variant: 'success' });
                   } catch {
                     void this.dialogManager.showAlert('Failed to save permissions.', { title: 'Error' });
                   }
@@ -4442,8 +4773,8 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             </Stack>
           </Stack>
 
-          <MessageBar messageBarType={MessageBarType.info}>
-            Role permissions control which features are visible to each user role. Admin always has full access. Changes affect navigation and feature access across all Policy Manager pages.
+          <MessageBar messageBarType={MessageBarType.warning} isMultiline>
+            <strong>Explicit permissions model.</strong> Each role sees ONLY the features toggled ON for that role — there is no inheritance. For example, a Manager does NOT automatically get Author permissions. If you want a Manager to also create policies, you must explicitly enable "Create Policy" for the Manager role. Admin always has full access.
           </MessageBar>
 
           <DetailsList
@@ -4456,6 +4787,204 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         </Stack>
       </div>
     );
+  }
+
+  // ============================================================================
+  // ============================================================================
+  // RENDER: PROVISIONING (following HyperProjects ProvisioningSection pattern)
+  // ============================================================================
+
+  private renderProvisioningContent(): JSX.Element {
+    const st = this.state as any;
+    const provisioningRunning = st._provisioningRunning || false;
+    const provisioningLog: string[] = st._provisioningLog || [];
+    const provisioningMessage = st._provisioningMessage || '';
+    const listStatuses: Array<{ key: string; title: string; description: string; exists: boolean; itemCount: number }> = st._listStatuses || [];
+
+    // SP list definitions for Policy Manager
+    const PM_LIST_DEFS = [
+      { key: 'policies', title: 'PM_Policies', description: 'Core policy records' },
+      { key: 'versions', title: 'PM_PolicyVersions', description: 'Version history' },
+      { key: 'acks', title: 'PM_PolicyAcknowledgements', description: 'User acknowledgements' },
+      { key: 'metadata', title: 'PM_PolicyMetadataProfiles', description: 'Metadata presets' },
+      { key: 'quizzes', title: 'PM_PolicyQuizzes', description: 'Quiz definitions' },
+      { key: 'questions', title: 'PM_PolicyQuizQuestions', description: 'Quiz questions' },
+      { key: 'results', title: 'PM_PolicyQuizResults', description: 'Quiz results' },
+      { key: 'approvals', title: 'PM_Approvals', description: 'Approval records' },
+      { key: 'chains', title: 'PM_ApprovalChains', description: 'Approval chain instances' },
+      { key: 'templates', title: 'PM_PolicyTemplates', description: 'Policy templates library' },
+      { key: 'notifications', title: 'PM_Notifications', description: 'In-app notifications' },
+      { key: 'emailQueue', title: 'PM_EmailQueue', description: 'Email delivery queue' },
+      { key: 'auditLog', title: 'PM_PolicyAuditLog', description: 'Audit trail' },
+      { key: 'config', title: 'PM_Configuration', description: 'Key-value configuration' },
+      { key: 'categories', title: 'PM_PolicyCategories', description: 'Policy categories' },
+      { key: 'subCats', title: 'PM_PolicySubCategories', description: 'Sub-categories' },
+      { key: 'distributions', title: 'PM_PolicyDistributions', description: 'Distribution tracking' },
+      { key: 'distQueue', title: 'PM_DistributionQueue', description: 'Bulk distribution queue' },
+      { key: 'packs', title: 'PM_PolicyPacks', description: 'Policy pack bundles' },
+      { key: 'packAssign', title: 'PM_PolicyPackAssignments', description: 'Pack assignments' },
+      { key: 'ratings', title: 'PM_PolicyRatings', description: 'User ratings' },
+      { key: 'comments', title: 'PM_PolicyComments', description: 'Discussion comments' },
+      { key: 'feedback', title: 'PM_PolicyFeedback', description: 'User feedback' },
+      { key: 'userProfiles', title: 'PM_UserProfiles', description: 'User profile data' },
+      { key: 'sourceDocs', title: 'PM_PolicySourceDocuments', description: 'Supporting documents' },
+    ];
+
+    // Check list statuses on first load
+    if (!st._provisioningLoaded) {
+      this.setState({ _provisioningLoaded: true } as any);
+      this.checkListStatuses(PM_LIST_DEFS);
+    }
+
+    const existsCount = listStatuses.filter(l => l.exists).length;
+    const totalCount = PM_LIST_DEFS.length;
+
+    const addLog = (msg: string) => {
+      this.setState((prev: any) => ({
+        _provisioningLog: [...(prev._provisioningLog || []), `[${new Date().toLocaleTimeString()}] ${msg}`]
+      }) as any);
+    };
+
+    const handleCheckAll = async () => {
+      addLog('Checking list statuses...');
+      await this.checkListStatuses(PM_LIST_DEFS);
+      addLog('Status check complete.');
+    };
+
+    return (
+      <div className={styles.sectionContent}>
+        <Stack tokens={{ childrenGap: 20 }}>
+          {/* Summary bar */}
+          <div style={{
+            display: 'flex', gap: 16, padding: '16px 20px',
+            background: 'linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%)',
+            borderRadius: 4, border: '1px solid #a7f3d0'
+          }}>
+            <div style={{ flex: 1, textAlign: 'center' }}>
+              <Text variant="xLarge" style={{ fontWeight: 700, color: '#0d9488', display: 'block' }}>
+                {existsCount} / {totalCount}
+              </Text>
+              <Text variant="small" style={{ color: '#059669' }}>Lists Provisioned</Text>
+            </div>
+            <div style={{ width: 1, background: '#a7f3d0' }} />
+            <div style={{ flex: 1, textAlign: 'center' }}>
+              <Text variant="xLarge" style={{ fontWeight: 700, color: '#0d9488', display: 'block' }}>
+                {listStatuses.reduce((sum, l) => sum + l.itemCount, 0)}
+              </Text>
+              <Text variant="small" style={{ color: '#059669' }}>Total Items</Text>
+            </div>
+          </div>
+
+          {/* Action buttons */}
+          <Stack horizontal tokens={{ childrenGap: 8 }} wrap>
+            <PrimaryButton
+              text="Check All Lists"
+              iconProps={{ iconName: 'Sync' }}
+              disabled={provisioningRunning}
+              onClick={handleCheckAll}
+            />
+            <DefaultButton
+              text="Provision Missing Lists"
+              iconProps={{ iconName: 'Database' }}
+              disabled={provisioningRunning}
+              onClick={async () => {
+                this.setState({ _provisioningRunning: true } as any);
+                const missing = PM_LIST_DEFS.filter(d => !listStatuses.find(s => s.title === d.title && s.exists));
+                addLog(`Provisioning ${missing.length} missing lists...`);
+                for (const def of missing) {
+                  try {
+                    addLog(`Creating ${def.title}...`);
+                    await this.props.sp.web.lists.add(def.title, def.description, 100, false);
+                    addLog(`  ✓ ${def.title} created`);
+                  } catch (err: any) {
+                    addLog(`  ✗ ${def.title}: ${err.message || 'Failed'}`);
+                  }
+                }
+                addLog('Provisioning complete. Refreshing statuses...');
+                await this.checkListStatuses(PM_LIST_DEFS);
+                this.setState({ _provisioningRunning: false } as any);
+              }}
+            />
+          </Stack>
+
+          {/* Progress */}
+          {provisioningRunning && (
+            <ProgressIndicator label={provisioningMessage || 'Working...'} />
+          )}
+
+          {/* Log console */}
+          {provisioningLog.length > 0 && (
+            <div style={{
+              background: '#1a2533', color: '#a0aec0', padding: 16, borderRadius: 4,
+              fontFamily: 'Consolas, monospace', fontSize: 12, maxHeight: 200,
+              overflowY: 'auto', lineHeight: 1.6
+            }}>
+              {provisioningLog.map((line: string, i: number) => (
+                <div key={i} style={{
+                  color: line.includes('✓') ? '#48bb78' : line.includes('✗') ? '#fc8181' : '#a0aec0'
+                }}>{line}</div>
+              ))}
+            </div>
+          )}
+
+          {/* List status cards */}
+          <Text variant="mediumPlus" style={TextStyles.semiBold}>SharePoint Lists ({existsCount}/{totalCount})</Text>
+          <div className={styles.adminCardGrid}>
+            {PM_LIST_DEFS.map(def => {
+              const status = listStatuses.find(s => s.title === def.title);
+              const exists = status?.exists || false;
+              return (
+                <div key={def.key} className={styles.adminCard} style={{
+                  borderLeft: `4px solid ${exists ? '#10b981' : '#f59e0b'}`
+                }}>
+                  <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
+                    <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
+                      <Icon iconName={exists ? 'CheckMark' : 'Warning'} style={{
+                        color: exists ? '#10b981' : '#f59e0b', fontSize: 16
+                      }} />
+                      <div>
+                        <Text style={{ fontWeight: 600, display: 'block' }}>{def.title}</Text>
+                        <Text variant="small" style={TextStyles.secondary}>{def.description}</Text>
+                      </div>
+                    </Stack>
+                    <Stack horizontal tokens={{ childrenGap: 4 }}>
+                      {exists && (
+                        <span style={{
+                          padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600,
+                          background: '#f0fdf4', color: '#16a34a'
+                        }}>
+                          {status?.itemCount || 0} items
+                        </span>
+                      )}
+                      <span style={{
+                        padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600,
+                        background: exists ? '#f0fdf4' : '#fffbeb',
+                        color: exists ? '#16a34a' : '#d97706'
+                      }}>
+                        {exists ? 'Provisioned' : 'Missing'}
+                      </span>
+                    </Stack>
+                  </Stack>
+                </div>
+              );
+            })}
+          </div>
+        </Stack>
+      </div>
+    );
+  }
+
+  private async checkListStatuses(defs: Array<{ key: string; title: string; description: string }>): Promise<void> {
+    const statuses: Array<{ key: string; title: string; description: string; exists: boolean; itemCount: number }> = [];
+    for (const def of defs) {
+      try {
+        const list = await this.props.sp.web.lists.getByTitle(def.title).select('ItemCount')();
+        statuses.push({ ...def, exists: true, itemCount: list.ItemCount || 0 });
+      } catch {
+        statuses.push({ ...def, exists: false, itemCount: 0 });
+      }
+    }
+    this.setState({ _listStatuses: statuses } as any);
   }
 
   // ============================================================================
@@ -4500,7 +5029,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           <div className={styles.adminCard} style={ContainerStyles.tealBorderLeft}>
             <Stack horizontal tokens={{ childrenGap: 24 }} verticalAlign="start">
               <div style={{
-                width: 80, height: 80, borderRadius: 12,
+                width: 80, height: 80, borderRadius: 4,
                 background: 'linear-gradient(135deg, #0d9488, #14b8a6)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 color: '#fff', fontSize: 28, fontWeight: 800, fontFamily: 'Inter, sans-serif'
@@ -4538,7 +5067,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           <div className={styles.adminCard}>
             <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 10 }} style={LayoutStyles.marginBottom16}>
               <div style={{
-                width: 36, height: 36, borderRadius: 8,
+                width: 36, height: 36, borderRadius: 4,
                 background: '#f0fdfa', display: 'flex', alignItems: 'center', justifyContent: 'center'
               }}>
                 <Icon iconName="Info" style={IconStyles.mediumTeal} />
@@ -4670,7 +5199,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           {/* Header */}
           <div style={{
             background: 'linear-gradient(135deg, #1a5a8a, #2d7ab8)',
-            borderRadius: 12, padding: '28px 32px', color: '#fff'
+            borderRadius: 4, padding: '28px 32px', color: '#fff'
           }}>
             <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
               <Stack tokens={{ childrenGap: 4 }}>
@@ -4730,7 +5259,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                 <Stack tokens={{ childrenGap: 10 }}>
                   <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 12 }}>
                     <div style={{
-                      width: 44, height: 44, borderRadius: 10,
+                      width: 44, height: 44, borderRadius: 4,
                       background: `linear-gradient(135deg, ${product.color}, ${product.color}cc)`,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       boxShadow: `0 3px 8px ${product.color}40`
@@ -4790,7 +5319,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               {/* Product Header */}
               <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 16 }}>
                 <div style={{
-                  width: 56, height: 56, borderRadius: 14,
+                  width: 56, height: 56, borderRadius: 4,
                   background: `linear-gradient(135deg, ${selectedProduct.color}, ${selectedProduct.color}cc)`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center'
                 }}>
@@ -4805,7 +5334,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               {/* Version & Badge */}
               <Stack horizontal tokens={{ childrenGap: 8 }} verticalAlign="center">
                 <span style={{
-                  padding: '3px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+                  padding: '3px 10px', borderRadius: 4, fontSize: 11, fontWeight: 600,
                   background: `${selectedProduct.color}12`, color: selectedProduct.color
                 }}>
                   {selectedProduct.version}
@@ -4998,6 +5527,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       case 'navigation': return this.renderNavigationContent();
       case 'aiAssistant': return this.renderAIAssistantContent();
       case 'settings': return this.renderSettingsContent();
+      case 'provisioning': return this.renderProvisioningContent();
       case 'systemInfo': return this.renderSystemInfoContent();
       case 'productShowcase': return this.renderProductShowcaseContent();
       default: return this.renderTemplatesContent();
@@ -5012,16 +5542,16 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     // Access denied guard — show friendly message with navigation back
     if (this.props.userRole && this.props.userRole !== 'Admin') {
       return (
-        <ErrorBoundary fallbackMessage="An error occurred in Policy Administration. Please try again.">
+        <ErrorBoundary fallbackMessage="An error occurred in Admin Centre. Please try again.">
         <JmlAppLayout
           context={this.props.context}
           sp={this.props.sp}
-          pageTitle="Policy Administration"
+          pageTitle="Admin Centre"
           pageDescription="Administrator access required"
           pageIcon="Admin"
           breadcrumbs={[
             { text: 'Policy Manager', url: '/sites/PolicyManager' },
-            { text: 'Policy Administration' }
+            { text: 'Admin Centre' }
           ]}
           activeNavKey="admin"
           compactFooter={true}
@@ -5032,7 +5562,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               Access Denied
             </Text>
             <Text variant="medium" block styles={{ root: { color: Colors.textTertiary, marginBottom: 24 } }}>
-              The Policy Administration panel requires an Administrator role. Contact your system administrator if you need access.
+              The Admin Centre panel requires an Administrator role. Contact your system administrator if you need access.
             </Text>
             <DefaultButton
               text="Go to Policy Hub"
@@ -5053,19 +5583,22 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
 
     const { saving } = this.state;
     const activeItem = this.getActiveNavItem();
-    const showSaveButton = ['workflows', 'compliance', 'notifications', 'naming', 'sla', 'lifecycle', 'navigation', 'aiAssistant', 'settings', 'emailTemplates', 'usersRoles', 'rolePermissions'].includes(this.state.activeSection);
+    // Sections with their OWN save buttons (workflows, compliance, notifications) are excluded
+    // Only show generic save bar for AI Assistant (all other sections have their own save or auto-save)
+    const showSaveButton = this.state.activeSection === 'aiAssistant';
 
     return (
-      <ErrorBoundary fallbackMessage="An error occurred in Policy Administration. Please try again.">
+      <ErrorBoundary fallbackMessage="An error occurred in Admin Centre. Please try again.">
       <JmlAppLayout
         context={this.props.context}
         sp={this.props.sp}
-        pageTitle="Policy Administration"
+        policyManagerRole={PolicyManagerRole.Admin}
+        pageTitle="Admin Centre"
         pageDescription="Manage policy settings, templates, and configurations"
         pageIcon="Admin"
         breadcrumbs={[
           { text: 'Policy Manager', url: '/sites/PolicyManager' },
-          { text: 'Policy Administration' }
+          { text: 'Admin Centre' }
         ]}
         activeNavKey="admin"
         showQuickLinks={true}
@@ -5118,10 +5651,9 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                           }
                           return;
                         }
-                        void this.dialogManager.showAlert('Administration settings have been updated.', { title: 'Settings Saved', variant: 'success' });
+                        // Only AI Assistant uses this generic save bar
                       }}
                     />
-                    <DefaultButton text="Reset to Defaults" />
                   </div>
                 )}
               </div>

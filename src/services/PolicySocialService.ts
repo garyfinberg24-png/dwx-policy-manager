@@ -20,6 +20,7 @@ import {
 } from '../models/IPolicy';
 import { logger } from './LoggingService';
 import { PolicyLists, SocialLists, SystemLists } from '../constants/SharePointListNames';
+import { ValidationUtils } from '../utils/ValidationUtils';
 
 export class PolicySocialService {
   private sp: SPFI;
@@ -65,7 +66,7 @@ export class PolicySocialService {
       // Check if user already rated
       const existingRatings = await this.sp.web.lists
         .getByTitle(this.POLICY_RATINGS_LIST)
-        .items.filter(`PolicyId eq ${request.policyId} and UserId eq ${this.currentUserId}`)
+        .items.filter(`PolicyId eq ${ValidationUtils.validateInteger(request.policyId, 'policyId', 1)} and UserId eq ${ValidationUtils.validateInteger(this.currentUserId, 'currentUserId', 1)}`)
         .top(1)();
 
       const ratingData = {
@@ -113,7 +114,7 @@ export class PolicySocialService {
     try {
       const ratings = await this.sp.web.lists
         .getByTitle(this.POLICY_RATINGS_LIST)
-        .items.filter(`PolicyId eq ${policyId}`)
+        .items.filter(`PolicyId eq ${ValidationUtils.validateInteger(policyId, 'policyId', 1)}`)
         .orderBy('RatingDate', false)
         .top(100)();
 
@@ -218,7 +219,7 @@ export class PolicySocialService {
     try {
       const comments = await this.sp.web.lists
         .getByTitle(this.POLICY_COMMENTS_LIST)
-        .items.filter(`PolicyId eq ${policyId} and IsDeleted eq false and IsApproved eq true`)
+        .items.filter(`PolicyId eq ${ValidationUtils.validateInteger(policyId, 'policyId', 1)} and IsDeleted eq false and IsApproved eq true`)
         .orderBy('CommentDate', false)
         .top(500)();
 
@@ -237,7 +238,7 @@ export class PolicySocialService {
       // Check if already liked
       const existing = await this.sp.web.lists
         .getByTitle(this.POLICY_COMMENT_LIKES_LIST)
-        .items.filter(`CommentId eq ${commentId} and UserId eq ${this.currentUserId}`)
+        .items.filter(`CommentId eq ${ValidationUtils.validateInteger(commentId, 'commentId', 1)} and UserId eq ${ValidationUtils.validateInteger(this.currentUserId, 'currentUserId', 1)}`)
         .top(1)();
 
       if (existing.length > 0) {
@@ -261,7 +262,7 @@ export class PolicySocialService {
       // Update like count
       const likes = await this.sp.web.lists
         .getByTitle(this.POLICY_COMMENT_LIKES_LIST)
-        .items.filter(`CommentId eq ${commentId}`)
+        .items.filter(`CommentId eq ${ValidationUtils.validateInteger(commentId, 'commentId', 1)}`)
         .top(1000)();
 
       await this.sp.web.lists
@@ -528,7 +529,7 @@ export class PolicySocialService {
       // Check if already following
       const existing = await this.sp.web.lists
         .getByTitle(this.POLICY_FOLLOWERS_LIST)
-        .items.filter(`PolicyId eq ${request.policyId} and UserId eq ${this.currentUserId}`)
+        .items.filter(`PolicyId eq ${ValidationUtils.validateInteger(request.policyId, 'policyId', 1)} and UserId eq ${ValidationUtils.validateInteger(this.currentUserId, 'currentUserId', 1)}`)
         .top(1)();
 
       const followerData = {
@@ -574,7 +575,7 @@ export class PolicySocialService {
     try {
       const followers = await this.sp.web.lists
         .getByTitle(this.POLICY_FOLLOWERS_LIST)
-        .items.filter(`PolicyId eq ${policyId} and UserId eq ${this.currentUserId}`)
+        .items.filter(`PolicyId eq ${ValidationUtils.validateInteger(policyId, 'policyId', 1)} and UserId eq ${ValidationUtils.validateInteger(this.currentUserId, 'currentUserId', 1)}`)
         .top(1)();
 
       if (followers.length > 0) {
@@ -596,7 +597,7 @@ export class PolicySocialService {
     try {
       const followers = await this.sp.web.lists
         .getByTitle(this.POLICY_FOLLOWERS_LIST)
-        .items.filter(`PolicyId eq ${policyId}`)
+        .items.filter(`PolicyId eq ${ValidationUtils.validateInteger(policyId, 'policyId', 1)}`)
         .top(1000)();
 
       return followers as IPolicyFollower[];
@@ -614,7 +615,7 @@ export class PolicySocialService {
       const targetUserId = userId || this.currentUserId;
       const followers = await this.sp.web.lists
         .getByTitle(this.POLICY_FOLLOWERS_LIST)
-        .items.filter(`PolicyId eq ${policyId} and UserId eq ${targetUserId}`)
+        .items.filter(`PolicyId eq ${ValidationUtils.validateInteger(policyId, 'policyId', 1)} and UserId eq ${ValidationUtils.validateInteger(targetUserId, 'userId', 1)}`)
         .top(1)();
 
       return followers.length > 0;
@@ -835,7 +836,7 @@ export class PolicySocialService {
     try {
       const acknowledgements = await this.sp.web.lists
         .getByTitle(PolicyLists.POLICY_ACKNOWLEDGEMENTS)
-        .items.filter(`PolicyId eq ${policyId} and AckUserId eq ${userId} and AckStatus eq 'Acknowledged'`)
+        .items.filter(`PolicyId eq ${ValidationUtils.validateInteger(policyId, 'policyId', 1)} and AckUserId eq ${ValidationUtils.validateInteger(userId, 'userId', 1)} and AckStatus eq 'Acknowledged'`)
         .top(1)();
 
       return acknowledgements.length > 0;

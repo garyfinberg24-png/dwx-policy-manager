@@ -59,21 +59,7 @@ const ROLE_LEVEL: Record<PolicyManagerRole, number> = {
 /**
  * Minimum role required to see each nav key
  */
-const NAV_KEY_MIN_ROLE: Record<string, PolicyManagerRole> = {
-  'browse': PolicyManagerRole.User,
-  'my-policies': PolicyManagerRole.User,
-  'details': PolicyManagerRole.User,
-  'create': PolicyManagerRole.Author,
-  'packs': PolicyManagerRole.Author,
-  'requests': PolicyManagerRole.Author,
-  'author': PolicyManagerRole.Author,
-  'manager': PolicyManagerRole.Manager,
-  'approvals': PolicyManagerRole.Manager,
-  'delegations': PolicyManagerRole.Manager,
-  'distribution': PolicyManagerRole.Manager,
-  'analytics': PolicyManagerRole.Manager,
-  'quiz': PolicyManagerRole.Author,
-};
+// NAV_KEY_MIN_ROLE removed — permissions are now explicit per role via Admin > Role Permissions
 
 /**
  * Header action visibility per role
@@ -85,32 +71,7 @@ interface IHeaderVisibility {
   showSettings: boolean;
 }
 
-const HEADER_VISIBILITY: Record<PolicyManagerRole, IHeaderVisibility> = {
-  [PolicyManagerRole.User]: {
-    showSearch: true,
-    showNotifications: true,
-    showHelp: true,
-    showSettings: false,
-  },
-  [PolicyManagerRole.Author]: {
-    showSearch: true,
-    showNotifications: true,
-    showHelp: true,
-    showSettings: false,
-  },
-  [PolicyManagerRole.Manager]: {
-    showSearch: true,
-    showNotifications: true,
-    showHelp: true,
-    showSettings: true,
-  },
-  [PolicyManagerRole.Admin]: {
-    showSearch: true,
-    showNotifications: true,
-    showHelp: true,
-    showSettings: true,
-  },
-};
+// Header visibility is now driven by explicit permissions (getHeaderVisibility function below)
 
 // ============================================================================
 // PUBLIC API
@@ -147,22 +108,111 @@ export function hasMinimumRole(currentRole: PolicyManagerRole, requiredRole: Pol
 }
 
 /**
- * Filter nav items based on the user's PolicyManagerRole.
- * Returns only nav items the user is allowed to see.
+ * Map from nav item keys to role permission table keys.
+ * The permission table uses different keys than the nav items.
  */
-export function filterNavForRole<T extends { key: string }>(navItems: T[], role: PolicyManagerRole): T[] {
+const NAV_KEY_TO_PERMISSION_KEY: Record<string, string> = {
+  'browse': 'browse',
+  'my-policies': 'myPolicies',
+  'details': 'details',
+  'create': 'create',
+  'author': 'create',        // "Policy Author" page uses create permission
+  'packs': 'packs',
+  'requests': 'create',      // "Requests" falls under create permission
+  'approvals': 'approvals',
+  'delegations': 'delegations',
+  'distribution': 'distribution',
+  'manager': 'approvals',    // "Policy Manager" page uses approvals permission
+  'analytics': 'analytics',
+  'quiz': 'quizBuilder',
+};
+
+/**
+ * Role permission entry as configured in Admin > Role Permissions
+ */
+export interface IRolePermissionEntry {
+  feature: string;
+  key: string;
+  user: boolean;
+  author: boolean;
+  manager: boolean;
+  admin: boolean;
+  [roleKey: string]: string | boolean; // Index signature for dynamic role access
+}
+
+/**
+ * Filter nav items based on EXPLICIT role permissions.
+ * No hierarchy inheritance — each role sees ONLY what's explicitly enabled for it.
+ *
+ * @param navItems - The nav items to filter
+ * @param role - The user's role (or roles)
+ * @param permissions - The admin-configured permission table (if null, falls back to defaults)
+ */
+export function filterNavForRole<T extends { key: string }>(
+  navItems: T[],
+  role: PolicyManagerRole,
+  permissions?: IRolePermissionEntry[] | null
+): T[] {
+  // If no explicit permissions configured, use the default permission table
+  const permTable = permissions && permissions.length > 0 ? permissions : getDefaultPermissions();
+  const roleKey = role.toLowerCase(); // 'user', 'author', 'manager', 'admin'
+
   return navItems.filter(item => {
-    const minRole = NAV_KEY_MIN_ROLE[item.key];
-    if (!minRole) return true; // Unknown keys default to visible
-    return ROLE_LEVEL[role] >= ROLE_LEVEL[minRole];
+    const permKey = NAV_KEY_TO_PERMISSION_KEY[item.key];
+    if (!permKey) return true; // Unknown nav keys default to visible
+
+    // Find the permission entry for this feature
+    const entry = permTable.find(p => p.key === permKey);
+    if (!entry) return true; // No permission entry = visible by default
+
+    // Admin always has access
+    if (role === PolicyManagerRole.Admin) return true;
+
+    // Check explicit permission for this role — NO inheritance
+    return entry[roleKey] === true;
   });
 }
 
 /**
- * Get header action visibility for a role
+ * Default permission table — used when admin hasn't configured custom permissions
  */
-export function getHeaderVisibility(role: PolicyManagerRole): IHeaderVisibility {
-  return HEADER_VISIBILITY[role] || HEADER_VISIBILITY[PolicyManagerRole.User];
+export function getDefaultPermissions(): IRolePermissionEntry[] {
+  return [
+    { feature: 'Browse Policies', key: 'browse', user: true, author: true, manager: true, admin: true },
+    { feature: 'My Policies', key: 'myPolicies', user: true, author: true, manager: true, admin: true },
+    { feature: 'Policy Details', key: 'details', user: true, author: true, manager: true, admin: true },
+    { feature: 'Create Policy', key: 'create', user: false, author: true, manager: false, admin: true },
+    { feature: 'Edit Policy', key: 'edit', user: false, author: true, manager: false, admin: true },
+    { feature: 'Delete Policy', key: 'delete', user: false, author: false, manager: false, admin: true },
+    { feature: 'Policy Packs', key: 'packs', user: false, author: true, manager: false, admin: true },
+    { feature: 'Approvals', key: 'approvals', user: false, author: false, manager: true, admin: true },
+    { feature: 'Delegations', key: 'delegations', user: false, author: false, manager: true, admin: true },
+    { feature: 'Distribution', key: 'distribution', user: false, author: false, manager: true, admin: true },
+    { feature: 'Analytics', key: 'analytics', user: false, author: false, manager: true, admin: true },
+    { feature: 'Quiz Builder', key: 'quizBuilder', user: false, author: true, manager: false, admin: true },
+    { feature: 'Admin Centre', key: 'adminPanel', user: false, author: false, manager: false, admin: true },
+    { feature: 'User Management', key: 'userMgmt', user: false, author: false, manager: false, admin: true },
+    { feature: 'System Settings', key: 'settings', user: false, author: false, manager: false, admin: true },
+  ];
+}
+
+/**
+ * Get header action visibility based on explicit permissions.
+ */
+export function getHeaderVisibility(role: PolicyManagerRole, permissions?: IRolePermissionEntry[] | null): IHeaderVisibility {
+  const permTable = permissions && permissions.length > 0 ? permissions : getDefaultPermissions();
+  const roleKey = role.toLowerCase();
+
+  // Settings cog visible if 'adminPanel' or 'settings' permission is enabled for this role
+  const settingsEntry = permTable.find(p => p.key === 'adminPanel' || p.key === 'settings');
+  const showSettings = role === PolicyManagerRole.Admin || (settingsEntry ? settingsEntry[roleKey] === true : false);
+
+  return {
+    showSearch: true,
+    showNotifications: true,
+    showHelp: true,
+    showSettings
+  };
 }
 
 /**

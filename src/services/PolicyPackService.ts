@@ -352,7 +352,7 @@ export class PolicyPackService {
       // Check if acknowledgement already exists
       const existing = await this.sp.web.lists
         .getByTitle(this.POLICY_ACKNOWLEDGEMENTS_LIST)
-        .items.filter(`PolicyId eq ${policyId} and AckUserId eq ${userId}`)
+        .items.filter(`PolicyId eq ${ValidationUtils.validateInteger(policyId, 'policyId', 1)} and AckUserId eq ${ValidationUtils.validateInteger(userId, 'userId', 1)}`)
         .top(1)();
 
       if (existing.length === 0) {
@@ -384,7 +384,7 @@ export class PolicyPackService {
         policyIds.map(async (policyId: number) => {
           const items = await this.sp.web.lists
             .getByTitle(this.POLICY_ACKNOWLEDGEMENTS_LIST)
-            .items.filter(`PolicyId eq ${policyId} and AckUserId eq ${assignment.UserId}`)
+            .items.filter(`PolicyId eq ${ValidationUtils.validateInteger(policyId, 'policyId', 1)} and AckUserId eq ${ValidationUtils.validateInteger(assignment.UserId, 'userId', 1)}`)
             .top(1)();
           return items.length > 0 ? items[0] as IPolicyAcknowledgement : null;
         })
@@ -487,7 +487,7 @@ export class PolicyPackService {
         // Now get the items
         allAcks = await this.sp.web.lists
           .getByTitle(this.POLICY_ACKNOWLEDGEMENTS_LIST)
-          .items.filter(`AckUserId eq ${targetUserId}`)
+          .items.filter(`AckUserId eq ${ValidationUtils.validateInteger(targetUserId, 'targetUserId', 1)}`)
           .top(1000)() as IPolicyAcknowledgement[];
       } catch (listError: any) {
         const errorMsg = listError?.message || String(listError);
@@ -534,7 +534,7 @@ export class PolicyPackService {
       try {
         packAssignments = await this.sp.web.lists
           .getByTitle(this.POLICY_PACK_ASSIGNMENTS_LIST)
-          .items.filter(`UserId eq ${targetUserId}`)
+          .items.filter(`UserId eq ${ValidationUtils.validateInteger(targetUserId, 'targetUserId', 1)}`)
           .top(100)() as IPolicyPackAssignment[];
 
         // Get progress for active packs (handle individual failures gracefully)
@@ -573,7 +573,7 @@ export class PolicyPackService {
       try {
         const follows = await this.sp.web.lists
           .getByTitle(SocialLists.POLICY_FOLLOWERS)
-          .items.filter(`UserId eq ${targetUserId}`)
+          .items.filter(`UserId eq ${ValidationUtils.validateInteger(targetUserId, 'targetUserId', 1)}`)
           .select('PolicyId')
           .top(50)();
         const followedIds = follows.map((f: Record<string, unknown>) => f.PolicyId as number);
@@ -830,7 +830,7 @@ export class PolicyPackService {
     try {
       const assignments = await this.sp.web.lists
         .getByTitle(this.POLICY_PACK_ASSIGNMENTS_LIST)
-        .items.filter(`PackId eq ${packId}`)
+        .items.filter(`PackId eq ${ValidationUtils.validateInteger(packId, 'packId', 1)}`)
         .top(1000)() as IPolicyPackAssignment[];
 
       const completed = assignments.filter(a => a.Status === 'Completed');

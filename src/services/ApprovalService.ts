@@ -824,7 +824,7 @@ export class ApprovalService {
     const pendingApprovals = await this.sp.web.lists
       .getByTitle(this.APPROVALS_LIST)
       .items
-      .filter(`ProcessID eq ${processId} and Status eq '${ApprovalStatus.Pending}'`)
+      .filter(`ProcessID eq ${ValidationUtils.validateInteger(processId, 'processId', 1)} and Status eq '${ApprovalStatus.Pending}'`)
       .select('Id', 'ApproverId', 'ApprovalLevel', 'Approver/Title')
       .expand('Approver')() as Array<{
         Id: number;
@@ -860,7 +860,7 @@ export class ApprovalService {
   private async getLevelApprovals(processId: number, level: number): Promise<IJmlApproval[]> {
     const items = await this.sp.web.lists
       .getByTitle(this.APPROVALS_LIST)
-      .items.filter(`ProcessID eq ${processId} and ApprovalLevel eq ${level}`)
+      .items.filter(`ProcessID eq ${ValidationUtils.validateInteger(processId, 'processId', 1)} and ApprovalLevel eq ${ValidationUtils.validateInteger(level, 'level', 1)}`)
       .select(
         '*',
         'Approver/Title',
@@ -1093,7 +1093,7 @@ export class ApprovalService {
       const pendingApprovals = await this.sp.web.lists
         .getByTitle(this.APPROVALS_LIST)
         .items
-        .filter(`ProcessID eq ${processId} and (Status eq '${ApprovalStatus.Pending}' or Status eq '${ApprovalStatus.Escalated}' or Status eq '${ApprovalStatus.Delegated}')`)
+        .filter(`ProcessID eq ${ValidationUtils.validateInteger(processId, 'processId', 1)} and (Status eq '${ApprovalStatus.Pending}' or Status eq '${ApprovalStatus.Escalated}' or Status eq '${ApprovalStatus.Delegated}')`)
         .select('Id', 'Title', 'Status', 'ApproverId')();
 
       if (pendingApprovals.length === 0) {
@@ -1153,7 +1153,7 @@ export class ApprovalService {
         const activeChains = await this.sp.web.lists
           .getByTitle(this.APPROVAL_CHAINS_LIST)
           .items
-          .filter(`ProcessID eq ${processId} and IsActive eq 1`)
+          .filter(`ProcessID eq ${ValidationUtils.validateInteger(processId, 'processId', 1)} and IsActive eq 1`)
           .select('Id')();
 
         for (const chain of activeChains) {
@@ -1193,7 +1193,7 @@ export class ApprovalService {
     try {
       const items = await this.sp.web.lists
         .getByTitle(this.APPROVAL_HISTORY_LIST)
-        .items.filter(`ProcessID eq ${processId}`)
+        .items.filter(`ProcessID eq ${ValidationUtils.validateInteger(processId, 'processId', 1)}`)
         .select(
           '*',
           'PerformedBy/Title',
@@ -1645,7 +1645,7 @@ export class ApprovalService {
       // Try to get manager from user profile or PM_Employees list
       const employees = await this.sp.web.lists.getByTitle('PM_Employees')
         .items
-        .filter(`UserId eq ${approverId}`)
+        .filter(`UserId eq ${ValidationUtils.validateInteger(approverId, 'approverId', 1)}`)
         .select('ManagerId')
         .top(1)();
 
@@ -1805,7 +1805,7 @@ export class ApprovalService {
   private async getChainByProcessId(processId: number): Promise<IJmlApprovalChain | undefined> {
     const items = await this.sp.web.lists
       .getByTitle(this.APPROVAL_CHAINS_LIST)
-      .items.filter(`ProcessID eq ${processId} and IsActive eq 1`)
+      .items.filter(`ProcessID eq ${ValidationUtils.validateInteger(processId, 'processId', 1)} and IsActive eq 1`)
       .select('*', 'CreatedBy/Title', 'CreatedBy/EMail', 'ModifiedBy/Title', 'ModifiedBy/EMail')
       .expand('CreatedBy', 'ModifiedBy')
       .top(1)();

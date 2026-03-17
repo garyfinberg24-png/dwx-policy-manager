@@ -12,6 +12,7 @@ import "@pnp/sp/fields";
 import "@pnp/sp/site-users";
 import { logger } from "./LoggingService";
 import { QuizLists } from "../constants/SharePointListNames";
+import { ValidationUtils } from "../utils/ValidationUtils";
 
 // ============================================================================
 // ENUMS
@@ -675,7 +676,7 @@ export class QuizService {
     }
   ): Promise<IQuizQuestion[]> {
     try {
-      let filter = `QuizId eq ${quizId}`;
+      let filter = `QuizId eq ${ValidationUtils.validateInteger(quizId, 'quizId', 1)}`;
       if (options?.sectionId) {
         filter += ` and SectionId eq ${options.sectionId}`;
       }
@@ -774,7 +775,7 @@ export class QuizService {
         try {
           const existing = await this.sp.web.lists
             .getByTitle(this.questionListName)
-            .items.filter(`QuizId eq ${question.QuizId}`)
+            .items.filter(`QuizId eq ${ValidationUtils.validateInteger(question.QuizId, 'quizId', 1)}`)
             .select("Id")
             .top(500)();
           nextOrder = existing.length + 1;
@@ -1434,7 +1435,7 @@ export class QuizService {
     try {
       const attempts = await this.sp.web.lists
         .getByTitle(this.attemptListName)
-        .items.filter(`QuizId eq ${quizId} and UserId eq ${userId}`)
+        .items.filter(`QuizId eq ${ValidationUtils.validateInteger(quizId, 'quizId', 1)} and UserId eq ${ValidationUtils.validateInteger(userId, 'userId', 1)}`)
         .orderBy("AttemptNumber", false)();
 
       return attempts as IQuizAttempt[];
@@ -1627,7 +1628,7 @@ export class QuizService {
     try {
       const sections = await this.sp.web.lists
         .getByTitle(this.sectionListName)
-        .items.filter(`QuizId eq ${quizId}`)
+        .items.filter(`QuizId eq ${ValidationUtils.validateInteger(quizId, 'quizId', 1)}`)
         .orderBy("Order", true)();
 
       return sections as IQuizSection[];
@@ -1673,7 +1674,7 @@ export class QuizService {
     try {
       const attempts = await this.sp.web.lists
         .getByTitle(this.attemptListName)
-        .items.filter(`QuizId eq ${quizId}`)() as IQuizAttempt[];
+        .items.filter(`QuizId eq ${ValidationUtils.validateInteger(quizId, 'quizId', 1)}`)() as IQuizAttempt[];
 
       const completedAttempts = attempts.filter(
         a => a.Status === AttemptStatus.Completed || a.Status === AttemptStatus.PendingReview
@@ -1769,7 +1770,7 @@ export class QuizService {
       const questions = await this.getQuizQuestions(quizId);
       const attempts = await this.sp.web.lists
         .getByTitle(this.attemptListName)
-        .items.filter(`QuizId eq ${quizId} and Status eq 'Completed'`)
+        .items.filter(`QuizId eq ${ValidationUtils.validateInteger(quizId, 'quizId', 1)} and Status eq 'Completed'`)
         .select("AnswersJson")() as { AnswersJson: string }[];
 
       const analytics: IQuestionAnalytics[] = [];
@@ -1997,7 +1998,7 @@ export class QuizService {
     try {
       const certs = await this.sp.web.lists
         .getByTitle(this.certificateListName)
-        .items.filter(`UserId eq ${userId}`)
+        .items.filter(`UserId eq ${ValidationUtils.validateInteger(userId, 'userId', 1)}`)
         .orderBy("PassedDate", false)();
 
       return certs as ICertificate[];
@@ -2200,7 +2201,7 @@ export class QuizService {
     try {
       const attempts = await this.sp.web.lists
         .getByTitle(this.attemptListName)
-        .items.filter(`UserId eq ${userId} and (Status eq 'Completed' or Status eq 'Pending Review')`)
+        .items.filter(`UserId eq ${ValidationUtils.validateInteger(userId, 'userId', 1)} and (Status eq 'Completed' or Status eq 'Pending Review')`)
         .orderBy("EndTime", false)
         .top(100)();
 

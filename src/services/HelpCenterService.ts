@@ -368,7 +368,7 @@ export class HelpCenterService {
           "AssignedTo/Id", "AssignedTo/Title", "AssignedTo/EMail"
         )
         .expand("SubmittedBy", "AssignedTo")
-        .filter(`SubmittedById eq ${userId}`)
+        .filter(`SubmittedById eq ${ValidationUtils.validateInteger(userId, 'userId', 1)}`)
         .orderBy("SubmittedDate", false)
         .top(100)();
 

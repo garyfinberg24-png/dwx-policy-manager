@@ -1531,17 +1531,64 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
   private renderStep3_Compliance(): JSX.Element {
     const {
       complianceRisk, readTimeframe, readTimeframeDays,
-      requiresAcknowledgement, requiresQuiz
+      requiresAcknowledgement, requiresQuiz, metadataProfiles
     } = this.state;
 
     const timeframeOptions: IDropdownOption[] = Object.values(ReadTimeframe).map(tf => ({
       key: tf, text: tf
     }));
 
+    // Filter profiles to only active ones, optionally matching the selected category
+    const availableProfiles = (metadataProfiles || []).filter(
+      (p: any) => p.IsActive !== false
+    );
+
     return (
       <div className={styles.wizardStepContent}>
         <div className={styles.section}>
           <Stack tokens={{ childrenGap: 20 }}>
+            {/* Metadata Profile Selector — auto-fills compliance fields */}
+            {availableProfiles.length > 0 && (
+              <>
+                <Dropdown
+                  label="Apply Metadata Profile"
+                  placeholder="Optionally select a profile to auto-fill compliance settings..."
+                  selectedKey={(this.state as any)._selectedProfileId || ''}
+                  options={[
+                    { key: '', text: '(None — set manually below)' },
+                    ...availableProfiles.map((p: any) => ({
+                      key: p.Id,
+                      text: `${p.ProfileName}${p.PolicyCategory ? ' (' + p.PolicyCategory + ')' : ''}`
+                    }))
+                  ]}
+                  onChange={(_, opt) => {
+                    if (opt && opt.key !== '') {
+                      const profile = availableProfiles.find((p: any) => p.Id === opt.key);
+                      if (profile) {
+                        this.setState({
+                          _selectedProfileId: profile.Id,
+                          complianceRisk: profile.ComplianceRisk || complianceRisk,
+                          readTimeframe: profile.ReadTimeframe || readTimeframe,
+                          requiresAcknowledgement: profile.RequiresAcknowledgement ?? requiresAcknowledgement,
+                          targetDepartments: profile.TargetDepartments
+                            ? profile.TargetDepartments.split(',').map((d: string) => d.trim()).filter(Boolean)
+                            : this.state.targetDepartments,
+                        } as any);
+                      }
+                    } else {
+                      this.setState({ _selectedProfileId: '' } as any);
+                    }
+                  }}
+                  styles={{ root: { maxWidth: 400 } }}
+                />
+                {(this.state as any)._selectedProfileId && (
+                  <MessageBar messageBarType={MessageBarType.info}>
+                    Profile applied. You can override any field below.
+                  </MessageBar>
+                )}
+              </>
+            )}
+
             <Dropdown
               label="Read Timeframe"
               selectedKey={readTimeframe}

@@ -18,6 +18,8 @@ export const PolicyLists = {
   POLICY_EXEMPTIONS: 'PM_PolicyExemptions',
   /** Distribution campaigns */
   POLICY_DISTRIBUTIONS: 'PM_PolicyDistributions',
+  /** Distribution queue — server-side bulk processing */
+  DISTRIBUTION_QUEUE: 'PM_DistributionQueue',
   /** Policy templates */
   POLICY_TEMPLATES: 'PM_PolicyTemplates',
   /** User feedback on policies */

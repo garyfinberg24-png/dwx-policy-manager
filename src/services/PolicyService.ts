@@ -883,19 +883,36 @@ export class PolicyService {
         IsActive: true
       });
 
-      // Create acknowledgement records for each user
-      await this.createAcknowledgements(
-        request.policyId,
-        policy.VersionNumber,
-        targetUsers,
-        request.dueDate
-      );
-
-      // Send notifications
-      if (request.sendNotifications && this.notificationService) {
-        const policy = await this.getPolicyById(request.policyId);
-        await this.notificationService.sendNewPolicyNotification(policy, targetUsers);
-        logger.info('PolicyService', `Sent notifications to ${targetUsers.length} users for policy ${policy.PolicyName}`);
+      // Queue bulk processing server-side (survives browser close)
+      // Instead of creating 2000+ acknowledgements + notifications inline,
+      // we write ONE queue record and let the Azure Function process it.
+      try {
+        const { DistributionQueueService } = await import('./DistributionQueueService');
+        const queueService = new DistributionQueueService(this.sp);
+        const jobId = await queueService.queueDistribution({
+          policyId: request.policyId,
+          policyName: policy.PolicyName,
+          policyVersionNumber: policy.VersionNumber,
+          targetUserIds: targetUsers,
+          jobType: 'Publish',
+          dueDate: request.dueDate,
+          sendNotifications: request.sendNotifications !== false,
+          queuedBy: this.currentUserEmail ? this.currentUserEmail.split('@')[0] : 'System',
+          queuedByEmail: this.currentUserEmail || ''
+        });
+        logger.info('PolicyService', `Distribution queued as job ${jobId}: ${policy.PolicyName} → ${targetUsers.length} users (server-side processing)`);
+      } catch (queueError) {
+        // Fallback: if queue list doesn't exist, process inline (legacy behaviour)
+        logger.warn('PolicyService', 'PM_DistributionQueue not available, falling back to inline processing:', queueError);
+        await this.createAcknowledgements(
+          request.policyId,
+          policy.VersionNumber,
+          targetUsers,
+          request.dueDate
+        );
+        if (request.sendNotifications && this.notificationService) {
+          await this.notificationService.sendNewPolicyNotification(policy, targetUsers);
+        }
       }
 
       await this.logAudit({
@@ -903,7 +920,7 @@ export class PolicyService {
         EntityId: request.policyId,
         PolicyId: request.policyId,
         Action: 'Published',
-        ActionDescription: `Policy published to ${targetUsers.length} users`,
+        ActionDescription: `Policy distribution queued for ${targetUsers.length} users`,
         PerformedById: this.currentUserId,
         PerformedByEmail: this.currentUserEmail,
         ActionDate: new Date(),
@@ -1037,7 +1054,7 @@ export class PolicyService {
     try {
       const items = await this.sp.web.lists
         .getByTitle(this.POLICY_VERSIONS_LIST)
-        .items.filter(`PolicyId eq ${policyId}`)
+        .items.filter(`PolicyId eq ${ValidationUtils.validateInteger(policyId, 'policyId', 1)}`)
         .orderBy('Created', false)
         .top(100)();
 
@@ -1163,7 +1180,7 @@ export class PolicyService {
           // Check if acknowledgement already exists
           const existing = await this.sp.web.lists
             .getByTitle(this.POLICY_ACKNOWLEDGEMENTS_LIST)
-            .items.filter(`PolicyId eq ${policyId} and AckUserId eq ${userId} and PolicyVersionNumber eq '${ValidationUtils.sanitizeForOData(versionNumber)}'`)
+            .items.filter(`PolicyId eq ${ValidationUtils.validateInteger(policyId, 'policyId', 1)} and AckUserId eq ${ValidationUtils.validateInteger(userId, 'userId', 1)} and PolicyVersionNumber eq '${ValidationUtils.sanitizeForOData(versionNumber)}'`)
             .top(1)();
 
           if (existing.length === 0) {
@@ -1206,7 +1223,7 @@ export class PolicyService {
     try {
       const items = await this.sp.web.lists
         .getByTitle(this.POLICY_ACKNOWLEDGEMENTS_LIST)
-        .items.filter(`PolicyId eq ${policyId} and AckUserId eq ${userId}`)
+        .items.filter(`PolicyId eq ${ValidationUtils.validateInteger(policyId, 'policyId', 1)} and AckUserId eq ${ValidationUtils.validateInteger(userId, 'userId', 1)}`)
         .orderBy('Created', false)
         .top(1)();
 
@@ -1450,7 +1467,7 @@ export class PolicyService {
     try {
       const allAcknowledgements = await this.sp.web.lists
         .getByTitle(this.POLICY_ACKNOWLEDGEMENTS_LIST)
-        .items.filter(`AckUserId eq ${userId}`)
+        .items.filter(`AckUserId eq ${ValidationUtils.validateInteger(userId, 'userId', 1)}`)
         .select('*')
         .top(1000)();
 
@@ -1487,7 +1504,7 @@ export class PolicyService {
       const policy = await this.getPolicyById(policyId);
       const acknowledgements = await this.sp.web.lists
         .getByTitle(this.POLICY_ACKNOWLEDGEMENTS_LIST)
-        .items.filter(`PolicyId eq ${policyId}`)
+        .items.filter(`PolicyId eq ${ValidationUtils.validateInteger(policyId, 'policyId', 1)}`)
         .top(1000)();
 
       const acks = acknowledgements as IPolicyAcknowledgement[];
@@ -1801,7 +1818,7 @@ export class PolicyService {
       const items = await this.sp.web.lists
         .getByTitle(QuizLists.POLICY_QUIZZES)
         .items
-        .filter(`PolicyId eq ${policyId}`)
+        .filter(`PolicyId eq ${ValidationUtils.validateInteger(policyId, 'policyId', 1)}`)
         .select('Id', 'Title', 'PolicyId', 'PassingScore', 'TimeLimit', 'AllowRetake', 'MaxAttempts')();
       return items;
     } catch (error) {
@@ -1818,7 +1835,7 @@ export class PolicyService {
       const items = await this.sp.web.lists
         .getByTitle(QuizLists.POLICY_QUIZ_QUESTIONS)
         .items
-        .filter(`QuizId eq ${quizId}`)
+        .filter(`QuizId eq ${ValidationUtils.validateInteger(quizId, 'quizId', 1)}`)
         .select('Id', 'Title', 'QuizId', 'QuestionText', 'QuestionType', 'OptionA', 'OptionB', 'OptionC', 'OptionD', 'CorrectAnswer', 'Points', 'Explanation')
         .orderBy('SortOrder', true)();
       return items;

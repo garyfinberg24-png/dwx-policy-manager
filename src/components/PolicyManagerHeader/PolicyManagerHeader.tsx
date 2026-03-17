@@ -2,7 +2,7 @@
 import * as React from 'react';
 import styles from './PolicyManagerHeader.module.scss';
 import { SPFI } from '@pnp/sp';
-import { PolicyManagerRole, filterNavForRole, getHeaderVisibility } from '../../services/PolicyRoleService';
+import { PolicyManagerRole, filterNavForRole, getHeaderVisibility, IRolePermissionEntry } from '../../services/PolicyRoleService';
 import { RecentlyViewedService, IRecentlyViewedDisplay } from '../../services/RecentlyViewedService';
 import { PolicyRequestWizard } from './PolicyRequestWizard';
 import { DwxHubService, DwxNotificationService, DwxNotificationBell } from '@dwx/core';
@@ -282,6 +282,9 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
   // Admin navigation visibility toggles (loaded from localStorage, set via PolicyAdmin)
   const [navVisibility, setNavVisibility] = React.useState<Record<string, boolean>>({});
 
+  // Role permissions — loaded from PM_Configuration (set via Admin > Role Permissions)
+  const [rolePermissions, setRolePermissions] = React.useState<IRolePermissionEntry[] | null>(null);
+
   React.useEffect(() => {
     try {
       const saved = localStorage.getItem('pm_nav_visibility');
@@ -289,6 +292,32 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
         setNavVisibility(JSON.parse(saved));
       }
     } catch { /* ignore corrupt data */ }
+
+    // Load role permissions from PM_Configuration (with localStorage cache)
+    try {
+      const cachedPerms = localStorage.getItem('pm_role_permissions');
+      if (cachedPerms) {
+        setRolePermissions(JSON.parse(cachedPerms));
+      }
+    } catch { /* ignore */ }
+
+    // Also try loading from SP list for fresh data
+    if (sp) {
+      sp.web.lists.getByTitle('PM_Configuration')
+        .items.filter("ConfigKey eq 'Admin.RolePermissions.Config'")
+        .select('ConfigValue')
+        .top(1)()
+        .then((items: any[]) => {
+          if (items.length > 0 && items[0].ConfigValue) {
+            try {
+              const perms = JSON.parse(items[0].ConfigValue);
+              setRolePermissions(perms);
+              localStorage.setItem('pm_role_permissions', items[0].ConfigValue);
+            } catch { /* ignore corrupt JSON */ }
+          }
+        })
+        .catch(() => { /* PM_Configuration may not exist — use defaults */ });
+    }
   }, []);
 
   // Cross-app notification service (from DWx Hub)
@@ -369,7 +398,8 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
   ];
 
   const allNavItems = navItems.length > 0 ? navItems : defaultNavItems;
-  const roleFiltered = policyRole ? filterNavForRole(allNavItems, policyRole) : allNavItems;
+  // Filter by EXPLICIT role permissions (no hierarchy inheritance)
+  const roleFiltered = policyRole ? filterNavForRole(allNavItems, policyRole, rolePermissions) : allNavItems;
 
   // Apply admin navigation toggles from localStorage (set via PolicyAdmin > Navigation)
   const displayNavItems = roleFiltered.filter(item => {
@@ -384,7 +414,7 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
   });
 
   // Override header visibility based on role
-  const roleVisibility = policyRole ? getHeaderVisibility(policyRole) : null;
+  const roleVisibility = policyRole ? getHeaderVisibility(policyRole, rolePermissions) : null;
 
   // Get badge class based on color
   const getBadgeClass = (color?: string) => {
@@ -625,8 +655,8 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
                 }
               }}
               type="button"
-              title="Policy Administration"
-              aria-label="Policy Administration"
+              title="Admin Centre"
+              aria-label="Admin Centre"
             >
               <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>

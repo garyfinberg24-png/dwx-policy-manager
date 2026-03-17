@@ -9,6 +9,7 @@ import '@pnp/sp/lists';
 import '@pnp/sp/items';
 import { AdminConfigLists, PolicyLists } from '../constants/SharePointListNames';
 import { logger } from './LoggingService';
+import { ValidationUtils } from '../utils/ValidationUtils';
 import {
   INamingRule,
   ISLAConfig,
@@ -481,7 +482,8 @@ export class AdminConfigService {
         .top(200);
 
       if (parentCategoryId) {
-        query = query.filter(`ParentCategoryId eq ${parentCategoryId}`);
+        const safeId = ValidationUtils.validateInteger(parentCategoryId, 'parentCategoryId', 1);
+        query = query.filter(`ParentCategoryId eq ${safeId}`);
       }
 
       const items = await query();
@@ -751,7 +753,7 @@ export class AdminConfigService {
       const prefix = `Admin.${category}`;
       const items = await this.sp.web.lists
         .getByTitle(this.CONFIG_LIST)
-        .items.filter(`substringof('${prefix}', ConfigKey)`)
+        .items.filter(`substringof('${ValidationUtils.sanitizeForOData(prefix)}', ConfigKey)`)
         .select('Id', 'ConfigKey', 'ConfigValue')
         .top(20)();
 
@@ -781,7 +783,7 @@ export class AdminConfigService {
     try {
       const items = await this.sp.web.lists
         .getByTitle(this.CONFIG_LIST)
-        .items.filter(`ConfigKey eq '${key}'`)
+        .items.filter(`ConfigKey eq '${ValidationUtils.sanitizeForOData(key)}'`)
         .select('Id')
         .top(1)();
 

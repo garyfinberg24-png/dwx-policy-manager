@@ -5,6 +5,7 @@ import "@pnp/sp/lists";
 import "@pnp/sp/items";
 import "@pnp/sp/site-users";
 import { AnalyticsLists } from '../constants/SharePointListNames';
+import { ValidationUtils } from '../utils/ValidationUtils';
 
 // ============================================================================
 // Phase 4: Policy Manager Analytics & Compliance
@@ -1803,7 +1804,7 @@ export class PolicyAnalyticsService {
         .items.orderBy("ExecutionDate", false);
 
       if (reportId) {
-        query = query.filter(`ReportId eq ${reportId}`);
+        query = query.filter(`ReportId eq ${ValidationUtils.validateInteger(reportId, 'reportId', 1)}`);
       }
 
       const items = await query.top(100)();
@@ -2814,7 +2815,7 @@ export class PolicyAnalyticsService {
       }
 
       if (filters?.userId) {
-        query = query.filter(`UserId eq ${filters.userId}`);
+        query = query.filter(`UserId eq ${ValidationUtils.validateInteger(filters.userId, 'userId', 1)}`);
       }
 
       const items = await query.top(500)();
@@ -2889,7 +2890,7 @@ export class PolicyAnalyticsService {
         .items.orderBy("GeneratedDate", false);
 
       if (filters?.reportType) {
-        query = query.filter(`ReportType eq '${filters.reportType}'`);
+        query = query.filter(`ReportType eq '${ValidationUtils.sanitizeForOData(filters.reportType)}'`);
       }
 
       const items = await query.top(50)();

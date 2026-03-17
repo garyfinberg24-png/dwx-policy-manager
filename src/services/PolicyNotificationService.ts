@@ -10,9 +10,10 @@ import '@pnp/sp/lists';
 import '@pnp/sp/items';
 import { IPolicy, IPolicyAcknowledgement, AcknowledgementStatus } from '../models/IPolicy';
 import { logger } from './LoggingService';
-import { NotificationLists, PolicyLists } from '../constants/SharePointListNames';
+import { NotificationLists } from '../constants/SharePointListNames';
 import { DwxNotificationService, DwxNotificationType, DwxNotificationPriority, DwxNotificationCategory } from '@dwx/core';
 import { escapeHtml } from '../utils/sanitizeHtml';
+import { ValidationUtils } from '../utils/ValidationUtils';
 
 /**
  * Policy notification types
@@ -398,7 +399,7 @@ export class PolicyNotificationService {
       // Check if schedule already exists
       const existing = await this.sp.web.lists
         .getByTitle(this.REMINDER_SCHEDULE_LIST)
-        .items.filter(`PolicyId eq ${policyId} and UserId eq ${userId}`)
+        .items.filter(`PolicyId eq ${ValidationUtils.validateInteger(policyId, 'policyId', 1)} and UserId eq ${ValidationUtils.validateInteger(userId, 'userId', 1)}`)
         .top(1)();
 
       if (existing.length > 0) {
@@ -478,44 +479,83 @@ export class PolicyNotificationService {
         .items.filter(`(Reminder3DaySent eq false or Reminder1DaySent eq false or OverdueSent eq false)`)
         .top(500)() as any[];
 
+      if (schedules.length === 0) return stats;
+
+      // Batch-load policies and acknowledgements to avoid N+1 queries
+      const policyIdSet = new Set<number>();
+      schedules.forEach((s: any) => policyIdSet.add(s.PolicyId));
+      const uniquePolicyIds = Array.from(policyIdSet);
+      const policyMap = new Map<number, any>();
+      const ackMap = new Map<string, any>();
+
+      // Load policies in batches of 50
+      for (let i = 0; i < uniquePolicyIds.length; i += 50) {
+        const batch = uniquePolicyIds.slice(i, i + 50);
+        try {
+          const filter = batch.map(function(id) { return 'Id eq ' + Number(id); }).join(' or ');
+          const policies = await this.sp.web.lists
+            .getByTitle('PM_Policies')
+            .items.filter(filter)
+            .select('Id', 'Title', 'PolicyName', 'PolicyNumber', 'PolicyCategory', 'ComplianceRisk')
+            .top(50)() as any[];
+          policies.forEach(function(p: any) { policyMap.set(p.Id, p); });
+        } catch { /* continue with partial data */ }
+      }
+
+      // Load acknowledgements in batches
+      for (let i = 0; i < schedules.length; i += 50) {
+        const batch = schedules.slice(i, i + 50);
+        try {
+          const filter = batch.map(function(s: any) { return '(PolicyId eq ' + Number(s.PolicyId) + ' and UserId eq ' + Number(s.UserId) + ')'; }).join(' or ');
+          const acks = await this.sp.web.lists
+            .getByTitle('PM_PolicyAcknowledgements')
+            .items.filter(filter)
+            .select('Id', 'PolicyId', 'UserId', 'AckStatus', 'UserEmail', 'UserName')
+            .top(50)() as any[];
+          acks.forEach(function(a: any) { ackMap.set(a.PolicyId + '_' + a.UserId, a); });
+        } catch { /* continue with partial data */ }
+      }
+
       for (const schedule of schedules) {
-        stats.processed++;
-        const dueDate = new Date(schedule.DueDate);
-        const daysToDue = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        try {
+          stats.processed++;
+          const dueDate = new Date(schedule.DueDate);
+          const daysToDue = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
-        // Get policy and acknowledgement info
-        const policy = await this.getPolicy(schedule.PolicyId);
-        if (!policy) continue;
+          const policy = policyMap.get(schedule.PolicyId);
+          if (!policy) continue;
 
-        const acknowledgement = await this.getAcknowledgement(schedule.PolicyId, schedule.UserId);
-        if (!acknowledgement || acknowledgement.AckStatus === AcknowledgementStatus.Acknowledged) {
-          // Already acknowledged, remove schedule
-          await this.sp.web.lists
-            .getByTitle(this.REMINDER_SCHEDULE_LIST)
-            .items.getById(schedule.Id)
-            .delete();
-          continue;
-        }
+          const acknowledgement = ackMap.get(schedule.PolicyId + '_' + schedule.UserId);
+          if (!acknowledgement || acknowledgement.AckStatus === AcknowledgementStatus.Acknowledged) {
+            await this.sp.web.lists
+              .getByTitle(this.REMINDER_SCHEDULE_LIST)
+              .items.getById(schedule.Id)
+              .delete();
+            continue;
+          }
 
-        // Warning reminder (SLA-driven, default 3 days)
-        if (daysToDue <= warningDays && daysToDue > urgentDays && !schedule.Reminder3DaySent) {
-          await this.sendReminder3DayNotification(policy, acknowledgement);
-          await this.updateReminderSchedule(schedule.Id, { reminder3DaySent: true });
-          stats.reminders3Day++;
-        }
+          // Warning reminder (SLA-driven, default 3 days)
+          if (daysToDue <= warningDays && daysToDue > urgentDays && !schedule.Reminder3DaySent) {
+            await this.sendReminder3DayNotification(policy, acknowledgement);
+            await this.updateReminderSchedule(schedule.Id, { reminder3DaySent: true });
+            stats.reminders3Day++;
+          }
 
-        // Urgent reminder (SLA-driven, default 1 day)
-        if (daysToDue <= urgentDays && daysToDue >= 0 && !schedule.Reminder1DaySent) {
-          await this.sendReminder1DayNotification(policy, acknowledgement);
-          await this.updateReminderSchedule(schedule.Id, { reminder1DaySent: true });
-          stats.reminders1Day++;
-        }
+          // Urgent reminder (SLA-driven, default 1 day)
+          if (daysToDue <= urgentDays && daysToDue >= 0 && !schedule.Reminder1DaySent) {
+            await this.sendReminder1DayNotification(policy, acknowledgement);
+            await this.updateReminderSchedule(schedule.Id, { reminder1DaySent: true });
+            stats.reminders1Day++;
+          }
 
-        // Overdue
-        if (daysToDue < 0 && !schedule.OverdueSent) {
-          await this.sendOverdueNotification(policy, acknowledgement, Math.abs(daysToDue));
-          await this.updateReminderSchedule(schedule.Id, { overdueSent: true });
-          stats.overdueAlerts++;
+          // Overdue
+          if (daysToDue < 0 && !schedule.OverdueSent) {
+            await this.sendOverdueNotification(policy, acknowledgement, Math.abs(daysToDue));
+            await this.updateReminderSchedule(schedule.Id, { overdueSent: true });
+            stats.overdueAlerts++;
+          }
+        } catch (scheduleErr) {
+          logger.warn('PolicyNotificationService', 'Failed processing schedule ' + schedule.Id + ':', scheduleErr);
         }
       }
 
@@ -1012,28 +1052,6 @@ export class PolicyNotificationService {
     `;
   }
 
-  private async getPolicy(policyId: number): Promise<IPolicy | null> {
-    try {
-      const policy = await this.sp.web.lists
-        .getByTitle(PolicyLists.POLICIES)
-        .items.getById(policyId)() as IPolicy;
-      return policy;
-    } catch {
-      return null;
-    }
-  }
-
-  private async getAcknowledgement(policyId: number, userId: number): Promise<IPolicyAcknowledgement | null> {
-    try {
-      const items = await this.sp.web.lists
-        .getByTitle(PolicyLists.POLICY_ACKNOWLEDGEMENTS)
-        .items.filter(`PolicyId eq ${policyId} and AckUserId eq ${userId}`)
-        .top(1)() as IPolicyAcknowledgement[];
-      return items.length > 0 ? items[0] : null;
-    } catch {
-      return null;
-    }
-  }
 
   private async updateReminderSchedule(scheduleId: number, updates: Partial<IReminderSchedule>): Promise<void> {
     try {

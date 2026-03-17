@@ -13,6 +13,7 @@ import '@pnp/sp/folders';
 import { IPolicy } from '../models/IPolicy';
 import { logger } from './LoggingService';
 import { PolicyLists, ComparisonLists } from '../constants/SharePointListNames';
+import { ValidationUtils } from '../utils/ValidationUtils';
 
 // ============================================================================
 // ENUMS
@@ -215,7 +216,7 @@ export class PolicyDocumentComparisonService {
     try {
       const items = await this.sp.web.lists
         .getByTitle(this.VERSIONS_LIST)
-        .items.filter(`PolicyId eq ${policyId}`)
+        .items.filter(`PolicyId eq ${ValidationUtils.validateInteger(policyId, 'policyId', 1)}`)
         .orderBy('VersionNumber', false)
         .top(100)();
 
@@ -1040,7 +1041,7 @@ export class PolicyDocumentComparisonService {
     try {
       const items = await this.sp.web.lists
         .getByTitle(this.COMPARISON_HISTORY_LIST)
-        .items.filter(`PolicyId eq ${policyId}`)
+        .items.filter(`PolicyId eq ${ValidationUtils.validateInteger(policyId, 'policyId', 1)}`)
         .orderBy('ComparedDate', false)
         .top(50)();
 

@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { Icon } from '@fluentui/react/lib/Icon';
 import * as React from 'react';
 import {
   Stack, Text, Spinner, SpinnerSize, MessageBar, MessageBarType,

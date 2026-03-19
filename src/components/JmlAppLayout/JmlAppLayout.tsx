@@ -150,6 +150,24 @@ const DwxAppLayout: React.FC<IJmlAppLayoutProps> = (props) => {
   // Signal app readiness to dismiss loading skeleton and reveal content
   React.useEffect(() => {
     signalAppReady();
+
+    // Load and apply custom theme
+    try {
+      const { ThemeManager } = require('../../utils/themeManager');
+      const stored = ThemeManager.getTheme();
+      if (stored && stored.preset !== 'forest-teal') {
+        // Non-default theme — apply from localStorage (fast)
+        ThemeManager.apply(stored);
+      }
+      // Also try to load from SP (slower but authoritative)
+      if (sp) {
+        ThemeManager.loadFromSP(sp).then((spTheme: any) => {
+          if (spTheme && (spTheme.primaryColor !== '#0d9488' || spTheme.logoUrl)) {
+            ThemeManager.apply(spTheme);
+          }
+        }).catch(() => { /* use cached/default */ });
+      }
+    } catch { /* ThemeManager not available — use defaults */ }
   }, []);
 
   // Content wrapper style — only apply overrides if non-default values are passed

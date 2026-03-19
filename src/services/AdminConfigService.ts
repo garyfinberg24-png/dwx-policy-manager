@@ -572,15 +572,26 @@ export class AdminConfigService {
     try {
       const items = await this.sp.web.lists
         .getByTitle(this.TEMPLATES_LIST)
-        .items.select('Id', 'Title', 'TemplateName', 'TemplateCategory', 'TemplateDescription', 'HTMLTemplate', 'IsActive')
+        .items.select('Id', 'Title', 'TemplateName', 'TemplateType', 'TemplateCategory', 'TemplateDescription', 'HTMLTemplate', 'TemplateContent', 'DocumentTemplateURL', 'ComplianceRisk', 'SuggestedReadTimeframe', 'RequiresAcknowledgement', 'RequiresQuiz', 'KeyPointsTemplate', 'UsageCount', 'Tags', 'IsActive')
         .orderBy('Title')
         .top(200)();
 
       logger.info('AdminConfigService', `Loaded ${items.length} policy templates`);
       return items as IPolicyTemplate[];
     } catch (error) {
-      logger.error('AdminConfigService', 'getTemplates failed:', error);
-      return [];
+      // Fallback: try without TemplateType/DocumentTemplateURL (columns may not exist yet)
+      try {
+        const items = await this.sp.web.lists
+          .getByTitle(this.TEMPLATES_LIST)
+          .items.select('Id', 'Title', 'TemplateName', 'TemplateCategory', 'TemplateDescription', 'HTMLTemplate', 'TemplateContent', 'ComplianceRisk', 'SuggestedReadTimeframe', 'RequiresAcknowledgement', 'RequiresQuiz', 'KeyPointsTemplate', 'UsageCount', 'IsActive')
+          .orderBy('Title')
+          .top(200)();
+        logger.info('AdminConfigService', `Loaded ${items.length} policy templates (fallback query)`);
+        return items as IPolicyTemplate[];
+      } catch (fallbackError) {
+        logger.error('AdminConfigService', 'getTemplates failed:', fallbackError);
+        return [];
+      }
     }
   }
 

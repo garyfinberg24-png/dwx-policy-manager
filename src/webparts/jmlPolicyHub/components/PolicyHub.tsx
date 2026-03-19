@@ -19,7 +19,6 @@ import {
   PivotItem,
   PivotLinkFormat,
   Label,
-  Icon,
   Link,
   Rating,
   RatingSize,
@@ -43,6 +42,7 @@ import {
   IColumn,
   SelectionMode
 } from '@fluentui/react';
+import { Icon } from '@fluentui/react/lib/Icon';
 import { injectPortalStyles } from '../../../utils/injectPortalStyles';
 import { JmlAppLayout } from '../../../components/JmlAppLayout';
 import { ErrorBoundary } from '../../../components/ErrorBoundary/ErrorBoundary';

@@ -10,7 +10,7 @@ import { Panel, IPanelProps, IPanelStyles } from '@fluentui/react';
  * - Close button: teal colored with hover effect
  * - Controls: 4px border-radius (inherited from global styles)
  * - Footer: light gray background with top border
- * - Surface: 8px left border-radius
+ * - Surface: no border-radius (flush to edge)
  *
  * Usage: Drop-in replacement for <Panel>. All IPanelProps are passed through.
  *
@@ -20,7 +20,14 @@ import { Panel, IPanelProps, IPanelStyles } from '@fluentui/react';
 
 const PANEL_STYLES: Partial<IPanelStyles> = {
   main: {
-    borderRadius: '8px 0 0 8px',
+    borderRadius: 0,
+  },
+  navigation: {
+    background: 'linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%)',
+    height: 'auto',
+    borderBottom: 'none',
+    justifyContent: 'flex-end',
+    padding: '8px 8px 0 0',
   },
   commands: {
     background: 'linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%)',

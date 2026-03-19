@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { Icon } from '@fluentui/react/lib/Icon';
 /* eslint-disable */
 import * as React from 'react';
 import { IPolicyPackManagerProps } from './IPolicyPackManagerProps';
@@ -12,7 +13,6 @@ import {
   DefaultButton,
   PrimaryButton,
   IconButton,
-  Icon,
   CommandBar,
   ICommandBarItemProps,
   TextField,

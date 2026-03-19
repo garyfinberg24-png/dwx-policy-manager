@@ -59,23 +59,45 @@ $pm-light-teal: #14b8a6;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 0 20px;
-  height: 32px;
+  gap: 8px;
+  padding: 0 24px;
+  height: 36px;
   background-color: #ffffff;
   color: $pm-dark-teal;
-  border: 1px solid #ffffff;
-  border-radius: 4px;
-  font-size: 15px;
-  font-weight: 500;
+  border: 2px solid #ffffff;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
   font-family: inherit;
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
   box-sizing: border-box;
+  letter-spacing: 0.3px;
 
   &:hover {
-    background-color: rgba(255, 255, 255, 0.85);
+    background-color: $pm-dark-teal;
+    color: #ffffff;
+    border-color: $pm-dark-teal;
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+// Override Fluent UI SearchBox focus blue border
+:global {
+  .ms-SearchBox {
+    &::after {
+      display: none !important;
+    }
+    &.is-active::after {
+      display: none !important;
+    }
+    &:focus-within {
+      border-color: #ffffff !important;
+    }
   }
 }
 
@@ -150,6 +172,9 @@ $pm-light-teal: #14b8a6;
 .mainContent {
   display: flex;
   gap: 24px;
+  align-items: flex-start;
+  width: 100%;
+  box-sizing: border-box;
 
   @media (max-width: 768px) {
     flex-direction: column;

@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { Icon } from '@fluentui/react/lib/Icon';
 import {
   Stack,
   Text,
@@ -26,8 +27,7 @@ import {
   Checkbox,
   ChoiceGroup,
   ActionButton,
-  Separator,
-  Icon
+  Separator
 } from '@fluentui/react';
 import {
   QuizService,
@@ -772,6 +772,109 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
     }
   };
 
+  // ── Save As handlers ─────────────────────────────────────────────────
+
+  private _handleSaveAsDraft = async (): Promise<void> => {
+    const { quizId } = this.state;
+    if (!quizId) return;
+    try {
+      this.setState({ saving: true });
+      await this.quizService.updateQuiz(quizId, { Status: 'Draft' } as any);
+      this.setState({ saving: false, status: 'Draft' as any, success: 'Quiz saved as Draft.' });
+    } catch {
+      this.setState({ saving: false, error: 'Failed to save as draft.' });
+    }
+  };
+
+  private _handleSaveAsTemplate = async (): Promise<void> => {
+    const { title, description, questions, category, passingScore, timeLimit, maxAttempts, difficultyLevel } = this.state;
+    try {
+      this.setState({ saving: true });
+      const templateData: any = {
+        Title: `[Template] ${title}`,
+        Description: description || `Template based on "${title}"`,
+        QuizCategory: category,
+        Status: 'Draft',
+        PassingScore: passingScore,
+        TimeLimit: timeLimit,
+        MaxAttempts: maxAttempts,
+        DifficultyLevel: difficultyLevel
+      };
+      const newQuiz = await this.quizService.createQuiz(templateData);
+      // Copy questions to the new template quiz
+      if (newQuiz?.Id) {
+        for (const q of questions) {
+          const qData: any = { ...q, QuizId: newQuiz.Id };
+          delete qData.Id;
+          await this.quizService.createQuestion(qData);
+        }
+      }
+      this.setState({ saving: false, success: `Quiz template "[Template] ${title}" created with ${questions.length} questions.` });
+    } catch {
+      this.setState({ saving: false, error: 'Failed to save as template.' });
+    }
+  };
+
+  private _handleSaveAsCopy = async (): Promise<void> => {
+    const { title, description, policyId, questions, category, passingScore, timeLimit, maxAttempts, difficultyLevel } = this.state;
+    try {
+      this.setState({ saving: true });
+      const copyData: any = {
+        Title: `${title} (Copy)`,
+        Description: description,
+        PolicyId: policyId,
+        QuizCategory: category,
+        Status: 'Draft',
+        PassingScore: passingScore,
+        TimeLimit: timeLimit,
+        MaxAttempts: maxAttempts,
+        DifficultyLevel: difficultyLevel
+      };
+      const newQuiz = await this.quizService.createQuiz(copyData);
+      if (newQuiz?.Id) {
+        for (const q of questions) {
+          const qData: any = { ...q, QuizId: newQuiz.Id };
+          delete qData.Id;
+          await this.quizService.createQuestion(qData);
+        }
+        // Navigate to the new copy
+        this.setState({
+          saving: false,
+          quizId: newQuiz.Id,
+          title: copyData.Title,
+          success: `Quiz copied as "${copyData.Title}" with ${questions.length} questions. You are now editing the copy.`
+        });
+      }
+    } catch {
+      this.setState({ saving: false, error: 'Failed to save copy.' });
+    }
+  };
+
+  private _handleExportJson = (): void => {
+    const { title, description, questions, category, passingScore, timeLimit, maxAttempts, difficultyLevel } = this.state;
+    const exportData = {
+      quiz: { title, description, category, passingScore, timeLimit, maxAttempts, difficultyLevel },
+      questions: questions.map(q => {
+        const copy = { ...q };
+        delete (copy as any).Id;
+        delete (copy as any).QuizId;
+        return copy;
+      }),
+      exportedAt: new Date().toISOString(),
+      version: '1.0'
+    };
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${title.replace(/[^a-zA-Z0-9]/g, '_')}_quiz_export.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    this.setState({ success: `Quiz exported as JSON (${questions.length} questions).` });
+  };
+
   private handleAddQuestion = (): void => {
     this.setState({
       showQuestionPanel: true,
@@ -1194,6 +1297,22 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
             disabled={saving}
             styles={{ root: { borderRadius: '4px' } }}
           />
+          {quizId && (
+            <DefaultButton
+              text="Save As"
+              iconProps={{ iconName: 'SaveAs' }}
+              disabled={saving || this.state.questions.length === 0}
+              styles={{ root: { borderRadius: '4px' } }}
+              menuProps={{
+                items: [
+                  { key: 'draft', text: 'Save as Draft', iconProps: { iconName: 'Edit' }, onClick: () => { void this._handleSaveAsDraft(); } },
+                  { key: 'template', text: 'Save as Template', iconProps: { iconName: 'DocumentSet' }, onClick: () => { void this._handleSaveAsTemplate(); } },
+                  { key: 'copy', text: 'Save as Copy', iconProps: { iconName: 'Copy' }, onClick: () => { void this._handleSaveAsCopy(); } },
+                  { key: 'export', text: 'Export to JSON', iconProps: { iconName: 'Download' }, onClick: () => { void this._handleExportJson(); } }
+                ]
+              }}
+            />
+          )}
           <DefaultButton
             text="Add Question"
             iconProps={{ iconName: 'Add' }}
@@ -1294,6 +1413,7 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
                 onChange={(e, option) => this.setState({ policyId: option?.key ? Number(option.key) : null })}
                 required
                 placeholder="Select a policy..."
+                calloutProps={{ calloutMaxWidth: 480 }}
                 errorMessage={!policyId && (this.state as any)._policyTouched ? 'Policy document is required' : undefined}
               />
             </Stack.Item>

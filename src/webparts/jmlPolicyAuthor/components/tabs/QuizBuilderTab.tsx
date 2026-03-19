@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { Icon } from '@fluentui/react/lib/Icon';
 /**
  * QuizBuilderTab — Extracted from PolicyAuthorEnhanced.tsx
  * Displays quiz management interface with quick-create cards and quiz table.
@@ -10,7 +11,6 @@ import {
   Spinner,
   SpinnerSize,
   IconButton,
-  Icon,
 } from '@fluentui/react';
 import { PageSubheader } from '../../../../components/PageSubheader';
 import { PrimaryButton } from '@fluentui/react';

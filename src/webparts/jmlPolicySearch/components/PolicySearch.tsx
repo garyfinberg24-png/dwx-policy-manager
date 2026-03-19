@@ -4,7 +4,6 @@ import styles from './PolicySearch.module.scss';
 import { IPolicySearchProps } from './IPolicySearchProps';
 import {
   SearchBox,
-  Icon,
   Dropdown,
   IDropdownOption,
   DatePicker,
@@ -13,6 +12,7 @@ import {
   Checkbox,
   DefaultButton
 } from '@fluentui/react';
+import { Icon } from '@fluentui/react/lib/Icon';
 import { JmlAppLayout } from '../../../components/JmlAppLayout';
 import { ErrorBoundary } from '../../../components/ErrorBoundary/ErrorBoundary';
 import { PolicyService } from '../../../services/PolicyService';
@@ -400,8 +400,10 @@ export default class PolicySearch extends React.Component<IPolicySearchProps, IP
                         onSearch={this.handleSearch}
                         onClear={() => this.setState({ searchQuery: '', results: [], totalResults: 0, hasSearched: false, error: null })}
                         styles={{
-                          root: { borderRadius: '4px', backgroundColor: '#ffffff', flex: 1 },
-                          field: { fontSize: '16px', padding: '8px' },
+                          root: { borderRadius: '6px', backgroundColor: '#ffffff', flex: 1, border: '2px solid transparent', selectors: { ':focus-within': { border: '2px solid #ffffff', boxShadow: '0 0 0 1px rgba(255,255,255,0.5)' }, '::after': { display: 'none' } } },
+                          field: { fontSize: '16px', padding: '8px 12px' },
+                          iconContainer: { color: '#94a3b8' },
+                          clearButton: { selectors: { '.ms-Button': { borderRadius: '4px' } } }
                         }}
                       />
                       <button

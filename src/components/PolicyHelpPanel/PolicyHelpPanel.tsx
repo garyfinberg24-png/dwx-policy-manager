@@ -1,9 +1,9 @@
 // @ts-nocheck
+import { Icon } from '@fluentui/react/lib/Icon';
 import * as React from 'react';
 import { Panel, PanelType } from '@fluentui/react/lib/Panel';
 import {
   SearchBox,
-  Icon,
   Pivot,
   PivotItem,
   TextField,

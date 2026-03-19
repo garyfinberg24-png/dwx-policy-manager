@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { Icon } from '@fluentui/react/lib/Icon';
 import * as React from 'react';
 import styles from './PolicyManagerHeader.module.scss';
 import { SPFI } from '@pnp/sp';
@@ -388,17 +389,79 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
     .slice(0, 2)
     .toUpperCase();
 
+  const [headerSearchResults, setHeaderSearchResults] = React.useState<any[]>([]);
+  const [headerSearching, setHeaderSearching] = React.useState(false);
+  const [showSearchDropdown, setShowSearchDropdown] = React.useState(false);
+  const searchDebounceRef = React.useRef<any>(null);
+  const searchDropdownRef = React.useRef<HTMLDivElement>(null);
+
+  // Close search dropdown on outside click
+  React.useEffect(() => {
+    const handleClickOutsideSearch = (e: MouseEvent) => {
+      if (searchDropdownRef.current && !searchDropdownRef.current.contains(e.target as Node)) {
+        setShowSearchDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutsideSearch);
+    return () => document.removeEventListener('mousedown', handleClickOutsideSearch);
+  }, []);
+
+  // Debounced inline search
+  const handleSearchInputChange = (value: string) => {
+    setSearchQuery(value);
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    if (!value.trim() || value.trim().length < 2) {
+      setHeaderSearchResults([]);
+      setShowSearchDropdown(false);
+      return;
+    }
+    searchDebounceRef.current = setTimeout(async () => {
+      if (!sp) return;
+      setHeaderSearching(true);
+      setShowSearchDropdown(true);
+      try {
+        const items = await sp.web.lists.getByTitle('PM_Policies')
+          .items.select('Id', 'Title', 'PolicyName', 'PolicyNumber', 'PolicyCategory', 'PolicyStatus')
+          .filter(`substringof('${value.trim().replace(/'/g, "''")}', Title) or substringof('${value.trim().replace(/'/g, "''")}', PolicyName) or substringof('${value.trim().replace(/'/g, "''")}', PolicyNumber)`)
+          .orderBy('Title')
+          .top(8)();
+        setHeaderSearchResults(items);
+      } catch {
+        // Fallback: get all and filter client-side
+        try {
+          const allItems = await sp.web.lists.getByTitle('PM_Policies')
+            .items.select('Id', 'Title', 'PolicyName', 'PolicyNumber', 'PolicyCategory', 'PolicyStatus')
+            .top(200)();
+          const q = value.trim().toLowerCase();
+          const filtered = allItems.filter((p: any) =>
+            (p.PolicyName || p.Title || '').toLowerCase().includes(q) ||
+            (p.PolicyNumber || '').toLowerCase().includes(q) ||
+            (p.PolicyCategory || '').toLowerCase().includes(q)
+          ).slice(0, 8);
+          setHeaderSearchResults(filtered);
+        } catch { setHeaderSearchResults([]); }
+      }
+      setHeaderSearching(false);
+    }, 300);
+  };
+
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       if (onSearch) {
         onSearch(searchQuery);
       }
+      setShowSearchDropdown(false);
       // Navigate to search page with query parameter
       if (searchQuery.trim()) {
         window.location.href = `/sites/PolicyManager/SitePages/PolicySearch.aspx?q=${encodeURIComponent(searchQuery.trim())}`;
       }
     }
+    if (e.key === 'Escape') {
+      setShowSearchDropdown(false);
+    }
   };
+
+  const siteUrl = sp ? '' : '';
 
   // Format login time
   const displayLoginTime = loginTime || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -568,7 +631,7 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
 
         {/* Search Section */}
         {showSearch && (
-          <div className={styles.searchSection}>
+          <div className={styles.searchSection} ref={searchDropdownRef} style={{ position: 'relative' }}>
             <div className={styles.searchInput}>
               <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path
@@ -583,10 +646,99 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
                 type="text"
                 placeholder={searchPlaceholder}
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => handleSearchInputChange(e.target.value)}
                 onKeyDown={handleSearchKeyDown}
+                onFocus={() => { if (headerSearchResults.length > 0) setShowSearchDropdown(true); }}
               />
             </div>
+            {/* Inline Search Results Dropdown */}
+            {showSearchDropdown && (
+              <div style={{
+                position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4,
+                background: '#fff', borderRadius: 6, boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+                border: '1px solid #e2e8f0', zIndex: 1000, maxHeight: 400, overflowY: 'auto'
+              }}>
+                {headerSearching ? (
+                  <div style={{ padding: '16px 20px', textAlign: 'center' }}>
+                    <span style={{ fontSize: 12, color: '#94a3b8' }}>Searching...</span>
+                  </div>
+                ) : headerSearchResults.length === 0 ? (
+                  <div style={{ padding: '16px 20px', textAlign: 'center' }}>
+                    <span style={{ fontSize: 12, color: '#94a3b8' }}>No policies found for &ldquo;{searchQuery}&rdquo;</span>
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ padding: '8px 16px', borderBottom: '1px solid #f1f5f9' }}>
+                      <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 500 }}>{headerSearchResults.length} result{headerSearchResults.length !== 1 ? 's' : ''}</span>
+                    </div>
+                    {headerSearchResults.map((policy: any) => {
+                      const statusColors: Record<string, { bg: string; color: string }> = {
+                        Published: { bg: '#dcfce7', color: '#16a34a' },
+                        Draft: { bg: '#f1f5f9', color: '#64748b' },
+                        'In Review': { bg: '#fef3c7', color: '#d97706' },
+                        Archived: { bg: '#f1f5f9', color: '#94a3b8' }
+                      };
+                      const sc = statusColors[policy.PolicyStatus] || statusColors.Draft;
+                      return (
+                        <div
+                          key={policy.Id}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => {
+                            setShowSearchDropdown(false);
+                            setSearchQuery('');
+                            window.location.href = `/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${policy.Id}&highlight=true`;
+                          }}
+                          onKeyDown={(ev) => { if (ev.key === 'Enter') { setShowSearchDropdown(false); window.location.href = `/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${policy.Id}&highlight=true`; } }}
+                          style={{
+                            padding: '10px 16px', cursor: 'pointer', borderBottom: '1px solid #f8fafc',
+                            display: 'flex', alignItems: 'center', gap: 10,
+                            transition: 'background 0.1s'
+                          }}
+                          onMouseEnter={(ev) => { (ev.currentTarget as HTMLElement).style.background = '#f0fdfa'; }}
+                          onMouseLeave={(ev) => { (ev.currentTarget as HTMLElement).style.background = '#fff'; }}
+                        >
+                          <div style={{ width: 32, height: 32, borderRadius: 4, background: '#f0fdfa', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <svg viewBox="0 0 24 24" fill="none" style={{ width: 16, height: 16 }}>
+                              <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke="#0d9488" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {policy.PolicyName || policy.Title}
+                            </div>
+                            <div style={{ fontSize: 11, color: '#94a3b8' }}>
+                              {policy.PolicyNumber} | {policy.PolicyCategory}
+                            </div>
+                          </div>
+                          <span style={{
+                            fontSize: 9, fontWeight: 600, padding: '2px 6px', borderRadius: 3,
+                            background: sc.bg, color: sc.color, flexShrink: 0
+                          }}>
+                            {policy.PolicyStatus}
+                          </span>
+                        </div>
+                      );
+                    })}
+                    <div
+                      role="button" tabIndex={0}
+                      onClick={() => {
+                        setShowSearchDropdown(false);
+                        window.location.href = `/sites/PolicyManager/SitePages/PolicySearch.aspx?q=${encodeURIComponent(searchQuery.trim())}`;
+                      }}
+                      onKeyDown={(ev) => { if (ev.key === 'Enter') { setShowSearchDropdown(false); window.location.href = `/sites/PolicyManager/SitePages/PolicySearch.aspx?q=${encodeURIComponent(searchQuery.trim())}`; } }}
+                      style={{ padding: '10px 16px', textAlign: 'center', cursor: 'pointer', borderTop: '1px solid #e2e8f0', background: '#f8fafc' }}
+                      onMouseEnter={(ev) => { (ev.currentTarget as HTMLElement).style.background = '#f0fdfa'; }}
+                      onMouseLeave={(ev) => { (ev.currentTarget as HTMLElement).style.background = '#f8fafc'; }}
+                    >
+                      <span style={{ fontSize: 12, color: '#0d9488', fontWeight: 600 }}>
+                        View all results for &ldquo;{searchQuery}&rdquo; →
+                      </span>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         )}
 

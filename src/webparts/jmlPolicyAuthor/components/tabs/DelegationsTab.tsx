@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { Icon } from '@fluentui/react/lib/Icon';
 /**
  * DelegationsTab — Extracted from PolicyAuthorEnhanced.tsx
  * Displays policy delegation requests with KPI cards and delegation list.
@@ -11,7 +12,6 @@ import {
   SpinnerSize,
   DefaultButton,
   PrimaryButton,
-  Icon,
 } from '@fluentui/react';
 import { PageSubheader } from '../../../../components/PageSubheader';
 import { IDelegationsTabProps } from './types';

@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { Icon } from '@fluentui/react/lib/Icon';
 /* eslint-disable */
 import * as React from 'react';
 import { IPolicyDetailsProps } from './IPolicyDetailsProps';
@@ -12,7 +13,6 @@ import {
   DefaultButton,
   PrimaryButton,
   IconButton,
-  Icon,
   Label,
   TextField,
   Checkbox,
@@ -816,41 +816,69 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
   };
 
   private generateReceiptEmailHtml(receipt: IReadReceipt): string {
-    return `
-      <html>
-      <body style="font-family: 'Segoe UI', Tahoma, Geneva, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <div style="background: linear-gradient(135deg, #0f4c47, #0f766e); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
-          <h1 style="color: white; margin: 0;">Policy Read Receipt</h1>
-          <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0;">Policy Manager</p>
-        </div>
-        <div style="background: white; padding: 30px; border: 1px solid #e1e1e1;">
-          <div style="text-align: center; margin-bottom: 20px;">
-            <div style="display: inline-block; background: #16a34a; color: white; padding: 8px 16px; border-radius: 20px; font-weight: 600;">
-              &#10003; Acknowledged
-            </div>
-          </div>
-          <table style="width: 100%; border-collapse: collapse;">
-            <tr><td style="padding: 8px 0; color: #666;">Receipt Number:</td><td style="padding: 8px 0; font-weight: 600;">${receipt.ReceiptNumber}</td></tr>
-            <tr><td style="padding: 8px 0; color: #666;">Employee:</td><td style="padding: 8px 0;">${receipt.UserDisplayName}</td></tr>
-            <tr><td style="padding: 8px 0; color: #666;">Email:</td><td style="padding: 8px 0;">${receipt.UserEmail}</td></tr>
-            <tr><td style="padding: 8px 0; color: #666;">Policy:</td><td style="padding: 8px 0; font-weight: 600;">${receipt.PolicyNumber} - ${receipt.PolicyName}</td></tr>
-            <tr><td style="padding: 8px 0; color: #666;">Version:</td><td style="padding: 8px 0;">${receipt.PolicyVersion}</td></tr>
-            <tr><td style="padding: 8px 0; color: #666;">Read Duration:</td><td style="padding: 8px 0;">${Math.floor(receipt.ReadDurationSeconds / 60)} min ${receipt.ReadDurationSeconds % 60} sec</td></tr>
-            ${receipt.QuizRequired ? `<tr><td style="padding: 8px 0; color: #666;">Quiz Score:</td><td style="padding: 8px 0;">${receipt.QuizScore}%</td></tr>` : ''}
-            <tr><td style="padding: 8px 0; color: #666;">Acknowledged:</td><td style="padding: 8px 0;">${receipt.AcknowledgedDate.toLocaleDateString()} at ${receipt.AcknowledgedTime}</td></tr>
-            <tr><td style="padding: 8px 0; color: #666;">Digital Signature:</td><td style="padding: 8px 0; font-style: italic;">${receipt.DigitalSignature}</td></tr>
-          </table>
-          <div style="margin-top: 20px; padding: 15px; background: #f5f5f5; border-radius: 4px; font-size: 12px; color: #666;">
-            <p style="margin: 0;"><strong>Legal Confirmation:</strong></p>
-            <p style="margin: 10px 0 0 0; white-space: pre-line;">${receipt.LegalConfirmationText}</p>
-          </div>
-        </div>
-        <div style="background: #f5f5f5; padding: 15px; text-align: center; font-size: 12px; color: #666; border-radius: 0 0 8px 8px;">
-          <p style="margin: 0;">This is an automated receipt from Policy Manager. Please retain for your records.</p>
-        </div>
-      </body>
-      </html>
-    `;
+    const { ReportHtmlGenerator } = require('../../../utils/reportHtmlGenerator');
+    return ReportHtmlGenerator.generate({
+      title: 'Policy Read Receipt',
+      subtitle: `Receipt ${receipt.ReceiptNumber}`,
+      reportType: 'ACKNOWLEDGEMENT',
+      reportId: receipt.ReceiptNumber,
+      sections: [
+        {
+          type: 'summary-card',
+          title: 'Acknowledgement Confirmed',
+          content: `<p>${receipt.UserDisplayName} has read and acknowledged this policy.</p>`,
+          style: 'success',
+          data: { badge: 'VERIFIED' }
+        },
+        {
+          type: 'two-column',
+          title: 'Employee Details',
+          subtitle: 'Policy Details',
+          data: {
+            left: [
+              { label: 'Name', value: receipt.UserDisplayName },
+              { label: 'Email', value: receipt.UserEmail },
+              { label: 'Read Duration', value: `${Math.floor(receipt.ReadDurationSeconds / 60)} min ${receipt.ReadDurationSeconds % 60} sec` },
+              { label: 'Acknowledged', value: `${receipt.AcknowledgedDate.toLocaleDateString()} at ${receipt.AcknowledgedTime}` }
+            ],
+            right: [
+              { label: 'Policy', value: `${receipt.PolicyNumber} - ${receipt.PolicyName}` },
+              { label: 'Version', value: receipt.PolicyVersion },
+              ...(receipt.QuizRequired ? [{ label: 'Quiz Score', value: `${receipt.QuizScore}%` }] : []),
+              { label: 'Receipt Number', value: receipt.ReceiptNumber }
+            ]
+          }
+        },
+        {
+          type: 'badge-row',
+          data: [
+            { label: 'Status', value: 'Acknowledged', color: '#059669' },
+            { label: 'Policy', value: receipt.PolicyNumber, color: '#0d9488' },
+            ...(receipt.QuizRequired ? [{ label: 'Quiz', value: `${receipt.QuizScore}%`, color: receipt.QuizScore >= 75 ? '#059669' : '#dc2626' }] : [])
+          ]
+        },
+        { type: 'divider' },
+        {
+          type: 'summary-card',
+          title: 'Legal Confirmation',
+          content: `<p style="white-space: pre-line; font-size: 9pt;">${receipt.LegalConfirmationText}</p>`,
+          style: 'muted'
+        },
+        {
+          type: 'text',
+          content: '<p style="font-size: 9pt; color: #94a3b8; text-align: center; margin-top: 16px;">This is an automated receipt from Policy Manager. Please retain for your records.</p>',
+          style: 'muted'
+        },
+        {
+          type: 'signature',
+          data: {
+            name: receipt.DigitalSignature,
+            role: 'Digital Signature',
+            date: `${receipt.AcknowledgedDate.toLocaleDateString()} ${receipt.AcknowledgedTime}`
+          }
+        }
+      ]
+    });
   }
 
   private handleViewReceipt = (): void => {

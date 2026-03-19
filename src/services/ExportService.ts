@@ -126,9 +126,71 @@ export class ExportService {
     options: IExportOptions
   ): Promise<void> {
     try {
-      const pdfContent = this.generatePDFContent(data, options);
-      const blob = new Blob([pdfContent], { type: 'application/pdf' });
-      this.downloadBlob(blob, `${filename}.pdf`);
+      const { ReportHtmlGenerator } = require('../utils/reportHtmlGenerator');
+      const sections: any[] = [];
+
+      if (options.includeSummary && data.summary) {
+        sections.push({
+          type: 'kpi-row',
+          data: [
+            { label: 'Total Policies', value: data.summary.totalProcesses || data.summary.totalPolicies || 0, color: '#0d9488' },
+            { label: 'Active', value: data.summary.activeProcesses || data.summary.activePolicies || 0, color: '#059669' },
+            { label: 'Compliance', value: `${data.summary.overallCompletionRate || data.summary.complianceRate || 0}`, unit: '%', color: '#2563eb' },
+            { label: 'Overdue', value: data.summary.overdueCount || 0, color: '#dc2626' }
+          ]
+        });
+      }
+
+      if (data.trends && data.trends.length > 0) {
+        sections.push({ type: 'heading', title: 'Completion Trends', style: 'accent' });
+        sections.push({
+          type: 'table',
+          data: {
+            headers: Object.keys(data.trends[0] || {}),
+            rows: data.trends.map((row: any) => Object.values(row).map(String))
+          }
+        });
+      }
+
+      if (data.costs && data.costs.length > 0) {
+        sections.push({ type: 'heading', title: 'Cost Analysis' });
+        sections.push({
+          type: 'table',
+          data: {
+            headers: Object.keys(data.costs[0] || {}),
+            rows: data.costs.map((row: any) => Object.values(row).map(String))
+          }
+        });
+      }
+
+      if (data.bottlenecks && data.bottlenecks.length > 0) {
+        sections.push({ type: 'heading', title: 'Task Bottlenecks' });
+        sections.push({
+          type: 'table',
+          data: {
+            headers: Object.keys(data.bottlenecks[0] || {}),
+            rows: data.bottlenecks.map((row: any) => Object.values(row).map(String))
+          }
+        });
+      }
+
+      const html = ReportHtmlGenerator.generate({
+        title: filename.replace(/_/g, ' '),
+        subtitle: `Generated ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`,
+        reportType: 'ANALYTICS',
+        sections
+      });
+
+      // Open in new window for print-to-PDF
+      const blob = new Blob([html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const printWindow = window.open(url, '_blank');
+      if (printWindow) {
+        printWindow.addEventListener('afterprint', () => URL.revokeObjectURL(url));
+        printWindow.addEventListener('load', () => { setTimeout(() => printWindow.print(), 300); });
+      } else {
+        URL.revokeObjectURL(url);
+      }
     } catch (error) {
       logger.error('ExportService', 'Failed to export to PDF:', error);
       throw error;

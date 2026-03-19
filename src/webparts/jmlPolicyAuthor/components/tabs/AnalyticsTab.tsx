@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { Icon } from '@fluentui/react/lib/Icon';
 /**
  * AnalyticsTab — Extracted from PolicyAuthorEnhanced.tsx
  * Displays policy analytics with KPI cards, category/status/risk charts,
@@ -13,7 +14,6 @@ import {
   DefaultButton,
   PrimaryButton,
   IconButton,
-  Icon,
 } from '@fluentui/react';
 import { PageSubheader } from '../../../../components/PageSubheader';
 import {

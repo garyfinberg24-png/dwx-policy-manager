@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { Icon } from '@fluentui/react/lib/Icon';
 import styles from './PolicyDistribution.module.scss';
 import { IPolicyDistributionProps } from './IPolicyDistributionProps';
 import { JmlAppLayout } from '../../../components/JmlAppLayout/JmlAppLayout';
@@ -16,7 +17,6 @@ import {
   Toggle,
   Spinner,
   SpinnerSize,
-  Icon,
   Label,
   MessageBar,
   MessageBarType,

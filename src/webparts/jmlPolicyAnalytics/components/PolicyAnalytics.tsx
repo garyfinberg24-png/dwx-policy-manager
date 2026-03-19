@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { Icon } from '@fluentui/react/lib/Icon';
 import * as React from 'react';
 import styles from './PolicyAnalytics.module.scss';
 import { IPolicyAnalyticsProps } from './IPolicyAnalyticsProps';
@@ -8,7 +9,6 @@ import { PM_LISTS } from '../../../constants/SharePointListNames';
 import {
   Pivot,
   PivotItem,
-  Icon,
   IconButton,
   SearchBox,
   Dropdown,

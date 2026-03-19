@@ -1,10 +1,10 @@
 // @ts-nocheck
+import { Icon } from '@fluentui/react/lib/Icon';
 import * as React from 'react';
 import styles from './PolicyHelp.module.scss';
 import { IPolicyHelpProps } from './IPolicyHelpProps';
 import {
   SearchBox,
-  Icon,
   Pivot,
   PivotItem,
   TextField,

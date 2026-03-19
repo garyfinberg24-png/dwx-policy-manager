@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { Icon } from '@fluentui/react/lib/Icon';
 /**
  * PolicyPacksTab — Extracted from PolicyAuthorEnhanced.tsx
  * Displays policy pack management with stats summary and pack card grid.
@@ -11,7 +12,6 @@ import {
   SpinnerSize,
   PrimaryButton,
   IconButton,
-  Icon,
 } from '@fluentui/react';
 import { PageSubheader } from '../../../../components/PageSubheader';
 import { IPolicyPacksTabProps } from './types';

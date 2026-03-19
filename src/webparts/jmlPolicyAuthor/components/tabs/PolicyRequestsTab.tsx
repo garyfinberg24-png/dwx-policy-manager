@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { Icon } from '@fluentui/react/lib/Icon';
 /**
  * PolicyRequestsTab — Extracted from PolicyAuthorEnhanced.tsx
  * Displays policy creation requests submitted by managers, with KPI cards,
@@ -12,7 +13,6 @@ import {
   SpinnerSize,
   DefaultButton,
   PrimaryButton,
-  Icon,
   Panel,
   PanelType,
 } from '@fluentui/react';

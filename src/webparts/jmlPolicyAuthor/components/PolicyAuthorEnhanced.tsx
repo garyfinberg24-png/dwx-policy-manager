@@ -521,12 +521,22 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     try {
       const items = await this.props.sp.web.lists
         .getByTitle(PM_LISTS.POLICY_METADATA_PROFILES)
-        .items.filter('IsActive eq true')
+        .items.select('Id', 'Title', 'ProfileName', 'PolicyCategory', 'ComplianceRisk', 'ReadTimeframe', 'RequiresAcknowledgement', 'RequiresQuiz', 'TargetDepartments', 'IsActive', 'Description')
+        .orderBy('Title')
         .top(50)();
 
-      if (this._isMounted) { this.setState({ metadataProfiles: items as IPolicyMetadataProfile[] }); }
+      // Filter active profiles client-side (IsActive filter may fail if column is missing)
+      const active = items.filter((p: any) => p.IsActive !== false);
+      if (this._isMounted) { this.setState({ metadataProfiles: active as IPolicyMetadataProfile[] }); }
     } catch (error) {
       console.error('Failed to load metadata profiles:', error);
+      // Fallback: try without filter in case the list schema is different
+      try {
+        const items = await this.props.sp.web.lists
+          .getByTitle(PM_LISTS.POLICY_METADATA_PROFILES)
+          .items.top(50)();
+        if (this._isMounted) { this.setState({ metadataProfiles: items as IPolicyMetadataProfile[] }); }
+      } catch { /* silent fallback */ }
     }
   }
 
@@ -589,10 +599,29 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
   }
 
   private handleSelectTemplate = (template: IPolicyTemplate): void => {
-    // Apply template to form — key points left empty for manual entry
+    const templateType = (template as any).TemplateType || 'richtext';
+    const isSectionBased = templateType === 'corporate' || templateType === 'regulatory';
+    const isDocBased = ['word', 'excel', 'powerpoint'].includes(templateType);
+
+    // Parse section definitions for corporate/regulatory templates
+    let templateSections: any[] = [];
+    let sectionContents: Record<string, string> = {};
+    if (isSectionBased) {
+      try {
+        templateSections = JSON.parse(template.TemplateContent || template.HTMLTemplate || '[]');
+        // Initialize section contents with defaults
+        templateSections.forEach((s: any) => { sectionContents[s.id] = s.defaultContent || ''; });
+      } catch { templateSections = []; }
+    }
+
+    // For document-based templates, copy the template file
+    if (isDocBased && (template as any).DocumentTemplateURL) {
+      void this._copyTemplateDocument(template);
+    }
+
     this.setState({
       selectedTemplate: template,
-      policyContent: template.TemplateContent,
+      policyContent: isSectionBased ? '' : (template.TemplateContent || template.HTMLTemplate || ''),
       policyCategory: template.TemplateCategory,
       complianceRisk: template.ComplianceRisk,
       readTimeframe: template.SuggestedReadTimeframe,
@@ -600,8 +629,11 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       requiresQuiz: template.RequiresQuiz,
       keyPoints: [],
       showTemplatePanel: false,
-      creationMethod: 'template'
-    });
+      creationMethod: isDocBased ? templateType : 'template',
+      _templateType: templateType,
+      _templateSections: templateSections,
+      _sectionContents: sectionContents
+    } as any);
 
     // Increment usage count
     this.props.sp.web.lists
@@ -612,6 +644,93 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
     void this.dialogManager.showAlert('Template applied! You can now customize the content.', { variant: 'success' });
   };
+
+  /**
+   * Copies a document template file to the policy's source documents folder.
+   * Used for Word/Excel/PPT template types.
+   */
+  private async _copyTemplateDocument(template: IPolicyTemplate): Promise<void> {
+    const docUrl = (template as any).DocumentTemplateURL;
+    if (!docUrl) return;
+    try {
+      const fileName = docUrl.split('/').pop() || 'template';
+      const policyNumber = this.state.policyNumber || `DRAFT_${Date.now()}`;
+      const destFolder = `PM_PolicySourceDocuments/${policyNumber}`;
+
+      // Ensure folder exists
+      try {
+        await this.props.sp.web.folders.addUsingPath(destFolder);
+      } catch { /* folder may already exist */ }
+
+      // Copy file
+      const sourceFile = this.props.sp.web.getFileByServerRelativePath(docUrl);
+      const destPath = `${destFolder}/${fileName}`;
+      await sourceFile.copyByPath(`${this.props.context.pageContext.web.serverRelativeUrl}/${destPath}`, false);
+
+      const fullUrl = `${this.props.context.pageContext.web.absoluteUrl}/${destPath}`;
+      this.setState({
+        linkedDocumentUrl: fullUrl,
+        _templateDocCopied: true
+      } as any);
+    } catch (err) {
+      console.error('Failed to copy template document:', err);
+      // Non-blocking — author can still manually upload
+    }
+  }
+
+  /**
+   * Builds HTML from section contents for corporate/regulatory templates.
+   * Called before save to convert structured sections into PolicyContent HTML.
+   */
+  private _buildSectionHtml(): string {
+    const st = this.state as any;
+    const sections: any[] = st._templateSections || [];
+    const contents: Record<string, string> = st._sectionContents || {};
+    const template = st.selectedTemplate;
+    const isRegulatory = (template as any)?.TemplateType === 'regulatory';
+
+    let html = '<div class="policy-sections">';
+
+    if (isRegulatory && (template as any)?.Tags) {
+      html += `<div style="background:#fee2e2;border-left:3px solid #dc2626;padding:8px 12px;margin-bottom:16px;border-radius:4px;font-size:12px;color:#991b1b;">Regulatory Framework: <strong>${(template as any).Tags}</strong></div>`;
+    }
+
+    sections.forEach((section: any, index: number) => {
+      const content = contents[section.id] || '';
+      html += `<div class="policy-section" style="margin-bottom:24px;">`;
+      html += `<h2 style="font-size:18px;font-weight:700;color:#0f172a;margin-bottom:8px;border-bottom:1px solid #e2e8f0;padding-bottom:6px;">${index + 1}. ${section.title}</h2>`;
+      if (section.description) {
+        html += `<p style="font-size:12px;color:#64748b;margin-bottom:12px;font-style:italic;">${section.description}</p>`;
+      }
+      html += content || '<p style="color:#94a3b8;">[Section content to be completed]</p>';
+      html += '</div>';
+    });
+
+    html += '</div>';
+    return html;
+  }
+
+  /**
+   * Validates that all required sections have content.
+   * Returns array of section titles that are missing content.
+   */
+  private _validateSections(): string[] {
+    const st = this.state as any;
+    const sections: any[] = st._templateSections || [];
+    const contents: Record<string, string> = st._sectionContents || {};
+    const missing: string[] = [];
+
+    sections.forEach((section: any) => {
+      if (section.required) {
+        const content = (contents[section.id] || '').replace(/<[^>]*>/g, '').trim();
+        if (!content) {
+          missing.push(section.title);
+        }
+      }
+    });
+
+    return missing;
+  }
 
   private handleApplyMetadataProfile = (profile: IPolicyMetadataProfile): void => {
     this.setState({
@@ -823,11 +942,13 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         PolicyStatus: 'Draft',
         PolicyOwnerId: currentUserId
       };
-      // Persist linked quiz and source request
+      // Persist linked quiz, source request, and source template
       const { selectedQuizId } = this.state;
       const sourceRequestId = (this.state as any).sourceRequestId;
+      const selectedTemplate = (this.state as any).selectedTemplate;
       if (selectedQuizId) { spData.LinkedQuizId = selectedQuizId; }
       if (sourceRequestId) { spData.SourceRequestId = sourceRequestId; }
+      if (selectedTemplate?.Id) { try { spData.SourceTemplateId = selectedTemplate.Id; } catch { /* column may not exist */ } }
       if (effectiveDate) { spData.EffectiveDate = new Date(effectiveDate).toISOString(); }
       if (expiryDate) { spData.ExpiryDate = new Date(expiryDate).toISOString(); }
       if (keyPoints && keyPoints.length > 0) { spData.InternalNotes = JSON.stringify(keyPoints); }
@@ -1036,6 +1157,13 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       case 2: // Content
         if (!policyContent.trim() && !linkedDocumentUrl) {
           errors.push('Policy content is required, or link a document');
+        }
+        // Validate required sections for corporate/regulatory templates
+        {
+          const missingSections = this._validateSections();
+          if (missingSections.length > 0) {
+            errors.push(`Required sections incomplete: ${missingSections.join(', ')}`);
+          }
         }
         break;
 
@@ -1560,13 +1688,29 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
   private renderStep2_Content(): JSX.Element {
     const { creationMethod, linkedDocumentUrl, creatingDocument } = this.state;
+    const st = this.state as any;
+    const templateType = st._templateType || '';
+    const isSectionBased = templateType === 'corporate' || templateType === 'regulatory';
+    const templateSections: any[] = st._templateSections || [];
+    const sectionContents: Record<string, string> = st._sectionContents || {};
+
     // Deferred document creation: if user selected an Office type in Step 0 but doc hasn't been created yet
     const isOfficeMethod = ['word', 'excel', 'powerpoint', 'infographic'].includes(creationMethod as string);
     const needsDocCreation = isOfficeMethod && !linkedDocumentUrl && !creatingDocument;
 
+    // Document template copied notification
+    const templateDocCopied = st._templateDocCopied || false;
+
     return (
       <div className={styles.wizardStepContent}>
         <Stack tokens={{ childrenGap: 24 }}>
+          {/* Document template copied notification */}
+          {templateDocCopied && linkedDocumentUrl && (
+            <MessageBar messageBarType={MessageBarType.success} onDismiss={() => this.setState({ _templateDocCopied: false } as any)}>
+              Template document copied to your policy folder. <a href={linkedDocumentUrl} target="_blank" rel="noopener noreferrer">Open in Office Online</a>
+            </MessageBar>
+          )}
+
           {needsDocCreation && (
             <MessageBar messageBarType={MessageBarType.info} isMultiline>
               <Text>You selected <strong>{creationMethod}</strong> as your creation method. Click the button below to create and open the document.</Text>
@@ -1579,8 +1723,125 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
               </div>
             </MessageBar>
           )}
-          {this.renderContentEditor()}
-          {this.renderEmbeddedEditor()}
+
+          {/* Section-based editor for Corporate/Regulatory templates */}
+          {isSectionBased && templateSections.length > 0 ? (
+            <div>
+              {/* Template info bar */}
+              <div style={{
+                background: templateType === 'regulatory' ? '#fef2f2' : '#f5f3ff',
+                borderLeft: `3px solid ${templateType === 'regulatory' ? '#dc2626' : '#6d28d9'}`,
+                padding: '10px 14px', borderRadius: 4, marginBottom: 16
+              }}>
+                <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
+                  <Icon iconName={templateType === 'regulatory' ? 'Shield' : 'CityNext'} styles={{ root: { fontSize: 16, color: templateType === 'regulatory' ? '#dc2626' : '#6d28d9' } }} />
+                  <Text style={{ fontWeight: 600, fontSize: 13, color: '#0f172a' }}>
+                    {templateType === 'regulatory' ? 'Regulatory Template' : 'Corporate Template'} — {st.selectedTemplate?.TemplateName || st.selectedTemplate?.Title}
+                  </Text>
+                  {templateType === 'regulatory' && st.selectedTemplate?.Tags && (
+                    <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 3, background: '#fee2e2', color: '#dc2626' }}>
+                      {st.selectedTemplate.Tags}
+                    </span>
+                  )}
+                </Stack>
+                <Text style={{ fontSize: 11, color: '#64748b', marginTop: 4, display: 'block' }}>
+                  Complete each section below. Required sections are marked with a teal border and must be filled before publishing.
+                </Text>
+              </div>
+
+              {/* Section progress */}
+              <div style={{ marginBottom: 16 }}>
+                <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
+                  <Text style={{ fontSize: 12, color: '#64748b' }}>
+                    {templateSections.filter((s: any) => {
+                      const content = (sectionContents[s.id] || '').replace(/<[^>]*>/g, '').trim();
+                      return content.length > 0;
+                    }).length} of {templateSections.length} sections completed
+                  </Text>
+                  <Text style={{ fontSize: 12, color: '#64748b' }}>
+                    {templateSections.filter((s: any) => s.required).length} required
+                  </Text>
+                </Stack>
+                <div style={{ height: 4, background: '#e2e8f0', borderRadius: 2, marginTop: 6, overflow: 'hidden' }}>
+                  <div style={{
+                    height: '100%', borderRadius: 2, background: '#0d9488', transition: 'width 0.3s',
+                    width: `${templateSections.length > 0 ? (templateSections.filter((s: any) => {
+                      const content = (sectionContents[s.id] || '').replace(/<[^>]*>/g, '').trim();
+                      return content.length > 0;
+                    }).length / templateSections.length * 100) : 0}%`
+                  }} />
+                </div>
+              </div>
+
+              {/* Section cards */}
+              <Stack tokens={{ childrenGap: 12 }}>
+                {templateSections.map((section: any, index: number) => {
+                  const content = sectionContents[section.id] || '';
+                  const hasContent = content.replace(/<[^>]*>/g, '').trim().length > 0;
+                  return (
+                    <div key={section.id} style={{
+                      background: '#fff',
+                      border: `1px solid ${section.required ? '#0d9488' : '#e2e8f0'}`,
+                      borderLeft: `3px solid ${section.required ? '#0d9488' : '#e2e8f0'}`,
+                      borderRadius: 4, overflow: 'hidden'
+                    }}>
+                      {/* Section header */}
+                      <div style={{
+                        padding: '10px 16px',
+                        background: hasContent ? '#f0fdfa' : '#f8fafc',
+                        borderBottom: '1px solid #e2e8f0',
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+                      }}>
+                        <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', minWidth: 24 }}>#{index + 1}</span>
+                          <Text style={{ fontWeight: 600, fontSize: 14, color: '#0f172a' }}>{section.title}</Text>
+                          {section.required && (
+                            <span style={{ fontSize: 9, fontWeight: 600, padding: '1px 6px', borderRadius: 3, background: '#ccfbf1', color: '#0d9488' }}>REQUIRED</span>
+                          )}
+                        </Stack>
+                        <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 6 }}>
+                          {hasContent && <Icon iconName="CheckMark" styles={{ root: { fontSize: 14, color: '#059669' } }} />}
+                          {section.helpText && (
+                            <Icon iconName="Info" styles={{ root: { fontSize: 12, color: '#94a3b8', cursor: 'help' } }} title={section.helpText} />
+                          )}
+                        </Stack>
+                      </div>
+                      {/* Section description */}
+                      {section.description && (
+                        <div style={{ padding: '6px 16px', background: '#fafafa', borderBottom: '1px solid #f1f5f9' }}>
+                          <Text style={{ fontSize: 11, color: '#64748b', fontStyle: 'italic' }}>{section.description}</Text>
+                        </div>
+                      )}
+                      {/* Section content editor */}
+                      <div style={{ padding: 16 }}>
+                        <TextField
+                          multiline
+                          rows={6}
+                          value={content}
+                          onChange={(_, v) => {
+                            const updated = { ...sectionContents, [section.id]: v || '' };
+                            // Also build combined HTML for PolicyContent
+                            this.setState({ _sectionContents: updated } as any, () => {
+                              const html = this._buildSectionHtml();
+                              this.setState({ policyContent: html });
+                            });
+                          }}
+                          placeholder={section.helpText || `Enter content for "${section.title}"...`}
+                          styles={{ fieldGroup: { borderRadius: 4, minHeight: 120 } }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </Stack>
+            </div>
+          ) : (
+            <>
+              {this.renderContentEditor()}
+              {this.renderEmbeddedEditor()}
+            </>
+          )}
+
           {this.renderKeyPoints()}
         </Stack>
       </div>
@@ -3029,21 +3290,16 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     const { showTemplatePanel, templates } = this.state;
 
     const riskColors: Record<string, string> = {
-      Critical: '#dc2626',
-      High: '#d97706',
-      Medium: '#2563eb',
-      Low: '#059669'
+      Critical: '#dc2626', High: '#d97706', Medium: '#2563eb', Low: '#059669'
     };
 
-    const categoryIcons: Record<string, string> = {
-      Corporate: 'CityNext',
-      'IT Security': 'Lock',
-      General: 'DocumentSet',
-      'Human Resources': 'People',
-      Compliance: 'Shield',
-      'Health & Safety': 'Heart',
-      Finance: 'Money',
-      Legal: 'Gavel'
+    const templateTypes: Record<string, { label: string; icon: string; color: string; bgColor: string }> = {
+      richtext: { label: 'Rich Text', icon: 'EditNote', color: '#0d9488', bgColor: '#ccfbf1' },
+      word: { label: 'Word', icon: 'WordDocument', color: '#2b579a', bgColor: '#dce6f5' },
+      excel: { label: 'Excel', icon: 'ExcelDocument', color: '#217346', bgColor: '#d4edda' },
+      powerpoint: { label: 'PowerPoint', icon: 'PowerPointDocument', color: '#b7472a', bgColor: '#f5d4cc' },
+      corporate: { label: 'Corporate', icon: 'CityNext', color: '#6d28d9', bgColor: '#ede9fe' },
+      regulatory: { label: 'Regulatory', icon: 'Shield', color: '#dc2626', bgColor: '#fee2e2' }
     };
 
     return (
@@ -3066,66 +3322,46 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             </MessageBar>
           ) : (
             <Stack tokens={{ childrenGap: 12 }}>
-              {templates.map(template => {
+              {templates.map((template: any) => {
                 const riskColor = riskColors[template.ComplianceRisk] || '#64748b';
-                const iconName = categoryIcons[template.TemplateCategory] || 'Document';
-                const keyPoints = template.KeyPointsTemplate ? template.KeyPointsTemplate.split(';').map(k => k.trim()) : [];
+                const type = template.TemplateType || 'richtext';
+                const typeMeta = templateTypes[type] || templateTypes.richtext;
+                const keyPoints = template.KeyPointsTemplate ? template.KeyPointsTemplate.split(';').map((k: string) => k.trim()) : [];
 
                 return (
                   <div
                     key={template.Id}
                     style={{
-                      background: '#ffffff',
-                      border: '1px solid #e2e8f0',
-                      borderLeft: `4px solid ${riskColor}`,
-                      borderRadius: 8,
-                      padding: 16,
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
+                      background: '#ffffff', border: '1px solid #e2e8f0',
+                      borderLeft: `4px solid ${typeMeta.color}`, borderRadius: 4,
+                      padding: 16, transition: 'box-shadow 0.2s',
                       boxShadow: '0 1px 3px rgba(0,0,0,0.06)'
-                    }}
-                    onMouseEnter={e => {
-                      e.currentTarget.style.borderLeftColor = '#0d9488';
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
-                      e.currentTarget.style.transform = 'translateY(-1px)';
-                    }}
-                    onMouseLeave={e => {
-                      e.currentTarget.style.borderLeftColor = riskColor;
-                      e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.06)';
-                      e.currentTarget.style.transform = 'translateY(0)';
                     }}
                   >
                     <Stack tokens={{ childrenGap: 10 }}>
-                      {/* Header Row */}
                       <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
                         <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 10 }}>
                           <div style={{
-                            width: 36, height: 36, borderRadius: 8,
-                            backgroundColor: `${riskColor}12`,
+                            width: 36, height: 36, borderRadius: 4,
+                            backgroundColor: typeMeta.bgColor,
                             display: 'flex', alignItems: 'center', justifyContent: 'center'
                           }}>
-                            <Icon iconName={iconName} style={{ fontSize: 18, color: riskColor }} />
+                            <Icon iconName={typeMeta.icon} style={{ fontSize: 18, color: typeMeta.color }} />
                           </div>
                           <div>
-                            <Text variant="mediumPlus" style={{ fontWeight: 600, display: 'block' }}>{template.Title}</Text>
+                            <Text variant="mediumPlus" style={{ fontWeight: 600, display: 'block' }}>{template.TemplateName || template.Title}</Text>
                             <Stack horizontal tokens={{ childrenGap: 6 }} verticalAlign="center">
-                              <span style={{
-                                ...BadgeStyles.small,
-                                backgroundColor: `${riskColor}15`, color: riskColor
-                              }}>
-                                {template.ComplianceRisk} Risk
+                              <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 3, background: typeMeta.bgColor, color: typeMeta.color }}>
+                                {typeMeta.label}
                               </span>
-                              <span style={{
-                                fontSize: 11, fontWeight: 500, padding: '1px 8px', borderRadius: 10,
-                                backgroundColor: '#f1f5f9', color: '#475569'
-                              }}>
+                              <span style={{ fontSize: 10, fontWeight: 500, padding: '1px 6px', borderRadius: 3, background: `${riskColor}15`, color: riskColor }}>
+                                {template.ComplianceRisk || 'Medium'} Risk
+                              </span>
+                              <span style={{ fontSize: 10, fontWeight: 500, padding: '1px 6px', borderRadius: 3, background: '#f1f5f9', color: '#475569' }}>
                                 {template.TemplateCategory}
                               </span>
-                              <span style={{
-                                fontSize: 11, fontWeight: 500, padding: '1px 8px', borderRadius: 10,
-                                backgroundColor: '#f1f5f9', color: '#475569'
-                              }}>
-                                Used {template.UsageCount} times
+                              <span style={{ fontSize: 10, color: '#94a3b8' }}>
+                                Used {template.UsageCount || 0}x
                               </span>
                             </Stack>
                           </div>
@@ -3134,25 +3370,23 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                           text="Use Template"
                           iconProps={{ iconName: 'Accept' }}
                           onClick={() => this.handleSelectTemplate(template)}
-                          styles={{ root: { height: 32, padding: '0 16px' }, label: { fontSize: 13 } }}
+                          styles={{ root: { height: 32, padding: '0 16px', borderRadius: 4 }, label: { fontSize: 13 } }}
                         />
                       </Stack>
 
-                      {/* Description */}
                       <Text variant="small" style={{ color: Colors.textSecondary, lineHeight: 1.5 }}>
-                        {template.TemplateDescription}
+                        {template.TemplateDescription || 'No description'}
                       </Text>
 
-                      {/* Metadata Row */}
                       <Stack horizontal tokens={{ childrenGap: 12 }} wrap>
                         <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 4 }}>
                           <Icon iconName="Timer" style={{ fontSize: 12, color: '#94a3b8' }} />
-                          <Text variant="tiny" style={{ color: '#64748b' }}>Read: {template.SuggestedReadTimeframe}</Text>
+                          <Text variant="tiny" style={{ color: '#64748b' }}>Read: {template.SuggestedReadTimeframe || 'Week 1'}</Text>
                         </Stack>
                         {template.RequiresAcknowledgement && (
                           <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 4 }}>
                             <Icon iconName="Handwriting" style={{ fontSize: 12, color: Colors.tealPrimary }} />
-                            <Text variant="tiny" style={{ color: Colors.tealPrimary }}>Acknowledgement Required</Text>
+                            <Text variant="tiny" style={{ color: Colors.tealPrimary }}>Ack Required</Text>
                           </Stack>
                         )}
                         {template.RequiresQuiz && (
@@ -3161,31 +3395,22 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                             <Text variant="tiny" style={{ color: '#7c3aed' }}>Quiz Required</Text>
                           </Stack>
                         )}
+                        {type === 'regulatory' && template.Tags && (
+                          <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 4 }}>
+                            <Icon iconName="Shield" style={{ fontSize: 12, color: '#dc2626' }} />
+                            <Text variant="tiny" style={{ color: '#dc2626' }}>{template.Tags}</Text>
+                          </Stack>
+                        )}
                       </Stack>
 
-                      {/* Key Points Preview */}
                       {keyPoints.length > 0 && (
-                        <div style={{
-                          padding: '8px 12px', borderRadius: 6,
-                          background: '#f8fafc', border: '1px solid #e2e8f0'
-                        }}>
-                          <Text variant="tiny" style={{ fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>
-                            Key Points Preview:
-                          </Text>
+                        <div style={{ padding: '8px 12px', borderRadius: 4, background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                          <Text variant="tiny" style={{ fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>Key Points:</Text>
                           <Stack horizontal tokens={{ childrenGap: 6 }} wrap>
-                            {keyPoints.slice(0, 4).map((point, i) => (
-                              <span key={i} style={{
-                                fontSize: 11, padding: '2px 8px', borderRadius: 4,
-                                background: '#ffffff', border: '1px solid #e2e8f0', color: '#475569'
-                              }}>
-                                {point}
-                              </span>
+                            {keyPoints.slice(0, 4).map((point: string, i: number) => (
+                              <span key={i} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 3, background: '#fff', border: '1px solid #e2e8f0', color: '#475569' }}>{point}</span>
                             ))}
-                            {keyPoints.length > 4 && (
-                              <span style={{ fontSize: 11, color: '#94a3b8' }}>
-                                +{keyPoints.length - 4} more
-                              </span>
-                            )}
+                            {keyPoints.length > 4 && <span style={{ fontSize: 11, color: '#94a3b8' }}>+{keyPoints.length - 4} more</span>}
                           </Stack>
                         </div>
                       )}

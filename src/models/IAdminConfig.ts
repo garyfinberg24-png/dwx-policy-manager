@@ -62,10 +62,12 @@ export interface IEmailTemplate {
   id: number;
   name: string;
   event: string;
+  category?: string;
   subject: string;
   body: string;
   recipients: string;
   isActive: boolean;
+  isDefault?: boolean;
   lastModified: string;
   mergeTags: string[];
 }
@@ -151,6 +153,117 @@ export interface IPolicyMetadataProfile {
   IsActive?: boolean;
   Description?: string;
 }
+
+// ============================================================================
+// CUSTOM THEME
+// ============================================================================
+
+export interface ICustomTheme {
+  // Branding
+  logoUrl: string;
+  logoText: string;
+  tagline: string;
+  footerText: string;
+  faviconUrl: string;
+
+  // Colors
+  primaryColor: string;
+  primaryDark: string;
+  accentColor: string;
+  successColor: string;
+  warningColor: string;
+  dangerColor: string;
+
+  // Header
+  headerStyle: 'solid' | 'gradient';
+  headerGradientStart: string;
+  headerGradientEnd: string;
+
+  // Surfaces
+  sidebarBackground: string;
+  contentBackground: string;
+  cardBackground: string;
+
+  // Typography
+  fontFamily: string;
+
+  // Borders
+  cardBorderRadius: number;
+  controlBorderRadius: number;
+
+  // Preset
+  preset: string;
+}
+
+export const DEFAULT_THEME: ICustomTheme = {
+  logoUrl: '',
+  logoText: 'Policy Manager',
+  tagline: 'POLICY GOVERNANCE & COMPLIANCE',
+  footerText: 'DWx Digital Workplace. All rights reserved.',
+  faviconUrl: '',
+  primaryColor: '#0d9488',
+  primaryDark: '#0f766e',
+  accentColor: '#0284c7',
+  successColor: '#059669',
+  warningColor: '#d97706',
+  dangerColor: '#dc2626',
+  headerStyle: 'gradient',
+  headerGradientStart: '#0d9488',
+  headerGradientEnd: '#0f766e',
+  sidebarBackground: '#f1f5f9',
+  contentBackground: '#ffffff',
+  cardBackground: '#ffffff',
+  fontFamily: 'Segoe UI',
+  cardBorderRadius: 4,
+  controlBorderRadius: 4,
+  preset: 'forest-teal'
+};
+
+export const PRESET_THEMES: Record<string, Partial<ICustomTheme>> = {
+  'forest-teal': {
+    preset: 'forest-teal',
+    primaryColor: '#0d9488', primaryDark: '#0f766e',
+    headerGradientStart: '#0d9488', headerGradientEnd: '#0f766e',
+    accentColor: '#0284c7', successColor: '#059669', warningColor: '#d97706', dangerColor: '#dc2626'
+  },
+  'corporate-blue': {
+    preset: 'corporate-blue',
+    primaryColor: '#1e40af', primaryDark: '#1e3a8a',
+    headerGradientStart: '#1e40af', headerGradientEnd: '#1e3a8a',
+    accentColor: '#0369a1', successColor: '#059669', warningColor: '#d97706', dangerColor: '#dc2626'
+  },
+  'slate-professional': {
+    preset: 'slate-professional',
+    primaryColor: '#475569', primaryDark: '#334155',
+    headerGradientStart: '#475569', headerGradientEnd: '#334155',
+    accentColor: '#0284c7', successColor: '#059669', warningColor: '#d97706', dangerColor: '#dc2626'
+  },
+  'royal-purple': {
+    preset: 'royal-purple',
+    primaryColor: '#7c3aed', primaryDark: '#6d28d9',
+    headerGradientStart: '#7c3aed', headerGradientEnd: '#6d28d9',
+    accentColor: '#2563eb', successColor: '#059669', warningColor: '#d97706', dangerColor: '#dc2626'
+  },
+  'crimson-red': {
+    preset: 'crimson-red',
+    primaryColor: '#dc2626', primaryDark: '#b91c1c',
+    headerGradientStart: '#dc2626', headerGradientEnd: '#b91c1c',
+    accentColor: '#0284c7', successColor: '#059669', warningColor: '#d97706', dangerColor: '#7c3aed'
+  },
+  'forest-green': {
+    preset: 'forest-green',
+    primaryColor: '#15803d', primaryDark: '#166534',
+    headerGradientStart: '#15803d', headerGradientEnd: '#166534',
+    accentColor: '#0284c7', successColor: '#0d9488', warningColor: '#d97706', dangerColor: '#dc2626'
+  },
+  'midnight': {
+    preset: 'midnight',
+    primaryColor: '#1e293b', primaryDark: '#0f172a',
+    headerGradientStart: '#1e293b', headerGradientEnd: '#0f172a',
+    accentColor: '#3b82f6', successColor: '#10b981', warningColor: '#f59e0b', dangerColor: '#ef4444',
+    sidebarBackground: '#1e293b', contentBackground: '#f8fafc'
+  }
+};
 
 // ============================================================================
 // CONFIG KEY CONSTANTS for PM_Configuration key-value pairs

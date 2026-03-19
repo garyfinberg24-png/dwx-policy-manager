@@ -57,8 +57,12 @@ import {
   IGeneralSettings,
   INavToggleItem,
   IPolicyMetadataProfile,
-  AdminConfigKeys
+  AdminConfigKeys,
+  ICustomTheme,
+  DEFAULT_THEME,
+  PRESET_THEMES
 } from '../../../models/IAdminConfig';
+import { ThemeManager } from '../../../utils/themeManager';
 import styles from './PolicyAdmin.module.scss';
 
 interface INavItem {
@@ -158,13 +162,16 @@ const NAV_SECTIONS: INavSection[] = [
       { key: 'aiAssistant', label: 'AI Settings', icon: 'Robot', description: 'AI chat, document conversion, and integration URLs' },
       { key: 'lifecycle', label: 'Data Management', icon: 'History', description: 'Archival, retention, and cleanup rules' },
       { key: 'settings', label: 'General Settings', icon: 'Settings', description: 'Display, feature toggles, and app config' },
+      { key: 'customTheme', label: 'Custom Theme', icon: 'Color', description: 'Brand colors, logo, fonts, and preset themes' },
       { key: 'export', label: 'Data Export', icon: 'Download', description: 'Export policy data and reports' }
     ]
   },
   {
-    category: 'AUDIT & MONITORING',
+    category: 'SECURITY',
     items: [
-      { key: 'audit', label: 'Audit Manager', icon: 'ComplianceAudit', description: 'Change history, access logs, and alerts' },
+      { key: 'audit', label: 'Audit Log', icon: 'ComplianceAudit', description: 'Event log with filters, change tracking, and CSV export' },
+      { key: 'dlpRules', label: 'DLP Rules', icon: 'Shield', description: 'Data loss prevention rules (block, warn, log)' },
+      { key: 'dataRetention', label: 'Data Retention', icon: 'History', description: 'Retention periods, auto-purge, and archival scheduling' },
       { key: 'systemInfo', label: 'System Info', icon: 'Info', description: 'Version, technology stack, and diagnostics' }
     ]
   },
@@ -331,11 +338,58 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         }
       }
 
+      // Merge email templates — use defaults if SP list is empty, categorize all
+      const defaultEmailTemplates: IEmailTemplate[] = [
+        // Acknowledgement Flow
+        { id: -1, name: 'New Policy Published', event: 'Policy Published', category: 'Acknowledgement', subject: 'New Policy: {{PolicyTitle}}', body: '<p>A new policy <strong>{{PolicyTitle}}</strong> has been published and requires your attention.</p><p>Please read and acknowledge by <strong>{{Deadline}}</strong>.</p>', recipients: 'All Employees', isActive: true, isDefault: true, lastModified: '', mergeTags: ['PolicyTitle', 'PolicyNumber', 'Deadline', 'PolicyUrl'] },
+        { id: -2, name: 'Acknowledgement Required', event: 'Policy Acknowledged', category: 'Acknowledgement', subject: 'Action Required: Acknowledge {{PolicyTitle}}', body: '<p>You are required to read and acknowledge <strong>{{PolicyTitle}}</strong>.</p><p>Deadline: <strong>{{Deadline}}</strong></p>', recipients: 'Assigned Users', isActive: true, isDefault: true, lastModified: '', mergeTags: ['PolicyTitle', 'UserName', 'Deadline', 'PolicyUrl'] },
+        { id: -3, name: 'Ack Reminder (3-day)', event: 'Ack Reminder 3-Day', category: 'Acknowledgement', subject: 'Reminder: {{PolicyTitle}} — 3 days remaining', body: '<p>Hi {{UserName}},</p><p>This is a friendly reminder that you have <strong>3 days</strong> remaining to acknowledge <strong>{{PolicyTitle}}</strong>.</p>', recipients: 'Assigned Users', isActive: true, isDefault: true, lastModified: '', mergeTags: ['PolicyTitle', 'UserName', 'Deadline', 'PolicyUrl'] },
+        { id: -4, name: 'Ack Reminder (1-day)', event: 'Ack Reminder 1-Day', category: 'Acknowledgement', subject: 'URGENT: {{PolicyTitle}} — due tomorrow', body: '<p>Hi {{UserName}},</p><p><strong>Final reminder:</strong> Your acknowledgement of <strong>{{PolicyTitle}}</strong> is due <strong>tomorrow</strong>.</p>', recipients: 'Assigned Users', isActive: true, isDefault: true, lastModified: '', mergeTags: ['PolicyTitle', 'UserName', 'Deadline', 'PolicyUrl'] },
+        { id: -5, name: 'Acknowledgement Overdue', event: 'Ack Overdue', category: 'Acknowledgement', subject: 'OVERDUE: {{PolicyTitle}} — acknowledgement required', body: '<p>Hi {{UserName}},</p><p>Your acknowledgement of <strong>{{PolicyTitle}}</strong> is now <strong>overdue</strong>. Please complete this immediately.</p>', recipients: 'Assigned Users', isActive: true, isDefault: true, lastModified: '', mergeTags: ['PolicyTitle', 'UserName', 'DaysOverdue', 'PolicyUrl'] },
+        { id: -6, name: 'Ack Complete (Manager)', event: 'Ack Complete Manager', category: 'Acknowledgement', subject: '{{EmployeeName}} acknowledged {{PolicyTitle}}', body: '<p>{{EmployeeName}} has acknowledged <strong>{{PolicyTitle}}</strong>.</p><p>Team compliance: <strong>{{ComplianceRate}}%</strong></p>', recipients: 'Managers', isActive: true, isDefault: true, lastModified: '', mergeTags: ['EmployeeName', 'PolicyTitle', 'ComplianceRate'] },
+        // Approval Flow
+        { id: -7, name: 'Approval Request', event: 'Approval Needed', category: 'Approval', subject: 'Approval Required: {{PolicyTitle}}', body: '<p>A policy requires your approval:</p><p><strong>{{PolicyTitle}}</strong></p><p>Submitted by: {{AuthorName}}<br/>Level: {{ApprovalLevel}}<br/>Due: <strong>{{DueDate}}</strong></p>', recipients: 'Approvers', isActive: true, isDefault: true, lastModified: '', mergeTags: ['PolicyTitle', 'AuthorName', 'ApprovalLevel', 'DueDate', 'ApprovalUrl'] },
+        { id: -8, name: 'Approval Approved', event: 'Approval Approved', category: 'Approval', subject: 'Approved: {{PolicyTitle}}', body: '<p>Great news! <strong>{{PolicyTitle}}</strong> has been approved by <strong>{{ApproverName}}</strong>.</p><p>{{Comments}}</p>', recipients: 'Policy Owners', isActive: true, isDefault: true, lastModified: '', mergeTags: ['PolicyTitle', 'ApproverName', 'Comments'] },
+        { id: -9, name: 'Approval Rejected', event: 'Approval Rejected', category: 'Approval', subject: 'Rejected: {{PolicyTitle}}', body: '<p><strong>{{PolicyTitle}}</strong> has been rejected by <strong>{{ApproverName}}</strong>.</p><p><strong>Reason:</strong> {{Comments}}</p><p>Please review the feedback and resubmit.</p>', recipients: 'Policy Owners', isActive: true, isDefault: true, lastModified: '', mergeTags: ['PolicyTitle', 'ApproverName', 'Comments'] },
+        { id: -10, name: 'Approval Escalated', event: 'Approval Escalated', category: 'Approval', subject: 'Escalated: {{PolicyTitle}} approval overdue', body: '<p>The approval for <strong>{{PolicyTitle}}</strong> has been escalated to you because the original approver did not respond within the deadline.</p>', recipients: 'Approvers', isActive: true, isDefault: true, lastModified: '', mergeTags: ['PolicyTitle', 'OriginalApprover', 'EscalationLevel'] },
+        { id: -11, name: 'Approval Delegated', event: 'Approval Delegated', category: 'Approval', subject: 'Delegated: {{PolicyTitle}} approval', body: '<p><strong>{{DelegatedBy}}</strong> has delegated the approval of <strong>{{PolicyTitle}}</strong> to you.</p><p>Reason: {{DelegationReason}}</p>', recipients: 'Approvers', isActive: true, isDefault: true, lastModified: '', mergeTags: ['PolicyTitle', 'DelegatedBy', 'DelegationReason', 'DueDate'] },
+        // Quiz Flow
+        { id: -12, name: 'Quiz Assigned', event: 'Quiz Assigned', category: 'Quiz', subject: 'Quiz Required: {{PolicyTitle}}', body: '<p>A comprehension quiz is required for <strong>{{PolicyTitle}}</strong>.</p><p>Passing score: <strong>{{PassingScore}}%</strong><br/>Attempts allowed: {{MaxAttempts}}</p>', recipients: 'Assigned Users', isActive: true, isDefault: true, lastModified: '', mergeTags: ['PolicyTitle', 'QuizTitle', 'PassingScore', 'MaxAttempts'] },
+        { id: -13, name: 'Quiz Passed', event: 'Quiz Passed', category: 'Quiz', subject: 'Congratulations! You passed: {{QuizTitle}}', body: '<p>Well done, {{UserName}}! You scored <strong>{{Score}}%</strong> on the <strong>{{QuizTitle}}</strong> quiz.</p>', recipients: 'Assigned Users', isActive: true, isDefault: true, lastModified: '', mergeTags: ['UserName', 'QuizTitle', 'Score', 'PassingScore'] },
+        { id: -14, name: 'Quiz Failed', event: 'Quiz Failed', category: 'Quiz', subject: 'Quiz Result: {{QuizTitle}} — retry available', body: '<p>Hi {{UserName}},</p><p>You scored <strong>{{Score}}%</strong> on <strong>{{QuizTitle}}</strong>. The passing score is {{PassingScore}}%.</p><p>You have <strong>{{AttemptsRemaining}}</strong> attempts remaining.</p>', recipients: 'Assigned Users', isActive: true, isDefault: true, lastModified: '', mergeTags: ['UserName', 'QuizTitle', 'Score', 'PassingScore', 'AttemptsRemaining'] },
+        // Review Cycle
+        { id: -15, name: 'Review Due', event: 'Review Due', category: 'Review', subject: 'Policy Review Due: {{PolicyTitle}}', body: '<p>The policy <strong>{{PolicyTitle}}</strong> is due for review in <strong>{{DaysUntilDue}} days</strong>.</p><p>Last reviewed: {{LastReviewDate}}</p>', recipients: 'Policy Owners', isActive: true, isDefault: true, lastModified: '', mergeTags: ['PolicyTitle', 'DaysUntilDue', 'LastReviewDate', 'ReviewCycle'] },
+        { id: -16, name: 'Review Overdue', event: 'Review Overdue', category: 'Review', subject: 'OVERDUE: {{PolicyTitle}} review past due', body: '<p>The review for <strong>{{PolicyTitle}}</strong> is now <strong>{{DaysOverdue}} days overdue</strong>.</p><p>Please schedule a review immediately.</p>', recipients: 'Policy Owners', isActive: true, isDefault: true, lastModified: '', mergeTags: ['PolicyTitle', 'DaysOverdue', 'LastReviewDate'] },
+        // Distribution
+        { id: -17, name: 'Campaign Launched', event: 'Campaign Active', category: 'Distribution', subject: 'Distribution Campaign: {{CampaignName}}', body: '<p>A new policy distribution campaign has been launched:</p><p><strong>{{CampaignName}}</strong></p><p>Policies: {{PolicyCount}}<br/>Target: {{RecipientCount}} employees</p>', recipients: 'All Employees', isActive: true, isDefault: true, lastModified: '', mergeTags: ['CampaignName', 'PolicyCount', 'RecipientCount'] },
+        { id: -18, name: 'Distribution Complete', event: 'Distribution Complete', category: 'Distribution', subject: 'Campaign Complete: {{CampaignName}}', body: '<p>The distribution campaign <strong>{{CampaignName}}</strong> has completed.</p><p>Acknowledged: <strong>{{AckRate}}%</strong><br/>Pending: {{PendingCount}}</p>', recipients: 'Managers', isActive: true, isDefault: true, lastModified: '', mergeTags: ['CampaignName', 'AckRate', 'PendingCount'] },
+        { id: -19, name: 'Policy Assigned', event: 'Policy Assigned', category: 'Distribution', subject: 'New Policy Assigned: {{PolicyTitle}}', body: '<p>Hi {{UserName}},</p><p>You have been assigned a new policy to read: <strong>{{PolicyTitle}}</strong>.</p><p>Please review and acknowledge by <strong>{{Deadline}}</strong>.</p>', recipients: 'Assigned Users', isActive: true, isDefault: true, lastModified: '', mergeTags: ['UserName', 'PolicyTitle', 'Deadline', 'PolicyUrl'] },
+        // Compliance
+        { id: -20, name: 'Policy Expiring', event: 'Policy Expiring', category: 'Compliance', subject: 'Policy Expiring: {{PolicyTitle}}', body: '<p><strong>{{PolicyTitle}}</strong> will expire on <strong>{{ExpiryDate}}</strong>.</p><p>Please review and either renew or retire this policy.</p>', recipients: 'Policy Owners', isActive: true, isDefault: true, lastModified: '', mergeTags: ['PolicyTitle', 'ExpiryDate', 'DaysUntilExpiry'] },
+        { id: -21, name: 'SLA Breached', event: 'SLA Breached', category: 'Compliance', subject: 'SLA Breach: {{SLAType}} for {{PolicyTitle}}', body: '<p>An SLA breach has been detected:</p><p><strong>{{SLAType}}</strong> for <strong>{{PolicyTitle}}</strong></p><p>Target: {{TargetDays}} days<br/>Actual: <strong>{{ActualDays}} days</strong></p>', recipients: 'Compliance Officers', isActive: true, isDefault: true, lastModified: '', mergeTags: ['SLAType', 'PolicyTitle', 'TargetDays', 'ActualDays'] },
+        { id: -22, name: 'Violation Found', event: 'Violation Found', category: 'Compliance', subject: 'DLP Violation: {{PolicyTitle}}', body: '<p>A data loss prevention violation was detected in <strong>{{PolicyTitle}}</strong>.</p><p>Rule: {{RuleName}}<br/>Severity: <strong>{{Severity}}</strong></p>', recipients: 'Compliance Officers', isActive: true, isDefault: true, lastModified: '', mergeTags: ['PolicyTitle', 'RuleName', 'Severity'] },
+        // Policy Lifecycle
+        { id: -23, name: 'Policy Updated', event: 'Policy Updated', category: 'Lifecycle', subject: 'Policy Updated: {{PolicyTitle}}', body: '<p><strong>{{PolicyTitle}}</strong> has been updated to version <strong>{{Version}}</strong>.</p><p>Changes: {{ChangeDescription}}</p>', recipients: 'All Employees', isActive: true, isDefault: true, lastModified: '', mergeTags: ['PolicyTitle', 'Version', 'ChangeDescription'] },
+        { id: -24, name: 'Policy Retired', event: 'Policy Retired', category: 'Lifecycle', subject: 'Policy Retired: {{PolicyTitle}}', body: '<p><strong>{{PolicyTitle}}</strong> has been retired and is no longer in effect.</p><p>Replacement: {{ReplacementPolicy}}</p>', recipients: 'All Employees', isActive: true, isDefault: true, lastModified: '', mergeTags: ['PolicyTitle', 'ReplacementPolicy', 'RetiredDate'] },
+        // Admin/System
+        { id: -25, name: 'Weekly Digest', event: 'Weekly Digest', category: 'System', subject: 'Your Policy Manager Weekly Summary', body: '<p>Hi {{UserName}},</p><p>Here is your weekly policy summary:</p><p>Pending acknowledgements: <strong>{{PendingAck}}</strong><br/>Pending approvals: <strong>{{PendingApprovals}}</strong><br/>New policies: {{NewPolicies}}</p>', recipients: 'All Employees', isActive: true, isDefault: true, lastModified: '', mergeTags: ['UserName', 'PendingAck', 'PendingApprovals', 'NewPolicies'] },
+        { id: -26, name: 'Welcome Email', event: 'User Added', category: 'System', subject: 'Welcome to Policy Manager — {{CompanyName}}', body: '<p>Welcome to {{CompanyName}}, {{UserName}}!</p><p>Policy Manager is where you will find all company policies. Please review the policies assigned to you in <strong>My Policies</strong>.</p>', recipients: 'New Users', isActive: true, isDefault: true, lastModified: '', mergeTags: ['UserName', 'CompanyName', 'PolicyHubUrl'] },
+        { id: -27, name: 'Role Changed', event: 'Role Changed', category: 'System', subject: 'Your Policy Manager role has been updated', body: '<p>Hi {{UserName}},</p><p>Your role has been changed from <strong>{{OldRole}}</strong> to <strong>{{NewRole}}</strong>.</p><p>This change affects your access to Policy Manager features.</p>', recipients: 'Assigned Users', isActive: true, isDefault: true, lastModified: '', mergeTags: ['UserName', 'OldRole', 'NewRole'] },
+        { id: -28, name: 'Delegation Expiring', event: 'Delegation Expiring', category: 'System', subject: 'Delegation ending: {{DelegateName}}', body: '<p>Your delegation to <strong>{{DelegateName}}</strong> will expire on <strong>{{ExpiryDate}}</strong>.</p><p>If you still need this delegation, please extend it in Policy Manager.</p>', recipients: 'Managers', isActive: true, isDefault: true, lastModified: '', mergeTags: ['DelegateName', 'ExpiryDate'] },
+        { id: -29, name: 'Policy Acknowledged (Confirmation)', event: 'Policy Acknowledged', category: 'Acknowledgement', subject: 'Confirmed: You acknowledged {{PolicyTitle}}', body: '<p>Hi {{UserName}},</p><p>This confirms you have acknowledged <strong>{{PolicyTitle}}</strong> on {{AckDate}}.</p>', recipients: 'Assigned Users', isActive: true, isDefault: true, lastModified: '', mergeTags: ['UserName', 'PolicyTitle', 'AckDate'] },
+      ];
+
+      // Categorize loaded templates and fill with defaults if empty
+      const categorizedTemplates = (emailTemplates.length > 0 ? emailTemplates : defaultEmailTemplates).map((t: any) => ({
+        ...t,
+        category: t.category || this._inferEmailCategory(t.event)
+      }));
+
       this.setState({
         namingRules,
         slaConfigs,
         lifecyclePolicies,
-        emailTemplates,
+        emailTemplates: categorizedTemplates as IEmailTemplate[],
         templates,
         metadataProfiles,
         policyCategories: hasDuplicates ? sortedCategories : policyCategories,
@@ -521,6 +575,37 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
   // RENDER: SECTION CONTENT
   // ============================================================================
 
+  private _inferEmailCategory(event: string): string {
+    if (!event) return 'System';
+    const e = event.toLowerCase();
+    if (e.includes('ack') || e.includes('acknowledged')) return 'Acknowledgement';
+    if (e.includes('approval') || e.includes('approved') || e.includes('rejected') || e.includes('escalated') || e.includes('delegated')) return 'Approval';
+    if (e.includes('quiz') || e.includes('passed') || e.includes('failed')) return 'Quiz';
+    if (e.includes('review')) return 'Review';
+    if (e.includes('campaign') || e.includes('distribution') || e.includes('assigned')) return 'Distribution';
+    if (e.includes('expir') || e.includes('sla') || e.includes('violation') || e.includes('breach')) return 'Compliance';
+    if (e.includes('published') || e.includes('updated') || e.includes('retired')) return 'Lifecycle';
+    return 'System';
+  }
+
+  private renderSectionIntro(title: string, description: string, tips?: string[]): JSX.Element {
+    return (
+      <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid #e2e8f0' }}>
+        <Text variant="xLarge" style={{ fontWeight: 700, color: '#0f172a', display: 'block', marginBottom: 4 }}>{title}</Text>
+        <Text variant="small" style={{ color: '#64748b', lineHeight: 1.5, display: 'block' }}>{description}</Text>
+        {tips && tips.length > 0 && (
+          <div style={{ marginTop: 8, padding: '8px 12px', background: '#f0fdfa', borderRadius: 4, borderLeft: '3px solid #0d9488' }}>
+            {tips.map((tip, i) => (
+              <Text key={i} variant="small" style={{ color: '#0f766e', display: 'block', lineHeight: 1.6 }}>
+                {tip}
+              </Text>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   private renderCategoriesContent(): JSX.Element {
     const { policyCategories, editingCategory, showCategoryPanel, saving } = this.state;
 
@@ -574,6 +659,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     return (
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 16 }}>
+          {this.renderSectionIntro('Policy Categories', 'Define and organise the top-level categories for your policy library. Categories appear as filters in Policy Hub and are required when creating new policies.', ['Use clear, descriptive names (e.g., \'HR Policies\', \'IT Security\')', 'Assign distinct colours to help users identify categories at a glance'])}
           <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
             <Text variant="mediumPlus" style={TextStyles.semiBold}>Policy Categories ({policyCategories.length})</Text>
             <PrimaryButton text="New Category" iconProps={{ iconName: 'Add' }} onClick={() => this.setState({
@@ -697,6 +783,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
 
     return (
       <div>
+        {this.renderSectionIntro('Sub-Categories', 'Create sub-categories within your main categories to provide finer-grained organisation. Sub-categories appear as a second-level filter in Policy Hub.')}
         <Stack horizontal horizontalAlign="space-between" verticalAlign="center" style={LayoutStyles.marginBottom16}>
           <Text variant="xLarge" style={TextStyles.semiBold}>Sub-Categories</Text>
           <PrimaryButton
@@ -824,91 +911,214 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
 
   private renderTemplatesContent(): JSX.Element {
     const { templates } = this.state;
-    const editingTemplate = this.state._editingTemplate;
-    const showTemplatePanel = this.state._showTemplatePanel;
+    const editingTemplate = (this.state as any)._editingTemplate;
+    const showTemplatePanel = (this.state as any)._showTemplatePanel;
+    const templateTypeFilter = (this.state as any)._templateTypeFilter || 'all';
+    const templateCategoryFilter = (this.state as any)._templateCategoryFilter || 'all';
 
-    const columns: IColumn[] = [
-      { key: 'title', name: 'Template Name', fieldName: 'TemplateName', minWidth: 200, maxWidth: 300, isResizable: true, onRender: (item: any) => <span>{item.TemplateName || item.Title}</span> },
-      { key: 'category', name: 'Category', fieldName: 'TemplateCategory', minWidth: 120, maxWidth: 160, isResizable: true },
-      { key: 'active', name: 'Status', minWidth: 80, maxWidth: 100, isResizable: true, onRender: (item: any) => (
-        <span style={{ ...BadgeStyles.activeInactive, backgroundColor: item.IsActive !== false ? '#ccfbf1' : '#f1f5f9', color: item.IsActive !== false ? '#0d9488' : '#64748b' }}>
-          {item.IsActive !== false ? 'Active' : 'Inactive'}
-        </span>
-      )},
-      { key: 'actions', name: '', minWidth: 100, maxWidth: 100, onRender: (item: any) => (
-        <Stack horizontal tokens={{ childrenGap: 4 }}>
-          <IconButton iconProps={{ iconName: 'Edit' }} title="Edit" ariaLabel="Edit" onClick={() => this.setState({ _editingTemplate: { ...item }, _showTemplatePanel: true } as any)} />
-          <IconButton iconProps={{ iconName: 'Delete' }} title="Delete" ariaLabel="Delete" onClick={async () => {
-            const confirmed = await this.dialogManager.showConfirm(`Delete template "${item.TemplateName || item.Title}"?`, { title: 'Delete Template', confirmText: 'Delete', cancelText: 'Cancel' });
-            if (confirmed) {
-              try { await this.adminConfigService.deleteTemplate(item.Id); this.setState({ templates: templates.filter(t => t.Id !== item.Id) }); } catch { void this.dialogManager.showAlert('Failed to delete template.', { title: 'Error' }); }
-            }
-          }} />
-        </Stack>
-      )}
-    ];
+    // Template type metadata
+    const templateTypes: Record<string, { label: string; icon: string; color: string; bgColor: string }> = {
+      richtext: { label: 'Rich Text', icon: 'EditNote', color: '#0d9488', bgColor: '#ccfbf1' },
+      word: { label: 'Word', icon: 'WordDocument', color: '#2b579a', bgColor: '#dce6f5' },
+      excel: { label: 'Excel', icon: 'ExcelDocument', color: '#217346', bgColor: '#d4edda' },
+      powerpoint: { label: 'PowerPoint', icon: 'PowerPointDocument', color: '#b7472a', bgColor: '#f5d4cc' },
+      corporate: { label: 'Corporate', icon: 'CityNext', color: '#6d28d9', bgColor: '#ede9fe' },
+      regulatory: { label: 'Regulatory', icon: 'Shield', color: '#dc2626', bgColor: '#fee2e2' }
+    };
+
+    // Filter templates
+    const filtered = templates.filter((t: any) => {
+      const type = t.TemplateType || 'richtext';
+      if (templateTypeFilter !== 'all' && type !== templateTypeFilter) return false;
+      if (templateCategoryFilter !== 'all' && t.TemplateCategory !== templateCategoryFilter) return false;
+      return true;
+    });
+
+    // Get unique categories for filter
+    const categories = [...new Set(templates.map((t: any) => t.TemplateCategory).filter(Boolean))].sort();
+
+    // Counts by type
+    const typeCounts: Record<string, number> = {};
+    templates.forEach((t: any) => { const type = t.TemplateType || 'richtext'; typeCounts[type] = (typeCounts[type] || 0) + 1; });
+
+    const editSections = (): any[] => {
+      try { return editingTemplate?.Sections ? JSON.parse(editingTemplate.Sections) : []; } catch { return []; }
+    };
+
+    const updateSections = (sections: any[]): void => {
+      this.setState({ _editingTemplate: { ...editingTemplate, Sections: JSON.stringify(sections) } } as any);
+    };
 
     return (
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 16 }}>
+          {/* Header */}
           <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
-            <Text variant="mediumPlus" style={TextStyles.semiBold}>Policy Templates ({templates.length})</Text>
-            <PrimaryButton text="New Template" iconProps={{ iconName: 'Add' }} onClick={() => this.setState({ _editingTemplate: { Id: 0, Title: '', TemplateName: '', TemplateCategory: 'HR Policies', TemplateDescription: '', HTMLTemplate: '', TemplateContent: '', ComplianceRisk: 'Medium', SuggestedReadTimeframe: 'Week1', RequiresAcknowledgement: true, RequiresQuiz: false, KeyPointsTemplate: '', IsActive: true }, _showTemplatePanel: true } as any)} />
+            <div>
+              <Text variant="mediumPlus" style={TextStyles.semiBold}>Template Manager</Text>
+              <Text variant="small" style={{ ...TextStyles.secondary, display: 'block', marginTop: 2 }}>
+                {templates.length} templates — {templates.filter((t: any) => t.IsActive !== false).length} active
+              </Text>
+            </div>
+            <Stack horizontal tokens={{ childrenGap: 8 }}>
+              <DefaultButton text="New Template" iconProps={{ iconName: 'Add' }} menuProps={{
+                items: [
+                  { key: 'richtext', text: 'Rich Text Template', iconProps: { iconName: 'EditNote' }, onClick: () => this._openNewTemplate('richtext') },
+                  { key: 'corporate', text: 'Corporate Template', iconProps: { iconName: 'CityNext' }, onClick: () => this._openNewTemplate('corporate') },
+                  { key: 'regulatory', text: 'Regulatory Template', iconProps: { iconName: 'Shield' }, onClick: () => this._openNewTemplate('regulatory') },
+                  { key: 'divider1', text: '-', itemType: 1 } as any,
+                  { key: 'word', text: 'Word Document', iconProps: { iconName: 'WordDocument' }, onClick: () => this._openNewTemplate('word') },
+                  { key: 'excel', text: 'Excel Spreadsheet', iconProps: { iconName: 'ExcelDocument' }, onClick: () => this._openNewTemplate('excel') },
+                  { key: 'powerpoint', text: 'PowerPoint', iconProps: { iconName: 'PowerPointDocument' }, onClick: () => this._openNewTemplate('powerpoint') }
+                ]
+              }} />
+            </Stack>
           </Stack>
-          {templates.length === 0 ? (
+
+          {/* Type Filter Chips */}
+          <Stack horizontal tokens={{ childrenGap: 6 }} wrap>
+            <span
+              onClick={() => this.setState({ _templateTypeFilter: 'all' } as any)}
+              style={{
+                padding: '4px 12px', borderRadius: 4, fontSize: 12, fontWeight: 500, cursor: 'pointer',
+                background: templateTypeFilter === 'all' ? '#0d9488' : '#f1f5f9',
+                color: templateTypeFilter === 'all' ? '#fff' : '#475569',
+                border: `1px solid ${templateTypeFilter === 'all' ? '#0d9488' : '#e2e8f0'}`
+              }}
+            >
+              All ({templates.length})
+            </span>
+            {Object.entries(templateTypes).map(([key, meta]) => (
+              <span
+                key={key}
+                onClick={() => this.setState({ _templateTypeFilter: key } as any)}
+                style={{
+                  padding: '4px 12px', borderRadius: 4, fontSize: 12, fontWeight: 500, cursor: 'pointer',
+                  background: templateTypeFilter === key ? meta.color : '#f1f5f9',
+                  color: templateTypeFilter === key ? '#fff' : '#475569',
+                  border: `1px solid ${templateTypeFilter === key ? meta.color : '#e2e8f0'}`
+                }}
+              >
+                {meta.label} ({typeCounts[key] || 0})
+              </span>
+            ))}
+          </Stack>
+
+          {/* Category Filter */}
+          {categories.length > 1 && (
+            <Dropdown
+              placeholder="Filter by category"
+              selectedKey={templateCategoryFilter}
+              options={[
+                { key: 'all', text: 'All Categories' },
+                ...categories.map(c => ({ key: c, text: c }))
+              ]}
+              onChange={(_, opt) => opt && this.setState({ _templateCategoryFilter: opt.key } as any)}
+              styles={{ root: { maxWidth: 240 } }}
+            />
+          )}
+
+          {/* Template Cards Grid */}
+          {filtered.length === 0 ? (
             <MessageBar messageBarType={MessageBarType.info}>
-              No templates found. Click "New Template" to create one, or templates will appear here as they are loaded from PM_PolicyTemplates.
+              {templates.length === 0
+                ? 'No templates found. Click "New Template" to create one.'
+                : 'No templates match the current filters.'}
             </MessageBar>
           ) : (
-            <DetailsList items={templates} columns={columns} layoutMode={DetailsListLayoutMode.justified} selectionMode={SelectionMode.none} />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 12 }}>
+              {filtered.map((template: any) => {
+                const type = template.TemplateType || 'richtext';
+                const meta = templateTypes[type] || templateTypes.richtext;
+                return (
+                  <div key={template.Id} style={{
+                    background: '#fff', border: '1px solid #e2e8f0', borderRadius: 4,
+                    overflow: 'hidden', opacity: template.IsActive === false ? 0.6 : 1,
+                    transition: 'box-shadow 0.2s'
+                  }}>
+                    {/* Card Header */}
+                    <div style={{ padding: '12px 16px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{
+                        width: 32, height: 32, borderRadius: 4, backgroundColor: meta.bgColor,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+                      }}>
+                        <Icon iconName={meta.icon} style={{ fontSize: 16, color: meta.color }} />
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <Text style={{ fontWeight: 600, fontSize: 13, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {template.TemplateName || template.Title}
+                        </Text>
+                        <Stack horizontal tokens={{ childrenGap: 4 }} verticalAlign="center">
+                          <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 3, background: meta.bgColor, color: meta.color }}>
+                            {meta.label}
+                          </span>
+                          <span style={{ fontSize: 10, fontWeight: 500, padding: '1px 6px', borderRadius: 3, background: '#f1f5f9', color: '#64748b' }}>
+                            {template.TemplateCategory}
+                          </span>
+                          {template.IsActive === false && (
+                            <span style={{ fontSize: 10, fontWeight: 500, padding: '1px 6px', borderRadius: 3, background: '#fee2e2', color: '#dc2626' }}>Inactive</span>
+                          )}
+                        </Stack>
+                      </div>
+                      <Stack horizontal tokens={{ childrenGap: 2 }}>
+                        <IconButton iconProps={{ iconName: 'Edit' }} title="Edit" ariaLabel="Edit template"
+                          onClick={() => this.setState({ _editingTemplate: { ...template }, _showTemplatePanel: true } as any)}
+                          styles={{ root: { height: 28, width: 28 }, icon: { fontSize: 13 } }} />
+                        <IconButton iconProps={{ iconName: 'View' }} title="Preview" ariaLabel="Preview template"
+                          onClick={() => this.setState({ _previewTemplate: template, _showTemplatePreview: true } as any)}
+                          styles={{ root: { height: 28, width: 28 }, icon: { fontSize: 13, color: '#0d9488' } }} />
+                        <IconButton iconProps={{ iconName: 'Copy' }} title="Duplicate" ariaLabel="Duplicate template"
+                          onClick={() => this._duplicateTemplate(template)}
+                          styles={{ root: { height: 28, width: 28 }, icon: { fontSize: 13 } }} />
+                        <IconButton iconProps={{ iconName: 'Delete' }} title="Delete" ariaLabel="Delete template"
+                          onClick={() => this._deleteTemplate(template)}
+                          styles={{ root: { height: 28, width: 28 }, icon: { fontSize: 13, color: '#dc2626' } }} />
+                      </Stack>
+                    </div>
+                    {/* Card Body */}
+                    <div style={{ padding: '10px 16px' }}>
+                      <Text variant="small" style={{ color: '#64748b', display: 'block', marginBottom: 8, lineHeight: 1.4, maxHeight: 40, overflow: 'hidden' }}>
+                        {template.TemplateDescription || 'No description'}
+                      </Text>
+                      <Stack horizontal tokens={{ childrenGap: 12 }} verticalAlign="center">
+                        <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 4 }}>
+                          <Icon iconName="TrendingHashtag" style={{ fontSize: 11, color: '#94a3b8' }} />
+                          <Text variant="tiny" style={{ color: '#94a3b8' }}>Used {template.UsageCount || 0}x</Text>
+                        </Stack>
+                        <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 4 }}>
+                          <Icon iconName="Warning" style={{ fontSize: 11, color: '#94a3b8' }} />
+                          <Text variant="tiny" style={{ color: '#94a3b8' }}>{template.ComplianceRisk || 'Medium'} risk</Text>
+                        </Stack>
+                        {template.RequiresAcknowledgement && (
+                          <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 4 }}>
+                            <Icon iconName="Handwriting" style={{ fontSize: 11, color: '#0d9488' }} />
+                            <Text variant="tiny" style={{ color: '#0d9488' }}>Ack</Text>
+                          </Stack>
+                        )}
+                        {template.RequiresQuiz && (
+                          <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 4 }}>
+                            <Icon iconName="Questionnaire" style={{ fontSize: 11, color: '#7c3aed' }} />
+                            <Text variant="tiny" style={{ color: '#7c3aed' }}>Quiz</Text>
+                          </Stack>
+                        )}
+                      </Stack>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
         </Stack>
 
-        {/* Template Edit Panel */}
+        {/* Template Edit/Create Panel */}
         <StyledPanel
           isOpen={!!showTemplatePanel}
           onDismiss={() => this.setState({ _showTemplatePanel: false, _editingTemplate: null } as any)}
           type={PanelType.medium}
-          headerText={editingTemplate?.Id ? 'Edit Template' : 'New Template'}
+          headerText={editingTemplate?.Id ? `Edit Template — ${(templateTypes[editingTemplate?.TemplateType] || templateTypes.richtext).label}` : `New ${(templateTypes[editingTemplate?.TemplateType] || templateTypes.richtext).label} Template`}
           onRenderFooterContent={() => (
             <Stack horizontal tokens={{ childrenGap: 8 }}>
-              <PrimaryButton text="Save" disabled={this.state.saving} onClick={async () => {
-                if (!editingTemplate) return;
-                if (!editingTemplate.TemplateName?.trim()) {
-                  void this.dialogManager.showAlert('Template name is required.', { title: 'Validation' });
-                  return;
-                }
-                if (!editingTemplate.TemplateCategory?.trim()) {
-                  void this.dialogManager.showAlert('Please select a category.', { title: 'Validation' });
-                  return;
-                }
-                this.setState({ saving: true });
-                try {
-                  const data = {
-                    Title: editingTemplate.TemplateName,
-                    TemplateName: editingTemplate.TemplateName,
-                    TemplateCategory: editingTemplate.TemplateCategory,
-                    TemplateDescription: editingTemplate.TemplateDescription,
-                    HTMLTemplate: editingTemplate.HTMLTemplate || editingTemplate.TemplateContent || '',
-                    TemplateContent: editingTemplate.TemplateContent || editingTemplate.HTMLTemplate || '',
-                    ComplianceRisk: editingTemplate.ComplianceRisk || 'Medium',
-                    SuggestedReadTimeframe: editingTemplate.SuggestedReadTimeframe || 'Week1',
-                    RequiresAcknowledgement: editingTemplate.RequiresAcknowledgement ?? true,
-                    RequiresQuiz: editingTemplate.RequiresQuiz ?? false,
-                    KeyPointsTemplate: editingTemplate.KeyPointsTemplate || '',
-                    IsActive: editingTemplate.IsActive
-                  };
-                  if (editingTemplate.Id) {
-                    await this.adminConfigService.updateTemplate(editingTemplate.Id, data);
-                    this.setState({ templates: templates.map(t => t.Id === editingTemplate.Id ? { ...t, ...editingTemplate } : t) });
-                  } else {
-                    const result = await this.adminConfigService.createTemplate(data);
-                    this.setState({ templates: [...templates, { ...editingTemplate, Id: result.Id }] });
-                  }
-                  this.setState({ _showTemplatePanel: false, _editingTemplate: null, saving: false } as any);
-                  void this.dialogManager.showAlert('Template saved successfully.', { title: 'Saved', variant: 'success' });
-                } catch { this.setState({ saving: false }); void this.dialogManager.showAlert('Failed to save template.', { title: 'Error' }); }
-              }} />
+              <PrimaryButton text="Save Template" disabled={this.state.saving} onClick={() => this._saveTemplate()} />
               <DefaultButton text="Cancel" onClick={() => this.setState({ _showTemplatePanel: false, _editingTemplate: null } as any)} />
             </Stack>
           )}
@@ -916,37 +1126,421 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         >
           {editingTemplate && (
             <Stack tokens={{ childrenGap: 16 }} style={LayoutStyles.paddingTop16}>
+              {/* Common fields */}
               <TextField label="Template Name" required value={editingTemplate.TemplateName || ''} onChange={(_, v) => this.setState({ _editingTemplate: { ...editingTemplate, TemplateName: v || '' } } as any)} />
-              <Dropdown label="Category" required selectedKey={editingTemplate.TemplateCategory || ''} options={this.state.policyCategories.filter(c => c.IsActive).map(c => ({ key: c.CategoryName, text: c.CategoryName }))} onChange={(_, opt) => opt && this.setState({ _editingTemplate: { ...editingTemplate, TemplateCategory: opt.key as string } } as any)} placeholder="Select a category" />
-              <TextField label="Description" multiline rows={3} value={editingTemplate.TemplateDescription || ''} onChange={(_, v) => this.setState({ _editingTemplate: { ...editingTemplate, TemplateDescription: v || '' } } as any)} />
-              <TextField label="Template Content (HTML)" multiline rows={8} value={editingTemplate.TemplateContent || editingTemplate.HTMLTemplate || ''} onChange={(_, v) => this.setState({ _editingTemplate: { ...editingTemplate, TemplateContent: v || '', HTMLTemplate: v || '' } } as any)} description="HTML content that pre-populates the policy editor when this template is selected" />
+
+              <Stack horizontal tokens={{ childrenGap: 12 }}>
+                <Stack.Item grow={1}>
+                  <Dropdown label="Category" required selectedKey={editingTemplate.TemplateCategory || ''} options={this.state.policyCategories.filter((c: any) => c.IsActive).map((c: any) => ({ key: c.CategoryName, text: c.CategoryName }))} onChange={(_, opt) => opt && this.setState({ _editingTemplate: { ...editingTemplate, TemplateCategory: opt.key as string } } as any)} placeholder="Select a category" />
+                </Stack.Item>
+                <Stack.Item grow={1}>
+                  <Dropdown label="Template Type" selectedKey={editingTemplate.TemplateType || 'richtext'} options={Object.entries(templateTypes).map(([key, meta]) => ({ key, text: meta.label, data: { icon: meta.icon } }))} onChange={(_, opt) => opt && this.setState({ _editingTemplate: { ...editingTemplate, TemplateType: opt.key as string } } as any)} />
+                </Stack.Item>
+              </Stack>
+
+              <TextField label="Description" multiline rows={2} value={editingTemplate.TemplateDescription || ''} onChange={(_, v) => this.setState({ _editingTemplate: { ...editingTemplate, TemplateDescription: v || '' } } as any)} />
+
+              <Separator />
+
+              {/* Type-specific content */}
+              {(editingTemplate.TemplateType === 'richtext' || !editingTemplate.TemplateType) && (
+                <TextField label="Template Content (HTML)" multiline rows={10} value={editingTemplate.TemplateContent || editingTemplate.HTMLTemplate || ''} onChange={(_, v) => this.setState({ _editingTemplate: { ...editingTemplate, TemplateContent: v || '', HTMLTemplate: v || '' } } as any)} description="HTML content that pre-populates the policy editor when this template is selected" />
+              )}
+
+              {(editingTemplate.TemplateType === 'word' || editingTemplate.TemplateType === 'excel' || editingTemplate.TemplateType === 'powerpoint') && (
+                <Stack tokens={{ childrenGap: 12 }}>
+                  <Text variant="medium" style={TextStyles.semiBold}>Document Template File</Text>
+                  <TextField label="Document URL" value={editingTemplate.DocumentTemplateURL || ''} onChange={(_, v) => this.setState({ _editingTemplate: { ...editingTemplate, DocumentTemplateURL: v || '' } } as any)} placeholder="e.g., /sites/PolicyManager/PM_CorporateTemplates/Template.docx" description="Path to the template file in the PM_CorporateTemplates library" />
+                  <MessageBar messageBarType={MessageBarType.info}>
+                    Upload your template file to the PM_CorporateTemplates document library first, then paste the URL here. The file will be copied for each new policy created from this template.
+                  </MessageBar>
+                </Stack>
+              )}
+
+              {(editingTemplate.TemplateType === 'corporate' || editingTemplate.TemplateType === 'regulatory') && (
+                <Stack tokens={{ childrenGap: 12 }}>
+                  <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
+                    <Text variant="medium" style={TextStyles.semiBold}>
+                      {editingTemplate.TemplateType === 'regulatory' ? 'Regulatory Sections' : 'Corporate Sections'}
+                    </Text>
+                    <DefaultButton text="Add Section" iconProps={{ iconName: 'Add' }} onClick={() => {
+                      const sections = editSections();
+                      sections.push({
+                        id: `section_${Date.now()}`,
+                        title: '',
+                        description: '',
+                        required: false,
+                        helpText: '',
+                        defaultContent: ''
+                      });
+                      updateSections(sections);
+                    }} />
+                  </Stack>
+
+                  {editingTemplate.TemplateType === 'regulatory' && (
+                    <Stack horizontal tokens={{ childrenGap: 12 }}>
+                      <Stack.Item grow={1}>
+                        <Dropdown label="Regulatory Framework" selectedKey={editingTemplate.RegulatoryFramework || ''} options={[
+                          { key: '', text: 'Select framework...' },
+                          { key: 'POPIA', text: 'POPIA (Protection of Personal Information Act)' },
+                          { key: 'GDPR', text: 'GDPR (General Data Protection Regulation)' },
+                          { key: 'OHS', text: 'OHS Act (Occupational Health & Safety)' },
+                          { key: 'BCEA', text: 'BCEA (Basic Conditions of Employment Act)' },
+                          { key: 'FICA', text: 'FICA (Financial Intelligence Centre Act)' },
+                          { key: 'KING_IV', text: 'King IV (Corporate Governance)' },
+                          { key: 'ISO27001', text: 'ISO 27001 (Information Security)' },
+                          { key: 'ISO9001', text: 'ISO 9001 (Quality Management)' },
+                          { key: 'OTHER', text: 'Other' }
+                        ]} onChange={(_, opt) => opt && this.setState({ _editingTemplate: { ...editingTemplate, RegulatoryFramework: opt.key as string } } as any)} />
+                      </Stack.Item>
+                      <Stack.Item grow={1}>
+                        <TextField label="Regulatory References" value={editingTemplate.RegulatoryReferences || ''} onChange={(_, v) => this.setState({ _editingTemplate: { ...editingTemplate, RegulatoryReferences: v || '' } } as any)} placeholder="e.g., Section 14;Section 19;Section 22" description="Semicolon-separated clause references" />
+                      </Stack.Item>
+                    </Stack>
+                  )}
+
+                  <Text variant="small" style={TextStyles.secondary}>
+                    Define the sections that authors must complete. Required sections cannot be skipped.
+                  </Text>
+
+                  {editSections().length === 0 ? (
+                    <MessageBar messageBarType={MessageBarType.info}>
+                      No sections defined. Click "Add Section" to build the template structure.
+                    </MessageBar>
+                  ) : (
+                    <Stack tokens={{ childrenGap: 8 }}>
+                      {editSections().map((section: any, index: number) => (
+                        <div key={section.id} style={{
+                          background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 4, padding: 12,
+                          borderLeft: section.required ? '3px solid #0d9488' : '3px solid #e2e8f0'
+                        }}>
+                          <Stack horizontal horizontalAlign="space-between" verticalAlign="start">
+                            <Stack tokens={{ childrenGap: 8 }} style={{ flex: 1, marginRight: 12 }}>
+                              <Stack horizontal tokens={{ childrenGap: 8 }} verticalAlign="center">
+                                <span style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', minWidth: 24 }}>#{index + 1}</span>
+                                <TextField placeholder="Section title" value={section.title} styles={{ root: { flex: 1 } }} onChange={(_, v) => {
+                                  const sections = editSections();
+                                  sections[index].title = v || '';
+                                  updateSections(sections);
+                                }} />
+                                <Toggle checked={section.required} onText="Required" offText="Optional" styles={{ root: { marginBottom: 0 } }} onChange={(_, c) => {
+                                  const sections = editSections();
+                                  sections[index].required = !!c;
+                                  updateSections(sections);
+                                }} />
+                              </Stack>
+                              <TextField placeholder="Description / guidance for authors" value={section.description} onChange={(_, v) => {
+                                const sections = editSections();
+                                sections[index].description = v || '';
+                                updateSections(sections);
+                              }} />
+                              <TextField placeholder="Help text (shown as tooltip)" value={section.helpText || ''} onChange={(_, v) => {
+                                const sections = editSections();
+                                sections[index].helpText = v || '';
+                                updateSections(sections);
+                              }} />
+                            </Stack>
+                            <Stack tokens={{ childrenGap: 2 }}>
+                              <IconButton iconProps={{ iconName: 'Up' }} title="Move up" ariaLabel="Move section up" disabled={index === 0} onClick={() => {
+                                const sections = editSections();
+                                [sections[index - 1], sections[index]] = [sections[index], sections[index - 1]];
+                                updateSections(sections);
+                              }} styles={{ root: { height: 24, width: 24 }, icon: { fontSize: 12 } }} />
+                              <IconButton iconProps={{ iconName: 'Down' }} title="Move down" ariaLabel="Move section down" disabled={index === editSections().length - 1} onClick={() => {
+                                const sections = editSections();
+                                [sections[index], sections[index + 1]] = [sections[index + 1], sections[index]];
+                                updateSections(sections);
+                              }} styles={{ root: { height: 24, width: 24 }, icon: { fontSize: 12 } }} />
+                              <IconButton iconProps={{ iconName: 'Delete' }} title="Remove section" ariaLabel="Remove section" onClick={() => {
+                                const sections = editSections();
+                                sections.splice(index, 1);
+                                updateSections(sections);
+                              }} styles={{ root: { height: 24, width: 24 }, icon: { fontSize: 12, color: '#dc2626' } }} />
+                            </Stack>
+                          </Stack>
+                        </div>
+                      ))}
+                    </Stack>
+                  )}
+                </Stack>
+              )}
 
               <Separator>Policy Defaults</Separator>
               <Text variant="small" style={{ ...TextStyles.secondary, marginBottom: 8, display: 'block' }}>
                 These defaults are applied when an author selects this template in the Policy Builder wizard.
               </Text>
 
-              <Dropdown label="Default Compliance Risk" selectedKey={editingTemplate.ComplianceRisk || 'Medium'} options={[
-                { key: 'Critical', text: 'Critical' }, { key: 'High', text: 'High' },
-                { key: 'Medium', text: 'Medium' }, { key: 'Low', text: 'Low' }, { key: 'Informational', text: 'Informational' }
-              ]} onChange={(_, opt) => opt && this.setState({ _editingTemplate: { ...editingTemplate, ComplianceRisk: opt.key as string } } as any)} />
+              <Stack horizontal tokens={{ childrenGap: 12 }}>
+                <Stack.Item grow={1}>
+                  <Dropdown label="Default Compliance Risk" selectedKey={editingTemplate.ComplianceRisk || 'Medium'} options={[
+                    { key: 'Critical', text: 'Critical' }, { key: 'High', text: 'High' },
+                    { key: 'Medium', text: 'Medium' }, { key: 'Low', text: 'Low' }, { key: 'Informational', text: 'Informational' }
+                  ]} onChange={(_, opt) => opt && this.setState({ _editingTemplate: { ...editingTemplate, ComplianceRisk: opt.key as string } } as any)} />
+                </Stack.Item>
+                <Stack.Item grow={1}>
+                  <Dropdown label="Suggested Read Timeframe" selectedKey={editingTemplate.SuggestedReadTimeframe || 'Week1'} options={[
+                    { key: 'Immediate', text: 'Immediate' }, { key: 'Day1', text: 'Day 1' }, { key: 'Day3', text: '3 Days' },
+                    { key: 'Week1', text: '1 Week' }, { key: 'Week2', text: '2 Weeks' }, { key: 'Month1', text: '1 Month' }
+                  ]} onChange={(_, opt) => opt && this.setState({ _editingTemplate: { ...editingTemplate, SuggestedReadTimeframe: opt.key as string } } as any)} />
+                </Stack.Item>
+              </Stack>
 
-              <Dropdown label="Suggested Read Timeframe" selectedKey={editingTemplate.SuggestedReadTimeframe || 'Week1'} options={[
-                { key: 'Immediate', text: 'Immediate' }, { key: 'Day1', text: 'Day 1' }, { key: 'Day3', text: '3 Days' },
-                { key: 'Week1', text: '1 Week' }, { key: 'Week2', text: '2 Weeks' }, { key: 'Month1', text: '1 Month' }
-              ]} onChange={(_, opt) => opt && this.setState({ _editingTemplate: { ...editingTemplate, SuggestedReadTimeframe: opt.key as string } } as any)} />
-
-              <Toggle label="Requires Acknowledgement" checked={editingTemplate.RequiresAcknowledgement !== false} onText="Yes" offText="No" onChange={(_, c) => this.setState({ _editingTemplate: { ...editingTemplate, RequiresAcknowledgement: !!c } } as any)} />
-              <Toggle label="Requires Quiz" checked={editingTemplate.RequiresQuiz === true} onText="Yes" offText="No" onChange={(_, c) => this.setState({ _editingTemplate: { ...editingTemplate, RequiresQuiz: !!c } } as any)} />
+              <Stack horizontal tokens={{ childrenGap: 24 }}>
+                <Toggle label="Requires Acknowledgement" checked={editingTemplate.RequiresAcknowledgement !== false} onText="Yes" offText="No" onChange={(_, c) => this.setState({ _editingTemplate: { ...editingTemplate, RequiresAcknowledgement: !!c } } as any)} />
+                <Toggle label="Requires Quiz" checked={editingTemplate.RequiresQuiz === true} onText="Yes" offText="No" onChange={(_, c) => this.setState({ _editingTemplate: { ...editingTemplate, RequiresQuiz: !!c } } as any)} />
+                <Toggle label="Active" checked={editingTemplate.IsActive !== false} onText="Active" offText="Inactive" onChange={(_, c) => this.setState({ _editingTemplate: { ...editingTemplate, IsActive: !!c } } as any)} />
+              </Stack>
 
               <TextField label="Key Points (semicolon-separated)" value={editingTemplate.KeyPointsTemplate || ''} onChange={(_, v) => this.setState({ _editingTemplate: { ...editingTemplate, KeyPointsTemplate: v || '' } } as any)} placeholder="e.g., Data classification;Access control;Incident reporting" description="Key points authors can use as a starting point" />
-
-              <Toggle label="Active" checked={editingTemplate.IsActive !== false} onText="Active" offText="Inactive" onChange={(_, c) => this.setState({ _editingTemplate: { ...editingTemplate, IsActive: !!c } } as any)} />
             </Stack>
           )}
         </StyledPanel>
+
+        {/* Template Preview Panel */}
+        <StyledPanel
+          isOpen={!!(this.state as any)._showTemplatePreview}
+          onDismiss={() => this.setState({ _showTemplatePreview: false, _previewTemplate: null } as any)}
+          type={PanelType.medium}
+          headerText="Template Preview"
+        >
+          {(() => {
+            const preview = (this.state as any)._previewTemplate;
+            if (!preview) return null;
+            const type = preview.TemplateType || 'richtext';
+            const meta = templateTypes[type] || templateTypes.richtext;
+            const isSectionBased = type === 'corporate' || type === 'regulatory';
+            let sections: any[] = [];
+            if (isSectionBased) {
+              try { sections = JSON.parse(preview.TemplateContent || preview.HTMLTemplate || '[]'); } catch { sections = []; }
+            }
+            const keyPoints = preview.KeyPointsTemplate ? preview.KeyPointsTemplate.split(';').map((k: string) => k.trim()).filter(Boolean) : [];
+
+            return (
+              <Stack tokens={{ childrenGap: 16 }} style={{ paddingTop: 8 }}>
+                {/* Template info card */}
+                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 4, padding: 16 }}>
+                  <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 10 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 4, backgroundColor: meta.bgColor, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Icon iconName={meta.icon} style={{ fontSize: 20, color: meta.color }} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <Text style={{ fontWeight: 700, fontSize: 16, display: 'block' }}>{preview.TemplateName || preview.Title}</Text>
+                      <Stack horizontal tokens={{ childrenGap: 6 }}>
+                        <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 3, background: meta.bgColor, color: meta.color }}>{meta.label}</span>
+                        <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 3, background: '#f1f5f9', color: '#64748b' }}>{preview.TemplateCategory}</span>
+                        <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 3, background: '#f1f5f9', color: '#64748b' }}>Used {preview.UsageCount || 0}x</span>
+                      </Stack>
+                    </div>
+                  </Stack>
+                  {preview.TemplateDescription && (
+                    <Text style={{ fontSize: 12, color: '#64748b', marginTop: 8, display: 'block', lineHeight: 1.5 }}>{preview.TemplateDescription}</Text>
+                  )}
+                </div>
+
+                {/* Policy defaults */}
+                <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 4, padding: 16 }}>
+                  <Text style={{ fontWeight: 600, fontSize: 13, display: 'block', marginBottom: 8 }}>Policy Defaults</Text>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                    <div><Text style={{ fontSize: 11, color: '#94a3b8' }}>Risk Level</Text><Text style={{ fontSize: 13, fontWeight: 600 }}>{preview.ComplianceRisk || 'Medium'}</Text></div>
+                    <div><Text style={{ fontSize: 11, color: '#94a3b8' }}>Read Timeframe</Text><Text style={{ fontSize: 13, fontWeight: 600 }}>{preview.SuggestedReadTimeframe || 'Week 1'}</Text></div>
+                    <div><Text style={{ fontSize: 11, color: '#94a3b8' }}>Acknowledgement</Text><Text style={{ fontSize: 13, fontWeight: 600, color: preview.RequiresAcknowledgement ? '#0d9488' : '#94a3b8' }}>{preview.RequiresAcknowledgement ? 'Required' : 'Not required'}</Text></div>
+                    <div><Text style={{ fontSize: 11, color: '#94a3b8' }}>Quiz</Text><Text style={{ fontSize: 13, fontWeight: 600, color: preview.RequiresQuiz ? '#7c3aed' : '#94a3b8' }}>{preview.RequiresQuiz ? 'Required' : 'Not required'}</Text></div>
+                  </div>
+                </div>
+
+                {/* Key points */}
+                {keyPoints.length > 0 && (
+                  <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 4, padding: 16 }}>
+                    <Text style={{ fontWeight: 600, fontSize: 13, display: 'block', marginBottom: 8 }}>Key Points ({keyPoints.length})</Text>
+                    <Stack tokens={{ childrenGap: 4 }}>
+                      {keyPoints.map((point: string, i: number) => (
+                        <Stack key={i} horizontal verticalAlign="center" tokens={{ childrenGap: 6 }}>
+                          <Icon iconName="StatusCircleCheckmark" styles={{ root: { fontSize: 12, color: '#0d9488' } }} />
+                          <Text style={{ fontSize: 12, color: '#334155' }}>{point}</Text>
+                        </Stack>
+                      ))}
+                    </Stack>
+                  </div>
+                )}
+
+                {/* Content preview */}
+                {isSectionBased && sections.length > 0 ? (
+                  <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 4, padding: 16 }}>
+                    <Text style={{ fontWeight: 600, fontSize: 13, display: 'block', marginBottom: 12 }}>
+                      Template Structure ({sections.length} sections)
+                    </Text>
+                    <Stack tokens={{ childrenGap: 6 }}>
+                      {sections.map((section: any, i: number) => (
+                        <div key={section.id || i} style={{
+                          padding: '8px 12px', borderRadius: 4,
+                          background: '#f8fafc',
+                          borderLeft: `3px solid ${section.required ? '#0d9488' : '#e2e8f0'}`
+                        }}>
+                          <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 6 }}>
+                            <Text style={{ fontWeight: 600, fontSize: 12, color: '#0f172a' }}>#{i + 1} {section.title}</Text>
+                            {section.required && <span style={{ fontSize: 9, fontWeight: 600, padding: '1px 5px', borderRadius: 2, background: '#ccfbf1', color: '#0d9488' }}>REQUIRED</span>}
+                          </Stack>
+                          {section.description && <Text style={{ fontSize: 11, color: '#64748b', display: 'block', marginTop: 2 }}>{section.description}</Text>}
+                        </div>
+                      ))}
+                    </Stack>
+                  </div>
+                ) : !isSectionBased && (preview.TemplateContent || preview.HTMLTemplate) ? (
+                  <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 4, padding: 16 }}>
+                    <Text style={{ fontWeight: 600, fontSize: 13, display: 'block', marginBottom: 8 }}>Content Preview</Text>
+                    <div style={{ maxHeight: 300, overflow: 'auto', padding: 12, background: '#fafafa', borderRadius: 4, border: '1px solid #f1f5f9', fontSize: 13, lineHeight: 1.6 }}
+                      dangerouslySetInnerHTML={{ __html: preview.TemplateContent || preview.HTMLTemplate || '' }} />
+                  </div>
+                ) : type === 'word' || type === 'excel' || type === 'powerpoint' ? (
+                  <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 4, padding: 16 }}>
+                    <Text style={{ fontWeight: 600, fontSize: 13, display: 'block', marginBottom: 8 }}>Document Template</Text>
+                    {preview.DocumentTemplateURL ? (
+                      <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
+                        <Icon iconName={meta.icon} styles={{ root: { fontSize: 20, color: meta.color } }} />
+                        <Text style={{ fontSize: 12, color: '#475569', wordBreak: 'break-all' }}>{preview.DocumentTemplateURL}</Text>
+                      </Stack>
+                    ) : (
+                      <Text style={{ fontSize: 12, color: '#94a3b8' }}>No document template URL configured.</Text>
+                    )}
+                  </div>
+                ) : null}
+              </Stack>
+            );
+          })()}
+        </StyledPanel>
       </div>
     );
+  }
+
+  private _openNewTemplate(type: string): void {
+    this.setState({
+      _editingTemplate: {
+        Id: 0, Title: '', TemplateName: '', TemplateType: type,
+        TemplateCategory: 'HR Policies', TemplateDescription: '',
+        HTMLTemplate: '', TemplateContent: '', DocumentTemplateURL: '',
+        Sections: type === 'corporate' || type === 'regulatory' ? '[]' : '',
+        RegulatoryFramework: '', RegulatoryReferences: '',
+        ComplianceRisk: 'Medium', SuggestedReadTimeframe: 'Week1',
+        RequiresAcknowledgement: true, RequiresQuiz: false,
+        KeyPointsTemplate: '', IsActive: true, UsageCount: 0
+      },
+      _showTemplatePanel: true
+    } as any);
+  }
+
+  private async _saveTemplate(): Promise<void> {
+    const editingTemplate = (this.state as any)._editingTemplate;
+    const { templates } = this.state;
+    if (!editingTemplate) return;
+    if (!editingTemplate.TemplateName?.trim()) {
+      void this.dialogManager.showAlert('Template name is required.', { title: 'Validation' });
+      return;
+    }
+    if (!editingTemplate.TemplateCategory?.trim()) {
+      void this.dialogManager.showAlert('Please select a category.', { title: 'Validation' });
+      return;
+    }
+
+    // Validate corporate/regulatory sections
+    if (editingTemplate.TemplateType === 'corporate' || editingTemplate.TemplateType === 'regulatory') {
+      try {
+        const sections = JSON.parse(editingTemplate.Sections || '[]');
+        const emptySections = sections.filter((s: any) => !s.title?.trim());
+        if (emptySections.length > 0) {
+          void this.dialogManager.showAlert(`${emptySections.length} section(s) have no title. Please fill in all section titles.`, { title: 'Validation' });
+          return;
+        }
+      } catch { /* invalid JSON will be caught on save */ }
+    }
+
+    // Validate document URL for doc templates
+    if (['word', 'excel', 'powerpoint'].includes(editingTemplate.TemplateType) && !editingTemplate.DocumentTemplateURL?.trim()) {
+      void this.dialogManager.showAlert('Document template URL is required for document-based templates.', { title: 'Validation' });
+      return;
+    }
+
+    this.setState({ saving: true });
+    try {
+      const data: Record<string, unknown> = {
+        Title: editingTemplate.TemplateName,
+        TemplateName: editingTemplate.TemplateName,
+        TemplateType: editingTemplate.TemplateType || 'richtext',
+        TemplateCategory: editingTemplate.TemplateCategory,
+        TemplateDescription: editingTemplate.TemplateDescription || '',
+        HTMLTemplate: editingTemplate.HTMLTemplate || editingTemplate.TemplateContent || '',
+        TemplateContent: editingTemplate.TemplateContent || editingTemplate.HTMLTemplate || '',
+        DocumentTemplateURL: editingTemplate.DocumentTemplateURL || '',
+        ComplianceRisk: editingTemplate.ComplianceRisk || 'Medium',
+        SuggestedReadTimeframe: editingTemplate.SuggestedReadTimeframe || 'Week1',
+        RequiresAcknowledgement: editingTemplate.RequiresAcknowledgement ?? true,
+        RequiresQuiz: editingTemplate.RequiresQuiz ?? false,
+        KeyPointsTemplate: editingTemplate.KeyPointsTemplate || '',
+        IsActive: editingTemplate.IsActive
+      };
+      // Store sections as JSON in TemplateContent for corporate/regulatory
+      if (editingTemplate.TemplateType === 'corporate' || editingTemplate.TemplateType === 'regulatory') {
+        data.TemplateContent = editingTemplate.Sections || '[]';
+        data.HTMLTemplate = editingTemplate.Sections || '[]';
+        if (editingTemplate.RegulatoryFramework) data.Tags = editingTemplate.RegulatoryFramework;
+      }
+      if (editingTemplate.Id) {
+        await this.adminConfigService.updateTemplate(editingTemplate.Id, data);
+        // Log version change to audit log
+        try {
+          await this.props.sp.web.lists.getByTitle('PM_PolicyAuditLog').items.add({
+            Title: `Template updated: ${editingTemplate.TemplateName}`,
+            EventType: 'Updated',
+            EntityType: 'Template',
+            EntityName: editingTemplate.TemplateName,
+            Description: `Template "${editingTemplate.TemplateName}" (${editingTemplate.TemplateType || 'richtext'}) was updated`,
+            PerformedByName: this.props.context?.pageContext?.user?.displayName || 'Admin',
+            PerformedByEmail: this.props.context?.pageContext?.user?.email || ''
+          });
+        } catch { /* audit log is best-effort */ }
+        this.setState({ templates: templates.map((t: any) => t.Id === editingTemplate.Id ? { ...t, ...editingTemplate } : t) });
+      } else {
+        const result = await this.adminConfigService.createTemplate(data);
+        // Log creation to audit log
+        try {
+          await this.props.sp.web.lists.getByTitle('PM_PolicyAuditLog').items.add({
+            Title: `Template created: ${editingTemplate.TemplateName}`,
+            EventType: 'Created',
+            EntityType: 'Template',
+            EntityName: editingTemplate.TemplateName,
+            Description: `New ${editingTemplate.TemplateType || 'richtext'} template "${editingTemplate.TemplateName}" created`,
+            PerformedByName: this.props.context?.pageContext?.user?.displayName || 'Admin',
+            PerformedByEmail: this.props.context?.pageContext?.user?.email || ''
+          });
+        } catch { /* audit log is best-effort */ }
+        this.setState({ templates: [...templates, { ...editingTemplate, Id: result.Id }] });
+      }
+      this.setState({ _showTemplatePanel: false, _editingTemplate: null, saving: false } as any);
+      void this.dialogManager.showAlert('Template saved successfully.', { title: 'Saved', variant: 'success' });
+    } catch { this.setState({ saving: false }); void this.dialogManager.showAlert('Failed to save template.', { title: 'Error' }); }
+  }
+
+  private async _duplicateTemplate(template: any): Promise<void> {
+    this.setState({
+      _editingTemplate: {
+        ...template, Id: 0,
+        TemplateName: `${template.TemplateName || template.Title} (Copy)`,
+        UsageCount: 0
+      },
+      _showTemplatePanel: true
+    } as any);
+  }
+
+  private async _deleteTemplate(template: any): Promise<void> {
+    const confirmed = await this.dialogManager.showConfirm(
+      `Delete template "${template.TemplateName || template.Title}"?`,
+      { title: 'Delete Template', confirmText: 'Delete', cancelText: 'Cancel' }
+    );
+    if (confirmed) {
+      try {
+        await this.adminConfigService.deleteTemplate(template.Id);
+        this.setState({ templates: this.state.templates.filter((t: any) => t.Id !== template.Id) });
+      } catch { void this.dialogManager.showAlert('Failed to delete template.', { title: 'Error' }); }
+    }
   }
 
   private renderMetadataContent(): JSX.Element {
@@ -957,6 +1551,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     return (
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 16 }}>
+          {this.renderSectionIntro('Metadata Profiles', 'Metadata profiles are reusable sets of default values (risk level, read timeframe, acknowledgement requirements) that authors can apply when creating policies. This saves time and ensures consistency across similar policy types.', ['Create profiles for common policy types: \'Critical Compliance\', \'General Awareness\', \'Onboarding\'', 'Authors can still override individual settings after applying a profile'])}
           <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
             <Text variant="mediumPlus" style={TextStyles.semiBold}>Metadata Profiles ({metadataProfiles.length})</Text>
             <PrimaryButton text="New Profile" iconProps={{ iconName: 'Add' }} onClick={() => this.setState({ _editingProfile: { Id: 0, Title: '', ProfileName: '', PolicyCategory: 'HR Policies', ComplianceRisk: 'Medium', ReadTimeframe: 'Week 1', RequiresAcknowledgement: true, RequiresQuiz: false, TargetDepartments: '' }, _showProfilePanel: true } as any)} />
@@ -1084,6 +1679,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     return (
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 24 }}>
+          {this.renderSectionIntro('Approval Workflows', 'Configure how policies move through the approval process. Define who needs to approve, in what order, and what happens when approvals are overdue.')}
           <Stack horizontal horizontalAlign="end">
             <PrimaryButton
               text="Save Workflow Settings"
@@ -1120,6 +1716,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     return (
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 24 }}>
+          {this.renderSectionIntro('Compliance Settings', 'Set global defaults for compliance-related policy settings. These defaults apply to all new policies unless overridden at the individual policy level.', ['Policy-level settings always take precedence over these global defaults'])}
           <Stack horizontal horizontalAlign="end">
             <PrimaryButton
               text="Save Compliance Settings"
@@ -1179,52 +1776,248 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
   }
 
   private renderNotificationsContent(): JSX.Element {
+    const st = this.state as any;
+
+    // Event channel configs — load defaults then merge with saved
+    const eventConfigs: Array<{ event: string; category: string; label: string; channels: { email: boolean; inApp: boolean; teams: boolean }; priority: string }> = st._notifEventConfigs || [
+      // Acknowledgement
+      { event: 'ack-required', category: 'Acknowledgement', label: 'Acknowledgement Required', channels: { email: true, inApp: true, teams: true }, priority: 'high' },
+      { event: 'ack-reminder-3day', category: 'Acknowledgement', label: 'Reminder (3 days)', channels: { email: true, inApp: true, teams: true }, priority: 'normal' },
+      { event: 'ack-reminder-1day', category: 'Acknowledgement', label: 'Reminder (1 day)', channels: { email: true, inApp: true, teams: true }, priority: 'high' },
+      { event: 'ack-overdue', category: 'Acknowledgement', label: 'Overdue Notice', channels: { email: true, inApp: true, teams: true }, priority: 'urgent' },
+      { event: 'ack-complete', category: 'Acknowledgement', label: 'Ack Confirmation', channels: { email: false, inApp: true, teams: false }, priority: 'low' },
+      // Approval
+      { event: 'approval-request', category: 'Approval', label: 'Approval Request', channels: { email: true, inApp: true, teams: true }, priority: 'high' },
+      { event: 'approval-approved', category: 'Approval', label: 'Approved', channels: { email: true, inApp: true, teams: true }, priority: 'normal' },
+      { event: 'approval-rejected', category: 'Approval', label: 'Rejected', channels: { email: true, inApp: true, teams: true }, priority: 'high' },
+      { event: 'approval-escalated', category: 'Approval', label: 'Escalated', channels: { email: true, inApp: true, teams: true }, priority: 'urgent' },
+      { event: 'approval-delegated', category: 'Approval', label: 'Delegated', channels: { email: true, inApp: true, teams: false }, priority: 'normal' },
+      // Quiz
+      { event: 'quiz-assigned', category: 'Quiz', label: 'Quiz Assigned', channels: { email: true, inApp: true, teams: true }, priority: 'normal' },
+      { event: 'quiz-passed', category: 'Quiz', label: 'Quiz Passed', channels: { email: false, inApp: true, teams: false }, priority: 'low' },
+      { event: 'quiz-failed', category: 'Quiz', label: 'Quiz Failed', channels: { email: true, inApp: true, teams: false }, priority: 'normal' },
+      // Review
+      { event: 'review-due', category: 'Review', label: 'Review Due', channels: { email: true, inApp: true, teams: false }, priority: 'normal' },
+      { event: 'review-overdue', category: 'Review', label: 'Review Overdue', channels: { email: true, inApp: true, teams: true }, priority: 'high' },
+      // Distribution
+      { event: 'policy-published', category: 'Distribution', label: 'Policy Published', channels: { email: true, inApp: true, teams: true }, priority: 'normal' },
+      { event: 'policy-updated', category: 'Distribution', label: 'Policy Updated', channels: { email: true, inApp: true, teams: false }, priority: 'normal' },
+      { event: 'policy-assigned', category: 'Distribution', label: 'Policy Assigned', channels: { email: true, inApp: true, teams: true }, priority: 'normal' },
+      { event: 'campaign-launched', category: 'Distribution', label: 'Campaign Launched', channels: { email: true, inApp: true, teams: true }, priority: 'normal' },
+      // Compliance
+      { event: 'sla-breach', category: 'Compliance', label: 'SLA Breach', channels: { email: true, inApp: true, teams: true }, priority: 'urgent' },
+      { event: 'violation-found', category: 'Compliance', label: 'DLP Violation', channels: { email: true, inApp: true, teams: true }, priority: 'urgent' },
+      { event: 'policy-expiring', category: 'Compliance', label: 'Policy Expiring', channels: { email: true, inApp: true, teams: false }, priority: 'normal' },
+      // System
+      { event: 'weekly-digest', category: 'System', label: 'Weekly Digest', channels: { email: true, inApp: false, teams: true }, priority: 'low' },
+      { event: 'welcome', category: 'System', label: 'Welcome Email', channels: { email: true, inApp: true, teams: true }, priority: 'normal' },
+      { event: 'role-changed', category: 'System', label: 'Role Changed', channels: { email: true, inApp: true, teams: false }, priority: 'normal' },
+      { event: 'delegation-expiring', category: 'System', label: 'Delegation Expiring', channels: { email: true, inApp: true, teams: false }, priority: 'normal' },
+      { event: 'policy-retired', category: 'System', label: 'Policy Retired', channels: { email: true, inApp: true, teams: false }, priority: 'low' },
+    ];
+
+    // Teams config
+    const teamsEnabled = st._teamsEnabled ?? false;
+    const teamsWebhookUrl = st._teamsWebhookUrl || '';
+    const teamsQuietHours = st._teamsQuietHours ?? true;
+    const teamsQuietStart = st._teamsQuietStart ?? 20;
+    const teamsQuietEnd = st._teamsQuietEnd ?? 7;
+
+    // Category filter
+    const activeCat = st._notifCatFilter || '';
+    const categories = [...new Set(eventConfigs.map(e => e.category))];
+
+    const categoryColors: Record<string, { bg: string; color: string }> = {
+      Acknowledgement: { bg: '#ccfbf1', color: '#0d9488' },
+      Approval: { bg: '#dbeafe', color: '#2563eb' },
+      Quiz: { bg: '#ede9fe', color: '#7c3aed' },
+      Review: { bg: '#fef3c7', color: '#d97706' },
+      Distribution: { bg: '#e0f2fe', color: '#0284c7' },
+      Compliance: { bg: '#fee2e2', color: '#dc2626' },
+      System: { bg: '#f1f5f9', color: '#475569' }
+    };
+
+    const priorityColors: Record<string, string> = { low: '#94a3b8', normal: '#0d9488', high: '#d97706', urgent: '#dc2626' };
+
+    const updateChannel = (index: number, channel: string, value: boolean): void => {
+      const updated = [...eventConfigs];
+      updated[index] = { ...updated[index], channels: { ...updated[index].channels, [channel]: value } };
+      this.setState({ _notifEventConfigs: updated } as any);
+    };
+
+    const filtered = activeCat ? eventConfigs.filter(e => e.category === activeCat) : eventConfigs;
+
+    const handleSaveAll = async (): Promise<void> => {
+      this.setState({ saving: true });
+      try {
+        // Save global notification settings
+        await this.adminConfigService.saveConfigByCategory('Notifications', {
+          [AdminConfigKeys.NOTIFY_NEW_POLICIES]: String(this.state._notifyNewPolicies ?? true),
+          [AdminConfigKeys.NOTIFY_POLICY_UPDATES]: String(this.state._notifyPolicyUpdates ?? true),
+          [AdminConfigKeys.NOTIFY_DAILY_DIGEST]: String(this.state._notifyDailyDigest ?? false),
+          'Notifications.Teams.Enabled': String(teamsEnabled),
+          'Notifications.Teams.WebhookUrl': teamsWebhookUrl,
+          'Notifications.Teams.QuietHours': String(teamsQuietHours),
+          'Notifications.Teams.QuietStart': String(teamsQuietStart),
+          'Notifications.Teams.QuietEnd': String(teamsQuietEnd)
+        });
+        // Save per-event channel configs
+        const eventChannelJson = JSON.stringify(eventConfigs.map(e => ({ event: e.event, channels: e.channels, priority: e.priority })));
+        const list = this.props.sp.web.lists.getByTitle('PM_Configuration');
+        const items = await list.items.filter("ConfigKey eq 'Notifications.EventChannels'").top(1)();
+        if (items.length > 0) {
+          await list.items.getById(items[0].Id).update({ ConfigValue: eventChannelJson });
+        } else {
+          await list.items.add({ Title: 'Event Channel Config', ConfigKey: 'Notifications.EventChannels', ConfigValue: eventChannelJson, Category: 'Notifications', IsActive: true });
+        }
+        void this.dialogManager.showAlert('All notification settings saved.', { title: 'Saved', variant: 'success' });
+      } catch {
+        void this.dialogManager.showAlert('Failed to save notification settings.', { title: 'Error' });
+      }
+      this.setState({ saving: false });
+    };
+
     return (
       <div className={styles.sectionContent}>
-        <Stack tokens={{ childrenGap: 24 }}>
+        <Stack tokens={{ childrenGap: 16 }}>
+          {this.renderSectionIntro(
+            'Notification Settings',
+            'Configure how and when notifications are delivered. Enable or disable individual notification events across Email, In-App, and Microsoft Teams channels.',
+            ['Each notification event can be independently toggled per channel', 'Teams notifications require the Teams integration to be enabled below']
+          )}
+
           <Stack horizontal horizontalAlign="end">
-            <PrimaryButton
-              text="Save Notification Settings"
-              iconProps={{ iconName: 'Save' }}
-              disabled={this.state.saving}
-              onClick={async () => {
-                this.setState({ saving: true });
-                try {
-                  await this.adminConfigService.saveConfigByCategory('Notifications', {
-                    [AdminConfigKeys.NOTIFY_NEW_POLICIES]: String(this.state._notifyNewPolicies ?? true),
-                    [AdminConfigKeys.NOTIFY_POLICY_UPDATES]: String(this.state._notifyPolicyUpdates ?? true),
-                    [AdminConfigKeys.NOTIFY_DAILY_DIGEST]: String(this.state._notifyDailyDigest ?? false)
-                  });
-                  void this.dialogManager.showAlert('Notification settings saved.', { title: 'Saved', variant: 'success' });
-                } catch {
-                  void this.dialogManager.showAlert('Failed to save notification settings.', { title: 'Error' });
-                }
-                this.setState({ saving: false });
-              }}
-            />
+            <PrimaryButton text={this.state.saving ? 'Saving...' : 'Save All Settings'} iconProps={{ iconName: 'Save' }} disabled={this.state.saving} onClick={handleSaveAll} />
           </Stack>
 
-          <div className={styles.section}>
-            <Text variant="large" style={TextStyles.sectionHeader}>Email Notifications</Text>
-            <Toggle label="Email notifications for new policies" checked={this.state._notifyNewPolicies ?? true} onChange={(_, c) => this.setState({ _notifyNewPolicies: !!c } as any)} />
-            <Toggle label="Email notifications for policy updates" checked={this.state._notifyPolicyUpdates ?? true} onChange={(_, c) => this.setState({ _notifyPolicyUpdates: !!c } as any)} />
-            <Toggle label="Daily digest instead of individual emails" checked={this.state._notifyDailyDigest ?? false} onChange={(_, c) => this.setState({ _notifyDailyDigest: !!c } as any)} />
+          {/* Global Toggles */}
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 4, padding: 16 }}>
+            <Text style={{ fontWeight: 600, fontSize: 14, display: 'block', marginBottom: 12 }}>Global Settings</Text>
+            <Stack horizontal tokens={{ childrenGap: 24 }} wrap>
+              <Toggle label="Email for new policies" checked={this.state._notifyNewPolicies ?? true} onText="On" offText="Off" onChange={(_, c) => this.setState({ _notifyNewPolicies: !!c } as any)} />
+              <Toggle label="Email for policy updates" checked={this.state._notifyPolicyUpdates ?? true} onText="On" offText="Off" onChange={(_, c) => this.setState({ _notifyPolicyUpdates: !!c } as any)} />
+              <Toggle label="Daily digest mode" checked={this.state._notifyDailyDigest ?? false} onText="On" offText="Off" onChange={(_, c) => this.setState({ _notifyDailyDigest: !!c } as any)} />
+            </Stack>
           </div>
 
-          <div className={styles.section}>
-            <Text variant="large" style={TextStyles.sectionHeader}>Email Templates</Text>
-            <Text style={{ ...TextStyles.secondary, marginBottom: 12, display: 'block' }}>
-              Configure the content and recipients for each notification type in the Email Templates section.
-            </Text>
-            <Stack horizontal tokens={{ childrenGap: 12 }}>
-              <Text style={TextStyles.secondary}>Active templates: {this.state.emailTemplates.filter(t => t.isActive).length} / {this.state.emailTemplates.length}</Text>
+          {/* Teams Configuration */}
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 4, padding: 16 }}>
+            <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 10 }} style={{ marginBottom: 12 }}>
+              <Icon iconName="TeamsLogo" styles={{ root: { fontSize: 20, color: '#6264a7' } }} />
+              <Text style={{ fontWeight: 600, fontSize: 14 }}>Microsoft Teams Integration</Text>
             </Stack>
-            <DefaultButton
-              text="Configure Email Templates"
-              iconProps={{ iconName: 'MailOptions' }}
-              styles={{ root: { marginTop: 12 } }}
-              onClick={() => this.setState({ activeSection: 'emailTemplates' })}
-            />
+            <Stack tokens={{ childrenGap: 12 }}>
+              <Toggle label="Enable Teams notifications" checked={teamsEnabled} onText="Enabled" offText="Disabled"
+                onChange={(_, c) => this.setState({ _teamsEnabled: !!c } as any)} />
+              {teamsEnabled && (
+                <>
+                  <TextField label="Teams Channel Webhook URL" placeholder="https://outlook.office.com/webhook/..." value={teamsWebhookUrl}
+                    onChange={(_, v) => this.setState({ _teamsWebhookUrl: v || '' } as any)}
+                    description="Incoming Webhook URL for channel announcements (policy published, campaigns, SLA breaches)" />
+                  <Stack horizontal tokens={{ childrenGap: 16 }} verticalAlign="end">
+                    <Toggle label="Respect quiet hours" checked={teamsQuietHours} onText="Yes" offText="No"
+                      onChange={(_, c) => this.setState({ _teamsQuietHours: !!c } as any)} />
+                    {teamsQuietHours && (
+                      <>
+                        <Dropdown label="Quiet start" selectedKey={String(teamsQuietStart)} styles={{ root: { width: 100 } }}
+                          options={Array.from({ length: 24 }, (_, i) => ({ key: String(i), text: `${i}:00` }))}
+                          onChange={(_, opt) => opt && this.setState({ _teamsQuietStart: Number(opt.key) } as any)} />
+                        <Dropdown label="Quiet end" selectedKey={String(teamsQuietEnd)} styles={{ root: { width: 100 } }}
+                          options={Array.from({ length: 24 }, (_, i) => ({ key: String(i), text: `${i}:00` }))}
+                          onChange={(_, opt) => opt && this.setState({ _teamsQuietEnd: Number(opt.key) } as any)} />
+                      </>
+                    )}
+                  </Stack>
+                  <MessageBar messageBarType={MessageBarType.info}>
+                    Adaptive Cards with action buttons (Acknowledge, Approve, Reject) are sent directly to users in Teams. Channel webhook posts are used for broadcast announcements.
+                  </MessageBar>
+                </>
+              )}
+            </Stack>
+          </div>
+
+          {/* Category Filter Pills */}
+          <Stack horizontal tokens={{ childrenGap: 6 }} wrap>
+            <span onClick={() => this.setState({ _notifCatFilter: '' } as any)} style={{
+              padding: '4px 12px', borderRadius: 4, fontSize: 12, fontWeight: 500, cursor: 'pointer',
+              background: !activeCat ? '#0d9488' : '#f8fafc', color: !activeCat ? '#fff' : '#475569',
+              border: `1px solid ${!activeCat ? '#0d9488' : '#e2e8f0'}`
+            }}>All ({eventConfigs.length})</span>
+            {categories.map(cat => {
+              const colors = categoryColors[cat] || categoryColors.System;
+              const count = eventConfigs.filter(e => e.category === cat).length;
+              const isActive = activeCat === cat;
+              return (
+                <span key={cat} onClick={() => this.setState({ _notifCatFilter: isActive ? '' : cat } as any)} style={{
+                  padding: '4px 12px', borderRadius: 4, fontSize: 12, fontWeight: 500, cursor: 'pointer',
+                  background: isActive ? colors.color : colors.bg, color: isActive ? '#fff' : colors.color,
+                  border: `1px solid ${isActive ? colors.color : colors.color}30`
+                }}>{cat} ({count})</span>
+              );
+            })}
+          </Stack>
+
+          {/* Per-Event Channel Grid */}
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 4, overflow: 'hidden' }}>
+            {/* Header */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 200px 80px 80px 80px 70px', padding: '10px 16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', gap: 8 }}>
+              <Text style={{ fontWeight: 600, fontSize: 12, color: '#475569' }}>Event</Text>
+              <Text style={{ fontWeight: 600, fontSize: 12, color: '#475569' }}>Category</Text>
+              <Text style={{ fontWeight: 600, fontSize: 12, color: '#475569', textAlign: 'center' }}>Email</Text>
+              <Text style={{ fontWeight: 600, fontSize: 12, color: '#475569', textAlign: 'center' }}>In-App</Text>
+              <Text style={{ fontWeight: 600, fontSize: 12, color: '#475569', textAlign: 'center' }}>Teams</Text>
+              <Text style={{ fontWeight: 600, fontSize: 12, color: '#475569', textAlign: 'center' }}>Priority</Text>
+            </div>
+            {/* Rows */}
+            {filtered.map((config, idx) => {
+              const globalIdx = eventConfigs.findIndex(e => e.event === config.event);
+              const catColor = categoryColors[config.category] || categoryColors.System;
+              const priColor = priorityColors[config.priority] || '#94a3b8';
+              return (
+                <div key={config.event} style={{
+                  display: 'grid', gridTemplateColumns: '1fr 200px 80px 80px 80px 70px',
+                  padding: '8px 16px', borderBottom: '1px solid #f1f5f9', gap: 8,
+                  alignItems: 'center',
+                  background: idx % 2 === 0 ? '#fff' : '#fafafa'
+                }}>
+                  <Text style={{ fontSize: 13, fontWeight: 500, color: '#0f172a' }}>{config.label}</Text>
+                  <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 3, background: catColor.bg, color: catColor.color, width: 'fit-content' }}>
+                    {config.category}
+                  </span>
+                  <div style={{ display: 'flex', justifyContent: 'center' }}>
+                    <Toggle checked={config.channels.email} onChange={(_, c) => updateChannel(globalIdx, 'email', !!c)}
+                      styles={{ root: { margin: 0 }, container: { justifyContent: 'center' } }} />
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'center' }}>
+                    <Toggle checked={config.channels.inApp} onChange={(_, c) => updateChannel(globalIdx, 'inApp', !!c)}
+                      styles={{ root: { margin: 0 }, container: { justifyContent: 'center' } }} />
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'center' }}>
+                    <Toggle checked={config.channels.teams} onChange={(_, c) => updateChannel(globalIdx, 'teams', !!c)}
+                      styles={{ root: { margin: 0 }, container: { justifyContent: 'center' } }} disabled={!teamsEnabled} />
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'center' }}>
+                    <span style={{ fontSize: 9, fontWeight: 600, padding: '2px 6px', borderRadius: 3, background: `${priColor}18`, color: priColor, textTransform: 'uppercase' }}>
+                      {config.priority}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Email Templates Link */}
+          <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 4, padding: 16 }}>
+            <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
+              <div>
+                <Text style={{ fontWeight: 600, fontSize: 13, display: 'block' }}>Email Templates</Text>
+                <Text style={{ fontSize: 12, color: '#64748b' }}>
+                  Active templates: {this.state.emailTemplates.filter(t => t.isActive).length} / {this.state.emailTemplates.length}
+                </Text>
+              </div>
+              <DefaultButton text="Configure Email Templates" iconProps={{ iconName: 'MailOptions' }}
+                onClick={() => this.setState({ activeSection: 'emailTemplates' })} styles={{ root: { borderRadius: 4 } }} />
+            </Stack>
           </div>
         </Stack>
       </div>
@@ -1233,363 +2026,614 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
 
   private renderReviewersContent(): JSX.Element {
     const st = this.state as any;
+    const groups: Array<{ id: number; title: string; description: string; userCount: number; ownerTitle: string }> = st._reviewerGroups || [];
+    const groupsLoading = st._reviewerGroupsLoading || false;
+    const showCreateForm = st._showReviewerCreateForm || false;
+    const newGroupName: string = st._reviewerNewGroupName || '';
+    const newGroupDesc: string = st._reviewerNewGroupDesc || '';
+    const creatingGroup = st._reviewerCreatingGroup || false;
+    const groupsMsg: string = st._reviewerGroupsMsg || '';
+    const groupsError: string = st._reviewerGroupsError || '';
 
-    const groups: any[] = st._spGroups || [];
-    const groupsLoading: boolean = st._groupsLoading || false;
-    const selectedGroup: any = st._selectedGroup || null;
-    const groupMembers: any[] = st._groupMembers || [];
-    const membersLoading: boolean = st._membersLoading || false;
-    const showAddMemberPanel: boolean = st._showAddMemberPanel || false;
-    const showCreateGroupPanel: boolean = st._showCreateGroupPanel || false;
-    const newGroupName: string = st._newGroupName || '';
-    const newGroupDesc: string = st._newGroupDesc || '';
-    const reviewerMessage: string = st._reviewerMessage || '';
-    const selectedLoginName: string = st._selectedLoginName || '';
-
-    // Load SP groups on first render
-    const loadGroups = async (): Promise<void> => {
-      this.setState({ _groupsLoading: true } as any);
-      try {
-        const result = await this.userManagementService.getSiteGroups();
-        this.setState({ _spGroups: result, _groupsLoading: false } as any);
-      } catch {
-        this.setState({ _spGroups: [], _groupsLoading: false } as any);
-      }
-    };
-
-    const loadMembers = async (groupId: number): Promise<void> => {
-      this.setState({ _membersLoading: true } as any);
-      try {
-        const members = await this.userManagementService.getGroupMembers(groupId);
-        this.setState({ _groupMembers: members, _membersLoading: false } as any);
-      } catch {
-        this.setState({ _groupMembers: [], _membersLoading: false } as any);
-      }
-    };
-
-    if (!st._reviewersLoaded) {
-      this.setState({ _reviewersLoaded: true } as any);
-      void loadGroups();
+    // Load groups on first render
+    if (!st._reviewersLoaded && !groupsLoading) {
+      this.setState({ _reviewersLoaded: true, _reviewerGroupsLoading: true } as any);
+      this.props.sp.web.siteGroups
+        .select('Id', 'Title', 'Description', 'OwnerTitle')()
+        .then(async (allGroups: any[]) => {
+          const mapped = await Promise.all(allGroups.map(async (g: any) => {
+            let userCount = 0;
+            try { const users = await this.props.sp.web.siteGroups.getById(g.Id).users(); userCount = users.length; } catch { /* ignore */ }
+            return { id: g.Id, title: g.Title, description: g.Description || '', ownerTitle: g.OwnerTitle || '', userCount };
+          }));
+          this.setState({ _reviewerGroups: mapped, _reviewerGroupsLoading: false } as any);
+        })
+        .catch(() => { this.setState({ _reviewerGroupsLoading: false, _reviewerGroupsError: 'Failed to load groups' } as any); });
     }
 
-    const handleRemoveMember = async (userId: number): Promise<void> => {
-      if (!selectedGroup) return;
-      try {
-        await this.userManagementService.removeUserFromGroup(selectedGroup.Id, userId);
-        this.setState({ _reviewerMessage: 'Member removed successfully' } as any);
-        setTimeout(() => this.setState({ _reviewerMessage: '' } as any), 3000);
-        void loadMembers(selectedGroup.Id);
-      } catch {
-        this.setState({ _reviewerMessage: 'Failed to remove member' } as any);
-      }
-    };
-
-    const handleAddMember = async (): Promise<void> => {
-      if (!selectedGroup || !selectedLoginName) return;
-      try {
-        await this.userManagementService.addUserToGroup(selectedGroup.Id, selectedLoginName);
-        this.setState({ _showAddMemberPanel: false, _selectedLoginName: '', _reviewerMessage: 'Member added successfully' } as any);
-        setTimeout(() => this.setState({ _reviewerMessage: '' } as any), 3000);
-        void loadMembers(selectedGroup.Id);
-      } catch {
-        this.setState({ _reviewerMessage: 'Failed to add member. Ensure the login name is correct.' } as any);
-      }
+    const reloadGroups = (): void => {
+      this.setState({ _reviewerGroupsLoading: true } as any);
+      this.props.sp.web.siteGroups
+        .select('Id', 'Title', 'Description', 'OwnerTitle')()
+        .then(async (allGroups: any[]) => {
+          const mapped = await Promise.all(allGroups.map(async (g: any) => {
+            let userCount = 0;
+            try { const users = await this.props.sp.web.siteGroups.getById(g.Id).users(); userCount = users.length; } catch { /* ignore */ }
+            return { id: g.Id, title: g.Title, description: g.Description || '', ownerTitle: g.OwnerTitle || '', userCount };
+          }));
+          this.setState({ _reviewerGroups: mapped, _reviewerGroupsLoading: false } as any);
+        })
+        .catch(() => { this.setState({ _reviewerGroupsLoading: false } as any); });
     };
 
     const handleCreateGroup = async (): Promise<void> => {
-      if (!newGroupName) return;
+      if (!newGroupName.trim()) return;
+      this.setState({ _reviewerCreatingGroup: true } as any);
       try {
-        await this.userManagementService.createGroup(newGroupName, newGroupDesc);
-        this.setState({ _showCreateGroupPanel: false, _newGroupName: '', _newGroupDesc: '', _reviewerMessage: `Group "${newGroupName}" created` } as any);
-        setTimeout(() => this.setState({ _reviewerMessage: '' } as any), 3000);
-        void loadGroups();
-      } catch {
-        this.setState({ _reviewerMessage: 'Failed to create group' } as any);
-      }
-    };
-
-    const groupColumns: IColumn[] = [
-      { key: 'title', name: 'Group Name', fieldName: 'Title', minWidth: 180, maxWidth: 280, isResizable: true, onRender: (item: any) => (
-        <Text style={TextStyles.clickableText}
-          onClick={() => {
-            this.setState({ _selectedGroup: item } as any);
-            void loadMembers(item.Id);
-          }}
-        >
-          {item.Title}
-        </Text>
-      )},
-      { key: 'description', name: 'Description', fieldName: 'Description', minWidth: 200, maxWidth: 350, isResizable: true, onRender: (item: any) => (
-        <Text style={{ color: Colors.textTertiary, fontSize: 12 }}>{item.Description || '—'}</Text>
-      )},
-      { key: 'owner', name: 'Owner', fieldName: 'OwnerTitle', minWidth: 120, maxWidth: 180 },
-    ];
-
-    const memberColumns: IColumn[] = [
-      { key: 'title', name: 'Name', fieldName: 'Title', minWidth: 150, maxWidth: 220 },
-      { key: 'email', name: 'Email', fieldName: 'Email', minWidth: 180, maxWidth: 280, onRender: (item: any) => (
-        <Text style={TextStyles.tertiary}>{item.Email || '—'}</Text>
-      )},
-      { key: 'admin', name: 'Site Admin', fieldName: 'IsSiteAdmin', minWidth: 80, maxWidth: 80, onRender: (item: any) => (
-        item.IsSiteAdmin ? <Icon iconName="CheckMark" style={{ color: '#059669' }} /> : null
-      )},
-      { key: 'actions', name: '', minWidth: 50, maxWidth: 50, onRender: (item: any) => (
-        <IconButton
-          iconProps={{ iconName: 'Delete' }}
-          title="Remove from group"
-          ariaLabel="Remove"
-          styles={{ root: { height: 28, color: '#dc2626' }, rootHovered: { color: '#991b1b' } }}
-          onClick={() => handleRemoveMember(item.Id)}
-        />
-      )},
-    ];
-
-    return (
-      <div className={styles.sectionContent}>
-        <Stack tokens={{ childrenGap: 20 }}>
-          {/* Info bar */}
-          <MessageBar messageBarType={MessageBarType.info}>
-            Reviewers and approvers are managed via SharePoint security groups. Select a group to view and manage its members, or create a new group for policy workflows.
-          </MessageBar>
-
-          {reviewerMessage && (
-            <MessageBar
-              messageBarType={reviewerMessage.includes('Failed') ? MessageBarType.error : MessageBarType.success}
-              onDismiss={() => this.setState({ _reviewerMessage: '' } as any)}
-            >
-              {reviewerMessage}
-            </MessageBar>
-          )}
-
-          {/* Group actions */}
-          <Stack horizontal tokens={{ childrenGap: 8 }}>
-            <PrimaryButton iconProps={{ iconName: 'AddGroup' }} text="Create Group" onClick={() => this.setState({ _showCreateGroupPanel: true } as any)} />
-            <DefaultButton iconProps={{ iconName: 'Sync' }} text="Refresh" onClick={loadGroups} disabled={groupsLoading} />
-            <DefaultButton iconProps={{ iconName: 'Group' }} text="Open SharePoint Groups" onClick={() => this.handleManageReviewers()} />
-          </Stack>
-
-          {/* Group list */}
-          <Text variant="mediumPlus" style={TextStyles.semiBold}>SharePoint Groups ({groups.length})</Text>
-          {groupsLoading ? (
-            <ProgressIndicator label="Loading groups..." />
-          ) : groups.length === 0 ? (
-            <MessageBar>No SharePoint groups found on this site.</MessageBar>
-          ) : (
-            <DetailsList
-              items={groups}
-              columns={groupColumns}
-              layoutMode={DetailsListLayoutMode.justified}
-              selectionMode={SelectionMode.none}
-              compact={true}
-            />
-          )}
-
-          {/* Selected group members */}
-          {selectedGroup && (
-            <>
-              <Separator />
-              <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
-                <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
-                  <Icon iconName="Group" style={IconStyles.mediumTeal} />
-                  <Text variant="mediumPlus" style={TextStyles.semiBold}>{selectedGroup.Title}</Text>
-                  <Text style={TextStyles.tertiary}>({groupMembers.length} members)</Text>
-                </Stack>
-                <PrimaryButton
-                  iconProps={{ iconName: 'AddFriend' }}
-                  text="Add Member"
-                  onClick={() => this.setState({ _showAddMemberPanel: true } as any)}
-                />
-              </Stack>
-
-              {membersLoading ? (
-                <ProgressIndicator label="Loading members..." />
-              ) : groupMembers.length === 0 ? (
-                <MessageBar messageBarType={MessageBarType.info}>
-                  This group has no members. Use "Add Member" to add users.
-                </MessageBar>
-              ) : (
-                <DetailsList
-                  items={groupMembers}
-                  columns={memberColumns}
-                  layoutMode={DetailsListLayoutMode.justified}
-                  selectionMode={SelectionMode.none}
-                  compact={true}
-                />
-              )}
-            </>
-          )}
-        </Stack>
-
-        {/* Add Member Panel */}
-        <StyledPanel
-          isOpen={showAddMemberPanel}
-          onDismiss={() => this.setState({ _showAddMemberPanel: false, _selectedLoginName: '' } as any)}
-          headerText={`Add Member to ${selectedGroup?.Title || 'Group'}`}
-          type={PanelType.smallFixedFar}
-          onRenderFooterContent={() => (
-            <Stack horizontal tokens={{ childrenGap: 8 }} style={LayoutStyles.paddingVertical16}>
-              <PrimaryButton text="Add to Group" disabled={!selectedLoginName} onClick={handleAddMember} />
-              <DefaultButton text="Cancel" onClick={() => this.setState({ _showAddMemberPanel: false } as any)} />
-            </Stack>
-          )}
-          isFooterAtBottom={true}
-        >
-          <Stack tokens={{ childrenGap: 16 }} style={LayoutStyles.paddingVertical16}>
-            <MessageBar messageBarType={MessageBarType.info}>
-              Search for a user by name or email address to add them to this group.
-            </MessageBar>
-            <PeoplePicker
-              context={this.props.context as any}
-              titleText="Search for user"
-              personSelectionLimit={1}
-              groupName=""
-              required={true}
-              showtooltip={true}
-              showHiddenInUI={false}
-              ensureUser={true}
-              principalTypes={[PrincipalType.User]}
-              resolveDelay={300}
-              onChange={(items: any[]) => {
-                if (items && items.length > 0) {
-                  this.setState({ _selectedLoginName: items[0].loginName || items[0].secondaryText || '' } as any);
-                } else {
-                  this.setState({ _selectedLoginName: '' } as any);
-                }
-              }}
-              placeholder="Type a name or email..."
-              webAbsoluteUrl={this.props.context.pageContext.web.absoluteUrl}
-            />
-          </Stack>
-        </StyledPanel>
-
-        {/* Create Group Panel */}
-        <StyledPanel
-          isOpen={showCreateGroupPanel}
-          onDismiss={() => this.setState({ _showCreateGroupPanel: false } as any)}
-          headerText="Create SharePoint Group"
-          type={PanelType.smallFixedFar}
-          onRenderFooterContent={() => (
-            <Stack horizontal tokens={{ childrenGap: 8 }} style={LayoutStyles.paddingVertical16}>
-              <PrimaryButton text="Create Group" disabled={!newGroupName} onClick={handleCreateGroup} />
-              <DefaultButton text="Cancel" onClick={() => this.setState({ _showCreateGroupPanel: false } as any)} />
-            </Stack>
-          )}
-          isFooterAtBottom={true}
-        >
-          <Stack tokens={{ childrenGap: 16 }} style={LayoutStyles.paddingVertical16}>
-            <TextField
-              label="Group Name"
-              placeholder="PM_PolicyReviewers"
-              value={newGroupName}
-              onChange={(_, val) => this.setState({ _newGroupName: val || '' } as any)}
-              required
-            />
-            <TextField
-              label="Description"
-              placeholder="Users who can review and approve policies"
-              value={newGroupDesc}
-              onChange={(_, val) => this.setState({ _newGroupDesc: val || '' } as any)}
-              multiline
-              rows={3}
-            />
-            <MessageBar messageBarType={MessageBarType.info}>
-              Tip: Use "PM_" prefix for Policy Manager groups to keep them organized (e.g., PM_PolicyReviewers, PM_PolicyApprovers).
-            </MessageBar>
-          </Stack>
-        </StyledPanel>
-      </div>
-    );
-  }
-
-  private renderAuditContent(): JSX.Element {
-    const auditEntries = this.state._auditEntries || [];
-    const auditLoading = this.state._auditLoading || false;
-
-    const loadAuditLog = async (): Promise<void> => {
-      this.setState({ _auditLoading: true, _auditError: '' } as any);
-      try {
-        // Try direct SP list query first (more reliable than service import)
-        const items = await this.props.sp.web.lists
-          .getByTitle('PM_PolicyAuditLog')
-          .items
-          .orderBy('Created', false)
-          .select('Id', 'Title', 'EventType', 'EntityType', 'EntityName', 'PolicyId', 'Description', 'PerformedByName', 'PerformedByEmail', 'Severity', 'ComplianceRelevant', 'Created')
-          .top(100)();
-
-        // Map Created → Timestamp for display
-        const mapped = items.map((item: any) => ({
-          ...item,
-          Timestamp: item.Created || item.EventTimestamp
-        }));
-
-        this.setState({ _auditEntries: mapped, _auditLoading: false } as any);
+        await this.props.sp.web.siteGroups.add({ Title: newGroupName, Description: newGroupDesc });
+        this.setState({ _showReviewerCreateForm: false, _reviewerNewGroupName: '', _reviewerNewGroupDesc: '', _reviewerCreatingGroup: false, _reviewerGroupsMsg: `Group "${newGroupName}" created` } as any);
+        reloadGroups();
       } catch (err: any) {
-        console.error('[PolicyAdmin] Audit log load failed:', err);
-        // Fallback: try the service (may have different field mapping)
-        try {
-          const { PolicyAuditService } = require('../../../services/PolicyAuditService');
-          const auditService = new PolicyAuditService(this.props.sp);
-          const result = await auditService.queryAuditLogs({}, 1, 100);
-          this.setState({ _auditEntries: result.entries, _auditLoading: false } as any);
-        } catch (serviceErr: any) {
-          const errorMsg = serviceErr?.message || err?.message || 'Failed to load audit log';
-          const isListMissing = errorMsg.includes('does not exist') || errorMsg.includes('404') || errorMsg.includes('list');
-          this.setState({
-            _auditEntries: [],
-            _auditLoading: false,
-            _auditError: isListMissing
-              ? 'The PM_PolicyAuditLog list has not been provisioned. Please run the provisioning script (Create-PolicyManagementLists.ps1) to create it.'
-              : `Failed to load audit log: ${errorMsg}`
-          } as any);
-        }
+        this.setState({ _reviewerCreatingGroup: false, _reviewerGroupsError: err.message || 'Failed to create group' } as any);
       }
     };
-
-    // Auto-load on first render of this section
-    if (!this.state._auditLoaded) {
-      this.setState({ _auditLoaded: true } as any);
-      void loadAuditLog();
-    }
-
-    const columns: IColumn[] = [
-      { key: 'date', name: 'Date', fieldName: 'Timestamp', minWidth: 140, maxWidth: 160, isResizable: true, onRender: (item: any) => <span>{item.Timestamp ? new Date(item.Timestamp).toLocaleString() : ''}</span> },
-      { key: 'user', name: 'User', fieldName: 'PerformedByName', minWidth: 120, maxWidth: 160, isResizable: true },
-      { key: 'action', name: 'Action', fieldName: 'EventType', minWidth: 120, maxWidth: 160, isResizable: true },
-      { key: 'entity', name: 'Entity', fieldName: 'EntityName', minWidth: 150, maxWidth: 200, isResizable: true },
-      { key: 'details', name: 'Details', fieldName: 'Description', minWidth: 200, isResizable: true }
-    ];
 
     return (
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 16 }}>
           <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
-            <Text variant="mediumPlus" style={TextStyles.semiBold}>Audit Log ({auditEntries.length} entries)</Text>
-            <Stack horizontal tokens={{ childrenGap: 8 }}>
-              <DefaultButton text="Refresh" iconProps={{ iconName: 'Sync' }} onClick={loadAuditLog} disabled={auditLoading} />
-              <DefaultButton text="Export Log" iconProps={{ iconName: 'Download' }} />
-            </Stack>
-          </Stack>
-          {(this.state as any)._auditError && (
-            <MessageBar messageBarType={MessageBarType.error} isMultiline>
-              {(this.state as any)._auditError}
-            </MessageBar>
-          )}
-          {auditLoading ? (
-            <MessageBar>Loading audit log entries...</MessageBar>
-          ) : auditEntries.length === 0 && !(this.state as any)._auditError ? (
-            <MessageBar messageBarType={MessageBarType.info}>
-              No audit log entries found. Entries will appear here as policies are created, modified, and acknowledged.
-            </MessageBar>
-          ) : (
-            <DetailsList
-              items={auditEntries}
-              columns={columns}
-              layoutMode={DetailsListLayoutMode.justified}
-              selectionMode={SelectionMode.none}
-              compact={true}
+            <div>
+              <Text variant="xLarge" style={{ ...TextStyles.bold, color: Colors.textDark, display: 'block' }}>Reviewers & Approvers</Text>
+              <Text variant="small" style={TextStyles.secondary}>Manage SharePoint groups for policy review and approval workflows.</Text>
+            </div>
+            <PrimaryButton
+              text="+ Create Group"
+              iconProps={{ iconName: 'AddGroup' }}
+              onClick={() => this.setState({ _showReviewerCreateForm: !showCreateForm } as any)}
+              styles={{ root: { background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
             />
+          </Stack>
+
+          {groupsMsg && (
+            <MessageBar messageBarType={MessageBarType.success} onDismiss={() => this.setState({ _reviewerGroupsMsg: '' } as any)}>{groupsMsg}</MessageBar>
+          )}
+          {groupsError && (
+            <MessageBar messageBarType={MessageBarType.error} onDismiss={() => this.setState({ _reviewerGroupsError: '' } as any)}>{groupsError}</MessageBar>
+          )}
+
+          {/* Create Group Form */}
+          {showCreateForm && (
+            <div style={{
+              background: Colors.tealLight, border: `1px solid ${Colors.tealBorder}`, borderRadius: 4,
+              padding: 20, marginBottom: 16
+            }}>
+              <Text style={{ fontWeight: 700, fontSize: 15, display: 'block', marginBottom: 12, color: Colors.textDark }}>
+                Create New Group
+              </Text>
+              <Stack tokens={{ childrenGap: 12 }}>
+                <TextField label="Group Name" required placeholder="e.g., PM_PolicyReviewers" value={newGroupName} onChange={(_, v) => this.setState({ _reviewerNewGroupName: v || '' } as any)} />
+                <TextField label="Description" placeholder="Users who can review and approve policies" value={newGroupDesc} onChange={(_, v) => this.setState({ _reviewerNewGroupDesc: v || '' } as any)} multiline rows={2} />
+                <Stack horizontal tokens={{ childrenGap: 8 }}>
+                  <PrimaryButton text={creatingGroup ? 'Creating...' : 'Create Group'} onClick={handleCreateGroup} disabled={!newGroupName.trim() || creatingGroup}
+                    styles={{ root: { background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }} />
+                  <DefaultButton text="Cancel" onClick={() => this.setState({ _showReviewerCreateForm: false, _reviewerNewGroupName: '', _reviewerNewGroupDesc: '' } as any)} />
+                </Stack>
+              </Stack>
+            </div>
+          )}
+
+          {/* Groups List */}
+          {groupsLoading ? (
+            <Spinner label="Loading groups..." />
+          ) : groups.length === 0 ? (
+            <Text style={{ color: Colors.textTertiary }}>No security groups found.</Text>
+          ) : (
+            <div>
+              <Text style={{ fontSize: 12, color: Colors.slateLight, marginBottom: 8, display: 'block' }}>{groups.length} groups on this site</Text>
+              <Stack tokens={{ childrenGap: 4 }}>
+                {groups.map(group => {
+                  const expandedGroupId = (st as any)._expandedGroupId;
+                  const isExpanded = expandedGroupId === group.id;
+                  const groupMembers: Array<{ id: number; title: string; email: string; loginName: string }> = (st as any)[`_groupMembers_${group.id}`] || [];
+                  const membersLoading = (st as any)[`_groupMembersLoading_${group.id}`] || false;
+                  const addingUser = (st as any)._addingUserToGroup || false;
+
+                  const handleExpand = async (): Promise<void> => {
+                    if (isExpanded) { this.setState({ _expandedGroupId: null } as any); return; }
+                    this.setState({ _expandedGroupId: group.id, [`_groupMembersLoading_${group.id}`]: true } as any);
+                    try {
+                      const users = await this.props.sp.web.siteGroups.getById(group.id).users();
+                      this.setState({
+                        [`_groupMembers_${group.id}`]: users.map((u: any) => ({ id: u.Id, title: u.Title, email: u.Email || '', loginName: u.LoginName })),
+                        [`_groupMembersLoading_${group.id}`]: false
+                      } as any);
+                    } catch { this.setState({ [`_groupMembersLoading_${group.id}`]: false } as any); }
+                  };
+
+                  const handleAddUser = async (): Promise<void> => {
+                    const email = (st as any)._addUserEmail || '';
+                    if (!email.trim()) return;
+                    this.setState({ _addingUserToGroup: true } as any);
+                    try {
+                      const user = await this.props.sp.web.ensureUser(email);
+                      await this.props.sp.web.siteGroups.getById(group.id).users.add(user.data.LoginName);
+                      const users = await this.props.sp.web.siteGroups.getById(group.id).users();
+                      const updatedGroups = groups.map(g => g.id === group.id ? { ...g, userCount: users.length } : g);
+                      this.setState({
+                        [`_groupMembers_${group.id}`]: users.map((u: any) => ({ id: u.Id, title: u.Title, email: u.Email || '', loginName: u.LoginName })),
+                        _reviewerGroups: updatedGroups, _addingUserToGroup: false, _addUserEmail: '',
+                        _reviewerGroupsMsg: `Added "${user.data.Title}" to ${group.title}`
+                      } as any);
+                    } catch (err: any) {
+                      this.setState({ _addingUserToGroup: false, _reviewerGroupsError: err.message || 'Failed to add user' } as any);
+                    }
+                  };
+
+                  const handleRemoveUser = async (userId: number, displayName: string): Promise<void> => {
+                    try {
+                      await this.props.sp.web.siteGroups.getById(group.id).users.removeById(userId);
+                      const users = await this.props.sp.web.siteGroups.getById(group.id).users();
+                      const updatedGroups = groups.map(g => g.id === group.id ? { ...g, userCount: users.length } : g);
+                      this.setState({
+                        [`_groupMembers_${group.id}`]: users.map((u: any) => ({ id: u.Id, title: u.Title, email: u.Email || '', loginName: u.LoginName })),
+                        _reviewerGroups: updatedGroups,
+                        _reviewerGroupsMsg: `Removed "${displayName}" from ${group.title}`
+                      } as any);
+                    } catch (err: any) {
+                      this.setState({ _reviewerGroupsError: err.message || 'Failed to remove user' } as any);
+                    }
+                  };
+
+                  return (
+                    <div key={group.id} style={{ border: `1px solid ${isExpanded ? Colors.tealPrimary : Colors.borderLight}`, borderRadius: 4, background: '#fff', overflow: 'hidden' }}>
+                      <div role="button" tabIndex={0} onClick={handleExpand}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleExpand(); } }}
+                        style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', cursor: 'pointer', background: isExpanded ? Colors.tealLight : '#fff' }}>
+                        <Icon iconName={isExpanded ? 'ChevronDown' : 'ChevronRight'} styles={{ root: { fontSize: 12, color: Colors.slateLight } }} />
+                        <Icon iconName="Group" styles={{ root: { fontSize: 18, color: Colors.tealPrimary } }} />
+                        <div style={{ flex: 1 }}>
+                          <Text style={{ fontWeight: 600, color: Colors.textDark, display: 'block' }}>{group.title}</Text>
+                          {group.description && <Text style={{ fontSize: 11, color: Colors.textTertiary }}>{group.description}</Text>}
+                        </div>
+                        <Text style={{ fontSize: 12, color: Colors.tealPrimary, fontWeight: 600 }}>{group.userCount}</Text>
+                        <Text style={{ fontSize: 11, color: Colors.slateLight }}>members</Text>
+                        <Text style={{ fontSize: 11, color: Colors.slateLight }}>Owner: {group.ownerTitle}</Text>
+                      </div>
+
+                      {isExpanded && (
+                        <div style={{ borderTop: `1px solid ${Colors.borderLight}`, padding: '12px 16px 16px 48px' }}>
+                          <Stack horizontal tokens={{ childrenGap: 8 }} verticalAlign="end" style={{ marginBottom: 12 }}>
+                            <Stack.Item grow>
+                              <TextField placeholder="Enter email address to add..." value={(st as any)._addUserEmail || ''}
+                                onChange={(_, v) => this.setState({ _addUserEmail: v || '' } as any)}
+                                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddUser(); } }} />
+                            </Stack.Item>
+                            <PrimaryButton text={addingUser ? 'Adding...' : 'Add User'} iconProps={{ iconName: 'AddFriend' }}
+                              onClick={handleAddUser} disabled={!((st as any)._addUserEmail || '').trim() || addingUser}
+                              styles={{ root: { background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }} />
+                          </Stack>
+
+                          {membersLoading ? <Spinner size={SpinnerSize.small} label="Loading members..." /> :
+                            groupMembers.length === 0 ? <Text style={{ color: Colors.textTertiary, fontSize: 12 }}>No members in this group</Text> : (
+                              <Stack tokens={{ childrenGap: 2 }}>
+                                {groupMembers.map(member => (
+                                  <Stack key={member.id} horizontal verticalAlign="center" tokens={{ childrenGap: 10 }}
+                                    style={{ padding: '6px 8px', borderRadius: 4, background: '#f8fafc' }}>
+                                    <Icon iconName="Contact" styles={{ root: { fontSize: 14, color: Colors.slateLight } }} />
+                                    <Text style={{ fontWeight: 500, fontSize: 13, flex: 1 }}>{member.title}</Text>
+                                    <Text style={{ fontSize: 11, color: Colors.slateLight, flex: 1 }}>{member.email}</Text>
+                                    <IconButton iconProps={{ iconName: 'Cancel' }} title="Remove" ariaLabel="Remove user"
+                                      onClick={() => handleRemoveUser(member.id, member.title)}
+                                      styles={{ root: { height: 24, width: 24 }, icon: { fontSize: 12, color: '#dc2626' } }} />
+                                  </Stack>
+                                ))}
+                              </Stack>
+                            )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </Stack>
+            </div>
           )}
         </Stack>
+      </div>
+    );
+  }
+
+  private renderAuditContent(): JSX.Element {
+    const st = this.state as any;
+    const auditEntries: any[] = st._auditEntries || [];
+    const auditLoading: boolean = st._auditLoading || false;
+    const auditError: string = st._auditError || '';
+    const entityFilter: string = st._auditEntityFilter || 'All';
+    const actionFilter: string = st._auditActionFilter || 'All';
+    const expandedId: number | null = st._auditExpandedId || null;
+
+    const ENTITY_TYPES = ['All', 'Policy', 'PolicyVersion', 'Quiz', 'Approval', 'Distribution', 'Acknowledgement', 'SecureLibrary', 'User', 'Config'];
+    const ACTION_TYPES = ['All', 'Created', 'Published', 'Updated', 'Archived', 'Approved', 'Rejected', 'Acknowledged', 'Accessed', 'Downloaded', 'Shared', 'Delegated', 'Reviewed', 'Deleted'];
+
+    const actionColors: Record<string, string> = {
+      Created: '#059669', Published: '#0d9488', Updated: '#2563eb', Archived: '#64748b',
+      Approved: '#059669', Rejected: '#dc2626', Acknowledged: '#059669', Accessed: '#6366f1',
+      Downloaded: '#d97706', Shared: '#8b5cf6', Delegated: '#0284c7', Reviewed: '#0d9488', Deleted: '#dc2626'
+    };
+
+    const loadAuditLog = async (): Promise<void> => {
+      this.setState({ _auditLoading: true, _auditError: '' } as any);
+      try {
+        const items = await this.props.sp.web.lists
+          .getByTitle('PM_PolicyAuditLog')
+          .items.orderBy('Created', false)
+          .select('Id', 'Title', 'EventType', 'EntityType', 'EntityName', 'PolicyId', 'Description', 'PerformedByName', 'PerformedByEmail', 'Severity', 'ComplianceRelevant', 'Created')
+          .top(500)();
+        const mapped = items.map((item: any) => ({ ...item, Timestamp: item.Created || item.EventTimestamp }));
+        this.setState({ _auditEntries: mapped, _auditLoading: false } as any);
+      } catch (err: any) {
+        const msg = err?.message || 'Failed to load';
+        this.setState({ _auditEntries: [], _auditLoading: false, _auditError: msg.includes('does not exist') ? 'PM_PolicyAuditLog list not provisioned.' : msg } as any);
+      }
+    };
+
+    if (!st._auditLoaded) { this.setState({ _auditLoaded: true } as any); void loadAuditLog(); }
+
+    // Filter entries
+    const filtered = auditEntries.filter((e: any) =>
+      (entityFilter === 'All' || e.EntityType === entityFilter) &&
+      (actionFilter === 'All' || e.EventType === actionFilter)
+    );
+
+    // CSV export
+    const exportCSV = (): void => {
+      const headers = 'Timestamp,Entity Type,Entity Name,Action,Performed By,Description\n';
+      const rows = filtered.map((e: any) =>
+        `"${e.Timestamp ? new Date(e.Timestamp).toLocaleString() : ''}","${e.EntityType || ''}","${e.EntityName || ''}","${e.EventType || ''}","${e.PerformedByName || ''}","${(e.Description || '').replace(/"/g, '""')}"`
+      ).join('\n');
+      const blob = new Blob([headers + rows], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = `audit-log-${new Date().toISOString().split('T')[0]}.csv`; a.click();
+      URL.revokeObjectURL(url);
+    };
+
+    return (
+      <div className={styles.sectionContent}>
+        <Stack tokens={{ childrenGap: 12 }}>
+          {this.renderSectionIntro('Audit Log', 'View a chronological record of all policy-related actions. The audit log tracks who did what, when, and to which policy \u2014 essential for compliance reporting and governance.', ['Use filters to narrow results by entity type or action', 'Audit entries are immutable \u2014 they cannot be edited or deleted'])}
+          <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
+            <Text variant="xLarge" style={{ ...TextStyles.bold, color: Colors.textDark }}>Audit Log</Text>
+            <Stack horizontal tokens={{ childrenGap: 8 }}>
+              <DefaultButton text="Refresh" iconProps={{ iconName: 'Sync' }} onClick={loadAuditLog} disabled={auditLoading} />
+              <DefaultButton text="Export CSV" iconProps={{ iconName: 'Download' }} onClick={exportCSV} disabled={filtered.length === 0} />
+            </Stack>
+          </Stack>
+          <Text style={{ color: Colors.textTertiary }}>Track all policy lifecycle events, access, and configuration changes.</Text>
+
+          {/* Filters */}
+          <Stack horizontal tokens={{ childrenGap: 12 }} verticalAlign="end">
+            <Dropdown label="Entity Type" selectedKey={entityFilter} options={ENTITY_TYPES.map(t => ({ key: t, text: t }))} onChange={(_, o) => o && this.setState({ _auditEntityFilter: o.key } as any)} styles={{ root: { width: 160 } }} />
+            <Dropdown label="Action" selectedKey={actionFilter} options={ACTION_TYPES.map(t => ({ key: t, text: t }))} onChange={(_, o) => o && this.setState({ _auditActionFilter: o.key } as any)} styles={{ root: { width: 160 } }} />
+            <Text style={{ fontSize: 12, color: Colors.slateLight, paddingBottom: 8 }}>{filtered.length} entries</Text>
+          </Stack>
+
+          {auditError && <MessageBar messageBarType={MessageBarType.error}>{auditError}</MessageBar>}
+
+          {auditLoading ? (
+            <Spinner label="Loading audit log..." />
+          ) : filtered.length === 0 ? (
+            <MessageBar messageBarType={MessageBarType.info}>No audit entries found{entityFilter !== 'All' || actionFilter !== 'All' ? ' matching filters' : ''}.</MessageBar>
+          ) : (
+            <div style={{ border: `1px solid ${Colors.borderLight}`, borderRadius: 4, overflow: 'hidden' }}>
+              {/* Header */}
+              <div style={{ display: 'grid', gridTemplateColumns: '160px 100px 60px 120px 1fr 40px', padding: '8px 12px', background: '#f8fafc', fontSize: 11, fontWeight: 600, color: Colors.slateLight, textTransform: 'uppercase', borderBottom: `1px solid ${Colors.borderLight}` }}>
+                <span>Timestamp</span><span>Entity</span><span>ID</span><span>Action</span><span>Performed By</span><span></span>
+              </div>
+              {/* Rows */}
+              {filtered.slice(0, 100).map((entry: any) => (
+                <div key={entry.Id}>
+                  <div
+                    style={{ display: 'grid', gridTemplateColumns: '160px 100px 60px 120px 1fr 40px', padding: '8px 12px', fontSize: 12, borderBottom: `1px solid ${Colors.borderLight}`, cursor: 'pointer', background: expandedId === entry.Id ? '#f0fdfa' : '#fff' }}
+                    onClick={() => this.setState({ _auditExpandedId: expandedId === entry.Id ? null : entry.Id } as any)}
+                  >
+                    <span style={{ fontFamily: 'Consolas, monospace', color: Colors.textTertiary }}>{entry.Timestamp ? new Date(entry.Timestamp).toLocaleString() : ''}</span>
+                    <span style={{ color: Colors.textDark }}>{entry.EntityType || ''}</span>
+                    <span style={{ color: Colors.slateLight }}>{entry.PolicyId || entry.Id}</span>
+                    <span><span style={{ padding: '1px 8px', borderRadius: 10, fontSize: 10, fontWeight: 600, background: (actionColors[entry.EventType] || Colors.slateLight) + '18', color: actionColors[entry.EventType] || Colors.slateLight }}>{entry.EventType || ''}</span></span>
+                    <span style={{ fontWeight: 500, color: Colors.textDark }}>{entry.PerformedByName || ''}</span>
+                    <span style={{ color: Colors.slateLight }}>{expandedId === entry.Id ? '▲' : '▼'}</span>
+                  </div>
+                  {expandedId === entry.Id && (
+                    <div style={{ padding: '12px 16px 12px 172px', background: '#f8fafc', borderBottom: `1px solid ${Colors.borderLight}`, fontSize: 12 }}>
+                      <div style={{ marginBottom: 4 }}><strong>Entity:</strong> {entry.EntityName || '—'}</div>
+                      <div style={{ marginBottom: 4 }}><strong>Description:</strong> {entry.Description || '—'}</div>
+                      {entry.Severity && <div style={{ marginBottom: 4 }}><strong>Severity:</strong> {entry.Severity}</div>}
+                      {entry.PerformedByEmail && <div><strong>Email:</strong> {entry.PerformedByEmail}</div>}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </Stack>
+      </div>
+    );
+  }
+
+  // ============================================================================
+  // RENDER: DLP RULES
+  // ============================================================================
+
+  private renderDLPRulesContent(): JSX.Element {
+    const st = this.state as any;
+    const dlpRules: Array<{ id: string; name: string; description: string; entityType: string; action: string; pattern: string; enabled: boolean }> = st._dlpRules || [];
+    const showDlpPanel: boolean = st._showDlpPanel || false;
+    const editingRule: any = st._editingDlpRule || null;
+    const dlpMsg: string = st._dlpMsg || '';
+
+    const DEFAULT_RULES = [
+      { id: '1', name: 'PII in Policy Notes', description: 'Detect email addresses in policy content and notes', entityType: 'Policy', action: 'Warn', pattern: '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}', enabled: true },
+      { id: '2', name: 'Bulk Delete Prevention', description: 'Block deletion of more than 5 policies within 1 hour', entityType: 'Policy', action: 'Block', pattern: 'delete_count > 5 within 1h', enabled: true },
+      { id: '3', name: 'After-Hours Secure Access', description: 'Log access to secure libraries outside business hours', entityType: 'SecureLibrary', action: 'LogOnly', pattern: 'access_time NOT BETWEEN 08:00 AND 18:00', enabled: false },
+    ];
+
+    // Load rules on first render
+    if (!st._dlpLoaded) {
+      this.setState({ _dlpLoaded: true } as any);
+      this.props.sp.web.lists.getByTitle('PM_Configuration')
+        .items.filter("ConfigKey eq 'Security.DLP.Rules'")
+        .select('ConfigValue').top(1)()
+        .then((items: any[]) => {
+          if (items.length > 0 && items[0].ConfigValue) {
+            try { this.setState({ _dlpRules: JSON.parse(items[0].ConfigValue) } as any); } catch { /* */ }
+          } else {
+            this.setState({ _dlpRules: DEFAULT_RULES } as any);
+          }
+        })
+        .catch(() => this.setState({ _dlpRules: DEFAULT_RULES } as any));
+    }
+
+    const saveDlpRules = async (rules: any[]): Promise<void> => {
+      const json = JSON.stringify(rules);
+      try {
+        const items = await this.props.sp.web.lists.getByTitle('PM_Configuration')
+          .items.filter("ConfigKey eq 'Security.DLP.Rules'").top(1)();
+        if (items.length > 0) { await this.props.sp.web.lists.getByTitle('PM_Configuration').items.getById(items[0].Id).update({ ConfigValue: json }); }
+        else { await this.props.sp.web.lists.getByTitle('PM_Configuration').items.add({ Title: 'DLP Rules', ConfigKey: 'Security.DLP.Rules', ConfigValue: json, Category: 'Security', IsActive: true, IsSystemConfig: false }); }
+      } catch { /* */ }
+    };
+
+    const handleSaveRule = async (): Promise<void> => {
+      if (!editingRule?.name?.trim()) return;
+      const updated = editingRule.id && dlpRules.some((r: any) => r.id === editingRule.id)
+        ? dlpRules.map((r: any) => r.id === editingRule.id ? editingRule : r)
+        : [...dlpRules, { ...editingRule, id: String(Date.now()) }];
+      await saveDlpRules(updated);
+      this.setState({ _dlpRules: updated, _showDlpPanel: false, _editingDlpRule: null, _dlpMsg: `DLP rule "${editingRule.name}" saved` } as any);
+    };
+
+    const handleDeleteRule = async (id: string): Promise<void> => {
+      const updated = dlpRules.filter((r: any) => r.id !== id);
+      await saveDlpRules(updated);
+      this.setState({ _dlpRules: updated, _dlpMsg: 'Rule deleted' } as any);
+    };
+
+    const handleToggleRule = async (id: string): Promise<void> => {
+      const updated = dlpRules.map((r: any) => r.id === id ? { ...r, enabled: !r.enabled } : r);
+      await saveDlpRules(updated);
+      this.setState({ _dlpRules: updated } as any);
+    };
+
+    const actionColors: Record<string, string> = { Block: '#dc2626', Warn: '#d97706', LogOnly: '#0d9488' };
+    const entityOptions: IDropdownOption[] = ['All', 'Policy', 'Quiz', 'Acknowledgement', 'SecureLibrary', 'Distribution', 'User'].map(t => ({ key: t, text: t }));
+    const actionOptions: IDropdownOption[] = [{ key: 'Block', text: 'Block' }, { key: 'Warn', text: 'Warn' }, { key: 'LogOnly', text: 'Log Only' }];
+
+    return (
+      <div className={styles.sectionContent}>
+        <Stack tokens={{ childrenGap: 12 }}>
+          {this.renderSectionIntro('DLP Rules', 'Configure Data Loss Prevention rules to protect sensitive information in policy documents. DLP rules can flag or block content containing personal data, financial information, or classified material.')}
+          <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
+            <div>
+              <Text variant="xLarge" style={{ ...TextStyles.bold, color: Colors.textDark, display: 'block' }}>DLP Rules</Text>
+              <Text style={{ color: Colors.textTertiary }}>Configure data loss prevention rules to protect sensitive policy content.</Text>
+            </div>
+            <PrimaryButton text="+ Add Rule" iconProps={{ iconName: 'Add' }}
+              onClick={() => this.setState({ _showDlpPanel: true, _editingDlpRule: { name: '', description: '', entityType: 'All', action: 'Warn', pattern: '', enabled: true } } as any)}
+              styles={{ root: { background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+            />
+          </Stack>
+
+          {dlpMsg && <MessageBar messageBarType={MessageBarType.success} onDismiss={() => this.setState({ _dlpMsg: '' } as any)}>{dlpMsg}</MessageBar>}
+
+          <div style={{ padding: '8px 12px', background: Colors.surfaceLight, borderRadius: 4, fontSize: 12, color: Colors.textTertiary }}>
+            Active Rules: <strong style={{ color: Colors.tealPrimary }}>{dlpRules.filter((r: any) => r.enabled).length}</strong> of {dlpRules.length}
+          </div>
+
+          {/* Rules table */}
+          {dlpRules.length === 0 ? (
+            <MessageBar messageBarType={MessageBarType.info}>No DLP rules configured. Click "+ Add Rule" to create one.</MessageBar>
+          ) : (
+            <div style={{ border: `1px solid ${Colors.borderLight}`, borderRadius: 4, overflow: 'hidden' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '50px 1fr 100px 90px 180px 64px', padding: '8px 12px', background: '#f8fafc', fontSize: 11, fontWeight: 600, color: Colors.slateLight, textTransform: 'uppercase', borderBottom: `1px solid ${Colors.borderLight}` }}>
+                <span></span><span>Rule</span><span>Scope</span><span>Action</span><span>Pattern</span><span></span>
+              </div>
+              {dlpRules.map((rule: any) => (
+                <div key={rule.id} style={{ display: 'grid', gridTemplateColumns: '50px 1fr 100px 90px 180px 64px', padding: '8px 12px', fontSize: 12, borderBottom: `1px solid ${Colors.borderLight}`, alignItems: 'center', opacity: rule.enabled ? 1 : 0.5 }}>
+                  <Toggle checked={rule.enabled} onChange={() => handleToggleRule(rule.id)} styles={{ root: { margin: 0 } }} />
+                  <div><Text style={{ fontWeight: 600, display: 'block', color: Colors.textDark }}>{rule.name}</Text><Text style={{ fontSize: 11, color: Colors.textTertiary }}>{rule.description}</Text></div>
+                  <span><span style={{ padding: '1px 8px', borderRadius: 10, fontSize: 10, fontWeight: 600, background: Colors.tealBadgeBg, color: Colors.tealPrimary }}>{rule.entityType}</span></span>
+                  <span><span style={{ padding: '1px 8px', borderRadius: 10, fontSize: 10, fontWeight: 600, background: (actionColors[rule.action] || '#64748b') + '18', color: actionColors[rule.action] || '#64748b' }}>{rule.action === 'LogOnly' ? 'Log Only' : rule.action}</span></span>
+                  <span style={{ fontFamily: 'Consolas, monospace', fontSize: 11, color: Colors.textTertiary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{rule.pattern}</span>
+                  <Stack horizontal tokens={{ childrenGap: 2 }}>
+                    <IconButton iconProps={{ iconName: 'Edit' }} title="Edit" onClick={() => this.setState({ _showDlpPanel: true, _editingDlpRule: { ...rule } } as any)} styles={{ root: { height: 28, width: 28 }, icon: { fontSize: 13 } }} />
+                    <IconButton iconProps={{ iconName: 'Delete' }} title="Delete" onClick={() => handleDeleteRule(rule.id)} styles={{ root: { height: 28, width: 28 }, icon: { fontSize: 13, color: '#dc2626' } }} />
+                  </Stack>
+                </div>
+              ))}
+            </div>
+          )}
+        </Stack>
+
+        {/* DLP Rule Edit Panel */}
+        <StyledPanel
+          isOpen={showDlpPanel}
+          onDismiss={() => this.setState({ _showDlpPanel: false, _editingDlpRule: null } as any)}
+          type={PanelType.medium}
+          headerText={editingRule?.id && dlpRules.some((r: any) => r.id === editingRule?.id) ? 'Edit DLP Rule' : 'New DLP Rule'}
+          onRenderFooterContent={() => (
+            <Stack horizontal tokens={{ childrenGap: 8 }}>
+              <PrimaryButton text="Save Rule" onClick={handleSaveRule} disabled={!editingRule?.name?.trim()} styles={{ root: { background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }} />
+              <DefaultButton text="Cancel" onClick={() => this.setState({ _showDlpPanel: false, _editingDlpRule: null } as any)} />
+            </Stack>
+          )}
+          isFooterAtBottom
+        >
+          {editingRule && (
+            <Stack tokens={{ childrenGap: 16 }} style={{ paddingTop: 16 }}>
+              <TextField label="Rule Name" required value={editingRule.name || ''} onChange={(_, v) => this.setState({ _editingDlpRule: { ...editingRule, name: v || '' } } as any)} />
+              <TextField label="Description" multiline rows={2} value={editingRule.description || ''} onChange={(_, v) => this.setState({ _editingDlpRule: { ...editingRule, description: v || '' } } as any)} />
+              <Dropdown label="Entity Type Scope" selectedKey={editingRule.entityType || 'All'} options={entityOptions} onChange={(_, o) => o && this.setState({ _editingDlpRule: { ...editingRule, entityType: o.key } } as any)} />
+              <Dropdown label="Action" selectedKey={editingRule.action || 'Warn'} options={actionOptions} onChange={(_, o) => o && this.setState({ _editingDlpRule: { ...editingRule, action: o.key } } as any)} />
+              <TextField label="Pattern / Condition" multiline rows={3} value={editingRule.pattern || ''} onChange={(_, v) => this.setState({ _editingDlpRule: { ...editingRule, pattern: v || '' } } as any)} placeholder="Regex pattern or condition expression..." />
+              <Toggle label="Enabled" checked={editingRule.enabled !== false} onText="Active" offText="Inactive" onChange={(_, c) => this.setState({ _editingDlpRule: { ...editingRule, enabled: !!c } } as any)} />
+            </Stack>
+          )}
+        </StyledPanel>
+      </div>
+    );
+  }
+
+  // ============================================================================
+  // RENDER: DATA RETENTION
+  // ============================================================================
+
+  private renderDataRetentionContent(): JSX.Element {
+    const st = this.state as any;
+    const auditRetention: string = st._retAudit || '365';
+    const policyVersionRetention: string = st._retPolicyVersions || '24';
+    const ackRetention: string = st._retAcks || '3';
+    const quizRetention: string = st._retQuiz || '3';
+    const docRetention: string = st._retDocs || 'unlimited';
+    const autoPurge: boolean = st._retAutoPurge || false;
+    const retMsg: string = st._retMsg || '';
+    const purgeDialogOpen: boolean = st._retPurgeDialog || false;
+
+    const auditOptions: IDropdownOption[] = [
+      { key: '30', text: '30 days' }, { key: '60', text: '60 days' }, { key: '90', text: '90 days' },
+      { key: '180', text: '180 days' }, { key: '365', text: '1 year' }, { key: 'unlimited', text: 'Unlimited' }
+    ];
+    const versionOptions: IDropdownOption[] = [
+      { key: '6', text: '6 months' }, { key: '12', text: '12 months' }, { key: '24', text: '24 months' }, { key: 'unlimited', text: 'Unlimited' }
+    ];
+    const yearOptions: IDropdownOption[] = [
+      { key: '1', text: '1 year' }, { key: '2', text: '2 years' }, { key: '3', text: '3 years' }, { key: '5', text: '5 years' }, { key: 'unlimited', text: 'Unlimited' }
+    ];
+    const docOptions: IDropdownOption[] = [
+      { key: '1', text: '1 year' }, { key: '2', text: '2 years' }, { key: '3', text: '3 years' }, { key: '5', text: '5 years' }, { key: '10', text: '10 years' }, { key: 'unlimited', text: 'Unlimited' }
+    ];
+
+    // Load retention config
+    if (!st._retLoaded) {
+      this.setState({ _retLoaded: true } as any);
+      this.props.sp.web.lists.getByTitle('PM_Configuration')
+        .items.filter("ConfigKey eq 'Security.DataRetention.Config'")
+        .select('ConfigValue').top(1)()
+        .then((items: any[]) => {
+          if (items.length > 0 && items[0].ConfigValue) {
+            try {
+              const cfg = JSON.parse(items[0].ConfigValue);
+              this.setState({ _retAudit: cfg.audit || '365', _retPolicyVersions: cfg.policyVersions || '24', _retAcks: cfg.acks || '3', _retQuiz: cfg.quiz || '3', _retDocs: cfg.docs || 'unlimited', _retAutoPurge: cfg.autoPurge || false } as any);
+            } catch { /* */ }
+          }
+        })
+        .catch(() => { /* */ });
+    }
+
+    const handleSave = async (): Promise<void> => {
+      const cfg = { audit: auditRetention, policyVersions: policyVersionRetention, acks: ackRetention, quiz: quizRetention, docs: docRetention, autoPurge };
+      const json = JSON.stringify(cfg);
+      try {
+        const items = await this.props.sp.web.lists.getByTitle('PM_Configuration')
+          .items.filter("ConfigKey eq 'Security.DataRetention.Config'").top(1)();
+        if (items.length > 0) { await this.props.sp.web.lists.getByTitle('PM_Configuration').items.getById(items[0].Id).update({ ConfigValue: json }); }
+        else { await this.props.sp.web.lists.getByTitle('PM_Configuration').items.add({ Title: 'Data Retention Config', ConfigKey: 'Security.DataRetention.Config', ConfigValue: json, Category: 'Security', IsActive: true, IsSystemConfig: false }); }
+        this.setState({ _retMsg: 'Retention policy saved' } as any);
+      } catch { this.setState({ _retMsg: 'Failed to save' } as any); }
+    };
+
+    return (
+      <div className={styles.sectionContent}>
+        <Stack tokens={{ childrenGap: 16 }}>
+          {this.renderSectionIntro('Data Retention', 'Define how long different types of policy data are retained before archival or deletion. Retention policies help ensure compliance with regulatory requirements and manage storage.')}
+          <Text variant="xLarge" style={{ ...TextStyles.bold, color: Colors.textDark }}>Data Retention</Text>
+          <Text style={{ color: Colors.textTertiary }}>Configure how long different data types are retained before archival. Archived records remain accessible but are excluded from active queries and reporting.</Text>
+
+          {retMsg && <MessageBar messageBarType={MessageBarType.success} onDismiss={() => this.setState({ _retMsg: '' } as any)}>{retMsg}</MessageBar>}
+
+          {/* Info box */}
+          <div style={{ background: Colors.tealLight, borderRadius: 4, padding: 16, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+            <Icon iconName="Timer" styles={{ root: { fontSize: 18, color: Colors.tealPrimary, marginTop: 2 } }} />
+            <div>
+              <Text style={{ fontWeight: 600, color: Colors.textDark, display: 'block', marginBottom: 4 }}>Retention Policy</Text>
+              <Text style={{ fontSize: 12, color: Colors.textTertiary }}>Records exceeding the retention period will be moved to archive storage. Archived records remain accessible but are excluded from active queries and reporting.</Text>
+            </div>
+          </div>
+
+          {/* Retention dropdowns — 2 column grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <Dropdown label="Audit Log Retention" selectedKey={auditRetention} options={auditOptions} onChange={(_, o) => o && this.setState({ _retAudit: o.key } as any)} />
+            <Dropdown label="Policy Version Archive After" selectedKey={policyVersionRetention} options={versionOptions} onChange={(_, o) => o && this.setState({ _retPolicyVersions: o.key } as any)} />
+            <Dropdown label="Acknowledgement Retention" selectedKey={ackRetention} options={yearOptions} onChange={(_, o) => o && this.setState({ _retAcks: o.key } as any)} />
+            <Dropdown label="Quiz Results Retention" selectedKey={quizRetention} options={yearOptions} onChange={(_, o) => o && this.setState({ _retQuiz: o.key } as any)} />
+            <Dropdown label="Document Retention" selectedKey={docRetention} options={docOptions} onChange={(_, o) => o && this.setState({ _retDocs: o.key } as any)} />
+          </div>
+
+          {/* Auto-Purge toggle */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: Colors.surfaceLight, borderRadius: 4, padding: 16 }}>
+            <div>
+              <Text style={{ fontWeight: 600, color: Colors.textDark, display: 'block' }}>Auto-Purge</Text>
+              <Text style={{ fontSize: 12, color: Colors.textTertiary }}>Automatically archive records that exceed the configured retention periods</Text>
+            </div>
+            <Toggle checked={autoPurge} onText="Enabled" offText="Disabled" onChange={(_, c) => this.setState({ _retAutoPurge: !!c } as any)} styles={{ root: { margin: 0 } }} />
+          </div>
+
+          {/* Next scheduled purge */}
+          {autoPurge && (
+            <div style={{ background: Colors.tealLight, borderRadius: 4, padding: '12px 16px', display: 'flex', gap: 12, alignItems: 'center' }}>
+              <Icon iconName="Timer" styles={{ root: { fontSize: 16, color: Colors.tealPrimary } }} />
+              <div>
+                <Text style={{ fontWeight: 600, fontSize: 12, color: Colors.tealPrimary, display: 'block' }}>Next Scheduled Purge</Text>
+                <Text style={{ fontSize: 12, color: Colors.textTertiary }}>
+                  {new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toLocaleDateString()} 02:00 (UTC) — Runs monthly on the 1st
+                </Text>
+              </div>
+            </div>
+          )}
+
+          {/* Action buttons */}
+          <Stack horizontal horizontalAlign="end" tokens={{ childrenGap: 8 }}>
+            <DefaultButton
+              text="Run Purge Now"
+              iconProps={{ iconName: 'Delete' }}
+              onClick={() => this.setState({ _retPurgeDialog: true } as any)}
+              styles={{ root: { borderColor: '#d97706', color: '#d97706', borderRadius: 4 }, rootHovered: { borderColor: '#b45309', color: '#b45309', background: '#fffbeb' } }}
+            />
+            <PrimaryButton text="Save Retention Policy" onClick={handleSave}
+              styles={{ root: { background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+            />
+          </Stack>
+        </Stack>
+
+        {/* Purge Confirmation Dialog */}
+        <Dialog
+          hidden={!purgeDialogOpen}
+          onDismiss={() => this.setState({ _retPurgeDialog: false } as any)}
+          dialogContentProps={{ type: DialogType.normal, title: 'Confirm Data Purge', subText: 'This will immediately archive all records that exceed configured retention periods. Archived records remain accessible but are excluded from active queries. This action cannot be undone.' }}
+        >
+          <DialogFooter>
+            <PrimaryButton text="Run Purge" onClick={() => { this.setState({ _retPurgeDialog: false, _retMsg: 'Purge initiated. Records will be archived within 24 hours.' } as any); }} styles={{ root: { background: '#d97706', borderColor: '#d97706' }, rootHovered: { background: '#b45309', borderColor: '#b45309' } }} />
+            <DefaultButton text="Cancel" onClick={() => this.setState({ _retPurgeDialog: false } as any)} />
+          </DialogFooter>
+        </Dialog>
       </div>
     );
   }
@@ -1615,6 +2659,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     return (
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 16 }}>
+          {this.renderSectionIntro('Data Export', 'Export policy data to CSV format for external reporting, analysis, or backup purposes.')}
           <Text variant="mediumPlus" style={TextStyles.semiBold}>Data Export</Text>
           <Text>Export policy data and compliance reports in CSV format.</Text>
           <Stack horizontal tokens={{ childrenGap: 12 }} wrap>
@@ -1670,6 +2715,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     return (
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 20 }}>
+          {this.renderSectionIntro('Naming Rules', 'Define naming conventions for policy numbers. Build rules using segments like prefix, counter, date, and category to generate consistent, meaningful policy identifiers (e.g., POL-HR-001).')}
           <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
             <Text variant="mediumPlus" style={TextStyles.semiBold}>Naming Rules</Text>
             <Stack horizontal tokens={{ childrenGap: 8 }}>
@@ -1833,6 +2879,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     return (
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 20 }}>
+          {this.renderSectionIntro('SLA Targets', 'Set service level agreement targets for key policy processes. SLA targets help you monitor and measure compliance with your organisation\'s policy governance standards.', ['Warning thresholds trigger amber alerts before the deadline', 'SLA breaches are logged in the Audit Log for compliance reporting'])}
           <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
             <Text variant="mediumPlus" style={TextStyles.semiBold}>SLA Targets</Text>
             <PrimaryButton
@@ -2038,6 +3085,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     return (
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 20 }}>
+          {this.renderSectionIntro('Data Lifecycle', 'Define retention and archival policies for each type of policy data. Control how long records are kept, whether they are auto-archived, and when they should be deleted.', ['Regulatory requirements may mandate minimum retention periods', 'Auto-delete is disabled by default \u2014 enable with caution'])}
           <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
             <Text variant="mediumPlus" style={TextStyles.semiBold}>Data Management</Text>
             <PrimaryButton
@@ -2192,6 +3240,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     return (
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 20 }}>
+          {this.renderSectionIntro('Navigation', 'Control which navigation items are visible in the Policy Manager app. Toggle items on or off to customise the navigation bar for your organisation\'s needs.', ['Protected items (Policy Hub, My Policies) cannot be disabled', 'Changes take effect immediately for all users'])}
           <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
             <Text variant="mediumPlus" style={TextStyles.semiBold}>Navigation Settings</Text>
             <Stack horizontal tokens={{ childrenGap: 8 }}>
@@ -2940,6 +3989,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     return (
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 24 }}>
+          {this.renderSectionIntro('General Settings', 'Configure general application settings including branding, upload limits, quiz defaults, and display preferences.')}
           <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
             <Text variant="mediumPlus" style={TextStyles.semiBold}>General Settings</Text>
             <Stack horizontal tokens={{ childrenGap: 8 }}>
@@ -3452,6 +4502,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     return (
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 16 }}>
+          {this.renderSectionIntro('Email Templates', 'Manage the email templates used for automated notifications. Each template defines the subject line, body content, and formatting for a specific notification type.')}
           {/* Summary Cards */}
           <Stack horizontal tokens={{ childrenGap: 12 }} wrap>
             <div style={{
@@ -3487,18 +4538,237 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             Email templates use merge tags like <strong>{'{{PolicyTitle}}'}</strong> and <strong>{'{{UserName}}'}</strong> that are replaced with actual values when emails are sent.
           </MessageBar>
 
-          <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
-            <Text variant="mediumPlus" style={TextStyles.semiBold}>Email Templates ({emailTemplates.length})</Text>
+          {/* Category Pill Filters */}
+          {(() => {
+            const categoryColors: Record<string, { bg: string; color: string; border: string }> = {
+              Acknowledgement: { bg: '#ccfbf1', color: '#0d9488', border: '#0d9488' },
+              Approval: { bg: '#dbeafe', color: '#2563eb', border: '#2563eb' },
+              Quiz: { bg: '#ede9fe', color: '#7c3aed', border: '#7c3aed' },
+              Review: { bg: '#fef3c7', color: '#d97706', border: '#d97706' },
+              Distribution: { bg: '#e0f2fe', color: '#0284c7', border: '#0284c7' },
+              Compliance: { bg: '#fee2e2', color: '#dc2626', border: '#dc2626' },
+              Lifecycle: { bg: '#f0f9ff', color: '#0369a1', border: '#0369a1' },
+              System: { bg: '#f1f5f9', color: '#475569', border: '#475569' },
+            };
+            const activeCatFilter = (this.state as any)._emailCatPillFilter || '';
+            const catCounts: Record<string, number> = {};
+            emailTemplates.forEach((t: any) => { const c = t.category || 'System'; catCounts[c] = (catCounts[c] || 0) + 1; });
+
+            return (
+              <Stack horizontal tokens={{ childrenGap: 6 }} wrap>
+                <span
+                  onClick={() => this.setState({ _emailCatPillFilter: '' } as any)}
+                  style={{
+                    padding: '4px 12px', borderRadius: 4, fontSize: 12, fontWeight: 500, cursor: 'pointer',
+                    background: !activeCatFilter ? '#0d9488' : '#f8fafc',
+                    color: !activeCatFilter ? '#fff' : '#475569',
+                    border: `1px solid ${!activeCatFilter ? '#0d9488' : '#e2e8f0'}`
+                  }}
+                >
+                  All ({emailTemplates.length})
+                </span>
+                {Object.entries(categoryColors).map(([cat, colors]) => {
+                  const count = catCounts[cat] || 0;
+                  if (count === 0) return null;
+                  const isActive = activeCatFilter === cat;
+                  return (
+                    <span
+                      key={cat}
+                      onClick={() => this.setState({ _emailCatPillFilter: isActive ? '' : cat } as any)}
+                      style={{
+                        padding: '4px 12px', borderRadius: 4, fontSize: 12, fontWeight: 500, cursor: 'pointer',
+                        background: isActive ? colors.color : colors.bg,
+                        color: isActive ? '#fff' : colors.color,
+                        border: `1px solid ${isActive ? colors.color : colors.border}40`
+                      }}
+                    >
+                      {cat} ({count})
+                    </span>
+                  );
+                })}
+              </Stack>
+            );
+          })()}
+
+          {/* Filters Bar */}
+          <Stack horizontal tokens={{ childrenGap: 12 }} verticalAlign="end" wrap>
+            <TextField
+              placeholder="Search templates..."
+              iconProps={{ iconName: 'Search' }}
+              value={(this.state as any)._emailSearchQuery || ''}
+              onChange={(_, v) => this.setState({ _emailSearchQuery: v || '' } as any)}
+              styles={{ root: { width: 220 } }}
+            />
+            <Dropdown
+              placeholder="All Categories"
+              selectedKey={(this.state as any)._emailCategoryFilter || ''}
+              options={[
+                { key: '', text: 'All Categories' },
+                ...Array.from(new Set(emailTemplates.map(t => t.event))).sort().map(e => ({ key: e, text: e }))
+              ]}
+              onChange={(_, opt) => this.setState({ _emailCategoryFilter: (opt?.key as string) || '' } as any)}
+              styles={{ root: { width: 180 } }}
+            />
+            <Dropdown
+              placeholder="All Statuses"
+              selectedKey={(this.state as any)._emailStatusFilter || ''}
+              options={[
+                { key: '', text: 'All Statuses' },
+                { key: 'active', text: 'Active' },
+                { key: 'inactive', text: 'Inactive' }
+              ]}
+              onChange={(_, opt) => this.setState({ _emailStatusFilter: (opt?.key as string) || '' } as any)}
+              styles={{ root: { width: 140 } }}
+            />
             <PrimaryButton iconProps={{ iconName: 'Add' }} text="New Template" onClick={this.handleNewEmailTemplate} />
+            <DefaultButton iconProps={{ iconName: 'Sync' }} text="Refresh"
+              onClick={() => this.setState({ _emailTemplatesLoaded: false } as any)} />
           </Stack>
 
-          <DetailsList
-            items={emailTemplates}
-            columns={columns}
-            layoutMode={DetailsListLayoutMode.justified}
-            selectionMode={SelectionMode.none}
-            compact={true}
-          />
+          {/* Count */}
+          {(() => {
+            const searchQ = ((this.state as any)._emailSearchQuery || '').toLowerCase();
+            const catFilter = (this.state as any)._emailCategoryFilter || '';
+            const statusFilter = (this.state as any)._emailStatusFilter || '';
+            const catPillFilter = (this.state as any)._emailCatPillFilter || '';
+            const filtered = emailTemplates.filter((t: any) => {
+              if (searchQ && !t.name.toLowerCase().includes(searchQ) && !t.subject.toLowerCase().includes(searchQ)) return false;
+              if (catFilter && t.event !== catFilter) return false;
+              if (statusFilter === 'active' && !t.isActive) return false;
+              if (statusFilter === 'inactive' && t.isActive) return false;
+              if (catPillFilter && (t.category || 'System') !== catPillFilter) return false;
+              return true;
+            });
+
+            const categoryHeaderColors: Record<string, { gradient: string; text: string }> = {
+              Acknowledgement: { gradient: 'linear-gradient(135deg, #0d9488, #0f766e)', text: '#fff' },
+              Approval: { gradient: 'linear-gradient(135deg, #2563eb, #1d4ed8)', text: '#fff' },
+              Quiz: { gradient: 'linear-gradient(135deg, #7c3aed, #6d28d9)', text: '#fff' },
+              Review: { gradient: 'linear-gradient(135deg, #d97706, #b45309)', text: '#fff' },
+              Distribution: { gradient: 'linear-gradient(135deg, #0284c7, #0369a1)', text: '#fff' },
+              Compliance: { gradient: 'linear-gradient(135deg, #dc2626, #b91c1c)', text: '#fff' },
+              Lifecycle: { gradient: 'linear-gradient(135deg, #0369a1, #075985)', text: '#fff' },
+              System: { gradient: 'linear-gradient(135deg, #475569, #334155)', text: '#fff' },
+            };
+
+            const eventColors: Record<string, { bg: string; color: string }> = {
+              'Policy Published': { bg: '#dcfce7', color: '#16a34a' },
+              'Policy Acknowledged': { bg: '#ccfbf1', color: '#0d9488' },
+              'Ack Reminder 3-Day': { bg: '#fef3c7', color: '#d97706' },
+              'Ack Reminder 1-Day': { bg: '#fee2e2', color: '#dc2626' },
+              'Ack Overdue': { bg: '#fee2e2', color: '#dc2626' },
+              'Ack Complete Manager': { bg: '#ccfbf1', color: '#0d9488' },
+              'Approval Needed': { bg: '#dbeafe', color: '#2563eb' },
+              'Approval Approved': { bg: '#dcfce7', color: '#16a34a' },
+              'Approval Rejected': { bg: '#fee2e2', color: '#dc2626' },
+              'Approval Escalated': { bg: '#fef3c7', color: '#d97706' },
+              'Approval Delegated': { bg: '#e0f2fe', color: '#0284c7' },
+              'Quiz Assigned': { bg: '#ede9fe', color: '#7c3aed' },
+              'Quiz Passed': { bg: '#dcfce7', color: '#16a34a' },
+              'Quiz Failed': { bg: '#fee2e2', color: '#dc2626' },
+              'Review Due': { bg: '#fef3c7', color: '#d97706' },
+              'Review Overdue': { bg: '#fee2e2', color: '#dc2626' },
+              'Campaign Active': { bg: '#e0f2fe', color: '#0284c7' },
+              'Distribution Complete': { bg: '#dcfce7', color: '#16a34a' },
+              'Policy Assigned': { bg: '#e0f2fe', color: '#0284c7' },
+              'Policy Expiring': { bg: '#fef3c7', color: '#d97706' },
+              'SLA Breached': { bg: '#fee2e2', color: '#dc2626' },
+              'Violation Found': { bg: '#fce7f3', color: '#db2777' },
+              'Policy Updated': { bg: '#f0f9ff', color: '#0369a1' },
+              'Policy Retired': { bg: '#f1f5f9', color: '#64748b' },
+              'Weekly Digest': { bg: '#f1f5f9', color: '#475569' },
+              'User Added': { bg: '#e0f2fe', color: '#0284c7' },
+              'Role Changed': { bg: '#ede9fe', color: '#7c3aed' },
+              'Delegation Expiring': { bg: '#fef3c7', color: '#d97706' },
+            };
+
+            return (
+              <>
+                <Text style={{ fontSize: 12, color: '#64748b' }}>
+                  Showing <strong>{filtered.length}</strong> of <strong>{emailTemplates.length}</strong> templates
+                </Text>
+
+                {/* Card Grid */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 16 }}>
+                  {filtered.map((template: any) => {
+                    const evtStyle = eventColors[template.event] || { bg: '#f1f5f9', color: '#64748b' };
+                    const category = template.category || 'System';
+                    const headerColor = categoryHeaderColors[category] || categoryHeaderColors.System;
+                    const bodyPreview = (template.body || '').replace(/<[^>]*>/g, '').substring(0, 140);
+                    return (
+                      <div key={template.id} style={{
+                        background: '#fff', border: '1px solid #e2e8f0', borderRadius: 4,
+                        display: 'flex', flexDirection: 'column', overflow: 'hidden',
+                        opacity: template.isActive ? 1 : 0.7
+                      }}>
+                        {/* Color-coded category header */}
+                        <div style={{ background: headerColor.gradient, padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Text style={{ fontWeight: 700, fontSize: 14, color: headerColor.text }}>
+                            {template.name}
+                          </Text>
+                          <Icon iconName="Mail" styles={{ root: { fontSize: 16, color: 'rgba(255,255,255,0.7)' } }} />
+                        </div>
+                        {/* Card Body */}
+                        <div style={{ padding: '10px 16px', flex: 1 }}>
+                          {/* Badges */}
+                          <Stack horizontal tokens={{ childrenGap: 4 }} style={{ marginBottom: 8 }} wrap>
+                            <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 8px', borderRadius: 3, background: evtStyle.bg, color: evtStyle.color, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                              {template.event}
+                            </span>
+                            {template.isDefault && (
+                              <span style={{ fontSize: 9, fontWeight: 600, padding: '2px 6px', borderRadius: 3, background: '#f1f5f9', color: '#475569' }}>DEFAULT</span>
+                            )}
+                            <span style={{
+                              fontSize: 9, fontWeight: 600, padding: '2px 6px', borderRadius: 3,
+                              background: template.isActive ? '#dcfce7' : '#f1f5f9',
+                              color: template.isActive ? '#16a34a' : '#94a3b8'
+                            }}>
+                              {template.isActive ? 'ACTIVE' : 'INACTIVE'}
+                            </span>
+                          </Stack>
+                          {/* Subject */}
+                          <Text style={{ fontSize: 12, color: '#334155', display: 'block', marginBottom: 6 }}>
+                            <strong>Subject:</strong> {template.subject}
+                          </Text>
+                          {/* Body preview */}
+                          <Text style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.5, display: 'block', maxHeight: 44, overflow: 'hidden' }}>
+                            {bodyPreview}{bodyPreview.length >= 140 ? '...' : ''}
+                          </Text>
+                        </div>
+                        {/* Card Footer */}
+                        <div style={{ borderTop: '1px solid #f1f5f9', padding: '8px 16px', display: 'flex', gap: 16 }}>
+                          <span role="button" tabIndex={0} onClick={() => this.setState({ _previewEmailTemplate: template, _showEmailPreview: true } as any)}
+                            onKeyDown={(e) => { if (e.key === 'Enter') this.setState({ _previewEmailTemplate: template, _showEmailPreview: true } as any); }}
+                            style={{ fontSize: 11, color: '#0d9488', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <Icon iconName="View" styles={{ root: { fontSize: 12 } }} /> Preview
+                          </span>
+                          <span role="button" tabIndex={0} onClick={() => this.handleEditEmailTemplate(template)}
+                            onKeyDown={(e) => { if (e.key === 'Enter') this.handleEditEmailTemplate(template); }}
+                            style={{ fontSize: 11, color: '#475569', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <Icon iconName="Edit" styles={{ root: { fontSize: 12 } }} /> Edit
+                          </span>
+                          <span role="button" tabIndex={0} onClick={() => this.handleDuplicateEmailTemplate(template)}
+                            onKeyDown={(e) => { if (e.key === 'Enter') this.handleDuplicateEmailTemplate(template); }}
+                            style={{ fontSize: 11, color: '#475569', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <Icon iconName="Copy" styles={{ root: { fontSize: 12 } }} /> Duplicate
+                          </span>
+                          <span role="button" tabIndex={0}
+                            onClick={() => {
+                              this.setState({ editingEmailTemplate: template } as any);
+                              void this.handleDeleteEmailTemplate();
+                            }}
+                            onKeyDown={(e) => { if (e.key === 'Enter') { this.setState({ editingEmailTemplate: template } as any); void this.handleDeleteEmailTemplate(); } }}
+                            style={{ fontSize: 11, color: '#dc2626', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto' }}>
+                            <Icon iconName="Delete" styles={{ root: { fontSize: 12 } }} /> Delete
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            );
+          })()}
         </Stack>
 
         {/* Edit/Create Panel */}
@@ -3616,6 +4886,47 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               )}
             </Stack>
           )}
+        </StyledPanel>
+
+        {/* Email Template Preview Panel */}
+        <StyledPanel
+          isOpen={!!(this.state as any)._showEmailPreview}
+          onDismiss={() => this.setState({ _showEmailPreview: false, _previewEmailTemplate: null } as any)}
+          type={PanelType.medium}
+          headerText="Email Preview"
+        >
+          {(() => {
+            const tpl = (this.state as any)._previewEmailTemplate;
+            if (!tpl) return null;
+            return (
+              <Stack tokens={{ childrenGap: 16 }} style={{ paddingTop: 8 }}>
+                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 4, padding: 16 }}>
+                  <Text style={{ fontWeight: 600, fontSize: 12, color: '#94a3b8', display: 'block', marginBottom: 4 }}>FROM</Text>
+                  <Text style={{ fontSize: 13, color: '#0f172a' }}>Policy Manager &lt;noreply@company.com&gt;</Text>
+                  <Text style={{ fontWeight: 600, fontSize: 12, color: '#94a3b8', display: 'block', marginTop: 8, marginBottom: 4 }}>TO</Text>
+                  <Text style={{ fontSize: 13, color: '#0f172a' }}>{tpl.recipients || 'All Employees'}</Text>
+                  <Text style={{ fontWeight: 600, fontSize: 12, color: '#94a3b8', display: 'block', marginTop: 8, marginBottom: 4 }}>SUBJECT</Text>
+                  <Text style={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>{tpl.subject}</Text>
+                </div>
+                <div style={{
+                  border: '1px solid #e2e8f0', borderRadius: 4, overflow: 'hidden'
+                }}>
+                  <div style={{ background: 'linear-gradient(135deg, #0d9488, #0f766e)', padding: '16px 20px', color: '#fff' }}>
+                    <Text style={{ fontWeight: 700, fontSize: 15, color: '#fff' }}>Policy Manager</Text>
+                  </div>
+                  <div style={{ padding: '20px', fontSize: 13, lineHeight: 1.7, color: '#334155' }}
+                    dangerouslySetInnerHTML={{ __html: tpl.body || '<p>No email body defined.</p>' }} />
+                  <div style={{ padding: '12px 20px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', textAlign: 'center' }}>
+                    <Text style={{ fontSize: 10, color: '#94a3b8' }}>First Digital — DWx Policy Manager</Text>
+                  </div>
+                </div>
+                <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 4, padding: 12 }}>
+                  <Text style={{ fontSize: 11, color: '#94a3b8', display: 'block' }}>Event: {tpl.event} | Recipients: {tpl.recipients} | Status: {tpl.isActive ? 'Active' : 'Inactive'}</Text>
+                  {tpl.lastModified && <Text style={{ fontSize: 11, color: '#94a3b8', display: 'block', marginTop: 4 }}>Last modified: {tpl.lastModified}</Text>}
+                </div>
+              </Stack>
+            );
+          })()}
         </StyledPanel>
       </div>
     );
@@ -3815,6 +5126,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     return (
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 20 }}>
+          {this.renderSectionIntro('Audience Targeting', 'Audiences are dynamic groups of employees defined by rules (e.g., department, job title, location). Use audiences to target policy distribution, control policy visibility, and track acknowledgement compliance by group.', ['Audiences target WHO should see a policy \u2014 Security Groups control WHO can access it', 'Use the \'Evaluate\' button to preview which employees match your rules before saving'])}
           {audienceMessage && (
             <MessageBar
               messageBarType={audienceMessage.includes('Failed') ? MessageBarType.error : MessageBarType.success}
@@ -3900,7 +5212,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           isOpen={showAudiencePanel}
           onDismiss={() => this.setState({ _showAudiencePanel: false } as any)}
           headerText={editingAudience ? 'Edit Audience' : 'Create Audience'}
-          type={PanelType.large}
+          type={PanelType.medium}
           onRenderFooterContent={() => (
             <Stack horizontal tokens={{ childrenGap: 8 }} style={LayoutStyles.paddingVertical16}>
               <PrimaryButton
@@ -4236,6 +5548,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     return (
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 20 }}>
+          {this.renderSectionIntro('Users & Roles', 'View and manage user role assignments. Users are assigned roles (User, Author, Manager, Admin) that determine what they can see and do in Policy Manager.', ['Roles are detected from SharePoint groups (PM_PolicyAdmins, PM_PolicyAuthors, etc.)', 'Use Role Permissions to customise what each role can access'])}
           {/* Success / Sync messages */}
           {userSaveMessage && (
             <MessageBar messageBarType={MessageBarType.success} onDismiss={() => this.setState({ _userSaveMessage: '' } as any)}>
@@ -4601,6 +5914,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     return (
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 20 }}>
+          {this.renderSectionIntro('Application Security', 'Configure security settings for the Policy Manager application including session management, access controls, and security policies.')}
           {/* Security Stats */}
           <Stack horizontal tokens={{ childrenGap: 12 }} wrap>
             {securityStats.map((stat, i) => (
@@ -4782,6 +6096,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     const builtInRoles = ['user', 'author', 'manager', 'admin'];
     const allRoleKeys = [...builtInRoles, ...customRoles.map(r => r.key)];
 
+    const roleColumnWidth = 100;
     const columns: IColumn[] = [
       { key: 'feature', name: 'Feature', fieldName: 'feature', minWidth: 160, maxWidth: 220, onRender: (item) => <Text style={TextStyles.medium}>{item.feature}</Text> },
       ...allRoleKeys.map(roleKey => {
@@ -4790,10 +6105,10 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         return {
           key: roleKey,
           name: roleName,
-          minWidth: 80,
-          maxWidth: 90,
+          minWidth: roleColumnWidth,
+          maxWidth: roleColumnWidth,
           onRenderHeader: () => (
-            <div style={{ textAlign: 'center', width: '100%' }}>
+            <div style={{ textAlign: 'center', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <Text style={{ fontWeight: 600, fontSize: 12, display: 'block' }}>{roleName}</Text>
               {isCustom && (
                 <span
@@ -4808,7 +6123,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             </div>
           ),
           onRender: (item: any, index?: number) => (
-            <div style={{ textAlign: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
               <Toggle
                 checked={item[roleKey] === true}
                 onChange={(_, v) => updatePermission(index || 0, roleKey, !!v)}
@@ -4883,7 +6198,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           <DetailsList
             items={permissions}
             columns={columns}
-            layoutMode={DetailsListLayoutMode.justified}
+            layoutMode={DetailsListLayoutMode.fixedColumns}
             selectionMode={SelectionMode.none}
             compact={true}
           />
@@ -5277,6 +6592,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     return (
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 20 }}>
+          {this.renderSectionIntro('Provisioning', 'View the status of all SharePoint lists required by Policy Manager. Use this section to verify your environment is correctly configured and to identify any missing lists.', ['Green items are provisioned and ready', 'Missing lists can be created by running the provisioning scripts in PowerShell'])}
           {/* Summary bar */}
           <div style={{
             display: 'flex', gap: 16, padding: '16px 20px', flexWrap: 'wrap',
@@ -5607,6 +6923,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
 
     return (
       <div>
+        {this.renderSectionIntro('Document Libraries', 'Browse existing SharePoint document libraries on this site or create new ones for storing policy-related documents, templates, and attachments.')}
         <Text variant="xLarge" style={{ ...TextStyles.bold, color: Colors.textDark, display: 'block', marginBottom: 4 }}>Document Storage</Text>
         <Text style={{ color: Colors.textTertiary, display: 'block', marginBottom: 20 }}>
           Choose where to store policy documents. You can browse an existing Document Library or create a new one.
@@ -5914,6 +7231,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
 
     return (
       <div>
+        {this.renderSectionIntro('Secure Libraries', 'Configure restricted document libraries with custom security groups. Secure libraries are accessible only to members of the assigned security groups and appear under the \'Secure Policies\' nav item.', ['Secure library policies do NOT appear in the public Policy Hub', 'Assign security groups to control who can view each library\'s policies'])}
         <Stack horizontal horizontalAlign="space-between" verticalAlign="center" style={{ marginBottom: 4 }}>
           <div>
             <Text variant="xLarge" style={{ ...TextStyles.bold, color: Colors.textDark, display: 'block' }}>Secure Libraries</Text>
@@ -6317,11 +7635,9 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                         <Text style={{ fontWeight: 600, color: Colors.textDark, display: 'block' }}>{group.title}</Text>
                         {group.description && <Text style={{ fontSize: 11, color: Colors.textTertiary }}>{group.description}</Text>}
                       </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <Text style={{ fontWeight: 600, fontSize: 13, color: Colors.tealPrimary, display: 'block' }}>{group.userCount}</Text>
-                        <Text style={{ fontSize: 10, color: Colors.slateLight }}>members</Text>
-                      </div>
-                      <Text style={{ fontSize: 11, color: Colors.slateLight, minWidth: 80 }}>Owner: {group.ownerTitle}</Text>
+                      <Text style={{ fontSize: 12, color: Colors.tealPrimary, fontWeight: 600 }}>{group.userCount}</Text>
+                      <Text style={{ fontSize: 11, color: Colors.slateLight }}>members</Text>
+                      <Text style={{ fontSize: 11, color: Colors.slateLight }}>Owner: {group.ownerTitle}</Text>
                     </div>
 
                     {/* Expanded: member list + add user */}
@@ -6386,6 +7702,330 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
   }
 
   // ============================================================================
+  // RENDER: CUSTOM THEME
+  // ============================================================================
+
+  private renderCustomThemeContent(): JSX.Element {
+    const st = this.state as any;
+    const theme: ICustomTheme = st._customTheme || { ...DEFAULT_THEME };
+    const saving = st._themeSaving || false;
+    const themeMsg = st._themeMessage || '';
+
+    // Load theme on first render
+    if (!st._themeLoaded) {
+      this.setState({ _themeLoaded: true } as any);
+      ThemeManager.loadFromSP(this.props.sp).then(loaded => {
+        this.setState({ _customTheme: loaded } as any);
+        ThemeManager.apply(loaded);
+      }).catch(() => { /* use defaults */ });
+    }
+
+    const updateTheme = (updates: Partial<ICustomTheme>): void => {
+      const updated = { ...theme, ...updates };
+      this.setState({ _customTheme: updated } as any);
+      // Live preview — apply immediately
+      ThemeManager.apply(updated);
+    };
+
+    const handleSave = async (): Promise<void> => {
+      this.setState({ _themeSaving: true } as any);
+      try {
+        await ThemeManager.saveToSP(this.props.sp, theme);
+        ThemeManager.apply(theme);
+        this.setState({ _themeSaving: false, _themeMessage: 'Theme saved successfully. Changes are live.' } as any);
+        setTimeout(() => this.setState({ _themeMessage: '' } as any), 4000);
+      } catch {
+        this.setState({ _themeSaving: false, _themeMessage: 'Failed to save theme.' } as any);
+      }
+    };
+
+    const handleReset = (): void => {
+      const defaultTheme = { ...DEFAULT_THEME };
+      this.setState({ _customTheme: defaultTheme } as any);
+      ThemeManager.apply(defaultTheme);
+    };
+
+    const handlePreset = (presetKey: string): void => {
+      const preset = PRESET_THEMES[presetKey];
+      if (preset) {
+        const updated = { ...theme, ...preset };
+        this.setState({ _customTheme: updated } as any);
+        ThemeManager.apply(updated);
+      }
+    };
+
+    const handleLogoUpload = async (file: File): Promise<void> => {
+      try {
+        const buffer = await file.arrayBuffer();
+        const fileName = `pm-logo-${Date.now()}.${file.name.split('.').pop()}`;
+        const result = await this.props.sp.web.getFolderByServerRelativePath('SiteAssets')
+          .files.addUsingPath(fileName, new Uint8Array(buffer), { Overwrite: true });
+        const logoUrl = (result as any).data?.ServerRelativeUrl || `${this.props.context.pageContext.web.serverRelativeUrl}/SiteAssets/${fileName}`;
+        updateTheme({ logoUrl });
+      } catch (err) {
+        console.error('Logo upload failed:', err);
+        void this.dialogManager.showAlert('Failed to upload logo. Ensure SiteAssets library exists.', { title: 'Upload Error' });
+      }
+    };
+
+    const colorPicker = (label: string, value: string, key: keyof ICustomTheme): JSX.Element => (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <input
+          type="color"
+          value={value || '#0d9488'}
+          onChange={(e) => {
+            const updates: Partial<ICustomTheme> = { [key]: e.target.value } as any;
+            // If changing primary, also update gradient start
+            if (key === 'primaryColor') {
+              updates.headerGradientStart = e.target.value;
+            }
+            if (key === 'primaryDark') {
+              updates.headerGradientEnd = e.target.value;
+            }
+            updateTheme(updates);
+          }}
+          style={{ width: 36, height: 28, border: '1px solid #e2e8f0', borderRadius: 4, cursor: 'pointer', padding: 0 }}
+        />
+        <div style={{ flex: 1 }}>
+          <Text style={{ fontSize: 12, fontWeight: 500, color: '#0f172a', display: 'block' }}>{label}</Text>
+          <Text style={{ fontSize: 10, color: '#94a3b8', fontFamily: 'monospace' }}>{value}</Text>
+        </div>
+      </div>
+    );
+
+    const presetThemes = [
+      { key: 'forest-teal', name: 'Forest Teal', color: '#0d9488' },
+      { key: 'corporate-blue', name: 'Corporate Blue', color: '#1e40af' },
+      { key: 'slate-professional', name: 'Slate Professional', color: '#475569' },
+      { key: 'royal-purple', name: 'Royal Purple', color: '#7c3aed' },
+      { key: 'crimson-red', name: 'Crimson Red', color: '#dc2626' },
+      { key: 'forest-green', name: 'Forest Green', color: '#15803d' },
+      { key: 'midnight', name: 'Midnight', color: '#1e293b' }
+    ];
+
+    return (
+      <div className={styles.sectionContent}>
+        <Stack tokens={{ childrenGap: 16 }}>
+          {this.renderSectionIntro(
+            'Custom Theme',
+            'Customise Policy Manager\'s appearance to match your organisation\'s branding. Changes are previewed live — save to make them permanent.',
+            ['Changes apply to all users across the site', 'Use "Reset to Default" to restore the Forest Teal theme']
+          )}
+
+          {/* Action Buttons */}
+          <Stack horizontal tokens={{ childrenGap: 8 }}>
+            <PrimaryButton text={saving ? 'Saving...' : 'Save Theme'} iconProps={{ iconName: 'Save' }} onClick={handleSave} disabled={saving}
+              styles={{ root: { borderRadius: 4 } }} />
+            <DefaultButton text="Reset to Default" iconProps={{ iconName: 'Undo' }} onClick={handleReset}
+              styles={{ root: { borderRadius: 4 } }} />
+          </Stack>
+
+          {themeMsg && (
+            <MessageBar messageBarType={themeMsg.includes('Failed') ? MessageBarType.error : MessageBarType.success}
+              onDismiss={() => this.setState({ _themeMessage: '' } as any)}>{themeMsg}</MessageBar>
+          )}
+
+          {/* Preset Themes */}
+          <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 4, padding: 16 }}>
+            <Text style={{ fontWeight: 600, fontSize: 13, display: 'block', marginBottom: 10 }}>Preset Themes</Text>
+            <Stack horizontal tokens={{ childrenGap: 8 }} wrap>
+              {presetThemes.map(p => (
+                <div
+                  key={p.key}
+                  role="button" tabIndex={0}
+                  onClick={() => handlePreset(p.key)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handlePreset(p.key); }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    padding: '8px 14px', borderRadius: 4, cursor: 'pointer',
+                    border: `2px solid ${theme.preset === p.key ? p.color : '#e2e8f0'}`,
+                    background: theme.preset === p.key ? `${p.color}10` : '#fff',
+                    transition: 'all 0.15s'
+                  }}
+                >
+                  <div style={{ width: 20, height: 20, borderRadius: 4, background: p.color }} />
+                  <Text style={{ fontSize: 12, fontWeight: theme.preset === p.key ? 700 : 500, color: '#0f172a' }}>{p.name}</Text>
+                  {theme.preset === p.key && <Icon iconName="CheckMark" styles={{ root: { fontSize: 12, color: p.color } }} />}
+                </div>
+              ))}
+            </Stack>
+          </div>
+
+          {/* Two-column layout for settings */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+
+            {/* Left Column — Branding */}
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 4, padding: 16 }}>
+              <Text style={{ fontWeight: 600, fontSize: 14, display: 'block', marginBottom: 12 }}>Branding</Text>
+              <Stack tokens={{ childrenGap: 12 }}>
+                {/* Logo */}
+                <div>
+                  <Text style={{ fontSize: 12, fontWeight: 500, color: '#0f172a', display: 'block', marginBottom: 4 }}>Logo</Text>
+                  {theme.logoUrl ? (
+                    <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
+                      <img src={theme.logoUrl} alt="Logo" style={{ maxHeight: 40, maxWidth: 160, objectFit: 'contain', border: '1px solid #e2e8f0', borderRadius: 4, padding: 4 }} />
+                      <IconButton iconProps={{ iconName: 'Delete' }} title="Remove logo" ariaLabel="Remove logo"
+                        onClick={() => updateTheme({ logoUrl: '' })}
+                        styles={{ root: { height: 28, width: 28 }, icon: { fontSize: 12, color: '#dc2626' } }} />
+                    </Stack>
+                  ) : (
+                    <DefaultButton text="Upload Logo" iconProps={{ iconName: 'Upload' }}
+                      onClick={() => {
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.accept = 'image/png,image/jpeg,image/svg+xml';
+                        input.onchange = (e: any) => {
+                          const file = e.target?.files?.[0];
+                          if (file) void handleLogoUpload(file);
+                        };
+                        input.click();
+                      }}
+                      styles={{ root: { borderRadius: 4 } }}
+                    />
+                  )}
+                  <Text style={{ fontSize: 10, color: '#94a3b8', marginTop: 4, display: 'block' }}>Recommended: 200x48px, PNG or SVG</Text>
+                </div>
+
+                <TextField label="Logo Text" value={theme.logoText} onChange={(_, v) => updateTheme({ logoText: v || '' })}
+                  description="Company/product name shown in the header" />
+                <TextField label="Tagline" value={theme.tagline} onChange={(_, v) => updateTheme({ tagline: v || '' })}
+                  description="Subtitle shown under the logo text" />
+                <TextField label="Footer Text" value={theme.footerText} onChange={(_, v) => updateTheme({ footerText: v || '' })}
+                  description="Copyright/company text in the app footer" />
+
+                <Dropdown label="Font Family" selectedKey={theme.fontFamily} options={[
+                  { key: 'Segoe UI', text: 'Segoe UI (Default)' },
+                  { key: 'Inter', text: 'Inter' },
+                  { key: 'Roboto', text: 'Roboto' },
+                  { key: 'Open Sans', text: 'Open Sans' },
+                  { key: 'Lato', text: 'Lato' },
+                  { key: 'Poppins', text: 'Poppins' },
+                  { key: 'Nunito', text: 'Nunito' },
+                  { key: 'Source Sans Pro', text: 'Source Sans Pro' }
+                ]} onChange={(_, opt) => opt && updateTheme({ fontFamily: opt.key as string })} />
+              </Stack>
+            </div>
+
+            {/* Right Column — Colors */}
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 4, padding: 16 }}>
+              <Text style={{ fontWeight: 600, fontSize: 14, display: 'block', marginBottom: 12 }}>Colors</Text>
+              <Stack tokens={{ childrenGap: 10 }}>
+                {colorPicker('Primary Color', theme.primaryColor, 'primaryColor')}
+                {colorPicker('Primary Dark', theme.primaryDark, 'primaryDark')}
+                {colorPicker('Accent Color', theme.accentColor, 'accentColor')}
+                {colorPicker('Success Color', theme.successColor, 'successColor')}
+                {colorPicker('Warning Color', theme.warningColor, 'warningColor')}
+                {colorPicker('Danger Color', theme.dangerColor, 'dangerColor')}
+
+                <Separator />
+                <Text style={{ fontWeight: 600, fontSize: 13, display: 'block' }}>Header</Text>
+                <Stack horizontal tokens={{ childrenGap: 16 }}>
+                  <Toggle label="Gradient" checked={theme.headerStyle === 'gradient'} onText="Gradient" offText="Solid"
+                    onChange={(_, c) => updateTheme({ headerStyle: c ? 'gradient' : 'solid' })} />
+                </Stack>
+                {theme.headerStyle === 'gradient' && (
+                  <Stack horizontal tokens={{ childrenGap: 12 }}>
+                    <div style={{ flex: 1 }}>{colorPicker('Gradient Start', theme.headerGradientStart, 'headerGradientStart')}</div>
+                    <div style={{ flex: 1 }}>{colorPicker('Gradient End', theme.headerGradientEnd, 'headerGradientEnd')}</div>
+                  </Stack>
+                )}
+
+                <Separator />
+                <Text style={{ fontWeight: 600, fontSize: 13, display: 'block' }}>Surfaces</Text>
+                {colorPicker('Sidebar Background', theme.sidebarBackground, 'sidebarBackground')}
+                {colorPicker('Content Background', theme.contentBackground, 'contentBackground')}
+              </Stack>
+            </div>
+          </div>
+
+          {/* Border Radius */}
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 4, padding: 16 }}>
+            <Text style={{ fontWeight: 600, fontSize: 14, display: 'block', marginBottom: 12 }}>Border Radius</Text>
+            <Stack horizontal tokens={{ childrenGap: 24 }}>
+              <div style={{ flex: 1 }}>
+                <Text style={{ fontSize: 12, fontWeight: 500, display: 'block', marginBottom: 4 }}>
+                  Cards & Containers: {theme.cardBorderRadius}px
+                </Text>
+                <input type="range" min={0} max={16} value={theme.cardBorderRadius}
+                  onChange={(e) => updateTheme({ cardBorderRadius: Number(e.target.value) })}
+                  style={{ width: '100%' }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <Text style={{ fontSize: 12, fontWeight: 500, display: 'block', marginBottom: 4 }}>
+                  Controls & Buttons: {theme.controlBorderRadius}px
+                </Text>
+                <input type="range" min={0} max={8} value={theme.controlBorderRadius}
+                  onChange={(e) => updateTheme({ controlBorderRadius: Number(e.target.value) })}
+                  style={{ width: '100%' }} />
+              </div>
+            </Stack>
+            {/* Preview swatches */}
+            <Stack horizontal tokens={{ childrenGap: 12 }} style={{ marginTop: 12 }}>
+              <div style={{ width: 80, height: 48, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: theme.cardBorderRadius, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ fontSize: 10, color: '#94a3b8' }}>Card</Text>
+              </div>
+              <div style={{ height: 32, padding: '0 16px', background: theme.primaryColor, borderRadius: theme.controlBorderRadius, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ fontSize: 11, color: '#fff', fontWeight: 600 }}>Button</Text>
+              </div>
+              <div style={{ height: 32, padding: '0 12px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: theme.controlBorderRadius, display: 'flex', alignItems: 'center' }}>
+                <Text style={{ fontSize: 11, color: '#94a3b8' }}>Input field</Text>
+              </div>
+            </Stack>
+          </div>
+
+          {/* Live Preview Card */}
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 4, padding: 16 }}>
+            <Text style={{ fontWeight: 600, fontSize: 14, display: 'block', marginBottom: 12 }}>Preview</Text>
+            <div style={{ border: '1px solid #e2e8f0', borderRadius: theme.cardBorderRadius, overflow: 'hidden' }}>
+              {/* Mock header */}
+              <div style={{
+                background: theme.headerStyle === 'gradient'
+                  ? `linear-gradient(135deg, ${theme.headerGradientStart}, ${theme.headerGradientEnd})`
+                  : theme.primaryColor,
+                padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 12
+              }}>
+                {theme.logoUrl ? (
+                  <img src={theme.logoUrl} alt="Logo" style={{ maxHeight: 28, maxWidth: 120, objectFit: 'contain' }} />
+                ) : (
+                  <div style={{ width: 28, height: 28, borderRadius: 4, background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Icon iconName="Shield" styles={{ root: { fontSize: 16, color: '#fff' } }} />
+                  </div>
+                )}
+                <div>
+                  <Text style={{ fontWeight: 700, fontSize: 14, color: '#fff', display: 'block', fontFamily: theme.fontFamily }}>{theme.logoText}</Text>
+                  <Text style={{ fontSize: 9, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: 1, fontFamily: theme.fontFamily }}>{theme.tagline}</Text>
+                </div>
+              </div>
+              {/* Mock content */}
+              <div style={{ padding: 16, background: theme.contentBackground, fontFamily: theme.fontFamily }}>
+                <Stack horizontal tokens={{ childrenGap: 8 }} style={{ marginBottom: 12 }}>
+                  <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: theme.controlBorderRadius, background: `${theme.successColor}18`, color: theme.successColor }}>Published</span>
+                  <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: theme.controlBorderRadius, background: `${theme.primaryColor}18`, color: theme.primaryColor }}>HR Policies</span>
+                  <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: theme.controlBorderRadius, background: `${theme.warningColor}18`, color: theme.warningColor }}>Medium Risk</span>
+                </Stack>
+                <Text style={{ fontWeight: 600, fontSize: 15, display: 'block', marginBottom: 4, fontFamily: theme.fontFamily }}>Employee Code of Conduct</Text>
+                <Text style={{ fontSize: 12, color: '#64748b', display: 'block', marginBottom: 12, fontFamily: theme.fontFamily }}>Standards of professional conduct for all employees.</Text>
+                <Stack horizontal tokens={{ childrenGap: 8 }}>
+                  <div style={{ height: 28, padding: '0 14px', background: theme.primaryColor, borderRadius: theme.controlBorderRadius, display: 'flex', alignItems: 'center' }}>
+                    <Text style={{ fontSize: 11, color: '#fff', fontWeight: 600 }}>Acknowledge</Text>
+                  </div>
+                  <div style={{ height: 28, padding: '0 14px', background: '#fff', border: `1px solid ${theme.primaryColor}`, borderRadius: theme.controlBorderRadius, display: 'flex', alignItems: 'center' }}>
+                    <Text style={{ fontSize: 11, color: theme.primaryColor, fontWeight: 600 }}>View Details</Text>
+                  </div>
+                </Stack>
+              </div>
+              {/* Mock footer */}
+              <div style={{ padding: '8px 20px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', textAlign: 'center' }}>
+                <Text style={{ fontSize: 10, color: '#94a3b8', fontFamily: theme.fontFamily }}>{theme.footerText}</Text>
+              </div>
+            </div>
+          </div>
+        </Stack>
+      </div>
+    );
+  }
+
+  // ============================================================================
   // RENDER: SYSTEM INFO (ABOUT)
   // ============================================================================
 
@@ -6417,6 +8057,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     return (
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 24 }}>
+          {this.renderSectionIntro('System Information', 'View technical details about the Policy Manager installation including version, environment, and configuration status.')}
           {/* About Header */}
           <div>
             <Text variant="xLarge" style={{ ...TextStyles.semiBold, display: 'block', marginBottom: 4 }}>About DWx Policy Manager</Text>
@@ -6594,6 +8235,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     return (
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 24 }}>
+          {this.renderSectionIntro('DWx Suite', 'Explore other applications in the DWx (Digital Workplace Excellence) suite. Policy Manager integrates with these apps for cross-application workflows and notifications.')}
           {/* Header */}
           <div style={{
             background: 'linear-gradient(135deg, #1a5a8a, #2d7ab8)',
@@ -6808,6 +8450,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
 
     return (
       <div>
+        {this.renderSectionIntro('AI Settings', 'Configure AI-powered features including the chat assistant and document converter.')}
         <Text variant="large" style={{ ...TextStyles.semiBold, color: Colors.textDark, marginBottom: 8, display: 'block' }}>AI Settings</Text>
         <Text variant="small" style={{ ...TextStyles.tertiary, display: 'block', marginBottom: 20 }}>
           Configure AI-powered services including the chat assistant and document conversion pipeline.
@@ -7440,10 +9083,13 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       case 'navigation': return this.renderNavigationContent();
       case 'aiAssistant': return this.renderAIAssistantContent();
       case 'settings': return this.renderSettingsContent();
+      case 'customTheme': return this.renderCustomThemeContent();
       case 'provisioning': return this.renderProvisioningContent();
       case 'documentStorage': return this.renderDocumentStorageContent();
       case 'secureLibraries': return this.renderSecureLibrariesContent();
       case 'securityGroups': return this.renderSecurityGroupsContent();
+      case 'dlpRules': return this.renderDLPRulesContent();
+      case 'dataRetention': return this.renderDataRetentionContent();
       case 'systemInfo': return this.renderSystemInfoContent();
       case 'productShowcase': return this.renderProductShowcaseContent();
       default: return this.renderTemplatesContent();

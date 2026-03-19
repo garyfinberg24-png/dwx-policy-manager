@@ -572,7 +572,15 @@ function injectFallbackCSS(): void {
 
     /* ----- Fluent UI v8 Panel — border-radius + header color ----- */
     .ms-Panel-main {
-      border-radius: 8px 0 0 8px !important;
+      border-radius: 0 !important;
+    }
+    .ms-Panel-navigation,
+    div[class*="navigation_"] {
+      background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%) !important;
+      border-bottom: none !important;
+      justify-content: flex-end !important;
+      padding: 8px 8px 0 0 !important;
+      height: auto !important;
     }
     .ms-Panel-header,
     div[class*="header_"] {

@@ -1,0 +1,223 @@
+/**
+ * Theme Manager — Applies custom theme CSS properties and overrides
+ *
+ * Reads theme config from PM_Configuration (or localStorage fallback)
+ * and applies CSS custom properties to the document root. Also injects
+ * a <style> block that overrides hardcoded color references.
+ *
+ * Usage:
+ *   import { ThemeManager } from '../utils/themeManager';
+ *   ThemeManager.apply(themeConfig);    // Apply theme
+ *   ThemeManager.reset();               // Reset to default
+ *   ThemeManager.getTheme();            // Get current theme from storage
+ */
+
+import { ICustomTheme, DEFAULT_THEME } from '../models/IAdminConfig';
+
+const THEME_STYLE_ID = 'pm-custom-theme-styles';
+const THEME_STORAGE_KEY = 'pm_custom_theme';
+
+export class ThemeManager {
+  /**
+   * Apply a custom theme to the document.
+   * Sets CSS custom properties on :root and injects override styles.
+   */
+  public static apply(theme: Partial<ICustomTheme>): void {
+    const merged: ICustomTheme = { ...DEFAULT_THEME, ...theme };
+    const root = document.documentElement;
+
+    // Set CSS custom properties
+    root.style.setProperty('--pm-primary', merged.primaryColor);
+    root.style.setProperty('--pm-primary-dark', merged.primaryDark);
+    root.style.setProperty('--pm-accent', merged.accentColor);
+    root.style.setProperty('--pm-success', merged.successColor);
+    root.style.setProperty('--pm-warning', merged.warningColor);
+    root.style.setProperty('--pm-danger', merged.dangerColor);
+    root.style.setProperty('--pm-sidebar-bg', merged.sidebarBackground);
+    root.style.setProperty('--pm-content-bg', merged.contentBackground);
+    root.style.setProperty('--pm-card-bg', merged.cardBackground);
+    root.style.setProperty('--pm-card-radius', `${merged.cardBorderRadius}px`);
+    root.style.setProperty('--pm-control-radius', `${merged.controlBorderRadius}px`);
+    root.style.setProperty('--pm-font-family', merged.fontFamily);
+
+    // Header gradient/solid
+    const headerBg = merged.headerStyle === 'gradient'
+      ? `linear-gradient(135deg, ${merged.headerGradientStart} 0%, ${merged.headerGradientEnd} 100%)`
+      : merged.primaryColor;
+    root.style.setProperty('--pm-header-bg', headerBg);
+
+    // Inject override stylesheet
+    this.injectOverrideStyles(merged);
+
+    // Persist to localStorage for cross-webpart sharing
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(merged));
+    } catch { /* storage unavailable */ }
+  }
+
+  /**
+   * Reset theme to Forest Teal defaults.
+   */
+  public static reset(): void {
+    this.apply(DEFAULT_THEME);
+    try { localStorage.removeItem(THEME_STORAGE_KEY); } catch { /* */ }
+  }
+
+  /**
+   * Get the current theme from localStorage (or default).
+   */
+  public static getTheme(): ICustomTheme {
+    try {
+      const stored = localStorage.getItem(THEME_STORAGE_KEY);
+      if (stored) {
+        return { ...DEFAULT_THEME, ...JSON.parse(stored) };
+      }
+    } catch { /* */ }
+    return { ...DEFAULT_THEME };
+  }
+
+  /**
+   * Save theme to SP PM_Configuration list.
+   */
+  public static async saveToSP(sp: any, theme: ICustomTheme): Promise<void> {
+    try {
+      const list = sp.web.lists.getByTitle('PM_Configuration');
+      const items = await list.items.filter("ConfigKey eq 'Theme.CustomConfig'").top(1)();
+      const json = JSON.stringify(theme);
+      if (items.length > 0) {
+        await list.items.getById(items[0].Id).update({ ConfigValue: json });
+      } else {
+        await list.items.add({
+          Title: 'Custom Theme',
+          ConfigKey: 'Theme.CustomConfig',
+          ConfigValue: json,
+          Category: 'Theme',
+          IsActive: true
+        });
+      }
+    } catch (err) {
+      console.error('[ThemeManager] Failed to save theme to SP:', err);
+      throw err;
+    }
+  }
+
+  /**
+   * Load theme from SP PM_Configuration list.
+   */
+  public static async loadFromSP(sp: any): Promise<ICustomTheme> {
+    try {
+      const list = sp.web.lists.getByTitle('PM_Configuration');
+      const items = await list.items.filter("ConfigKey eq 'Theme.CustomConfig'").top(1)();
+      if (items.length > 0 && items[0].ConfigValue) {
+        const parsed = JSON.parse(items[0].ConfigValue);
+        return { ...DEFAULT_THEME, ...parsed };
+      }
+    } catch (err) {
+      console.error('[ThemeManager] Failed to load theme from SP:', err);
+    }
+    return { ...DEFAULT_THEME };
+  }
+
+  /**
+   * Inject a <style> block that overrides hardcoded colors with CSS custom properties.
+   * This allows existing inline styles and SCSS to be overridden without refactoring.
+   */
+  private static injectOverrideStyles(theme: ICustomTheme): void {
+    // Remove existing override block
+    const existing = document.getElementById(THEME_STYLE_ID);
+    if (existing) existing.remove();
+
+    const style = document.createElement('style');
+    style.id = THEME_STYLE_ID;
+    style.textContent = `
+      /* ═══════════════════════════════════════════════════════════ */
+      /* PM Custom Theme Overrides — Generated by ThemeManager      */
+      /* ═══════════════════════════════════════════════════════════ */
+
+      :root {
+        --pm-primary: ${theme.primaryColor};
+        --pm-primary-dark: ${theme.primaryDark};
+        --pm-accent: ${theme.accentColor};
+        --pm-success: ${theme.successColor};
+        --pm-warning: ${theme.warningColor};
+        --pm-danger: ${theme.dangerColor};
+        --pm-header-bg: ${theme.headerStyle === 'gradient'
+          ? `linear-gradient(135deg, ${theme.headerGradientStart}, ${theme.headerGradientEnd})`
+          : theme.primaryColor};
+        --pm-sidebar-bg: ${theme.sidebarBackground};
+        --pm-content-bg: ${theme.contentBackground};
+        --pm-card-bg: ${theme.cardBackground};
+        --pm-card-radius: ${theme.cardBorderRadius}px;
+        --pm-control-radius: ${theme.controlBorderRadius}px;
+        --pm-font-family: '${theme.fontFamily}', 'Segoe UI', system-ui, sans-serif;
+      }
+
+      /* Header override */
+      [class*="appHeader"], [class*="headerGradient"], [class*="header_"] {
+        background: var(--pm-header-bg) !important;
+      }
+
+      /* Primary color overrides — buttons, active states, links */
+      .ms-Button--primary, [class*="primaryButton"] {
+        background-color: var(--pm-primary) !important;
+        border-color: var(--pm-primary) !important;
+      }
+      .ms-Button--primary:hover {
+        background-color: var(--pm-primary-dark) !important;
+        border-color: var(--pm-primary-dark) !important;
+      }
+
+      /* Toggle overrides */
+      .ms-Toggle.is-checked .ms-Toggle-background {
+        background-color: var(--pm-primary) !important;
+        border-color: var(--pm-primary) !important;
+      }
+
+      /* Active nav items */
+      [class*="navItemActive"], [class*="activeNavItem"] {
+        background-color: ${theme.primaryColor}15 !important;
+        border-left-color: var(--pm-primary) !important;
+        color: var(--pm-primary) !important;
+      }
+
+      /* Sidebar background */
+      [class*="sidebar"], [class*="adminSidebar"] {
+        background-color: var(--pm-sidebar-bg) !important;
+      }
+
+      /* Badge overrides — teal badges */
+      [class*="badgeGreen"], [class*="badgeTeal"] {
+        background-color: ${theme.primaryColor}18 !important;
+        color: var(--pm-primary) !important;
+      }
+
+      /* Font family */
+      [class*="policyManager"], [class*="jmlApp"], [class*="dwxPolicy"] {
+        font-family: var(--pm-font-family) !important;
+      }
+
+      /* Read timer and progress — teal accents */
+      [class*="readTimer"] {
+        color: var(--pm-primary) !important;
+      }
+
+      /* Scroll progress fill */
+      [class*="scrollProgressFill"] {
+        background-color: var(--pm-primary) !important;
+      }
+
+      /* Card border radius */
+      [class*="adminCard"], [class*="wizardCard"], .ms-Card {
+        border-radius: var(--pm-card-radius) !important;
+      }
+
+      /* Control border radius */
+      .ms-TextField-fieldGroup, .ms-Dropdown-title, .ms-Button,
+      .ms-SearchBox, .ms-ComboBox-Input {
+        border-radius: var(--pm-control-radius) !important;
+      }
+    `;
+
+    document.head.appendChild(style);
+  }
+}

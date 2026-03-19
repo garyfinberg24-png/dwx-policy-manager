@@ -1,11 +1,11 @@
 // @ts-nocheck
+import { Icon } from '@fluentui/react/lib/Icon';
 import * as React from 'react';
 import styles from './MyPolicies.module.scss';
 import { IMyPoliciesProps } from './IMyPoliciesProps';
 import {
   Spinner,
   SpinnerSize,
-  Icon,
   SearchBox,
   PrimaryButton,
   DefaultButton

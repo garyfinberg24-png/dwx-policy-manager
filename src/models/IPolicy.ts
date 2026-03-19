@@ -542,14 +542,35 @@ export interface IPolicyDistribution extends IBaseListItem {
 // POLICY TEMPLATES
 // ============================================================================
 
+export type PolicyTemplateType = 'blank' | 'richtext' | 'word' | 'excel' | 'powerpoint' | 'corporate' | 'regulatory';
+
+export interface ITemplateSectionDef {
+  id: string;
+  title: string;
+  description: string;
+  required: boolean;
+  helpText?: string;
+  defaultContent?: string;
+}
+
 export interface IPolicyTemplate extends IBaseListItem {
   TemplateName: string;
   TemplateCategory: PolicyCategory;
   Description: string;
+  TemplateDescription?: string;
 
-  // Template Content
+  // Template Type
+  TemplateType: PolicyTemplateType;
+
+  // Template Content (varies by type)
   HTMLTemplate?: string;
+  TemplateContent?: string;
   DocumentTemplateURL?: string;
+  Sections?: string; // JSON array of ITemplateSectionDef (for corporate/regulatory)
+
+  // Regulatory-specific
+  RegulatoryFramework?: string; // e.g., 'POPIA', 'GDPR', 'OHS Act'
+  RegulatoryReferences?: string; // Semicolon-separated clause references
 
   // Default Settings
   DefaultAcknowledgementType: AcknowledgementType;
@@ -557,6 +578,13 @@ export interface IPolicyTemplate extends IBaseListItem {
   DefaultRequiresQuiz: boolean;
   DefaultReviewCycleMonths: number;
   DefaultComplianceRisk: ComplianceRisk;
+
+  // Compliance fields (used by actual implementation)
+  ComplianceRisk?: string;
+  SuggestedReadTimeframe?: string;
+  RequiresAcknowledgement?: boolean;
+  RequiresQuiz?: boolean;
+  KeyPointsTemplate?: string;
 
   // Metadata
   UsageCount: number;

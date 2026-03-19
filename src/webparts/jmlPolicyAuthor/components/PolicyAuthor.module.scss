@@ -655,7 +655,7 @@
   .creationMethodIcon {
     width: 36px;
     height: 36px;
-    border-radius: 6px;
+    border-radius: 4px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1035,7 +1035,7 @@
   .kanbanCard {
     background: #ffffff;
     border: 1px solid #edebe9;
-    border-radius: 6px;
+    border-radius: 4px;
     padding: 12px;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -1669,7 +1669,7 @@
 
   .v3Tip {
     background: #f0fdfa;
-    border-radius: 6px;
+    border-radius: 4px;
     padding: 12px;
     font-size: 12px;
     color: #115e59;
@@ -1683,7 +1683,7 @@
     align-items: center;
     gap: 8px;
     padding: 8px 10px;
-    border-radius: 6px;
+    border-radius: 4px;
     font-size: 12px;
     color: #4b5563;
     transition: background 0.15s;

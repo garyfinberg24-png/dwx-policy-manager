@@ -8,7 +8,6 @@ import {
   DefaultButton,
   IconButton,
   SearchBox,
-  Panel,
   PanelType,
   TextField,
   Dropdown,
@@ -22,6 +21,7 @@ import {
   MessageBar,
   MessageBarType,
 } from '@fluentui/react';
+import { StyledPanel } from '../../../components/StyledPanel';
 import { PeoplePicker, PrincipalType } from "@pnp/spfx-controls-react/lib/PeoplePicker";
 import { PolicyDistributionService, ISPDistributionItem } from '../../../services/PolicyDistributionService';
 
@@ -911,7 +911,7 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
             text="New Campaign"
             iconProps={{ iconName: 'Add' }}
             onClick={this.openCreatePanel}
-            styles={{ root: { borderRadius: 6, background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' }, label: { fontWeight: 400 } }}
+            styles={{ root: { borderRadius: 4, background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' }, label: { fontWeight: 400 } }}
           />
         </div>
       </div>
@@ -1027,25 +1027,25 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
           </div>
           <div className={styles.detailActions}>
             {c.status === 'Draft' && (
-              <PrimaryButton text="Send Now" iconProps={{ iconName: 'Send' }} styles={{ root: { borderRadius: 6, background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }} />
+              <PrimaryButton text="Send Now" iconProps={{ iconName: 'Send' }} styles={{ root: { borderRadius: 4, background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }} />
             )}
             {c.status === 'Active' && (
-              <DefaultButton text="Pause" iconProps={{ iconName: 'Pause' }} styles={{ root: { borderRadius: 6 } }} />
+              <DefaultButton text="Pause" iconProps={{ iconName: 'Pause' }} styles={{ root: { borderRadius: 4 } }} />
             )}
-            <DefaultButton text="Send Reminder" iconProps={{ iconName: 'Ringer' }} styles={{ root: { borderRadius: 6 } }} />
+            <DefaultButton text="Send Reminder" iconProps={{ iconName: 'Ringer' }} styles={{ root: { borderRadius: 4 } }} />
             <DefaultButton
               text={this.state.metricsLoading ? 'Refreshing...' : 'Refresh Metrics'}
               iconProps={{ iconName: 'Refresh' }}
               disabled={this.state.metricsLoading}
               onClick={this.refreshMetrics}
-              styles={{ root: { borderRadius: 6 } }}
+              styles={{ root: { borderRadius: 4 } }}
             />
             {c.escalationEnabled && c.totalOverdue > 0 && (
               <DefaultButton
                 text={`Escalate Overdue (${c.totalOverdue})`}
                 iconProps={{ iconName: 'Warning' }}
                 onClick={this.handleEscalation}
-                styles={{ root: { borderRadius: 6, borderColor: '#d97706', color: '#d97706' }, rootHovered: { background: '#fffbeb', borderColor: '#b45309', color: '#b45309' } }}
+                styles={{ root: { borderRadius: 4, borderColor: '#d97706', color: '#d97706' }, rootHovered: { background: '#fffbeb', borderColor: '#b45309', color: '#b45309' } }}
               />
             )}
             <IconButton iconProps={{ iconName: 'Edit' }} title="Edit Campaign" onClick={() => this.openEditPanel(c)} />
@@ -1145,15 +1145,15 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
     const { showCreatePanel, editingCampaign, formCampaignName, formContentType, formPolicyId, formPolicyPackId, formScope, formTargetUsers, formTargetGroups, formScheduledDate, formDueDate, formEscalation, formReminder, errorMessage, policyOptions, policyPackOptions } = this.state;
 
     return (
-      <Panel
+      <StyledPanel
         isOpen={showCreatePanel}
         onDismiss={() => this.setState({ showCreatePanel: false, errorMessage: '' })}
         type={PanelType.medium}
         headerText={editingCampaign ? 'Edit Distribution Campaign' : 'New Distribution Campaign'}
         onRenderFooterContent={() => (
           <div style={{ display: 'flex', gap: 8 }}>
-            <PrimaryButton text={editingCampaign ? 'Update' : 'Create Campaign'} onClick={this.saveCampaign} styles={{ root: { borderRadius: 6, background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }} />
-            <DefaultButton text="Cancel" onClick={() => this.setState({ showCreatePanel: false, errorMessage: '' })} styles={{ root: { borderRadius: 6 } }} />
+            <PrimaryButton text={editingCampaign ? 'Update' : 'Create Campaign'} onClick={this.saveCampaign} styles={{ root: { borderRadius: 4, background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }} />
+            <DefaultButton text="Cancel" onClick={() => this.setState({ showCreatePanel: false, errorMessage: '' })} styles={{ root: { borderRadius: 4 } }} />
           </div>
         )}
         isFooterAtBottom={true}
@@ -1359,7 +1359,7 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
             </div>
           </div>
         </div>
-      </Panel>
+      </StyledPanel>
     );
   }
 

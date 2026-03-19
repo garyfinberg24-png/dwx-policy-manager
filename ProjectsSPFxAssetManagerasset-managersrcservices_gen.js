@@ -1,0 +1,20 @@
+var fs = require("fs");
+var Q = String.fromCharCode(39);
+var BT = String.fromCharCode(96);
+var DL = String.fromCharCode(36);
+var NL = String.fromCharCode(10);
+var t = "";
+
+t += "// Request Service" + NL;
+t += "// Asset request workflow management" + NL;
+t += NL;
+t += "import { SPFI } from " + Q + "@pnp/sp" + Q + ";" + NL;
+t += "import " + Q + "@pnp/sp/webs" + Q + ";" + NL;
+t += "import " + Q + "@pnp/sp/lists" + Q + ";" + NL;
+t += "import " + Q + "@pnp/sp/items" + Q + ";" + NL;
+t += "import " + Q + "@pnp/sp/items/get-all" + Q + ";" + NL;
+t += "import " + Q + "@pnp/sp/site-users/web" + Q + ";" + NL;
+t += "import { IAssetRequest, AssetCategory } from " + Q + "../models/IAsset" + Q + ";" + NL;
+t += "import { AM_LISTS } from " + Q + "../constants/SharePointListNames" + Q + ";" + NL;
+fs.writeFileSync("C:\Projects\SPFx\AssetManager\asset-manager\src\services\_write_rs.js", "//ok");
+console.log("header generated: " + t.length);

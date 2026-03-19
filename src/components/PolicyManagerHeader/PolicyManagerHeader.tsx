@@ -268,6 +268,26 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [showProfileDropdown, setShowProfileDropdown] = React.useState(false);
+  const [openNavGroup, setOpenNavGroup] = React.useState<string | null>(null);
+  const navGroupRef = React.useRef<HTMLDivElement>(null);
+
+  // Close nav dropdown on outside click
+  React.useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (navGroupRef.current && !navGroupRef.current.contains(e.target as Node)) {
+        setOpenNavGroup(null);
+      }
+    };
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpenNavGroup(null);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, []);
   const [showRecentlyViewedDropdown, setShowRecentlyViewedDropdown] = React.useState(false);
 
   // Request Policy Wizard — extracted to PolicyRequestWizard.tsx
@@ -383,35 +403,113 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
   // Format login time
   const displayLoginTime = loginTime || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-  // Default nav items — ordered by workflow: consume → author → manage → analyse
-  // Role filtering applied via PolicyRoleService.filterNavForRole()
-  const defaultNavItems: INavItem[] = [
+  // ── Grouped nav structure ──
+  // Flat items: visible to all (role-filtered). Dropdown groups: Author, Manager.
+  interface INavGroup {
+    key: string;
+    text: string;
+    icon: JSX.Element;
+    minRole: 'User' | 'Author' | 'Manager' | 'Admin';
+    children: INavItem[];
+  }
+
+  const flatNavItems: INavItem[] = [
     { key: 'my-policies', text: 'My Policies', icon: NavIcons.authored, href: '/sites/PolicyManager/SitePages/MyPolicies.aspx' },
     { key: 'browse', text: 'Policy Hub', icon: NavIcons.browse, href: '/sites/PolicyManager/SitePages/PolicyHub.aspx' },
-    { key: 'create', text: 'Policy Builder', icon: NavIcons.create, href: '/sites/PolicyManager/SitePages/PolicyBuilder.aspx' },
-    { key: 'author', text: 'Policy Author', icon: NavIcons.authored, href: '/sites/PolicyManager/SitePages/PolicyAuthor.aspx' },
-    { key: 'packs', text: 'Policy Packs', icon: NavIcons.packs, href: '/sites/PolicyManager/SitePages/PolicyPacks.aspx' },
-    { key: 'distribution', text: 'Distribution', icon: NavIcons.distribution, href: '/sites/PolicyManager/SitePages/PolicyDistribution.aspx' },
-    { key: 'manager', text: 'Policy Manager', icon: NavIcons.manager, href: '/sites/PolicyManager/SitePages/PolicyManagerView.aspx' },
-    { key: 'analytics', text: 'Analytics', icon: NavIcons.analytics, href: '/sites/PolicyManager/SitePages/PolicyAnalytics.aspx' },
-    { key: 'quiz', text: 'Quiz Builder', icon: NavIcons.quiz, href: '/sites/PolicyManager/SitePages/QuizBuilder.aspx' },
   ];
 
-  const allNavItems = navItems.length > 0 ? navItems : defaultNavItems;
-  // Filter by EXPLICIT role permissions (no hierarchy inheritance)
-  const roleFiltered = policyRole ? filterNavForRole(allNavItems, policyRole, rolePermissions) : allNavItems;
+  const navGroups: INavGroup[] = [
+    {
+      key: 'author-group', text: 'Author', icon: NavIcons.authored, minRole: 'Author',
+      children: [
+        { key: 'create', text: 'Policy Builder', icon: NavIcons.create, href: '/sites/PolicyManager/SitePages/PolicyBuilder.aspx' },
+        { key: 'packs', text: 'Policy Packs', icon: NavIcons.packs, href: '/sites/PolicyManager/SitePages/PolicyPacks.aspx' },
+        { key: 'quiz', text: 'Quiz Builder', icon: NavIcons.quiz, href: '/sites/PolicyManager/SitePages/QuizBuilder.aspx' },
+      ]
+    },
+    {
+      key: 'manager-group', text: 'Manager', icon: NavIcons.manager, minRole: 'Manager',
+      children: [
+        { key: 'distribution', text: 'Distribution', icon: NavIcons.distribution, href: '/sites/PolicyManager/SitePages/PolicyDistribution.aspx' },
+        { key: 'approvals', text: 'Approvals', icon: NavIcons.approvals, href: '/sites/PolicyManager/SitePages/PolicyManagerView.aspx' },
+        { key: 'reports', text: 'Reports', icon: NavIcons.details, href: '/sites/PolicyManager/SitePages/PolicyManagerView.aspx?tab=reports' },
+        { key: 'analytics', text: 'Analytics', icon: NavIcons.analytics, href: '/sites/PolicyManager/SitePages/PolicyAnalytics.aspx' },
+        { key: 'executive', text: 'Executive Dashboard', icon: NavIcons.analytics, href: '/sites/PolicyManager/SitePages/PolicyAnalytics.aspx?tab=executive' },
+      ]
+    }
+  ];
 
-  // Apply admin navigation toggles from localStorage (set via PolicyAdmin > Navigation)
-  const displayNavItems = roleFiltered.filter(item => {
-    // If no admin toggle settings saved yet, show everything (default)
+  // ── Secure Policies dropdown — group-membership based ──
+  const [secureLibItems, setSecureLibItems] = React.useState<Array<{ title: string; libraryUrl: string; icon: string }>>([]);
+  const [secureLibsChecked, setSecureLibsChecked] = React.useState(false);
+
+  React.useEffect(() => {
+    if (secureLibsChecked || !sp) return;
+    setSecureLibsChecked(true);
+
+    // Load secure libraries config from localStorage (fast) then SP (authoritative)
+    let libs: Array<{ title: string; libraryUrl: string; securityGroups: string[]; icon: string; isActive: boolean }> = [];
+    try {
+      const cached = localStorage.getItem('pm_secure_libraries');
+      if (cached) libs = JSON.parse(cached).filter((l: any) => l.isActive);
+    } catch { /* */ }
+
+    // Also try loading from SP for fresh data
+    sp.web.lists.getByTitle('PM_Configuration')
+      .items.filter("ConfigKey eq 'Admin.SecureLibraries.Config'")
+      .select('ConfigValue').top(1)()
+      .then((items: any[]) => {
+        if (items.length > 0 && items[0].ConfigValue) {
+          try {
+            libs = JSON.parse(items[0].ConfigValue).filter((l: any) => l.isActive);
+            localStorage.setItem('pm_secure_libraries', items[0].ConfigValue);
+          } catch { /* */ }
+        }
+        if (libs.length === 0) return;
+
+        // Check which groups the current user belongs to
+        sp.web.currentUser.groups()
+          .then((userGroups: any[]) => {
+            const userGroupNames = new Set(userGroups.map((g: any) => g.Title));
+            const accessible = libs.filter(lib =>
+              lib.securityGroups.some(sg => userGroupNames.has(sg))
+            );
+            if (accessible.length > 0) {
+              setSecureLibItems(accessible.map(l => ({ title: l.title, libraryUrl: l.libraryUrl, icon: l.icon || 'Lock' })));
+            }
+          })
+          .catch(() => { /* can't check groups */ });
+      })
+      .catch(() => { /* PM_Configuration may not exist */ });
+  }, [sp, secureLibsChecked]);
+
+  // Legacy flat list for role filtering compatibility
+  const allFlatKeys = [
+    ...flatNavItems,
+    ...navGroups.flatMap(g => g.children)
+  ];
+  const allNavItems = navItems.length > 0 ? navItems : allFlatKeys;
+  const roleFiltered = policyRole ? filterNavForRole(allNavItems, policyRole, rolePermissions) : allNavItems;
+  const roleFilteredKeys = new Set(roleFiltered.map(item => item.key));
+
+  // Apply admin navigation toggles
+  const isNavVisible = (key: string): boolean => {
+    if (!roleFilteredKeys.has(key)) return false;
     if (Object.keys(navVisibility).length === 0) return true;
-    // Look up the toggle key for this nav item
-    const toggleKey = NAV_KEY_TO_TOGGLE_KEY[item.key];
-    // If no mapping exists for this nav key, always show it
+    const toggleKey = NAV_KEY_TO_TOGGLE_KEY[key];
     if (!toggleKey) return true;
-    // Check admin toggle — default to visible if this specific toggle key isn't in the saved data
     return navVisibility[toggleKey] !== false;
-  });
+  };
+
+  const displayFlatItems = flatNavItems.filter(item => isNavVisible(item.key));
+  const displayGroups = navGroups
+    .filter(g => {
+      if (!policyRole) return true;
+      const roleLevel: Record<string, number> = { User: 0, Author: 1, Manager: 2, Admin: 3 };
+      return (roleLevel[policyRole] || 0) >= (roleLevel[g.minRole] || 0);
+    })
+    .map(g => ({ ...g, children: g.children.filter(c => isNavVisible(c.key)) }))
+    .filter(g => g.children.length > 0);
 
   // Override header visibility based on role
   const roleVisibility = policyRole ? getHeaderVisibility(policyRole, rolePermissions) : null;
@@ -521,18 +619,7 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
               </svg>
               New Policy
             </button>
-            <button
-              className={styles.quickActionBtn}
-              type="button"
-              title="Request Policy"
-              aria-label="Request Policy"
-              onClick={() => setShowRequestWizard(true)}
-            >
-              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              Request Policy
-            </button>
+            {/* Request Policy moved to Manager dropdown */}
             <div className={styles.dropdownContainer} ref={recentlyViewedRef} style={{ display: 'inline-flex' }}>
               <button
                 className={styles.quickActionBtn}
@@ -770,8 +857,9 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
 
       {/* Navigation Bar - White background */}
       <nav className={styles.navBar}>
-        <div className={styles.navItems}>
-          {displayNavItems.map((item) => (
+        <div className={styles.navItems} ref={navGroupRef}>
+          {/* Flat nav items */}
+          {displayFlatItems.map((item) => (
             <a
               key={item.key}
               href={item.href}
@@ -780,18 +868,144 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
             >
               {item.icon}
               {item.text}
-              {item.badge !== undefined && item.badge > 0 && (
-                <span className={`${styles.navBadge} ${getBadgeClass(item.badgeColor)}`}>
-                  {item.badge}
-                </span>
-              )}
-              {item.hasDropdown && (
-                <span className={styles.navDropdown}>
-                  {NavIcons.dropdown}
-                </span>
-              )}
             </a>
           ))}
+
+          {/* Separator between flat and grouped items */}
+          {displayGroups.length > 0 && (
+            <div style={{ width: 1, height: 20, background: '#e2e8f0', margin: '8px 4px', alignSelf: 'center' }} />
+          )}
+
+          {/* Dropdown groups */}
+          {displayGroups.map((group) => {
+            const isOpen = openNavGroup === group.key;
+            const hasActiveChild = group.children.some(c => activeNavKey === c.key);
+            return (
+              <div key={group.key} style={{ position: 'relative' }}>
+                <button
+                  type="button"
+                  className={`${styles.navItem} ${hasActiveChild ? styles.active : ''}`}
+                  onClick={() => setOpenNavGroup(isOpen ? null : group.key)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 'inherit' }}
+                >
+                  {group.icon}
+                  {group.text}
+                  <svg viewBox="0 0 24 24" fill="none" style={{
+                    width: 12, height: 12, marginLeft: 2, transition: 'transform 0.2s',
+                    transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)'
+                  }}>
+                    <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+
+                {isOpen && (
+                  <div style={{
+                    position: 'absolute', top: '100%', left: 0, background: '#fff',
+                    border: '1px solid #e2e8f0', borderRadius: 4,
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.12)', minWidth: 240,
+                    zIndex: 100, padding: '4px 0'
+                  }}>
+                    {group.children.map((child) => (
+                      <a
+                        key={child.key}
+                        href={child.href}
+                        onClick={() => setOpenNavGroup(null)}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px',
+                          fontSize: 13, color: activeNavKey === child.key ? '#0d9488' : '#334155',
+                          fontWeight: activeNavKey === child.key ? 600 : 400,
+                          background: activeNavKey === child.key ? '#f0fdfa' : 'transparent',
+                          textDecoration: 'none', cursor: 'pointer'
+                        }}
+                        onMouseEnter={(e) => { if (activeNavKey !== child.key) (e.currentTarget as HTMLElement).style.background = '#f0fdfa'; }}
+                        onMouseLeave={(e) => { if (activeNavKey !== child.key) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+                      >
+                        <span style={{ width: 20, display: 'flex', justifyContent: 'center' }}>{child.icon}</span>
+                        {child.text}
+                      </a>
+                    ))}
+                    {/* Request Policy in Manager group */}
+                    {group.key === 'manager-group' && (
+                      <>
+                        <div style={{ height: 1, background: '#f1f5f9', margin: '4px 0' }} />
+                        <button
+                          type="button"
+                          onClick={() => { setOpenNavGroup(null); setShowRequestWizard(true); }}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px',
+                            fontSize: 13, color: '#334155', background: 'transparent', border: 'none',
+                            cursor: 'pointer', width: '100%', textAlign: 'left', fontFamily: 'inherit'
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.background = '#f0fdfa'}
+                          onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.background = 'transparent'}
+                        >
+                          <span style={{ width: 20, display: 'flex', justifyContent: 'center' }}>
+                            <svg viewBox="0 0 24 24" fill="none" style={{ width: 16, height: 16 }}>
+                              <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          </span>
+                          Request Policy
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          {/* Secure Policies dropdown — only visible to security group members */}
+          {secureLibItems.length > 0 && (
+            <>
+              <div style={{ width: 1, height: 20, background: '#e2e8f0', margin: '8px 4px', alignSelf: 'center' }} />
+              <div style={{ position: 'relative' }}>
+                <button
+                  type="button"
+                  className={`${styles.navItem} ${activeNavKey === 'secure' ? styles.active : ''}`}
+                  onClick={() => setOpenNavGroup(openNavGroup === 'secure-group' ? null : 'secure-group')}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 'inherit' }}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" style={{ width: 16, height: 16 }}>
+                    <rect x="3" y="11" width="18" height="11" rx="2" stroke="currentColor" strokeWidth="2"/>
+                    <path d="M7 11V7a5 5 0 0110 0v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  </svg>
+                  Secure Policies
+                  <svg viewBox="0 0 24 24" fill="none" style={{
+                    width: 12, height: 12, marginLeft: 2, transition: 'transform 0.2s',
+                    transform: openNavGroup === 'secure-group' ? 'rotate(180deg)' : 'rotate(0deg)'
+                  }}>
+                    <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+
+                {openNavGroup === 'secure-group' && (
+                  <div style={{
+                    position: 'absolute', top: '100%', left: 0, background: '#fff',
+                    border: '1px solid #e2e8f0', borderRadius: 4,
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.12)', minWidth: 260,
+                    zIndex: 100, padding: '4px 0'
+                  }}>
+                    {secureLibItems.map(lib => (
+                      <a
+                        key={lib.libraryUrl}
+                        href={`/sites/PolicyManager/SitePages/PolicyHub.aspx?library=${encodeURIComponent(lib.libraryUrl)}`}
+                        onClick={() => setOpenNavGroup(null)}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px',
+                          fontSize: 13, color: '#334155', textDecoration: 'none', cursor: 'pointer'
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.background = '#f0fdfa'}
+                        onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.background = 'transparent'}
+                      >
+                        <Icon iconName={lib.icon || 'Lock'} styles={{ root: { fontSize: 16, color: '#0d9488' } }} />
+                        {lib.title}
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </div>
 
         {/* Quick Actions */}

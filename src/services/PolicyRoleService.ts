@@ -107,25 +107,6 @@ export function hasMinimumRole(currentRole: PolicyManagerRole, requiredRole: Pol
   return ROLE_LEVEL[currentRole] >= ROLE_LEVEL[requiredRole];
 }
 
-/**
- * Map from nav item keys to role permission table keys.
- * The permission table uses different keys than the nav items.
- */
-const NAV_KEY_TO_PERMISSION_KEY: Record<string, string> = {
-  'browse': 'browse',
-  'my-policies': 'myPolicies',
-  'details': 'details',
-  'create': 'create',
-  'author': 'create',        // "Policy Author" page uses create permission
-  'packs': 'packs',
-  'requests': 'create',      // "Requests" falls under create permission
-  'approvals': 'approvals',
-  'delegations': 'delegations',
-  'distribution': 'distribution',
-  'manager': 'approvals',    // "Policy Manager" page uses approvals permission
-  'analytics': 'analytics',
-  'quiz': 'quizBuilder',
-};
 
 /**
  * Role permission entry as configured in Admin > Role Permissions
@@ -141,37 +122,53 @@ export interface IRolePermissionEntry {
 }
 
 /**
- * Filter nav items based on EXPLICIT role permissions.
- * No hierarchy inheritance — each role sees ONLY what's explicitly enabled for it.
+ * Filter nav items based on HIERARCHICAL role access.
+ * Higher roles inherit all access from lower roles:
+ *   Admin >= Manager >= Author >= User
+ *
+ * Each nav item has a minimum role requirement. If the user's role
+ * meets or exceeds it, the item is visible.
  *
  * @param navItems - The nav items to filter
- * @param role - The user's role (or roles)
- * @param permissions - The admin-configured permission table (if null, falls back to defaults)
+ * @param role - The user's highest PolicyManagerRole
+ * @param _permissions - Reserved for future use (admin-configurable overrides)
  */
 export function filterNavForRole<T extends { key: string }>(
   navItems: T[],
   role: PolicyManagerRole,
-  permissions?: IRolePermissionEntry[] | null
+  _permissions?: IRolePermissionEntry[] | null
 ): T[] {
-  // If no explicit permissions configured, use the default permission table
-  const permTable = permissions && permissions.length > 0 ? permissions : getDefaultPermissions();
-  const roleKey = role.toLowerCase(); // 'user', 'author', 'manager', 'admin'
-
   return navItems.filter(item => {
-    const permKey = NAV_KEY_TO_PERMISSION_KEY[item.key];
-    if (!permKey) return role === PolicyManagerRole.Admin; // Unknown nav keys hidden unless Admin
-
-    // Find the permission entry for this feature
-    const entry = permTable.find(p => p.key === permKey);
-    if (!entry) return role === PolicyManagerRole.Admin; // No permission entry = hidden unless Admin
-
-    // Admin always has access
-    if (role === PolicyManagerRole.Admin) return true;
-
-    // Check explicit permission for this role — NO inheritance
-    return entry[roleKey] === true;
+    const minRole = NAV_MINIMUM_ROLE[item.key];
+    if (minRole === undefined) return role === PolicyManagerRole.Admin;
+    return hasMinimumRole(role, minRole);
   });
 }
+
+/**
+ * Minimum role required for each nav item key.
+ * Higher roles automatically have access to everything below them.
+ */
+const NAV_MINIMUM_ROLE: Record<string, PolicyManagerRole> = {
+  'browse':        PolicyManagerRole.User,
+  'my-policies':   PolicyManagerRole.User,
+  'details':       PolicyManagerRole.User,
+  'search':        PolicyManagerRole.User,
+  'help':          PolicyManagerRole.User,
+  'create':        PolicyManagerRole.Author,
+  'author':        PolicyManagerRole.Author,
+  'packs':         PolicyManagerRole.Author,
+  'quiz':          PolicyManagerRole.Author,
+  'requests':      PolicyManagerRole.Author,
+  'distribution':  PolicyManagerRole.Manager,
+  'analytics':     PolicyManagerRole.Manager,
+  'manager':       PolicyManagerRole.Manager,
+  'approvals':     PolicyManagerRole.Manager,
+  'delegations':   PolicyManagerRole.Manager,
+  'reports':       PolicyManagerRole.Manager,
+  'executive':     PolicyManagerRole.Manager,
+  'admin':         PolicyManagerRole.Admin,
+};
 
 /**
  * Default permission table — used when admin hasn't configured custom permissions
@@ -197,21 +194,15 @@ export function getDefaultPermissions(): IRolePermissionEntry[] {
 }
 
 /**
- * Get header action visibility based on explicit permissions.
+ * Get header action visibility based on hierarchical role.
+ * Settings cog visible for Manager and above.
  */
-export function getHeaderVisibility(role: PolicyManagerRole, permissions?: IRolePermissionEntry[] | null): IHeaderVisibility {
-  const permTable = permissions && permissions.length > 0 ? permissions : getDefaultPermissions();
-  const roleKey = role.toLowerCase();
-
-  // Settings cog visible if 'adminPanel' or 'settings' permission is enabled for this role
-  const settingsEntry = permTable.find(p => p.key === 'adminPanel' || p.key === 'settings');
-  const showSettings = role === PolicyManagerRole.Admin || (settingsEntry ? settingsEntry[roleKey] === true : false);
-
+export function getHeaderVisibility(role: PolicyManagerRole, _permissions?: IRolePermissionEntry[] | null): IHeaderVisibility {
   return {
     showSearch: true,
     showNotifications: true,
     showHelp: true,
-    showSettings
+    showSettings: hasMinimumRole(role, PolicyManagerRole.Manager)
   };
 }
 

@@ -1,0 +1,20 @@
+// Request Service
+// Asset request workflow management
+
+import { SPFI } from '@pnp/sp';
+import '@pnp/sp/webs';
+import '@pnp/sp/lists';
+import '@pnp/sp/items';
+import '@pnp/sp/items/get-all';
+import '@pnp/sp/site-users/web';
+import { IAssetRequest, AssetCategory } from '../models/IAsset';
+import { AM_LISTS } from '../constants/SharePointListNames';
+
+export interface IRequestStatistics {
+  total: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+  fulfilled: number;
+  byPriority: { [key: string]: number };
+}

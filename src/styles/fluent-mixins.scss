@@ -96,7 +96,7 @@
 }
 
 @mixin radius-medium {
-  border-radius: 6px;
+  border-radius: 4px;
 }
 
 @mixin radius-large {
@@ -543,9 +543,31 @@
     border-radius: 4px !important;
   }
 
-  // Panels (slide-in — rounded left corners) — 4px
+  // Panels (slide-in — rounded left corners) — 8px for larger surface
   .ms-Panel-main {
-    border-radius: 4px 0 0 4px !important;
+    border-radius: 8px 0 0 8px !important;
+  }
+
+  // Panel header and footer controls — 4px
+  .ms-Panel-headerText {
+    font-weight: 700 !important;
+  }
+  .ms-Panel-closeButton {
+    border-radius: 4px !important;
+  }
+
+  // ComboBox — 4px
+  .ms-ComboBox,
+  .ms-ComboBox-Input {
+    border-radius: 4px !important;
+  }
+  .ms-ComboBox-callout {
+    border-radius: 4px !important;
+  }
+
+  // DatePicker — 4px
+  .ms-DatePicker-wrap .ms-TextField-fieldGroup {
+    border-radius: 4px !important;
   }
 
   // DetailsList header — 4px top corners

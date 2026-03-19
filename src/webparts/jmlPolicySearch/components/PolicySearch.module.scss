@@ -1,5 +1,6 @@
 // Policy Search Center Styles
 // Teal theme matching Policy Manager branding
+@import '../../../styles/fluent-mixins';
 
 $pm-primary-teal: #0d9488;
 $pm-dark-teal: #0f766e;
@@ -64,7 +65,7 @@ $pm-light-teal: #14b8a6;
   background-color: #ffffff;
   color: $pm-dark-teal;
   border: 1px solid #ffffff;
-  border-radius: 6px;
+  border-radius: 4px;
   font-size: 15px;
   font-weight: 500;
   font-family: inherit;

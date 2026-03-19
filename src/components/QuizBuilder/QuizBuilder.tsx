@@ -13,7 +13,6 @@ import {
   Spinner,
   MessageBar,
   MessageBarType,
-  Panel,
   PanelType,
   Dialog,
   DialogType,
@@ -42,6 +41,7 @@ import {
   IQuizStatistics,
   IQuizExportData
 } from '../../services/QuizService';
+import { StyledPanel } from '../StyledPanel';
 import { PolicyService } from '../../services/PolicyService';
 import { IPolicy, PolicyStatus } from '../../models/IPolicy';
 import { SPFI } from '@pnp/sp';
@@ -211,7 +211,7 @@ const styles = mergeStyleSets({
   questionCard: {
     backgroundColor: '#f8f8f8',
     padding: '16px',
-    borderRadius: '6px',
+    borderRadius: '4px',
     marginBottom: '12px',
     border: '1px solid #edebe9',
     transition: 'box-shadow 0.2s',
@@ -676,6 +676,11 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
       return;
     }
 
+    if (!policyId) {
+      this.setState({ error: 'Please select a policy document.', _policyTouched: true } as any);
+      return;
+    }
+
     try {
       this.setState({ saving: true, error: null, success: null });
 
@@ -730,6 +735,23 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
           this.setState({ quizId: savedQuiz.Id });
         } else {
           console.warn('[QuizBuilder] Quiz saved but no ID returned. Response:', JSON.stringify(savedQuiz));
+        }
+      }
+
+      // Auto-link quiz to policy when published and toggle is ON
+      const linkOnPublish = (this.state as any)._linkOnPublish !== false;
+      const effectiveStatus = isScheduled ? QuizStatus.Scheduled : status;
+      const savedQuizId = savedQuiz?.Id || quizId;
+      if (linkOnPublish && policyId && savedQuizId && effectiveStatus === QuizStatus.Published) {
+        try {
+          const { PM_LISTS } = await import('../../constants/SharePointListNames');
+          await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES).items.getById(policyId).update({
+            LinkedQuizId: savedQuizId
+          });
+          console.log(`[QuizBuilder] Linked quiz ${savedQuizId} to policy ${policyId}`);
+        } catch (linkErr) {
+          console.warn('[QuizBuilder] Failed to link quiz to policy:', linkErr);
+          // Non-blocking — quiz still saved successfully
         }
       }
 
@@ -1158,7 +1180,7 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
         padding: '12px 16px',
         marginBottom: '16px',
         backgroundColor: '#ffffff',
-        borderRadius: '6px',
+        borderRadius: '4px',
         border: '1px solid #edebe9',
         boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
         flexWrap: 'wrap',
@@ -1170,21 +1192,21 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
             iconProps={{ iconName: 'Save' }}
             onClick={(): void => { void this.handleSaveQuiz(); }}
             disabled={saving}
-            styles={{ root: { borderRadius: '6px' } }}
+            styles={{ root: { borderRadius: '4px' } }}
           />
           <DefaultButton
             text="Add Question"
             iconProps={{ iconName: 'Add' }}
             onClick={this.handleAddQuestion}
             disabled={saving || !quizId}
-            styles={{ root: { borderRadius: '6px' } }}
+            styles={{ root: { borderRadius: '4px' } }}
           />
           <DefaultButton
             text="AI Generate"
             iconProps={{ iconName: 'Robot' }}
             onClick={() => this.setState({ showAiPanel: true })}
             disabled={saving || !quizId}
-            styles={{ root: { borderRadius: '6px', borderColor: '#0d9488', color: '#0d9488' }, rootHovered: { borderColor: '#0b7c72', color: '#0b7c72' } }}
+            styles={{ root: { borderRadius: '4px', borderColor: '#0d9488', color: '#0d9488' }, rootHovered: { borderColor: '#0b7c72', color: '#0b7c72' } }}
           />
         </Stack>
         <Stack horizontal tokens={{ childrenGap: 8 }} wrap>
@@ -1193,28 +1215,28 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
             iconProps={{ iconName: 'Upload' }}
             onClick={() => this.setState({ showImportDialog: true })}
             disabled={!quizId}
-            styles={{ root: { borderRadius: '6px' } }}
+            styles={{ root: { borderRadius: '4px' } }}
           />
           <DefaultButton
             text="Export"
             iconProps={{ iconName: 'Download' }}
             onClick={() => this.setState({ showExportDialog: true })}
             disabled={!quizId || this.state.questions.length === 0}
-            styles={{ root: { borderRadius: '6px' } }}
+            styles={{ root: { borderRadius: '4px' } }}
           />
           <DefaultButton
             text="Statistics"
             iconProps={{ iconName: 'BarChartVertical' }}
             onClick={(): void => { void this.handleLoadStatistics(); }}
             disabled={!quizId}
-            styles={{ root: { borderRadius: '6px' } }}
+            styles={{ root: { borderRadius: '4px' } }}
           />
           {this.props.onCancel && (
             <DefaultButton
               text="Cancel"
               iconProps={{ iconName: 'Cancel' }}
               onClick={this.props.onCancel}
-              styles={{ root: { borderRadius: '6px' } }}
+              styles={{ root: { borderRadius: '4px' } }}
             />
           )}
         </Stack>
@@ -1242,7 +1264,7 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
     } = this.state;
 
     const policyOptions: IDropdownOption[] = [
-      { key: '', text: '(No linked policy)' },
+      { key: '', text: '-- Select a policy document --' },
       ...policies.map(p => ({ key: p.Id || 0, text: `${p.PolicyNumber} - ${p.PolicyName}` }))
     ];
 
@@ -1255,7 +1277,7 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
 
         <Stack tokens={{ childrenGap: 16 }}>
           <Stack horizontal tokens={{ childrenGap: 16 }}>
-            <Stack.Item grow={2}>
+            <Stack.Item grow={1}>
               <TextField
                 label="Quiz Title"
                 value={title}
@@ -1266,10 +1288,32 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
             </Stack.Item>
             <Stack.Item grow={1}>
               <Dropdown
+                label="Policy Document"
+                options={policyOptions}
+                selectedKey={policyId || ''}
+                onChange={(e, option) => this.setState({ policyId: option?.key ? Number(option.key) : null })}
+                required
+                placeholder="Select a policy..."
+                errorMessage={!policyId && (this.state as any)._policyTouched ? 'Policy document is required' : undefined}
+              />
+            </Stack.Item>
+          </Stack>
+
+          <Stack horizontal tokens={{ childrenGap: 16 }}>
+            <Stack.Item grow={1}>
+              <Dropdown
                 label="Status"
                 options={statusOptions}
                 selectedKey={status}
                 onChange={(e, option) => this.setState({ status: option?.key as QuizStatus || QuizStatus.Draft })}
+              />
+            </Stack.Item>
+            <Stack.Item grow={1}>
+              <Dropdown
+                label="Category"
+                options={categoryOptions}
+                selectedKey={category}
+                onChange={(e, option) => this.setState({ category: option?.key as string || 'General' })}
               />
             </Stack.Item>
           </Stack>
@@ -1284,22 +1328,6 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
           />
 
           <Stack horizontal tokens={{ childrenGap: 16 }}>
-            <Stack.Item grow={1}>
-              <Dropdown
-                label="Category"
-                options={categoryOptions}
-                selectedKey={category}
-                onChange={(e, option) => this.setState({ category: option?.key as string || 'General' })}
-              />
-            </Stack.Item>
-            <Stack.Item grow={1}>
-              <Dropdown
-                label="Linked Policy"
-                options={policyOptions}
-                selectedKey={policyId || ''}
-                onChange={(e, option) => this.setState({ policyId: option?.key ? Number(option.key) : null })}
-              />
-            </Stack.Item>
             <Stack.Item grow={1}>
               <Dropdown
                 label="Difficulty Level"
@@ -1354,6 +1382,13 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
               label="Show Correct Answers"
               checked={showCorrectAnswers}
               onChange={(e, checked) => this.setState({ showCorrectAnswers: checked || false })}
+            />
+            <Toggle
+              label="Link to Policy on Publish"
+              checked={(this.state as any)._linkOnPublish !== false}
+              onChange={(e, checked) => this.setState({ _linkOnPublish: checked } as any)}
+              onText="Yes"
+              offText="No"
             />
           </Stack>
 
@@ -1481,11 +1516,34 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
               <MessageBar messageBarType={MessageBarType.success}>
                 A certificate will be automatically generated when users pass this quiz.
               </MessageBar>
-              <Text variant="medium">
-                Certificate Title: <strong>Certificate of Completion - {title || 'Quiz Name'}</strong>
-              </Text>
+
+              {/* Certificate Preview Card */}
+              <div style={{
+                background: 'linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 50%, #f0fdf4 100%)',
+                border: '2px solid #99f6e4', borderRadius: 8, padding: 32, textAlign: 'center', position: 'relative'
+              }}>
+                <div style={{
+                  position: 'absolute', top: 8, left: 8, right: 8, bottom: 8,
+                  border: '1px dashed #99f6e4', borderRadius: 4
+                }} />
+                <div style={{ fontSize: 32, marginBottom: 8, position: 'relative' }}>&#127941;</div>
+                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 2, color: '#0d9488', marginBottom: 4, position: 'relative' }}>
+                  Certificate of Completion
+                </div>
+                <div style={{ fontSize: 22, fontWeight: 700, color: '#0f766e', marginBottom: 4, position: 'relative' }}>
+                  {title || 'Quiz Name'}
+                </div>
+                <div style={{ fontSize: 13, color: '#64748b', position: 'relative' }}>
+                  This certifies that <strong>[Employee Name]</strong> has successfully completed<br />
+                  the policy compliance assessment.
+                </div>
+                <div style={{ marginTop: 16, fontSize: 11, color: '#94a3b8', position: 'relative' }}>
+                  Date: [Completion Date] &middot; Score: [Score]% &middot; Policy Manager &middot; First Digital
+                </div>
+              </div>
+
               <Text variant="small" style={{ color: '#605e5c' }}>
-                Certificate templates can be managed in the admin settings. The default template will be used for this quiz.
+                Certificate includes: employee name, completion date, quiz score, policy name, and a unique certificate ID.
               </Text>
             </Stack>
           </div>
@@ -1519,6 +1577,28 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
             </Stack>
           )}
         </Stack>
+
+        {/* Info bar — question count, total points, linked policy */}
+        {quizId && questions.length > 0 && (
+          <div style={{
+            padding: '10px 16px', background: '#f0fdfa', border: '1px solid #99f6e4', borderRadius: 4,
+            fontSize: 12, color: '#0f766e', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12
+          }}>
+            <Icon iconName="ClipboardList" styles={{ root: { fontSize: 14 } }} />
+            <strong>{questions.length} questions</strong>
+            <span>&middot;</span>
+            <span>{questions.reduce((sum, q) => sum + (q.Points || 0), 0)} total points</span>
+            {(() => {
+              const linkedPolicy = (this.state.policies || []).find((p: any) => p.Id === this.state.policyId);
+              return linkedPolicy ? (
+                <>
+                  <span>&middot;</span>
+                  <span>Linked to <strong style={{ color: '#0d9488' }}>{linkedPolicy.PolicyNumber} — {linkedPolicy.PolicyName}</strong></span>
+                </>
+              ) : null;
+            })()}
+          </div>
+        )}
 
         {!quizId && (
           <MessageBar messageBarType={MessageBarType.info}>
@@ -1750,7 +1830,7 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
     const isNew = editingQuestionIndex < 0;
 
     return (
-      <Panel
+      <StyledPanel
         isOpen={showQuestionPanel}
         type={PanelType.custom}
         customWidth="650px"
@@ -1898,7 +1978,7 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
             />
           </Stack>
         </div>
-      </Panel>
+      </StyledPanel>
     );
   }
 
@@ -2770,7 +2850,7 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
     const { showStatisticsPanel, quizStatistics, title } = this.state;
 
     return (
-      <Panel
+      <StyledPanel
         isOpen={showStatisticsPanel}
         type={PanelType.medium}
         onDismiss={() => this.setState({ showStatisticsPanel: false })}
@@ -2846,7 +2926,7 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
             )}
           </Stack>
         )}
-      </Panel>
+      </StyledPanel>
     );
   }
 
@@ -2874,14 +2954,41 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
       let policyText = '';
       const rawDocUrl = policy?.DocumentURL;
       // SharePoint URL fields may return { Url: string, Description: string } or a plain string
-      const docUrl: string | undefined = rawDocUrl
-        ? (typeof rawDocUrl === 'string' ? rawDocUrl : (rawDocUrl as { Url?: string }).Url || undefined)
+      let docUrl: string | undefined = rawDocUrl
+        ? (typeof rawDocUrl === 'string' ? rawDocUrl : (rawDocUrl as { Url?: string; Description?: string }).Url || (rawDocUrl as any).Description || undefined)
         : undefined;
+
+      console.log('[QuizBuilder] AI Generate — policyId:', policyId, 'DocumentURL raw:', rawDocUrl, 'resolved docUrl:', docUrl);
+
+      // Fallback: if no DocumentURL field, check PM_PolicySourceDocuments for files
+      if (!docUrl && policy?.PolicyNumber) {
+        try {
+          const folderUrl = (this.props.context?.pageContext?.web?.serverRelativeUrl || '') + '/PM_PolicySourceDocuments/' + policy.PolicyNumber;
+          const files = await this.props.sp.web.getFolderByServerRelativePath(folderUrl).files();
+          const docFile = files.find((f: any) => /\.(docx?|pptx?|xlsx?)$/i.test(f.Name));
+          if (docFile) {
+            docUrl = docFile.ServerRelativeUrl;
+            console.log('[QuizBuilder] Found document in PM_PolicySourceDocuments:', docUrl);
+          }
+        } catch {
+          console.log('[QuizBuilder] No PM_PolicySourceDocuments folder for', policy.PolicyNumber);
+        }
+      }
 
       // Determine file extension and server-relative path
       let serverRelativePath = '';
       let docExtension = '';
       let documentBase64 = '';
+
+      // Fallback: if no DocumentURL but policy has converted HTML content, use that
+      if (!docUrl && policy?.PolicyContent && policy.PolicyContent.length > 100) {
+        console.log('[QuizBuilder] Using PolicyContent (converted HTML) as source text');
+        // Strip HTML tags to get plain text for AI
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = policy.PolicyContent;
+        policyText = (tempDiv.textContent || tempDiv.innerText || '').trim();
+        console.log(`[QuizBuilder] Extracted ${policyText.length} chars from PolicyContent`);
+      }
 
       if (docUrl) {
         try {
@@ -3081,7 +3188,7 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
     ];
 
     return (
-      <Panel
+      <StyledPanel
         isOpen={showAiPanel}
         onDismiss={() => this.setState({ showAiPanel: false })}
         headerText="AI Question Builder"
@@ -3098,24 +3205,43 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
             const policy = this.state.policies.find(p => p.Id === this.state.policyId);
             const rawDocUrl = policy?.DocumentURL;
             const docUrl: string | undefined = rawDocUrl
-              ? (typeof rawDocUrl === 'string' ? rawDocUrl : (rawDocUrl as { Url?: string }).Url || undefined)
+              ? (typeof rawDocUrl === 'string' ? rawDocUrl : (rawDocUrl as { Url?: string; Description?: string }).Url || (rawDocUrl as any).Description || undefined)
               : undefined;
             const docName = docUrl ? decodeURIComponent(docUrl.split('/').pop() || docUrl) : undefined;
+            // Also check if policy has converted HTML content (PolicyContent)
+            const hasHtmlContent = policy?.PolicyContent && policy.PolicyContent.length > 100;
+            // Check if policy has documents in PM_PolicySourceDocuments (shown as info)
+            const hasPolicyNumber = !!policy?.PolicyNumber;
 
             return docUrl ? (
               <div style={{
-                padding: '10px 14px', backgroundColor: '#e8f5e9', borderRadius: 6,
+                padding: '10px 14px', backgroundColor: '#e8f5e9', borderRadius: 4,
                 border: '1px solid #c8e6c9', display: 'flex', alignItems: 'center', gap: 10
               }}>
-                <span style={{ fontSize: 18 }}>&#128196;</span>
+                <Icon iconName="DocumentSet" styles={{ root: { fontSize: 18, color: '#2e7d32' } }} />
                 <div style={{ flex: 1 }}>
                   <Text variant="smallPlus" style={{ fontWeight: 600, display: 'block' }}>Linked Document</Text>
                   <Text variant="small" style={{ color: '#2e7d32', wordBreak: 'break-all' }}>{docName}</Text>
                 </div>
               </div>
+            ) : hasHtmlContent ? (
+              <div style={{
+                padding: '10px 14px', backgroundColor: '#e8f5e9', borderRadius: 4,
+                border: '1px solid #c8e6c9', display: 'flex', alignItems: 'center', gap: 10
+              }}>
+                <Icon iconName="Document" styles={{ root: { fontSize: 18, color: '#2e7d32' } }} />
+                <div style={{ flex: 1 }}>
+                  <Text variant="smallPlus" style={{ fontWeight: 600, display: 'block' }}>Policy Content Available</Text>
+                  <Text variant="small" style={{ color: '#2e7d32' }}>HTML content will be used for AI generation</Text>
+                </div>
+              </div>
             ) : (
-              <MessageBar messageBarType={MessageBarType.warning}>
-                No document is linked to the selected policy. Please go to the Settings tab and select a policy that has a linked document, or add a document URL to the policy first.
+              <MessageBar messageBarType={hasHtmlContent ? MessageBarType.success : hasPolicyNumber ? MessageBarType.info : MessageBarType.warning}>
+                {hasHtmlContent
+                  ? 'No direct document link, but this policy has converted HTML content that will be used for AI generation.'
+                  : hasPolicyNumber
+                    ? `No DocumentURL field set, but the AI will check PM_PolicySourceDocuments/${policy?.PolicyNumber}/ for uploaded documents when generating.`
+                    : 'No document linked to this policy. Upload a document to the policy first, or ensure it has converted HTML content (PolicyContent).'}
               </MessageBar>
             );
           })()}
@@ -3252,7 +3378,7 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
             </>
           )}
         </Stack>
-      </Panel>
+      </StyledPanel>
     );
   }
 
@@ -3335,7 +3461,7 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
               { label: 'Quiz ID', value: quizId || 'Unsaved', color: '#605e5c' }
             ].map((stat, idx) => (
               <div key={idx} style={{
-                textAlign: 'center', padding: '12px', backgroundColor: '#f8f8f8', borderRadius: '6px'
+                textAlign: 'center', padding: '12px', backgroundColor: '#f8f8f8', borderRadius: '4px'
               }}>
                 <div style={{ fontSize: '24px', fontWeight: 700, color: stat.color }}>{stat.value}</div>
                 <div style={{ fontSize: '11px', color: '#605e5c', textTransform: 'uppercase', fontWeight: 500, marginTop: '2px' }}>{stat.label}</div>
@@ -3353,8 +3479,12 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
               <div style={valueStyle}>{category || 'General'}</div>
             </div>
             <div>
-              <div style={labelStyle}>Linked Policy</div>
+              <div style={labelStyle}>Policy Document</div>
               <div style={valueStyle}>{linkedPolicy ? `${linkedPolicy.PolicyNumber} - ${linkedPolicy.PolicyName}` : 'None'}</div>
+            </div>
+            <div>
+              <div style={labelStyle}>Link to Policy on Publish</div>
+              <div>{boolBadge((this.state as any)._linkOnPublish !== false)}</div>
             </div>
             <div>
               <div style={labelStyle}>Randomize Questions</div>
@@ -3416,21 +3546,19 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
             </MessageBar>
           ) : (
             <>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
-                {Object.entries(questionsByType).map(([type, count]) => (
-                  <div key={type} style={{
-                    padding: '8px 16px',
-                    backgroundColor: '#f0f6ff',
-                    borderRadius: '6px',
-                    border: '1px solid #cce4f6',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}>
-                    <span style={{ fontSize: '18px', fontWeight: 700, color: '#0078d4' }}>{count}</span>
-                    <span style={{ fontSize: '13px', color: '#323130' }}>{type}</span>
-                  </div>
-                ))}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '8px', marginBottom: '16px' }}>
+                {Object.entries(questionsByType).map(([type, count]) => {
+                  const typeColor = this.getQuestionTypeColor(type as any);
+                  return (
+                    <div key={type} style={{
+                      textAlign: 'center', padding: '10px', borderRadius: '4px',
+                      backgroundColor: typeColor.bg || '#f0f6ff'
+                    }}>
+                      <div style={{ fontWeight: 700, color: typeColor.text || '#0078d4' }}>{count}</div>
+                      <div style={{ fontSize: '10px', color: typeColor.text || '#323130' }}>{type}</div>
+                    </div>
+                  );
+                })}
               </div>
 
               {/* Question List Preview */}

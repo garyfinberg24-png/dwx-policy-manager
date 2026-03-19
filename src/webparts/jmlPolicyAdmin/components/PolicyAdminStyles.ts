@@ -136,7 +136,7 @@ export const BadgeStyles = {
   /** Department chip */
   departmentChip: { padding: '1px 6px', borderRadius: 3, fontSize: 10, fontWeight: 500, background: Colors.tealLight, color: Colors.tealPrimary, border: '1px solid ' + Colors.tealBorder } as React.CSSProperties,
   /** Highlight badge (bold, rounded) */
-  highlight: { padding: '3px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700 } as React.CSSProperties,
+  highlight: { padding: '3px 10px', borderRadius: 4, fontSize: 11, fontWeight: 700 } as React.CSSProperties,
   /** Default purple pill */
   defaultPurple: { padding: '2px 8px', borderRadius: 12, fontSize: 11, fontWeight: 600, backgroundColor: Colors.purpleLightBg, color: Colors.purple } as React.CSSProperties,
 } as const;
@@ -153,7 +153,7 @@ export const ContainerStyles = {
   /** Large color swatch (24x24) */
   colorSwatchLarge: { width: 24, height: 24, borderRadius: 4, border: '1px solid #e2e8f0' } as React.CSSProperties,
   /** Preview box (small) */
-  previewBox: { padding: 12, background: Colors.surfaceLight, borderRadius: 6, border: '1px solid #e2e8f0' } as React.CSSProperties,
+  previewBox: { padding: 12, background: Colors.surfaceLight, borderRadius: 4, border: '1px solid #e2e8f0' } as React.CSSProperties,
   /** Preview box (large) */
   previewBoxLarge: { padding: 16, background: Colors.surfaceLight, borderRadius: 8, border: '1px solid #e2e8f0' } as React.CSSProperties,
   /** Light teal background */

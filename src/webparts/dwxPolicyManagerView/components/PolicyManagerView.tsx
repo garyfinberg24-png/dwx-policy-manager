@@ -38,6 +38,7 @@ import { PolicyService } from '../../../services/PolicyService';
 import { logger } from '../../../services/LoggingService';
 import { RoleDetectionService } from '../../../services/RoleDetectionService';
 import { PolicyManagerRole, getHighestPolicyRole, hasMinimumRole } from '../../../services/PolicyRoleService';
+import { StyledPanel } from '../../../components/StyledPanel';
 import styles from './PolicyManagerView.module.scss';
 
 // ============================================================================
@@ -1030,7 +1031,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
               text={`${f} (${f === 'All' ? approvals.length : approvals.filter(a => a.Status === f).length})`}
               styles={{
                 root: {
-                  borderRadius: 20, minWidth: 'auto', padding: '2px 14px', height: 32,
+                  borderRadius: 4, minWidth: 'auto', padding: '2px 14px', height: 32,
                   border: approvalFilter === f ? '2px solid #0d9488' : '1px solid #e1dfdd',
                   background: approvalFilter === f ? '#f0fdfa' : 'transparent',
                   color: approvalFilter === f ? '#0d9488' : '#605e5c',
@@ -1134,7 +1135,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
           />
           <PrimaryButton text="Add Delegation" iconProps={{ iconName: 'AddFriend' }}
             styles={{
-              root: { background: '#0d9488', borderColor: '#0d9488', borderRadius: 6, height: 36 },
+              root: { background: '#0d9488', borderColor: '#0d9488', borderRadius: 4, height: 36 },
               rootHovered: { background: '#0f766e', borderColor: '#0f766e' }
             }}
             onClick={() => this.setState({ showDelegationPanel: true })} />
@@ -1159,7 +1160,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
               text={`${f === 'InProgress' ? 'In Progress' : f} (${f === 'All' ? delegations.length : delegations.filter(d => d.Status === f).length})`}
               styles={{
                 root: {
-                  borderRadius: 20, minWidth: 'auto', padding: '2px 14px', height: 32,
+                  borderRadius: 4, minWidth: 'auto', padding: '2px 14px', height: 32,
                   border: delegationFilter === f ? '2px solid #0d9488' : '1px solid #e1dfdd',
                   background: delegationFilter === f ? '#f0fdfa' : 'transparent',
                   color: delegationFilter === f ? '#0d9488' : '#605e5c',
@@ -1258,7 +1259,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
               text={`${f} (${f === 'All' ? reviews.length : reviews.filter(r => r.Status === f).length})`}
               styles={{
                 root: {
-                  borderRadius: 20, minWidth: 'auto', padding: '2px 14px', height: 32,
+                  borderRadius: 4, minWidth: 'auto', padding: '2px 14px', height: 32,
                   border: reviewFilter === f ? '2px solid #0d9488' : '1px solid #e1dfdd',
                   background: reviewFilter === f ? '#f0fdfa' : 'transparent',
                   color: reviewFilter === f ? '#0d9488' : '#605e5c',
@@ -1974,7 +1975,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
     ];
 
     return (
-      <Panel
+      <StyledPanel
         isOpen={showReportFlyout}
         onDismiss={() => this.setState({ showReportFlyout: false, flyoutReportKey: '' })}
         type={PanelType.medium}
@@ -2055,7 +2056,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
             Last generated: {report.lastGenerated} &middot; Data shown is a preview sample
           </Text>
         </Stack>
-      </Panel>
+      </StyledPanel>
     );
   }
 
@@ -2082,7 +2083,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
     const isFormValid = delegationForm.delegateTo && delegationForm.policyTitle && delegationForm.dueDate;
 
     return (
-      <Panel
+      <StyledPanel
         isOpen={showDelegationPanel}
         onDismiss={() => this.dismissDelegationPanel()}
         type={PanelType.custom}
@@ -2140,7 +2141,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
           <TextField label="Notes / Instructions" placeholder="Provide context or specific instructions..." multiline rows={4}
             value={delegationForm.notes} onChange={(_, val) => this.updateDelegationForm({ notes: val || '' })} />
         </Stack>
-      </Panel>
+      </StyledPanel>
     );
   }
 

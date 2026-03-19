@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Policy Manager — Quiz Builder Wizard Mockups</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #f5f5f5; color: #0f172a; }
+
+    .mockup-page { background: #fff; margin: 0 auto 48px; max-width: 1440px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); overflow: hidden; }
+    .mockup-title { background: #1e293b; color: #fff; padding: 16px 32px; font-size: 14px; font-weight: 600; }
+    .mockup-title span { color: #5eead4; margin-right: 8px; }
+    .mockup-note { background: #fef3c7; padding: 12px 32px; font-size: 13px; color: #92400e; border-bottom: 1px solid #fde68a; }
+
+    /* ── App shell ── */
+    .app-header { background: linear-gradient(135deg, #0d9488, #0f766e); padding: 12px 24px; display: flex; align-items: center; gap: 16px; }
+    .app-logo { width: 36px; height: 36px; background: rgba(255,255,255,0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; }
+    .app-title { color: #fff; font-weight: 700; font-size: 16px; }
+    .app-subtitle { color: rgba(255,255,255,0.7); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .header-search { flex: 1; max-width: 400px; margin: 0 auto; }
+    .header-search input { width: 100%; padding: 7px 14px 7px 36px; border: 1px solid rgba(255,255,255,0.25); border-radius: 4px; background: rgba(255,255,255,0.1); color: #fff; font-size: 13px; outline: none; }
+    .header-search input::placeholder { color: rgba(255,255,255,0.5); }
+    .nav-bar { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 0 24px; display: flex; gap: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+    .nav-item { padding: 10px 16px; font-size: 13px; color: #64748b; cursor: pointer; border-bottom: 2px solid transparent; }
+    .nav-item.active { color: #0d9488; border-bottom-color: #0d9488; font-weight: 600; }
+
+    .content { padding: 20px 40px; }
+
+    /* ── Buttons ── */
+    .btn { padding: 8px 18px; border-radius: 4px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-teal { background: #0d9488; color: #fff; }
+    .btn-outline { background: #fff; color: #323130; border: 1px solid #d1d5db; }
+    .btn-sm { padding: 5px 12px; font-size: 12px; }
+    .btn-ghost { background: transparent; border: none; color: #0d9488; font-weight: 600; cursor: pointer; font-size: 13px; padding: 6px 12px; border-radius: 4px; }
+    .btn-ghost:hover { background: #f0fdfa; }
+    .btn-icon { width: 32px; height: 32px; border-radius: 4px; border: 1px solid #d1d5db; background: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #64748b; }
+    .btn-icon:hover { background: #f8fafc; color: #0f172a; }
+    .btn-danger { background: #fff; color: #dc2626; border: 1px solid #fca5a5; }
+
+    /* ── Command bar ── */
+    .command-bar { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #fff; border: 1px solid #e2e8f0; border-radius: 4px; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
+    .command-bar-left, .command-bar-right { display: flex; gap: 8px; align-items: center; }
+
+    /* ── Wizard tabs ── */
+    .wizard-tabs { display: flex; gap: 0; border-bottom: 1px solid #e2e8f0; margin-bottom: 24px; }
+    .wizard-tab { padding: 12px 20px; font-size: 13px; color: #64748b; cursor: pointer; border-bottom: 2px solid transparent; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+    .wizard-tab.active { color: #0d9488; border-bottom-color: #0d9488; font-weight: 600; }
+    .wizard-tab .tab-count { background: #e2e8f0; color: #475569; padding: 1px 7px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+    .wizard-tab.active .tab-count { background: #ccfbf1; color: #0d9488; }
+    .wizard-tab-icon { font-size: 14px; }
+
+    /* ── Form ── */
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-size: 13px; font-weight: 600; color: #323130; margin-bottom: 4px; }
+    .form-label .required { color: #dc2626; margin-left: 2px; }
+    .form-input, .form-select, .form-textarea {
+      width: 100%; padding: 7px 12px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px; color: #0f172a; outline: none; font-family: inherit; background: #fff;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: #0d9488; box-shadow: 0 0 0 1px #0d9488; }
+    .form-textarea { resize: vertical; min-height: 60px; }
+    .form-row { display: grid; gap: 16px; margin-bottom: 16px; }
+    .form-row-2 { grid-template-columns: 1fr 1fr; }
+    .form-row-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .form-row-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+    .form-hint { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+
+    /* ── Toggle ── */
+    .toggle-row { display: flex; align-items: center; gap: 10px; }
+    .toggle-track { width: 40px; height: 20px; border-radius: 10px; position: relative; cursor: pointer; transition: background 0.2s; }
+    .toggle-track.off { background: #cbd5e1; }
+    .toggle-track.on { background: #0d9488; }
+    .toggle-thumb { width: 16px; height: 16px; border-radius: 50%; background: #fff; position: absolute; top: 2px; transition: left 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.15); }
+    .toggle-track.off .toggle-thumb { left: 2px; }
+    .toggle-track.on .toggle-thumb { left: 22px; }
+    .toggle-label { font-size: 13px; color: #323130; }
+    .toggle-sublabel { font-size: 11px; color: #94a3b8; }
+
+    /* ── Slider ── */
+    .slider-row { display: flex; align-items: center; gap: 12px; }
+    .slider-track { flex: 1; height: 4px; background: #e2e8f0; border-radius: 2px; position: relative; }
+    .slider-fill { height: 100%; background: #0d9488; border-radius: 2px; }
+    .slider-thumb { width: 16px; height: 16px; border-radius: 50%; background: #fff; border: 2px solid #0d9488; position: absolute; top: -6px; }
+    .slider-value { font-weight: 700; color: #0d9488; font-size: 15px; min-width: 40px; text-align: right; }
+
+    /* ── Section card ── */
+    .section-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 16px; }
+    .section-title { font-size: 15px; font-weight: 600; color: #0f172a; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .section-title-icon { color: #94a3b8; font-size: 16px; }
+
+    /* ── Question card ── */
+    .question-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px 20px; margin-bottom: 8px; display: flex; align-items: flex-start; gap: 12px; transition: box-shadow 0.15s; }
+    .question-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .question-num { width: 32px; height: 32px; border-radius: 50%; background: #f0fdfa; color: #0d9488; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .question-body { flex: 1; }
+    .question-text { font-size: 14px; font-weight: 500; color: #0f172a; margin-bottom: 4px; }
+    .question-meta { font-size: 12px; color: #94a3b8; display: flex; gap: 12px; }
+    .question-actions { display: flex; gap: 4px; }
+
+    /* ── Badges ── */
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+    .badge-green { background: #dcfce7; color: #059669; }
+    .badge-amber { background: #fef3c7; color: #d97706; }
+    .badge-teal { background: #ccfbf1; color: #0d9488; }
+    .badge-slate { background: #f1f5f9; color: #475569; }
+    .badge-blue { background: #dbeafe; color: #2563eb; }
+
+    /* ── Certificate preview ── */
+    .cert-preview { background: linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 50%, #f0fdf4 100%); border: 2px solid #99f6e4; border-radius: 8px; padding: 32px; text-align: center; position: relative; }
+    .cert-preview::before { content: ''; position: absolute; top: 8px; left: 8px; right: 8px; bottom: 8px; border: 1px dashed #99f6e4; border-radius: 4px; }
+    .cert-ornament { font-size: 32px; margin-bottom: 8px; }
+    .cert-title-text { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #0d9488; margin-bottom: 4px; }
+    .cert-name { font-size: 22px; font-weight: 700; color: #0f766e; margin-bottom: 4px; }
+    .cert-subtitle { font-size: 13px; color: #64748b; }
+
+    /* ── Summary grid ── */
+    .summary-stats { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 24px; }
+    .summary-stat { text-align: center; padding: 12px; background: #f8fafc; border-radius: 4px; }
+    .summary-stat-value { font-size: 22px; font-weight: 700; }
+    .summary-stat-label { font-size: 11px; color: #64748b; text-transform: uppercase; margin-top: 2px; }
+    .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .summary-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f1f5f9; }
+    .summary-label { font-size: 12px; color: #64748b; }
+    .summary-value { font-size: 12px; font-weight: 600; color: #0f172a; }
+
+    /* ── AI Panel ── */
+    .ai-panel { background: linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%); border: 1px solid #99f6e4; border-radius: 8px; padding: 20px; margin-top: 16px; }
+    .ai-panel-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .ai-icon { width: 28px; height: 28px; background: #0d9488; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; }
+
+    /* ── Info bar ── */
+    .info-bar { padding: 10px 16px; background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 4px; font-size: 12px; color: #0f766e; display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+    .info-bar-icon { font-size: 14px; }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- MOCKUP 1: Step 1 — Settings (Create/Edit Quiz)          -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div class="mockup-page">
+  <div class="mockup-title"><span>STEP 1</span> Quiz Settings — Create New Quiz</div>
+  <div class="mockup-note">
+    Top row: Quiz Title + Policy Document (both required). Second row: Status + Category. Then description, difficulty, scoring, toggles.
+  </div>
+
+  <div class="app-header">
+    <div class="app-logo">&#9830;</div>
+    <div><div class="app-title">Policy Manager</div><div class="app-subtitle">Policy Governance & Compliance</div></div>
+    <div class="header-search"><input placeholder="Search policies..." /></div>
+  </div>
+  <div class="nav-bar">
+    <div class="nav-item">My Policies</div>
+    <div class="nav-item">Policy Hub</div>
+    <div class="nav-item">+ Policy Builder</div>
+    <div class="nav-item">Policy Author</div>
+    <div class="nav-item">Policy Packs</div>
+    <div class="nav-item">Distribution</div>
+    <div class="nav-item">Analytics</div>
+    <div class="nav-item active">Quiz Builder</div>
+  </div>
+
+  <div class="content">
+    <!-- Page header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <div>
+        <h1 style="font-size: 22px; font-weight: 700;">Create New Quiz</h1>
+      </div>
+      <span class="badge badge-teal" style="font-size: 12px; padding: 4px 12px;">New</span>
+    </div>
+
+    <!-- Command bar -->
+    <div class="command-bar">
+      <div class="command-bar-left">
+        <button class="btn btn-teal">&#128190; Create Quiz</button>
+        <button class="btn btn-outline">+ Add Question</button>
+        <button class="btn btn-outline" style="border-color: #0d9488; color: #0d9488;">&#9889; AI Generate</button>
+      </div>
+      <div class="command-bar-right">
+        <button class="btn btn-outline">&#8593; Import</button>
+        <button class="btn btn-outline">&#8595; Export</button>
+        <button class="btn btn-outline">&#128202; Statistics</button>
+        <button class="btn btn-outline">&times; Cancel</button>
+      </div>
+    </div>
+
+    <!-- Wizard tabs -->
+    <div class="wizard-tabs">
+      <div class="wizard-tab active"><span class="wizard-tab-icon">&#9881;</span> Settings</div>
+      <div class="wizard-tab"><span class="wizard-tab-icon">&#128203;</span> Questions <span class="tab-count">0</span></div>
+      <div class="wizard-tab"><span class="wizard-tab-icon">&#128295;</span> Advanced</div>
+      <div class="wizard-tab"><span class="wizard-tab-icon">&#127941;</span> Certificate</div>
+      <div class="wizard-tab"><span class="wizard-tab-icon">&#128200;</span> Summary</div>
+    </div>
+
+    <!-- Settings form -->
+    <div class="section-card">
+      <div class="section-title"><span class="section-title-icon">&#9881;</span> Quiz Settings</div>
+
+      <!-- Row 1: Title + Policy -->
+      <div class="form-row form-row-2">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label">Quiz Title <span class="required">*</span></label>
+          <input type="text" class="form-input" placeholder="Enter quiz title..." />
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label">Policy Document <span class="required">*</span></label>
+          <select class="form-select">
+            <option>-- Select a policy document --</option>
+            <option>POL-HR-001 - Employee Code of Conduct</option>
+            <option>POL-HR-002 - Anti-Harassment and Discrimination</option>
+            <option selected>POL-IT-003 - Data Protection and Privacy Policy</option>
+            <option>POL-IT-002 - Password and Authentication Policy</option>
+            <option>POL-HR-005 - Workplace Health and Safety</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Row 2: Status + Category -->
+      <div class="form-row form-row-2">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label">Status</label>
+          <select class="form-select"><option selected>Draft</option><option>Published</option><option>Scheduled</option></select>
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label">Category</label>
+          <select class="form-select"><option selected>General</option><option>HR Policies</option><option>IT & Security</option><option>Compliance</option></select>
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea class="form-textarea" placeholder="Enter quiz description..."></textarea>
+      </div>
+
+      <!-- Row 3: Difficulty -->
+      <div class="form-group">
+        <label class="form-label">Difficulty Level</label>
+        <select class="form-select" style="max-width: 300px;"><option>Easy</option><option selected>Medium</option><option>Hard</option><option>Expert</option></select>
+      </div>
+
+      <!-- Row 4: Passing Score + Time + Attempts -->
+      <div class="form-row form-row-3">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label">Passing Score</label>
+          <div class="slider-row">
+            <div class="slider-track">
+              <div class="slider-fill" style="width: 70%;"></div>
+              <div class="slider-thumb" style="left: calc(70% - 8px);"></div>
+            </div>
+            <span class="slider-value">70%</span>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label">Time Limit (minutes)</label>
+          <input type="number" class="form-input" value="15" />
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label">Max Attempts</label>
+          <input type="number" class="form-input" value="3" />
+        </div>
+      </div>
+
+      <!-- Toggles -->
+      <div style="display: flex; gap: 32px; padding-top: 16px; border-top: 1px solid #f1f5f9;">
+        <div class="toggle-row">
+          <div class="toggle-track off"><div class="toggle-thumb"></div></div>
+          <span class="toggle-label">Randomize Questions</span>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-track on"><div class="toggle-thumb"></div></div>
+          <span class="toggle-label">Show Correct Answers</span>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-track on"><div class="toggle-thumb"></div></div>
+          <div>
+            <span class="toggle-label" style="font-weight: 600; color: #0d9488;">Link to Policy on Publish</span>
+            <div class="toggle-sublabel">Auto-link quiz to policy when status is Published</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- MOCKUP 2: Step 2 — Questions                            -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div class="mockup-page">
+  <div class="mockup-title"><span>STEP 2</span> Questions — Manage Quiz Questions</div>
+  <div class="mockup-note">
+    Question list with drag handles, type badges, point values, and inline actions. AI Generate panel shown at bottom.
+  </div>
+
+  <div class="app-header">
+    <div class="app-logo">&#9830;</div>
+    <div><div class="app-title">Policy Manager</div><div class="app-subtitle">Policy Governance & Compliance</div></div>
+    <div class="header-search"><input placeholder="Search policies..." /></div>
+  </div>
+  <div class="nav-bar">
+    <div class="nav-item">My Policies</div>
+    <div class="nav-item">Policy Hub</div>
+    <div class="nav-item active">Quiz Builder</div>
+  </div>
+
+  <div class="content">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <h1 style="font-size: 22px; font-weight: 700;">Edit Quiz</h1>
+      <span class="badge badge-teal" style="font-size: 12px; padding: 4px 12px;">ID: 4</span>
+    </div>
+
+    <div class="command-bar">
+      <div class="command-bar-left">
+        <button class="btn btn-teal">&#128190; Update Quiz</button>
+        <button class="btn btn-outline">+ Add Question</button>
+        <button class="btn btn-outline" style="border-color: #0d9488; color: #0d9488;">&#9889; AI Generate</button>
+      </div>
+      <div class="command-bar-right">
+        <button class="btn btn-outline">&#8593; Import</button>
+        <button class="btn btn-outline">&#8595; Export</button>
+        <button class="btn btn-outline">&times; Cancel</button>
+      </div>
+    </div>
+
+    <div class="wizard-tabs">
+      <div class="wizard-tab"><span class="wizard-tab-icon">&#9881;</span> Settings</div>
+      <div class="wizard-tab active"><span class="wizard-tab-icon">&#128203;</span> Questions <span class="tab-count">10</span></div>
+      <div class="wizard-tab"><span class="wizard-tab-icon">&#128295;</span> Advanced</div>
+      <div class="wizard-tab"><span class="wizard-tab-icon">&#127941;</span> Certificate</div>
+      <div class="wizard-tab"><span class="wizard-tab-icon">&#128200;</span> Summary</div>
+    </div>
+
+    <div class="info-bar">
+      <span class="info-bar-icon">&#128203;</span>
+      <strong>10 questions</strong> &middot; 100 total points &middot; Linked to <strong style="color: #0d9488;">POL-IT-003 — Data Protection and Privacy Policy</strong>
+    </div>
+
+    <!-- Question list -->
+    <div class="question-card">
+      <div class="question-num">1</div>
+      <div class="question-body">
+        <div class="question-text">What is the primary purpose of GDPR?</div>
+        <div class="question-meta">
+          <span class="badge badge-teal">Multiple Choice</span>
+          <span>10 pts</span>
+          <span>Medium</span>
+        </div>
+      </div>
+      <div class="question-actions">
+        <button class="btn-icon" title="Edit">&#9998;</button>
+        <button class="btn-icon" title="Duplicate">&#128203;</button>
+        <button class="btn-icon" title="Delete" style="color: #dc2626;">&times;</button>
+      </div>
+    </div>
+
+    <div class="question-card">
+      <div class="question-num">2</div>
+      <div class="question-body">
+        <div class="question-text">Data subjects have the right to request deletion of their personal data.</div>
+        <div class="question-meta">
+          <span class="badge badge-blue">True / False</span>
+          <span>10 pts</span>
+          <span>Easy</span>
+        </div>
+      </div>
+      <div class="question-actions">
+        <button class="btn-icon" title="Edit">&#9998;</button>
+        <button class="btn-icon" title="Duplicate">&#128203;</button>
+        <button class="btn-icon" title="Delete" style="color: #dc2626;">&times;</button>
+      </div>
+    </div>
+
+    <div class="question-card">
+      <div class="question-num">3</div>
+      <div class="question-body">
+        <div class="question-text">Which of the following are valid legal bases for processing personal data? (Select all that apply)</div>
+        <div class="question-meta">
+          <span class="badge badge-amber">Multiple Select</span>
+          <span>15 pts</span>
+          <span>Hard</span>
+        </div>
+      </div>
+      <div class="question-actions">
+        <button class="btn-icon" title="Edit">&#9998;</button>
+        <button class="btn-icon" title="Duplicate">&#128203;</button>
+        <button class="btn-icon" title="Delete" style="color: #dc2626;">&times;</button>
+      </div>
+    </div>
+
+    <div class="question-card">
+      <div class="question-num">4</div>
+      <div class="question-body">
+        <div class="question-text">A data breach must be reported to the supervisory authority within ___ hours.</div>
+        <div class="question-meta">
+          <span class="badge" style="background: #ede9fe; color: #7c3aed;">Fill in the Blank</span>
+          <span>10 pts</span>
+          <span>Medium</span>
+        </div>
+      </div>
+      <div class="question-actions">
+        <button class="btn-icon" title="Edit">&#9998;</button>
+        <button class="btn-icon" title="Duplicate">&#128203;</button>
+        <button class="btn-icon" title="Delete" style="color: #dc2626;">&times;</button>
+      </div>
+    </div>
+
+    <div class="question-card">
+      <div class="question-num">5</div>
+      <div class="question-body">
+        <div class="question-text">Explain the difference between a Data Controller and a Data Processor.</div>
+        <div class="question-meta">
+          <span class="badge" style="background: #fce7f3; color: #be185d;">Short Answer</span>
+          <span>10 pts</span>
+          <span>Medium</span>
+        </div>
+      </div>
+      <div class="question-actions">
+        <button class="btn-icon" title="Edit">&#9998;</button>
+        <button class="btn-icon" title="Duplicate">&#128203;</button>
+        <button class="btn-icon" title="Delete" style="color: #dc2626;">&times;</button>
+      </div>
+    </div>
+
+    <div style="text-align: center; padding: 12px; color: #94a3b8; font-size: 12px;">
+      + 5 more questions below &middot; Scroll to view all
+    </div>
+
+    <!-- AI Generate Panel -->
+    <div class="ai-panel">
+      <div class="ai-panel-header">
+        <div class="ai-icon">&#9889;</div>
+        <div>
+          <div style="font-weight: 700; font-size: 14px; color: #0f766e;">AI Question Generator</div>
+          <div style="font-size: 12px; color: #64748b;">Powered by Azure OpenAI GPT-4o</div>
+        </div>
+      </div>
+      <div class="form-row form-row-3">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label">Number of Questions</label>
+          <input type="number" class="form-input" value="5" min="1" max="50" />
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label">Difficulty</label>
+          <select class="form-select"><option>Easy</option><option selected>Medium</option><option>Hard</option></select>
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label">Question Types</label>
+          <select class="form-select"><option>All Types</option><option>Multiple Choice Only</option><option>True/False Only</option></select>
+        </div>
+      </div>
+      <div style="display: flex; gap: 8px; margin-top: 12px;">
+        <button class="btn btn-teal">&#9889; Generate Questions</button>
+        <button class="btn btn-outline">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- MOCKUP 3: Step 3 — Advanced Settings                    -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div class="mockup-page">
+  <div class="mockup-title"><span>STEP 3</span> Advanced Settings</div>
+
+  <div class="app-header">
+    <div class="app-logo">&#9830;</div>
+    <div><div class="app-title">Policy Manager</div><div class="app-subtitle">Policy Governance & Compliance</div></div>
+    <div class="header-search"><input placeholder="Search policies..." /></div>
+  </div>
+  <div class="nav-bar">
+    <div class="nav-item">My Policies</div>
+    <div class="nav-item">Policy Hub</div>
+    <div class="nav-item active">Quiz Builder</div>
+  </div>
+
+  <div class="content">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <h1 style="font-size: 22px; font-weight: 700;">Edit Quiz</h1>
+      <span class="badge badge-teal" style="font-size: 12px; padding: 4px 12px;">ID: 4</span>
+    </div>
+
+    <div class="command-bar">
+      <div class="command-bar-left">
+        <button class="btn btn-teal">&#128190; Update Quiz</button>
+        <button class="btn btn-outline">+ Add Question</button>
+      </div>
+      <div class="command-bar-right">
+        <button class="btn btn-outline">&times; Cancel</button>
+      </div>
+    </div>
+
+    <div class="wizard-tabs">
+      <div class="wizard-tab">&#9881; Settings</div>
+      <div class="wizard-tab">&#128203; Questions <span class="tab-count">10</span></div>
+      <div class="wizard-tab active">&#128295; Advanced</div>
+      <div class="wizard-tab">&#127941; Certificate</div>
+      <div class="wizard-tab">&#128200; Summary</div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-title"><span class="section-title-icon">&#128295;</span> Advanced Settings</div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+        <div>
+          <div class="toggle-row" style="margin-bottom: 16px;">
+            <div class="toggle-track on"><div class="toggle-thumb"></div></div>
+            <div>
+              <span class="toggle-label">Allow Partial Credit</span>
+              <div class="toggle-sublabel">Award partial marks for partially correct answers</div>
+            </div>
+          </div>
+          <div class="toggle-row" style="margin-bottom: 16px;">
+            <div class="toggle-track on"><div class="toggle-thumb"></div></div>
+            <div>
+              <span class="toggle-label">Allow Review Before Submit</span>
+              <div class="toggle-sublabel">Users can navigate back and change answers before submitting</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="toggle-row" style="margin-bottom: 16px;">
+            <div class="toggle-track off"><div class="toggle-thumb"></div></div>
+            <div>
+              <span class="toggle-label">Shuffle Within Sections</span>
+              <div class="toggle-sublabel">Randomize question order within each section</div>
+            </div>
+          </div>
+          <div class="toggle-row" style="margin-bottom: 16px;">
+            <div class="toggle-track off"><div class="toggle-thumb"></div></div>
+            <div>
+              <span class="toggle-label">Require Sequential Completion</span>
+              <div class="toggle-sublabel">Users must answer questions in order (no skipping)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-title"><span class="section-title-icon">&#128337;</span> Schedule Quiz</div>
+      <div class="toggle-row" style="margin-bottom: 16px;">
+        <div class="toggle-track off"><div class="toggle-thumb"></div></div>
+        <span class="toggle-label">Schedule Quiz for Later</span>
+      </div>
+      <div style="opacity: 0.4; pointer-events: none;">
+        <div class="form-row form-row-2">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label">Start Date</label>
+            <input type="date" class="form-input" disabled />
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label">End Date</label>
+            <input type="date" class="form-input" disabled />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- MOCKUP 4: Step 4 — Certificate                          -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div class="mockup-page">
+  <div class="mockup-title"><span>STEP 4</span> Certificate Settings</div>
+
+  <div class="app-header">
+    <div class="app-logo">&#9830;</div>
+    <div><div class="app-title">Policy Manager</div><div class="app-subtitle">Policy Governance & Compliance</div></div>
+    <div class="header-search"><input placeholder="Search policies..." /></div>
+  </div>
+  <div class="nav-bar">
+    <div class="nav-item">My Policies</div>
+    <div class="nav-item">Policy Hub</div>
+    <div class="nav-item active">Quiz Builder</div>
+  </div>
+
+  <div class="content">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <h1 style="font-size: 22px; font-weight: 700;">Edit Quiz</h1>
+      <span class="badge badge-teal" style="font-size: 12px; padding: 4px 12px;">ID: 4</span>
+    </div>
+
+    <div class="command-bar">
+      <div class="command-bar-left">
+        <button class="btn btn-teal">&#128190; Update Quiz</button>
+      </div>
+      <div class="command-bar-right">
+        <button class="btn btn-outline">&times; Cancel</button>
+      </div>
+    </div>
+
+    <div class="wizard-tabs">
+      <div class="wizard-tab">&#9881; Settings</div>
+      <div class="wizard-tab">&#128203; Questions <span class="tab-count">10</span></div>
+      <div class="wizard-tab">&#128295; Advanced</div>
+      <div class="wizard-tab active">&#127941; Certificate</div>
+      <div class="wizard-tab">&#128200; Summary</div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-title"><span class="section-title-icon">&#127941;</span> Certificate Settings</div>
+
+      <div class="toggle-row" style="margin-bottom: 20px;">
+        <div class="toggle-track on"><div class="toggle-thumb"></div></div>
+        <div>
+          <span class="toggle-label" style="font-weight: 600;">Generate Certificate on Pass</span>
+          <div class="toggle-sublabel">Automatically generate a compliance certificate when users pass the quiz</div>
+        </div>
+      </div>
+
+      <div class="info-bar" style="margin-bottom: 20px;">
+        <span>&#10003;</span> A certificate will be automatically generated when users pass this quiz.
+      </div>
+
+      <!-- Certificate Preview -->
+      <div style="margin-bottom: 16px;">
+        <label class="form-label" style="margin-bottom: 8px;">Certificate Preview</label>
+        <div class="cert-preview">
+          <div class="cert-ornament">&#127941;</div>
+          <div class="cert-title-text">Certificate of Completion</div>
+          <div class="cert-name">Data Protection Assessment</div>
+          <div class="cert-subtitle">This certifies that <strong>[Employee Name]</strong> has successfully completed<br/>the Data Protection and Privacy Policy compliance assessment.</div>
+          <div style="margin-top: 16px; font-size: 11px; color: #94a3b8;">Date: [Completion Date] &middot; Score: [Score]% &middot; Policy Manager &middot; First Digital</div>
+        </div>
+      </div>
+
+      <div class="form-hint">Certificate includes: employee name, completion date, quiz score, policy name, and a unique certificate ID.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- MOCKUP 5: Step 5 — Summary                              -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div class="mockup-page" style="margin-bottom: 0;">
+  <div class="mockup-title"><span>STEP 5</span> Summary — Review Before Publishing</div>
+
+  <div class="app-header">
+    <div class="app-logo">&#9830;</div>
+    <div><div class="app-title">Policy Manager</div><div class="app-subtitle">Policy Governance & Compliance</div></div>
+    <div class="header-search"><input placeholder="Search policies..." /></div>
+  </div>
+  <div class="nav-bar">
+    <div class="nav-item">My Policies</div>
+    <div class="nav-item">Policy Hub</div>
+    <div class="nav-item active">Quiz Builder</div>
+  </div>
+
+  <div class="content">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <h1 style="font-size: 22px; font-weight: 700;">Edit Quiz</h1>
+      <span class="badge badge-teal" style="font-size: 12px; padding: 4px 12px;">ID: 4</span>
+    </div>
+
+    <div class="command-bar">
+      <div class="command-bar-left">
+        <button class="btn btn-teal">&#128190; Update Quiz</button>
+        <button class="btn btn-outline" style="border-color: #059669; color: #059669;">&#128640; Publish Quiz</button>
+      </div>
+      <div class="command-bar-right">
+        <button class="btn btn-outline">&times; Cancel</button>
+      </div>
+    </div>
+
+    <div class="wizard-tabs">
+      <div class="wizard-tab">&#9881; Settings</div>
+      <div class="wizard-tab">&#128203; Questions <span class="tab-count">10</span></div>
+      <div class="wizard-tab">&#128295; Advanced</div>
+      <div class="wizard-tab">&#127941; Certificate</div>
+      <div class="wizard-tab active">&#128200; Summary</div>
+    </div>
+
+    <!-- Summary stats -->
+    <div class="summary-stats">
+      <div class="summary-stat">
+        <div class="summary-stat-value" style="color: #0d9488;">10</div>
+        <div class="summary-stat-label">Questions</div>
+      </div>
+      <div class="summary-stat">
+        <div class="summary-stat-value" style="color: #0d9488;">100</div>
+        <div class="summary-stat-label">Total Points</div>
+      </div>
+      <div class="summary-stat">
+        <div class="summary-stat-value" style="color: #059669;">75%</div>
+        <div class="summary-stat-label">Pass Score</div>
+      </div>
+      <div class="summary-stat">
+        <div class="summary-stat-value" style="color: #7c3aed;">20m</div>
+        <div class="summary-stat-label">Time Limit</div>
+      </div>
+      <div class="summary-stat">
+        <div class="summary-stat-value" style="color: #dc2626;">3</div>
+        <div class="summary-stat-label">Max Attempts</div>
+      </div>
+      <div class="summary-stat">
+        <div class="summary-stat-value" style="color: #64748b;">4</div>
+        <div class="summary-stat-label">Quiz ID</div>
+      </div>
+    </div>
+
+    <!-- Configuration details -->
+    <div class="section-card">
+      <div class="section-title">Configuration</div>
+      <div class="summary-grid">
+        <div>
+          <div class="summary-row"><span class="summary-label">Category</span><span class="summary-value">IT & Security</span></div>
+          <div class="summary-row"><span class="summary-label">Policy Document</span><span class="summary-value" style="color: #0d9488;">POL-IT-003 — Data Protection</span></div>
+          <div class="summary-row"><span class="summary-label">Link on Publish</span><span class="badge badge-green" style="font-size: 10px;">Yes</span></div>
+          <div class="summary-row"><span class="summary-label">Randomize Questions</span><span class="badge badge-green" style="font-size: 10px;">Yes</span></div>
+          <div class="summary-row"><span class="summary-label">Show Correct Answers</span><span class="badge badge-green" style="font-size: 10px;">Yes</span></div>
+        </div>
+        <div>
+          <div class="summary-row"><span class="summary-label">Allow Partial Credit</span><span class="badge badge-green" style="font-size: 10px;">Yes</span></div>
+          <div class="summary-row"><span class="summary-label">Allow Review</span><span class="badge badge-green" style="font-size: 10px;">Yes</span></div>
+          <div class="summary-row"><span class="summary-label">Shuffle Sections</span><span class="badge badge-slate" style="font-size: 10px;">No</span></div>
+          <div class="summary-row"><span class="summary-label">Sequential</span><span class="badge badge-slate" style="font-size: 10px;">No</span></div>
+          <div class="summary-row"><span class="summary-label">Certificate</span><span class="badge badge-green" style="font-size: 10px;">Enabled</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Question breakdown -->
+    <div class="section-card">
+      <div class="section-title">Question Breakdown</div>
+      <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;">
+        <div style="text-align: center; padding: 10px; background: #ccfbf1; border-radius: 4px;">
+          <div style="font-weight: 700; color: #0d9488;">4</div>
+          <div style="font-size: 10px; color: #0f766e;">Multiple Choice</div>
+        </div>
+        <div style="text-align: center; padding: 10px; background: #dbeafe; border-radius: 4px;">
+          <div style="font-weight: 700; color: #2563eb;">2</div>
+          <div style="font-size: 10px; color: #1e40af;">True / False</div>
+        </div>
+        <div style="text-align: center; padding: 10px; background: #fef3c7; border-radius: 4px;">
+          <div style="font-weight: 700; color: #d97706;">2</div>
+          <div style="font-size: 10px; color: #92400e;">Multiple Select</div>
+        </div>
+        <div style="text-align: center; padding: 10px; background: #ede9fe; border-radius: 4px;">
+          <div style="font-weight: 700; color: #7c3aed;">1</div>
+          <div style="font-size: 10px; color: #5b21b6;">Fill in Blank</div>
+        </div>
+        <div style="text-align: center; padding: 10px; background: #fce7f3; border-radius: 4px;">
+          <div style="font-weight: 700; color: #be185d;">1</div>
+          <div style="font-size: 10px; color: #9d174d;">Short Answer</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

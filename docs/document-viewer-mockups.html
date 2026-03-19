@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Policy Manager — Document Viewer Mockups</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', -apple-system, sans-serif; background: #f1f5f9; color: #334155; padding: 32px; }
+
+  .mockup-title { font-size: 28px; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
+  .mockup-subtitle { font-size: 14px; color: #64748b; margin-bottom: 40px; }
+
+  .mockup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-bottom: 48px; }
+  @media (max-width: 1200px) { .mockup-grid { grid-template-columns: 1fr; } }
+
+  .mockup-card { background: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow: hidden; }
+  .mockup-label { padding: 12px 20px; background: #0f172a; color: #fff; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .mockup-label .badge { background: #0d9488; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 500; }
+  .mockup-label .badge-pdf { background: #dc2626; }
+
+  .section-title { font-size: 20px; font-weight: 700; color: #0f172a; margin: 48px 0 8px; }
+  .section-desc { font-size: 14px; color: #64748b; margin-bottom: 24px; }
+
+  /* ===== Viewer Wrapper ===== */
+  .viewer-wrapper { border: 1px solid #e2e8f0; border-radius: 4px; overflow: hidden; }
+
+  /* ===== Toolbar ===== */
+  .viewer-toolbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 16px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;
+  }
+  .toolbar-left { display: flex; align-items: center; gap: 8px; }
+  .toolbar-left .doc-icon { font-size: 16px; color: #0d9488; }
+  .toolbar-left .doc-name { font-size: 13px; font-weight: 600; color: #334155; }
+  .toolbar-left .doc-type { font-size: 11px; color: #94a3b8; }
+  .toolbar-right { display: flex; align-items: center; gap: 6px; }
+
+  .icon-btn {
+    width: 28px; height: 28px; border: 1px solid #e2e8f0; border-radius: 4px;
+    background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    color: #0d9488; font-size: 13px; transition: all 0.15s;
+  }
+  .icon-btn:hover { background: #f0fdfa; border-color: #0d9488; }
+
+  .text-btn {
+    height: 28px; padding: 0 10px; border: 1px solid #e2e8f0; border-radius: 4px;
+    background: #fff; cursor: pointer; font-size: 11px; font-weight: 500; color: #334155;
+    display: flex; align-items: center; gap: 4px; transition: all 0.15s;
+  }
+  .text-btn:hover { background: #f8fafc; border-color: #94a3b8; }
+
+  /* ===== Document Viewer ===== */
+  .document-viewer {
+    height: 520px; overflow-y: auto; position: relative; background: #fff;
+  }
+  .document-viewer.html-mode { padding: 24px 32px; }
+  .document-viewer.pdf-mode { padding: 0; }
+
+  /* Scroll progress bar */
+  .scroll-progress { position: absolute; top: 0; right: 0; width: 4px; height: 100%; background: #e2e8f0; z-index: 1; }
+  .scroll-progress-fill { width: 100%; background: #0d9488; transition: height 0.2s; border-radius: 2px; }
+
+  /* ===== Scroll Notice ===== */
+  .scroll-notice {
+    padding: 10px 16px; background: #f8fafc; border-top: 1px solid #e2e8f0;
+    text-align: center; font-size: 13px; color: #64748b;
+  }
+  .scroll-notice.complete { color: #16a34a; font-weight: 600; }
+
+  /* ===== Converted HTML Content (Forest Teal theme from Azure Function) ===== */
+  .pm-policy-content { font-size: 15px; line-height: 1.8; color: #334155; max-width: 800px; margin: 0 auto; }
+  .pm-policy-content h1 { font-size: 24px; font-weight: 700; color: #0f172a; margin: 32px 0 16px; padding-bottom: 8px; border-bottom: 2px solid #0d9488; }
+  .pm-policy-content h2 { font-size: 20px; font-weight: 700; color: #0f172a; margin: 28px 0 12px; padding-bottom: 6px; border-bottom: 1px solid #e2e8f0; }
+  .pm-policy-content h3 { font-size: 17px; font-weight: 600; color: #0f172a; margin: 24px 0 8px; }
+  .pm-policy-content p { margin-bottom: 12px; }
+  .pm-policy-content ul, .pm-policy-content ol { margin: 8px 0 16px 24px; }
+  .pm-policy-content li { margin-bottom: 6px; }
+  .pm-policy-content table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+  .pm-policy-content th { background: #f0fdfa; color: #0f766e; font-weight: 600; text-align: left; padding: 10px 12px; border: 1px solid #e2e8f0; }
+  .pm-policy-content td { padding: 10px 12px; border: 1px solid #e2e8f0; }
+  .pm-policy-content tr:nth-child(even) td { background: #fafafa; }
+  .pm-policy-content a { color: #0d9488; text-decoration: none; }
+  .pm-policy-content blockquote { border-left: 4px solid #0d9488; padding: 12px 20px; margin: 16px 0; background: #f0fdfa; color: #0f766e; font-style: italic; }
+  .pm-policy-content strong { color: #0f172a; }
+
+  /* ===== PDF placeholder ===== */
+  .pdf-placeholder {
+    height: 100%; background: #f5f5f5; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; color: #94a3b8;
+  }
+  .pdf-placeholder .pdf-icon { font-size: 48px; margin-bottom: 12px; color: #dc2626; }
+  .pdf-placeholder .pdf-label { font-size: 14px; font-weight: 600; color: #334155; }
+  .pdf-placeholder .pdf-sublabel { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+
+  /* ===== Metadata strip (compact, above viewer) ===== */
+  .metadata-strip {
+    display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 4px; margin-bottom: 12px;
+  }
+  .metadata-strip .policy-name { font-size: 16px; font-weight: 600; color: #0f172a; flex: 1; }
+  .meta-badge { padding: 2px 10px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .meta-badge.published { background: #dcfce7; color: #16a34a; }
+  .meta-badge.category { background: #f0fdfa; color: #0f766e; }
+  .meta-badge.number { background: #f1f5f9; color: #475569; }
+
+  /* ===== Focused mode ===== */
+  .focused-wrapper { background: #fff; }
+  .focused-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 24px; border-bottom: 1px solid #e2e8f0;
+  }
+  .focused-header .back-link { color: #0d9488; font-size: 13px; cursor: pointer; text-decoration: none; font-weight: 500; }
+  .focused-header .step-label { font-size: 13px; color: #64748b; }
+  .reading-progress { height: 3px; background: #e2e8f0; }
+  .reading-progress-fill { height: 100%; background: #0d9488; transition: width 0.3s; }
+
+  .focused-meta {
+    display: flex; align-items: center; gap: 12px; padding: 12px 24px;
+    border-bottom: 1px solid #f1f5f9; background: #fafafa;
+  }
+  .focused-meta .policy-title { font-size: 15px; font-weight: 600; color: #0f172a; flex: 1; }
+
+  .focused-viewer { flex: 1; overflow-y: auto; padding: 32px 48px 80px; position: relative; }
+
+  .floating-card {
+    position: fixed; bottom: 24px; right: 24px; width: 300px;
+    background: #fff; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+    padding: 16px; border: 1px solid #e2e8f0;
+  }
+  .floating-card .fc-title { font-size: 13px; font-weight: 600; color: #0f172a; margin-bottom: 8px; }
+  .floating-card .fc-progress { height: 4px; background: #e2e8f0; border-radius: 2px; margin-bottom: 8px; overflow: hidden; }
+  .floating-card .fc-progress-fill { height: 100%; background: #0d9488; border-radius: 2px; }
+  .fc-btn {
+    width: 100%; padding: 8px; border: none; border-radius: 4px;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+  .fc-btn.disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
+  .fc-btn.enabled { background: #0d9488; color: #fff; }
+  .fc-btn.enabled:hover { background: #0f766e; }
+
+  /* Full width mockup */
+  .full-width-mockup { margin-bottom: 48px; }
+</style>
+</head>
+<body>
+
+<div class="mockup-title">Document Viewer — Unified UI</div>
+<div class="mockup-subtitle">Seamless experience between converted Word documents (HTML) and native PDFs. Same toolbar, same progress tracking, same chrome.</div>
+
+<!-- ===================================================================== -->
+<!-- SECTION 1: Side-by-side comparison -->
+<!-- ===================================================================== -->
+
+<div class="section-title">1. Browse Mode — Side by Side</div>
+<div class="section-desc">Both viewers use identical toolbar, scroll progress bar, and scroll notice. The only difference is the content area.</div>
+
+<div class="mockup-grid">
+
+  <!-- HTML Viewer (converted .docx) -->
+  <div class="mockup-card">
+    <div class="mockup-label">
+      <span>Converted Word Document</span>
+      <span class="badge">.docx → HTML</span>
+    </div>
+    <div style="padding: 20px;">
+      <div class="metadata-strip">
+        <span class="policy-name">Data Protection & Privacy Policy</span>
+        <span class="meta-badge published">Published</span>
+        <span class="meta-badge category">IT Security</span>
+        <span class="meta-badge number">POL-2026-001</span>
+      </div>
+      <div class="viewer-wrapper">
+        <div class="viewer-toolbar">
+          <div class="toolbar-left">
+            <span class="doc-icon">📄</span>
+            <span class="doc-name">Data-Protection-Policy-v2.docx</span>
+            <span class="doc-type">Word Document</span>
+          </div>
+          <div class="toolbar-right">
+            <button class="icon-btn" title="Print">🖨️</button>
+            <button class="icon-btn" title="Fullscreen">⛶</button>
+            <button class="text-btn">↗ Open Original</button>
+            <button class="text-btn">⬇ Download</button>
+          </div>
+        </div>
+        <div class="document-viewer html-mode" style="height: 400px;">
+          <div class="scroll-progress">
+            <div class="scroll-progress-fill" style="height: 65%;"></div>
+          </div>
+          <div class="pm-policy-content">
+            <h1>Data Protection & Privacy Policy</h1>
+            <p>This policy establishes the principles, guidelines, and requirements for the protection of personal and sensitive data across all business operations at First Digital.</p>
+
+            <h2>1. Purpose</h2>
+            <p>The purpose of this policy is to ensure that all employees understand their responsibilities regarding the collection, processing, storage, and disposal of personal data in compliance with applicable privacy legislation.</p>
+
+            <h2>2. Scope</h2>
+            <p>This policy applies to all employees, contractors, and third-party service providers who access, process, or store personal data on behalf of the organisation.</p>
+            <ul>
+              <li>All departments and business units</li>
+              <li>All information systems that process personal data</li>
+              <li>Both electronic and physical records containing personal information</li>
+            </ul>
+
+            <h2>3. Data Classification</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>Classification</th>
+                  <th>Description</th>
+                  <th>Examples</th>
+                  <th>Handling</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Restricted</strong></td>
+                  <td>Highly sensitive personal data</td>
+                  <td>Health records, financial data, TFN</td>
+                  <td>Encrypted, access-controlled, audit logged</td>
+                </tr>
+                <tr>
+                  <td><strong>Confidential</strong></td>
+                  <td>Internal business data with personal elements</td>
+                  <td>Employee records, client contacts</td>
+                  <td>Need-to-know access, secure storage</td>
+                </tr>
+                <tr>
+                  <td><strong>Internal</strong></td>
+                  <td>Business information not for public</td>
+                  <td>Meeting notes, project plans</td>
+                  <td>Standard access controls</td>
+                </tr>
+                <tr>
+                  <td><strong>Public</strong></td>
+                  <td>Information approved for release</td>
+                  <td>Marketing material, job postings</td>
+                  <td>No restrictions</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h2>4. Key Principles</h2>
+            <blockquote>
+              Personal data must be processed lawfully, fairly, and transparently. Collection must be limited to what is necessary for the specified purpose.
+            </blockquote>
+            <ol>
+              <li><strong>Lawfulness</strong> — Process data only with a lawful basis</li>
+              <li><strong>Purpose limitation</strong> — Use data only for specified purposes</li>
+              <li><strong>Data minimisation</strong> — Collect only what is necessary</li>
+              <li><strong>Accuracy</strong> — Keep data accurate and up to date</li>
+              <li><strong>Storage limitation</strong> — Retain only as long as needed</li>
+              <li><strong>Integrity</strong> — Protect against unauthorised access</li>
+            </ol>
+          </div>
+        </div>
+        <div class="scroll-notice">
+          Please review the document before proceeding (12s remaining)
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PDF Viewer -->
+  <div class="mockup-card">
+    <div class="mockup-label">
+      <span>Native PDF Document</span>
+      <span class="badge badge-pdf">.pdf</span>
+    </div>
+    <div style="padding: 20px;">
+      <div class="metadata-strip">
+        <span class="policy-name">Acceptable Use Policy</span>
+        <span class="meta-badge published">Published</span>
+        <span class="meta-badge category">IT Security</span>
+        <span class="meta-badge number">POL-2026-003</span>
+      </div>
+      <div class="viewer-wrapper">
+        <div class="viewer-toolbar">
+          <div class="toolbar-left">
+            <span class="doc-icon" style="color: #dc2626;">📕</span>
+            <span class="doc-name">Acceptable-Use-Policy-v3.pdf</span>
+            <span class="doc-type">PDF Document</span>
+          </div>
+          <div class="toolbar-right">
+            <button class="icon-btn" title="Fullscreen">⛶</button>
+            <button class="text-btn">↗ Open</button>
+            <button class="text-btn">⬇ Download</button>
+          </div>
+        </div>
+        <div class="document-viewer pdf-mode" style="height: 400px;">
+          <div class="scroll-progress">
+            <div class="scroll-progress-fill" style="height: 42%;"></div>
+          </div>
+          <div class="pdf-placeholder">
+            <div class="pdf-icon">📄</div>
+            <div class="pdf-label">Acceptable-Use-Policy-v3.pdf</div>
+            <div class="pdf-sublabel">Native PDF embed — rendered by browser</div>
+            <div style="margin-top: 20px; padding: 16px 24px; background: #fff; border: 1px solid #e2e8f0; border-radius: 4px; max-width: 400px; text-align: left; font-size: 13px; color: #64748b;">
+              <div style="font-weight: 600; color: #334155; margin-bottom: 8px;">In production:</div>
+              This area renders the PDF using <code>&lt;object&gt;</code> with the browser's native PDF viewer. Toolbar is hidden (<code>#toolbar=0</code>) for a clean reading experience.
+            </div>
+          </div>
+        </div>
+        <div class="scroll-notice">
+          Please review the document before proceeding (18s remaining)
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===================================================================== -->
+<!-- SECTION 2: Read Complete state -->
+<!-- ===================================================================== -->
+
+<div class="section-title">2. Read Complete State</div>
+<div class="section-desc">When the user has scrolled ≥95% or spent ≥30 seconds reading, the scroll notice turns green.</div>
+
+<div class="mockup-grid">
+  <div class="mockup-card">
+    <div class="mockup-label">
+      <span>HTML Reader — Read Complete</span>
+      <span class="badge">✓ 95% scrolled</span>
+    </div>
+    <div style="padding: 20px;">
+      <div class="viewer-wrapper">
+        <div class="viewer-toolbar">
+          <div class="toolbar-left">
+            <span class="doc-icon">📄</span>
+            <span class="doc-name">Data-Protection-Policy-v2.docx</span>
+            <span class="doc-type">Word Document</span>
+          </div>
+          <div class="toolbar-right">
+            <button class="icon-btn">🖨️</button>
+            <button class="icon-btn">⛶</button>
+            <button class="text-btn">↗ Open Original</button>
+            <button class="text-btn">⬇ Download</button>
+          </div>
+        </div>
+        <div class="document-viewer html-mode" style="height: 200px;">
+          <div class="scroll-progress">
+            <div class="scroll-progress-fill" style="height: 97%;"></div>
+          </div>
+          <div class="pm-policy-content">
+            <h2>8. Compliance & Enforcement</h2>
+            <p>Non-compliance with this policy may result in disciplinary action, up to and including termination of employment. All suspected breaches must be reported to the Data Protection Officer within 24 hours.</p>
+            <h2>9. Review</h2>
+            <p>This policy will be reviewed annually or when significant changes occur to privacy legislation or business operations.</p>
+            <p style="margin-top: 24px; color: #94a3b8; font-size: 13px;"><em>Last reviewed: 15 March 2026 | Next review: 15 March 2027 | Owner: CISO</em></p>
+          </div>
+        </div>
+        <div class="scroll-notice complete">
+          ✓ Document read complete — you may now proceed
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup-card">
+    <div class="mockup-label">
+      <span>PDF Reader — Read Complete</span>
+      <span class="badge badge-pdf">✓ 30s elapsed</span>
+    </div>
+    <div style="padding: 20px;">
+      <div class="viewer-wrapper">
+        <div class="viewer-toolbar">
+          <div class="toolbar-left">
+            <span class="doc-icon" style="color: #dc2626;">📕</span>
+            <span class="doc-name">Acceptable-Use-Policy-v3.pdf</span>
+            <span class="doc-type">PDF Document</span>
+          </div>
+          <div class="toolbar-right">
+            <button class="icon-btn">⛶</button>
+            <button class="text-btn">↗ Open</button>
+            <button class="text-btn">⬇ Download</button>
+          </div>
+        </div>
+        <div class="document-viewer pdf-mode" style="height: 200px;">
+          <div class="scroll-progress">
+            <div class="scroll-progress-fill" style="height: 100%;"></div>
+          </div>
+          <div class="pdf-placeholder" style="font-size: 13px;">
+            <div style="color: #334155;">PDF content rendered natively by browser</div>
+          </div>
+        </div>
+        <div class="scroll-notice complete">
+          ✓ Document read complete — you may now proceed
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================================================================== -->
+<!-- SECTION 3: Focused Reader Mode -->
+<!-- ===================================================================== -->
+
+<div class="section-title">3. Focused Reader Mode</div>
+<div class="section-desc">When a user needs to acknowledge a policy, they enter focused reader mode — minimal chrome, reading progress bar, floating action card. Identical layout for both HTML and PDF content.</div>
+
+<div class="full-width-mockup">
+  <div class="mockup-card">
+    <div class="mockup-label">
+      <span>Focused Reader — HTML Content (converted .docx)</span>
+      <span class="badge">Acknowledgement Flow</span>
+    </div>
+    <div class="focused-wrapper">
+      <!-- Focused header -->
+      <div class="focused-header">
+        <a class="back-link">← Back to My Policies</a>
+        <span class="step-label">Step 1 of 3 — Read Policy</span>
+        <a class="back-link">✕ Exit</a>
+      </div>
+
+      <!-- Reading progress bar -->
+      <div class="reading-progress">
+        <div class="reading-progress-fill" style="width: 65%;"></div>
+      </div>
+
+      <!-- Compact metadata strip -->
+      <div class="focused-meta">
+        <span class="focused-meta .policy-title" style="font-size: 15px; font-weight: 600; color: #0f172a; flex: 1;">Data Protection & Privacy Policy</span>
+        <span class="meta-badge published">Published</span>
+        <span class="meta-badge category">IT Security</span>
+        <span class="meta-badge number">POL-2026-001</span>
+        <span style="font-size: 12px; color: #94a3b8;">v2.0 | Effective: 1 Jan 2026</span>
+      </div>
+
+      <!-- Content area -->
+      <div style="display: flex; position: relative;">
+        <div style="flex: 1; padding: 32px 48px 80px; max-height: 500px; overflow-y: auto; position: relative;">
+          <div class="scroll-progress">
+            <div class="scroll-progress-fill" style="height: 65%;"></div>
+          </div>
+          <div class="pm-policy-content">
+            <h1>Data Protection & Privacy Policy</h1>
+            <p>This policy establishes the principles, guidelines, and requirements for the protection of personal and sensitive data across all business operations at First Digital.</p>
+
+            <h2>1. Purpose</h2>
+            <p>The purpose of this policy is to ensure that all employees understand their responsibilities regarding the collection, processing, storage, and disposal of personal data in compliance with applicable privacy legislation.</p>
+
+            <h2>2. Scope</h2>
+            <p>This policy applies to all employees, contractors, and third-party service providers who access, process, or store personal data on behalf of the organisation.</p>
+            <ul>
+              <li>All departments and business units</li>
+              <li>All information systems that process personal data</li>
+              <li>Both electronic and physical records</li>
+            </ul>
+
+            <h2>3. Data Classification</h2>
+            <table>
+              <thead>
+                <tr><th>Classification</th><th>Description</th><th>Examples</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>Restricted</strong></td><td>Highly sensitive personal data</td><td>Health records, financial data</td></tr>
+                <tr><td><strong>Confidential</strong></td><td>Internal data with personal elements</td><td>Employee records, client contacts</td></tr>
+                <tr><td><strong>Internal</strong></td><td>Business information not for public</td><td>Meeting notes, project plans</td></tr>
+                <tr><td><strong>Public</strong></td><td>Approved for release</td><td>Marketing material</td></tr>
+              </tbody>
+            </table>
+
+            <h2>4. Key Principles</h2>
+            <blockquote>
+              Personal data must be processed lawfully, fairly, and transparently.
+            </blockquote>
+          </div>
+        </div>
+
+        <!-- Floating action card -->
+        <div style="position: absolute; bottom: 24px; right: 24px;">
+          <div class="floating-card">
+            <div class="fc-title">Reading Progress</div>
+            <div class="fc-progress">
+              <div class="fc-progress-fill" style="width: 65%;"></div>
+            </div>
+            <div style="font-size: 12px; color: #64748b; margin-bottom: 12px;">Read 12 more seconds to continue</div>
+            <button class="fc-btn disabled">Next: Quiz →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================================================================== -->
+<!-- SECTION 4: Toolbar detail comparison -->
+<!-- ===================================================================== -->
+
+<div class="section-title">4. Toolbar Feature Comparison</div>
+<div class="section-desc">The HTML reader adds a Print button since content is native HTML. PDF keeps the browser's built-in print. Both share fullscreen, open, and download.</div>
+
+<div style="max-width: 700px; margin-bottom: 48px;">
+  <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+    <thead>
+      <tr style="background: #f0fdfa;">
+        <th style="text-align: left; padding: 10px 16px; border: 1px solid #e2e8f0; color: #0f766e;">Feature</th>
+        <th style="text-align: center; padding: 10px 16px; border: 1px solid #e2e8f0; color: #0f766e;">HTML (.docx)</th>
+        <th style="text-align: center; padding: 10px 16px; border: 1px solid #e2e8f0; color: #0f766e;">PDF</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td style="padding: 8px 16px; border: 1px solid #e2e8f0;">Document icon + name</td><td style="text-align: center; padding: 8px; border: 1px solid #e2e8f0;">✅</td><td style="text-align: center; padding: 8px; border: 1px solid #e2e8f0;">✅</td></tr>
+      <tr style="background: #fafafa;"><td style="padding: 8px 16px; border: 1px solid #e2e8f0;">Document type label</td><td style="text-align: center; padding: 8px; border: 1px solid #e2e8f0;">✅ "Word Document"</td><td style="text-align: center; padding: 8px; border: 1px solid #e2e8f0;">✅ "PDF Document"</td></tr>
+      <tr><td style="padding: 8px 16px; border: 1px solid #e2e8f0;">Print button</td><td style="text-align: center; padding: 8px; border: 1px solid #e2e8f0;">✅ (opens print dialog)</td><td style="text-align: center; padding: 8px; border: 1px solid #e2e8f0;">— (browser built-in)</td></tr>
+      <tr style="background: #fafafa;"><td style="padding: 8px 16px; border: 1px solid #e2e8f0;">Fullscreen toggle</td><td style="text-align: center; padding: 8px; border: 1px solid #e2e8f0;">✅</td><td style="text-align: center; padding: 8px; border: 1px solid #e2e8f0;">✅</td></tr>
+      <tr><td style="padding: 8px 16px; border: 1px solid #e2e8f0;">Open Original</td><td style="text-align: center; padding: 8px; border: 1px solid #e2e8f0;">✅ (opens .docx)</td><td style="text-align: center; padding: 8px; border: 1px solid #e2e8f0;">✅ (opens .pdf)</td></tr>
+      <tr style="background: #fafafa;"><td style="padding: 8px 16px; border: 1px solid #e2e8f0;">Download</td><td style="text-align: center; padding: 8px; border: 1px solid #e2e8f0;">✅</td><td style="text-align: center; padding: 8px; border: 1px solid #e2e8f0;">✅</td></tr>
+      <tr><td style="padding: 8px 16px; border: 1px solid #e2e8f0;">Scroll progress bar</td><td style="text-align: center; padding: 8px; border: 1px solid #e2e8f0;">✅ (native scroll)</td><td style="text-align: center; padding: 8px; border: 1px solid #e2e8f0;">✅ (timer fallback)</td></tr>
+      <tr style="background: #fafafa;"><td style="padding: 8px 16px; border: 1px solid #e2e8f0;">Scroll notice</td><td style="text-align: center; padding: 8px; border: 1px solid #e2e8f0;">✅</td><td style="text-align: center; padding: 8px; border: 1px solid #e2e8f0;">✅</td></tr>
+      <tr><td style="padding: 8px 16px; border: 1px solid #e2e8f0;">Focused reader mode</td><td style="text-align: center; padding: 8px; border: 1px solid #e2e8f0;">✅</td><td style="text-align: center; padding: 8px; border: 1px solid #e2e8f0;">✅</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ===================================================================== -->
+<!-- SECTION 5: Conversion Pipeline Overview -->
+<!-- ===================================================================== -->
+
+<div class="section-title">5. Document Pipeline Overview</div>
+<div class="section-desc">How documents flow from author upload to reader rendering.</div>
+
+<div style="max-width: 800px; margin-bottom: 48px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 32px;">
+  <div style="display: flex; align-items: flex-start; gap: 16px; margin-bottom: 24px;">
+    <div style="width: 32px; height: 32px; background: #0d9488; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0;">1</div>
+    <div>
+      <div style="font-weight: 600; color: #0f172a; margin-bottom: 4px;">Author Uploads Document</div>
+      <div style="font-size: 13px; color: #64748b;">Author attaches .docx or .pdf to the policy in the wizard. File stored in PM_PolicySourceDocuments.</div>
+    </div>
+  </div>
+  <div style="display: flex; align-items: flex-start; gap: 16px; margin-bottom: 24px;">
+    <div style="width: 32px; height: 32px; background: #0d9488; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0;">2</div>
+    <div>
+      <div style="font-weight: 600; color: #0f172a; margin-bottom: 4px;">Author Publishes Policy</div>
+      <div style="font-size: 13px; color: #64748b;">PolicyService.publishPolicy() fires. If DocumentURL is a .docx, triggers conversion.</div>
+    </div>
+  </div>
+  <div style="display: flex; align-items: flex-start; gap: 16px; margin-bottom: 24px;">
+    <div style="width: 32px; height: 32px; background: #0d9488; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0;">3</div>
+    <div>
+      <div style="font-weight: 600; color: #0f172a; margin-bottom: 4px;">Azure Function Converts</div>
+      <div style="font-size: 13px; color: #64748b;">
+        <strong>.docx path:</strong> Downloads from SharePoint → mammoth.js converts to HTML → Forest Teal CSS applied → HTML returned<br>
+        <strong>.pdf path:</strong> No conversion needed — skipped
+      </div>
+    </div>
+  </div>
+  <div style="display: flex; align-items: flex-start; gap: 16px; margin-bottom: 24px;">
+    <div style="width: 32px; height: 32px; background: #0d9488; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0;">4</div>
+    <div>
+      <div style="font-weight: 600; color: #0f172a; margin-bottom: 4px;">HTML Saved to PolicyContent</div>
+      <div style="font-size: 13px; color: #64748b;">Converted HTML stored in PM_Policies.PolicyContent field. One-time conversion — not repeated on each read.</div>
+    </div>
+  </div>
+  <div style="display: flex; align-items: flex-start; gap: 16px;">
+    <div style="width: 32px; height: 32px; background: #0d9488; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0;">5</div>
+    <div>
+      <div style="font-weight: 600; color: #0f172a; margin-bottom: 4px;">Reader Renders</div>
+      <div style="font-size: 13px; color: #64748b;">
+        <strong>Has PolicyContent?</strong> → Native HTML reader (fast, scrollable, printable, themed)<br>
+        <strong>No PolicyContent + .pdf?</strong> → Native browser PDF embed (no iframe wrapping)<br>
+        <strong>No PolicyContent + .docx?</strong> → Office Online iframe viewer (fallback)
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="text-align: center; color: #94a3b8; font-size: 12px; padding: 24px;">
+  Policy Manager v1.2.5 — Document Viewer Mockups — Generated March 2026
+</div>
+
+</body>
+</html>

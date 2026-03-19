@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Policy Manager — Fluent Panel Standard Style Mockup</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #f5f5f5; color: #0f172a; }
+
+    .mockup-page { background: #fff; margin: 0 auto 48px; max-width: 1440px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); overflow: hidden; }
+    .mockup-title { background: #1e293b; color: #fff; padding: 16px 32px; font-size: 14px; font-weight: 600; }
+    .mockup-title span { color: #5eead4; margin-right: 8px; }
+    .mockup-note { background: #fef3c7; padding: 12px 32px; font-size: 13px; color: #92400e; border-bottom: 1px solid #fde68a; }
+
+    /* ── Page background ── */
+    .page-bg { background: #f1f5f9; min-height: 700px; display: flex; justify-content: flex-end; position: relative; }
+    .page-content { flex: 1; padding: 40px; opacity: 0.4; }
+    .page-content h2 { color: #334155; margin-bottom: 8px; }
+    .page-content p { color: #94a3b8; font-size: 14px; }
+
+    /* ── Overlay ── */
+    .panel-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 10; }
+
+    /* ── Panel ── */
+    .panel { position: absolute; top: 0; right: 0; bottom: 0; width: 480px; background: #fff; z-index: 20; display: flex; flex-direction: column; border-radius: 8px 0 0 8px; box-shadow: -8px 0 32px rgba(0,0,0,0.15); }
+    .panel-wide { width: 640px; }
+
+    /* ── Panel header ── */
+    .panel-header {
+      background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%);
+      border-bottom: 1px solid #99f6e4;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .panel-header-text { font-size: 18px; font-weight: 700; color: #0f766e; }
+    .panel-header-sub { font-size: 12px; color: #64748b; margin-top: 2px; }
+    .panel-close {
+      width: 32px; height: 32px; border-radius: 4px; border: none; background: transparent;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      color: #0f766e; font-size: 18px;
+    }
+    .panel-close:hover { background: rgba(13,148,136,0.1); }
+
+    /* ── Panel body ── */
+    .panel-body { flex: 1; overflow-y: auto; padding: 20px 24px; }
+
+    /* ── Panel footer ── */
+    .panel-footer {
+      padding: 12px 24px;
+      border-top: 1px solid #e2e8f0;
+      background: #f8fafc;
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    /* ── Form controls (4px radius) ── */
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-size: 13px; font-weight: 600; color: #323130; margin-bottom: 4px; }
+    .form-label .req { color: #dc2626; margin-left: 2px; }
+    .form-input, .form-select, .form-textarea {
+      width: 100%; padding: 7px 12px; border: 1px solid #d1d5db; border-radius: 4px;
+      font-size: 13px; color: #0f172a; outline: none; font-family: inherit; background: #fff;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: #0d9488; box-shadow: 0 0 0 1px #0d9488; }
+    .form-textarea { resize: vertical; min-height: 80px; }
+    .form-hint { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+    .form-row { display: grid; gap: 16px; margin-bottom: 16px; }
+    .form-row-2 { grid-template-columns: 1fr 1fr; }
+
+    /* ── Toggle ── */
+    .toggle-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .toggle-track { width: 40px; height: 20px; border-radius: 10px; position: relative; cursor: pointer; }
+    .toggle-track.off { background: #cbd5e1; }
+    .toggle-track.on { background: #0d9488; }
+    .toggle-thumb { width: 16px; height: 16px; border-radius: 50%; background: #fff; position: absolute; top: 2px; box-shadow: 0 1px 2px rgba(0,0,0,0.15); }
+    .toggle-track.off .toggle-thumb { left: 2px; }
+    .toggle-track.on .toggle-thumb { left: 22px; }
+    .toggle-label { font-size: 13px; color: #323130; }
+    .toggle-value { font-size: 12px; color: #0d9488; font-weight: 600; }
+
+    /* ── Buttons ── */
+    .btn { padding: 8px 18px; border-radius: 4px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-teal { background: #0d9488; color: #fff; }
+    .btn-teal:hover { background: #0f766e; }
+    .btn-outline { background: #fff; color: #323130; border: 1px solid #d1d5db; }
+    .btn-outline:hover { background: #f8fafc; }
+    .btn-danger { background: #fff; color: #dc2626; border: 1px solid #fca5a5; }
+
+    /* ── Message bar ── */
+    .msg-bar { padding: 8px 12px; border-radius: 4px; font-size: 12px; display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+    .msg-info { background: #f0fdfa; border: 1px solid #99f6e4; color: #0f766e; }
+    .msg-success { background: #dcfce7; border: 1px solid #86efac; color: #059669; }
+    .msg-warning { background: #fef3c7; border: 1px solid #fde68a; color: #92400e; }
+
+    /* ── Section divider ── */
+    .section-divider { border: none; height: 1px; background: #e2e8f0; margin: 20px 0; }
+    .section-label { font-size: 12px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+
+    /* ── Badge ── */
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+    .badge-green { background: #dcfce7; color: #059669; }
+    .badge-amber { background: #fef3c7; color: #d97706; }
+    .badge-teal { background: #ccfbf1; color: #0d9488; }
+
+    /* ── Spec table ── */
+    .spec-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .spec-table th { text-align: left; padding: 8px 12px; background: #f8fafc; color: #64748b; font-weight: 600; border-bottom: 1px solid #e2e8f0; font-size: 12px; }
+    .spec-table td { padding: 8px 12px; border-bottom: 1px solid #f1f5f9; color: #334155; }
+    .spec-code { font-family: 'Consolas', monospace; font-size: 12px; background: #f1f5f9; padding: 1px 6px; border-radius: 3px; color: #475569; }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- MOCKUP 1: Edit Template Panel (Medium)                  -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div class="mockup-page">
+  <div class="mockup-title"><span>MOCKUP 1</span> Standard Panel — Edit Template (PanelType.medium, 480px)</div>
+
+  <div class="page-bg">
+    <div class="page-content">
+      <h2>Admin Centre > Templates</h2>
+      <p>Content behind the panel is dimmed with overlay</p>
+    </div>
+    <div class="panel-overlay"></div>
+
+    <div class="panel">
+      <!-- Header -->
+      <div class="panel-header">
+        <div>
+          <div class="panel-header-text">Edit Template</div>
+        </div>
+        <button class="panel-close">&times;</button>
+      </div>
+
+      <!-- Body -->
+      <div class="panel-body">
+        <div class="form-group">
+          <label class="form-label">Template Name <span class="req">*</span></label>
+          <input type="text" class="form-input" value="IT Security Policy Template" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select class="form-select"><option>IT & Security</option><option>HR Policies</option><option>Compliance</option></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Template Content (HTML)</label>
+          <textarea class="form-textarea" style="min-height: 120px;">Why do we use it?
+It is a long established fact that a reader will be distracted by the readable content of a page...</textarea>
+          <span class="form-hint">HTML content that pre-populates the policy editor when this template is selected</span>
+        </div>
+
+        <hr class="section-divider" />
+        <div class="section-label">Policy Defaults</div>
+        <p style="font-size: 12px; color: #64748b; margin-bottom: 16px;">These defaults are applied when an author selects this template in the Policy Builder wizard.</p>
+
+        <div class="form-group">
+          <label class="form-label">Default Compliance Risk</label>
+          <select class="form-select"><option>Medium</option><option>Critical</option><option>High</option><option>Low</option></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Suggested Read Timeframe</label>
+          <select class="form-select"><option>1 Week</option><option>Immediate</option><option>Day 1</option><option>Day 3</option></select>
+        </div>
+
+        <div class="toggle-row">
+          <div class="toggle-track on"><div class="toggle-thumb"></div></div>
+          <span class="toggle-label">Requires Acknowledgement</span>
+          <span class="toggle-value">Yes</span>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-track off"><div class="toggle-thumb"></div></div>
+          <span class="toggle-label">Requires Quiz</span>
+          <span style="font-size: 12px; color: #94a3b8;">No</span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Key Points (semicolon-separated)</label>
+          <input type="text" class="form-input" placeholder="e.g., Data classification;Access control;Incident reporting" />
+          <span class="form-hint">Key points authors can use as a starting point</span>
+        </div>
+
+        <div class="toggle-row">
+          <div class="toggle-track on"><div class="toggle-thumb"></div></div>
+          <span class="toggle-label">Active</span>
+          <span class="toggle-value">Active</span>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="panel-footer">
+        <button class="btn btn-teal">Save</button>
+        <button class="btn btn-outline">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- MOCKUP 2: New Metadata Profile Panel                    -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div class="mockup-page">
+  <div class="mockup-title"><span>MOCKUP 2</span> Standard Panel — New Metadata Profile (PanelType.medium, 480px)</div>
+
+  <div class="page-bg">
+    <div class="page-content">
+      <h2>Admin Centre > Metadata Profiles</h2>
+      <p>Content behind the panel</p>
+    </div>
+    <div class="panel-overlay"></div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-header-text">New Metadata Profile</div>
+        </div>
+        <button class="panel-close">&times;</button>
+      </div>
+
+      <div class="panel-body">
+        <div class="msg-info msg-bar">
+          <svg viewBox="0 0 16 16" fill="currentColor" style="width: 14px; height: 14px; flex-shrink: 0;"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 3a1 1 0 110 2 1 1 0 010-2zm1 8H7V7h2v5z"/></svg>
+          Metadata profiles pre-fill compliance settings when creating new policies.
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Profile Name <span class="req">*</span></label>
+          <input type="text" class="form-input" placeholder="e.g., HR Critical Policy" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Policy Category <span class="req">*</span></label>
+          <select class="form-select"><option value="">Select a category...</option><option>HR Policies</option><option>IT & Security</option><option>Compliance</option><option>Health & Safety</option><option>Financial</option><option>Legal</option></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Compliance Risk</label>
+          <select class="form-select"><option>Critical</option><option>High</option><option selected>Medium</option><option>Low</option><option>Informational</option></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Read Timeframe</label>
+          <select class="form-select"><option>Immediate</option><option>Day 1</option><option>Day 3</option><option selected>Week 1</option><option>Week 2</option><option>Month 1</option></select>
+        </div>
+
+        <hr class="section-divider" />
+        <div class="section-label">Requirements</div>
+
+        <div class="toggle-row">
+          <div class="toggle-track on"><div class="toggle-thumb"></div></div>
+          <span class="toggle-label">Requires Acknowledgement</span>
+          <span class="toggle-value">Yes</span>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-track off"><div class="toggle-thumb"></div></div>
+          <span class="toggle-label">Requires Quiz</span>
+          <span style="font-size: 12px; color: #94a3b8;">No</span>
+        </div>
+
+        <hr class="section-divider" />
+        <div class="section-label">Target Departments</div>
+
+        <div class="form-group">
+          <label class="form-label">Departments (multi-select)</label>
+          <select class="form-select" multiple style="min-height: 80px;"><option>Human Resources</option><option>IT</option><option selected>All Departments</option><option>Finance</option><option>Legal</option><option>Operations</option></select>
+          <span class="form-hint">Leave blank to target all departments</span>
+        </div>
+      </div>
+
+      <div class="panel-footer">
+        <button class="btn btn-teal">Save Profile</button>
+        <button class="btn btn-outline">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- MOCKUP 3: Add Question Panel (Large)                    -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div class="mockup-page">
+  <div class="mockup-title"><span>MOCKUP 3</span> Standard Panel — Add Question (PanelType.large, 640px)</div>
+
+  <div class="page-bg">
+    <div class="page-content">
+      <h2>Quiz Builder > Questions</h2>
+      <p>Content behind the panel</p>
+    </div>
+    <div class="panel-overlay"></div>
+
+    <div class="panel panel-wide">
+      <div class="panel-header">
+        <div>
+          <div class="panel-header-text">Add Question</div>
+          <div class="panel-header-sub">Data Protection Assessment — Question 11</div>
+        </div>
+        <button class="panel-close">&times;</button>
+      </div>
+
+      <div class="panel-body">
+        <div class="form-group">
+          <label class="form-label">Question Type</label>
+          <select class="form-select"><option selected>Multiple Choice</option><option>True / False</option><option>Multiple Select</option><option>Short Answer</option><option>Fill in the Blank</option><option>Matching</option><option>Ordering</option><option>Essay</option></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Question Text <span class="req">*</span></label>
+          <textarea class="form-textarea" placeholder="Enter your question..."></textarea>
+        </div>
+
+        <div class="form-row form-row-2">
+          <div class="form-group" style="margin: 0;">
+            <label class="form-label">Difficulty</label>
+            <select class="form-select"><option>Easy</option><option selected>Medium</option><option>Hard</option><option>Expert</option></select>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="form-group" style="margin: 0;">
+              <label class="form-label">Points</label>
+              <input type="number" class="form-input" value="10" />
+            </div>
+            <div class="form-group" style="margin: 0;">
+              <label class="form-label">Time Limit (sec)</label>
+              <input type="number" class="form-input" value="0" />
+              <span class="form-hint">0 = no limit</span>
+            </div>
+          </div>
+        </div>
+
+        <hr class="section-divider" />
+        <div class="section-label">Answer Options</div>
+
+        <div style="margin-bottom: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid #0d9488; border-radius: 4px; background: #f0fdfa; margin-bottom: 6px;">
+            <span style="font-weight: 700; color: #0d9488; width: 20px;">A</span>
+            <input type="text" class="form-input" placeholder="Enter option A..." style="border: none; background: transparent; padding: 4px 0; box-shadow: none;" />
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 4px; margin-bottom: 6px;">
+            <span style="font-weight: 700; color: #94a3b8; width: 20px;">B</span>
+            <input type="text" class="form-input" placeholder="Enter option B..." style="border: none; background: transparent; padding: 4px 0; box-shadow: none;" />
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 4px; margin-bottom: 6px;">
+            <span style="font-weight: 700; color: #94a3b8; width: 20px;">C</span>
+            <input type="text" class="form-input" placeholder="Enter option C (optional)..." style="border: none; background: transparent; padding: 4px 0; box-shadow: none;" />
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 4px; margin-bottom: 6px;">
+            <span style="font-weight: 700; color: #94a3b8; width: 20px;">D</span>
+            <input type="text" class="form-input" placeholder="Enter option D (optional)..." style="border: none; background: transparent; padding: 4px 0; box-shadow: none;" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Correct Answer</label>
+          <select class="form-select"><option selected>Option A</option><option>Option B</option><option>Option C</option><option>Option D</option></select>
+        </div>
+
+        <hr class="section-divider" />
+
+        <div class="form-group">
+          <label class="form-label">Explanation (shown after answering)</label>
+          <textarea class="form-textarea" placeholder="Explain why this is the correct answer..."></textarea>
+        </div>
+      </div>
+
+      <div class="panel-footer">
+        <button class="btn btn-teal">Save Question</button>
+        <button class="btn btn-outline">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- MOCKUP 4: Acknowledgement Panel                         -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div class="mockup-page">
+  <div class="mockup-title"><span>MOCKUP 4</span> Standard Panel — Policy Acknowledgement (PanelType.medium)</div>
+
+  <div class="page-bg">
+    <div class="page-content">
+      <h2>Policy Details > Acknowledge</h2>
+      <p>User reads policy then acknowledges</p>
+    </div>
+    <div class="panel-overlay"></div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-header-text">Policy Acknowledgement</div>
+          <div class="panel-header-sub">POL-HR-001 — Employee Code of Conduct</div>
+        </div>
+        <button class="panel-close">&times;</button>
+      </div>
+
+      <div class="panel-body">
+        <div class="msg-info msg-bar">
+          <svg viewBox="0 0 16 16" fill="currentColor" style="width: 14px; height: 14px; flex-shrink: 0;"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 3a1 1 0 110 2 1 1 0 010-2zm1 8H7V7h2v5z"/></svg>
+          Please review the legal declaration below and provide your digital signature to acknowledge this policy.
+        </div>
+
+        <div style="padding: 12px 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; margin-bottom: 16px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px;">
+            <div><span style="color: #94a3b8;">Policy:</span> <strong>Employee Code of Conduct</strong></div>
+            <div><span style="color: #94a3b8;">Version:</span> <strong>v3.0</strong></div>
+            <div><span style="color: #94a3b8;">Read time:</span> <strong>4m 23s</strong></div>
+            <div><span style="color: #94a3b8;">Date:</span> <strong>19 Mar 2026</strong></div>
+          </div>
+        </div>
+
+        <hr class="section-divider" />
+        <div class="section-label">Legal Declaration</div>
+
+        <div style="margin-bottom: 12px;">
+          <label style="display: flex; gap: 8px; align-items: flex-start; cursor: pointer; font-size: 13px; margin-bottom: 10px;">
+            <input type="checkbox" checked style="margin-top: 3px;" />
+            <span>I confirm that I have read and fully understood this policy in its entirety.</span>
+          </label>
+          <label style="display: flex; gap: 8px; align-items: flex-start; cursor: pointer; font-size: 13px; margin-bottom: 10px;">
+            <input type="checkbox" checked style="margin-top: 3px;" />
+            <span>I agree to comply with all requirements and guidelines outlined in this policy.</span>
+          </label>
+          <label style="display: flex; gap: 8px; align-items: flex-start; cursor: pointer; font-size: 13px; margin-bottom: 10px;">
+            <input type="checkbox" checked style="margin-top: 3px;" />
+            <span>I understand that this electronic acknowledgement constitutes an official record.</span>
+          </label>
+        </div>
+
+        <hr class="section-divider" />
+        <div class="section-label">Digital Signature</div>
+
+        <div class="form-group">
+          <label class="form-label">Full Legal Name <span class="req">*</span></label>
+          <input type="text" class="form-input" value="Gary Finberg" placeholder="Type your full legal name..." />
+          <span class="form-hint">This serves as your electronic signature</span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Additional Notes (optional)</label>
+          <textarea class="form-textarea" placeholder="Any comments or questions..." style="min-height: 60px;"></textarea>
+        </div>
+
+        <div class="msg-warning msg-bar">
+          <svg viewBox="0 0 16 16" fill="currentColor" style="width: 14px; height: 14px; flex-shrink: 0;"><path d="M8 1l7 14H1L8 1zm0 4v4m0 2v1"/></svg>
+          This acknowledgement is legally binding and cannot be undone.
+        </div>
+      </div>
+
+      <div class="panel-footer">
+        <button class="btn btn-teal">Submit Acknowledgement</button>
+        <button class="btn btn-outline">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!-- STYLE SPECIFICATION                                      -->
+<!-- ════════════════════════════════════════════════════════ -->
+<div class="mockup-page" style="margin-bottom: 0;">
+  <div class="mockup-title"><span>SPEC</span> StyledPanel Component — Design Tokens</div>
+  <div style="padding: 32px 40px;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px;">
+      <div>
+        <h3 style="font-size: 15px; margin-bottom: 16px;">Panel Structure</h3>
+        <table class="spec-table">
+          <thead><tr><th>Element</th><th>Style</th></tr></thead>
+          <tbody>
+            <tr><td>Panel surface</td><td><span class="spec-code">border-radius: 8px 0 0 8px</span><br/>White background, left shadow</td></tr>
+            <tr><td>Header background</td><td><span class="spec-code">linear-gradient(135deg, #f0fdfa, #ccfbf1)</span></td></tr>
+            <tr><td>Header border</td><td><span class="spec-code">border-bottom: 1px solid #99f6e4</span></td></tr>
+            <tr><td>Header text</td><td><span class="spec-code">color: #0f766e; font-weight: 700; font-size: 18px</span></td></tr>
+            <tr><td>Header subtitle</td><td><span class="spec-code">color: #64748b; font-size: 12px</span></td></tr>
+            <tr><td>Close button</td><td><span class="spec-code">border-radius: 4px; color: #0f766e</span><br/>Hover: <span class="spec-code">background: rgba(13,148,136,0.1)</span></td></tr>
+            <tr><td>Body padding</td><td><span class="spec-code">padding: 20px 24px</span></td></tr>
+            <tr><td>Footer</td><td><span class="spec-code">background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 12px 24px</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <h3 style="font-size: 15px; margin-bottom: 16px;">Controls Inside Panels</h3>
+        <table class="spec-table">
+          <thead><tr><th>Control</th><th>Border Radius</th></tr></thead>
+          <tbody>
+            <tr><td>Text inputs</td><td><span class="spec-code">4px</span></td></tr>
+            <tr><td>Dropdowns</td><td><span class="spec-code">4px</span></td></tr>
+            <tr><td>Textareas</td><td><span class="spec-code">4px</span></td></tr>
+            <tr><td>Buttons (primary)</td><td><span class="spec-code">4px</span> — teal bg</td></tr>
+            <tr><td>Buttons (default)</td><td><span class="spec-code">4px</span> — white bg, gray border</td></tr>
+            <tr><td>Toggle tracks</td><td><span class="spec-code">10px</span> (pill — Fluent default)</td></tr>
+            <tr><td>Message bars</td><td><span class="spec-code">4px</span></td></tr>
+            <tr><td>Section dividers</td><td><span class="spec-code">1px solid #e2e8f0; margin: 20px 0</span></td></tr>
+          </tbody>
+        </table>
+
+        <div style="margin-top: 20px; padding: 16px; background: #f0fdfa; border-left: 3px solid #0d9488; border-radius: 4px;">
+          <div style="font-weight: 600; color: #0f172a; margin-bottom: 4px;">Implementation Approach</div>
+          <ul style="font-size: 13px; color: #64748b; padding-left: 20px; line-height: 1.6;">
+            <li><strong>StyledPanel.tsx</strong> — wrapper component using Fluent UI Panel <span class="spec-code">styles</span> prop</li>
+            <li>Styles applied via <strong>JavaScript</strong> (not CSS) — travels with the portal</li>
+            <li>Every <span class="spec-code">&lt;Panel&gt;</span> in the codebase replaced with <span class="spec-code">&lt;StyledPanel&gt;</span></li>
+            <li>Removes need for CSS injection hacks in <span class="spec-code">injectPortalStyles.ts</span></li>
+            <li>Single source of truth for all panel styling</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

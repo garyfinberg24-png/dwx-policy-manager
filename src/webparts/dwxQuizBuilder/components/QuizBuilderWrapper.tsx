@@ -230,7 +230,7 @@ export const QuizBuilderWrapper: React.FC<IQuizBuilderWrapperProps> = (props) =>
                   backgroundColor: '#0d9488',
                   color: '#fff',
                   border: 'none',
-                  borderRadius: '6px',
+                  borderRadius: '4px',
                   fontSize: '14px',
                   fontWeight: 600,
                   cursor: 'pointer'
@@ -255,7 +255,7 @@ export const QuizBuilderWrapper: React.FC<IQuizBuilderWrapperProps> = (props) =>
                 display: 'flex',
                 gap: '4px',
                 backgroundColor: '#f3f2f1',
-                borderRadius: '6px',
+                borderRadius: '4px',
                 padding: '3px'
               }}>
                 {['all', 'Draft', 'Published', 'Scheduled', 'Archived'].map(status => (
@@ -295,7 +295,7 @@ export const QuizBuilderWrapper: React.FC<IQuizBuilderWrapperProps> = (props) =>
                     width: '100%',
                     padding: '8px 12px 8px 36px',
                     border: '1px solid #d2d0ce',
-                    borderRadius: '6px',
+                    borderRadius: '4px',
                     fontSize: '14px',
                     outline: 'none',
                     boxSizing: 'border-box'
@@ -319,7 +319,7 @@ export const QuizBuilderWrapper: React.FC<IQuizBuilderWrapperProps> = (props) =>
                 padding: '16px',
                 backgroundColor: '#fde7e9',
                 border: '1px solid #a80000',
-                borderRadius: '6px',
+                borderRadius: '4px',
                 color: '#a80000',
                 fontSize: '14px',
                 marginBottom: '16px'
@@ -356,7 +356,7 @@ export const QuizBuilderWrapper: React.FC<IQuizBuilderWrapperProps> = (props) =>
                       backgroundColor: '#0d9488',
                       color: '#fff',
                       border: 'none',
-                      borderRadius: '6px',
+                      borderRadius: '4px',
                       fontSize: '14px',
                       fontWeight: 600,
                       cursor: 'pointer'

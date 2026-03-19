@@ -179,5 +179,5 @@ export const ContainerStyles = {
   /** Bordered card */
   borderedCard: { padding: 16, border: '1px solid #e2e8f0', borderRadius: 8 } as React.CSSProperties,
   /** Light bordered preview */
-  previewBox: { padding: 12, background: Colors.surfaceLight, borderRadius: 6, border: '1px solid #e2e8f0' } as React.CSSProperties,
+  previewBox: { padding: 12, background: Colors.surfaceLight, borderRadius: 4, border: '1px solid #e2e8f0' } as React.CSSProperties,
 } as const;

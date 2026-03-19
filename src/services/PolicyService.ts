@@ -848,7 +848,7 @@ export class PolicyService {
         EffectiveDate: request.effectiveDate || new Date()
       });
 
-      // Convert linked .docx to HTML for clean reader rendering
+      // Convert linked document (.docx, .pptx) to HTML for clean reader rendering
       if (policy.DocumentURL) {
         try {
           const { DocumentConversionService } = await import('./DocumentConversionService');

@@ -633,7 +633,7 @@ export default class PolicyHelp extends React.Component<IPolicyHelpProps, IPolic
                 onSearch={(value) => this.handleSearch(value)}
                 onClear={() => this.setState({ searchQuery: '' })}
                 styles={{
-                  root: { maxWidth: '600px', backgroundColor: '#ffffff', borderRadius: '6px' },
+                  root: { maxWidth: '600px', backgroundColor: '#ffffff', borderRadius: '4px' },
                 }}
               />
             </div>

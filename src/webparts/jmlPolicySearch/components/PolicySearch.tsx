@@ -400,7 +400,7 @@ export default class PolicySearch extends React.Component<IPolicySearchProps, IP
                         onSearch={this.handleSearch}
                         onClear={() => this.setState({ searchQuery: '', results: [], totalResults: 0, hasSearched: false, error: null })}
                         styles={{
-                          root: { borderRadius: '6px', backgroundColor: '#ffffff', flex: 1 },
+                          root: { borderRadius: '4px', backgroundColor: '#ffffff', flex: 1 },
                           field: { fontSize: '16px', padding: '8px' },
                         }}
                       />

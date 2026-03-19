@@ -486,7 +486,7 @@ export const PolicyRequestWizard: React.FC<IPolicyRequestWizardProps> = ({
                                 borderBottom: idx < attachments.length - 1 ? '1px solid #f1f5f9' : 'none'
                               }}>
                                 <div style={{
-                                  width: 32, height: 32, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  width: 32, height: 32, borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center',
                                   fontSize: 10, fontWeight: 700, flexShrink: 0,
                                   background: file.type.includes('pdf') ? '#fef2f2' : file.type.includes('word') ? '#eff6ff' : file.type.includes('excel') || file.type.includes('sheet') ? '#f0fdf4' : file.type.includes('image') ? '#faf5ff' : '#f8fafc',
                                   color: file.type.includes('pdf') ? '#dc2626' : file.type.includes('word') ? '#2563eb' : file.type.includes('excel') || file.type.includes('sheet') ? '#16a34a' : file.type.includes('image') ? '#9333ea' : '#64748b'
@@ -514,7 +514,7 @@ export const PolicyRequestWizard: React.FC<IPolicyRequestWizardProps> = ({
                                 type="button"
                                 onClick={() => fileInputRef.current?.click()}
                                 style={{
-                                  background: 'none', border: '1px dashed #cbd5e1', borderRadius: 6, padding: '6px 12px',
+                                  background: 'none', border: '1px dashed #cbd5e1', borderRadius: 4, padding: '6px 12px',
                                   fontSize: 12, color: '#0d9488', cursor: 'pointer', marginTop: 8, width: '100%'
                                 }}
                               >

@@ -1,0 +1,1 @@
+export { StyledPanel } from './StyledPanel';

@@ -39,6 +39,7 @@ import {
   IPolicyPackDeploymentResult
 } from '../../../models/IPolicy';
 import { PeoplePicker, PrincipalType } from "@pnp/spfx-controls-react/lib/PeoplePicker";
+import { StyledPanel } from '../../../components/StyledPanel';
 import styles from './PolicyPackManager.module.scss';
 
 export interface IPolicyPackManagerState {
@@ -501,7 +502,7 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
     ];
 
     return (
-      <Panel
+      <StyledPanel
         isOpen={showCreatePanel}
         onDismiss={() => this.setState({ showCreatePanel: false, editingPackId: null })}
         type={PanelType.medium}
@@ -796,7 +797,7 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
             )}
           </div>
         </Stack>
-      </Panel>
+      </StyledPanel>
     );
   }
 
@@ -813,7 +814,7 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
     } = this.state;
 
     return (
-      <Panel
+      <StyledPanel
         isOpen={showAssignPanel}
         onDismiss={() => this.setState({ showAssignPanel: false })}
         type={PanelType.medium}
@@ -898,7 +899,7 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
             />
           </Stack>
         </Stack>
-      </Panel>
+      </StyledPanel>
     );
   }
 

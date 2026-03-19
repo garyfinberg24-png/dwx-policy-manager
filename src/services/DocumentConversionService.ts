@@ -2,12 +2,17 @@
 /**
  * DocumentConversionService
  *
- * Converts .docx files to clean HTML at publish time.
- * Uses the dwx-pm-docconv Azure Function (mammoth.js server-side).
+ * Converts Office documents to clean HTML at publish time.
+ * Uses the dwx-pm-docconv Azure Function (server-side conversion).
+ *
+ * Supported formats:
+ *   - .docx/.doc  → mammoth.js (semantic HTML from Word)
+ *   - .pptx/.ppt  → JSZip + XML parsing (slide-by-slide HTML)
+ *   - .xlsx/.xls  → SheetJS (worksheet-by-worksheet HTML tables)
  *
  * Flow:
- *   1. Author publishes a policy with a .docx document
- *   2. This service calls the Azure Function to convert .docx → HTML
+ *   1. Author publishes a policy with a linked document
+ *   2. This service calls the Azure Function to convert → HTML
  *   3. The resulting HTML is saved to the PolicyContent field on PM_Policies
  *   4. The reader renders PolicyContent as native HTML (no iframe needed)
  *
@@ -19,6 +24,9 @@ import '@pnp/sp/webs';
 import '@pnp/sp/lists';
 import '@pnp/sp/items';
 import { logger } from './LoggingService';
+
+/** File extensions supported by the doc converter Azure Function */
+const CONVERTIBLE_EXTENSIONS = ['docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls'];
 
 export class DocumentConversionService {
   private sp: SPFI;
@@ -61,12 +69,22 @@ export class DocumentConversionService {
   }
 
   /**
-   * Convert a .docx document to HTML.
-   * Call this when publishing a policy that has a linked .docx document.
+   * Check if a file extension is supported for conversion.
+   */
+  public static isConvertible(documentUrl: string): boolean {
+    const ext = documentUrl.split('.').pop()?.toLowerCase() || '';
+    return CONVERTIBLE_EXTENSIONS.includes(ext);
+  }
+
+  /**
+   * Convert an Office document to HTML.
+   * Call this when publishing a policy that has a linked document.
+   *
+   * Supported: .docx, .doc, .pptx, .ppt
    *
    * @returns The converted HTML string, or null if conversion failed/unavailable
    */
-  public async convertDocxToHtml(
+  public async convertToHtml(
     siteUrl: string,
     documentUrl: string,
     policyId: number
@@ -78,14 +96,14 @@ export class DocumentConversionService {
       return null;
     }
 
-    const ext = documentUrl.split('.').pop()?.toLowerCase();
-    if (ext !== 'docx' && ext !== 'doc') {
-      logger.info('DocumentConversionService', `Not a Word document (${ext}) — skipping conversion`);
+    const ext = documentUrl.split('.').pop()?.toLowerCase() || '';
+    if (!CONVERTIBLE_EXTENSIONS.includes(ext)) {
+      logger.info('DocumentConversionService', `Unsupported format (.${ext}) — skipping conversion`);
       return null;
     }
 
     try {
-      logger.info('DocumentConversionService', `Converting ${documentUrl} for policy ${policyId}`);
+      logger.info('DocumentConversionService', `Converting .${ext} document: ${documentUrl} for policy ${policyId}`);
 
       const response = await fetch(this.functionUrl, {
         method: 'POST',
@@ -102,7 +120,7 @@ export class DocumentConversionService {
       const result = await response.json();
 
       if (result.html) {
-        logger.info('DocumentConversionService', `Conversion successful: ${result.characterCount} chars, ${result.messages?.length || 0} warnings`);
+        logger.info('DocumentConversionService', `Conversion successful (${result.sourceFormat || ext}): ${result.characterCount} chars, ${result.messages?.length || 0} warnings`);
         return result.html;
       }
 
@@ -114,6 +132,18 @@ export class DocumentConversionService {
   }
 
   /**
+   * Legacy alias — calls convertToHtml internally.
+   * @deprecated Use convertToHtml() instead.
+   */
+  public async convertDocxToHtml(
+    siteUrl: string,
+    documentUrl: string,
+    policyId: number
+  ): Promise<string | null> {
+    return this.convertToHtml(siteUrl, documentUrl, policyId);
+  }
+
+  /**
    * Convert and save — converts the document AND updates the policy's PolicyContent field.
    * One-stop method for the publish flow.
    */
@@ -122,7 +152,7 @@ export class DocumentConversionService {
     documentUrl: string,
     policyId: number
   ): Promise<boolean> {
-    const html = await this.convertDocxToHtml(siteUrl, documentUrl, policyId);
+    const html = await this.convertToHtml(siteUrl, documentUrl, policyId);
 
     if (!html) return false;
 

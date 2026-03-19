@@ -32,6 +32,7 @@ import {
   PersonaSize,
   Toggle
 } from '@fluentui/react';
+import { StyledPanel } from '../../../components/StyledPanel';
 import { RichText } from "@pnp/spfx-controls-react/lib/RichText";
 import { PeoplePicker, PrincipalType } from "@pnp/spfx-controls-react/lib/PeoplePicker";
 import { FilePicker, IFilePickerResult } from "@pnp/spfx-controls-react/lib/FilePicker";
@@ -94,6 +95,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
   private policyService: PolicyService;
   private quizService: QuizService;
   private comparisonService: PolicyDocumentComparisonService;
+  private adminConfigService: any;
   private autoSaveTimer: ReturnType<typeof setInterval> | null = null;
   private dialogManager = createDialogManager();
 
@@ -278,6 +280,11 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     this.quizService = new QuizService(props.sp);
     this.comparisonService = new PolicyDocumentComparisonService(props.sp, props.context.pageContext.web.absoluteUrl);
 
+    // Lazy-load AdminConfigService for metadata profile creation
+    import('../../../services/AdminConfigService').then(({ AdminConfigService }) => {
+      this.adminConfigService = new AdminConfigService(props.sp);
+    }).catch(() => { /* AdminConfigService not available */ });
+
     // Wire DWx cross-app services if Hub is available
     if (props.dwxHub) {
       this.policyService.setDwxServices(
@@ -324,19 +331,56 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     injectPortalStyles();
     window.addEventListener('beforeunload', this.handleBeforeUnload);
 
-    // Access guard — check if user has Author role
+    // Access guard — check if user has at least Author role
+    // Uses 3-tier detection: PM_UserProfiles (admin-assigned) → localStorage (set by JmlAppLayout) → SP groups
     try {
-      const { RoleDetectionService } = await import('../../../services/RoleDetectionService');
-      const { getHighestPolicyRole, hasMinimumRole } = await import('../../../services/PolicyRoleService');
-      const roleService = new RoleDetectionService(this.props.sp);
-      const userRoles = await roleService.getCurrentUserRoles();
-      const policyRole = getHighestPolicyRole(userRoles);
-      if (!hasMinimumRole(policyRole, 'Author' as any)) {
+      const ROLE_LEVEL: Record<string, number> = { User: 0, Author: 1, Manager: 2, Admin: 3 };
+      let resolvedRole = '';
+
+      // 1. Check PM_UserProfiles (admin-assigned roles — authoritative source)
+      try {
+        const userEmail = this.props.context?.pageContext?.user?.email || '';
+        if (userEmail) {
+          const profiles = await this.props.sp.web.lists.getByTitle('PM_UserProfiles')
+            .items.filter("Email eq '" + userEmail.replace(/'/g, "''") + "'")
+            .select('PMRole', 'PMRoles')
+            .top(1)();
+          if (profiles.length > 0) {
+            const rolesStr = profiles[0].PMRoles || profiles[0].PMRole || 'User';
+            const roles = rolesStr.split(';').map((r: string) => r.trim()).filter(Boolean);
+            resolvedRole = roles.reduce((a: string, b: string) => (ROLE_LEVEL[b] || 0) > (ROLE_LEVEL[a] || 0) ? b : a, 'User');
+          }
+        }
+      } catch {
+        // PM_UserProfiles may not exist — continue to fallbacks
+      }
+
+      // 2. Check localStorage cache (set by JmlAppLayout which already did full detection)
+      if (!resolvedRole || ROLE_LEVEL[resolvedRole] === undefined) {
+        try {
+          const cached = localStorage.getItem('pm_detected_role');
+          if (cached && ROLE_LEVEL[cached] !== undefined) {
+            resolvedRole = cached;
+          }
+        } catch { /* ignore */ }
+      }
+
+      // 3. Fall back to SP group detection
+      if (!resolvedRole || ROLE_LEVEL[resolvedRole] === undefined) {
+        const { RoleDetectionService } = await import('../../../services/RoleDetectionService');
+        const { getHighestPolicyRole } = await import('../../../services/PolicyRoleService');
+        const roleService = new RoleDetectionService(this.props.sp);
+        const userRoles = await roleService.getCurrentUserRoles();
+        resolvedRole = getHighestPolicyRole(userRoles);
+      }
+
+      // Check if resolved role meets minimum Author requirement
+      if ((ROLE_LEVEL[resolvedRole] || 0) < ROLE_LEVEL['Author']) {
         if (this._isMounted) this.setState({ _accessDenied: true } as any);
         return;
       }
     } catch {
-      // If role detection fails, allow access (least-disruptive fallback)
+      // If role detection fails entirely, allow access (least-disruptive fallback)
     }
 
     // Parallelize independent service calls for faster initial load
@@ -1546,102 +1590,235 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
   private renderStep3_Compliance(): JSX.Element {
     const {
       complianceRisk, readTimeframe, readTimeframeDays,
-      requiresAcknowledgement, requiresQuiz, metadataProfiles
+      requiresAcknowledgement, metadataProfiles
     } = this.state;
+    const st = this.state as any;
+    const profileMode: 'existing' | 'create' = st._profileMode || 'existing';
+    const newProfile: any = st._newProfileData || { ProfileName: '', PolicyCategory: '', ComplianceRisk: 'Medium', ReadTimeframe: 'Week 1', RequiresAcknowledgement: true, RequiresQuiz: false, TargetDepartments: '' };
+    const savingProfile: boolean = st._savingNewProfile || false;
 
-    const timeframeOptions: IDropdownOption[] = Object.values(ReadTimeframe).map(tf => ({
-      key: tf, text: tf
-    }));
+    const timeframeOptions: IDropdownOption[] = Object.values(ReadTimeframe).map(tf => ({ key: tf, text: tf }));
+    const availableProfiles = (metadataProfiles || []).filter((p: any) => p.IsActive !== false);
 
-    // Filter profiles to only active ones, optionally matching the selected category
-    const availableProfiles = (metadataProfiles || []).filter(
-      (p: any) => p.IsActive !== false
-    );
+    const riskColors: Record<string, string> = { Critical: '#dc2626', High: '#ea580c', Medium: '#d97706', Low: '#0d9488', Informational: '#64748b' };
+
+    const applyProfile = (profile: any): void => {
+      this.setState({
+        _selectedProfileId: profile.Id,
+        complianceRisk: profile.ComplianceRisk || complianceRisk,
+        readTimeframe: profile.ReadTimeframe || readTimeframe,
+        requiresAcknowledgement: profile.RequiresAcknowledgement ?? requiresAcknowledgement,
+        targetDepartments: profile.TargetDepartments
+          ? profile.TargetDepartments.split(',').map((d: string) => d.trim()).filter(Boolean)
+          : this.state.targetDepartments,
+      } as any);
+    };
+
+    const handleCreateProfile = async (): Promise<void> => {
+      if (!newProfile.ProfileName?.trim()) return;
+      this.setState({ _savingNewProfile: true } as any);
+      try {
+        const data = {
+          Title: newProfile.ProfileName,
+          ProfileName: newProfile.ProfileName,
+          PolicyCategory: newProfile.PolicyCategory || 'General',
+          ComplianceRisk: newProfile.ComplianceRisk || 'Medium',
+          ReadTimeframe: newProfile.ReadTimeframe || 'Week 1',
+          RequiresAcknowledgement: newProfile.RequiresAcknowledgement ?? true,
+          RequiresQuiz: newProfile.RequiresQuiz ?? false,
+          TargetDepartments: newProfile.TargetDepartments || ''
+        };
+        const result = await this.adminConfigService.createMetadataProfile(data);
+        const created = { ...data, Id: result.Id, IsActive: true };
+        // Add to profiles list and auto-apply
+        this.setState({
+          metadataProfiles: [...metadataProfiles, created],
+          _savingNewProfile: false,
+          _profileMode: 'existing',
+          _newProfileData: null
+        } as any);
+        applyProfile(created);
+      } catch {
+        this.setState({ _savingNewProfile: false } as any);
+      }
+    };
+
+    const modeCard = (mode: 'existing' | 'create', icon: string, title: string, desc: string): JSX.Element => {
+      const isActive = profileMode === mode;
+      return (
+        <div
+          role="radio" aria-checked={isActive} tabIndex={0}
+          onClick={() => this.setState({ _profileMode: mode } as any)}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.setState({ _profileMode: mode } as any); } }}
+          style={{
+            flex: 1, padding: 16, borderRadius: 4, cursor: 'pointer',
+            border: `2px solid ${isActive ? '#0d9488' : '#edebe9'}`,
+            background: isActive ? '#f0fdfa' : '#fff',
+            boxShadow: isActive ? '0 2px 8px rgba(13,148,136,0.12)' : 'none',
+            transition: 'all 0.2s'
+          }}
+        >
+          <Icon iconName={icon} styles={{ root: { fontSize: 24, color: isActive ? '#0d9488' : '#94a3b8', marginBottom: 6, display: 'block' } }} />
+          <Text style={{ fontWeight: 700, fontSize: 13, display: 'block', color: '#0f172a' }}>{title}</Text>
+          <Text style={{ fontSize: 11, color: '#64748b' }}>{desc}</Text>
+        </div>
+      );
+    };
 
     return (
       <div className={styles.wizardStepContent}>
         <div className={styles.section}>
-          <Stack tokens={{ childrenGap: 20 }}>
-            {/* Metadata Profile Selector — auto-fills compliance fields */}
-            {availableProfiles.length > 0 && (
-              <>
-                <Dropdown
-                  label="Apply Metadata Profile"
-                  placeholder="Optionally select a profile to auto-fill compliance settings..."
-                  selectedKey={(this.state as any)._selectedProfileId || ''}
-                  options={[
-                    { key: '', text: '(None — set manually below)' },
-                    ...availableProfiles.map((p: any) => ({
-                      key: p.Id,
-                      text: `${p.ProfileName}${p.PolicyCategory ? ' (' + p.PolicyCategory + ')' : ''}`
-                    }))
-                  ]}
-                  onChange={(_, opt) => {
-                    if (opt && opt.key !== '') {
-                      const profile = availableProfiles.find((p: any) => p.Id === opt.key);
-                      if (profile) {
-                        this.setState({
-                          _selectedProfileId: profile.Id,
-                          complianceRisk: profile.ComplianceRisk || complianceRisk,
-                          readTimeframe: profile.ReadTimeframe || readTimeframe,
-                          requiresAcknowledgement: profile.RequiresAcknowledgement ?? requiresAcknowledgement,
-                          targetDepartments: profile.TargetDepartments
-                            ? profile.TargetDepartments.split(',').map((d: string) => d.trim()).filter(Boolean)
-                            : this.state.targetDepartments,
-                        } as any);
-                      }
-                    } else {
-                      this.setState({ _selectedProfileId: '' } as any);
-                    }
-                  }}
-                  styles={{ root: { maxWidth: 400 } }}
-                />
-                {(this.state as any)._selectedProfileId && (
+          <Stack tokens={{ childrenGap: 16 }}>
+            {/* Mode toggle */}
+            <div role="radiogroup" aria-label="Profile mode" style={{ display: 'flex', gap: 12 }}>
+              {modeCard('existing', 'Tag', 'Use Existing Profile', 'Select from saved metadata profiles')}
+              {modeCard('create', 'Add', 'Create New Profile', 'Define a new metadata profile')}
+            </div>
+
+            {/* USE EXISTING */}
+            {profileMode === 'existing' && (
+              <div>
+                {availableProfiles.length === 0 ? (
                   <MessageBar messageBarType={MessageBarType.info}>
-                    Profile applied. You can override any field below.
+                    No metadata profiles found. Create one using the "Create New Profile" option, or configure profiles in Admin Centre &gt; Metadata Profiles.
                   </MessageBar>
+                ) : (
+                  <Stack tokens={{ childrenGap: 8 }}>
+                    {availableProfiles.map((profile: any) => {
+                      const isSelected = st._selectedProfileId === profile.Id;
+                      return (
+                        <div
+                          key={profile.Id}
+                          role="option" aria-selected={isSelected} tabIndex={0}
+                          onClick={() => applyProfile(profile)}
+                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); applyProfile(profile); } }}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px',
+                            borderRadius: 4, cursor: 'pointer',
+                            border: `2px solid ${isSelected ? '#0d9488' : '#edebe9'}`,
+                            background: isSelected ? '#f0fdfa' : '#fff',
+                            transition: 'all 0.15s'
+                          }}
+                        >
+                          <Icon iconName="Tag" styles={{ root: { fontSize: 18, color: isSelected ? '#0d9488' : '#94a3b8' } }} />
+                          <div style={{ flex: 1 }}>
+                            <Text style={{ fontWeight: 600, color: '#0f172a', display: 'block' }}>{profile.ProfileName || profile.Title}</Text>
+                            <Stack horizontal tokens={{ childrenGap: 12 }} style={{ marginTop: 4 }}>
+                              {profile.PolicyCategory && <Text style={{ fontSize: 11, color: '#64748b' }}>Category: {profile.PolicyCategory}</Text>}
+                              <Text style={{ fontSize: 11, color: riskColors[profile.ComplianceRisk] || '#64748b', fontWeight: 600 }}>Risk: {profile.ComplianceRisk}</Text>
+                              <Text style={{ fontSize: 11, color: '#64748b' }}>Timeframe: {profile.ReadTimeframe}</Text>
+                              <Text style={{ fontSize: 11, color: '#64748b' }}>Ack: {profile.RequiresAcknowledgement ? 'Yes' : 'No'}</Text>
+                            </Stack>
+                          </div>
+                          {isSelected && <Icon iconName="CheckMark" styles={{ root: { fontSize: 16, color: '#0d9488' } }} />}
+                        </div>
+                      );
+                    })}
+                  </Stack>
                 )}
-              </>
+
+                {/* Applied profile — show current settings below for override */}
+                {st._selectedProfileId && (
+                  <div style={{ marginTop: 16, padding: 16, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 4 }}>
+                    <Text style={{ fontWeight: 600, fontSize: 13, display: 'block', marginBottom: 12 }}>Applied Settings (override below if needed)</Text>
+                    <Stack tokens={{ childrenGap: 12 }}>
+                      <Dropdown
+                        label="Read Timeframe"
+                        selectedKey={readTimeframe}
+                        options={timeframeOptions}
+                        onChange={(_, option) => {
+                          const selected = option?.key as string;
+                          this.setState({ readTimeframe: selected, readTimeframeDays: selected === ReadTimeframe.Custom ? readTimeframeDays : 7 });
+                        }}
+                        styles={{ root: { maxWidth: 300 } }}
+                      />
+                      {readTimeframe === ReadTimeframe.Custom && (
+                        <TextField label="Custom Days" type="number" value={readTimeframeDays.toString()} onChange={(_, value) => this.setState({ readTimeframeDays: parseInt(value || '7', 10) })} styles={{ root: { maxWidth: 150 } }} />
+                      )}
+                      <Checkbox label="Requires Acknowledgement" checked={requiresAcknowledgement} onChange={(_, checked) => this.setState({ requiresAcknowledgement: checked || false })} />
+                      <Text variant="small" style={{ color: '#64748b', fontStyle: 'italic' }}>Quizzes can be created and linked after publishing.</Text>
+                    </Stack>
+                  </div>
+                )}
+              </div>
             )}
 
-            <Dropdown
-              label="Read Timeframe"
-              selectedKey={readTimeframe}
-              options={timeframeOptions}
-              onChange={(e, option) => {
-                const selected = option?.key as string;
-                this.setState({
-                  readTimeframe: selected,
-                  readTimeframeDays: selected === ReadTimeframe.Custom ? readTimeframeDays : 7
-                });
-              }}
-              styles={{ root: { maxWidth: 300 } }}
-            />
-
-            {readTimeframe === ReadTimeframe.Custom && (
-              <TextField
-                label="Custom Days"
-                type="number"
-                value={readTimeframeDays.toString()}
-                onChange={(e, value) => this.setState({ readTimeframeDays: parseInt(value || '7', 10) })}
-                styles={{ root: { maxWidth: 150 } }}
-              />
+            {/* CREATE NEW */}
+            {profileMode === 'create' && (
+              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 4, padding: 20 }}>
+                <Text style={{ fontWeight: 700, fontSize: 14, display: 'block', marginBottom: 16, color: '#0f172a' }}>New Metadata Profile</Text>
+                <Stack tokens={{ childrenGap: 12 }}>
+                  <TextField
+                    label="Profile Name" required
+                    placeholder="e.g., HR Critical Policy"
+                    value={newProfile.ProfileName || ''}
+                    onChange={(_, v) => this.setState({ _newProfileData: { ...newProfile, ProfileName: v || '' } } as any)}
+                  />
+                  <Dropdown
+                    label="Policy Category"
+                    selectedKey={newProfile.PolicyCategory || ''}
+                    options={((this.state as any).policyCategories || []).length > 0
+                      ? ((this.state as any).policyCategories).filter((c: any) => c.IsActive !== false).map((c: any) => ({ key: c.CategoryName, text: c.CategoryName }))
+                      : [
+                        { key: 'HR Policies', text: 'HR Policies' },
+                        { key: 'IT & Security', text: 'IT & Security' },
+                        { key: 'Compliance', text: 'Compliance' },
+                        { key: 'Health & Safety', text: 'Health & Safety' },
+                        { key: 'Financial', text: 'Financial' },
+                        { key: 'Legal', text: 'Legal' },
+                        { key: 'Operational', text: 'Operational' },
+                        { key: 'Data Privacy', text: 'Data Privacy' },
+                        { key: 'General', text: 'General' }
+                      ]
+                    }
+                    onChange={(_, opt) => opt && this.setState({ _newProfileData: { ...newProfile, PolicyCategory: opt.key as string } } as any)}
+                    placeholder="Select a category"
+                  />
+                  <Dropdown
+                    label="Compliance Risk"
+                    selectedKey={newProfile.ComplianceRisk || 'Medium'}
+                    options={[
+                      { key: 'Critical', text: 'Critical' }, { key: 'High', text: 'High' }, { key: 'Medium', text: 'Medium' },
+                      { key: 'Low', text: 'Low' }, { key: 'Informational', text: 'Informational' }
+                    ]}
+                    onChange={(_, opt) => opt && this.setState({ _newProfileData: { ...newProfile, ComplianceRisk: opt.key as string } } as any)}
+                  />
+                  <Dropdown
+                    label="Read Timeframe"
+                    selectedKey={newProfile.ReadTimeframe || 'Week 1'}
+                    options={[
+                      { key: 'Immediate', text: 'Immediate' }, { key: 'Day 1', text: 'Day 1' }, { key: 'Day 3', text: 'Day 3' },
+                      { key: 'Week 1', text: 'Week 1' }, { key: 'Week 2', text: 'Week 2' }, { key: 'Month 1', text: 'Month 1' }
+                    ]}
+                    onChange={(_, opt) => opt && this.setState({ _newProfileData: { ...newProfile, ReadTimeframe: opt.key as string } } as any)}
+                  />
+                  <Toggle
+                    label="Requires Acknowledgement"
+                    checked={newProfile.RequiresAcknowledgement !== false}
+                    onText="Yes" offText="No"
+                    onChange={(_, c) => this.setState({ _newProfileData: { ...newProfile, RequiresAcknowledgement: !!c } } as any)}
+                  />
+                  <Toggle
+                    label="Requires Quiz"
+                    checked={newProfile.RequiresQuiz === true}
+                    onText="Yes" offText="No"
+                    onChange={(_, c) => this.setState({ _newProfileData: { ...newProfile, RequiresQuiz: !!c } } as any)}
+                  />
+                  <Stack horizontal tokens={{ childrenGap: 8 }} style={{ marginTop: 8 }}>
+                    <PrimaryButton
+                      text={savingProfile ? 'Creating...' : 'Create & Apply Profile'}
+                      onClick={handleCreateProfile}
+                      disabled={!newProfile.ProfileName?.trim() || savingProfile}
+                      styles={{ root: { background: '#0d9488', borderColor: '#0d9488', borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+                    />
+                    <DefaultButton text="Cancel" onClick={() => this.setState({ _profileMode: 'existing', _newProfileData: null } as any)} />
+                  </Stack>
+                  <Text variant="small" style={{ color: '#94a3b8', fontStyle: 'italic' }}>
+                    This profile will be saved to PM_PolicyMetadataProfiles and available for future policies.
+                  </Text>
+                </Stack>
+              </div>
             )}
-
-            <Stack tokens={{ childrenGap: 12 }}>
-              <Checkbox
-                label="Requires Acknowledgement"
-                checked={requiresAcknowledgement}
-                onChange={(e, checked) => this.setState({ requiresAcknowledgement: checked || false })}
-              />
-              <Text variant="small" style={TextStyles.labelWithIconOffset}>
-                Employees must confirm they have read and understood the policy
-              </Text>
-
-              <Text variant="small" style={{ ...TextStyles.labelWithIconOffset, fontStyle: 'italic', color: '#64748b' }}>
-                Quizzes can be created and linked to this policy after it has been published.
-              </Text>
-            </Stack>
           </Stack>
         </div>
       </div>
@@ -1768,6 +1945,72 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
               checked={includeContractors}
               onChange={(e, checked) => this.setState({ includeContractors: checked || false })}
             />
+
+            {/* Storage & Security */}
+            {(() => {
+              const secureLibs: any[] = st._wizardSecureLibs || [];
+              const selectedLibrary: string = st._selectedLibrary || 'default';
+
+              // Lazy-load secure libraries config
+              if (!st._wizardSecureLibsLoaded) {
+                this.setState({ _wizardSecureLibsLoaded: true } as any);
+                try {
+                  const cached = localStorage.getItem('pm_secure_libraries');
+                  if (cached) {
+                    const libs = JSON.parse(cached).filter((l: any) => l.isActive);
+                    this.setState({ _wizardSecureLibs: libs } as any);
+                  }
+                } catch { /* */ }
+                // Also load from SP
+                this.props.sp.web.lists.getByTitle('PM_Configuration')
+                  .items.filter("ConfigKey eq 'Admin.SecureLibraries.Config'")
+                  .select('ConfigValue').top(1)()
+                  .then((items: any[]) => {
+                    if (items.length > 0 && items[0].ConfigValue) {
+                      try {
+                        const libs = JSON.parse(items[0].ConfigValue).filter((l: any) => l.isActive);
+                        this.setState({ _wizardSecureLibs: libs } as any);
+                      } catch { /* */ }
+                    }
+                  })
+                  .catch(() => { /* */ });
+              }
+
+              const libraryOptions: IDropdownOption[] = [
+                { key: 'default', text: 'Policy Hub (Open — All Employees)' },
+                ...secureLibs.map(lib => ({
+                  key: lib.libraryUrl,
+                  text: `${lib.title} (Secure — ${lib.securityGroups.join(', ')})`
+                }))
+              ];
+
+              const selectedLib = secureLibs.find((l: any) => l.libraryUrl === selectedLibrary);
+
+              return secureLibs.length > 0 ? (
+                <>
+                  <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: 16, marginTop: 8 }}>
+                    <Text style={{ fontWeight: 600, fontSize: 14, display: 'block', marginBottom: 4 }}>
+                      <Icon iconName="Lock" styles={{ root: { marginRight: 6, fontSize: 14, color: '#0d9488' } }} />
+                      Storage & Security
+                    </Text>
+                    <Text style={{ fontSize: 12, color: '#64748b', marginBottom: 12, display: 'block' }}>
+                      Choose where this policy is stored. Secure libraries restrict access to assigned security groups only.
+                    </Text>
+                    <Dropdown
+                      label="Document Library"
+                      selectedKey={selectedLibrary}
+                      options={libraryOptions}
+                      onChange={(_, opt) => opt && this.setState({ _selectedLibrary: opt.key as string } as any)}
+                    />
+                    {selectedLib && (
+                      <MessageBar messageBarType={MessageBarType.warning} style={{ marginTop: 8 }}>
+                        <strong>Restricted access.</strong> This policy will only be visible to members of: {selectedLib.securityGroups.join(', ')}. It will NOT appear in the public Policy Hub.
+                      </MessageBar>
+                    )}
+                  </div>
+                </>
+              ) : null;
+            })()}
           </Stack>
         </div>
       </div>
@@ -1917,7 +2160,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         )
       },
       {
-        key: 'compliance', icon: 'Shield', title: 'Compliance & Risk',
+        key: 'compliance', icon: 'Tag', title: 'Metadata Profile',
         content: (
           <div className={styles.reviewGrid}>
             <div className={styles.reviewItem}><Label>Risk Level</Label><Text>{complianceRisk}</Text></div>
@@ -2804,7 +3047,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     };
 
     return (
-      <Panel
+      <StyledPanel
         isOpen={showTemplatePanel}
         onDismiss={() => this.setState({ showTemplatePanel: false })}
         type={PanelType.custom}
@@ -2953,7 +3196,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             </Stack>
           )}
         </Stack>
-      </Panel>
+      </StyledPanel>
     );
   }
 
@@ -2961,7 +3204,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     const { showFileUploadPanel, uploadingFiles, uploadedFiles } = this.state;
 
     return (
-      <Panel
+      <StyledPanel
         isOpen={showFileUploadPanel}
         onDismiss={() => this.setState({ showFileUploadPanel: false })}
         type={PanelType.custom}
@@ -3041,7 +3284,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             </Stack>
           )}
         </Stack>
-      </Panel>
+      </StyledPanel>
     );
   }
 
@@ -3049,7 +3292,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     const { showMetadataPanel, metadataProfiles } = this.state;
 
     return (
-      <Panel
+      <StyledPanel
         isOpen={showMetadataPanel}
         onDismiss={() => this.setState({ showMetadataPanel: false })}
         type={PanelType.medium}
@@ -3086,7 +3329,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             </Stack>
           )}
         </Stack>
-      </Panel>
+      </StyledPanel>
     );
   }
 
@@ -3104,7 +3347,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     };
 
     return (
-      <Panel
+      <StyledPanel
         isOpen={showCorporateTemplatePanel}
         onDismiss={() => this.setState({ showCorporateTemplatePanel: false })}
         type={PanelType.custom}
@@ -3162,7 +3405,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             </Stack>
           )}
         </Stack>
-      </Panel>
+      </StyledPanel>
     );
   }
 
@@ -3170,7 +3413,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     const { showImageViewerPanel, imageViewerUrl, imageViewerTitle, imageViewerZoom } = this.state;
 
     return (
-      <Panel
+      <StyledPanel
         isOpen={showImageViewerPanel}
         onDismiss={() => this.setState({ showImageViewerPanel: false })}
         type={PanelType.large}
@@ -3260,7 +3503,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             You can download it, edit it externally, and re-upload the final version using the file upload option.
           </MessageBar>
         </Stack>
-      </Panel>
+      </StyledPanel>
     );
   }
 
@@ -3268,7 +3511,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     const { showBulkImportPanel, bulkImportFiles, bulkImportProgress, uploadingFiles } = this.state;
 
     return (
-      <Panel
+      <StyledPanel
         isOpen={showBulkImportPanel}
         onDismiss={() => this.setState({ showBulkImportPanel: false, bulkImportFiles: [], bulkImportProgress: 0 })}
         type={PanelType.custom}
@@ -3329,7 +3572,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             />
           </Stack>
         </Stack>
-      </Panel>
+      </StyledPanel>
     );
   }
 
@@ -4221,7 +4464,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     const { showNewDelegationPanel, saving } = this.state;
 
     return (
-      <Panel
+      <StyledPanel
         isOpen={showNewDelegationPanel}
         onDismiss={() => this.setState({ showNewDelegationPanel: false })}
         type={PanelType.medium}
@@ -4336,7 +4579,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             />
           </Stack>
         </form>
-      </Panel>
+      </StyledPanel>
     );
   }
 
@@ -4344,7 +4587,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     const { showCreatePackPanel, saving } = this.state;
 
     return (
-      <Panel
+      <StyledPanel
         isOpen={showCreatePackPanel}
         onDismiss={() => this.setState({ showCreatePackPanel: false })}
         type={PanelType.medium}
@@ -4421,7 +4664,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             </MessageBar>
           </Stack>
         </form>
-      </Panel>
+      </StyledPanel>
     );
   }
 
@@ -4429,7 +4672,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     const { showCreateQuizPanel, saving, browsePolicies } = this.state;
 
     return (
-      <Panel
+      <StyledPanel
         isOpen={showCreateQuizPanel}
         onDismiss={() => this.setState({ showCreateQuizPanel: false })}
         type={PanelType.medium}
@@ -4499,7 +4742,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             </MessageBar>
           </Stack>
         </form>
-      </Panel>
+      </StyledPanel>
     );
   }
 
@@ -4515,7 +4758,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
     return (
       <>
-        <Panel
+        <StyledPanel
           isOpen={showQuestionEditorPanel}
           onDismiss={() => this.setState({ showQuestionEditorPanel: false, editingQuiz: null, quizQuestions: [] })}
           type={PanelType.custom}
@@ -4672,7 +4915,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
               </Stack>
             )}
           </Stack>
-        </Panel>
+        </StyledPanel>
 
         {/* Add/Edit Question Dialog */}
         <Dialog
@@ -4879,7 +5122,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     const versions: IPolicyVersion[] = state._policyVersions || [];
 
     return (
-      <Panel
+      <StyledPanel
         isOpen={showPanel}
         onDismiss={() => this.setState({ _showVersionHistoryPanel: false } as any)}
         type={PanelType.medium}
@@ -4948,7 +5191,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             ))
           )}
         </Stack>
-      </Panel>
+      </StyledPanel>
     );
   }
 
@@ -4959,7 +5202,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     const html = state._versionComparisonHtml || '';
 
     return (
-      <Panel
+      <StyledPanel
         isOpen={showPanel}
         onDismiss={() => this.setState({ _showVersionComparisonPanel: false, _versionComparisonHtml: '' } as any)}
         type={PanelType.extraLarge}
@@ -4976,7 +5219,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             />
           )}
         </div>
-      </Panel>
+      </StyledPanel>
     );
   }
 
@@ -4988,7 +5231,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     }
 
     return (
-      <Panel
+      <StyledPanel
         isOpen={showPolicyDetailsPanel}
         onDismiss={() => this.setState({ showPolicyDetailsPanel: false, selectedPolicyDetails: null })}
         type={PanelType.custom}
@@ -5088,7 +5331,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             />
           </Stack>
         </Stack>
-      </Panel>
+      </StyledPanel>
     );
   }
 
@@ -5102,7 +5345,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     }
 
     return (
-      <Panel
+      <StyledPanel
         isOpen={showApprovalDetailsPanel}
         onDismiss={() => this.setState({ showApprovalDetailsPanel: false, selectedApprovalId: null })}
         type={PanelType.custom}
@@ -5209,7 +5452,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             />
           </Stack>
         </Stack>
-      </Panel>
+      </StyledPanel>
     );
   }
 
@@ -5217,7 +5460,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     const { showAdminSettingsPanel, saving } = this.state;
 
     return (
-      <Panel
+      <StyledPanel
         isOpen={showAdminSettingsPanel}
         onDismiss={() => this.setState({ showAdminSettingsPanel: false })}
         type={PanelType.medium}
@@ -5318,7 +5561,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             />
           </div>
         </Stack>
-      </Panel>
+      </StyledPanel>
     );
   }
 
@@ -5326,7 +5569,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     const { showFilterPanel } = this.state;
 
     return (
-      <Panel
+      <StyledPanel
         isOpen={showFilterPanel}
         onDismiss={() => this.setState({ showFilterPanel: false })}
         type={PanelType.smallFixedFar}
@@ -5420,7 +5663,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             defaultChecked={false}
           />
         </Stack>
-      </Panel>
+      </StyledPanel>
     );
   }
 

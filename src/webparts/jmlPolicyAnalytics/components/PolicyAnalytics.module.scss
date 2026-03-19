@@ -743,7 +743,7 @@ $pm-font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue'
   align-items: center;
   padding: 10px 16px;
   background: linear-gradient(to right, $pm-primary, $pm-primary-light);
-  border-radius: 6px;
+  border-radius: 4px;
   color: #fff;
   min-height: 36px;
   transition: width 0.4s ease;
@@ -1045,7 +1045,7 @@ $pm-font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue'
   font-weight: 400;
   padding: 5px 12px;
   border: 1px solid #e2e8f0;
-  border-radius: 6px;
+  border-radius: 4px;
   background: #fff;
   color: #64748b;
   cursor: pointer;

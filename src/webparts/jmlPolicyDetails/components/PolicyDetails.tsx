@@ -43,6 +43,7 @@ import {
   IPolicyVersion
 } from '../../../models/IPolicy';
 import { PolicyDocumentComparisonService } from '../../../services/PolicyDocumentComparisonService';
+import { StyledPanel } from '../../../components/StyledPanel';
 import styles from './PolicyDetails.module.scss';
 import { PM_LISTS } from '../../../constants/SharePointListNames';
 import { QuizService, IQuizResult } from '../../../services/QuizService';
@@ -630,11 +631,14 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
       quizRequired, quizCompleted, quizScore, digitalSignature, acknowledgeNotes
     } = this.state;
 
-    if (!policy || !acknowledgement) return;
+    if (!policy) return;
     if (!this.canSubmitAcknowledgement()) {
       this.setState({ error: 'Please complete all acknowledgement requirements.' });
       return;
     }
+
+    // Declare readReceipt in outer scope so catch block can access it
+    let readReceipt: IReadReceipt | undefined;
 
     try {
       this.setState({ submittingAcknowledgement: true, error: null });
@@ -654,7 +658,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
 3. I understand that failure to comply may result in disciplinary action.
 4. I acknowledge that this constitutes my electronic signature and consent.`;
 
-      const readReceipt: IReadReceipt = {
+      readReceipt = {
         UserId: currentUser.Id,
         UserEmail: currentUser.Email,
         UserDisplayName: currentUser.Title,
@@ -682,7 +686,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
         ReceiptNumber: this.generateReceiptNumber()
       };
 
-      // Try to save to SharePoint — but still advance to complete if lists aren't provisioned yet
+      // Try to save to SharePoint — but always advance to complete even if SP calls fail
       try {
         await this.saveReadReceipt(readReceipt);
       } catch (saveErr) {
@@ -690,33 +694,63 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
       }
 
       try {
-        const request: IPolicyAcknowledgeRequest = {
-          acknowledgementId: acknowledgement.Id,
-          acknowledgedDate: now,
-          notes: acknowledgeNotes,
-          readDuration: readDuration,
-          ipAddress: '',
-          userAgent: navigator.userAgent,
-          quizScore: quizCompleted ? quizScore : undefined
-        };
-        await this.policyService.acknowledgePolicy(request);
+        if (acknowledgement && acknowledgement.Id) {
+          // Update existing acknowledgement record
+          const request: IPolicyAcknowledgeRequest = {
+            acknowledgementId: acknowledgement.Id,
+            acknowledgedDate: now,
+            notes: acknowledgeNotes,
+            readDuration: readDuration,
+            ipAddress: '',
+            userAgent: navigator.userAgent,
+            quizScore: quizCompleted ? quizScore : undefined
+          };
+          await this.policyService.acknowledgePolicy(request);
+        } else {
+          // No existing record — create a new acknowledgement directly
+          try {
+            await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_ACKNOWLEDGEMENTS).items.add({
+              Title: `${policy.PolicyNumber} - ${currentUser.Title}`,
+              PolicyId: policy.Id,
+              PolicyName: policy.PolicyName,
+              PolicyNumber: policy.PolicyNumber,
+              UserId: currentUser.Id,
+              UserEmail: currentUser.Email,
+              AckStatus: 'Acknowledged',
+              AcknowledgedDate: now.toISOString(),
+              ReadDuration: readDuration,
+              Notes: acknowledgeNotes
+            });
+          } catch (createErr) {
+            console.warn('Could not create acknowledgement record:', createErr);
+          }
+        }
       } catch (ackErr) {
-        console.warn('Could not update acknowledgement record (list may not exist yet):', ackErr);
+        console.warn('Could not update acknowledgement record:', ackErr);
       }
 
-      this.setState({
-        readReceipt,
-        showAcknowledgePanel: false,
-        showCongratulationsPanel: true,
-        currentFlowStep: 'complete',
-        submittingAcknowledgement: false
-      });
-    } catch (error) {
+      // Always advance to complete — even if SP saves failed
+      if (this._isMounted) {
+        this.setState({
+          readReceipt,
+          showAcknowledgePanel: false,
+          showCongratulationsPanel: true,
+          currentFlowStep: 'complete',
+          submittingAcknowledgement: false
+        });
+      }
+    } catch (error: any) {
       console.error('Failed to submit acknowledgement:', error);
-      this.setState({
-        error: 'Failed to submit acknowledgement. Please try again.',
-        submittingAcknowledgement: false
-      });
+      // Still advance to complete — the user has made their declaration
+      if (this._isMounted) {
+        this.setState({
+          readReceipt,
+          showAcknowledgePanel: false,
+          showCongratulationsPanel: true,
+          currentFlowStep: 'complete',
+          submittingAcknowledgement: false
+        });
+      }
     }
   };
 
@@ -1115,103 +1149,183 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
 
     return (
       <div className={styles.stepContent}>
-        {/* Policy Metadata Card — hidden in focused reader mode (shown in compact bar instead) */}
-        {!isFocusedMode && <div className={styles.wizardCard}>
-          <div className={styles.cardHeader}>
-            <div className={styles.cardIcon}>
-              <Icon iconName="Document" styles={{ root: { fontSize: 18 } }} />
-            </div>
-            <div className={styles.cardHeaderInfo}>
-              <Text variant="large" style={{ fontWeight: 700, color: '#0f172a' }}>
+        {/* Compact Policy Header — collapsible accordion for maximum reading space */}
+        {!isFocusedMode && (
+          <div style={{
+            background: '#fff',
+            border: '1px solid #e2e8f0',
+            borderLeft: '4px solid #0d9488',
+            borderRadius: 4,
+            marginTop: 5,
+            marginBottom: 12,
+            overflow: 'hidden'
+          }}>
+            {/* Header Row — always visible */}
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => this.setState({ _headerExpanded: !(this.state as any)._headerExpanded } as any)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') this.setState({ _headerExpanded: !(this.state as any)._headerExpanded } as any); }}
+              style={{
+                display: 'flex', alignItems: 'center', padding: '10px 16px',
+                cursor: 'pointer', gap: 12, userSelect: 'none'
+              }}
+            >
+              <Icon iconName={(this.state as any)._headerExpanded ? 'ChevronUp' : 'ChevronDown'}
+                styles={{ root: { fontSize: 12, color: '#94a3b8', transition: 'transform 0.2s' } }} />
+              <Text style={{ fontWeight: 700, color: '#0f172a', fontSize: 15, flex: 1 }}>
                 {policy.PolicyNumber} - {policy.PolicyName}
               </Text>
-              <Stack horizontal tokens={{ childrenGap: 8 }} style={{ marginTop: 4 }}>
+              <Stack horizontal tokens={{ childrenGap: 6 }} verticalAlign="center" wrap>
                 <span className={styles.badgeGreen}>Published</span>
                 <span className={styles.badgeTeal}>{policy.PolicyCategory}</span>
                 <span className={styles.badgeSlate}>{policy.PolicyNumber}</span>
+                <span className={styles.badgeSlate}>{policy.EffectiveDate ? new Date(policy.EffectiveDate).toLocaleDateString() : 'N/A'}</span>
+                <span className={styles.badgeSlate}>v{policy.VersionNumber || '1.0'}</span>
                 {acknowledgement && (
                   <span className={styles.badgeAmber} style={{ backgroundColor: statusColor === '#16a34a' ? '#dcfce7' : statusColor === '#dc2626' ? '#fee2e2' : '#fef3c7', color: statusColor }}>
                     {acknowledgement.AckStatus || acknowledgement.Status}
                   </span>
                 )}
               </Stack>
+              <Stack horizontal tokens={{ childrenGap: 4 }} verticalAlign="center" style={{ marginLeft: 8 }}>
+                <div className={styles.readTimer}>
+                  <Icon iconName="Timer" styles={{ root: { fontSize: 12 } }} />
+                  <span>{this.formatDuration(readDuration)}</span>
+                </div>
+                <IconButton
+                  iconProps={{ iconName: 'History' }}
+                  title="Version History"
+                  ariaLabel="Version History"
+                  onClick={(e) => { e.stopPropagation(); this.loadVersionHistory(); }}
+                  styles={{ root: { height: 28, width: 28 }, icon: { fontSize: 14, color: '#0d9488' } }}
+                />
+                <IconButton
+                  iconProps={{ iconName: isFollowing ? 'FavoriteStarFill' : 'FavoriteStar' }}
+                  title={isFollowing ? 'Unfollow' : 'Follow'}
+                  ariaLabel={isFollowing ? 'Unfollow policy' : 'Follow policy'}
+                  onClick={(e) => { e.stopPropagation(); this.handleFollow(); }}
+                  styles={{ root: { height: 28, width: 28 }, icon: { fontSize: 14, color: isFollowing ? '#f59e0b' : '#94a3b8' } }}
+                />
+                <IconButton
+                  iconProps={{ iconName: 'Share' }}
+                  title="Share"
+                  ariaLabel="Share policy"
+                  onClick={(e) => { e.stopPropagation(); this.handleShare(); }}
+                  styles={{ root: { height: 28, width: 28 }, icon: { fontSize: 14, color: '#0d9488' } }}
+                />
+              </Stack>
             </div>
-            <Stack horizontal tokens={{ childrenGap: 8 }} className={styles.cardActions}>
-              <div className={styles.readTimer}>
-                <Icon iconName="Timer" styles={{ root: { fontSize: 14 } }} />
-                <span>{this.formatDuration(readDuration)}</span>
-              </div>
-              <IconButton
-                iconProps={{ iconName: 'History' }}
-                title="Version History"
-                onClick={this.loadVersionHistory}
-                styles={{ root: { color: '#0d9488' } }}
-              />
-              <IconButton
-                iconProps={{ iconName: isFollowing ? 'FavoriteStarFill' : 'FavoriteStar' }}
-                title={isFollowing ? 'Unfollow' : 'Follow'}
-                onClick={this.handleFollow}
-              />
-              <IconButton
-                iconProps={{ iconName: 'Share' }}
-                title="Share"
-                onClick={this.handleShare}
-              />
-            </Stack>
-          </div>
 
-          <div className={styles.policyMeta}>
-            <div className={styles.metaItem}>
-              <span className={styles.metaLabel}>Department</span>
-              <span className={styles.metaValue}>{policy.PolicyCategory || 'General'}</span>
-            </div>
-            <div className={styles.metaItem}>
-              <span className={styles.metaLabel}>Effective Date</span>
-              <span className={styles.metaValue}>{policy.EffectiveDate ? new Date(policy.EffectiveDate).toLocaleDateString() : 'N/A'}</span>
-            </div>
-            <div className={styles.metaItem}>
-              <span className={styles.metaLabel}>Version</span>
-              <span className={styles.metaValue}>v{policy.VersionNumber || '1.0'}</span>
-            </div>
-            {acknowledgement?.DueDate && (
-              <div className={styles.metaItem}>
-                <span className={styles.metaLabel}>Ack. Due</span>
-                <span className={styles.metaValue} style={{ color: statusColor }}>{new Date(acknowledgement.DueDate).toLocaleDateString()}</span>
+            {/* Expanded Details — collapsible */}
+            {(this.state as any)._headerExpanded && (
+              <div style={{ padding: '0 16px 12px', borderTop: '1px solid #f1f5f9' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, paddingTop: 12 }}>
+                  <div>
+                    <Text variant="tiny" style={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Department</Text>
+                    <Text variant="small" style={{ color: '#334155', fontWeight: 500 }}>{policy.PolicyCategory || 'General'}</Text>
+                  </div>
+                  <div>
+                    <Text variant="tiny" style={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Effective Date</Text>
+                    <Text variant="small" style={{ color: '#334155', fontWeight: 500 }}>{policy.EffectiveDate ? new Date(policy.EffectiveDate).toLocaleDateString() : 'N/A'}</Text>
+                  </div>
+                  <div>
+                    <Text variant="tiny" style={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Version</Text>
+                    <Text variant="small" style={{ color: '#334155', fontWeight: 500 }}>v{policy.VersionNumber || '1.0'}</Text>
+                  </div>
+                  {acknowledgement?.DueDate && (
+                    <div>
+                      <Text variant="tiny" style={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Ack. Due</Text>
+                      <Text variant="small" style={{ color: statusColor, fontWeight: 500 }}>{new Date(acknowledgement.DueDate).toLocaleDateString()}</Text>
+                    </div>
+                  )}
+                  {policy.PolicySummary && (
+                    <div style={{ gridColumn: '1 / -1' }}>
+                      <Text variant="tiny" style={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Summary</Text>
+                      <Text variant="small" style={{ color: '#334155' }}>{policy.PolicySummary}</Text>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
-        </div>}
-
-        {/* Cross-App Linked Records (DWx Hub) — hidden in focused mode */}
-        {!isFocusedMode && this.linkedRecordService && policy.Id && (
-          <DwxLinkedRecordsPanel
-            linkedRecordService={this.linkedRecordService}
-            appId="PolicyManager"
-            itemId={policy.Id}
-            itemTitle={`${policy.PolicyNumber} - ${policy.PolicyName}`}
-            compact={true}
-          />
         )}
 
         {/* Native HTML Reader — rendered when PolicyContent has converted HTML */}
         {hasConvertedHtml && (
-          <div
-            ref={this.documentViewerRef}
-            onScroll={this.handleDocumentScroll}
-            style={{
-              background: '#fff',
-              padding: isFocusedMode ? '32px 48px 80px' : '24px 32px',
-              maxHeight: isFocusedMode ? 'calc(100vh - 140px)' : 520,
-              overflowY: 'auto',
-              border: isFocusedMode ? 'none' : '1px solid #e2e8f0',
-              borderRadius: 4,
-              position: 'relative'
-            }}
-          >
-            <div className={styles.scrollProgressBar}>
-              <div className={styles.scrollProgressFill} style={{ height: `${scrollProgress}%` }} />
+          <div className={styles.documentViewerWrapper} ref={this.viewerWrapperRef} style={{
+            ...(this.state.isFullscreen ? { background: '#fff', padding: 0 } : {}),
+            ...(isFocusedMode ? { marginBottom: 0 } : {})
+          }}>
+            {/* Toolbar — matches iframe viewer chrome */}
+            {!isFocusedMode && (
+              <div className={styles.viewerToolbar}>
+                <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
+                  <Icon iconName={documentUrl ? this.getDocumentIcon(documentUrl) : 'FileHTML'} style={{ fontSize: 16, color: '#0d9488' }} />
+                  <Text variant="small" style={{ fontWeight: 600, color: '#334155' }}>
+                    {documentUrl ? documentUrl.split('/').pop() : `${policy.PolicyNumber || ''} ${policy.PolicyName || policy.Title}`.trim()}
+                  </Text>
+                  <Text variant="tiny" style={{ color: '#94a3b8' }}>
+                    {documentUrl ? this.getDocumentTypeLabel(documentUrl) : 'HTML Document'}
+                  </Text>
+                </Stack>
+                <Stack horizontal tokens={{ childrenGap: 8 }}>
+                  <IconButton
+                    iconProps={{ iconName: 'Print' }}
+                    title="Print"
+                    ariaLabel="Print policy"
+                    onClick={() => {
+                      const printWindow = window.open('', '_blank');
+                      if (printWindow) {
+                        printWindow.document.write(`<!DOCTYPE html><html><head><title>${policy.PolicyName || 'Policy'}</title></head><body>${sanitizeHtml(policy.PolicyContent || '')}</body></html>`);
+                        printWindow.document.close();
+                        printWindow.print();
+                      }
+                    }}
+                    styles={{ root: { height: 28, width: 28 }, icon: { fontSize: 14, color: '#0d9488' } }}
+                  />
+                  <IconButton
+                    iconProps={{ iconName: this.state.isFullscreen ? 'BackToWindow' : 'FullScreen' }}
+                    title={this.state.isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+                    ariaLabel={this.state.isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+                    onClick={this.toggleFullscreen}
+                    styles={{ root: { height: 28, width: 28 }, icon: { fontSize: 14, color: '#0d9488' } }}
+                  />
+                  {documentUrl && (
+                    <>
+                      <DefaultButton
+                        iconProps={{ iconName: 'OpenInNewTab' }}
+                        text="Open Original"
+                        href={documentUrl}
+                        target="_blank"
+                        styles={{ root: { height: 28, padding: '0 10px' }, label: { fontSize: 11 } }}
+                      />
+                      <DefaultButton
+                        iconProps={{ iconName: 'Download' }}
+                        text="Download"
+                        href={documentUrl}
+                        styles={{ root: { height: 28, padding: '0 10px' }, label: { fontSize: 11 } }}
+                      />
+                    </>
+                  )}
+                </Stack>
+              </div>
+            )}
+            <div
+              className={styles.documentViewer}
+              ref={this.documentViewerRef}
+              onScroll={this.handleDocumentScroll}
+              style={{
+                padding: isFocusedMode ? '32px 48px 80px' : '24px 32px',
+                ...(isFocusedMode ? { height: 'calc(100vh - 140px)' } : {}),
+                ...(this.state.isFullscreen ? { height: 'calc(100vh - 80px)' } : {})
+              }}
+            >
+              <div className={styles.scrollProgressBar}>
+                <div className={styles.scrollProgressFill} style={{ height: `${scrollProgress}%` }} />
+              </div>
+              <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(policy.PolicyContent || '') }} />
             </div>
-            <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(policy.PolicyContent || '') }} />
           </div>
         )}
 
@@ -1286,17 +1400,6 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                 <iframe src={viewerUrl} style={{ width: '100%', height: this.state.isFullscreen ? 'calc(100vh - 80px)' : '100%', border: 'none' }} title={`${policy.Title} Document Viewer`} />
               )}
             </div>
-            {!this.state.isFullscreen && !isFocusedMode && (
-            <div className={styles.scrollNotice}>
-              {scrollProgress >= 95 || readDuration >= 30 ? (
-                <span style={{ color: '#16a34a', fontWeight: 600 }}>
-                  <Icon iconName="CheckMark" /> Document read complete — you may now proceed
-                </span>
-              ) : (
-                <span>Please review the document before proceeding ({Math.max(0, 30 - readDuration)}s remaining)</span>
-              )}
-            </div>
-            )}
           </div>
         )}
 
@@ -1384,26 +1487,6 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                 </div>
               </div>
             </div>
-            <div className={styles.scrollNotice}>
-              {scrollProgress >= 95 ? (
-                <span style={{ color: '#16a34a', fontWeight: 600 }}>
-                  <Icon iconName="CheckMark" /> Document read complete — you may now proceed
-                </span>
-              ) : (
-                <span>Please scroll through the entire document before proceeding</span>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Policy Content (HTML/text fallback) — hidden in focused mode when document viewer is showing */}
-        {!(isFocusedMode && hasDocuments) && policy.PolicyContent && (
-          <div className={styles.wizardCard}>
-            <Text variant="large" style={{ fontWeight: 600, color: '#0d9488', marginBottom: 12, display: 'block' }}>
-              Policy Overview
-            </Text>
-            {policy.PolicySummary && <Text style={{ marginBottom: 12, display: 'block' }}>{policy.PolicySummary}</Text>}
-            <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(policy.PolicyContent || '') }} />
           </div>
         )}
 
@@ -1428,8 +1511,56 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
           </div>
         )}
 
-        {/* Per-Policy Documents Section — hidden in focused reader mode */}
-        {!isFocusedMode && this.renderPolicyDocumentsSection(policy)}
+        {/* Document Read Footer — anchored to bottom of browser, covers PM footer */}
+        {!this.state.isFullscreen && !isFocusedMode && (hasConvertedHtml || hasDocuments) && (
+          <div style={{
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            padding: '8px 24px',
+            background: scrollProgress >= 95 || readDuration >= 30 ? '#dcfce7' : '#fef3c7',
+            borderTop: `2px solid ${scrollProgress >= 95 || readDuration >= 30 ? '#16a34a' : '#d97706'}`,
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            transition: 'background 0.3s, border-color 0.3s'
+          }}>
+            {/* Back button */}
+            <DefaultButton
+              text="Back"
+              iconProps={{ iconName: 'ChevronLeft' }}
+              onClick={() => { window.location.href = '/sites/PolicyManager/SitePages/MyPolicies.aspx'; }}
+              styles={{ root: { borderRadius: 4, minWidth: 80 } }}
+            />
+
+            {/* Status text */}
+            <span style={{ fontSize: 13, textAlign: 'center', flex: 1 }}>
+              {scrollProgress >= 95 || readDuration >= 30 ? (
+                <span style={{ color: '#16a34a', fontWeight: 600 }}>
+                  <Icon iconName="CheckMark" /> Document read complete — you may now proceed
+                </span>
+              ) : (
+                <span style={{ color: '#92400e' }}>
+                  Please review the document before proceeding ({Math.max(0, 30 - readDuration)}s remaining)
+                </span>
+              )}
+            </span>
+
+            {/* Next button */}
+            <PrimaryButton
+              text={scrollProgress >= 95 || readDuration >= 30 ? (policy.RequiresQuiz ? 'Proceed to Quiz' : 'Proceed to Acknowledge') : `${Math.max(0, 30 - readDuration)}s`}
+              iconProps={{ iconName: 'ChevronRight' }}
+              disabled={scrollProgress < 95 && readDuration < 30}
+              onClick={() => this.handleMarkAsRead()}
+              styles={{
+                root: { borderRadius: 4, minWidth: 80, background: scrollProgress >= 95 || readDuration >= 30 ? '#0d9488' : '#94a3b8', borderColor: scrollProgress >= 95 || readDuration >= 30 ? '#0d9488' : '#94a3b8' },
+                rootHovered: { background: '#0f766e', borderColor: '#0f766e' }
+              }}
+            />
+          </div>
+        )}
       </div>
     );
   }
@@ -1840,7 +1971,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
     const { showVersionHistoryPanel, versionHistoryLoading, policyVersions, policy } = this.state;
 
     return (
-      <Panel
+      <StyledPanel
         isOpen={showVersionHistoryPanel}
         onDismiss={() => this.setState({ showVersionHistoryPanel: false })}
         type={PanelType.medium}
@@ -1916,7 +2047,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
             ))
           )}
         </Stack>
-      </Panel>
+      </StyledPanel>
     );
   }
 
@@ -1924,7 +2055,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
     const { showVersionComparisonPanel, versionComparisonLoading, versionComparisonHtml } = this.state;
 
     return (
-      <Panel
+      <StyledPanel
         isOpen={showVersionComparisonPanel}
         onDismiss={() => this.setState({ showVersionComparisonPanel: false, versionComparisonHtml: '' })}
         type={PanelType.extraLarge}
@@ -1941,7 +2072,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
             />
           )}
         </div>
-      </Panel>
+      </StyledPanel>
     );
   }
 
@@ -2085,7 +2216,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
     const { showReadReceiptPanel, readReceipt } = this.state;
 
     return (
-      <Panel
+      <StyledPanel
         isOpen={showReadReceiptPanel}
         onDismiss={() => this.setState({ showReadReceiptPanel: false })}
         type={PanelType.medium}
@@ -2124,7 +2255,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
             </Stack>
           </Stack>
         )}
-      </Panel>
+      </StyledPanel>
     );
   }
 
@@ -2156,8 +2287,10 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
             <DefaultButton
               text="Back"
               iconProps={{ iconName: 'ChevronLeft' }}
-              disabled={currentIndex === 0}
-              onClick={this.handleWizardBack}
+              onClick={currentIndex === 0
+                ? () => { window.location.href = '/sites/PolicyManager/SitePages/MyPolicies.aspx'; }
+                : this.handleWizardBack
+              }
             />
           </div>
           <Text variant="small" style={{ color: '#64748b' }}>
@@ -2336,8 +2469,8 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
           {this.renderVersionHistoryPanel()}
           {this.renderVersionComparisonPanel()}
 
-          {/* Wizard footer for non-reading steps */}
-          {currentFlowStep !== 'reading' && this.renderWizardFooter()}
+          {/* Wizard footer — shown for ALL steps (including reading) */}
+          {this.renderWizardFooter()}
         </div>
         </ErrorBoundary>
       );
@@ -2384,8 +2517,11 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
 
           {!loading && !error && policy && (
             <>
-              {/* Read-only view for browse mode or already acknowledged */}
-              {this.renderReadStep()}
+              {/* Render current flow step */}
+              {currentFlowStep === 'reading' && this.renderReadStep()}
+              {currentFlowStep === 'quiz' && this.renderQuizStep()}
+              {currentFlowStep === 'acknowledge' && this.renderAcknowledgeStep()}
+              {currentFlowStep === 'complete' && this.renderCompleteStep()}
 
               {/* Panels */}
               {this.renderAcknowledgePanel()}

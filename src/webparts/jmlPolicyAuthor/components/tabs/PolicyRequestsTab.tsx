@@ -20,6 +20,7 @@ import { PageSubheader } from '../../../../components/PageSubheader';
 import {
   IPolicyAuthorRequest as IPolicyRequest,
 } from '../../../../models/IPolicyAuthor';
+import { StyledPanel } from '../../../../components/StyledPanel';
 import { IPolicyRequestsTabProps } from './types';
 
 export default class PolicyRequestsTab extends React.Component<IPolicyRequestsTabProps> {
@@ -215,7 +216,7 @@ export default class PolicyRequestsTab extends React.Component<IPolicyRequestsTa
               checked={requestStatusFilter === status}
               styles={{
                 root: {
-                  borderRadius: 20,
+                  borderRadius: 4,
                   minWidth: 'auto',
                   padding: '2px 14px',
                   height: 32,
@@ -312,7 +313,7 @@ export default class PolicyRequestsTab extends React.Component<IPolicyRequestsTa
 
         {/* Policy Request Detail Panel */}
         {showPolicyRequestDetailPanel && selectedPolicyRequest && (
-          <Panel
+          <StyledPanel
             isOpen={showPolicyRequestDetailPanel}
             onDismiss={() => onSetState({ showPolicyRequestDetailPanel: false, selectedPolicyRequest: null })}
             type={PanelType.medium}
@@ -481,7 +482,7 @@ export default class PolicyRequestsTab extends React.Component<IPolicyRequestsTa
                 />
               </Stack>
             </div>
-          </Panel>
+          </StyledPanel>
         )}
       </>
     );

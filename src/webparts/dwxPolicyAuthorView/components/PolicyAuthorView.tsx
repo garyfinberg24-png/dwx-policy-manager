@@ -35,6 +35,7 @@ import { PageSubheader } from '../../../components/PageSubheader';
 import { RoleDetectionService } from '../../../services/RoleDetectionService';
 import { PolicyManagerRole, getHighestPolicyRole, hasMinimumRole } from '../../../services/PolicyRoleService';
 import { PM_LISTS } from '../../../constants/SharePointListNames';
+import { StyledPanel } from '../../../components/StyledPanel';
 import styles from './PolicyAuthorView.module.scss';
 
 // ============================================================================
@@ -581,7 +582,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
               checked={statusFilter === status}
               styles={{
                 root: {
-                  borderRadius: 20,
+                  borderRadius: 4,
                   minWidth: 'auto',
                   padding: '2px 14px',
                   height: 32,
@@ -731,7 +732,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
     const request = this.state.selectedRequest!;
 
     return (
-      <Panel
+      <StyledPanel
         isOpen={this.state.showDetailPanel}
         onDismiss={() => this.setState({ showDetailPanel: false, selectedRequest: null })}
         type={PanelType.medium}
@@ -901,7 +902,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
             />
           </Stack>
         </div>
-      </Panel>
+      </StyledPanel>
     );
   }
 
@@ -967,7 +968,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
               text={`${f} (${f === 'All' ? approvals.length : approvals.filter(a => a.Status === f).length})`}
               styles={{
                 root: {
-                  borderRadius: 20, minWidth: 'auto', padding: '2px 14px', height: 32,
+                  borderRadius: 4, minWidth: 'auto', padding: '2px 14px', height: 32,
                   border: approvalFilter === f ? '2px solid #0d9488' : '1px solid #e1dfdd',
                   background: approvalFilter === f ? '#f0fdfa' : 'transparent',
                   color: approvalFilter === f ? '#0d9488' : '#605e5c',
@@ -1093,7 +1094,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
             text="Add Delegation"
             iconProps={{ iconName: 'AddFriend' }}
             styles={{
-              root: { background: '#0d9488', borderColor: '#0d9488', borderRadius: 6, height: 36 },
+              root: { background: '#0d9488', borderColor: '#0d9488', borderRadius: 4, height: 36 },
               rootHovered: { background: '#0f766e', borderColor: '#0f766e' },
               rootPressed: { background: '#115e59', borderColor: '#115e59' }
             }}
@@ -1117,7 +1118,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
               text={`${f === 'InProgress' ? 'In Progress' : f} (${f === 'All' ? delegations.length : delegations.filter(d => d.Status === f).length})`}
               styles={{
                 root: {
-                  borderRadius: 20, minWidth: 'auto', padding: '2px 14px', height: 32,
+                  borderRadius: 4, minWidth: 'auto', padding: '2px 14px', height: 32,
                   border: delegationFilter === f ? '2px solid #0d9488' : '1px solid #e1dfdd',
                   background: delegationFilter === f ? '#f0fdfa' : 'transparent',
                   color: delegationFilter === f ? '#0d9488' : '#605e5c',
@@ -1240,7 +1241,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
     const isFormValid = delegationForm.delegateTo && delegationForm.policyTitle && delegationForm.dueDate;
 
     return (
-      <Panel
+      <StyledPanel
         isOpen={showDelegationPanel}
         onDismiss={() => this.dismissDelegationPanel()}
         type={PanelType.custom}
@@ -1347,7 +1348,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
             onChange={(_, val) => this.updateDelegationForm({ notes: val || '' })}
           />
         </Stack>
-      </Panel>
+      </StyledPanel>
     );
   }
 

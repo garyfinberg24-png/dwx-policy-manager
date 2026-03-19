@@ -6,11 +6,12 @@
 // ============================================================================
 
 import * as React from 'react';
-import { Panel, PanelType } from '@fluentui/react/lib/Panel';
+import { PanelType } from '@fluentui/react/lib/Panel';
 import { SPFI } from '@pnp/sp';
 import styles from './PolicyChatPanel.module.scss';
 import { PolicyChatService, ChatMode, IChatMessageLocal } from '../../services/PolicyChatService';
 import { PolicyManagerRole } from '../../services/PolicyRoleService';
+import { StyledPanel } from '../StyledPanel';
 import { sanitizeHtml } from '../../utils/sanitizeHtml';
 
 // ── Props ──
@@ -454,7 +455,7 @@ export const PolicyChatPanel: React.FC<IPolicyChatPanelProps> = ({
   // ── Render ──
 
   return (
-    <Panel
+    <StyledPanel
       isOpen={isOpen}
       onDismiss={onDismiss}
       type={PanelType.medium}
@@ -468,6 +469,6 @@ export const PolicyChatPanel: React.FC<IPolicyChatPanelProps> = ({
       }}
     >
       {renderPanelContent()}
-    </Panel>
+    </StyledPanel>
   );
 };

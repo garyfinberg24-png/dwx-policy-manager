@@ -31,6 +31,7 @@ import {
   Label,
   Checkbox
 } from '@fluentui/react';
+import { StyledPanel } from '../../../components/StyledPanel';
 import { injectPortalStyles } from '../../../utils/injectPortalStyles';
 import { Colors, TextStyles, IconStyles, LayoutStyles, BadgeStyles, ContainerStyles, KPIStyles, CardBorderStyles, DividerStyles, EmailTemplateStyles } from './PolicyAdminStyles';
 import { PeoplePicker, PrincipalType } from "@pnp/spfx-controls-react/lib/PeoplePicker";
@@ -142,6 +143,7 @@ const NAV_SECTIONS: INavSection[] = [
     items: [
       { key: 'usersRoles', label: 'Users & Roles', icon: 'PlayerSettings', description: 'User management and Entra ID sync' },
       { key: 'rolePermissions', label: 'Role Permissions', icon: 'Permissions', description: 'Feature access per role (explicit, no inheritance)' },
+      { key: 'securityGroups', label: 'Security Groups', icon: 'SecurityGroup', description: 'Create and manage SharePoint security groups' },
       { key: 'reviewers', label: 'Reviewers & Approvers', icon: 'People', description: 'SharePoint groups for policy workflows' },
       { key: 'audiences', label: 'Audience Targeting', icon: 'Group', description: 'Target audiences for policy distribution' }
     ]
@@ -149,9 +151,11 @@ const NAV_SECTIONS: INavSection[] = [
   {
     category: 'SYSTEM',
     items: [
+      { key: 'documentStorage', label: 'Document Libraries', icon: 'DocLibrary', description: 'Configure document libraries and folder structure' },
+      { key: 'secureLibraries', label: 'Secure Libraries', icon: 'LockSolid', description: 'Restricted policy libraries with custom security groups' },
       { key: 'provisioning', label: 'Provisioning', icon: 'Database', description: 'SharePoint lists, seed data, and system setup' },
       { key: 'navigation', label: 'Navigation', icon: 'Nav2DMapView', description: 'Toggle app navigation items' },
-      { key: 'aiAssistant', label: 'AI Assistant', icon: 'Robot', description: 'AI chat configuration and function URL' },
+      { key: 'aiAssistant', label: 'AI Settings', icon: 'Robot', description: 'AI chat, document conversion, and integration URLs' },
       { key: 'lifecycle', label: 'Data Management', icon: 'History', description: 'Archival, retention, and cleanup rules' },
       { key: 'settings', label: 'General Settings', icon: 'Settings', description: 'Display, feature toggles, and app config' },
       { key: 'export', label: 'Data Export', icon: 'Download', description: 'Export policy data and reports' }
@@ -281,7 +285,8 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         approvalConfig,
         complianceConfig,
         notificationConfig,
-        generalExtConfig
+        generalExtConfig,
+        integrationConfig
       ] = await Promise.all([
         this.adminConfigService.getNamingRules().catch(() => []),
         this.adminConfigService.getSLAConfigs().catch(() => []),
@@ -296,7 +301,8 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         this.adminConfigService.getConfigByCategory('Approval').catch(() => ({})),
         this.adminConfigService.getConfigByCategory('Compliance').catch(() => ({})),
         this.adminConfigService.getConfigByCategory('Notifications').catch(() => ({})),
-        this.adminConfigService.getConfigByCategory('General').catch(() => ({}))
+        this.adminConfigService.getConfigByCategory('General').catch(() => ({})),
+        this.adminConfigService.getConfigByCategory('Integration').catch(() => ({}))
       ]);
 
       // Merge general settings from SP with defaults
@@ -339,6 +345,8 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         _aiChatEnabled: (aiChatConfig as any)['Integration.AI.Chat.Enabled'] === 'true',
         _aiChatFunctionUrl: (aiChatConfig as any)['Integration.AI.Chat.FunctionUrl'] || '',
         _aiChatMaxTokens: (aiChatConfig as any)['Integration.AI.Chat.MaxTokens'] || '1000',
+        // Document Converter config
+        _docConverterFunctionUrl: (integrationConfig as any)['Integration.DocConverter.FunctionUrl'] || '',
         // Approval Workflow config
         _approvalRequireNew: (approvalConfig as any)[AdminConfigKeys.APPROVAL_REQUIRE_NEW] !== 'false',
         _approvalRequireUpdate: (approvalConfig as any)[AdminConfigKeys.APPROVAL_REQUIRE_UPDATE] !== 'false',
@@ -586,7 +594,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         </Stack>
 
         {/* Category Edit Panel */}
-        <Panel
+        <StyledPanel
           isOpen={!!showCategoryPanel}
           onDismiss={() => this.setState({ showCategoryPanel: false, editingCategory: null })}
           type={PanelType.medium}
@@ -663,7 +671,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               )}
             </Stack>
           )}
-        </Panel>
+        </StyledPanel>
       </div>
     );
   }
@@ -758,7 +766,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         )}
 
         {/* Edit/Create Panel */}
-        <Panel
+        <StyledPanel
           isOpen={state._showSubCatPanel || false}
           onDismiss={() => this.setState({ _showSubCatPanel: false } as any)}
           type={PanelType.medium}
@@ -809,7 +817,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             <Toggle label="Active" checked={state._editSubCat?.IsActive ?? true}
               onChange={(e, checked) => this.setState({ _editSubCat: { ...state._editSubCat, IsActive: checked } } as any)} />
           </Stack>
-        </Panel>
+        </StyledPanel>
       </div>
     );
   }
@@ -857,7 +865,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         </Stack>
 
         {/* Template Edit Panel */}
-        <Panel
+        <StyledPanel
           isOpen={!!showTemplatePanel}
           onDismiss={() => this.setState({ _showTemplatePanel: false, _editingTemplate: null } as any)}
           type={PanelType.medium}
@@ -936,7 +944,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               <Toggle label="Active" checked={editingTemplate.IsActive !== false} onText="Active" offText="Inactive" onChange={(_, c) => this.setState({ _editingTemplate: { ...editingTemplate, IsActive: !!c } } as any)} />
             </Stack>
           )}
-        </Panel>
+        </StyledPanel>
       </div>
     );
   }
@@ -990,7 +998,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         </Stack>
 
         {/* Metadata Profile Edit Panel */}
-        <Panel
+        <StyledPanel
           isOpen={!!showProfilePanel}
           onDismiss={() => this.setState({ _showProfilePanel: false, _editingProfile: null } as any)}
           type={PanelType.medium}
@@ -1067,7 +1075,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               />
             </Stack>
           )}
-        </Panel>
+        </StyledPanel>
       </div>
     );
   }
@@ -1413,7 +1421,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         </Stack>
 
         {/* Add Member Panel */}
-        <Panel
+        <StyledPanel
           isOpen={showAddMemberPanel}
           onDismiss={() => this.setState({ _showAddMemberPanel: false, _selectedLoginName: '' } as any)}
           headerText={`Add Member to ${selectedGroup?.Title || 'Group'}`}
@@ -1452,10 +1460,10 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               webAbsoluteUrl={this.props.context.pageContext.web.absoluteUrl}
             />
           </Stack>
-        </Panel>
+        </StyledPanel>
 
         {/* Create Group Panel */}
-        <Panel
+        <StyledPanel
           isOpen={showCreateGroupPanel}
           onDismiss={() => this.setState({ _showCreateGroupPanel: false } as any)}
           headerText="Create SharePoint Group"
@@ -1488,7 +1496,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               Tip: Use "PM_" prefix for Policy Manager groups to keep them organized (e.g., PM_PolicyReviewers, PM_PolicyApprovers).
             </MessageBar>
           </Stack>
-        </Panel>
+        </StyledPanel>
       </div>
     );
   }
@@ -2495,7 +2503,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     };
 
     return (
-      <Panel
+      <StyledPanel
         isOpen={showNamingRulePanel}
         onDismiss={() => this.setState({ showNamingRulePanel: false, editingNamingRule: null })}
         type={PanelType.medium}
@@ -2573,7 +2581,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             <TextField label="Example Output" value={preview.example} readOnly disabled description="Auto-generated from segments above" />
           </>); })()}
         </Stack>
-      </Panel>
+      </StyledPanel>
     );
   }
 
@@ -2645,7 +2653,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     };
 
     return (
-      <Panel
+      <StyledPanel
         isOpen={showSLAPanel}
         onDismiss={() => this.setState({ showSLAPanel: false, editingSLA: null })}
         type={PanelType.medium}
@@ -2706,7 +2714,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             </Stack>
           </div>
         </Stack>
-      </Panel>
+      </StyledPanel>
     );
   }
 
@@ -2797,7 +2805,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     const isPreset = !isCustomMode && retentionPresets.some(p => p.key === String(editingLifecycle.RetentionPeriodDays));
 
     return (
-      <Panel
+      <StyledPanel
         isOpen={showLifecyclePanel}
         onDismiss={() => this.setState({ showLifecyclePanel: false, editingLifecycle: null })}
         type={PanelType.medium}
@@ -2881,7 +2889,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             </>
           )}
         </Stack>
-      </Panel>
+      </StyledPanel>
     );
   }
 
@@ -3494,7 +3502,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         </Stack>
 
         {/* Edit/Create Panel */}
-        <Panel
+        <StyledPanel
           isOpen={showEmailTemplatePanel}
           onDismiss={() => this.setState({ showEmailTemplatePanel: false, editingEmailTemplate: null })}
           type={PanelType.medium}
@@ -3608,7 +3616,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               )}
             </Stack>
           )}
-        </Panel>
+        </StyledPanel>
       </div>
     );
   }
@@ -3888,7 +3896,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         </Stack>
 
         {/* Audience Builder Panel */}
-        <Panel
+        <StyledPanel
           isOpen={showAudiencePanel}
           onDismiss={() => this.setState({ _showAudiencePanel: false } as any)}
           headerText={editingAudience ? 'Edit Audience' : 'Create Audience'}
@@ -4040,7 +4048,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               )}
             </Stack>
           </Stack>
-        </Panel>
+        </StyledPanel>
       </div>
     );
   }
@@ -4400,7 +4408,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         </Stack>
 
         {/* User Detail Panel — Edit Role */}
-        <Panel
+        <StyledPanel
           isOpen={showUserPanel}
           onDismiss={() => this.setState({ _showUserPanel: false, _editingEmployee: null, _editingManagedDepts: [] } as any)}
           headerText={editingEmployee ? `Edit User: ${editingEmployee.Title}` : 'User Details'}
@@ -4524,7 +4532,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               </MessageBar>
             </Stack>
           )}
-        </Panel>
+        </StyledPanel>
       </div>
     );
   }
@@ -4717,9 +4725,6 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
 
   private renderRolePermissionsContent(): JSX.Element {
     const st = this.state as any;
-    // Explicit permissions — NO hierarchy inheritance.
-    // A Manager does NOT automatically get Author permissions.
-    // Each role sees ONLY what's explicitly toggled ON for that role.
     const defaultPermissions = [
       { feature: 'Browse Policies', key: 'browse', user: true, author: true, manager: true, admin: true },
       { feature: 'My Policies', key: 'myPolicies', user: true, author: true, manager: true, admin: true },
@@ -4738,39 +4743,81 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       { feature: 'System Settings', key: 'settings', user: false, author: false, manager: false, admin: true },
     ];
 
-    // Merge with any saved overrides
     const permissions = (st._rolePermissions || defaultPermissions).length > 0 ? (st._rolePermissions || defaultPermissions) : defaultPermissions;
+    const customRoles: Array<{ name: string; key: string }> = st._customRoles || [];
 
-    const updatePermission = (index: number, role: string, value: boolean) => {
+    const updatePermission = (index: number, roleKey: string, value: boolean) => {
       const updated = [...permissions];
-      updated[index] = { ...updated[index], [role]: value };
+      updated[index] = { ...updated[index], [roleKey]: value };
       this.setState({ _rolePermissions: updated } as any);
     };
 
-    const renderToggle = (item: any, role: string, index: number) => (
-      <div style={LayoutStyles.textCenter}>
-        {role === 'admin' ? (
-          <Icon iconName="CheckMark" style={{ ...IconStyles.smallMedium, color: '#16a34a' }} />
-        ) : (
-          <Toggle
-            checked={item[role]}
-            onChange={(_, v) => updatePermission(index, role, !!v)}
-            styles={{ root: { margin: 0 }, container: { justifyContent: 'center' } }}
-          />
-        )}
-      </div>
-    );
+    const addCustomRole = (): void => {
+      const name = ((st as any)._newRoleName || '').trim();
+      if (!name) return;
+      const key = name.toLowerCase().replace(/\s+/g, '_');
+      if (['user', 'author', 'manager', 'admin'].includes(key) || customRoles.some(r => r.key === key)) return;
+      // Add role column to all permissions (default OFF)
+      const updated = permissions.map((p: any) => ({ ...p, [key]: false }));
+      this.setState({
+        _customRoles: [...customRoles, { name, key }],
+        _rolePermissions: updated,
+        _newRoleName: ''
+      } as any);
+    };
+
+    const removeCustomRole = (key: string): void => {
+      const updated = permissions.map((p: any) => {
+        const copy = { ...p };
+        delete copy[key];
+        return copy;
+      });
+      this.setState({
+        _customRoles: customRoles.filter(r => r.key !== key),
+        _rolePermissions: updated
+      } as any);
+    };
+
+    // Build columns: Feature + 4 built-in roles + custom roles + Add Role
+    const builtInRoles = ['user', 'author', 'manager', 'admin'];
+    const allRoleKeys = [...builtInRoles, ...customRoles.map(r => r.key)];
 
     const columns: IColumn[] = [
-      { key: 'feature', name: 'Feature', fieldName: 'feature', minWidth: 180, maxWidth: 240, onRender: (item) => <Text style={TextStyles.medium}>{item.feature}</Text> },
-      { key: 'user', name: 'User', minWidth: 80, maxWidth: 80, onRender: (item, index) => renderToggle(item, 'user', index) },
-      { key: 'author', name: 'Author', minWidth: 80, maxWidth: 80, onRender: (item, index) => renderToggle(item, 'author', index) },
-      { key: 'manager', name: 'Manager', minWidth: 80, maxWidth: 80, onRender: (item, index) => renderToggle(item, 'manager', index) },
-      { key: 'admin', name: 'Admin', minWidth: 80, maxWidth: 80, onRender: (item) => (
-        <div style={LayoutStyles.textCenter}>
-          <Icon iconName="CheckMark" style={{ ...IconStyles.smallMedium, color: '#16a34a' }} />
-        </div>
-      )},
+      { key: 'feature', name: 'Feature', fieldName: 'feature', minWidth: 160, maxWidth: 220, onRender: (item) => <Text style={TextStyles.medium}>{item.feature}</Text> },
+      ...allRoleKeys.map(roleKey => {
+        const isCustom = customRoles.some(r => r.key === roleKey);
+        const roleName = isCustom ? customRoles.find(r => r.key === roleKey)!.name : roleKey.charAt(0).toUpperCase() + roleKey.slice(1);
+        return {
+          key: roleKey,
+          name: roleName,
+          minWidth: 80,
+          maxWidth: 90,
+          onRenderHeader: () => (
+            <div style={{ textAlign: 'center', width: '100%' }}>
+              <Text style={{ fontWeight: 600, fontSize: 12, display: 'block' }}>{roleName}</Text>
+              {isCustom && (
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => removeCustomRole(roleKey)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') removeCustomRole(roleKey); }}
+                  style={{ fontSize: 10, color: '#dc2626', cursor: 'pointer', display: 'block' }}
+                  title={`Remove ${roleName} role`}
+                >remove</span>
+              )}
+            </div>
+          ),
+          onRender: (item: any, index?: number) => (
+            <div style={{ textAlign: 'center' }}>
+              <Toggle
+                checked={item[roleKey] === true}
+                onChange={(_, v) => updatePermission(index || 0, roleKey, !!v)}
+                styles={{ root: { margin: 0 }, container: { justifyContent: 'center' } }}
+              />
+            </div>
+          )
+        } as IColumn;
+      }),
     ];
 
     return (
@@ -4786,12 +4833,13 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                 onClick={async () => {
                   this.setState({ saving: true });
                   try {
-                    const permJson = JSON.stringify(permissions);
+                    const saveData = { permissions, customRoles };
+                    const permJson = JSON.stringify(saveData);
                     await this.adminConfigService.saveConfigByCategory('RolePermissions', {
                       'Admin.RolePermissions.Config': permJson
                     });
-                    // Cache to localStorage for instant effect across pages
-                    try { localStorage.setItem('pm_role_permissions', permJson); } catch { /* non-critical */ }
+                    try { localStorage.setItem('pm_role_permissions', JSON.stringify(permissions)); } catch { /* non-critical */ }
+                    try { localStorage.setItem('pm_custom_roles', JSON.stringify(customRoles)); } catch { /* non-critical */ }
                     void this.dialogManager.showAlert('Role permissions saved. Changes take effect immediately.', { title: 'Saved', variant: 'success' });
                   } catch {
                     void this.dialogManager.showAlert('Failed to save permissions.', { title: 'Error' });
@@ -4801,14 +4849,36 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               />
               <DefaultButton
                 text="Reset to Defaults"
-                onClick={() => this.setState({ _rolePermissions: defaultPermissions } as any)}
+                onClick={() => this.setState({ _rolePermissions: defaultPermissions, _customRoles: [] } as any)}
               />
             </Stack>
           </Stack>
 
           <MessageBar messageBarType={MessageBarType.warning} isMultiline>
-            <strong>Explicit permissions model.</strong> Each role sees ONLY the features toggled ON for that role — there is no inheritance. For example, a Manager does NOT automatically get Author permissions. If you want a Manager to also create policies, you must explicitly enable "Create Policy" for the Manager role. Admin always has full access.
+            <strong>Explicit permissions model.</strong> Each role sees ONLY the features toggled ON for that role — there is no inheritance. For example, a Manager does NOT automatically get Author permissions. If you want a Manager to also create policies, you must explicitly enable "Create Policy" for the Manager role. Admin always has full access. Custom roles can be added with the "+ Add Role" button below.
           </MessageBar>
+
+          {/* Add Custom Role */}
+          <Stack horizontal tokens={{ childrenGap: 8 }} verticalAlign="end">
+            <TextField
+              placeholder="New role name..."
+              value={(st as any)._newRoleName || ''}
+              onChange={(_, v) => this.setState({ _newRoleName: v || '' } as any)}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCustomRole(); } }}
+              styles={{ root: { width: 200 } }}
+            />
+            <DefaultButton
+              text="+ Add Role"
+              iconProps={{ iconName: 'AddGroup' }}
+              onClick={addCustomRole}
+              disabled={!((st as any)._newRoleName || '').trim()}
+            />
+            {customRoles.length > 0 && (
+              <Text style={{ fontSize: 12, color: Colors.slateLight }}>
+                {customRoles.length} custom role{customRoles.length !== 1 ? 's' : ''}
+              </Text>
+            )}
+          </Stack>
 
           <DetailsList
             items={permissions}
@@ -4827,40 +4897,224 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
   // RENDER: PROVISIONING (following HyperProjects ProvisioningSection pattern)
   // ============================================================================
 
+  // ── SA SEED DATA ──────────────────────────────────────────────────────────
+  // Realistic South African enterprise policy seed data
+  // ────────────────────────────────────────────────────────────────────────────
+
+  private getSeedDataForList(listTitle: string): any[] {
+    const today = new Date().toISOString();
+    const pastDate = (daysAgo: number) => new Date(Date.now() - daysAgo * 86400000).toISOString();
+    const futureDate = (daysAhead: number) => new Date(Date.now() + daysAhead * 86400000).toISOString();
+
+    switch (listTitle) {
+
+      case 'PM_Policies': return [
+        // HR POLICIES
+        { Title: 'POL-HR-001 Employment Equity Plan', PolicyNumber: 'POL-HR-001', PolicyName: 'Employment Equity Plan', PolicyCategory: 'HR Policies', PolicyType: 'Regulatory', PolicyDescription: 'This policy outlines First Digital\'s commitment to employment equity in accordance with the Employment Equity Act 55 of 1998 (EEA). It details our affirmative action measures, numerical targets for designated groups, and barriers to equity identified through workforce analysis. All managers must complete EE training annually.', VersionNumber: '4.0', VersionType: 'Major', PolicyStatus: 'Published', ComplianceRisk: 'Critical', IsMandatory: true, IsActive: true, RequiresAcknowledgement: true, AcknowledgementType: 'Periodic - Annual', AcknowledgementDeadlineDays: 14, ReadTimeframe: 'Week 1', RequiresQuiz: true, QuizPassingScore: 80, DistributionScope: 'All Employees', EstimatedReadTimeMinutes: 30, ReviewCycleMonths: 12, PolicyOwner: 'Nomsa Dlamini', Department: 'Human Resources' },
+        { Title: 'POL-HR-002 BBBEE Compliance Policy', PolicyNumber: 'POL-HR-002', PolicyName: 'Broad-Based Black Economic Empowerment Policy', PolicyCategory: 'HR Policies', PolicyType: 'Regulatory', PolicyDescription: 'Sets out First Digital\'s BBBEE strategy aligned with the ICT Sector Code. Covers ownership, management control, skills development, enterprise and supplier development, and socio-economic development. All procurement decisions must consider BBBEE scorecard impact per the DTI Codes of Good Practice.', VersionNumber: '3.1', VersionType: 'Minor', PolicyStatus: 'Published', ComplianceRisk: 'Critical', IsMandatory: true, IsActive: true, RequiresAcknowledgement: true, AcknowledgementType: 'Periodic - Annual', AcknowledgementDeadlineDays: 14, ReadTimeframe: 'Week 1', RequiresQuiz: true, QuizPassingScore: 75, DistributionScope: 'All Employees', EstimatedReadTimeMinutes: 35, ReviewCycleMonths: 12, PolicyOwner: 'Thabo Mokoena', Department: 'Compliance' },
+        { Title: 'POL-HR-003 Skills Development Act Compliance', PolicyNumber: 'POL-HR-003', PolicyName: 'Skills Development and Training Policy', PolicyCategory: 'HR Policies', PolicyType: 'Corporate', PolicyDescription: 'Governs First Digital\'s obligations under the Skills Development Act 97 of 1998 and Skills Development Levies Act 9 of 1999. Covers the Workplace Skills Plan (WSP), Annual Training Report (ATR), SETA submissions to MICT SETA, and learnerships. SDL levy is 1% of payroll submitted to SARS monthly.', VersionNumber: '2.0', VersionType: 'Major', PolicyStatus: 'Published', ComplianceRisk: 'High', IsMandatory: true, IsActive: true, RequiresAcknowledgement: true, AcknowledgementType: 'Periodic - Annual', AcknowledgementDeadlineDays: 21, ReadTimeframe: 'Week 2', RequiresQuiz: false, DistributionScope: 'All Employees', EstimatedReadTimeMinutes: 20, ReviewCycleMonths: 12, PolicyOwner: 'Lindiwe Nkosi', Department: 'Human Resources' },
+        { Title: 'POL-HR-004 Leave Management Policy', PolicyNumber: 'POL-HR-004', PolicyName: 'Leave Management Policy', PolicyCategory: 'HR Policies', PolicyType: 'Corporate', PolicyDescription: 'Comprehensive leave policy aligned with the Basic Conditions of Employment Act 75 of 1997. Covers annual leave (15 working days), sick leave (30 days per 36-month cycle), family responsibility leave (3 days per annum), and maternity leave (4 consecutive months per the BCEA). Includes provisions for SA public holidays as per the Public Holidays Act 36 of 1994.', VersionNumber: '5.0', VersionType: 'Major', PolicyStatus: 'Published', ComplianceRisk: 'Medium', IsMandatory: true, IsActive: true, RequiresAcknowledgement: true, AcknowledgementType: 'One-Time', AcknowledgementDeadlineDays: 7, ReadTimeframe: 'Day 3', RequiresQuiz: false, DistributionScope: 'All Employees', EstimatedReadTimeMinutes: 15, ReviewCycleMonths: 24, PolicyOwner: 'Priya Naidoo', Department: 'Human Resources' },
+        { Title: 'POL-HR-005 Anti-Harassment and Discrimination', PolicyNumber: 'POL-HR-005', PolicyName: 'Anti-Harassment and Discrimination Policy', PolicyCategory: 'HR Policies', PolicyType: 'Corporate', PolicyDescription: 'Zero-tolerance policy for harassment and unfair discrimination as per the Employment Equity Act, the Promotion of Equality and Prevention of Unfair Discrimination Act (PEPUDA), and the Code of Good Practice on the Handling of Sexual Harassment Cases. Covers all protected grounds under Section 6 of the EEA including race, gender, disability, and HIV status.', VersionNumber: '3.0', VersionType: 'Major', PolicyStatus: 'Published', ComplianceRisk: 'Critical', IsMandatory: true, IsActive: true, RequiresAcknowledgement: true, AcknowledgementType: 'Periodic - Annual', AcknowledgementDeadlineDays: 7, ReadTimeframe: 'Day 3', RequiresQuiz: true, QuizPassingScore: 85, DistributionScope: 'All Employees', EstimatedReadTimeMinutes: 25, ReviewCycleMonths: 12, PolicyOwner: 'Zanele Mthembu', Department: 'Human Resources' },
+        // IT & SECURITY
+        { Title: 'POL-IT-001 POPIA Data Protection Policy', PolicyNumber: 'POL-IT-001', PolicyName: 'Protection of Personal Information (POPIA) Compliance Policy', PolicyCategory: 'IT & Security', PolicyType: 'Regulatory', PolicyDescription: 'First Digital\'s comprehensive data protection policy in compliance with the Protection of Personal Information Act 4 of 2013 (POPIA). Covers the 8 processing conditions, data subject rights, the role of the Information Officer (registered with the Information Regulator), cross-border transfer rules, and breach notification requirements (within 72 hours to the Information Regulator).', VersionNumber: '2.0', VersionType: 'Major', PolicyStatus: 'Published', ComplianceRisk: 'Critical', IsMandatory: true, IsActive: true, RequiresAcknowledgement: true, AcknowledgementType: 'Periodic - Annual', AcknowledgementDeadlineDays: 14, ReadTimeframe: 'Week 1', RequiresQuiz: true, QuizPassingScore: 80, DistributionScope: 'All Employees', EstimatedReadTimeMinutes: 40, ReviewCycleMonths: 12, PolicyOwner: 'Johan van der Merwe', Department: 'Information Security' },
+        { Title: 'POL-IT-002 Acceptable Use of ICT Resources', PolicyNumber: 'POL-IT-002', PolicyName: 'Acceptable Use of ICT Resources', PolicyCategory: 'IT & Security', PolicyType: 'Corporate', PolicyDescription: 'Governs the use of all ICT resources including laptops, mobile devices, email, internet, cloud services, and company-issued software. Aligned with the Electronic Communications and Transactions Act 25 of 2002 (ECTA) and the Regulation of Interception of Communications Act 70 of 2002 (RICA). Includes provisions for monitoring as permitted under Section 6 of RICA.', VersionNumber: '4.2', VersionType: 'Minor', PolicyStatus: 'Published', ComplianceRisk: 'High', IsMandatory: true, IsActive: true, RequiresAcknowledgement: true, AcknowledgementType: 'One-Time', AcknowledgementDeadlineDays: 3, ReadTimeframe: 'Day 1', RequiresQuiz: false, DistributionScope: 'All Employees', EstimatedReadTimeMinutes: 20, ReviewCycleMonths: 12, PolicyOwner: 'Sipho Khumalo', Department: 'IT Operations' },
+        { Title: 'POL-IT-003 Cybersecurity Incident Response', PolicyNumber: 'POL-IT-003', PolicyName: 'Cybersecurity Incident Response Plan', PolicyCategory: 'IT & Security', PolicyType: 'Corporate', PolicyDescription: 'Defines the incident response framework for cybersecurity events. Covers detection, containment, eradication, recovery, and post-incident review. Includes POPIA breach notification workflow (Information Regulator notification within 72 hours), CSIRT team composition, and escalation matrix. References the Cybercrimes Act 19 of 2020 reporting obligations.', VersionNumber: '2.1', VersionType: 'Minor', PolicyStatus: 'Published', ComplianceRisk: 'Critical', IsMandatory: true, IsActive: true, RequiresAcknowledgement: true, AcknowledgementType: 'Periodic - Annual', AcknowledgementDeadlineDays: 7, ReadTimeframe: 'Day 3', RequiresQuiz: true, QuizPassingScore: 75, DistributionScope: 'All Employees', EstimatedReadTimeMinutes: 30, ReviewCycleMonths: 6, PolicyOwner: 'Ravi Pillay', Department: 'Information Security' },
+        // COMPLIANCE
+        { Title: 'POL-COM-001 FICA Anti-Money Laundering Policy', PolicyNumber: 'POL-COM-001', PolicyName: 'Anti-Money Laundering and Counter-Terrorism Financing Policy', PolicyCategory: 'Compliance', PolicyType: 'Regulatory', PolicyDescription: 'Compliance framework for the Financial Intelligence Centre Act 38 of 2001 (FICA) as amended. Covers Customer Due Diligence (CDD), Know Your Customer (KYC), suspicious transaction reporting (STR) to the Financial Intelligence Centre, record-keeping obligations (5 years), and Politically Exposed Persons (PEPs) screening. All staff handling financial transactions must complete FICA training.', VersionNumber: '3.0', VersionType: 'Major', PolicyStatus: 'Published', ComplianceRisk: 'Critical', IsMandatory: true, IsActive: true, RequiresAcknowledgement: true, AcknowledgementType: 'Periodic - Annual', AcknowledgementDeadlineDays: 14, ReadTimeframe: 'Week 1', RequiresQuiz: true, QuizPassingScore: 80, DistributionScope: 'All Employees', EstimatedReadTimeMinutes: 45, ReviewCycleMonths: 12, PolicyOwner: 'André Botha', Department: 'Compliance' },
+        { Title: 'POL-COM-002 King IV Corporate Governance', PolicyNumber: 'POL-COM-002', PolicyName: 'Corporate Governance Framework (King IV)', PolicyCategory: 'Compliance', PolicyType: 'Corporate', PolicyDescription: 'First Digital\'s corporate governance framework aligned with the King IV Report on Corporate Governance for South Africa (2016). Covers the 17 principles including ethical leadership, strategy and performance, adequate and effective control, and stakeholder inclusivity. Board composition targets 50% independent non-executive directors.', VersionNumber: '2.0', VersionType: 'Major', PolicyStatus: 'Published', ComplianceRisk: 'High', IsMandatory: false, IsActive: true, RequiresAcknowledgement: true, AcknowledgementType: 'Periodic - Annual', AcknowledgementDeadlineDays: 30, ReadTimeframe: 'Month 1', RequiresQuiz: false, DistributionScope: 'All Employees', EstimatedReadTimeMinutes: 50, ReviewCycleMonths: 24, PolicyOwner: 'Fatima Cassim', Department: 'Legal' },
+        { Title: 'POL-COM-003 Whistleblower Protection Policy', PolicyNumber: 'POL-COM-003', PolicyName: 'Whistleblower and Protected Disclosures Policy', PolicyCategory: 'Compliance', PolicyType: 'Corporate', PolicyDescription: 'Protects employees who report wrongdoing in accordance with the Protected Disclosures Act 26 of 2000 (PDA). Covers reporting channels (anonymous hotline, Ethics Officer, CIPC), protections against occupational detriment, investigation procedures, and feedback obligations. Reports can be made to the Public Protector or Auditor-General for public sector matters.', VersionNumber: '1.2', VersionType: 'Minor', PolicyStatus: 'Published', ComplianceRisk: 'High', IsMandatory: true, IsActive: true, RequiresAcknowledgement: true, AcknowledgementType: 'One-Time', AcknowledgementDeadlineDays: 14, ReadTimeframe: 'Week 2', RequiresQuiz: false, DistributionScope: 'All Employees', EstimatedReadTimeMinutes: 15, ReviewCycleMonths: 24, PolicyOwner: 'Nomsa Dlamini', Department: 'Compliance' },
+        // HEALTH & SAFETY
+        { Title: 'POL-HS-001 Occupational Health and Safety', PolicyNumber: 'POL-HS-001', PolicyName: 'Occupational Health and Safety Policy', PolicyCategory: 'Health & Safety', PolicyType: 'Regulatory', PolicyDescription: 'Compliance with the Occupational Health and Safety Act 85 of 1993 (OHSA) and COIDA (Compensation for Occupational Injuries and Diseases Act 130 of 1993). Covers workplace hazard identification, risk assessments, incident reporting to the Department of Employment and Labour, H&S representative appointments (Section 17), and H&S committee requirements (Section 19). COIDA registration with the Compensation Fund is mandatory.', VersionNumber: '3.0', VersionType: 'Major', PolicyStatus: 'Published', ComplianceRisk: 'High', IsMandatory: true, IsActive: true, RequiresAcknowledgement: true, AcknowledgementType: 'Periodic - Annual', AcknowledgementDeadlineDays: 14, ReadTimeframe: 'Week 1', RequiresQuiz: true, QuizPassingScore: 70, DistributionScope: 'All Employees', EstimatedReadTimeMinutes: 25, ReviewCycleMonths: 12, PolicyOwner: 'David Bosman', Department: 'Facilities' },
+        // FINANCIAL
+        { Title: 'POL-FIN-001 Travel and Expense Policy', PolicyNumber: 'POL-FIN-001', PolicyName: 'Travel and Expense Management Policy', PolicyCategory: 'Financial', PolicyType: 'Corporate', PolicyDescription: 'Governs all business travel and expense claims for First Digital. Domestic travel rates aligned with SARS deemed amounts. International travel requires pre-approval for amounts exceeding R50,000. Per diem allowances: Johannesburg R1,500/night, Cape Town R1,800/night, Durban R1,200/night. Subsistence allowance as per SARS rates. All claims must be submitted within 30 days with valid tax invoices.', VersionNumber: '6.0', VersionType: 'Major', PolicyStatus: 'Published', ComplianceRisk: 'Medium', IsMandatory: true, IsActive: true, RequiresAcknowledgement: true, AcknowledgementType: 'One-Time', AcknowledgementDeadlineDays: 7, ReadTimeframe: 'Day 3', RequiresQuiz: false, DistributionScope: 'All Employees', EstimatedReadTimeMinutes: 15, ReviewCycleMonths: 12, PolicyOwner: 'Werner Steyn', Department: 'Finance' },
+        { Title: 'POL-FIN-002 Procurement and SCM Policy', PolicyNumber: 'POL-FIN-002', PolicyName: 'Procurement and Supply Chain Management Policy', PolicyCategory: 'Financial', PolicyType: 'Corporate', PolicyDescription: 'Procurement framework incorporating BBBEE preferential procurement targets. Three-quote requirement for purchases above R25,000, tender process for above R500,000. BBBEE supplier verification via qualifying agencies accredited by SANAS. Central Supplier Database (CSD) registration required for all vendors. Tax compliance confirmation via SARS TCC for contracts exceeding R10,000.', VersionNumber: '3.0', VersionType: 'Major', PolicyStatus: 'Published', ComplianceRisk: 'High', IsMandatory: false, IsActive: true, RequiresAcknowledgement: true, AcknowledgementType: 'Periodic - Annual', AcknowledgementDeadlineDays: 21, ReadTimeframe: 'Week 2', RequiresQuiz: false, DistributionScope: 'All Employees', EstimatedReadTimeMinutes: 30, ReviewCycleMonths: 12, PolicyOwner: 'Kobus Pretorius', Department: 'Finance' },
+        // DATA PRIVACY
+        { Title: 'POL-DP-001 Data Classification and Handling', PolicyNumber: 'POL-DP-001', PolicyName: 'Data Classification and Handling Policy', PolicyCategory: 'Data Privacy', PolicyType: 'Corporate', PolicyDescription: 'Defines data classification levels (Public, Internal, Confidential, Restricted) and handling requirements for each. Aligned with POPIA processing conditions and the Promotion of Access to Information Act 2 of 2000 (PAIA). Covers data at rest encryption (AES-256), data in transit (TLS 1.2+), and data retention schedules per the National Archives Act. PAIA manual must be updated annually.', VersionNumber: '2.0', VersionType: 'Major', PolicyStatus: 'Published', ComplianceRisk: 'High', IsMandatory: true, IsActive: true, RequiresAcknowledgement: true, AcknowledgementType: 'Periodic - Annual', AcknowledgementDeadlineDays: 14, ReadTimeframe: 'Week 1', RequiresQuiz: true, QuizPassingScore: 75, DistributionScope: 'All Employees', EstimatedReadTimeMinutes: 25, ReviewCycleMonths: 12, PolicyOwner: 'Johan van der Merwe', Department: 'Information Security' },
+        // OPERATIONAL
+        { Title: 'POL-OP-001 Business Continuity Plan', PolicyNumber: 'POL-OP-001', PolicyName: 'Business Continuity and Disaster Recovery Policy', PolicyCategory: 'Operational', PolicyType: 'Corporate', PolicyDescription: 'Business continuity framework for First Digital\'s operations across Johannesburg (head office, Sandton), Cape Town (Foreshore), and Durban (Umhlanga) offices. Covers load-shedding contingency plans (generator backup, UPS systems), RPO/RTO targets, DR site in Centurion, and communication protocols during Stage 4+ load shedding. Annual BCP testing aligned with ISO 22301.', VersionNumber: '4.0', VersionType: 'Major', PolicyStatus: 'Published', ComplianceRisk: 'High', IsMandatory: false, IsActive: true, RequiresAcknowledgement: true, AcknowledgementType: 'Periodic - Annual', AcknowledgementDeadlineDays: 30, ReadTimeframe: 'Month 1', RequiresQuiz: false, DistributionScope: 'All Employees', EstimatedReadTimeMinutes: 35, ReviewCycleMonths: 12, PolicyOwner: 'Sipho Khumalo', Department: 'IT Operations' },
+        { Title: 'POL-OP-002 Remote Work and Hybrid Policy', PolicyNumber: 'POL-OP-002', PolicyName: 'Remote Work and Hybrid Working Policy', PolicyCategory: 'Operational', PolicyType: 'Corporate', PolicyDescription: 'Governs remote and hybrid working arrangements for First Digital employees. Covers eligibility criteria, equipment provisions (R5,000 home office setup allowance), connectivity requirements (minimum 10Mbps), load shedding mitigation (data allowance top-up during Stage 4+), and OHS compliance for home offices per the OHSA General Safety Regulations.', VersionNumber: '2.1', VersionType: 'Minor', PolicyStatus: 'Published', ComplianceRisk: 'Low', IsMandatory: false, IsActive: true, RequiresAcknowledgement: true, AcknowledgementType: 'One-Time', AcknowledgementDeadlineDays: 7, ReadTimeframe: 'Day 3', RequiresQuiz: false, DistributionScope: 'All Employees', EstimatedReadTimeMinutes: 15, ReviewCycleMonths: 12, PolicyOwner: 'Priya Naidoo', Department: 'Human Resources' },
+        // LEGAL
+        { Title: 'POL-LEG-001 Consumer Protection Policy', PolicyNumber: 'POL-LEG-001', PolicyName: 'Consumer Protection Act Compliance Policy', PolicyCategory: 'Legal', PolicyType: 'Regulatory', PolicyDescription: 'Compliance framework for the Consumer Protection Act 68 of 2008 (CPA). Covers the right to fair and responsible marketing, right to fair and honest dealing, right to fair value and good quality, right to privacy, and right to choose. Service-level commitments, cooling-off periods (5 business days), and the National Consumer Commission complaint escalation process.', VersionNumber: '1.0', VersionType: 'Major', PolicyStatus: 'Published', ComplianceRisk: 'Medium', IsMandatory: false, IsActive: true, RequiresAcknowledgement: true, AcknowledgementType: 'One-Time', AcknowledgementDeadlineDays: 30, ReadTimeframe: 'Month 1', RequiresQuiz: false, DistributionScope: 'All Employees', EstimatedReadTimeMinutes: 20, ReviewCycleMonths: 24, PolicyOwner: 'Fatima Cassim', Department: 'Legal' },
+        // ENVIRONMENTAL
+        { Title: 'POL-ENV-001 Environmental Sustainability', PolicyNumber: 'POL-ENV-001', PolicyName: 'Environmental Sustainability and Carbon Reduction Policy', PolicyCategory: 'Environmental', PolicyType: 'Corporate', PolicyDescription: 'First Digital\'s environmental commitment aligned with the National Environmental Management Act 107 of 1998 (NEMA) and the Carbon Tax Act 15 of 2019. Covers carbon footprint reduction targets (30% by 2030), e-waste management per the National Environmental Management: Waste Act, water conservation in line with municipal by-laws, and solar panel installation programme for load shedding resilience.', VersionNumber: '1.0', VersionType: 'Major', PolicyStatus: 'Published', ComplianceRisk: 'Low', IsMandatory: false, IsActive: true, RequiresAcknowledgement: false, AcknowledgementDeadlineDays: 30, ReadTimeframe: 'Month 1', RequiresQuiz: false, DistributionScope: 'All Employees', EstimatedReadTimeMinutes: 20, ReviewCycleMonths: 24, PolicyOwner: 'David Bosman', Department: 'Facilities' },
+        // DRAFT policies
+        { Title: 'POL-HR-006 Disciplinary Code and Procedure', PolicyNumber: 'POL-HR-006', PolicyName: 'Disciplinary Code and Procedure', PolicyCategory: 'HR Policies', PolicyType: 'Corporate', PolicyDescription: 'Draft disciplinary code aligned with Schedule 8 of the Labour Relations Act 66 of 1995 and the CCMA Guidelines on Misconduct Arbitrations. Covers categories of misconduct, progressive discipline, hearing procedures, and appeal process. References the LRA unfair dismissal provisions.', VersionNumber: '0.1', VersionType: 'Minor', PolicyStatus: 'Draft', ComplianceRisk: 'High', IsMandatory: true, IsActive: true, RequiresAcknowledgement: true, AcknowledgementType: 'One-Time', ReadTimeframe: 'Week 1', RequiresQuiz: false, DistributionScope: 'All Employees', EstimatedReadTimeMinutes: 30, ReviewCycleMonths: 24, PolicyOwner: 'Nomsa Dlamini', Department: 'Human Resources' },
+        { Title: 'POL-IT-004 Cloud Security Policy', PolicyNumber: 'POL-IT-004', PolicyName: 'Cloud Security and Data Sovereignty Policy', PolicyCategory: 'IT & Security', PolicyType: 'Corporate', PolicyDescription: 'Draft cloud security policy addressing data sovereignty requirements for South African personal information under POPIA. Covers Azure South Africa regions (Johannesburg, Cape Town), data residency obligations, cloud provider due diligence, and encryption requirements for cross-border data transfers.', VersionNumber: '0.2', VersionType: 'Minor', PolicyStatus: 'Draft', ComplianceRisk: 'High', IsMandatory: true, IsActive: true, RequiresAcknowledgement: true, AcknowledgementType: 'Periodic - Annual', ReadTimeframe: 'Week 1', RequiresQuiz: true, QuizPassingScore: 75, DistributionScope: 'All Employees', EstimatedReadTimeMinutes: 25, ReviewCycleMonths: 12, PolicyOwner: 'Ravi Pillay', Department: 'Information Security' },
+      ];
+
+      case 'PM_PolicyVersions': return [
+        { Title: 'POL-HR-001 v4.0', PolicyId: 1, PolicyNumber: 'POL-HR-001', VersionNumber: '4.0', VersionType: 'Major', VersionDescription: 'Updated EE numerical targets for 2026/2027 reporting period per DOL submission requirements', CreatedDate: pastDate(30), CreatedBy: 'Nomsa Dlamini', ChangeType: 'Major Update' },
+        { Title: 'POL-HR-001 v3.0', PolicyId: 1, PolicyNumber: 'POL-HR-001', VersionNumber: '3.0', VersionType: 'Major', VersionDescription: 'Aligned with amended Employment Equity Amendment Act 4 of 2022', CreatedDate: pastDate(365), CreatedBy: 'Nomsa Dlamini', ChangeType: 'Regulatory Update' },
+        { Title: 'POL-IT-001 v2.0', PolicyId: 6, PolicyNumber: 'POL-IT-001', VersionNumber: '2.0', VersionType: 'Major', VersionDescription: 'Major revision incorporating Information Regulator enforcement guidelines published in 2025', CreatedDate: pastDate(60), CreatedBy: 'Johan van der Merwe', ChangeType: 'Major Update' },
+        { Title: 'POL-IT-001 v1.0', PolicyId: 6, PolicyNumber: 'POL-IT-001', VersionNumber: '1.0', VersionType: 'Major', VersionDescription: 'Initial POPIA compliance policy following July 2021 effective date', CreatedDate: pastDate(720), CreatedBy: 'Johan van der Merwe', ChangeType: 'New Policy' },
+        { Title: 'POL-COM-001 v3.0', PolicyId: 9, PolicyNumber: 'POL-COM-001', VersionNumber: '3.0', VersionType: 'Major', VersionDescription: 'Updated FICA requirements per General Laws Amendment Act — new CDD thresholds', CreatedDate: pastDate(45), CreatedBy: 'André Botha', ChangeType: 'Regulatory Update' },
+        { Title: 'POL-FIN-001 v6.0', PolicyId: 13, PolicyNumber: 'POL-FIN-001', VersionNumber: '6.0', VersionType: 'Major', VersionDescription: 'Updated per diem rates to align with 2026 SARS deemed subsistence allowances', CreatedDate: pastDate(15), CreatedBy: 'Werner Steyn', ChangeType: 'Annual Update' },
+      ];
+
+      case 'PM_PolicyAcknowledgements': return [
+        { Title: 'ACK-001', PolicyId: 1, PolicyName: 'Employment Equity Plan', UserId: 'user1@firstdigital.co.za', UserName: 'Sipho Mabaso', AcknowledgementStatus: 'Acknowledged', AcknowledgedDate: pastDate(5), DueDate: futureDate(9), Department: 'Engineering' },
+        { Title: 'ACK-002', PolicyId: 1, PolicyName: 'Employment Equity Plan', UserId: 'user2@firstdigital.co.za', UserName: 'Anele Xaba', AcknowledgementStatus: 'Acknowledged', AcknowledgedDate: pastDate(3), DueDate: futureDate(11), Department: 'Product' },
+        { Title: 'ACK-003', PolicyId: 6, PolicyName: 'POPIA Data Protection Policy', UserId: 'user1@firstdigital.co.za', UserName: 'Sipho Mabaso', AcknowledgementStatus: 'Sent', DueDate: futureDate(7), Department: 'Engineering' },
+        { Title: 'ACK-004', PolicyId: 6, PolicyName: 'POPIA Data Protection Policy', UserId: 'user3@firstdigital.co.za', UserName: 'Lerato Moloi', AcknowledgementStatus: 'Overdue', DueDate: pastDate(2), Department: 'Marketing' },
+        { Title: 'ACK-005', PolicyId: 9, PolicyName: 'FICA Anti-Money Laundering Policy', UserId: 'user4@firstdigital.co.za', UserName: 'Pieter du Plessis', AcknowledgementStatus: 'Acknowledged', AcknowledgedDate: pastDate(1), DueDate: futureDate(13), Department: 'Finance' },
+        { Title: 'ACK-006', PolicyId: 5, PolicyName: 'Anti-Harassment and Discrimination Policy', UserId: 'user5@firstdigital.co.za', UserName: 'Ayanda Ngcobo', AcknowledgementStatus: 'In Progress', DueDate: futureDate(4), Department: 'Customer Success' },
+      ];
+
+      case 'PM_PolicyQuizzes': return [
+        { Title: 'Employment Equity Awareness Quiz', QuizName: 'Employment Equity Awareness Quiz', PolicyId: 1, PolicyName: 'Employment Equity Plan', PassingScore: 80, MaxAttempts: 3, TimeLimit: 20, QuestionCount: 10, IsActive: true, Description: 'Test your understanding of the EEA, designated groups, and affirmative action measures.' },
+        { Title: 'POPIA Compliance Assessment', QuizName: 'POPIA Compliance Assessment', PolicyId: 6, PolicyName: 'POPIA Data Protection Policy', PassingScore: 80, MaxAttempts: 3, TimeLimit: 25, QuestionCount: 12, IsActive: true, Description: 'Assess your knowledge of POPIA processing conditions, data subject rights, and breach notification.' },
+        { Title: 'FICA and AML Fundamentals', QuizName: 'FICA and AML Fundamentals', PolicyId: 9, PolicyName: 'FICA Anti-Money Laundering Policy', PassingScore: 80, MaxAttempts: 3, TimeLimit: 30, QuestionCount: 15, IsActive: true, Description: 'Test your understanding of FICA obligations including CDD, KYC, and STR reporting.' },
+        { Title: 'Cybersecurity Awareness Quiz', QuizName: 'Cybersecurity Awareness Quiz', PolicyId: 8, PolicyName: 'Cybersecurity Incident Response Plan', PassingScore: 75, MaxAttempts: 3, TimeLimit: 15, QuestionCount: 8, IsActive: true, Description: 'Incident response procedures, phishing identification, and Cybercrimes Act obligations.' },
+        { Title: 'Workplace Safety Essentials', QuizName: 'Workplace Safety Essentials', PolicyId: 12, PolicyName: 'Occupational Health and Safety Policy', PassingScore: 70, MaxAttempts: 3, TimeLimit: 15, QuestionCount: 8, IsActive: true, Description: 'OHSA compliance, hazard identification, and incident reporting procedures.' },
+      ];
+
+      case 'PM_PolicyQuizQuestions': return [
+        { Title: 'EE-Q1', QuizId: 1, QuestionText: 'Which Act governs employment equity in South Africa?', QuestionType: 'Multiple Choice', Options: 'A) Labour Relations Act 66 of 1995|B) Employment Equity Act 55 of 1998|C) Basic Conditions of Employment Act 75 of 1997|D) Skills Development Act 97 of 1998', CorrectAnswer: 'B', Points: 10, OrderIndex: 1 },
+        { Title: 'EE-Q2', QuizId: 1, QuestionText: 'Designated groups under the EEA include black people, women, and persons with disabilities.', QuestionType: 'True/False', CorrectAnswer: 'True', Points: 10, OrderIndex: 2 },
+        { Title: 'EE-Q3', QuizId: 1, QuestionText: 'How often must Employment Equity Reports be submitted to the Department of Labour?', QuestionType: 'Multiple Choice', Options: 'A) Monthly|B) Quarterly|C) Annually|D) Every 2 years', CorrectAnswer: 'C', Points: 10, OrderIndex: 3 },
+        { Title: 'POPIA-Q1', QuizId: 2, QuestionText: 'Within how many hours must a data breach be reported to the Information Regulator?', QuestionType: 'Multiple Choice', Options: 'A) 24 hours|B) 48 hours|C) 72 hours|D) 7 days', CorrectAnswer: 'C', Points: 10, OrderIndex: 1 },
+        { Title: 'POPIA-Q2', QuizId: 2, QuestionText: 'How many processing conditions does POPIA prescribe?', QuestionType: 'Multiple Choice', Options: 'A) 5|B) 6|C) 7|D) 8', CorrectAnswer: 'D', Points: 10, OrderIndex: 2 },
+        { Title: 'POPIA-Q3', QuizId: 2, QuestionText: 'POPIA applies to the processing of personal information by both public and private bodies.', QuestionType: 'True/False', CorrectAnswer: 'True', Points: 10, OrderIndex: 3 },
+        { Title: 'FICA-Q1', QuizId: 3, QuestionText: 'What does CDD stand for in the context of FICA?', QuestionType: 'Short Answer', CorrectAnswer: 'Customer Due Diligence', Points: 10, OrderIndex: 1 },
+        { Title: 'FICA-Q2', QuizId: 3, QuestionText: 'For how many years must FICA records be retained?', QuestionType: 'Multiple Choice', Options: 'A) 3 years|B) 5 years|C) 7 years|D) 10 years', CorrectAnswer: 'B', Points: 10, OrderIndex: 2 },
+      ];
+
+      case 'PM_Approvals': return [
+        { Title: 'APR-001', PolicyId: 20, PolicyName: 'Disciplinary Code and Procedure', ApprovalStatus: 'Pending', RequestedBy: 'Nomsa Dlamini', RequestedDate: pastDate(3), AssignedTo: 'Thabo Mokoena', ApprovalLevel: 1, Comments: 'Draft ready for legal review', Priority: 'High' },
+        { Title: 'APR-002', PolicyId: 21, PolicyName: 'Cloud Security Policy', ApprovalStatus: 'Pending', RequestedBy: 'Ravi Pillay', RequestedDate: pastDate(5), AssignedTo: 'Sipho Khumalo', ApprovalLevel: 1, Comments: 'Initial draft — needs CISO review', Priority: 'Medium' },
+        { Title: 'APR-003', PolicyId: 13, PolicyName: 'Travel and Expense Policy', ApprovalStatus: 'Approved', RequestedBy: 'Werner Steyn', RequestedDate: pastDate(20), AssignedTo: 'André Botha', ApprovalLevel: 2, ApprovedDate: pastDate(15), Comments: 'Approved — SARS rates updated for 2026', Priority: 'Low' },
+      ];
+
+      case 'PM_ApprovalChains': return [
+        { Title: 'CHAIN-001', ChainName: 'Standard Policy Approval', PolicyId: 20, Status: 'Active', CurrentLevel: 1, TotalLevels: 3, InitiatedBy: 'Nomsa Dlamini', InitiatedDate: pastDate(3) },
+        { Title: 'CHAIN-002', ChainName: 'IT Security Fast-Track', PolicyId: 21, Status: 'Active', CurrentLevel: 1, TotalLevels: 2, InitiatedBy: 'Ravi Pillay', InitiatedDate: pastDate(5) },
+      ];
+
+      case 'PM_Notifications': return [
+        { Title: 'New policy requires acknowledgement', NotificationType: 'AcknowledgementRequired', RecipientId: 'user1@firstdigital.co.za', RecipientName: 'Sipho Mabaso', PolicyId: 6, PolicyName: 'POPIA Data Protection Policy', IsRead: false, CreatedDate: pastDate(1), Priority: 'High' },
+        { Title: 'Policy updated — review required', NotificationType: 'PolicyUpdated', RecipientId: 'user2@firstdigital.co.za', RecipientName: 'Anele Xaba', PolicyId: 13, PolicyName: 'Travel and Expense Policy', IsRead: true, CreatedDate: pastDate(3), Priority: 'Medium' },
+        { Title: 'Acknowledgement overdue', NotificationType: 'AcknowledgementOverdue', RecipientId: 'user3@firstdigital.co.za', RecipientName: 'Lerato Moloi', PolicyId: 6, PolicyName: 'POPIA Data Protection Policy', IsRead: false, CreatedDate: pastDate(1), Priority: 'High' },
+        { Title: 'Approval request', NotificationType: 'ApprovalRequired', RecipientId: 'user6@firstdigital.co.za', RecipientName: 'Thabo Mokoena', PolicyId: 20, PolicyName: 'Disciplinary Code and Procedure', IsRead: false, CreatedDate: pastDate(3), Priority: 'High' },
+        { Title: 'Quiz score: 85%', NotificationType: 'QuizCompleted', RecipientId: 'user4@firstdigital.co.za', RecipientName: 'Pieter du Plessis', PolicyId: 9, PolicyName: 'FICA Anti-Money Laundering Policy', IsRead: true, CreatedDate: pastDate(5), Priority: 'Low' },
+      ];
+
+      case 'PM_PolicyAuditLog': return [
+        { Title: 'Policy Published', ActionType: 'Publish', PolicyId: 13, PolicyName: 'Travel and Expense Policy', PerformedBy: 'Werner Steyn', PerformedDate: pastDate(15), Details: 'Version 6.0 published — SARS rates updated for 2026', IPAddress: '196.25.x.x' },
+        { Title: 'Policy Updated', ActionType: 'Update', PolicyId: 6, PolicyName: 'POPIA Data Protection Policy', PerformedBy: 'Johan van der Merwe', PerformedDate: pastDate(60), Details: 'Major revision v2.0 — Information Regulator enforcement guidelines incorporated', IPAddress: '105.18.x.x' },
+        { Title: 'Approval Granted', ActionType: 'Approve', PolicyId: 13, PolicyName: 'Travel and Expense Policy', PerformedBy: 'André Botha', PerformedDate: pastDate(15), Details: 'Level 2 approval granted for travel policy update', IPAddress: '41.76.x.x' },
+        { Title: 'Policy Created', ActionType: 'Create', PolicyId: 20, PolicyName: 'Disciplinary Code and Procedure', PerformedBy: 'Nomsa Dlamini', PerformedDate: pastDate(10), Details: 'Initial draft created — aligned with LRA Schedule 8', IPAddress: '196.25.x.x' },
+        { Title: 'Quiz Generated', ActionType: 'QuizCreate', PolicyId: 9, PolicyName: 'FICA Anti-Money Laundering Policy', PerformedBy: 'André Botha', PerformedDate: pastDate(45), Details: 'AI-generated quiz with 15 questions, passing score 80%', IPAddress: '105.18.x.x' },
+        { Title: 'Bulk Distribution', ActionType: 'Distribute', PolicyId: 1, PolicyName: 'Employment Equity Plan', PerformedBy: 'Nomsa Dlamini', PerformedDate: pastDate(30), Details: 'Distributed to All Employees (387 recipients)', IPAddress: '196.25.x.x' },
+      ];
+
+      case 'PM_Configuration': return [
+        { Title: 'Company Name', ConfigKey: 'General.CompanyName', ConfigValue: 'First Digital', Category: 'General', IsActive: true, IsSystemConfig: false },
+        { Title: 'Product Name', ConfigKey: 'General.ProductName', ConfigValue: 'DWx Policy Manager', Category: 'General', IsActive: true, IsSystemConfig: false },
+        { Title: 'Default Review Cycle', ConfigKey: 'Compliance.DefaultReviewCycleMonths', ConfigValue: '12', Category: 'Compliance', IsActive: true, IsSystemConfig: false },
+        { Title: 'Default Ack Deadline', ConfigKey: 'Compliance.DefaultAckDeadlineDays', ConfigValue: '14', Category: 'Compliance', IsActive: true, IsSystemConfig: false },
+        { Title: 'Quiz Passing Score', ConfigKey: 'Quiz.DefaultPassingScore', ConfigValue: '75', Category: 'Quiz', IsActive: true, IsSystemConfig: false },
+        { Title: 'Doc Upload Limit MB', ConfigKey: 'Upload.DocumentLimitMB', ConfigValue: '25', Category: 'Upload', IsActive: true, IsSystemConfig: true },
+        { Title: 'Video Upload Limit MB', ConfigKey: 'Upload.VideoLimitMB', ConfigValue: '100', Category: 'Upload', IsActive: true, IsSystemConfig: true },
+      ];
+
+      case 'PM_PolicySubCategories': return [
+        { Title: 'Employment Law', SubCategoryName: 'Employment Law', ParentCategoryName: 'HR Policies', IconName: 'People', Description: 'Policies related to SA employment legislation (EEA, BCEA, LRA, SDA)', SortOrder: 1, IsActive: true },
+        { Title: 'Leave and Benefits', SubCategoryName: 'Leave and Benefits', ParentCategoryName: 'HR Policies', IconName: 'Calendar', Description: 'Leave management, medical aid, provident fund', SortOrder: 2, IsActive: true },
+        { Title: 'Workplace Conduct', SubCategoryName: 'Workplace Conduct', ParentCategoryName: 'HR Policies', IconName: 'Shield', Description: 'Code of conduct, harassment, discipline', SortOrder: 3, IsActive: true },
+        { Title: 'Data Protection', SubCategoryName: 'Data Protection', ParentCategoryName: 'IT & Security', IconName: 'Lock', Description: 'POPIA compliance, data classification, privacy', SortOrder: 1, IsActive: true },
+        { Title: 'Network Security', SubCategoryName: 'Network Security', ParentCategoryName: 'IT & Security', IconName: 'NetworkTower', Description: 'Firewalls, VPN, access controls', SortOrder: 2, IsActive: true },
+        { Title: 'Regulatory', SubCategoryName: 'Regulatory', ParentCategoryName: 'Compliance', IconName: 'Certificate', Description: 'FICA, King IV, FSCA, SARB compliance', SortOrder: 1, IsActive: true },
+        { Title: 'Financial Controls', SubCategoryName: 'Financial Controls', ParentCategoryName: 'Financial', IconName: 'Money', Description: 'Procurement, expense management, SARS compliance', SortOrder: 1, IsActive: true },
+      ];
+
+      case 'PM_PolicyDistributions': return [
+        { Title: 'DIST-001 EE Plan Annual Distribution', PolicyId: 1, PolicyName: 'Employment Equity Plan', DistributionDate: pastDate(30), Status: 'Completed', RecipientCount: 387, AcknowledgedCount: 312, TargetAudience: 'All Employees', InitiatedBy: 'Nomsa Dlamini', CompletionDate: pastDate(10) },
+        { Title: 'DIST-002 POPIA Refresher', PolicyId: 6, PolicyName: 'POPIA Data Protection Policy', DistributionDate: pastDate(7), Status: 'In Progress', RecipientCount: 387, AcknowledgedCount: 145, TargetAudience: 'All Employees', InitiatedBy: 'Johan van der Merwe' },
+        { Title: 'DIST-003 FICA Training Rollout', PolicyId: 9, PolicyName: 'FICA Anti-Money Laundering Policy', DistributionDate: pastDate(14), Status: 'In Progress', RecipientCount: 52, AcknowledgedCount: 38, TargetAudience: 'Finance Department', InitiatedBy: 'André Botha' },
+      ];
+
+      case 'PM_PolicyPacks': return [
+        { Title: 'New Employee Onboarding Pack', PackName: 'New Employee Onboarding Pack', Description: 'Essential policies for all new joiners at First Digital. Covers code of conduct, EE, POPIA, leave, OHS, and acceptable ICT use. Must be completed within first week of employment.', PolicyCount: 6, IsActive: true, CreatedBy: 'Priya Naidoo', CreatedDate: pastDate(90) },
+        { Title: 'Finance Team Compliance Pack', PackName: 'Finance Team Compliance Pack', Description: 'Mandatory compliance policies for Finance department staff. Includes FICA/AML, procurement, travel expenses, and King IV governance.', PolicyCount: 4, IsActive: true, CreatedBy: 'Werner Steyn', CreatedDate: pastDate(60) },
+        { Title: 'IT Security Essentials Pack', PackName: 'IT Security Essentials Pack', Description: 'Core security policies for all IT and Engineering staff. Covers POPIA technical requirements, acceptable use, cybersecurity incident response, and data classification.', PolicyCount: 4, IsActive: true, CreatedBy: 'Sipho Khumalo', CreatedDate: pastDate(45) },
+        { Title: 'Management Leadership Pack', PackName: 'Management Leadership Pack', Description: 'Governance and compliance policies required for all managers and team leads. Includes King IV, EE, BBBEE, whistleblower, and disciplinary procedures.', PolicyCount: 5, IsActive: true, CreatedBy: 'Thabo Mokoena', CreatedDate: pastDate(30) },
+      ];
+
+      case 'PM_PolicyRatings': return [
+        { Title: 'Rating-001', PolicyId: 4, PolicyName: 'Leave Management Policy', UserId: 'user1@firstdigital.co.za', UserName: 'Sipho Mabaso', Rating: 5, Comment: 'Very clear breakdown of BCEA leave entitlements. The SA public holiday calendar is helpful.', CreatedDate: pastDate(10) },
+        { Title: 'Rating-002', PolicyId: 13, PolicyName: 'Travel and Expense Policy', UserId: 'user2@firstdigital.co.za', UserName: 'Anele Xaba', Rating: 4, Comment: 'Good policy. Would be helpful to include per diem rates for Pretoria as well.', CreatedDate: pastDate(8) },
+        { Title: 'Rating-003', PolicyId: 6, PolicyName: 'POPIA Data Protection Policy', UserId: 'user3@firstdigital.co.za', UserName: 'Lerato Moloi', Rating: 3, Comment: 'Comprehensive but quite technical. Could use a simpler summary section for non-IT staff.', CreatedDate: pastDate(5) },
+        { Title: 'Rating-004', PolicyId: 17, PolicyName: 'Remote Work and Hybrid Working Policy', UserId: 'user4@firstdigital.co.za', UserName: 'Pieter du Plessis', Rating: 5, Comment: 'Love the load shedding data allowance provision. Very practical for SA context.', CreatedDate: pastDate(3) },
+        { Title: 'Rating-005', PolicyId: 16, PolicyName: 'Business Continuity Plan', UserId: 'user5@firstdigital.co.za', UserName: 'Ayanda Ngcobo', Rating: 4, Comment: 'Good BCP. The Stage 4+ load shedding protocols are well thought out.', CreatedDate: pastDate(1) },
+      ];
+
+      case 'PM_PolicyComments': return [
+        { Title: 'Comment-001', PolicyId: 13, PolicyName: 'Travel and Expense Policy', UserId: 'user2@firstdigital.co.za', UserName: 'Anele Xaba', CommentText: 'Are the per diem rates for Cape Town inclusive of parking? The Foreshore office has limited on-site parking.', CreatedDate: pastDate(12), LikeCount: 3 },
+        { Title: 'Comment-002', PolicyId: 13, PolicyName: 'Travel and Expense Policy', UserId: 'user7@firstdigital.co.za', UserName: 'Werner Steyn', CommentText: 'Parking is claimed separately under the miscellaneous expenses category, up to R250/day in metro areas.', CreatedDate: pastDate(11), ParentCommentId: 1, LikeCount: 5 },
+        { Title: 'Comment-003', PolicyId: 6, PolicyName: 'POPIA Data Protection Policy', UserId: 'user3@firstdigital.co.za', UserName: 'Lerato Moloi', CommentText: 'The section on direct marketing consent should reference the opt-out register maintained by the Direct Marketing Association of SA.', CreatedDate: pastDate(7), LikeCount: 2 },
+        { Title: 'Comment-004', PolicyId: 17, PolicyName: 'Remote Work and Hybrid Working Policy', UserId: 'user1@firstdigital.co.za', UserName: 'Sipho Mabaso', CommentText: 'Can the R5,000 home office allowance be used for a backup power solution (UPS/inverter)? Load shedding makes remote work challenging during Stage 6.', CreatedDate: pastDate(4), LikeCount: 8 },
+        { Title: 'Comment-005', PolicyId: 17, PolicyName: 'Remote Work and Hybrid Working Policy', UserId: 'user8@firstdigital.co.za', UserName: 'Priya Naidoo', CommentText: 'Yes — the allowance covers any equipment that enables productive remote work, including UPS units and portable inverters. Submit via the standard equipment request form.', CreatedDate: pastDate(3), ParentCommentId: 4, LikeCount: 6 },
+      ];
+
+      case 'PM_PolicyFeedback': return [
+        { Title: 'FB-001', PolicyId: 6, PolicyName: 'POPIA Data Protection Policy', UserId: 'user3@firstdigital.co.za', UserName: 'Lerato Moloi', FeedbackType: 'Suggestion', FeedbackText: 'Please add a quick-reference card summarising the 8 POPIA processing conditions. The full policy is very detailed but a one-pager would help with daily reference.', Status: 'Open', CreatedDate: pastDate(7) },
+        { Title: 'FB-002', PolicyId: 4, PolicyName: 'Leave Management Policy', UserId: 'user4@firstdigital.co.za', UserName: 'Pieter du Plessis', FeedbackType: 'Question', FeedbackText: 'Does family responsibility leave cover customary/traditional ceremonies? Some employees have extended family obligations under customary law.', Status: 'Under Review', CreatedDate: pastDate(5) },
+        { Title: 'FB-003', PolicyId: 16, PolicyName: 'Business Continuity Plan', UserId: 'user5@firstdigital.co.za', UserName: 'Ayanda Ngcobo', FeedbackType: 'Issue', FeedbackText: 'The BCP references the Centurion DR site but does not include the fibre failover procedure when the primary Teraco data centre link is down. Can this be added?', Status: 'Open', CreatedDate: pastDate(2) },
+      ];
+
+      case 'PM_UserProfiles': return [
+        { Title: 'Nomsa Dlamini', UserEmail: 'nomsa@firstdigital.co.za', DisplayName: 'Nomsa Dlamini', Department: 'Human Resources', JobTitle: 'Chief People Officer', Office: 'Johannesburg - Sandton', Role: 'Admin', IsActive: true },
+        { Title: 'Thabo Mokoena', UserEmail: 'thabo@firstdigital.co.za', DisplayName: 'Thabo Mokoena', Department: 'Compliance', JobTitle: 'Head of Compliance', Office: 'Johannesburg - Sandton', Role: 'Manager', IsActive: true },
+        { Title: 'Johan van der Merwe', UserEmail: 'johan@firstdigital.co.za', DisplayName: 'Johan van der Merwe', Department: 'Information Security', JobTitle: 'Chief Information Security Officer', Office: 'Johannesburg - Sandton', Role: 'Author', IsActive: true },
+        { Title: 'Priya Naidoo', UserEmail: 'priya@firstdigital.co.za', DisplayName: 'Priya Naidoo', Department: 'Human Resources', JobTitle: 'HR Business Partner', Office: 'Durban - Umhlanga', Role: 'Author', IsActive: true },
+        { Title: 'Werner Steyn', UserEmail: 'werner@firstdigital.co.za', DisplayName: 'Werner Steyn', Department: 'Finance', JobTitle: 'Financial Director', Office: 'Johannesburg - Sandton', Role: 'Manager', IsActive: true },
+        { Title: 'Sipho Khumalo', UserEmail: 'sipho@firstdigital.co.za', DisplayName: 'Sipho Khumalo', Department: 'IT Operations', JobTitle: 'Head of IT', Office: 'Johannesburg - Sandton', Role: 'Manager', IsActive: true },
+        { Title: 'Ravi Pillay', UserEmail: 'ravi@firstdigital.co.za', DisplayName: 'Ravi Pillay', Department: 'Information Security', JobTitle: 'Security Architect', Office: 'Cape Town - Foreshore', Role: 'Author', IsActive: true },
+        { Title: 'Fatima Cassim', UserEmail: 'fatima@firstdigital.co.za', DisplayName: 'Fatima Cassim', Department: 'Legal', JobTitle: 'General Counsel', Office: 'Johannesburg - Sandton', Role: 'Author', IsActive: true },
+        { Title: 'André Botha', UserEmail: 'andre@firstdigital.co.za', DisplayName: 'André Botha', Department: 'Compliance', JobTitle: 'Compliance Officer', Office: 'Cape Town - Foreshore', Role: 'Author', IsActive: true },
+        { Title: 'David Bosman', UserEmail: 'david@firstdigital.co.za', DisplayName: 'David Bosman', Department: 'Facilities', JobTitle: 'Facilities Manager', Office: 'Johannesburg - Sandton', Role: 'Author', IsActive: true },
+        { Title: 'Lindiwe Nkosi', UserEmail: 'lindiwe@firstdigital.co.za', DisplayName: 'Lindiwe Nkosi', Department: 'Human Resources', JobTitle: 'Learning & Development Manager', Office: 'Durban - Umhlanga', Role: 'Author', IsActive: true },
+        { Title: 'Zanele Mthembu', UserEmail: 'zanele@firstdigital.co.za', DisplayName: 'Zanele Mthembu', Department: 'Human Resources', JobTitle: 'Employee Relations Specialist', Office: 'Johannesburg - Sandton', Role: 'Author', IsActive: true },
+        { Title: 'Kobus Pretorius', UserEmail: 'kobus@firstdigital.co.za', DisplayName: 'Kobus Pretorius', Department: 'Finance', JobTitle: 'Procurement Manager', Office: 'Johannesburg - Sandton', Role: 'Author', IsActive: true },
+      ];
+
+      default: return [];
+    }
+  }
+
   private renderProvisioningContent(): JSX.Element {
     const st = this.state as any;
     const provisioningRunning = st._provisioningRunning || false;
     const provisioningLog: string[] = st._provisioningLog || [];
-    const provisioningMessage = st._provisioningMessage || '';
     const listStatuses: Array<{ key: string; title: string; description: string; exists: boolean; itemCount: number }> = st._listStatuses || [];
 
     // SP list definitions for Policy Manager
     const PM_LIST_DEFS = [
-      { key: 'policies', title: 'PM_Policies', description: 'Core policy records' },
-      { key: 'versions', title: 'PM_PolicyVersions', description: 'Version history' },
-      { key: 'acks', title: 'PM_PolicyAcknowledgements', description: 'User acknowledgements' },
-      { key: 'metadata', title: 'PM_PolicyMetadataProfiles', description: 'Metadata presets' },
-      { key: 'quizzes', title: 'PM_PolicyQuizzes', description: 'Quiz definitions' },
-      { key: 'questions', title: 'PM_PolicyQuizQuestions', description: 'Quiz questions' },
-      { key: 'results', title: 'PM_PolicyQuizResults', description: 'Quiz results' },
-      { key: 'approvals', title: 'PM_Approvals', description: 'Approval records' },
-      { key: 'chains', title: 'PM_ApprovalChains', description: 'Approval chain instances' },
-      { key: 'templates', title: 'PM_PolicyTemplates', description: 'Policy templates library' },
-      { key: 'notifications', title: 'PM_Notifications', description: 'In-app notifications' },
-      { key: 'emailQueue', title: 'PM_EmailQueue', description: 'Email delivery queue' },
-      { key: 'auditLog', title: 'PM_PolicyAuditLog', description: 'Audit trail' },
-      { key: 'config', title: 'PM_Configuration', description: 'Key-value configuration' },
-      { key: 'categories', title: 'PM_PolicyCategories', description: 'Policy categories' },
-      { key: 'subCats', title: 'PM_PolicySubCategories', description: 'Sub-categories' },
-      { key: 'distributions', title: 'PM_PolicyDistributions', description: 'Distribution tracking' },
-      { key: 'distQueue', title: 'PM_DistributionQueue', description: 'Bulk distribution queue' },
-      { key: 'packs', title: 'PM_PolicyPacks', description: 'Policy pack bundles' },
-      { key: 'packAssign', title: 'PM_PolicyPackAssignments', description: 'Pack assignments' },
-      { key: 'ratings', title: 'PM_PolicyRatings', description: 'User ratings' },
-      { key: 'comments', title: 'PM_PolicyComments', description: 'Discussion comments' },
-      { key: 'feedback', title: 'PM_PolicyFeedback', description: 'User feedback' },
-      { key: 'userProfiles', title: 'PM_UserProfiles', description: 'User profile data' },
-      { key: 'sourceDocs', title: 'PM_PolicySourceDocuments', description: 'Supporting documents' },
+      { key: 'policies', title: 'PM_Policies', description: 'Core policy records', seedable: true },
+      { key: 'versions', title: 'PM_PolicyVersions', description: 'Version history', seedable: true },
+      { key: 'acks', title: 'PM_PolicyAcknowledgements', description: 'User acknowledgements', seedable: true },
+      { key: 'metadata', title: 'PM_PolicyMetadataProfiles', description: 'Metadata presets', seedable: false },
+      { key: 'quizzes', title: 'PM_PolicyQuizzes', description: 'Quiz definitions', seedable: true },
+      { key: 'questions', title: 'PM_PolicyQuizQuestions', description: 'Quiz questions', seedable: true },
+      { key: 'results', title: 'PM_PolicyQuizResults', description: 'Quiz results', seedable: false },
+      { key: 'approvals', title: 'PM_Approvals', description: 'Approval records', seedable: true },
+      { key: 'chains', title: 'PM_ApprovalChains', description: 'Approval chain instances', seedable: true },
+      { key: 'templates', title: 'PM_PolicyTemplates', description: 'Policy templates library', seedable: false },
+      { key: 'notifications', title: 'PM_Notifications', description: 'In-app notifications', seedable: true },
+      { key: 'emailQueue', title: 'PM_EmailQueue', description: 'Email delivery queue', seedable: false },
+      { key: 'auditLog', title: 'PM_PolicyAuditLog', description: 'Audit trail', seedable: true },
+      { key: 'config', title: 'PM_Configuration', description: 'Key-value configuration', seedable: true },
+      { key: 'categories', title: 'PM_PolicyCategories', description: 'Policy categories', seedable: false },
+      { key: 'subCats', title: 'PM_PolicySubCategories', description: 'Sub-categories', seedable: true },
+      { key: 'distributions', title: 'PM_PolicyDistributions', description: 'Distribution tracking', seedable: true },
+      { key: 'distQueue', title: 'PM_DistributionQueue', description: 'Bulk distribution queue', seedable: false },
+      { key: 'packs', title: 'PM_PolicyPacks', description: 'Policy pack bundles', seedable: true },
+      { key: 'packAssign', title: 'PM_PolicyPackAssignments', description: 'Pack assignments', seedable: false },
+      { key: 'ratings', title: 'PM_PolicyRatings', description: 'User ratings', seedable: true },
+      { key: 'comments', title: 'PM_PolicyComments', description: 'Discussion comments', seedable: true },
+      { key: 'feedback', title: 'PM_PolicyFeedback', description: 'User feedback', seedable: true },
+      { key: 'userProfiles', title: 'PM_UserProfiles', description: 'User profile data', seedable: true },
+      { key: 'sourceDocs', title: 'PM_PolicySourceDocuments', description: 'Supporting documents', seedable: false },
     ];
 
     // Check list statuses on first load
@@ -4871,6 +5125,8 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
 
     const existsCount = listStatuses.filter(l => l.exists).length;
     const totalCount = PM_LIST_DEFS.length;
+    const totalItems = listStatuses.reduce((sum, l) => sum + l.itemCount, 0);
+    const seedableCount = PM_LIST_DEFS.filter(d => d.seedable).length;
 
     const addLog = (msg: string) => {
       this.setState((prev: any) => ({
@@ -4878,10 +5134,144 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       }) as any);
     };
 
+    const scrollLogToBottom = () => {
+      setTimeout(() => {
+        const el = document.getElementById('pm-provisioning-log');
+        if (el) el.scrollTop = el.scrollHeight;
+      }, 50);
+    };
+
+    const addLogAndScroll = (msg: string) => {
+      addLog(msg);
+      scrollLogToBottom();
+    };
+
     const handleCheckAll = async () => {
-      addLog('Checking list statuses...');
+      addLogAndScroll('Checking list statuses...');
       await this.checkListStatuses(PM_LIST_DEFS);
-      addLog('Status check complete.');
+      addLogAndScroll('Status check complete.');
+    };
+
+    const handleSeedList = async (listTitle: string) => {
+      const data = this.getSeedDataForList(listTitle);
+      if (data.length === 0) {
+        addLogAndScroll(`No seed data defined for ${listTitle}`);
+        return;
+      }
+      this.setState({ _provisioningRunning: true } as any);
+      addLogAndScroll(`Seeding ${listTitle} with ${data.length} items...`);
+      let created = 0;
+      let failed = 0;
+      for (const item of data) {
+        try {
+          await this.props.sp.web.lists.getByTitle(listTitle).items.add(item);
+          created++;
+        } catch (err: any) {
+          failed++;
+          addLogAndScroll(`  ✗ Failed to create item in ${listTitle}: ${err.message || 'Error'}`);
+        }
+      }
+      addLogAndScroll(`  ✓ ${listTitle}: ${created} created, ${failed} failed`);
+      await this.checkListStatuses(PM_LIST_DEFS);
+      this.setState({ _provisioningRunning: false } as any);
+    };
+
+    const handleClearList = async (listTitle: string) => {
+      this.setState({ _provisioningRunning: true } as any);
+      addLogAndScroll(`Clearing all items from ${listTitle}...`);
+      try {
+        const items: any[] = await this.props.sp.web.lists.getByTitle(listTitle).items.select('Id').top(5000)();
+        if (items.length === 0) {
+          addLogAndScroll(`  ${listTitle} is already empty`);
+        } else {
+          for (const item of items) {
+            try {
+              await this.props.sp.web.lists.getByTitle(listTitle).items.getById(item.Id).delete();
+            } catch { /* skip */ }
+          }
+          addLogAndScroll(`  ✓ ${listTitle}: ${items.length} items deleted`);
+        }
+      } catch (err: any) {
+        addLogAndScroll(`  ✗ ${listTitle}: ${err.message || 'Failed'}`);
+      }
+      await this.checkListStatuses(PM_LIST_DEFS);
+      this.setState({ _provisioningRunning: false } as any);
+    };
+
+    const handleSeedAll = async () => {
+      this.setState({ _provisioningRunning: true } as any);
+      addLogAndScroll('═══ SEED ALL DATA — South African Business Context ═══');
+      const seedableDefs = PM_LIST_DEFS.filter(d => d.seedable && listStatuses.find(s => s.title === d.title && s.exists));
+      addLogAndScroll(`Seeding ${seedableDefs.length} lists...`);
+      for (const def of seedableDefs) {
+        const data = this.getSeedDataForList(def.title);
+        if (data.length === 0) continue;
+        addLogAndScroll(`Seeding ${def.title} (${data.length} items)...`);
+        let created = 0;
+        let failed = 0;
+        for (const item of data) {
+          try {
+            await this.props.sp.web.lists.getByTitle(def.title).items.add(item);
+            created++;
+          } catch {
+            failed++;
+          }
+        }
+        addLogAndScroll(`  ✓ ${def.title}: ${created} created${failed > 0 ? `, ${failed} failed` : ''}`);
+      }
+      addLogAndScroll('═══ Seed All complete. Refreshing statuses... ═══');
+      await this.checkListStatuses(PM_LIST_DEFS);
+      this.setState({ _provisioningRunning: false } as any);
+    };
+
+    const handleClearAndReseed = async () => {
+      const confirmed = await this.dialogManager.showConfirm(
+        'This will DELETE ALL existing data from every seedable list and replace it with fresh South African sample data. This action cannot be undone.',
+        { title: 'Clear & Reseed All Data', confirmText: 'Clear & Reseed', variant: 'destructive' }
+      );
+      if (!confirmed) return;
+
+      this.setState({ _provisioningRunning: true } as any);
+      addLogAndScroll('═══ CLEAR & RESEED ALL — Starting fresh ═══');
+      const seedableDefs = PM_LIST_DEFS.filter(d => d.seedable && listStatuses.find(s => s.title === d.title && s.exists));
+
+      // Phase 1: Clear all
+      addLogAndScroll('Phase 1: Clearing all seedable lists...');
+      for (const def of seedableDefs) {
+        try {
+          const items: any[] = await this.props.sp.web.lists.getByTitle(def.title).items.select('Id').top(5000)();
+          if (items.length > 0) {
+            for (const item of items) {
+              try { await this.props.sp.web.lists.getByTitle(def.title).items.getById(item.Id).delete(); } catch { /* skip */ }
+            }
+            addLogAndScroll(`  ✓ ${def.title}: ${items.length} items cleared`);
+          }
+        } catch {
+          addLogAndScroll(`  ✗ ${def.title}: clear failed`);
+        }
+      }
+
+      // Phase 2: Seed all
+      addLogAndScroll('Phase 2: Seeding fresh data...');
+      for (const def of seedableDefs) {
+        const data = this.getSeedDataForList(def.title);
+        if (data.length === 0) continue;
+        let created = 0;
+        let failed = 0;
+        for (const item of data) {
+          try {
+            await this.props.sp.web.lists.getByTitle(def.title).items.add(item);
+            created++;
+          } catch {
+            failed++;
+          }
+        }
+        addLogAndScroll(`  ✓ ${def.title}: ${created} seeded${failed > 0 ? `, ${failed} failed` : ''}`);
+      }
+
+      addLogAndScroll('═══ Clear & Reseed complete ═══');
+      await this.checkListStatuses(PM_LIST_DEFS);
+      this.setState({ _provisioningRunning: false } as any);
     };
 
     return (
@@ -4889,22 +5279,29 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         <Stack tokens={{ childrenGap: 20 }}>
           {/* Summary bar */}
           <div style={{
-            display: 'flex', gap: 16, padding: '16px 20px',
+            display: 'flex', gap: 16, padding: '16px 20px', flexWrap: 'wrap',
             background: 'linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%)',
             borderRadius: 4, border: '1px solid #a7f3d0'
           }}>
-            <div style={{ flex: 1, textAlign: 'center' }}>
+            <div style={{ flex: '1 1 100px', textAlign: 'center', minWidth: 80 }}>
               <Text variant="xLarge" style={{ fontWeight: 700, color: '#0d9488', display: 'block' }}>
                 {existsCount} / {totalCount}
               </Text>
               <Text variant="small" style={{ color: '#059669' }}>Lists Provisioned</Text>
             </div>
             <div style={{ width: 1, background: '#a7f3d0' }} />
-            <div style={{ flex: 1, textAlign: 'center' }}>
+            <div style={{ flex: '1 1 100px', textAlign: 'center', minWidth: 80 }}>
               <Text variant="xLarge" style={{ fontWeight: 700, color: '#0d9488', display: 'block' }}>
-                {listStatuses.reduce((sum, l) => sum + l.itemCount, 0)}
+                {totalItems}
               </Text>
               <Text variant="small" style={{ color: '#059669' }}>Total Items</Text>
+            </div>
+            <div style={{ width: 1, background: '#a7f3d0' }} />
+            <div style={{ flex: '1 1 100px', textAlign: 'center', minWidth: 80 }}>
+              <Text variant="xLarge" style={{ fontWeight: 700, color: '#0d9488', display: 'block' }}>
+                {seedableCount}
+              </Text>
+              <Text variant="small" style={{ color: '#059669' }}>Seedable Lists</Text>
             </div>
           </div>
 
@@ -4915,6 +5312,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               iconProps={{ iconName: 'Sync' }}
               disabled={provisioningRunning}
               onClick={handleCheckAll}
+              styles={{ root: { background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
             />
             <DefaultButton
               text="Provision Missing Lists"
@@ -4923,38 +5321,51 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               onClick={async () => {
                 this.setState({ _provisioningRunning: true } as any);
                 const missing = PM_LIST_DEFS.filter(d => !listStatuses.find(s => s.title === d.title && s.exists));
-                addLog(`Provisioning ${missing.length} missing lists...`);
+                addLogAndScroll(`Provisioning ${missing.length} missing lists...`);
                 for (const def of missing) {
                   try {
-                    addLog(`Creating ${def.title}...`);
+                    addLogAndScroll(`Creating ${def.title}...`);
                     await this.props.sp.web.lists.add(def.title, def.description, 100, false);
-                    addLog(`  ✓ ${def.title} created`);
+                    addLogAndScroll(`  ✓ ${def.title} created`);
                   } catch (err: any) {
-                    addLog(`  ✗ ${def.title}: ${err.message || 'Failed'}`);
+                    addLogAndScroll(`  ✗ ${def.title}: ${err.message || 'Failed'}`);
                   }
                 }
-                addLog('Provisioning complete. Refreshing statuses...');
+                addLogAndScroll('Provisioning complete. Refreshing statuses...');
                 await this.checkListStatuses(PM_LIST_DEFS);
                 this.setState({ _provisioningRunning: false } as any);
               }}
+            />
+            <DefaultButton
+              text="Seed All Data"
+              iconProps={{ iconName: 'DatabaseSync' }}
+              disabled={provisioningRunning || existsCount === 0}
+              onClick={handleSeedAll}
+            />
+            <DefaultButton
+              text="Clear & Reseed All"
+              iconProps={{ iconName: 'Refresh' }}
+              disabled={provisioningRunning || existsCount === 0}
+              onClick={handleClearAndReseed}
+              styles={{ root: { color: '#dc2626', borderColor: '#fca5a5' }, rootHovered: { color: '#fff', background: '#dc2626', borderColor: '#dc2626' } }}
             />
           </Stack>
 
           {/* Progress */}
           {provisioningRunning && (
-            <ProgressIndicator label={provisioningMessage || 'Working...'} />
+            <ProgressIndicator label="Working..." styles={{ progressBar: { background: '#0d9488' } }} />
           )}
 
           {/* Log console */}
           {provisioningLog.length > 0 && (
-            <div style={{
+            <div id="pm-provisioning-log" style={{
               background: '#1a2533', color: '#a0aec0', padding: 16, borderRadius: 4,
-              fontFamily: 'Consolas, monospace', fontSize: 12, maxHeight: 200,
+              fontFamily: 'Consolas, monospace', fontSize: 12, maxHeight: 280,
               overflowY: 'auto', lineHeight: 1.6
             }}>
               {provisioningLog.map((line: string, i: number) => (
                 <div key={i} style={{
-                  color: line.includes('✓') ? '#48bb78' : line.includes('✗') ? '#fc8181' : '#a0aec0'
+                  color: line.includes('✓') ? '#48bb78' : line.includes('✗') ? '#fc8181' : line.includes('═══') ? '#63b3ed' : '#a0aec0'
                 }}>{line}</div>
               ))}
             </div>
@@ -4968,35 +5379,59 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               const exists = status?.exists || false;
               return (
                 <div key={def.key} className={styles.adminCard} style={{
-                  borderLeft: `4px solid ${exists ? '#10b981' : '#f59e0b'}`
+                  borderLeft: `4px solid ${exists ? '#10b981' : '#f59e0b'}`,
+                  position: 'relative'
                 }}>
-                  <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
-                    <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
-                      <Icon iconName={exists ? 'CheckMark' : 'Warning'} style={{
-                        color: exists ? '#10b981' : '#f59e0b', fontSize: 16
-                      }} />
-                      <div>
-                        <Text style={{ fontWeight: 600, display: 'block' }}>{def.title}</Text>
-                        <Text variant="small" style={TextStyles.secondary}>{def.description}</Text>
-                      </div>
-                    </Stack>
-                    <Stack horizontal tokens={{ childrenGap: 4 }}>
-                      {exists && (
+                  <Stack tokens={{ childrenGap: 8 }}>
+                    <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
+                      <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
+                        <Icon iconName={exists ? 'CheckMark' : 'Warning'} style={{
+                          color: exists ? '#10b981' : '#f59e0b', fontSize: 16
+                        }} />
+                        <div>
+                          <Text style={{ fontWeight: 600, display: 'block' }}>{def.title}</Text>
+                          <Text variant="small" style={TextStyles.secondary}>{def.description}</Text>
+                        </div>
+                      </Stack>
+                      <Stack horizontal tokens={{ childrenGap: 4 }}>
+                        {exists && (
+                          <span style={{
+                            padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600,
+                            background: '#f0fdf4', color: '#16a34a'
+                          }}>
+                            {status?.itemCount || 0} items
+                          </span>
+                        )}
                         <span style={{
                           padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600,
-                          background: '#f0fdf4', color: '#16a34a'
+                          background: exists ? '#f0fdf4' : '#fffbeb',
+                          color: exists ? '#16a34a' : '#d97706'
                         }}>
-                          {status?.itemCount || 0} items
+                          {exists ? 'Provisioned' : 'Missing'}
                         </span>
-                      )}
-                      <span style={{
-                        padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600,
-                        background: exists ? '#f0fdf4' : '#fffbeb',
-                        color: exists ? '#16a34a' : '#d97706'
-                      }}>
-                        {exists ? 'Provisioned' : 'Missing'}
-                      </span>
+                      </Stack>
                     </Stack>
+                    {/* Per-card action buttons — only show for existing, seedable lists */}
+                    {exists && def.seedable && (
+                      <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: 6, display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
+                        <IconButton
+                          iconProps={{ iconName: 'DatabaseSync' }}
+                          title={`Seed ${def.title}`}
+                          ariaLabel={`Seed sample data into ${def.title}`}
+                          disabled={provisioningRunning}
+                          onClick={() => handleSeedList(def.title)}
+                          styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: '#0d9488' } }}
+                        />
+                        <IconButton
+                          iconProps={{ iconName: 'Delete' }}
+                          title={`Clear ${def.title}`}
+                          ariaLabel={`Clear all data from ${def.title}`}
+                          disabled={provisioningRunning}
+                          onClick={() => handleClearList(def.title)}
+                          styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: '#dc2626' } }}
+                        />
+                      </div>
+                    )}
                   </Stack>
                 </div>
               );
@@ -5018,6 +5453,936 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       }
     }
     this.setState({ _listStatuses: statuses } as any);
+  }
+
+  // ============================================================================
+  // RENDER: DOCUMENT STORAGE
+  // ============================================================================
+
+  private renderDocumentStorageContent(): JSX.Element {
+    const st = this.state as any;
+    const docLibMode: 'existing' | 'create' = st._docLibMode || 'existing';
+    const docLibs: Array<{ title: string; url: string; itemCount: number }> = st._docLibs || [];
+    const selectedLibUrl: string = st._selectedDocLibUrl || '';
+    const newLibName: string = st._newLibName || '';
+    const newLibFolders: string[] = st._newLibFolders || [];
+    const customFolderName: string = st._customFolderName || '';
+    const docStorageLoading: boolean = st._docStorageLoading || false;
+    const docStorageMsg: string = st._docStorageMsg || '';
+    const docStorageError: string = st._docStorageError || '';
+
+    const PRESET_FOLDERS = [
+      { key: 'HR Policies', icon: 'People', description: 'Human resources and employment policies' },
+      { key: 'IT & Security', icon: 'Lock', description: 'Technology, security, and data protection' },
+      { key: 'Compliance', icon: 'Shield', description: 'Regulatory compliance and governance' },
+      { key: 'Legal', icon: 'Courthouse', description: 'Legal agreements and statutory documents' },
+      { key: 'Operations', icon: 'Settings', description: 'Operational procedures and guidelines' },
+      { key: 'Finance', icon: 'Money', description: 'Financial policies and fiscal governance' },
+    ];
+
+    // Load libraries on first render
+    if (!st._docLibsLoaded && !docStorageLoading) {
+      this.setState({ _docStorageLoading: true, _docLibsLoaded: true } as any);
+      this.props.sp.web.lists
+        .filter("BaseTemplate eq 101 or BaseTemplate eq 109")
+        .select('Title', 'RootFolder/ServerRelativeUrl', 'ItemCount')
+        .expand('RootFolder')()
+        .then((lists: any[]) => {
+          const libs = lists.map((l: any) => ({
+            title: l.Title,
+            url: l.RootFolder?.ServerRelativeUrl || '',
+            itemCount: l.ItemCount || 0
+          }));
+          this.setState({ _docLibs: libs, _docStorageLoading: false } as any);
+        })
+        .catch(() => this.setState({ _docStorageLoading: false } as any));
+
+      // Load saved config
+      this.props.sp.web.lists.getByTitle('PM_Configuration')
+        .items.filter("ConfigKey eq 'Admin.DocumentStorage.LibraryUrl'")
+        .select('ConfigValue').top(1)()
+        .then((items: any[]) => {
+          if (items.length > 0 && items[0].ConfigValue) {
+            this.setState({ _selectedDocLibUrl: items[0].ConfigValue } as any);
+          }
+        })
+        .catch(() => { /* ignore */ });
+    }
+
+    const toggleFolder = (key: string): void => {
+      const updated = newLibFolders.includes(key)
+        ? newLibFolders.filter(f => f !== key)
+        : [...newLibFolders, key];
+      this.setState({ _newLibFolders: updated } as any);
+    };
+
+    const addCustomFolder = (): void => {
+      const name = customFolderName.trim();
+      if (name && !newLibFolders.includes(name)) {
+        this.setState({ _newLibFolders: [...newLibFolders, name], _customFolderName: '' } as any);
+      }
+    };
+
+    const handleCreateLibrary = async (): Promise<void> => {
+      if (!newLibName.trim()) return;
+      this.setState({ _docStorageLoading: true, _docStorageMsg: 'Creating library...', _docStorageError: '' } as any);
+      try {
+        const result = await this.props.sp.web.lists.add(newLibName.trim(), 'Policy document library', 101);
+        const serverRelUrl = result.data?.RootFolder?.ServerRelativeUrl ||
+          this.props.context.pageContext.web.serverRelativeUrl + '/' + newLibName.trim().replace(/\s+/g, '');
+
+        // Create folders sequentially
+        for (let i = 0; i < newLibFolders.length; i++) {
+          this.setState({ _docStorageMsg: `Creating folder ${i + 1}/${newLibFolders.length}...` } as any);
+          try {
+            await this.props.sp.web.getFolderByServerRelativePath(serverRelUrl).addSubFolderUsingPath(newLibFolders[i]);
+          } catch (folderErr) {
+            console.warn(`Could not create folder "${newLibFolders[i]}":`, folderErr);
+          }
+        }
+
+        // Add to list and select it
+        const newLib = { title: newLibName.trim(), url: serverRelUrl, itemCount: 0 };
+        this.setState({
+          _docLibs: [newLib, ...docLibs],
+          _selectedDocLibUrl: serverRelUrl,
+          _docLibMode: 'existing',
+          _newLibName: '',
+          _newLibFolders: [],
+          _docStorageLoading: false,
+          _docStorageMsg: `Created "${newLibName.trim()}" with ${newLibFolders.length} folders`
+        } as any);
+      } catch (err: any) {
+        this.setState({ _docStorageLoading: false, _docStorageError: err.message || 'Failed to create library' } as any);
+      }
+    };
+
+    const handleSelectLibrary = async (url: string): Promise<void> => {
+      this.setState({ _selectedDocLibUrl: url } as any);
+      // Save to PM_Configuration
+      try {
+        const items = await this.props.sp.web.lists.getByTitle('PM_Configuration')
+          .items.filter("ConfigKey eq 'Admin.DocumentStorage.LibraryUrl'").top(1)();
+        if (items.length > 0) {
+          await this.props.sp.web.lists.getByTitle('PM_Configuration').items.getById(items[0].Id).update({ ConfigValue: url });
+        } else {
+          await this.props.sp.web.lists.getByTitle('PM_Configuration').items.add({
+            Title: 'Document Storage Library',
+            ConfigKey: 'Admin.DocumentStorage.LibraryUrl',
+            ConfigValue: url,
+            Category: 'Storage',
+            IsActive: true,
+            IsSystemConfig: false
+          });
+        }
+        this.setState({ _docStorageMsg: 'Library selection saved' } as any);
+      } catch {
+        this.setState({ _docStorageMsg: 'Selected (could not save to config)' } as any);
+      }
+    };
+
+    const modeCard = (mode: 'existing' | 'create', icon: string, title: string, desc: string): JSX.Element => {
+      const isActive = docLibMode === mode;
+      return (
+        <div
+          role="radio"
+          aria-checked={isActive}
+          tabIndex={0}
+          onClick={() => this.setState({ _docLibMode: mode } as any)}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.setState({ _docLibMode: mode } as any); } }}
+          style={{
+            flex: 1, padding: 20, borderRadius: 4, cursor: 'pointer',
+            border: `2px solid ${isActive ? Colors.tealPrimary : Colors.borderLight}`,
+            background: isActive ? Colors.tealLight : '#fff',
+            boxShadow: isActive ? '0 4px 16px rgba(13,148,136,0.12)' : 'none',
+            transition: 'all 0.2s'
+          }}
+        >
+          <Icon iconName={icon} styles={{ root: { fontSize: 28, color: isActive ? Colors.tealPrimary : Colors.slateLight, marginBottom: 8, display: 'block' } }} />
+          <Text style={{ fontWeight: 700, fontSize: 14, display: 'block', color: Colors.textDark }}>{title}</Text>
+          <Text style={{ fontSize: 12, color: Colors.textTertiary }}>{desc}</Text>
+        </div>
+      );
+    };
+
+    return (
+      <div>
+        <Text variant="xLarge" style={{ ...TextStyles.bold, color: Colors.textDark, display: 'block', marginBottom: 4 }}>Document Storage</Text>
+        <Text style={{ color: Colors.textTertiary, display: 'block', marginBottom: 20 }}>
+          Choose where to store policy documents. You can browse an existing Document Library or create a new one.
+        </Text>
+
+        {docStorageMsg && (
+          <MessageBar messageBarType={MessageBarType.success} onDismiss={() => this.setState({ _docStorageMsg: '' } as any)} style={{ marginBottom: 12 }}>{docStorageMsg}</MessageBar>
+        )}
+        {docStorageError && (
+          <MessageBar messageBarType={MessageBarType.error} onDismiss={() => this.setState({ _docStorageError: '' } as any)} style={{ marginBottom: 12 }}>{docStorageError}</MessageBar>
+        )}
+
+        {/* Mode toggle */}
+        <div role="radiogroup" aria-label="Library mode" style={{ display: 'flex', gap: 16, marginBottom: 20 }}>
+          {modeCard('existing', 'FolderOpen', 'Browse Existing', 'Choose from an existing Document Library on this site')}
+          {modeCard('create', 'FolderList', 'Create New', 'Create a new Document Library to store policy documents')}
+        </div>
+
+        {/* Browse Existing */}
+        {docLibMode === 'existing' && (
+          <div>
+            {docStorageLoading ? (
+              <Spinner label="Loading libraries..." />
+            ) : docLibs.length === 0 ? (
+              <Text style={{ color: Colors.textTertiary }}>No document libraries found on this site.</Text>
+            ) : (
+              <Stack tokens={{ childrenGap: 6 }}>
+                {docLibs.map((lib, idx) => {
+                  const isSelected = selectedLibUrl === lib.url;
+                  return (
+                    <div
+                      key={idx}
+                      role="option"
+                      aria-selected={isSelected}
+                      tabIndex={0}
+                      onClick={() => handleSelectLibrary(lib.url)}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSelectLibrary(lib.url); } }}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px',
+                        borderRadius: 4, cursor: 'pointer',
+                        border: `2px solid ${isSelected ? Colors.tealPrimary : Colors.borderLight}`,
+                        background: isSelected ? Colors.tealLight : '#fff',
+                        transition: 'all 0.15s'
+                      }}
+                    >
+                      <Icon iconName="FabricFolder" styles={{ root: { fontSize: 20, color: isSelected ? Colors.tealPrimary : Colors.slateLight } }} />
+                      <div style={{ flex: 1 }}>
+                        <Text style={{ fontWeight: 600, color: Colors.textDark, display: 'block' }}>{lib.title}</Text>
+                        <Text style={{ fontSize: 11, color: Colors.textTertiary }}>{lib.itemCount} items</Text>
+                      </div>
+                      {isSelected && <Icon iconName="CheckMark" styles={{ root: { fontSize: 16, color: Colors.tealPrimary } }} />}
+                    </div>
+                  );
+                })}
+              </Stack>
+            )}
+            <Text style={{ fontSize: 12, color: Colors.slateLight, fontStyle: 'italic', marginTop: 12, display: 'block', textAlign: 'center' }}>
+              This step is optional. You can skip it and use the default PM_PolicySourceDocuments library.
+            </Text>
+          </div>
+        )}
+
+        {/* Create New */}
+        {docLibMode === 'create' && (
+          <div style={{ background: Colors.surfaceLight, border: `1px solid ${Colors.borderLight}`, borderRadius: 4, padding: 20 }}>
+            <div style={{ marginBottom: 16 }}>
+              <Text style={{ fontWeight: 600, display: 'block', marginBottom: 4 }}>Library Name</Text>
+              <TextField
+                placeholder="e.g., Policy Documents"
+                value={newLibName}
+                onChange={(_, v) => this.setState({ _newLibName: v || '' } as any)}
+              />
+            </div>
+
+            <div style={{ marginBottom: 16 }}>
+              <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }} style={{ marginBottom: 8 }}>
+                <Icon iconName="FolderOpen" styles={{ root: { fontSize: 14, color: Colors.slateLight } }} />
+                <Text style={{ fontWeight: 600 }}>Create Folders</Text>
+                <Text style={{ fontSize: 12, color: Colors.slateLight, fontStyle: 'italic' }}>(optional)</Text>
+              </Stack>
+              <Text style={{ fontSize: 12, color: Colors.textTertiary, marginBottom: 10, display: 'block' }}>
+                Select folders to organise your policy documents:
+              </Text>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                {PRESET_FOLDERS.map(folder => {
+                  const isChecked = newLibFolders.includes(folder.key);
+                  return (
+                    <label
+                      key={folder.key}
+                      style={{
+                        display: 'flex', alignItems: 'flex-start', gap: 8, padding: '8px 10px',
+                        borderRadius: 4, cursor: 'pointer',
+                        border: `2px solid ${isChecked ? Colors.tealPrimary : Colors.borderLight}`,
+                        background: isChecked ? Colors.tealLight : '#fff',
+                        transition: 'all 0.15s'
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => toggleFolder(folder.key)}
+                        style={{ marginTop: 2 }}
+                      />
+                      <Icon iconName={folder.icon} styles={{ root: { fontSize: 14, color: isChecked ? Colors.tealPrimary : Colors.slateLight, marginTop: 1 } }} />
+                      <div>
+                        <Text style={{ fontWeight: 600, fontSize: 12, display: 'block' }}>{folder.key}</Text>
+                        <Text style={{ fontSize: 10, color: Colors.textTertiary }}>{folder.description}</Text>
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Custom folder input */}
+            <Stack horizontal tokens={{ childrenGap: 6 }} verticalAlign="end" style={{ marginBottom: 12 }}>
+              <Stack.Item grow>
+                <TextField
+                  placeholder="Custom folder name..."
+                  value={customFolderName}
+                  onChange={(_, v) => this.setState({ _customFolderName: v || '' } as any)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCustomFolder(); } }}
+                />
+              </Stack.Item>
+              <DefaultButton text="+ Add" onClick={addCustomFolder} disabled={!customFolderName.trim()} />
+            </Stack>
+
+            {/* Custom folder tags */}
+            {newLibFolders.filter(f => !PRESET_FOLDERS.some(p => p.key === f)).length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 12 }}>
+                {newLibFolders.filter(f => !PRESET_FOLDERS.some(p => p.key === f)).map(f => (
+                  <span key={f} style={{
+                    padding: '3px 10px', background: Colors.tealLight, border: `1px solid ${Colors.tealPrimary}`,
+                    borderRadius: 12, fontSize: 11, fontWeight: 600, color: Colors.tealPrimary,
+                    display: 'inline-flex', alignItems: 'center', gap: 4
+                  }}>
+                    {f}
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => this.setState({ _newLibFolders: newLibFolders.filter(x => x !== f) } as any)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') this.setState({ _newLibFolders: newLibFolders.filter(x => x !== f) } as any); }}
+                      style={{ cursor: 'pointer', marginLeft: 2 }}
+                    >×</span>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            <PrimaryButton
+              text={docStorageLoading ? 'Creating...' : 'Create Library'}
+              onClick={handleCreateLibrary}
+              disabled={!newLibName.trim() || docStorageLoading}
+              styles={{ root: { background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+            />
+            <Text style={{ fontSize: 11, color: Colors.slateLight, fontStyle: 'italic', display: 'block', marginTop: 8 }}>
+              This creates a SharePoint Document Library (BaseTemplate 101) on the current site.
+            </Text>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ============================================================================
+  // RENDER: SECURE LIBRARIES
+  // ============================================================================
+
+  private renderSecureLibrariesContent(): JSX.Element {
+    const st = this.state as any;
+    const secureLibs: Array<{ id: number; title: string; libraryUrl: string; securityGroups: string[]; icon: string; isActive: boolean; subfolders: string[] }> = st._secureLibs || [];
+    const secureLibsLoading: boolean = st._secureLibsLoading || false;
+    const secureLibsMsg: string = st._secureLibsMsg || '';
+    const secureLibsError: string = st._secureLibsError || '';
+    const showCreateSecureLib: boolean = st._showCreateSecureLib || false;
+    const editingSecureLib: any = st._editingSecureLib || null;
+    const spGroups: Array<{ id: number; title: string }> = st._secLibSpGroups || [];
+
+    // Load secure libraries config + SP groups on first render
+    if (!st._secureLibsLoaded && !secureLibsLoading) {
+      this.setState({ _secureLibsLoading: true, _secureLibsLoaded: true } as any);
+
+      // Load config
+      this.props.sp.web.lists.getByTitle('PM_Configuration')
+        .items.filter("ConfigKey eq 'Admin.SecureLibraries.Config'")
+        .select('ConfigValue').top(1)()
+        .then((items: any[]) => {
+          if (items.length > 0 && items[0].ConfigValue) {
+            try {
+              const libs = JSON.parse(items[0].ConfigValue);
+              this.setState({ _secureLibs: libs } as any);
+            } catch { /* ignore corrupt */ }
+          }
+        })
+        .catch(() => { /* ignore */ });
+
+      // Load SP groups for dropdown
+      this.props.sp.web.siteGroups.select('Id', 'Title')()
+        .then((groups: any[]) => {
+          this.setState({ _secLibSpGroups: groups.map((g: any) => ({ id: g.Id, title: g.Title })), _secureLibsLoading: false } as any);
+        })
+        .catch(() => this.setState({ _secureLibsLoading: false } as any));
+    }
+
+    const saveSecureLibsConfig = async (libs: any[]): Promise<void> => {
+      try {
+        const configJson = JSON.stringify(libs);
+        const items = await this.props.sp.web.lists.getByTitle('PM_Configuration')
+          .items.filter("ConfigKey eq 'Admin.SecureLibraries.Config'").top(1)();
+        if (items.length > 0) {
+          await this.props.sp.web.lists.getByTitle('PM_Configuration').items.getById(items[0].Id).update({ ConfigValue: configJson });
+        } else {
+          await this.props.sp.web.lists.getByTitle('PM_Configuration').items.add({
+            Title: 'Secure Libraries Config', ConfigKey: 'Admin.SecureLibraries.Config',
+            ConfigValue: configJson, Category: 'Security', IsActive: true, IsSystemConfig: false
+          });
+        }
+        try { localStorage.setItem('pm_secure_libraries', configJson); } catch { /* */ }
+      } catch (err: any) {
+        this.setState({ _secureLibsError: err.message || 'Failed to save' } as any);
+      }
+    };
+
+    const handleCreateLibrary = async (): Promise<void> => {
+      if (!editingSecureLib?.title?.trim()) return;
+      this.setState({ _secureLibsLoading: true } as any);
+      try {
+        // Create the SP document library
+        const libName = editingSecureLib.title.trim();
+        const result = await this.props.sp.web.lists.add(libName, `Secure policy library: ${libName}`, 101);
+        const serverRelUrl = result.data?.RootFolder?.ServerRelativeUrl ||
+          this.props.context.pageContext.web.serverRelativeUrl + '/' + libName.replace(/\s+/g, '');
+
+        // Create subfolders
+        if (editingSecureLib.subfolders?.length > 0) {
+          for (const folder of editingSecureLib.subfolders) {
+            try {
+              await this.props.sp.web.getFolderByServerRelativePath(serverRelUrl).addSubFolderUsingPath(folder);
+            } catch { /* folder may exist */ }
+          }
+        }
+
+        // Break permission inheritance and set group permissions
+        try {
+          await this.props.sp.web.lists.getByTitle(libName).breakRoleInheritance(false, true);
+          for (const groupName of (editingSecureLib.securityGroups || [])) {
+            try {
+              const group = await this.props.sp.web.siteGroups.getByName(groupName)();
+              // Role 1073741826 = Read, 1073741827 = Contribute
+              await this.props.sp.web.lists.getByTitle(libName).roleAssignments.add(group.Id, 1073741827);
+            } catch (grpErr) {
+              console.warn(`Could not assign group "${groupName}":`, grpErr);
+            }
+          }
+        } catch (permErr) {
+          console.warn('Could not set library permissions:', permErr);
+        }
+
+        // Save to config
+        const newLib = {
+          id: Date.now(),
+          title: libName,
+          libraryUrl: serverRelUrl,
+          securityGroups: editingSecureLib.securityGroups || [],
+          icon: editingSecureLib.icon || 'Lock',
+          isActive: true,
+          subfolders: editingSecureLib.subfolders || []
+        };
+        const updated = [...secureLibs, newLib];
+        await saveSecureLibsConfig(updated);
+        this.setState({
+          _secureLibs: updated, _secureLibsLoading: false, _showCreateSecureLib: false, _editingSecureLib: null,
+          _secureLibsMsg: `Secure library "${libName}" created with ${editingSecureLib.securityGroups?.length || 0} security groups`
+        } as any);
+      } catch (err: any) {
+        this.setState({ _secureLibsLoading: false, _secureLibsError: err.message || 'Failed to create library' } as any);
+      }
+    };
+
+    const handleDeleteLibrary = async (lib: any): Promise<void> => {
+      const updated = secureLibs.filter(l => l.id !== lib.id);
+      await saveSecureLibsConfig(updated);
+      this.setState({ _secureLibs: updated, _secureLibsMsg: `Removed "${lib.title}" from secure libraries` } as any);
+    };
+
+    const handleToggleActive = async (lib: any): Promise<void> => {
+      const updated = secureLibs.map(l => l.id === lib.id ? { ...l, isActive: !l.isActive } : l);
+      await saveSecureLibsConfig(updated);
+      this.setState({ _secureLibs: updated } as any);
+    };
+
+    const groupOptions: IDropdownOption[] = spGroups.map(g => ({ key: g.title, text: g.title }));
+
+    const iconOptions: IDropdownOption[] = [
+      { key: 'Lock', text: 'Lock' },
+      { key: 'LockSolid', text: 'Lock (Solid)' },
+      { key: 'Shield', text: 'Shield' },
+      { key: 'ShieldAlert', text: 'Shield Alert' },
+      { key: 'SecurityGroup', text: 'Security Group' },
+      { key: 'Admin', text: 'Admin' },
+      { key: 'BlockedSite', text: 'Restricted' },
+      { key: 'Encryption', text: 'Encryption' },
+    ];
+
+    return (
+      <div>
+        <Stack horizontal horizontalAlign="space-between" verticalAlign="center" style={{ marginBottom: 4 }}>
+          <div>
+            <Text variant="xLarge" style={{ ...TextStyles.bold, color: Colors.textDark, display: 'block' }}>Secure Libraries</Text>
+            <Text style={{ color: Colors.textTertiary, display: 'block', marginBottom: 16 }}>
+              Create restricted policy libraries with custom security groups. Only members of assigned groups can access these policies. Policies in secure libraries are hidden from the public Policy Hub.
+            </Text>
+          </div>
+          <PrimaryButton
+            text="+ New Secure Library"
+            iconProps={{ iconName: 'Add' }}
+            onClick={() => this.setState({ _showCreateSecureLib: true, _editingSecureLib: { title: '', securityGroups: [], icon: 'Lock', subfolders: [], _customSubfolder: '' } } as any)}
+            disabled={showCreateSecureLib}
+            styles={{ root: { background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+          />
+        </Stack>
+
+        {secureLibsMsg && <MessageBar messageBarType={MessageBarType.success} onDismiss={() => this.setState({ _secureLibsMsg: '' } as any)} style={{ marginBottom: 12 }}>{secureLibsMsg}</MessageBar>}
+        {secureLibsError && <MessageBar messageBarType={MessageBarType.error} onDismiss={() => this.setState({ _secureLibsError: '' } as any)} style={{ marginBottom: 12 }}>{secureLibsError}</MessageBar>}
+
+        {/* Create/Edit Form */}
+        {showCreateSecureLib && editingSecureLib && (
+          <div style={{ background: Colors.tealLight, border: `1px solid ${Colors.tealBorder}`, borderRadius: 4, padding: 20, marginBottom: 16 }}>
+            <Text style={{ fontWeight: 700, fontSize: 15, display: 'block', marginBottom: 12, color: Colors.textDark }}>
+              New Secure Library
+            </Text>
+            <Stack tokens={{ childrenGap: 12 }}>
+              <TextField
+                label="Library Name" required
+                placeholder="e.g., CxO Strategic Policies"
+                value={editingSecureLib.title || ''}
+                onChange={(_, v) => this.setState({ _editingSecureLib: { ...editingSecureLib, title: v || '' } } as any)}
+              />
+              <Dropdown
+                label="Security Groups" required
+                multiSelect
+                placeholder="Select groups that can access this library..."
+                selectedKeys={editingSecureLib.securityGroups || []}
+                options={groupOptions}
+                onChange={(_, option) => {
+                  if (!option) return;
+                  const current: string[] = editingSecureLib.securityGroups || [];
+                  const updated = option.selected ? [...current, option.key as string] : current.filter((k: string) => k !== option.key);
+                  this.setState({ _editingSecureLib: { ...editingSecureLib, securityGroups: updated } } as any);
+                }}
+              />
+              <Dropdown
+                label="Icon"
+                selectedKey={editingSecureLib.icon || 'Lock'}
+                options={iconOptions}
+                onChange={(_, opt) => opt && this.setState({ _editingSecureLib: { ...editingSecureLib, icon: opt.key as string } } as any)}
+              />
+
+              {/* Subfolders */}
+              <div>
+                <Text style={{ fontWeight: 600, fontSize: 13, display: 'block', marginBottom: 6 }}>Secure Subfolders (optional)</Text>
+                <Text style={{ fontSize: 12, color: Colors.textTertiary, marginBottom: 8, display: 'block' }}>
+                  Create subfolders within this library. Each subfolder can inherit the library's security or have additional restrictions.
+                </Text>
+                <Stack horizontal tokens={{ childrenGap: 6 }} verticalAlign="end" style={{ marginBottom: 8 }}>
+                  <Stack.Item grow>
+                    <TextField
+                      placeholder="Subfolder name..."
+                      value={editingSecureLib._customSubfolder || ''}
+                      onChange={(_, v) => this.setState({ _editingSecureLib: { ...editingSecureLib, _customSubfolder: v || '' } } as any)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const name = (editingSecureLib._customSubfolder || '').trim();
+                          if (name && !(editingSecureLib.subfolders || []).includes(name)) {
+                            this.setState({ _editingSecureLib: { ...editingSecureLib, subfolders: [...(editingSecureLib.subfolders || []), name], _customSubfolder: '' } } as any);
+                          }
+                        }
+                      }}
+                    />
+                  </Stack.Item>
+                  <DefaultButton text="+ Add" onClick={() => {
+                    const name = (editingSecureLib._customSubfolder || '').trim();
+                    if (name && !(editingSecureLib.subfolders || []).includes(name)) {
+                      this.setState({ _editingSecureLib: { ...editingSecureLib, subfolders: [...(editingSecureLib.subfolders || []), name], _customSubfolder: '' } } as any);
+                    }
+                  }} disabled={!(editingSecureLib._customSubfolder || '').trim()} />
+                </Stack>
+                {(editingSecureLib.subfolders || []).length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                    {(editingSecureLib.subfolders || []).map((f: string) => (
+                      <span key={f} style={{
+                        padding: '3px 10px', background: '#fff', border: `1px solid ${Colors.tealPrimary}`,
+                        borderRadius: 4, fontSize: 12, fontWeight: 500, color: Colors.tealPrimary,
+                        display: 'inline-flex', alignItems: 'center', gap: 4
+                      }}>
+                        <Icon iconName="FabricFolder" styles={{ root: { fontSize: 12 } }} /> {f}
+                        <span role="button" tabIndex={0} style={{ cursor: 'pointer', marginLeft: 2 }}
+                          onClick={() => this.setState({ _editingSecureLib: { ...editingSecureLib, subfolders: (editingSecureLib.subfolders || []).filter((x: string) => x !== f) } } as any)}
+                          onKeyDown={(e) => { if (e.key === 'Enter') this.setState({ _editingSecureLib: { ...editingSecureLib, subfolders: (editingSecureLib.subfolders || []).filter((x: string) => x !== f) } } as any); }}
+                        >&times;</span>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <Stack horizontal tokens={{ childrenGap: 8 }} style={{ marginTop: 8 }}>
+                <PrimaryButton
+                  text={secureLibsLoading ? 'Creating...' : 'Create Secure Library'}
+                  onClick={handleCreateLibrary}
+                  disabled={!editingSecureLib.title?.trim() || (editingSecureLib.securityGroups || []).length === 0 || secureLibsLoading}
+                  styles={{ root: { background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+                />
+                <DefaultButton text="Cancel" onClick={() => this.setState({ _showCreateSecureLib: false, _editingSecureLib: null } as any)} />
+              </Stack>
+            </Stack>
+          </div>
+        )}
+
+        {/* Secure Libraries List */}
+        {secureLibsLoading && !showCreateSecureLib ? (
+          <Spinner label="Loading secure libraries..." />
+        ) : secureLibs.length === 0 && !showCreateSecureLib ? (
+          <div style={{ textAlign: 'center', padding: '40px 20px', background: '#fff', border: `1px solid ${Colors.borderLight}`, borderRadius: 8 }}>
+            <Icon iconName="Lock" styles={{ root: { fontSize: 40, color: Colors.slateLight, marginBottom: 12, display: 'block' } }} />
+            <Text style={{ fontWeight: 600, fontSize: 15, display: 'block', marginBottom: 4, color: Colors.textDark }}>No Secure Libraries</Text>
+            <Text style={{ fontSize: 13, color: Colors.textTertiary }}>Create a secure library to restrict policy access to specific security groups.</Text>
+          </div>
+        ) : (
+          <Stack tokens={{ childrenGap: 8 }}>
+            {secureLibs.map(lib => (
+              <div key={lib.id} style={{
+                border: `1px solid ${lib.isActive ? Colors.tealPrimary : Colors.borderLight}`,
+                borderRadius: 4, background: '#fff', overflow: 'hidden',
+                opacity: lib.isActive ? 1 : 0.6
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px' }}>
+                  <Icon iconName={lib.icon || 'Lock'} styles={{ root: { fontSize: 20, color: lib.isActive ? Colors.tealPrimary : Colors.slateLight } }} />
+                  <div style={{ flex: 1 }}>
+                    <Text style={{ fontWeight: 600, color: Colors.textDark, display: 'block' }}>{lib.title}</Text>
+                    <Stack horizontal tokens={{ childrenGap: 8 }} style={{ marginTop: 4 }}>
+                      {(lib.securityGroups || []).map(g => (
+                        <span key={g} style={{ padding: '1px 8px', borderRadius: 10, fontSize: 10, fontWeight: 600, background: '#ccfbf1', color: Colors.tealPrimary }}>{g}</span>
+                      ))}
+                    </Stack>
+                    {(lib.subfolders || []).length > 0 && (
+                      <Stack horizontal tokens={{ childrenGap: 6 }} style={{ marginTop: 4 }}>
+                        <Icon iconName="FabricFolder" styles={{ root: { fontSize: 11, color: Colors.slateLight } }} />
+                        <Text style={{ fontSize: 11, color: Colors.textTertiary }}>{lib.subfolders.join(', ')}</Text>
+                      </Stack>
+                    )}
+                  </div>
+                  <Toggle
+                    checked={lib.isActive}
+                    onChange={() => handleToggleActive(lib)}
+                    onText="Active" offText="Inactive"
+                    styles={{ root: { margin: 0 } }}
+                  />
+                  <IconButton
+                    iconProps={{ iconName: 'Delete' }}
+                    title="Remove"
+                    ariaLabel="Remove secure library"
+                    onClick={() => handleDeleteLibrary(lib)}
+                    styles={{ icon: { color: '#dc2626', fontSize: 14 } }}
+                  />
+                </div>
+              </div>
+            ))}
+          </Stack>
+        )}
+      </div>
+    );
+  }
+
+  // ============================================================================
+  // RENDER: SECURITY GROUPS
+  // ============================================================================
+
+  private renderSecurityGroupsContent(): JSX.Element {
+    const st = this.state as any;
+    const groups: Array<{ id: number; title: string; description: string; ownerTitle: string; userCount: number }> = st._spGroups || [];
+    const groupsLoading: boolean = st._spGroupsLoading || false;
+    const groupsMsg: string = st._spGroupsMsg || '';
+    const groupsError: string = st._spGroupsError || '';
+    const showCreateForm: boolean = st._showCreateGroupForm || false;
+    const newGroupName: string = st._newGroupName || '';
+    const newGroupDesc: string = st._newGroupDesc || '';
+    const creatingGroup: boolean = st._creatingGroup || false;
+
+    // Load groups on first render
+    if (!st._spGroupsLoaded && !groupsLoading) {
+      this.setState({ _spGroupsLoading: true, _spGroupsLoaded: true } as any);
+      this.props.sp.web.siteGroups
+        .select('Id', 'Title', 'Description', 'OwnerTitle')()
+        .then(async (allGroups: any[]) => {
+          // Get user counts for each group (batch)
+          const mapped = await Promise.all(allGroups.map(async (g: any) => {
+            let userCount = 0;
+            try {
+              const users = await this.props.sp.web.siteGroups.getById(g.Id).users();
+              userCount = users.length;
+            } catch { /* ignore */ }
+            return {
+              id: g.Id,
+              title: g.Title,
+              description: g.Description || '',
+              ownerTitle: g.OwnerTitle || '',
+              userCount
+            };
+          }));
+          this.setState({ _spGroups: mapped, _spGroupsLoading: false } as any);
+        })
+        .catch((err: any) => {
+          console.error('Failed to load groups:', err);
+          this.setState({ _spGroupsLoading: false, _spGroupsError: 'Failed to load security groups' } as any);
+        });
+    }
+
+    const handleCreateGroup = async (): Promise<void> => {
+      if (!newGroupName.trim()) return;
+      this.setState({ _creatingGroup: true, _spGroupsError: '' } as any);
+      try {
+        await this.props.sp.web.siteGroups.add({
+          Title: newGroupName.trim(),
+          Description: newGroupDesc.trim() || `Custom group created via Policy Manager Admin`,
+          AllowMembersEditMembership: false,
+          OnlyAllowMembersViewMembership: false
+        });
+
+        // Refresh the list
+        const allGroups = await this.props.sp.web.siteGroups.select('Id', 'Title', 'Description', 'OwnerTitle')();
+        const mapped = allGroups.map((g: any) => ({
+          id: g.Id,
+          title: g.Title,
+          description: g.Description || '',
+          ownerTitle: g.OwnerTitle || '',
+          userCount: 0
+        }));
+        this.setState({
+          _spGroups: mapped,
+          _creatingGroup: false,
+          _showCreateGroupForm: false,
+          _newGroupName: '',
+          _newGroupDesc: '',
+          _spGroupsMsg: `Group "${newGroupName.trim()}" created successfully`
+        } as any);
+      } catch (err: any) {
+        this.setState({
+          _creatingGroup: false,
+          _spGroupsError: err.message || 'Failed to create group'
+        } as any);
+      }
+    };
+
+    return (
+      <div>
+        <Stack horizontal horizontalAlign="space-between" verticalAlign="center" style={{ marginBottom: 4 }}>
+          <div>
+            <Text variant="xLarge" style={{ ...TextStyles.bold, color: Colors.textDark, display: 'block' }}>Security Groups</Text>
+            <Text style={{ color: Colors.textTertiary, display: 'block', marginBottom: 16 }}>
+              Create and manage SharePoint security groups for policy visibility and access control.
+            </Text>
+          </div>
+          <PrimaryButton
+            text="+ Create Group"
+            iconProps={{ iconName: 'AddGroup' }}
+            onClick={() => this.setState({ _showCreateGroupForm: true } as any)}
+            disabled={showCreateForm}
+            styles={{ root: { background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+          />
+        </Stack>
+
+        {groupsMsg && (
+          <MessageBar messageBarType={MessageBarType.success} onDismiss={() => this.setState({ _spGroupsMsg: '' } as any)} style={{ marginBottom: 12 }}>{groupsMsg}</MessageBar>
+        )}
+        {groupsError && (
+          <MessageBar messageBarType={MessageBarType.error} onDismiss={() => this.setState({ _spGroupsError: '' } as any)} style={{ marginBottom: 12 }}>{groupsError}</MessageBar>
+        )}
+
+        {/* Create Group Form */}
+        {showCreateForm && (
+          <div style={{
+            background: Colors.tealLight, border: `1px solid ${Colors.tealBorder}`, borderRadius: 4,
+            padding: 20, marginBottom: 16
+          }}>
+            <Text style={{ fontWeight: 700, fontSize: 15, display: 'block', marginBottom: 12, color: Colors.textDark }}>
+              Create New Security Group
+            </Text>
+            <Stack tokens={{ childrenGap: 12 }}>
+              <TextField
+                label="Group Name"
+                required
+                placeholder="e.g., PM_PolicyReviewers"
+                value={newGroupName}
+                onChange={(_, v) => this.setState({ _newGroupName: v || '' } as any)}
+              />
+              <TextField
+                label="Description"
+                placeholder="What is this group used for?"
+                value={newGroupDesc}
+                onChange={(_, v) => this.setState({ _newGroupDesc: v || '' } as any)}
+                multiline rows={2}
+              />
+              <Stack horizontal tokens={{ childrenGap: 8 }}>
+                <PrimaryButton
+                  text={creatingGroup ? 'Creating...' : 'Create Group'}
+                  onClick={handleCreateGroup}
+                  disabled={!newGroupName.trim() || creatingGroup}
+                  styles={{ root: { background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+                />
+                <DefaultButton
+                  text="Cancel"
+                  onClick={() => this.setState({ _showCreateGroupForm: false, _newGroupName: '', _newGroupDesc: '' } as any)}
+                />
+              </Stack>
+            </Stack>
+          </div>
+        )}
+
+        {/* Groups List */}
+        {groupsLoading ? (
+          <Spinner label="Loading security groups..." />
+        ) : groups.length === 0 ? (
+          <Text style={{ color: Colors.textTertiary }}>No security groups found.</Text>
+        ) : (
+          <div>
+            <Text style={{ fontSize: 12, color: Colors.slateLight, marginBottom: 8, display: 'block' }}>{groups.length} groups on this site</Text>
+            <Stack tokens={{ childrenGap: 4 }}>
+              {groups.map(group => {
+                const expandedGroupId = (st as any)._expandedGroupId;
+                const isExpanded = expandedGroupId === group.id;
+                const groupMembers: Array<{ id: number; title: string; email: string; loginName: string }> = (st as any)[`_groupMembers_${group.id}`] || [];
+                const membersLoading = (st as any)[`_groupMembersLoading_${group.id}`] || false;
+                const addingUser = (st as any)._addingUserToGroup || false;
+
+                const handleExpand = async (): Promise<void> => {
+                  if (isExpanded) {
+                    this.setState({ _expandedGroupId: null } as any);
+                    return;
+                  }
+                  this.setState({ _expandedGroupId: group.id, [`_groupMembersLoading_${group.id}`]: true } as any);
+                  try {
+                    const users = await this.props.sp.web.siteGroups.getById(group.id).users();
+                    this.setState({
+                      [`_groupMembers_${group.id}`]: users.map((u: any) => ({ id: u.Id, title: u.Title, email: u.Email || '', loginName: u.LoginName })),
+                      [`_groupMembersLoading_${group.id}`]: false
+                    } as any);
+                  } catch {
+                    this.setState({ [`_groupMembersLoading_${group.id}`]: false } as any);
+                  }
+                };
+
+                const handleAddUser = async (): Promise<void> => {
+                  const email = (st as any)._addUserEmail || '';
+                  if (!email.trim()) return;
+                  this.setState({ _addingUserToGroup: true } as any);
+                  try {
+                    const ensured = await this.props.sp.web.ensureUser(email.trim());
+                    await this.props.sp.web.siteGroups.getById(group.id).users.add(ensured.data.LoginName);
+                    // Refresh members
+                    const users = await this.props.sp.web.siteGroups.getById(group.id).users();
+                    const updatedGroups = groups.map(g => g.id === group.id ? { ...g, userCount: users.length } : g);
+                    this.setState({
+                      [`_groupMembers_${group.id}`]: users.map((u: any) => ({ id: u.Id, title: u.Title, email: u.Email || '', loginName: u.LoginName })),
+                      _addingUserToGroup: false,
+                      _addUserEmail: '',
+                      _spGroups: updatedGroups,
+                      _spGroupsMsg: `Added "${ensured.data.Title}" to ${group.title}`
+                    } as any);
+                  } catch (err: any) {
+                    this.setState({ _addingUserToGroup: false, _spGroupsError: err.message || 'Failed to add user' } as any);
+                  }
+                };
+
+                const handleRemoveUser = async (loginName: string, displayName: string): Promise<void> => {
+                  try {
+                    await this.props.sp.web.siteGroups.getById(group.id).users.removeByLoginName(loginName);
+                    const users = await this.props.sp.web.siteGroups.getById(group.id).users();
+                    const updatedGroups = groups.map(g => g.id === group.id ? { ...g, userCount: users.length } : g);
+                    this.setState({
+                      [`_groupMembers_${group.id}`]: users.map((u: any) => ({ id: u.Id, title: u.Title, email: u.Email || '', loginName: u.LoginName })),
+                      _spGroups: updatedGroups,
+                      _spGroupsMsg: `Removed "${displayName}" from ${group.title}`
+                    } as any);
+                  } catch (err: any) {
+                    this.setState({ _spGroupsError: err.message || 'Failed to remove user' } as any);
+                  }
+                };
+
+                return (
+                  <div key={group.id} style={{ border: `1px solid ${isExpanded ? Colors.tealPrimary : Colors.borderLight}`, borderRadius: 4, background: '#fff', overflow: 'hidden' }}>
+                    {/* Group header row */}
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={handleExpand}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleExpand(); } }}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', cursor: 'pointer',
+                        background: isExpanded ? Colors.tealLight : '#fff'
+                      }}
+                    >
+                      <Icon iconName={isExpanded ? 'ChevronDown' : 'ChevronRight'} styles={{ root: { fontSize: 12, color: Colors.slateLight, transition: 'transform 0.2s' } }} />
+                      <Icon iconName="Group" styles={{ root: { fontSize: 18, color: Colors.tealPrimary } }} />
+                      <div style={{ flex: 1 }}>
+                        <Text style={{ fontWeight: 600, color: Colors.textDark, display: 'block' }}>{group.title}</Text>
+                        {group.description && <Text style={{ fontSize: 11, color: Colors.textTertiary }}>{group.description}</Text>}
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <Text style={{ fontWeight: 600, fontSize: 13, color: Colors.tealPrimary, display: 'block' }}>{group.userCount}</Text>
+                        <Text style={{ fontSize: 10, color: Colors.slateLight }}>members</Text>
+                      </div>
+                      <Text style={{ fontSize: 11, color: Colors.slateLight, minWidth: 80 }}>Owner: {group.ownerTitle}</Text>
+                    </div>
+
+                    {/* Expanded: member list + add user */}
+                    {isExpanded && (
+                      <div style={{ borderTop: `1px solid ${Colors.borderLight}`, padding: '12px 16px 16px 48px' }}>
+                        {/* Add user row */}
+                        <Stack horizontal tokens={{ childrenGap: 8 }} verticalAlign="end" style={{ marginBottom: 12 }}>
+                          <Stack.Item grow>
+                            <TextField
+                              placeholder="Enter email address to add..."
+                              value={(st as any)._addUserEmail || ''}
+                              onChange={(_, v) => this.setState({ _addUserEmail: v || '' } as any)}
+                              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddUser(); } }}
+                              styles={{ root: { flex: 1 } }}
+                            />
+                          </Stack.Item>
+                          <PrimaryButton
+                            text={addingUser ? 'Adding...' : 'Add User'}
+                            iconProps={{ iconName: 'AddFriend' }}
+                            onClick={handleAddUser}
+                            disabled={!((st as any)._addUserEmail || '').trim() || addingUser}
+                            styles={{ root: { background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+                          />
+                        </Stack>
+
+                        {/* Members */}
+                        {membersLoading ? (
+                          <Spinner size={SpinnerSize.small} label="Loading members..." />
+                        ) : groupMembers.length === 0 ? (
+                          <Text style={{ fontSize: 12, color: Colors.slateLight, fontStyle: 'italic' }}>No members in this group</Text>
+                        ) : (
+                          <Stack tokens={{ childrenGap: 2 }}>
+                            {groupMembers.map(member => (
+                              <div key={member.id} style={{
+                                display: 'flex', alignItems: 'center', gap: 10, padding: '6px 8px',
+                                borderRadius: 4, fontSize: 13
+                              }}>
+                                <Icon iconName="Contact" styles={{ root: { fontSize: 14, color: Colors.slateLight } }} />
+                                <Text style={{ flex: 1, fontWeight: 500, color: Colors.textDark }}>{member.title}</Text>
+                                <Text style={{ fontSize: 11, color: Colors.textTertiary, minWidth: 160 }}>{member.email}</Text>
+                                <IconButton
+                                  iconProps={{ iconName: 'Cancel' }}
+                                  title={`Remove ${member.title}`}
+                                  ariaLabel={`Remove ${member.title} from group`}
+                                  onClick={() => handleRemoveUser(member.loginName, member.title)}
+                                  styles={{ root: { height: 24, width: 24 }, icon: { fontSize: 12, color: '#dc2626' } }}
+                                />
+                              </div>
+                            ))}
+                          </Stack>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </Stack>
+          </div>
+        )}
+      </div>
+    );
   }
 
   // ============================================================================
@@ -5340,7 +6705,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         </Stack>
 
         {/* Learn More Panel */}
-        <Panel
+        <StyledPanel
           isOpen={showProductPanel}
           onDismiss={() => this.setState({ showProductPanel: false, selectedProduct: null })}
           type={PanelType.medium}
@@ -5424,7 +6789,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               </Text>
             </Stack>
           )}
-        </Panel>
+        </StyledPanel>
       </div>
     );
   }
@@ -5443,13 +6808,13 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
 
     return (
       <div>
-        <Text variant="large" style={{ ...TextStyles.semiBold, color: Colors.textDark, marginBottom: 8, display: 'block' }}>AI Chat Assistant</Text>
+        <Text variant="large" style={{ ...TextStyles.semiBold, color: Colors.textDark, marginBottom: 8, display: 'block' }}>AI Settings</Text>
         <Text variant="small" style={{ ...TextStyles.tertiary, display: 'block', marginBottom: 20 }}>
-          Configure the AI-powered chat assistant. Users can ask questions about policies, get drafting help, and receive app guidance.
+          Configure AI-powered services including the chat assistant and document conversion pipeline.
         </Text>
 
         <MessageBar messageBarType={MessageBarType.info} style={{ marginBottom: 20 }}>
-          The AI Assistant uses the existing Azure OpenAI deployment. Deploy the chat function first using the provided Bicep template, then paste the Function URL below.
+          These services use Azure Functions. Deploy each function using the provided Bicep templates, then paste the Function URLs below.
         </MessageBar>
 
         <Stack tokens={{ childrenGap: 16 }}>
@@ -5532,6 +6897,521 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             }}
             styles={{ root: { maxWidth: 300 } }}
           />
+
+          {/* Separator */}
+          <div style={{ borderTop: '1px solid #e2e8f0', margin: '8px 0' }} />
+
+          {/* Document Converter */}
+          <Text variant="mediumPlus" style={{ ...TextStyles.semiBold, color: Colors.textDark, display: 'block' }}>Document Converter</Text>
+          <Text variant="small" style={{ ...TextStyles.tertiary, display: 'block', marginBottom: 4 }}>
+            Converts Word (.docx), PowerPoint (.pptx), and Excel (.xlsx) files to clean HTML at publish time. PDFs remain as native PDFs.
+          </Text>
+
+          {/* Status Summary Card */}
+          <div style={{
+            display: 'flex', gap: 12, padding: '14px 16px',
+            background: 'linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%)',
+            borderRadius: 4, border: '1px solid #a7f3d0', flexWrap: 'wrap'
+          }}>
+            <div style={{ flex: '1 1 100px', textAlign: 'center', minWidth: 80 }}>
+              <Icon iconName={(st as any)._docConverterFunctionUrl ? 'PlugConnected' : 'PlugDisconnected'}
+                style={{ fontSize: 20, color: (st as any)._docConverterFunctionUrl ? '#059669' : '#d97706', display: 'block', marginBottom: 2 }} />
+              <Text variant="small" style={{ color: '#334155' }}>
+                {(st as any)._docConverterFunctionUrl ? 'Configured' : 'Not Configured'}
+              </Text>
+            </div>
+            <div style={{ width: 1, background: '#a7f3d0', alignSelf: 'stretch' }} />
+            <div style={{ flex: '1 1 100px', textAlign: 'center', minWidth: 80 }}>
+              <Icon iconName={(st as any)._docConverterTestStatus === 'success' ? 'StatusCircleCheckmark' :
+                (st as any)._docConverterTestStatus === 'error' ? 'StatusCircleErrorX' : 'StatusCircleQuestionMark'}
+                style={{ fontSize: 20, color: (st as any)._docConverterTestStatus === 'success' ? '#059669' :
+                  (st as any)._docConverterTestStatus === 'error' ? '#dc2626' : '#94a3b8', display: 'block', marginBottom: 2 }} />
+              <Text variant="small" style={{ color: '#334155' }}>
+                {(st as any)._docConverterTestStatus === 'success' ? 'Connected' :
+                  (st as any)._docConverterTestStatus === 'error' ? 'Error' : 'Not Tested'}
+              </Text>
+            </div>
+            <div style={{ width: 1, background: '#a7f3d0', alignSelf: 'stretch' }} />
+            <div style={{ flex: '1 1 100px', textAlign: 'center', minWidth: 80 }}>
+              <Text variant="xLarge" style={{ fontWeight: 700, color: '#0d9488', display: 'block' }}>
+                {(st as any)._docScanEligible ?? '—'}
+              </Text>
+              <Text variant="small" style={{ color: '#334155' }}>Eligible</Text>
+            </div>
+            <div style={{ width: 1, background: '#a7f3d0', alignSelf: 'stretch' }} />
+            <div style={{ flex: '1 1 100px', textAlign: 'center', minWidth: 80 }}>
+              <Text variant="xLarge" style={{ fontWeight: 700, color: '#059669', display: 'block' }}>
+                {(st as any)._docScanConverted ?? '—'}
+              </Text>
+              <Text variant="small" style={{ color: '#334155' }}>Already Converted</Text>
+            </div>
+          </div>
+
+          {/* Format breakdown */}
+          {(st as any)._docScanBreakdown && (
+            <Text variant="small" style={{ color: '#64748b', fontStyle: 'italic' }}>
+              {(st as any)._docScanBreakdown}
+            </Text>
+          )}
+
+          {/* Doc Converter Function URL */}
+          <TextField
+            label="Document Converter Function URL"
+            placeholder="https://dwx-pm-docconv-func-prod.azurewebsites.net/api/convertDocument?code=..."
+            value={(st as any)._docConverterFunctionUrl ?? ''}
+            onChange={(_, val) => this.setState({ _docConverterFunctionUrl: val || '' } as any)}
+            description="Full URL including the function key (?code=...). Converts .docx/.pptx/.xlsx to styled HTML when policies are published."
+          />
+
+          {/* Test Connection + Scan */}
+          <Stack horizontal tokens={{ childrenGap: 8 }} verticalAlign="center" wrap>
+            <PrimaryButton
+              text={(st as any)._docConverterTestStatus === 'testing' ? 'Testing...' : 'Test Connection & Scan'}
+              iconProps={{ iconName: (st as any)._docConverterTestStatus === 'success' ? 'CheckMark' : (st as any)._docConverterTestStatus === 'error' ? 'Cancel' : 'TestBeaker' }}
+              disabled={!(st as any)._docConverterFunctionUrl || (st as any)._docConverterTestStatus === 'testing'}
+              onClick={async () => {
+                this.setState({ _docConverterTestStatus: 'testing', _docConverterTestMessage: '', _docScanEligible: '...', _docScanConverted: '...', _docScanBreakdown: '' } as any);
+                try {
+                  // 1. Test connection
+                  const resp = await fetch((st as any)._docConverterFunctionUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ siteUrl: 'https://test.sharepoint.com', documentUrl: '/test.docx', policyId: 0 })
+                  });
+                  // Any HTTP response (even 500) means the function is reachable.
+                  // The test sends dummy data, so 500 is expected (can't download from test.sharepoint.com).
+                  // Only a network error (caught below) means truly unreachable.
+                  this.setState({ _docConverterTestStatus: 'success', _docConverterTestMessage: `Function reachable (HTTP ${resp.status})` } as any);
+
+                  // 2. Scan documents
+                  const items: any[] = await this.props.sp.web.lists
+                    .getByTitle('PM_Policies')
+                    .items.filter("PolicyStatus eq 'Published'")
+                    .select('Id', 'PolicyName', 'DocumentURL', 'PolicyContent')
+                    .top(500)();
+
+                  const convertibleExts = ['docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls'];
+                  const getExt = (item: any) => {
+                    const docUrl = typeof item.DocumentURL === 'string' ? item.DocumentURL : (item.DocumentURL?.Url || '');
+                    return docUrl.split('.').pop()?.toLowerCase() || '';
+                  };
+
+                  const eligible = items.filter((item: any) => convertibleExts.includes(getExt(item)) && !item.PolicyContent);
+                  const converted = items.filter((item: any) => convertibleExts.includes(getExt(item)) && !!item.PolicyContent);
+
+                  // Build format breakdown
+                  const extCounts: Record<string, number> = {};
+                  eligible.forEach((item: any) => {
+                    const ext = getExt(item);
+                    extCounts[ext] = (extCounts[ext] || 0) + 1;
+                  });
+                  const breakdown = Object.entries(extCounts).map(([ext, count]) => `${count} .${ext}`).join(', ');
+
+                  this.setState({
+                    _docScanEligible: eligible.length,
+                    _docScanConverted: converted.length,
+                    _docScanBreakdown: breakdown ? `Eligible breakdown: ${breakdown}` : 'No convertible documents found'
+                  } as any);
+                } catch (err: any) {
+                  this.setState({ _docConverterTestStatus: 'error', _docConverterTestMessage: `Error: ${err.message || 'Network error'}`, _docScanEligible: '—', _docScanConverted: '—' } as any);
+                }
+              }}
+              styles={{
+                root: {
+                  background: (st as any)._docConverterTestStatus === 'success' ? '#059669' : (st as any)._docConverterTestStatus === 'error' ? '#dc2626' : '#0d9488',
+                  borderColor: (st as any)._docConverterTestStatus === 'success' ? '#059669' : (st as any)._docConverterTestStatus === 'error' ? '#dc2626' : '#0d9488',
+                },
+                rootHovered: {
+                  background: (st as any)._docConverterTestStatus === 'success' ? '#047857' : (st as any)._docConverterTestStatus === 'error' ? '#b91c1c' : '#0f766e',
+                  borderColor: (st as any)._docConverterTestStatus === 'success' ? '#047857' : (st as any)._docConverterTestStatus === 'error' ? '#b91c1c' : '#0f766e',
+                }
+              }}
+            />
+            {(st as any)._docConverterTestMessage && (
+              <Text style={{ color: (st as any)._docConverterTestStatus === 'success' ? '#059669' : '#dc2626', fontSize: 12 }}>
+                {(st as any)._docConverterTestMessage}
+              </Text>
+            )}
+          </Stack>
+
+          {/* Eligible Documents List */}
+          <div style={{ borderTop: '1px solid #e2e8f0', margin: '8px 0' }} />
+          <Text variant="mediumPlus" style={{ ...TextStyles.semiBold, color: Colors.textDark, display: 'block' }}>Documents Ready for Conversion</Text>
+          <Text variant="small" style={{ ...TextStyles.tertiary, display: 'block', marginBottom: 8 }}>
+            Published policies with convertible documents (.docx, .pptx, .xlsx) that don't yet have HTML content.
+          </Text>
+
+          {!(st as any)._docListLoaded && !(st as any)._docListLoading && (
+            <DefaultButton
+              text="Scan Documents"
+              iconProps={{ iconName: 'DocumentSearch' }}
+              onClick={async () => {
+                this.setState({ _docListLoading: true, _docListLoaded: true } as any);
+                try {
+                  const items: any[] = await this.props.sp.web.lists
+                    .getByTitle('PM_Policies')
+                    .items.filter("PolicyStatus eq 'Published'")
+                    .select('Id', 'PolicyName', 'PolicyNumber', 'DocumentURL', 'PolicyContent', 'PolicyCategory')
+                    .top(500)();
+                  const convertibleExts = ['docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls'];
+                  const getDocUrl = (item: any) => typeof item.DocumentURL === 'string' ? item.DocumentURL : (item.DocumentURL?.Url || item.DocumentURL?.Description || '');
+                  const getExt = (item: any) => getDocUrl(item).split('.').pop()?.toLowerCase() || '';
+                  const getFileName = (item: any) => getDocUrl(item).split('/').pop() || '';
+
+                  const eligible = items
+                    .filter((item: any) => convertibleExts.includes(getExt(item)) && !item.PolicyContent)
+                    .map((item: any) => ({ id: item.Id, name: item.PolicyName, number: item.PolicyNumber || '', category: item.PolicyCategory || '', fileName: getFileName(item), ext: getExt(item), url: getDocUrl(item) }));
+                  const converted = items
+                    .filter((item: any) => convertibleExts.includes(getExt(item)) && !!item.PolicyContent)
+                    .map((item: any) => ({ id: item.Id, name: item.PolicyName, number: item.PolicyNumber || '', category: item.PolicyCategory || '', fileName: getFileName(item), ext: getExt(item) }));
+
+                  this.setState({ _docListEligible: eligible, _docListConverted: converted, _docListLoading: false } as any);
+                } catch {
+                  this.setState({ _docListLoading: false } as any);
+                }
+              }}
+            />
+          )}
+
+          {(st as any)._docListLoading && <Spinner size={SpinnerSize.small} label="Scanning policies..." />}
+
+          {(st as any)._docListLoaded && !(st as any)._docListLoading && (
+            <div style={{ marginBottom: 8 }}>
+              {/* Filters + Select controls */}
+              {((st as any)._docListEligible || []).length > 0 && (() => {
+                const eligible: any[] = (st as any)._docListEligible || [];
+                const selectedIds: Set<number> = new Set((st as any)._docConvertSelected || []);
+                const filterType: string = (st as any)._docFilterType || 'all';
+                const filterCategory: string = (st as any)._docFilterCategory || 'all';
+
+                // Unique types and categories for filter dropdowns
+                const types = Array.from(new Set(eligible.map((d: any) => d.ext)));
+                const categories = Array.from(new Set(eligible.map((d: any) => d.category).filter(Boolean)));
+
+                // Apply filters
+                const filtered = eligible.filter((d: any) =>
+                  (filterType === 'all' || d.ext === filterType) &&
+                  (filterCategory === 'all' || d.category === filterCategory)
+                );
+
+                const allFilteredSelected = filtered.length > 0 && filtered.every((d: any) => selectedIds.has(d.id));
+                const someSelected = filtered.some((d: any) => selectedIds.has(d.id));
+
+                const toggleAll = (): void => {
+                  if (allFilteredSelected) {
+                    const newSet = new Set(selectedIds);
+                    filtered.forEach((d: any) => newSet.delete(d.id));
+                    this.setState({ _docConvertSelected: Array.from(newSet) } as any);
+                  } else {
+                    const newSet = new Set(selectedIds);
+                    filtered.forEach((d: any) => newSet.add(d.id));
+                    this.setState({ _docConvertSelected: Array.from(newSet) } as any);
+                  }
+                };
+
+                const toggleOne = (id: number): void => {
+                  const newSet = new Set(selectedIds);
+                  if (newSet.has(id)) newSet.delete(id); else newSet.add(id);
+                  this.setState({ _docConvertSelected: Array.from(newSet) } as any);
+                };
+
+                return (
+                  <div style={{ marginBottom: 12 }}>
+                    <Text style={{ fontWeight: 600, fontSize: 13, color: Colors.amber, display: 'block', marginBottom: 6 }}>
+                      &#128337; {eligible.length} documents pending conversion
+                    </Text>
+
+                    {/* Filter bar */}
+                    <Stack horizontal tokens={{ childrenGap: 8 }} verticalAlign="end" style={{ marginBottom: 8 }}>
+                      <Dropdown
+                        label="File Type"
+                        selectedKey={filterType}
+                        onChange={(_, opt) => this.setState({ _docFilterType: opt?.key || 'all' } as any)}
+                        options={[{ key: 'all', text: 'All Types' }, ...types.map(t => ({ key: t, text: `.${t}` }))]}
+                        styles={{ root: { width: 120 }, dropdown: { borderRadius: 4 } }}
+                      />
+                      {categories.length > 1 && (
+                        <Dropdown
+                          label="Category"
+                          selectedKey={filterCategory}
+                          onChange={(_, opt) => this.setState({ _docFilterCategory: opt?.key || 'all' } as any)}
+                          options={[{ key: 'all', text: 'All Categories' }, ...categories.map(c => ({ key: c, text: c }))]}
+                          styles={{ root: { width: 160 }, dropdown: { borderRadius: 4 } }}
+                        />
+                      )}
+                      <Text style={{ fontSize: 12, color: Colors.slateLight, paddingBottom: 6 }}>
+                        {filtered.length} shown &middot; {selectedIds.size} selected
+                      </Text>
+                    </Stack>
+
+                    <div style={{ border: `1px solid ${Colors.borderLight}`, borderRadius: 4, overflow: 'hidden' }}>
+                      {/* Header */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '32px 60px 1fr 140px 80px 60px', padding: '6px 12px', background: '#f8fafc', fontSize: 11, fontWeight: 600, color: Colors.slateLight, textTransform: 'uppercase', borderBottom: `1px solid ${Colors.borderLight}`, alignItems: 'center' }}>
+                        <input
+                          type="checkbox"
+                          checked={allFilteredSelected}
+                          ref={(el) => { if (el) el.indeterminate = someSelected && !allFilteredSelected; }}
+                          onChange={toggleAll}
+                          style={{ width: 14, height: 14 }}
+                          title="Select all"
+                        />
+                        <span>ID</span><span>Policy</span><span>File</span><span>Type</span><span>Status</span>
+                      </div>
+                      {/* Rows */}
+                      {filtered.map((doc: any) => (
+                        <div key={doc.id} style={{
+                          display: 'grid', gridTemplateColumns: '32px 60px 1fr 140px 80px 60px',
+                          padding: '8px 12px', fontSize: 12, borderBottom: `1px solid ${Colors.borderLight}`, alignItems: 'center',
+                          background: selectedIds.has(doc.id) ? '#f0fdfa' : '#fff'
+                        }}>
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(doc.id)}
+                            onChange={() => toggleOne(doc.id)}
+                            style={{ width: 14, height: 14 }}
+                          />
+                          <span style={{ color: Colors.slateLight }}>{doc.id}</span>
+                          <span style={{ fontWeight: 500, color: Colors.textDark }}>{doc.number ? `${doc.number} — ` : ''}{doc.name}</span>
+                          <span style={{ color: Colors.textTertiary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={doc.fileName}>{doc.fileName}</span>
+                          <span><span style={{ padding: '1px 8px', borderRadius: 10, fontSize: 10, fontWeight: 600, background: doc.ext === 'docx' || doc.ext === 'doc' ? '#dbeafe' : doc.ext === 'pptx' || doc.ext === 'ppt' ? '#fef3c7' : '#dcfce7', color: doc.ext === 'docx' || doc.ext === 'doc' ? '#2563eb' : doc.ext === 'pptx' || doc.ext === 'ppt' ? '#d97706' : '#059669' }}>.{doc.ext}</span></span>
+                          <span style={{ color: Colors.amber, fontWeight: 600, fontSize: 11 }}>Pending</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Convert Selected button */}
+                    {selectedIds.size > 0 && (
+                      <PrimaryButton
+                        text={`Convert Selected (${selectedIds.size})`}
+                        iconProps={{ iconName: 'Processing' }}
+                        disabled={!(st as any)._docConverterFunctionUrl || (st as any)._batchConvertRunning}
+                        onClick={async () => {
+                          const selected = eligible.filter((d: any) => selectedIds.has(d.id));
+                          this.setState({
+                            _batchConvertRunning: true, _batchConvertCurrent: 0, _batchConvertTotal: selected.length,
+                            _batchConvertCurrentName: 'Starting...', _batchConvertResult: null, _batchConvertLog: []
+                          } as any);
+
+                          const addLog = (msg: string) => this.setState((prev: any) => ({ _batchConvertLog: [...(prev._batchConvertLog || []), `[${new Date().toLocaleTimeString()}] ${msg}`] }) as any);
+
+                          try {
+                            const siteUrl = this.props.context.pageContext.web.absoluteUrl;
+                            const { DocumentConversionService } = await import('../../../services/DocumentConversionService');
+                            const converter = new DocumentConversionService(this.props.sp, (st as any)._docConverterFunctionUrl);
+                            let converted = 0, failed = 0;
+
+                            for (let i = 0; i < selected.length; i++) {
+                              const doc = selected[i];
+                              this.setState({ _batchConvertCurrent: i + 1, _batchConvertCurrentName: doc.name } as any);
+                              addLog(`[${i + 1}/${selected.length}] Converting: ${doc.name} (.${doc.ext})`);
+                              try {
+                                const ok = await converter.convertAndSave(siteUrl, doc.url, doc.id);
+                                if (ok) { converted++; addLog(`  ✓ ${doc.name} — converted`); }
+                                else { failed++; addLog(`  ✗ ${doc.name} — returned null`); }
+                              } catch (err: any) { failed++; addLog(`  ✗ ${doc.name} — ${err.message}`); }
+                            }
+
+                            addLog(`Done: ${converted} converted, ${failed} failed`);
+                            this.setState({ _batchConvertRunning: false, _batchConvertResult: { converted, failed, skipped: 0 }, _docConvertSelected: [], _docListLoaded: false } as any);
+                          } catch (err: any) {
+                            addLog(`✗ Failed: ${err.message}`);
+                            this.setState({ _batchConvertRunning: false, _batchConvertResult: { converted: 0, failed: 0, skipped: 0 } } as any);
+                          }
+                        }}
+                        styles={{ root: { marginTop: 8, background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+                      />
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Already converted */}
+              {((st as any)._docListConverted || []).length > 0 && (
+                <div style={{ marginBottom: 12 }}>
+                  <Text style={{ fontWeight: 600, fontSize: 13, color: Colors.green, display: 'block', marginBottom: 6 }}>
+                    &#10003; {((st as any)._docListConverted || []).length} documents already converted
+                  </Text>
+                  <div style={{ border: `1px solid ${Colors.borderLight}`, borderRadius: 4, overflow: 'hidden' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '60px 1fr 140px 80px 60px', padding: '6px 12px', background: '#f8fafc', fontSize: 11, fontWeight: 600, color: Colors.slateLight, textTransform: 'uppercase', borderBottom: `1px solid ${Colors.borderLight}` }}>
+                      <span>ID</span><span>Policy</span><span>File</span><span>Type</span><span>Status</span>
+                    </div>
+                    {((st as any)._docListConverted || []).map((doc: any) => (
+                      <div key={doc.id} style={{ display: 'grid', gridTemplateColumns: '60px 1fr 140px 80px 60px', padding: '8px 12px', fontSize: 12, borderBottom: `1px solid ${Colors.borderLight}`, alignItems: 'center' }}>
+                        <span style={{ color: Colors.slateLight }}>{doc.id}</span>
+                        <span style={{ fontWeight: 500, color: Colors.textDark }}>{doc.number ? `${doc.number} — ` : ''}{doc.name}</span>
+                        <span style={{ color: Colors.textTertiary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={doc.fileName}>{doc.fileName}</span>
+                        <span><span style={{ padding: '1px 8px', borderRadius: 10, fontSize: 10, fontWeight: 600, background: doc.ext === 'docx' || doc.ext === 'doc' ? '#dbeafe' : doc.ext === 'pptx' || doc.ext === 'ppt' ? '#fef3c7' : '#dcfce7', color: doc.ext === 'docx' || doc.ext === 'doc' ? '#2563eb' : doc.ext === 'pptx' || doc.ext === 'ppt' ? '#d97706' : '#059669' }}>.{doc.ext}</span></span>
+                        <span style={{ color: Colors.green, fontWeight: 600, fontSize: 11 }}>Done</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {((st as any)._docListEligible || []).length === 0 && ((st as any)._docListConverted || []).length === 0 && (
+                <Text style={{ fontSize: 12, color: Colors.slateLight, fontStyle: 'italic' }}>No published policies with convertible documents found.</Text>
+              )}
+
+              <DefaultButton
+                text="Refresh"
+                iconProps={{ iconName: 'Refresh' }}
+                onClick={() => this.setState({ _docListLoaded: false, _docListLoading: false } as any)}
+                styles={{ root: { marginTop: 8 } }}
+              />
+            </div>
+          )}
+
+          {/* Batch Convert */}
+          <div style={{ borderTop: '1px solid #e2e8f0', margin: '8px 0' }} />
+          <Text variant="mediumPlus" style={{ ...TextStyles.semiBold, color: Colors.textDark, display: 'block' }}>Batch Convert</Text>
+          <Text variant="small" style={{ ...TextStyles.tertiary, display: 'block', marginBottom: 4 }}>
+            Convert all published policies with convertible documents that don't yet have HTML content.
+          </Text>
+
+          {(st as any)._batchConvertRunning && (
+            <div style={{ marginBottom: 8 }}>
+              <Text variant="small" style={{ display: 'block', marginBottom: 4, color: Colors.textDark }}>
+                Converting {(st as any)._batchConvertCurrent || 0} of {(st as any)._batchConvertTotal || 0}: {(st as any)._batchConvertCurrentName || ''}
+              </Text>
+              <div style={{ height: 6, borderRadius: 3, background: '#e2e8f0', overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%',
+                  borderRadius: 3,
+                  background: '#0d9488',
+                  width: `${(st as any)._batchConvertTotal ? ((st as any)._batchConvertCurrent / (st as any)._batchConvertTotal) * 100 : 0}%`,
+                  transition: 'width 0.3s ease'
+                }} />
+              </div>
+            </div>
+          )}
+
+          {(st as any)._batchConvertResult && !(st as any)._batchConvertRunning && (
+            <MessageBar
+              messageBarType={(st as any)._batchConvertResult.failed > 0 ? MessageBarType.warning : MessageBarType.success}
+              style={{ marginBottom: 8 }}
+            >
+              Batch complete: {(st as any)._batchConvertResult.converted} converted, {(st as any)._batchConvertResult.failed} failed, {(st as any)._batchConvertResult.skipped} already had HTML.
+            </MessageBar>
+          )}
+
+          <DefaultButton
+            text={(st as any)._batchConvertRunning ? 'Converting...' : 'Batch Convert Documents'}
+            iconProps={{ iconName: 'Processing' }}
+            disabled={!(st as any)._docConverterFunctionUrl || (st as any)._batchConvertRunning}
+            onClick={async () => {
+              this.setState({
+                _batchConvertRunning: true,
+                _batchConvertCurrent: 0,
+                _batchConvertTotal: 0,
+                _batchConvertCurrentName: 'Scanning...',
+                _batchConvertResult: null,
+                _batchConvertLog: []
+              } as any);
+
+              const addConvertLog = (msg: string) => {
+                this.setState((prev: any) => ({
+                  _batchConvertLog: [...(prev._batchConvertLog || []), `[${new Date().toLocaleTimeString()}] ${msg}`]
+                }) as any);
+              };
+
+              try {
+                addConvertLog('Scanning published policies...');
+
+                // 1. Query published policies
+                const items: any[] = await this.props.sp.web.lists
+                  .getByTitle('PM_Policies')
+                  .items.filter("PolicyStatus eq 'Published'")
+                  .select('Id', 'PolicyName', 'DocumentURL', 'PolicyContent')
+                  .top(500)();
+
+                const convertibleExts = ['docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls'];
+                const getDocUrl = (item: any) => typeof item.DocumentURL === 'string' ? item.DocumentURL : (item.DocumentURL?.Url || '');
+                const getExt = (item: any) => getDocUrl(item).split('.').pop()?.toLowerCase() || '';
+
+                // 2. Filter eligible
+                const eligible = items.filter((item: any) => convertibleExts.includes(getExt(item)) && !item.PolicyContent);
+                const skipped = items.filter((item: any) => convertibleExts.includes(getExt(item)) && !!item.PolicyContent).length;
+
+                addConvertLog(`Found ${items.length} published policies — ${eligible.length} eligible, ${skipped} already converted`);
+
+                if (eligible.length === 0) {
+                  addConvertLog('Nothing to convert.');
+                  this.setState({
+                    _batchConvertRunning: false,
+                    _batchConvertResult: { converted: 0, failed: 0, skipped: skipped }
+                  } as any);
+                  return;
+                }
+
+                this.setState({ _batchConvertTotal: eligible.length } as any);
+
+                // 3. Convert sequentially
+                const siteUrl = this.props.context.pageContext.web.absoluteUrl;
+                const { DocumentConversionService } = await import('../../../services/DocumentConversionService');
+                const converter = new DocumentConversionService(this.props.sp, (st as any)._docConverterFunctionUrl);
+                let converted = 0;
+                let failed = 0;
+
+                for (let i = 0; i < eligible.length; i++) {
+                  const item = eligible[i];
+                  const docUrl = getDocUrl(item);
+                  const ext = getExt(item);
+                  const name = item.PolicyName || `Policy ${item.Id}`;
+
+                  this.setState({
+                    _batchConvertCurrent: i + 1,
+                    _batchConvertCurrentName: name
+                  } as any);
+
+                  addConvertLog(`[${i + 1}/${eligible.length}] Converting: ${name} (.${ext})`);
+
+                  try {
+                    const success = await converter.convertAndSave(siteUrl, docUrl, item.Id);
+                    if (success) {
+                      converted++;
+                      addConvertLog(`  ✓ ${name} — converted successfully`);
+                    } else {
+                      failed++;
+                      addConvertLog(`  ✗ ${name} — conversion returned null`);
+                    }
+                  } catch (err: any) {
+                    failed++;
+                    addConvertLog(`  ✗ ${name} — ${err.message || 'Unknown error'}`);
+                  }
+                }
+
+                addConvertLog(`Batch complete: ${converted} converted, ${failed} failed, ${skipped} already had HTML`);
+
+                this.setState({
+                  _batchConvertRunning: false,
+                  _batchConvertResult: { converted, failed, skipped },
+                  _docScanEligible: 0,
+                  _docScanConverted: (skipped + converted)
+                } as any);
+              } catch (err: any) {
+                addConvertLog(`✗ Batch failed: ${err.message || 'Unknown error'}`);
+                this.setState({
+                  _batchConvertRunning: false,
+                  _batchConvertResult: { converted: 0, failed: 0, skipped: 0 }
+                } as any);
+              }
+            }}
+          />
+
+          {/* Conversion Log Console */}
+          {((st as any)._batchConvertLog || []).length > 0 && (
+            <div style={{
+              background: '#1a2533', color: '#a0aec0', padding: 16, borderRadius: 4,
+              fontFamily: 'Consolas, monospace', fontSize: 12, maxHeight: 250,
+              overflowY: 'auto', lineHeight: 1.6, marginTop: 8
+            }} ref={(el: HTMLDivElement | null) => { if (el) el.scrollTop = el.scrollHeight; }}>
+              {((st as any)._batchConvertLog || []).map((line: string, i: number) => (
+                <div key={i} style={{
+                  color: line.includes('✓') ? '#48bb78' : line.includes('✗') ? '#fc8181' : line.includes('complete') ? '#63b3ed' : '#a0aec0'
+                }}>{line}</div>
+              ))}
+            </div>
+          )}
         </Stack>
       </div>
     );
@@ -5561,6 +7441,9 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       case 'aiAssistant': return this.renderAIAssistantContent();
       case 'settings': return this.renderSettingsContent();
       case 'provisioning': return this.renderProvisioningContent();
+      case 'documentStorage': return this.renderDocumentStorageContent();
+      case 'secureLibraries': return this.renderSecureLibrariesContent();
+      case 'securityGroups': return this.renderSecurityGroupsContent();
       case 'systemInfo': return this.renderSystemInfoContent();
       case 'productShowcase': return this.renderProductShowcaseContent();
       default: return this.renderTemplatesContent();
@@ -5662,7 +7545,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                       iconProps={{ iconName: 'Save' }}
                       disabled={saving}
                       onClick={async () => {
-                        // AI Assistant section — save to PM_Configuration + localStorage
+                        // AI Settings section — save to PM_Configuration + localStorage
                         if (this.state.activeSection === 'aiAssistant') {
                           try {
                             this.setState({ saving: true } as any);
@@ -5672,11 +7555,18 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                               'Integration.AI.Chat.FunctionUrl': st._aiChatFunctionUrl || '',
                               'Integration.AI.Chat.MaxTokens': st._aiChatMaxTokens || '1000'
                             });
-                            // Also persist URL to localStorage as fallback
+                            // Save Doc Converter URL to Integration category
+                            await this.adminConfigService.saveConfigByCategory('Integration', {
+                              'Integration.DocConverter.FunctionUrl': st._docConverterFunctionUrl || ''
+                            });
+                            // Also persist URLs to localStorage as fallback
                             if (st._aiChatFunctionUrl) {
                               localStorage.setItem('PM_AI_ChatFunctionUrl', st._aiChatFunctionUrl);
                             }
-                            void this.dialogManager.showAlert('AI Assistant configuration saved.', { title: 'Settings Saved', variant: 'success' });
+                            if (st._docConverterFunctionUrl) {
+                              localStorage.setItem('PM_DocConverter_FunctionUrl', st._docConverterFunctionUrl);
+                            }
+                            void this.dialogManager.showAlert('AI Settings saved.', { title: 'Settings Saved', variant: 'success' });
                           } catch (err: any) {
                             void this.dialogManager.showAlert('Failed to save AI settings: ' + (err.message || 'Unknown error'), { title: 'Save Failed', variant: 'error' });
                           } finally {
@@ -5684,7 +7574,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                           }
                           return;
                         }
-                        // Only AI Assistant uses this generic save bar
+                        // Only AI Settings uses this generic save bar
                       }}
                     />
                   </div>

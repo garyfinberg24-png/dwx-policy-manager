@@ -750,12 +750,12 @@ export class AdminConfigService {
 
   public async getConfigByCategory(category: string): Promise<Record<string, string>> {
     try {
-      const prefix = `Admin.${category}`;
+      const sanitizedCategory = ValidationUtils.sanitizeForOData(category);
       const items = await this.sp.web.lists
         .getByTitle(this.CONFIG_LIST)
-        .items.filter(`substringof('${ValidationUtils.sanitizeForOData(prefix)}', ConfigKey)`)
+        .items.filter(`Category eq '${sanitizedCategory}'`)
         .select('Id', 'ConfigKey', 'ConfigValue')
-        .top(20)();
+        .top(50)();
 
       const result: Record<string, string> = {};
       items.forEach((item: any) => {

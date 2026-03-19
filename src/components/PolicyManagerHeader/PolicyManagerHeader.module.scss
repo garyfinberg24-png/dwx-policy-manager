@@ -127,7 +127,7 @@ $pm-font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue'
   padding: 8px 14px;
   background: rgba(255, 255, 255, 0.15);
   border: none;
-  border-radius: 6px;
+  border-radius: 4px;
   color: $pm-white;
   font-family: $pm-font-family;
   font-size: 13px;
@@ -192,7 +192,7 @@ $pm-font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue'
   gap: 6px;
   padding: 7px 16px;
   border: 1.5px solid rgba(255, 255, 255, 0.4);
-  border-radius: 6px;
+  border-radius: 4px;
   background: transparent;
   color: rgba(255, 255, 255, 0.9);
   font-family: $pm-font-family;
@@ -314,7 +314,7 @@ $pm-font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue'
   display: flex;
   align-items: center;
   background: rgba(255, 255, 255, 0.15);
-  border-radius: 6px;
+  border-radius: 4px;
   padding: 8px 12px;
   transition: background 0.2s ease;
 
@@ -471,7 +471,7 @@ $pm-font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue'
   padding: 8px 14px;
   background: $pm-primary-teal;
   border: none;
-  border-radius: 6px;
+  border-radius: 4px;
   color: $pm-white;
   font-family: $pm-font-family;
   font-size: 13px;
@@ -516,7 +516,7 @@ $pm-font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue'
   justify-content: center;
   background: transparent;
   border: none;
-  border-radius: 6px;
+  border-radius: 4px;
   color: $pm-white;
   cursor: pointer;
 

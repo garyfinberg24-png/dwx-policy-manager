@@ -14,6 +14,7 @@ import {
   MessageBar,
   MessageBarType
 } from '@fluentui/react';
+import { StyledPanel } from '../StyledPanel';
 import { sanitizeHtml } from '../../utils/sanitizeHtml';
 import styles from './PolicyHelpPanel.module.scss';
 
@@ -610,7 +611,7 @@ export class PolicyHelpPanel extends React.Component<IPolicyHelpPanelProps, IPol
     const { currentTab, searchQuery, selectedArticle } = this.state;
 
     return (
-      <Panel
+      <StyledPanel
         isOpen={isOpen}
         onDismiss={this.handleDismiss}
         type={PanelType.large}
@@ -660,7 +661,7 @@ export class PolicyHelpPanel extends React.Component<IPolicyHelpPanelProps, IPol
                   onSearch={(value) => this.handleSearch(value)}
                   onClear={() => this.setState({ searchQuery: '' })}
                   styles={{
-                    root: { borderRadius: '6px' },
+                    root: { borderRadius: '4px' },
                   }}
                 />
               </div>
@@ -689,7 +690,7 @@ export class PolicyHelpPanel extends React.Component<IPolicyHelpPanelProps, IPol
             </>
           )}
         </div>
-      </Panel>
+      </StyledPanel>
     );
   }
 }

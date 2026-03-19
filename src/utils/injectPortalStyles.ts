@@ -54,7 +54,7 @@ const portalStyles: Record<string, Record<string, string>> = {
   '[role="tooltip"]': {
     backgroundColor: '#323130',
     color: '#ffffff',
-    borderRadius: '6px',
+    borderRadius: '4px',
     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
     padding: '8px 12px',
     fontSize: '12px',
@@ -92,7 +92,7 @@ const portalStyles: Record<string, Record<string, string>> = {
   '[role="combobox"]': {
     backgroundColor: '#ffffff',
     border: '1px solid #d1d1d1',
-    borderRadius: '6px',
+    borderRadius: '4px',
     color: '#323130',
     fontFamily: FLUENT_FONT_FAMILY
   }
@@ -345,7 +345,7 @@ function injectFallbackCSS(): void {
     .fui-Dropdown {
       background-color: #ffffff !important;
       border: 1px solid #d1d1d1 !important;
-      border-radius: 6px !important;
+      border-radius: 4px !important;
       color: #323130 !important;
       font-family: 'Segoe UI', 'Segoe UI Web (West European)', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif !important;
     }
@@ -373,7 +373,7 @@ function injectFallbackCSS(): void {
     .fui-Tooltip {
       background-color: #323130 !important;
       color: #ffffff !important;
-      border-radius: 6px !important;
+      border-radius: 4px !important;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
       padding: 8px 12px !important;
       font-size: 12px !important;
@@ -459,7 +459,7 @@ function injectFallbackCSS(): void {
     .fui-Textarea {
       background-color: #ffffff !important;
       border: 1px solid #d1d1d1 !important;
-      border-radius: 6px !important;
+      border-radius: 4px !important;
       color: #323130 !important;
       font-family: 'Segoe UI', 'Segoe UI Web (West European)', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif !important;
     }
@@ -508,7 +508,7 @@ function injectFallbackCSS(): void {
     /* ----- MessageBar ----- */
     .fui-MessageBar {
       background-color: #ffffff !important;
-      border-radius: 6px !important;
+      border-radius: 4px !important;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04) !important;
     }
 
@@ -568,6 +568,83 @@ function injectFallbackCSS(): void {
     .fui-AccordionPanel {
       background-color: #ffffff !important;
       font-family: 'Segoe UI', 'Segoe UI Web (West European)', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif !important;
+    }
+
+    /* ----- Fluent UI v8 Panel — border-radius + header color ----- */
+    .ms-Panel-main {
+      border-radius: 8px 0 0 8px !important;
+    }
+    .ms-Panel-header,
+    div[class*="header_"] {
+      background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%) !important;
+      padding: 16px 24px !important;
+      border-bottom: 1px solid #99f6e4 !important;
+      margin-bottom: 0 !important;
+    }
+    .ms-Panel-headerText,
+    p[class*="headerText_"] {
+      color: #0f766e !important;
+      font-weight: 700 !important;
+      font-size: 18px !important;
+    }
+    .ms-Panel-commands,
+    div[class*="commands_"] {
+      background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%) !important;
+      margin: 0 !important;
+    }
+    .ms-Panel-closeButton,
+    button[class*="closeButton_"] {
+      border-radius: 4px !important;
+      color: #0f766e !important;
+    }
+    .ms-Panel-closeButton:hover,
+    button[class*="closeButton_"]:hover {
+      background: rgba(13, 148, 136, 0.1) !important;
+      color: #0d9488 !important;
+    }
+    .ms-Panel-content {
+      padding-top: 16px !important;
+    }
+    /* Fluent v8 controls inside panels */
+    .ms-Panel .ms-TextField-fieldGroup,
+    .ms-Panel .ms-TextField-field,
+    .ms-Panel .ms-Dropdown-title,
+    .ms-Panel .ms-Dropdown,
+    .ms-Panel .ms-SearchBox,
+    .ms-Panel .ms-ComboBox,
+    .ms-Panel .ms-ComboBox-Input,
+    .ms-Panel .ms-SpinButton-input,
+    .ms-Panel .ms-SpinButton-spinButtonWrapper,
+    .ms-Panel .ms-BasePicker-text {
+      border-radius: 4px !important;
+    }
+    .ms-Panel .ms-Button,
+    .ms-Panel .ms-Button--primary,
+    .ms-Panel .ms-Button--default,
+    .ms-Panel .ms-Button--icon,
+    .ms-Panel .ms-Button--compound {
+      border-radius: 4px !important;
+    }
+    .ms-Panel .ms-Dropdown-callout,
+    .ms-Panel .ms-Dropdown-items-wrapper {
+      border-radius: 4px !important;
+    }
+    /* Also target Layer-hosted controls (Fluent v8 renders dropdowns in ms-Layer) */
+    .ms-Layer .ms-Dropdown-title,
+    .ms-Layer .ms-Dropdown,
+    .ms-Layer .ms-Dropdown-callout,
+    .ms-Layer .ms-Dropdown-items-wrapper,
+    .ms-Layer .ms-TextField-fieldGroup,
+    .ms-Layer .ms-TextField-field,
+    .ms-Layer .ms-SearchBox,
+    .ms-Layer .ms-ComboBox,
+    .ms-Layer .ms-BasePicker-text {
+      border-radius: 4px !important;
+    }
+    .ms-Layer .ms-Button,
+    .ms-Layer .ms-Button--primary,
+    .ms-Layer .ms-Button--default {
+      border-radius: 4px !important;
     }
 
     /* ----- InfoLabel Popover ----- */

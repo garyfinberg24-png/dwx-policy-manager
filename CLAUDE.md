@@ -812,9 +812,66 @@ The QuizBuilder's "AI Generate" panel calls the Azure Function with:
 
 ---
 
-## Session State (Last Updated: 17 Mar 2026 — Session 14)
+## Session State (Last Updated: 19 Mar 2026 — Session 16)
 
-### Recently Completed (Session 14 — 17 Mar 2026)
+### Recently Completed (Session 16 — 19 Mar 2026)
+
+#### Template Manager, Teams Notifications, Custom Theme, Premium Reports
+
+**Template Manager (Enterprise-grade):**
+- IPolicyTemplate enhanced: PolicyTemplateType (richtext, word, excel, powerpoint, corporate, regulatory), ITemplateSectionDef for sections
+- Admin Centre: card grid with type filter chips, type-aware edit panel, section builder, regulatory framework dropdown, template preview panel
+- Policy Builder: Corporate/Regulatory section editor in Step 3 with progress bar, document template file copy, required section validation
+- Template versioning via PM_PolicyAuditLog, SourceTemplateId tracking on policies
+- 16-TemplateType-Update.ps1 provisioning script
+
+**Teams Adaptive Card Notifications:**
+- TeamsNotificationService: 7 card templates (policy-published, ack-required, ack-reminder, approval-request, approval-result, quiz-assigned, sla-breach, weekly-digest)
+- 3 delivery methods: Activity Feed, 1:1 chat Adaptive Cards, Channel Webhook
+- NotificationRouter: multi-channel orchestrator (Email, In-App, Teams) with 27 events
+- Admin Centre: Teams config section, per-event channel grid with category pill filters
+
+**Custom Theme Tool:**
+- ICustomTheme model (20 properties), 7 preset themes, ThemeManager utility
+- Admin Centre: color pickers, logo upload to SiteAssets, font selector, border radius sliders, live preview
+- CSS custom properties injected via style block, localStorage cache + SP persistence
+- JmlAppLayout loads theme on mount
+
+**Email Templates — 29 Templates:**
+- 18 new templates across 8 categories, card grid UI with search/filters/preview
+- Category pill filters, color-coded gradient card headers, email preview panel
+
+**Premium Report HTML Generator:**
+- reportHtmlGenerator.ts: brand-mark header, KPI cards, summary cards, tables, signatures, print media queries
+- PolicyDetails receipt and ExportService PDF upgraded to premium template
+
+**Quiz Builder:**
+- Save As menu: Draft, Template, Copy, Export to JSON
+- Policy Document dropdown width constrained
+
+**Header Search Dropdown:**
+- Debounced inline search (300ms), 8-result dropdown, click-to-navigate
+
+**Admin Centre Enhancements:**
+- 25 section contextual intros, Reviewers accordion UI, Security Groups layout fix, Role Permissions column alignment
+
+**Critical Fix — Icon Import Resolution:**
+- 17+ files had `Icon` used without proper import (barrel export tree-shaken with @ts-nocheck)
+- All fixed with explicit `import { Icon } from '@fluentui/react/lib/Icon'`
+
+**Build:** Zero errors, 14 webpart manifests, v1.2.4
+**Commit:** `7705f9b` — pushed to both ADO and GitHub
+
+### Previously Completed (Session 15 — 19 Mar 2026)
+
+#### Document Conversion Pipeline, Nav Restructure, StyledPanel, Secure Libraries
+
+- Document conversion: Azure Function (mammoth.js) converts .docx to styled HTML at publish time
+- Graph API file download (replaces SharePoint REST API — app-only token fix)
+- Batch convert in Admin Centre (AI Settings), PowerPoint/Excel support added
+- Nav restructure, StyledPanel wrapper, Secure Libraries, quiz/read flow fixes
+
+### Previously Completed (Session 14 — 17 Mar 2026)
 
 #### Deep Assessment + Admin Centre Overhaul + Bulk Distribution Queue
 

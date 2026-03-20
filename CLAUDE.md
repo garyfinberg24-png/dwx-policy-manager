@@ -812,7 +812,18 @@ The QuizBuilder's "AI Generate" panel calls the Azure Function with:
 
 ---
 
-## Session State (Last Updated: 19 Mar 2026 — Session 16)
+## Session State (Last Updated: 20 Mar 2026 — Session 16 Complete)
+
+### Design System Rules (MANDATORY)
+- **Icons**: ONLY SVG line icons (`<svg viewBox="0 0 24 24" fill="none">` with stroke paths). NO emoji icons. NO Fluent `<Icon>` for decorative use — only for IconButton/Fluent API requirements.
+- **Cards**: background #fff, border 1px solid #e2e8f0, borderRadius 10px
+- **KPI cards**: borderTop 3px solid {color}, value 28px bold, label 10px uppercase letterSpacing 1px
+- **Badges**: 9px uppercase bold, padding 3px 8px, borderRadius 4px
+- **Page headers**: 26px bold title, 13px subtitle
+- **Hover**: borderColor #0d9488, box-shadow 0 4px 16px rgba(13,148,136,0.1), translateY(-2px)
+- **Panels**: Use StyledPanel (slide-in from right), NOT persistent side panels or inline expanded rows
+- **Color palette**: #0d9488 teal, #0f766e dark teal, #2563eb blue, #d97706 amber, #dc2626 red, #059669 green, #7c3aed purple, #94a3b8 slate
+- **NO Microsoft Blue (#0078d4)** — replaced with Forest Teal everywhere
 
 ### Recently Completed (Session 16 — 19 Mar 2026)
 

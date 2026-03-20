@@ -812,7 +812,65 @@ The QuizBuilder's "AI Generate" panel calls the Azure Function with:
 
 ---
 
-## Session State (Last Updated: 20 Mar 2026 — Session 16 Complete)
+## Session State (Last Updated: 20 Mar 2026 — Session 17 In Progress)
+
+### Recently Completed (Session 17 — 20 Mar 2026)
+
+#### Policy Hub Upgrade, Simple Reader, Manager Consolidation, UI Consistency
+
+**Policy Hub — Complete Redesign:**
+- Slim hero banner: 3-column CSS Grid (title | search centred | spacer), teal gradient, 16px padding
+- Facet sidebar: 240px sticky, 3 groups (Category, Risk Level, Department), checkbox-style items with counts
+- Status removed — Hub shows Published only via forced `statuses: [PolicyStatus.Published]`
+- Featured policy: accordion collapse/expand, right-side stats panel (acknowledged %, View Policy button)
+- Card grid: `repeat(3, 1fr)`, `borderTop: 4px solid ${categoryColor}`, version chip added
+- List view: premium grid rows + StyledPanel detail panel (replaces expanding columns)
+- Card click → opens StyledPanel (same as list row click), not navigation
+- Category strip color mapping expanded to all PolicyCategory enum values
+
+**Simple Reader (Browse Mode from Policy Hub):**
+- New `renderSimpleReader()` in PolicyDetails — breadcrumb, header, toolbar (Download/Print/Fullscreen), document content, bottom bar
+- No wizard steps, no quiz, no acknowledgement — read-only with "Back to Policy Hub"
+- `signalAppReady()` added to dismiss SharePoint loading skeleton (was the root cause of "stuck loading" bug)
+- Lightweight data loading: direct SP query bypassing service init/social/dashboard
+- Content priority: HTMLContent → PolicyContent → Description → DocumentURL iframe
+
+**My Policies Hero Banner:**
+- 3-column grid: compliance ring + greeting | search | KPI mini cards
+- Dynamic greeting, compliance ring SVG, pending/overdue counts
+
+**Manager Consolidation:**
+- Tab bar removed from PolicyManagerView — Manager dropdown is sole navigation
+- Team Compliance + Reports added to dropdown (were missing)
+- All Manager views use consistent margins: `maxWidth: 1400, padding: '24px 40px'`
+- Meaningful SVG icons for all 8 dropdown items
+- Reports sub-tabs renamed: "Executive Dashboard" → "Reports Analytics"
+
+**Help Centre — Full Page:**
+- Help icon navigates to PolicyHelp.aspx (PolicyHelpPanel deprecated)
+- Hero banner matches slim layout pattern
+
+**Analytics Pill Tabs:**
+- Fluent Pivot replaced with pill/chip buttons (Option A)
+- Active = filled teal, inactive = white/grey border — eliminates KPI accent clash
+
+**UI Consistency:**
+- StyledPanel: content padding 32px, section headers 12px/700/#64748b
+- Panel border-radius: 0 (squared corners for all Fluent panels)
+- Footer: teal gradient matching app header
+- All hero banners: 3-column CSS Grid, `align-items: flex-end`
+
+**Fixes:**
+- MyPolicies `renderDetailPanel()` null crash fixed
+- Read flow "Return to My Policies" redirect fixed (was going to PolicyHub)
+
+**Known Issues (to fix next session):**
+- Hero banner search field not perfectly bottom-aligned with subtitle text
+- PDF rendering constrained in simple reader iframe
+- Reports feature is 95% UI scaffolding — needs full backend wiring (see audit report)
+
+**Build:** Zero errors, 14 webpart manifests, 7.6MB package
+**Commit:** `05dd869` — pushed to both ADO and GitHub
 
 ### Design System Rules (MANDATORY)
 - **Icons**: ONLY SVG line icons (`<svg viewBox="0 0 24 24" fill="none">` with stroke paths). NO emoji icons. NO Fluent `<Icon>` for decorative use — only for IconButton/Fluent API requirements.

@@ -262,6 +262,13 @@ export const PRESET_THEMES: Record<string, Partial<ICustomTheme>> = {
     headerGradientStart: '#1e293b', headerGradientEnd: '#0f172a',
     accentColor: '#3b82f6', successColor: '#10b981', warningColor: '#f59e0b', dangerColor: '#ef4444',
     sidebarBackground: '#1e293b', contentBackground: '#f8fafc'
+  },
+  'microsoft-fluent': {
+    preset: 'microsoft-fluent',
+    primaryColor: '#0078d4', primaryDark: '#106ebe',
+    headerGradientStart: '#0078d4', headerGradientEnd: '#106ebe',
+    accentColor: '#0078d4', successColor: '#107c10', warningColor: '#ffb900', dangerColor: '#d13438',
+    sidebarBackground: '#f3f2f1', contentBackground: '#ffffff'
   }
 };
 

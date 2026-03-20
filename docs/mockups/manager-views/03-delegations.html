@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Delegations — Premium Mockup</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', -apple-system, sans-serif; background: #f8fafc; color: #0f172a; }
+  .page { max-width: 1400px; margin: 0 auto; padding: 32px 40px; }
+  .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; }
+  .page-header h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+  .page-header .subtitle { font-size: 13px; color: #64748b; margin-top: 4px; }
+  .btn { padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid; font-family: inherit; transition: all 0.15s; }
+  .btn-primary { background: #0d9488; color: #fff; border-color: #0d9488; }
+  .btn-primary:hover { background: #0f766e; }
+
+  .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
+  .kpi-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px 20px; border-top: 3px solid transparent; }
+  .kpi-value { font-size: 28px; font-weight: 700; line-height: 1.1; }
+  .kpi-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; font-weight: 600; margin-top: 4px; }
+
+  .filter-tabs { display: flex; gap: 6px; margin-bottom: 20px; }
+  .filter-tab { padding: 6px 16px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid #e2e8f0; background: #fff; color: #64748b; }
+  .filter-tab.active { background: #0d9488; color: #fff; border-color: #0d9488; }
+  .filter-tab .count { display: inline-block; min-width: 18px; height: 18px; border-radius: 9px; background: rgba(0,0,0,0.1); font-size: 10px; line-height: 18px; text-align: center; margin-left: 6px; }
+  .filter-tab.active .count { background: rgba(255,255,255,0.25); }
+
+  /* Delegation cards */
+  .delegation-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+
+  .delegation-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .delegation-card:hover { border-color: #0d9488; box-shadow: 0 2px 12px rgba(13,148,136,0.06); }
+
+  .delegation-header {
+    padding: 16px 20px; border-bottom: 1px solid #f1f5f9;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .delegation-title { font-size: 14px; font-weight: 700; }
+  .delegation-type { font-size: 9px; font-weight: 700; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.3px; }
+  .type-review { background: #dbeafe; color: #2563eb; }
+  .type-draft { background: #f0fdf4; color: #16a34a; }
+  .type-approve { background: #fef3c7; color: #d97706; }
+  .type-distribute { background: #ede9fe; color: #7c3aed; }
+
+  .delegation-body { padding: 16px 20px; }
+
+  .delegate-row {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+  }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0; }
+  .delegate-info { flex: 1; }
+  .delegate-name { font-size: 13px; font-weight: 600; }
+  .delegate-email { font-size: 10px; color: #94a3b8; }
+
+  .delegation-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .meta-item { }
+  .meta-label { font-size: 9px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+  .meta-value { font-size: 12px; font-weight: 600; color: #334155; }
+
+  .delegation-notes {
+    background: #f8fafc; border-radius: 6px; padding: 10px 12px; font-size: 11px;
+    color: #64748b; line-height: 1.5; border-left: 3px solid #e2e8f0;
+  }
+
+  .delegation-footer {
+    padding: 10px 20px; background: #fafafa; border-top: 1px solid #f1f5f9;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .status { font-size: 9px; font-weight: 700; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; }
+  .status-pending { background: #fef3c7; color: #d97706; }
+  .status-progress { background: #dbeafe; color: #2563eb; }
+  .status-complete { background: #dcfce7; color: #16a34a; }
+  .status-overdue { background: #fee2e2; color: #dc2626; }
+
+  .priority-indicator { display: flex; align-items: center; gap: 4px; font-size: 10px; color: #94a3b8; }
+  .priority-dot { width: 6px; height: 6px; border-radius: 50%; }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1>Delegations</h1>
+      <div class="subtitle">Manage policy tasks delegated to your team</div>
+    </div>
+    <button class="btn btn-primary">+ New Delegation</button>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi-card" style="border-top-color:#d97706;"><div class="kpi-value" style="color:#d97706;">2</div><div class="kpi-label">Pending</div></div>
+    <div class="kpi-card" style="border-top-color:#2563eb;"><div class="kpi-value" style="color:#2563eb;">3</div><div class="kpi-label">In Progress</div></div>
+    <div class="kpi-card" style="border-top-color:#dc2626;"><div class="kpi-value" style="color:#dc2626;">1</div><div class="kpi-label">Overdue</div></div>
+    <div class="kpi-card" style="border-top-color:#059669;"><div class="kpi-value" style="color:#059669;">12</div><div class="kpi-label">Completed (30d)</div></div>
+  </div>
+
+  <div class="filter-tabs">
+    <div class="filter-tab active">All<span class="count">6</span></div>
+    <div class="filter-tab">Pending<span class="count">2</span></div>
+    <div class="filter-tab">In Progress<span class="count">3</span></div>
+    <div class="filter-tab">Overdue<span class="count">1</span></div>
+    <div class="filter-tab">Completed</div>
+  </div>
+
+  <div class="delegation-grid">
+    <div class="delegation-card">
+      <div class="delegation-header">
+        <div class="delegation-title">POPIA Compliance Review</div>
+        <span class="delegation-type type-review">Review</span>
+      </div>
+      <div class="delegation-body">
+        <div class="delegate-row">
+          <div class="avatar" style="background:#2563eb;">TM</div>
+          <div class="delegate-info"><div class="delegate-name">Thabo Mokoena</div><div class="delegate-email">thabo.m@firstdigital.co.za</div></div>
+        </div>
+        <div class="delegation-meta">
+          <div class="meta-item"><div class="meta-label">Assigned</div><div class="meta-value">15 Mar 2026</div></div>
+          <div class="meta-item"><div class="meta-label">Due</div><div class="meta-value">22 Mar 2026</div></div>
+        </div>
+        <div class="delegation-notes">Review all POPIA-related clauses and update data processing sections to reflect new Information Regulator guidance.</div>
+      </div>
+      <div class="delegation-footer">
+        <span class="status status-progress">In Progress</span>
+        <div class="priority-indicator"><div class="priority-dot" style="background:#d97706;"></div> High Priority</div>
+      </div>
+    </div>
+
+    <div class="delegation-card">
+      <div class="delegation-header">
+        <div class="delegation-title">New Expense Policy Draft</div>
+        <span class="delegation-type type-draft">Draft</span>
+      </div>
+      <div class="delegation-body">
+        <div class="delegate-row">
+          <div class="avatar" style="background:#059669;">PN</div>
+          <div class="delegate-info"><div class="delegate-name">Priya Naidoo</div><div class="delegate-email">priya.n@firstdigital.co.za</div></div>
+        </div>
+        <div class="delegation-meta">
+          <div class="meta-item"><div class="meta-label">Assigned</div><div class="meta-value">12 Mar 2026</div></div>
+          <div class="meta-item"><div class="meta-label">Due</div><div class="meta-value" style="color:#dc2626;">18 Mar 2026</div></div>
+        </div>
+        <div class="delegation-notes">Draft a new expense reimbursement policy covering travel, entertainment, and remote work equipment.</div>
+      </div>
+      <div class="delegation-footer">
+        <span class="status status-overdue">Overdue</span>
+        <div class="priority-indicator"><div class="priority-dot" style="background:#dc2626;"></div> Critical</div>
+      </div>
+    </div>
+
+    <div class="delegation-card">
+      <div class="delegation-header">
+        <div class="delegation-title">IT Acceptable Use Distribution</div>
+        <span class="delegation-type type-distribute">Distribute</span>
+      </div>
+      <div class="delegation-body">
+        <div class="delegate-row">
+          <div class="avatar" style="background:#7c3aed;">SK</div>
+          <div class="delegate-info"><div class="delegate-name">Sipho Khumalo</div><div class="delegate-email">sipho.k@firstdigital.co.za</div></div>
+        </div>
+        <div class="delegation-meta">
+          <div class="meta-item"><div class="meta-label">Assigned</div><div class="meta-value">18 Mar 2026</div></div>
+          <div class="meta-item"><div class="meta-label">Due</div><div class="meta-value">28 Mar 2026</div></div>
+        </div>
+        <div class="delegation-notes">Coordinate distribution of updated IT Acceptable Use policy to all IT department staff and contractors.</div>
+      </div>
+      <div class="delegation-footer">
+        <span class="status status-pending">Pending</span>
+        <div class="priority-indicator"><div class="priority-dot" style="background:#059669;"></div> Normal</div>
+      </div>
+    </div>
+
+    <div class="delegation-card">
+      <div class="delegation-header">
+        <div class="delegation-title">Whistleblower Policy Approval</div>
+        <span class="delegation-type type-approve">Approve</span>
+      </div>
+      <div class="delegation-body">
+        <div class="delegate-row">
+          <div class="avatar" style="background:#d97706;">FC</div>
+          <div class="delegate-info"><div class="delegate-name">Fatima Cassim</div><div class="delegate-email">fatima.c@firstdigital.co.za</div></div>
+        </div>
+        <div class="delegation-meta">
+          <div class="meta-item"><div class="meta-label">Assigned</div><div class="meta-value">16 Mar 2026</div></div>
+          <div class="meta-item"><div class="meta-label">Due</div><div class="meta-value">23 Mar 2026</div></div>
+        </div>
+        <div class="delegation-notes">Review and approve the updated Whistleblower Protection Policy. Legal team has already reviewed.</div>
+      </div>
+      <div class="delegation-footer">
+        <span class="status status-progress">In Progress</span>
+        <div class="priority-indicator"><div class="priority-dot" style="background:#d97706;"></div> High Priority</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

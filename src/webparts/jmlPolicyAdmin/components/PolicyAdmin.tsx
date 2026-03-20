@@ -536,7 +536,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                 <button
                   key={item.key}
                   className={`${styles.navItem} ${activeSection === item.key ? styles.navItemActive : ''}`}
-                  onClick={() => this.setState({ activeSection: item.key })}
+                  onClick={() => { this.setState({ activeSection: item.key }); window.scrollTo(0, 0); }}
                   type="button"
                 >
                   <Icon iconName={item.icon} style={IconStyles.medium} />
@@ -660,8 +660,8 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 16 }}>
           {this.renderSectionIntro('Policy Categories', 'Define and organise the top-level categories for your policy library. Categories appear as filters in Policy Hub and are required when creating new policies.', ['Use clear, descriptive names (e.g., \'HR Policies\', \'IT Security\')', 'Assign distinct colours to help users identify categories at a glance'])}
-          <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
-            <Text variant="mediumPlus" style={TextStyles.semiBold}>Policy Categories ({policyCategories.length})</Text>
+          <Stack horizontal horizontalAlign="end" verticalAlign="center" style={{ marginBottom: 8 }}>
+            <Text style={{ fontSize: 12, color: '#94a3b8', marginRight: 'auto' }}>{policyCategories.length} categories</Text>
             <PrimaryButton text="New Category" iconProps={{ iconName: 'Add' }} onClick={() => this.setState({
               editingCategory: { Id: 0, Title: '', CategoryName: '', IconName: 'Tag', Color: '#0d9488', Description: '', SortOrder: policyCategories.length + 1, IsActive: true, IsDefault: false },
               showCategoryPanel: true
@@ -784,8 +784,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     return (
       <div>
         {this.renderSectionIntro('Sub-Categories', 'Create sub-categories within your main categories to provide finer-grained organisation. Sub-categories appear as a second-level filter in Policy Hub.')}
-        <Stack horizontal horizontalAlign="space-between" verticalAlign="center" style={LayoutStyles.marginBottom16}>
-          <Text variant="xLarge" style={TextStyles.semiBold}>Sub-Categories</Text>
+        <Stack horizontal horizontalAlign="end" style={LayoutStyles.marginBottom16}>
           <PrimaryButton
             text="Add Sub-Category"
             iconProps={{ iconName: 'Add' }}
@@ -795,10 +794,6 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             } as any)}
           />
         </Stack>
-
-        <Text style={{ ...TextStyles.secondary, marginBottom: 16, display: 'block' }}>
-          Sub-categories create folder-like navigation in the Policy Hub. Each sub-category belongs to a parent category.
-        </Text>
 
         {subCatError && (
           <MessageBar messageBarType={MessageBarType.warning} isMultiline style={{ marginBottom: 12 }}
@@ -1552,11 +1547,10 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 16 }}>
           {this.renderSectionIntro('Metadata Profiles', 'Metadata profiles are reusable sets of default values (risk level, read timeframe, acknowledgement requirements) that authors can apply when creating policies. This saves time and ensures consistency across similar policy types.', ['Create profiles for common policy types: \'Critical Compliance\', \'General Awareness\', \'Onboarding\'', 'Authors can still override individual settings after applying a profile'])}
-          <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
-            <Text variant="mediumPlus" style={TextStyles.semiBold}>Metadata Profiles ({metadataProfiles.length})</Text>
-            <PrimaryButton text="New Profile" iconProps={{ iconName: 'Add' }} onClick={() => this.setState({ _editingProfile: { Id: 0, Title: '', ProfileName: '', PolicyCategory: 'HR Policies', ComplianceRisk: 'Medium', ReadTimeframe: 'Week 1', RequiresAcknowledgement: true, RequiresQuiz: false, TargetDepartments: '' }, _showProfilePanel: true } as any)} />
+          <Stack horizontal horizontalAlign="end" verticalAlign="center" style={{ marginBottom: 8 }}>
+            <Text style={{ fontSize: 12, color: '#94a3b8', marginRight: 'auto' }}>{metadataProfiles.length} profiles</Text>
+            <PrimaryButton text="New Profile" iconProps={{ iconName: 'Add' }} onClick={() => this.setState({ _editingProfile: { Id: 0, Title: '', ProfileName: '', Description: '', PolicyCategory: 'HR Policies', ComplianceRisk: 'Medium', ReadTimeframe: 'Week 1', RequiresAcknowledgement: true, RequiresQuiz: false, RequiresDigitalSignature: false, TargetDepartments: '', Classification: 'Internal', RegulatoryFramework: 'None', ReviewCycleMonths: 12, EstimatedReadTimeMinutes: 15, RetentionYears: 7, DistributionScope: 'All Employees', AutoNotifyOnUpdate: true }, _showProfilePanel: true } as any)} />
           </Stack>
-          <Text>Configure pre-defined metadata settings for policies:</Text>
           {metadataProfiles.length === 0 ? (
             <MessageBar messageBarType={MessageBarType.info}>
               No metadata profiles found. Click "New Profile" to create one.
@@ -1631,30 +1625,86 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           {editingProfile && (
             <Stack tokens={{ childrenGap: 16 }} style={LayoutStyles.paddingTop16}>
               <TextField label="Profile Name" required value={editingProfile.ProfileName || ''} onChange={(_, v) => this.setState({ _editingProfile: { ...editingProfile, ProfileName: v || '' } } as any)} errorMessage={editingProfile.ProfileName !== undefined && !editingProfile.ProfileName?.trim() ? 'Profile name is required' : undefined} />
-              <Dropdown label="Policy Category" required selectedKey={editingProfile.PolicyCategory || ''} options={this.state.policyCategories.filter(c => c.IsActive).map(c => ({ key: c.CategoryName, text: c.CategoryName }))} onChange={(_, opt) => opt && this.setState({ _editingProfile: { ...editingProfile, PolicyCategory: opt.key as string } } as any)} placeholder="Select a category" />
-              <Dropdown label="Compliance Risk" selectedKey={editingProfile.ComplianceRisk || ''} options={[
-                { key: 'Critical', text: 'Critical' }, { key: 'High', text: 'High' }, { key: 'Medium', text: 'Medium' }, { key: 'Low', text: 'Low' }, { key: 'Informational', text: 'Informational' }
-              ]} onChange={(_, opt) => opt && this.setState({ _editingProfile: { ...editingProfile, ComplianceRisk: opt.key as string } } as any)} />
-              <Dropdown label="Read Timeframe" selectedKey={editingProfile.ReadTimeframe || ''} options={[
-                { key: 'Immediate', text: 'Immediate' }, { key: 'Day 1', text: 'Day 1' }, { key: 'Day 3', text: 'Day 3' }, { key: 'Week 1', text: 'Week 1' }, { key: 'Week 2', text: 'Week 2' }, { key: 'Month 1', text: 'Month 1' }
-              ]} onChange={(_, opt) => opt && this.setState({ _editingProfile: { ...editingProfile, ReadTimeframe: opt.key as string } } as any)} />
-              <Toggle label="Requires Acknowledgement" checked={editingProfile.RequiresAcknowledgement} onText="Yes" offText="No" onChange={(_, c) => this.setState({ _editingProfile: { ...editingProfile, RequiresAcknowledgement: !!c } } as any)} />
-              <Toggle label="Requires Quiz" checked={editingProfile.RequiresQuiz} onText="Yes" offText="No" onChange={(_, c) => this.setState({ _editingProfile: { ...editingProfile, RequiresQuiz: !!c } } as any)} />
+              <TextField label="Description" multiline rows={2} value={editingProfile.Description || ''} onChange={(_, v) => this.setState({ _editingProfile: { ...editingProfile, Description: v || '' } } as any)} placeholder="Describe when this profile should be used" />
+
+              <Separator>Compliance & Risk</Separator>
+
+              <Stack horizontal tokens={{ childrenGap: 12 }}>
+                <Stack.Item grow={1}>
+                  <Dropdown label="Policy Category" required selectedKey={editingProfile.PolicyCategory || ''} options={this.state.policyCategories.filter(c => c.IsActive).map(c => ({ key: c.CategoryName, text: c.CategoryName }))} onChange={(_, opt) => opt && this.setState({ _editingProfile: { ...editingProfile, PolicyCategory: opt.key as string } } as any)} placeholder="Select a category" />
+                </Stack.Item>
+                <Stack.Item grow={1}>
+                  <Dropdown label="Compliance Risk" selectedKey={editingProfile.ComplianceRisk || ''} options={[
+                    { key: 'Critical', text: 'Critical' }, { key: 'High', text: 'High' }, { key: 'Medium', text: 'Medium' }, { key: 'Low', text: 'Low' }, { key: 'Informational', text: 'Informational' }
+                  ]} onChange={(_, opt) => opt && this.setState({ _editingProfile: { ...editingProfile, ComplianceRisk: opt.key as string } } as any)} />
+                </Stack.Item>
+              </Stack>
+
+              <Stack horizontal tokens={{ childrenGap: 12 }}>
+                <Stack.Item grow={1}>
+                  <Dropdown label="Read Timeframe" selectedKey={editingProfile.ReadTimeframe || ''} options={[
+                    { key: 'Immediate', text: 'Immediate' }, { key: 'Day 1', text: 'Day 1' }, { key: 'Day 3', text: 'Day 3' }, { key: 'Week 1', text: 'Week 1' }, { key: 'Week 2', text: 'Week 2' }, { key: 'Month 1', text: 'Month 1' }, { key: 'Month 3', text: 'Month 3' }, { key: 'Month 6', text: 'Month 6' }
+                  ]} onChange={(_, opt) => opt && this.setState({ _editingProfile: { ...editingProfile, ReadTimeframe: opt.key as string } } as any)} />
+                </Stack.Item>
+                <Stack.Item grow={1}>
+                  <Dropdown label="Classification" selectedKey={(editingProfile as any).Classification || 'Internal'} options={[
+                    { key: 'Public', text: 'Public' }, { key: 'Internal', text: 'Internal' }, { key: 'Confidential', text: 'Confidential' }, { key: 'Restricted', text: 'Restricted' }
+                  ]} onChange={(_, opt) => opt && this.setState({ _editingProfile: { ...editingProfile, Classification: opt.key as string } } as any)} />
+                </Stack.Item>
+              </Stack>
+
+              <Dropdown label="Regulatory Framework" selectedKey={(editingProfile as any).RegulatoryFramework || 'None'} options={[
+                { key: 'None', text: 'None' }, { key: 'POPIA', text: 'POPIA' }, { key: 'GDPR', text: 'GDPR' },
+                { key: 'OHS', text: 'OHS Act' }, { key: 'BCEA', text: 'BCEA' }, { key: 'FICA', text: 'FICA' },
+                { key: 'KING_IV', text: 'King IV' }, { key: 'ISO27001', text: 'ISO 27001' }, { key: 'ISO9001', text: 'ISO 9001' }
+              ]} onChange={(_, opt) => opt && this.setState({ _editingProfile: { ...editingProfile, RegulatoryFramework: opt.key as string } } as any)} />
+
+              <Separator>Acknowledgement & Review</Separator>
+
+              <Stack horizontal tokens={{ childrenGap: 24 }}>
+                <Toggle label="Requires Acknowledgement" checked={editingProfile.RequiresAcknowledgement} onText="Yes" offText="No" onChange={(_, c) => this.setState({ _editingProfile: { ...editingProfile, RequiresAcknowledgement: !!c } } as any)} />
+                <Toggle label="Requires Quiz" checked={editingProfile.RequiresQuiz} onText="Yes" offText="No" onChange={(_, c) => this.setState({ _editingProfile: { ...editingProfile, RequiresQuiz: !!c } } as any)} />
+                <Toggle label="Digital Signature" checked={(editingProfile as any).RequiresDigitalSignature || false} onText="Yes" offText="No" onChange={(_, c) => this.setState({ _editingProfile: { ...editingProfile, RequiresDigitalSignature: !!c } } as any)} />
+              </Stack>
+
+              <Stack horizontal tokens={{ childrenGap: 12 }}>
+                <Stack.Item grow={1}>
+                  <Dropdown label="Review Cycle" selectedKey={String((editingProfile as any).ReviewCycleMonths || 12)} options={[
+                    { key: '3', text: 'Every 3 months' }, { key: '6', text: 'Every 6 months' }, { key: '12', text: 'Annually' }, { key: '24', text: 'Every 2 years' }, { key: '36', text: 'Every 3 years' }
+                  ]} onChange={(_, opt) => opt && this.setState({ _editingProfile: { ...editingProfile, ReviewCycleMonths: Number(opt.key) } } as any)} />
+                </Stack.Item>
+                <Stack.Item grow={1}>
+                  <TextField label="Estimated Read Time (minutes)" type="number" value={String((editingProfile as any).EstimatedReadTimeMinutes || '')} onChange={(_, v) => this.setState({ _editingProfile: { ...editingProfile, EstimatedReadTimeMinutes: v ? Number(v) : 0 } } as any)} placeholder="e.g., 15" />
+                </Stack.Item>
+              </Stack>
+
+              <Stack horizontal tokens={{ childrenGap: 12 }}>
+                <Stack.Item grow={1}>
+                  <Dropdown label="Retention Period" selectedKey={String((editingProfile as any).RetentionYears || 7)} options={[
+                    { key: '1', text: '1 year' }, { key: '3', text: '3 years' }, { key: '5', text: '5 years' }, { key: '7', text: '7 years' }, { key: '10', text: '10 years' }, { key: '0', text: 'Indefinite' }
+                  ]} onChange={(_, opt) => opt && this.setState({ _editingProfile: { ...editingProfile, RetentionYears: Number(opt.key) } } as any)} />
+                </Stack.Item>
+                <Stack.Item grow={1}>
+                  <Dropdown label="Distribution Scope" selectedKey={(editingProfile as any).DistributionScope || 'All Employees'} options={[
+                    { key: 'All Employees', text: 'All Employees' }, { key: 'Department Only', text: 'Department Only' }, { key: 'Role-Based', text: 'Role-Based' }, { key: 'Security Group', text: 'Security Group' }
+                  ]} onChange={(_, opt) => opt && this.setState({ _editingProfile: { ...editingProfile, DistributionScope: opt.key as string } } as any)} />
+                </Stack.Item>
+              </Stack>
+
+              <Toggle label="Auto-Notify on Update" checked={(editingProfile as any).AutoNotifyOnUpdate !== false} onText="Yes" offText="No" onChange={(_, c) => this.setState({ _editingProfile: { ...editingProfile, AutoNotifyOnUpdate: !!c } } as any)} />
+
+              <Separator>Targeting</Separator>
+
               <Dropdown
                 label="Target Departments"
                 multiSelect
                 selectedKeys={editingProfile.TargetDepartments ? editingProfile.TargetDepartments.split(',').map((d: string) => d.trim()).filter(Boolean) : []}
                 options={[
-                  { key: 'Human Resources', text: 'Human Resources' },
-                  { key: 'IT', text: 'IT' },
-                  { key: 'Finance', text: 'Finance' },
-                  { key: 'Operations', text: 'Operations' },
-                  { key: 'Sales', text: 'Sales' },
-                  { key: 'Marketing', text: 'Marketing' },
-                  { key: 'Legal', text: 'Legal' },
-                  { key: 'Executive', text: 'Executive' },
-                  { key: 'Compliance', text: 'Compliance' },
-                  { key: 'Customer Service', text: 'Customer Service' },
+                  { key: 'Human Resources', text: 'Human Resources' }, { key: 'IT', text: 'IT' },
+                  { key: 'Finance', text: 'Finance' }, { key: 'Operations', text: 'Operations' },
+                  { key: 'Sales', text: 'Sales' }, { key: 'Marketing', text: 'Marketing' },
+                  { key: 'Legal', text: 'Legal' }, { key: 'Executive', text: 'Executive' },
+                  { key: 'Compliance', text: 'Compliance' }, { key: 'Customer Service', text: 'Customer Service' },
                   { key: 'All Departments', text: 'All Departments' }
                 ]}
                 onChange={(_, option) => {
@@ -2016,7 +2066,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                 </Text>
               </div>
               <DefaultButton text="Configure Email Templates" iconProps={{ iconName: 'MailOptions' }}
-                onClick={() => this.setState({ activeSection: 'emailTemplates' })} styles={{ root: { borderRadius: 4 } }} />
+                onClick={() => { this.setState({ activeSection: 'emailTemplates' }); window.scrollTo(0, 0); }} styles={{ root: { borderRadius: 4 } }} />
             </Stack>
           </div>
         </Stack>
@@ -2300,14 +2350,10 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 12 }}>
           {this.renderSectionIntro('Audit Log', 'View a chronological record of all policy-related actions. The audit log tracks who did what, when, and to which policy \u2014 essential for compliance reporting and governance.', ['Use filters to narrow results by entity type or action', 'Audit entries are immutable \u2014 they cannot be edited or deleted'])}
-          <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
-            <Text variant="xLarge" style={{ ...TextStyles.bold, color: Colors.textDark }}>Audit Log</Text>
-            <Stack horizontal tokens={{ childrenGap: 8 }}>
-              <DefaultButton text="Refresh" iconProps={{ iconName: 'Sync' }} onClick={loadAuditLog} disabled={auditLoading} />
-              <DefaultButton text="Export CSV" iconProps={{ iconName: 'Download' }} onClick={exportCSV} disabled={filtered.length === 0} />
-            </Stack>
+          <Stack horizontal horizontalAlign="end" tokens={{ childrenGap: 8 }}>
+            <DefaultButton text="Refresh" iconProps={{ iconName: 'Sync' }} onClick={loadAuditLog} disabled={auditLoading} />
+            <DefaultButton text="Export CSV" iconProps={{ iconName: 'Download' }} onClick={exportCSV} disabled={filtered.length === 0} />
           </Stack>
-          <Text style={{ color: Colors.textTertiary }}>Track all policy lifecycle events, access, and configuration changes.</Text>
 
           {/* Filters */}
           <Stack horizontal tokens={{ childrenGap: 12 }} verticalAlign="end">
@@ -2431,11 +2477,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 12 }}>
           {this.renderSectionIntro('DLP Rules', 'Configure Data Loss Prevention rules to protect sensitive information in policy documents. DLP rules can flag or block content containing personal data, financial information, or classified material.')}
-          <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
-            <div>
-              <Text variant="xLarge" style={{ ...TextStyles.bold, color: Colors.textDark, display: 'block' }}>DLP Rules</Text>
-              <Text style={{ color: Colors.textTertiary }}>Configure data loss prevention rules to protect sensitive policy content.</Text>
-            </div>
+          <Stack horizontal horizontalAlign="end" verticalAlign="center">
             <PrimaryButton text="+ Add Rule" iconProps={{ iconName: 'Add' }}
               onClick={() => this.setState({ _showDlpPanel: true, _editingDlpRule: { name: '', description: '', entityType: 'All', action: 'Warn', pattern: '', enabled: true } } as any)}
               styles={{ root: { background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
@@ -2564,8 +2606,6 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 16 }}>
           {this.renderSectionIntro('Data Retention', 'Define how long different types of policy data are retained before archival or deletion. Retention policies help ensure compliance with regulatory requirements and manage storage.')}
-          <Text variant="xLarge" style={{ ...TextStyles.bold, color: Colors.textDark }}>Data Retention</Text>
-          <Text style={{ color: Colors.textTertiary }}>Configure how long different data types are retained before archival. Archived records remain accessible but are excluded from active queries and reporting.</Text>
 
           {retMsg && <MessageBar messageBarType={MessageBarType.success} onDismiss={() => this.setState({ _retMsg: '' } as any)}>{retMsg}</MessageBar>}
 
@@ -2660,8 +2700,6 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 16 }}>
           {this.renderSectionIntro('Data Export', 'Export policy data to CSV format for external reporting, analysis, or backup purposes.')}
-          <Text variant="mediumPlus" style={TextStyles.semiBold}>Data Export</Text>
-          <Text>Export policy data and compliance reports in CSV format.</Text>
           <Stack horizontal tokens={{ childrenGap: 12 }} wrap>
             <DefaultButton
               text={this.state.saving ? 'Exporting...' : 'Export Policy Inventory (CSV)'}
@@ -2716,8 +2754,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 20 }}>
           {this.renderSectionIntro('Naming Rules', 'Define naming conventions for policy numbers. Build rules using segments like prefix, counter, date, and category to generate consistent, meaningful policy identifiers (e.g., POL-HR-001).')}
-          <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
-            <Text variant="mediumPlus" style={TextStyles.semiBold}>Naming Rules</Text>
+          <Stack horizontal horizontalAlign="end" verticalAlign="center">
             <Stack horizontal tokens={{ childrenGap: 8 }}>
               <DefaultButton
                 text={this.state.refreshingAllRules ? 'Refreshing...' : 'Refresh All Rules'}
@@ -2752,10 +2789,6 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               />
             </Stack>
           </Stack>
-
-          <Text variant="small" style={TextStyles.secondary}>
-            Define naming conventions to standardise policy document IDs. Rules are applied automatically when new policies are created.
-          </Text>
 
           {/* Segment Type Legend */}
           <Stack horizontal tokens={{ childrenGap: 12 }} wrap>
@@ -2880,8 +2913,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 20 }}>
           {this.renderSectionIntro('SLA Targets', 'Set service level agreement targets for key policy processes. SLA targets help you monitor and measure compliance with your organisation\'s policy governance standards.', ['Warning thresholds trigger amber alerts before the deadline', 'SLA breaches are logged in the Audit Log for compliance reporting'])}
-          <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
-            <Text variant="mediumPlus" style={TextStyles.semiBold}>SLA Targets</Text>
+          <Stack horizontal horizontalAlign="end" verticalAlign="center">
             <PrimaryButton
               text="New SLA Target"
               iconProps={{ iconName: 'Add' }}
@@ -2899,10 +2931,6 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               }}
             />
           </Stack>
-
-          <Text variant="small" style={TextStyles.secondary}>
-            Set target completion times for policy processes. Warnings are triggered when the remaining time falls below the threshold.
-          </Text>
 
           {/* Live SLA Compliance Dashboard */}
           {(() => {
@@ -3086,8 +3114,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 20 }}>
           {this.renderSectionIntro('Data Lifecycle', 'Define retention and archival policies for each type of policy data. Control how long records are kept, whether they are auto-archived, and when they should be deleted.', ['Regulatory requirements may mandate minimum retention periods', 'Auto-delete is disabled by default \u2014 enable with caution'])}
-          <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
-            <Text variant="mediumPlus" style={TextStyles.semiBold}>Data Management</Text>
+          <Stack horizontal horizontalAlign="end" verticalAlign="center">
             <PrimaryButton
               text="New Management Rule"
               iconProps={{ iconName: 'Add' }}
@@ -3241,8 +3268,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 20 }}>
           {this.renderSectionIntro('Navigation', 'Control which navigation items are visible in the Policy Manager app. Toggle items on or off to customise the navigation bar for your organisation\'s needs.', ['Protected items (Policy Hub, My Policies) cannot be disabled', 'Changes take effect immediately for all users'])}
-          <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
-            <Text variant="mediumPlus" style={TextStyles.semiBold}>Navigation Settings</Text>
+          <Stack horizontal horizontalAlign="end" verticalAlign="center">
             <Stack horizontal tokens={{ childrenGap: 8 }}>
               <DefaultButton
                 text="Enable All"
@@ -3990,8 +4016,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 24 }}>
           {this.renderSectionIntro('General Settings', 'Configure general application settings including branding, upload limits, quiz defaults, and display preferences.')}
-          <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
-            <Text variant="mediumPlus" style={TextStyles.semiBold}>General Settings</Text>
+          <Stack horizontal horizontalAlign="end" verticalAlign="center">
             <Stack horizontal tokens={{ childrenGap: 8 }}>
               <PrimaryButton
                 text="Save All Settings"
@@ -4412,6 +4437,70 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     this.setState(prev => ({ emailTemplates: [...prev.emailTemplates, duplicate] }));
   };
 
+  private async _seedDefaultEmailTemplates(): Promise<void> {
+    this.setState({ _seedingTemplates: true } as any);
+    try {
+      const existing = this.state.emailTemplates.map(t => t.name.toLowerCase());
+      const defaults = [
+        { name: 'New Policy Published', event: 'Policy Published', category: 'Acknowledgement', subject: 'New Policy: {{PolicyTitle}}', body: '<p>A new policy <strong>{{PolicyTitle}}</strong> has been published and requires your attention.</p><p>Please read and acknowledge by <strong>{{Deadline}}</strong>.</p>', recipients: 'All Employees' },
+        { name: 'Acknowledgement Required', event: 'Policy Acknowledged', category: 'Acknowledgement', subject: 'Action Required: Acknowledge {{PolicyTitle}}', body: '<p>You are required to read and acknowledge <strong>{{PolicyTitle}}</strong>.</p><p>Deadline: <strong>{{Deadline}}</strong></p>', recipients: 'Assigned Users' },
+        { name: 'Ack Reminder (3-day)', event: 'Ack Reminder 3-Day', category: 'Acknowledgement', subject: 'Reminder: {{PolicyTitle}} — 3 days remaining', body: '<p>Hi {{UserName}},</p><p>This is a friendly reminder that you have <strong>3 days</strong> remaining to acknowledge <strong>{{PolicyTitle}}</strong>.</p>', recipients: 'Assigned Users' },
+        { name: 'Ack Reminder (1-day)', event: 'Ack Reminder 1-Day', category: 'Acknowledgement', subject: 'URGENT: {{PolicyTitle}} — due tomorrow', body: '<p>Hi {{UserName}},</p><p><strong>Final reminder:</strong> Your acknowledgement of <strong>{{PolicyTitle}}</strong> is due <strong>tomorrow</strong>.</p>', recipients: 'Assigned Users' },
+        { name: 'Acknowledgement Overdue', event: 'Ack Overdue', category: 'Acknowledgement', subject: 'OVERDUE: {{PolicyTitle}} — acknowledgement required', body: '<p>Hi {{UserName}},</p><p>Your acknowledgement of <strong>{{PolicyTitle}}</strong> is now <strong>overdue</strong>. Please complete this immediately.</p>', recipients: 'Assigned Users' },
+        { name: 'Ack Complete (Manager)', event: 'Ack Complete Manager', category: 'Acknowledgement', subject: '{{EmployeeName}} acknowledged {{PolicyTitle}}', body: '<p>{{EmployeeName}} has acknowledged <strong>{{PolicyTitle}}</strong>.</p><p>Team compliance: <strong>{{ComplianceRate}}%</strong></p>', recipients: 'Managers' },
+        { name: 'Ack Confirmation', event: 'Policy Acknowledged', category: 'Acknowledgement', subject: 'Confirmed: You acknowledged {{PolicyTitle}}', body: '<p>Hi {{UserName}},</p><p>This confirms you have acknowledged <strong>{{PolicyTitle}}</strong> on {{AckDate}}.</p>', recipients: 'Assigned Users' },
+        { name: 'Approval Request', event: 'Approval Needed', category: 'Approval', subject: 'Approval Required: {{PolicyTitle}}', body: '<p>A policy requires your approval:</p><p><strong>{{PolicyTitle}}</strong></p><p>Submitted by: {{AuthorName}}<br/>Level: {{ApprovalLevel}}<br/>Due: <strong>{{DueDate}}</strong></p>', recipients: 'Approvers' },
+        { name: 'Approval Approved', event: 'Approval Approved', category: 'Approval', subject: 'Approved: {{PolicyTitle}}', body: '<p>Great news! <strong>{{PolicyTitle}}</strong> has been approved by <strong>{{ApproverName}}</strong>.</p><p>{{Comments}}</p>', recipients: 'Policy Owners' },
+        { name: 'Approval Rejected', event: 'Approval Rejected', category: 'Approval', subject: 'Rejected: {{PolicyTitle}}', body: '<p><strong>{{PolicyTitle}}</strong> has been rejected by <strong>{{ApproverName}}</strong>.</p><p><strong>Reason:</strong> {{Comments}}</p>', recipients: 'Policy Owners' },
+        { name: 'Approval Escalated', event: 'Approval Escalated', category: 'Approval', subject: 'Escalated: {{PolicyTitle}} approval overdue', body: '<p>The approval for <strong>{{PolicyTitle}}</strong> has been escalated to you.</p>', recipients: 'Approvers' },
+        { name: 'Approval Delegated', event: 'Approval Delegated', category: 'Approval', subject: 'Delegated: {{PolicyTitle}} approval', body: '<p><strong>{{DelegatedBy}}</strong> has delegated the approval of <strong>{{PolicyTitle}}</strong> to you.</p>', recipients: 'Approvers' },
+        { name: 'Quiz Assigned', event: 'Quiz Assigned', category: 'Quiz', subject: 'Quiz Required: {{PolicyTitle}}', body: '<p>A comprehension quiz is required for <strong>{{PolicyTitle}}</strong>.</p><p>Passing score: <strong>{{PassingScore}}%</strong></p>', recipients: 'Assigned Users' },
+        { name: 'Quiz Passed', event: 'Quiz Passed', category: 'Quiz', subject: 'Congratulations! You passed: {{QuizTitle}}', body: '<p>Well done, {{UserName}}! You scored <strong>{{Score}}%</strong> on the <strong>{{QuizTitle}}</strong> quiz.</p>', recipients: 'Assigned Users' },
+        { name: 'Quiz Failed', event: 'Quiz Failed', category: 'Quiz', subject: 'Quiz Result: {{QuizTitle}} — retry available', body: '<p>Hi {{UserName}},</p><p>You scored <strong>{{Score}}%</strong> on <strong>{{QuizTitle}}</strong>. The passing score is {{PassingScore}}%.</p><p>You have <strong>{{AttemptsRemaining}}</strong> attempts remaining.</p>', recipients: 'Assigned Users' },
+        { name: 'Review Due', event: 'Review Due', category: 'Review', subject: 'Policy Review Due: {{PolicyTitle}}', body: '<p>The policy <strong>{{PolicyTitle}}</strong> is due for review in <strong>{{DaysUntilDue}} days</strong>.</p>', recipients: 'Policy Owners' },
+        { name: 'Review Overdue', event: 'Review Overdue', category: 'Review', subject: 'OVERDUE: {{PolicyTitle}} review past due', body: '<p>The review for <strong>{{PolicyTitle}}</strong> is now <strong>{{DaysOverdue}} days overdue</strong>.</p>', recipients: 'Policy Owners' },
+        { name: 'Campaign Launched', event: 'Campaign Active', category: 'Distribution', subject: 'Distribution Campaign: {{CampaignName}}', body: '<p>A new policy distribution campaign has been launched: <strong>{{CampaignName}}</strong></p>', recipients: 'All Employees' },
+        { name: 'Distribution Complete', event: 'Distribution Complete', category: 'Distribution', subject: 'Campaign Complete: {{CampaignName}}', body: '<p>The distribution campaign <strong>{{CampaignName}}</strong> has completed.</p><p>Acknowledged: <strong>{{AckRate}}%</strong></p>', recipients: 'Managers' },
+        { name: 'Policy Assigned', event: 'Policy Assigned', category: 'Distribution', subject: 'New Policy Assigned: {{PolicyTitle}}', body: '<p>Hi {{UserName}},</p><p>You have been assigned a new policy to read: <strong>{{PolicyTitle}}</strong>.</p>', recipients: 'Assigned Users' },
+        { name: 'Policy Expiring', event: 'Policy Expiring', category: 'Compliance', subject: 'Policy Expiring: {{PolicyTitle}}', body: '<p><strong>{{PolicyTitle}}</strong> will expire on <strong>{{ExpiryDate}}</strong>.</p>', recipients: 'Policy Owners' },
+        { name: 'SLA Breached', event: 'SLA Breached', category: 'Compliance', subject: 'SLA Breach: {{SLAType}} for {{PolicyTitle}}', body: '<p>An SLA breach has been detected for <strong>{{PolicyTitle}}</strong>.</p><p>Target: {{TargetDays}} days | Actual: <strong>{{ActualDays}} days</strong></p>', recipients: 'Compliance Officers' },
+        { name: 'DLP Violation', event: 'Violation Found', category: 'Compliance', subject: 'DLP Violation: {{PolicyTitle}}', body: '<p>A data loss prevention violation was detected in <strong>{{PolicyTitle}}</strong>.</p>', recipients: 'Compliance Officers' },
+        { name: 'Policy Updated', event: 'Policy Updated', category: 'Lifecycle', subject: 'Policy Updated: {{PolicyTitle}}', body: '<p><strong>{{PolicyTitle}}</strong> has been updated to version <strong>{{Version}}</strong>.</p>', recipients: 'All Employees' },
+        { name: 'Policy Retired', event: 'Policy Retired', category: 'Lifecycle', subject: 'Policy Retired: {{PolicyTitle}}', body: '<p><strong>{{PolicyTitle}}</strong> has been retired and is no longer in effect.</p>', recipients: 'All Employees' },
+        { name: 'Weekly Digest', event: 'Weekly Digest', category: 'System', subject: 'Your Policy Manager Weekly Summary', body: '<p>Hi {{UserName}},</p><p>Pending acknowledgements: <strong>{{PendingAck}}</strong><br/>Pending approvals: <strong>{{PendingApprovals}}</strong></p>', recipients: 'All Employees' },
+        { name: 'Welcome Email', event: 'User Added', category: 'System', subject: 'Welcome to Policy Manager', body: '<p>Welcome, {{UserName}}!</p><p>Policy Manager is where you will find all company policies.</p>', recipients: 'New Users' },
+        { name: 'Role Changed', event: 'Role Changed', category: 'System', subject: 'Your Policy Manager role has been updated', body: '<p>Hi {{UserName}},</p><p>Your role has been changed from <strong>{{OldRole}}</strong> to <strong>{{NewRole}}</strong>.</p>', recipients: 'Assigned Users' },
+        { name: 'Delegation Expiring', event: 'Delegation Expiring', category: 'System', subject: 'Delegation ending: {{DelegateName}}', body: '<p>Your delegation to <strong>{{DelegateName}}</strong> will expire on <strong>{{ExpiryDate}}</strong>.</p>', recipients: 'Managers' },
+      ];
+
+      let added = 0;
+      let skipped = 0;
+      for (const tpl of defaults) {
+        if (existing.includes(tpl.name.toLowerCase())) {
+          skipped++;
+          continue;
+        }
+        try {
+          await this.adminConfigService.createEmailTemplate({
+            id: 0, name: tpl.name, event: tpl.event, category: tpl.category,
+            subject: tpl.subject, body: tpl.body, recipients: tpl.recipients,
+            isActive: true, isDefault: true, lastModified: '', mergeTags: []
+          });
+          added++;
+        } catch { skipped++; }
+      }
+
+      // Reload templates
+      const refreshed = await this.adminConfigService.getEmailTemplates();
+      const categorized = refreshed.map((t: any) => ({ ...t, category: t.category || this._inferEmailCategory(t.event) }));
+      this.setState({ emailTemplates: categorized as IEmailTemplate[], _seedingTemplates: false } as any);
+      void this.dialogManager.showAlert(`Seeded ${added} new templates (${skipped} skipped — already existed).`, { title: 'Email Templates Seeded', variant: 'success' });
+    } catch (err) {
+      this.setState({ _seedingTemplates: false } as any);
+      void this.dialogManager.showAlert('Failed to seed templates.', { title: 'Error' });
+    }
+  }
+
   private insertMergeTag = (tag: string): void => {
     const { editingEmailTemplate } = this.state;
     if (!editingEmailTemplate) return;
@@ -4621,6 +4710,10 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               styles={{ root: { width: 140 } }}
             />
             <PrimaryButton iconProps={{ iconName: 'Add' }} text="New Template" onClick={this.handleNewEmailTemplate} />
+            <DefaultButton iconProps={{ iconName: 'DatabaseSync' }} text="Seed Defaults"
+              disabled={(this.state as any)._seedingTemplates}
+              onClick={() => this._seedDefaultEmailTemplates()}
+              title="Add all 29 default email templates to the list (skips existing)" />
             <DefaultButton iconProps={{ iconName: 'Sync' }} text="Refresh"
               onClick={() => this.setState({ _emailTemplatesLoaded: false } as any)} />
           </Stack>
@@ -6924,10 +7017,6 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     return (
       <div>
         {this.renderSectionIntro('Document Libraries', 'Browse existing SharePoint document libraries on this site or create new ones for storing policy-related documents, templates, and attachments.')}
-        <Text variant="xLarge" style={{ ...TextStyles.bold, color: Colors.textDark, display: 'block', marginBottom: 4 }}>Document Storage</Text>
-        <Text style={{ color: Colors.textTertiary, display: 'block', marginBottom: 20 }}>
-          Choose where to store policy documents. You can browse an existing Document Library or create a new one.
-        </Text>
 
         {docStorageMsg && (
           <MessageBar messageBarType={MessageBarType.success} onDismiss={() => this.setState({ _docStorageMsg: '' } as any)} style={{ marginBottom: 12 }}>{docStorageMsg}</MessageBar>
@@ -7233,14 +7322,9 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       <div>
         {this.renderSectionIntro('Secure Libraries', 'Configure restricted document libraries with custom security groups. Secure libraries are accessible only to members of the assigned security groups and appear under the \'Secure Policies\' nav item.', ['Secure library policies do NOT appear in the public Policy Hub', 'Assign security groups to control who can view each library\'s policies'])}
         <Stack horizontal horizontalAlign="space-between" verticalAlign="center" style={{ marginBottom: 4 }}>
-          <div>
-            <Text variant="xLarge" style={{ ...TextStyles.bold, color: Colors.textDark, display: 'block' }}>Secure Libraries</Text>
-            <Text style={{ color: Colors.textTertiary, display: 'block', marginBottom: 16 }}>
-              Create restricted policy libraries with custom security groups. Only members of assigned groups can access these policies. Policies in secure libraries are hidden from the public Policy Hub.
-            </Text>
-          </div>
+          <div />
           <PrimaryButton
-            text="+ New Secure Library"
+            text="+ Secure Library"
             iconProps={{ iconName: 'Add' }}
             onClick={() => this.setState({ _showCreateSecureLib: true, _editingSecureLib: { title: '', securityGroups: [], icon: 'Lock', subfolders: [], _customSubfolder: '' } } as any)}
             disabled={showCreateSecureLib}
@@ -7711,38 +7795,43 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     const saving = st._themeSaving || false;
     const themeMsg = st._themeMessage || '';
 
-    // Load theme on first render
+    // Load saved theme on first render (for preview card only — does NOT apply to live app)
     if (!st._themeLoaded) {
       this.setState({ _themeLoaded: true } as any);
       ThemeManager.loadFromSP(this.props.sp).then(loaded => {
         this.setState({ _customTheme: loaded } as any);
-        ThemeManager.apply(loaded);
       }).catch(() => { /* use defaults */ });
     }
 
     const updateTheme = (updates: Partial<ICustomTheme>): void => {
       const updated = { ...theme, ...updates };
       this.setState({ _customTheme: updated } as any);
-      // Live preview — apply immediately
-      ThemeManager.apply(updated);
+      // Preview only — does NOT apply to the live app until saved
     };
 
     const handleSave = async (): Promise<void> => {
       this.setState({ _themeSaving: true } as any);
       try {
         await ThemeManager.saveToSP(this.props.sp, theme);
+        // Only apply to the live app on explicit save
         ThemeManager.apply(theme);
-        this.setState({ _themeSaving: false, _themeMessage: 'Theme saved successfully. Changes are live.' } as any);
+        this.setState({ _themeSaving: false, _themeMessage: 'Theme saved and applied. Changes are live across all pages.' } as any);
         setTimeout(() => this.setState({ _themeMessage: '' } as any), 4000);
       } catch {
         this.setState({ _themeSaving: false, _themeMessage: 'Failed to save theme.' } as any);
       }
     };
 
-    const handleReset = (): void => {
+    const handleReset = async (): Promise<void> => {
       const defaultTheme = { ...DEFAULT_THEME };
       this.setState({ _customTheme: defaultTheme } as any);
-      ThemeManager.apply(defaultTheme);
+      // Reset clears injected styles immediately + removes from SP and localStorage
+      ThemeManager.reset();
+      try {
+        await ThemeManager.saveToSP(this.props.sp, defaultTheme);
+        this.setState({ _themeMessage: 'Theme reset to Forest Teal defaults.' } as any);
+        setTimeout(() => this.setState({ _themeMessage: '' } as any), 3000);
+      } catch { /* best effort */ }
     };
 
     const handlePreset = (presetKey: string): void => {
@@ -7750,7 +7839,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       if (preset) {
         const updated = { ...theme, ...preset };
         this.setState({ _customTheme: updated } as any);
-        ThemeManager.apply(updated);
+        // Preview only — preset is previewed, not applied until saved
       }
     };
 
@@ -7800,7 +7889,8 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       { key: 'royal-purple', name: 'Royal Purple', color: '#7c3aed' },
       { key: 'crimson-red', name: 'Crimson Red', color: '#dc2626' },
       { key: 'forest-green', name: 'Forest Green', color: '#15803d' },
-      { key: 'midnight', name: 'Midnight', color: '#1e293b' }
+      { key: 'midnight', name: 'Midnight', color: '#1e293b' },
+      { key: 'microsoft-fluent', name: 'Microsoft Fluent', color: '#0078d4' }
     ];
 
     return (
@@ -8058,11 +8148,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 24 }}>
           {this.renderSectionIntro('System Information', 'View technical details about the Policy Manager installation including version, environment, and configuration status.')}
-          {/* About Header */}
-          <div>
-            <Text variant="xLarge" style={{ ...TextStyles.semiBold, display: 'block', marginBottom: 4 }}>About DWx Policy Manager</Text>
-            <Text style={TextStyles.tertiary}>Enterprise policy governance and compliance solution</Text>
-          </div>
+          {/* Company Info */}
 
           {/* Company Info Card */}
           <div className={styles.adminCard} style={ContainerStyles.tealBorderLeft}>
@@ -8451,10 +8537,6 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     return (
       <div>
         {this.renderSectionIntro('AI Settings', 'Configure AI-powered features including the chat assistant and document converter.')}
-        <Text variant="large" style={{ ...TextStyles.semiBold, color: Colors.textDark, marginBottom: 8, display: 'block' }}>AI Settings</Text>
-        <Text variant="small" style={{ ...TextStyles.tertiary, display: 'block', marginBottom: 20 }}>
-          Configure AI-powered services including the chat assistant and document conversion pipeline.
-        </Text>
 
         <MessageBar messageBarType={MessageBarType.info} style={{ marginBottom: 20 }}>
           These services use Azure Functions. Deploy each function using the provided Bicep templates, then paste the Function URLs below.

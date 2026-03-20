@@ -226,6 +226,10 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
     const validViews: PolicyViewType[] = ['browse', 'myPolicies', 'authored', 'delegated', 'pendingApproval', 'analytics'];
     const initialView: PolicyViewType = viewParam && validViews.includes(viewParam) ? viewParam : 'browse';
 
+    // Secure Library filter — when ?library= is present, only show policies from that library
+    const libraryParam = urlParams.get('library');
+    (this as any)._secureLibraryFilter = libraryParam ? decodeURIComponent(libraryParam) : null;
+
     this.state = {
       loading: true,
       error: null,
@@ -296,16 +300,27 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
   public async componentDidMount(): Promise<void> {
     this._isMounted = true;
     injectPortalStyles();
-    await this.initializeUserContext();
+
+    try {
+      await this.initializeUserContext();
+    } catch (err) {
+      console.error('User context init failed (non-blocking):', err);
+    }
 
     // Parallelize independent data loads for faster initial render
-    await Promise.all([
-      this.initializeFeaturedAndRecent(),
-      this.loadPolicies()
-    ]);
+    try {
+      await Promise.all([
+        this.initializeFeaturedAndRecent().catch(() => {}),
+        this.loadPolicies().catch(() => {
+          if (this._isMounted) this.setState({ loading: false, error: 'Failed to load policies.' });
+        })
+      ]);
+    } catch {
+      if (this._isMounted) this.setState({ loading: false });
+    }
 
     // Start the notification queue processor after data is loaded
-    this.notificationProcessor.start();
+    try { this.notificationProcessor.start(); } catch { /* non-critical */ }
   }
 
   public componentWillUnmount(): void {
@@ -679,6 +694,16 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
       const { userVisibilityContext } = this.state;
       if (userVisibilityContext && results.policies) {
         results.policies = this.hubService.filterByVisibility(results.policies, userVisibilityContext);
+        results.totalCount = results.policies.length;
+      }
+
+      // Secure Library filter — only show policies stored in the specific library
+      const secureLibFilter = (this as any)._secureLibraryFilter;
+      if (secureLibFilter && results.policies) {
+        results.policies = results.policies.filter((p: any) => {
+          const docUrl = p.DocumentURL?.Url || p.DocumentURL || '';
+          return docUrl.includes(secureLibFilter);
+        });
         results.totalCount = results.policies.length;
       }
 
@@ -2848,6 +2873,38 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
 
   public render(): React.ReactElement<IPolicyHubProps> {
     const { currentView, currentUserRole, loading, error } = this.state;
+
+    // Show Start Screen if:
+    // - No URL params (fresh navigation to PolicyHub)
+    // - User hasn't dismissed for this session
+    // - Not a secure library view
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasUrlParams = urlParams.get('view') || urlParams.get('library') || urlParams.get('q');
+    const showStartScreen = !hasUrlParams
+      && !(this.state as any)._startScreenDismissed
+      && !sessionStorage.getItem('pm_start_dismissed')
+      && localStorage.getItem('pm_skip_start') !== 'true';
+
+    if (showStartScreen) {
+      const { StartScreen } = require('../../../components/StartScreen');
+      // Map PolicyUserRole to PolicyManagerRole for StartScreen
+      const roleMap: Record<string, string> = { Employee: 'User', Author: 'Author', Manager: 'Manager', Admin: 'Admin' };
+      const detectedRole = roleMap[currentUserRole] || localStorage.getItem('pm_detected_role') || 'User';
+      const userName = this.props.context?.pageContext?.user?.displayName || 'User';
+      const siteUrl = this.props.context?.pageContext?.web?.absoluteUrl || '/sites/PolicyManager';
+      return (
+        <StartScreen
+          sp={this.props.sp}
+          userName={userName}
+          userRole={detectedRole}
+          siteUrl={siteUrl}
+          onDismiss={() => {
+            sessionStorage.setItem('pm_start_dismissed', 'true');
+            this.setState({ _startScreenDismissed: true } as any);
+          }}
+        />
+      );
+    }
 
     // Determine page title based on current view
     // Policy Hub only has browse and myPolicies views (admin views moved to Policy Builder)

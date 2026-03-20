@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Policy Author View — Premium Mockup</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', -apple-system, sans-serif; background: #f8fafc; color: #0f172a; }
+
+  .page { max-width: 1400px; margin: 0 auto; padding: 32px 40px; }
+
+  /* Page Header */
+  .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; }
+  .page-header h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+  .page-header .subtitle { font-size: 13px; color: #64748b; margin-top: 4px; }
+  .btn { padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid #e2e8f0; background: #fff; color: #334155; font-family: inherit; transition: all 0.15s; }
+  .btn:hover { border-color: #0d9488; color: #0d9488; }
+  .btn-primary { background: #0d9488; color: #fff; border-color: #0d9488; }
+  .btn-primary:hover { background: #0f766e; }
+
+  /* KPI Strip */
+  .kpi-strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 28px; }
+  .kpi-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px 16px;
+    position: relative; overflow: hidden;
+  }
+  .kpi-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 10px 10px 0 0;
+  }
+  .kpi-card.teal::before { background: #0d9488; }
+  .kpi-card.green::before { background: #059669; }
+  .kpi-card.blue::before { background: #2563eb; }
+  .kpi-card.slate::before { background: #94a3b8; }
+  .kpi-card.amber::before { background: #d97706; }
+  .kpi-value { font-size: 28px; font-weight: 700; line-height: 1.1; }
+  .kpi-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; font-weight: 600; margin-top: 4px; }
+
+  /* Tab Bar */
+  .tab-bar { display: flex; gap: 0; border-bottom: 2px solid #e2e8f0; margin-bottom: 24px; }
+  .tab {
+    padding: 10px 20px; font-size: 13px; font-weight: 500; color: #64748b; cursor: pointer;
+    border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.15s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .tab:hover { color: #0d9488; }
+  .tab.active { color: #0d9488; font-weight: 700; border-bottom-color: #0d9488; }
+  .tab-count { font-size: 10px; font-weight: 700; background: #f1f5f9; color: #64748b; padding: 2px 7px; border-radius: 10px; }
+  .tab.active .tab-count { background: #ccfbf1; color: #0d9488; }
+
+  /* Policy Cards */
+  .policy-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden;
+    padding: 20px 24px; margin-bottom: 12px; display: flex; align-items: center; gap: 16px;
+    transition: all 0.2s; cursor: pointer; border-left: 4px solid transparent;
+  }
+  .policy-card:hover { border-color: #e2e8f0; box-shadow: 0 4px 16px rgba(13,148,136,0.1); transform: translateY(-2px); border-left-color: inherit; }
+  .policy-card.status-published { border-left-color: #059669; }
+  .policy-card.status-draft { border-left-color: #94a3b8; }
+  .policy-card.status-review { border-left-color: #2563eb; }
+  .policy-card.status-pending { border-left-color: #d97706; }
+  .policy-info { flex: 1; min-width: 0; }
+  .policy-title { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+  .policy-meta { font-size: 11px; color: #94a3b8; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+  /* Status Badges */
+  .status { font-size: 9px; font-weight: 700; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .status-green { background: #dcfce7; color: #16a34a; }
+  .status-blue { background: #dbeafe; color: #2563eb; }
+  .status-amber { background: #fef3c7; color: #d97706; }
+  .status-slate { background: #f1f5f9; color: #64748b; }
+  .badge { font-size: 9px; font-weight: 700; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .badge-cat { background: #f0f9ff; color: #0369a1; }
+
+  /* Action buttons */
+  .card-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .icon-btn {
+    width: 32px; height: 32px; border-radius: 6px; border: 1px solid #e2e8f0; background: #fff;
+    display: flex; align-items: center; justify-content: center; cursor: pointer; color: #64748b;
+    transition: all 0.15s; font-size: 14px;
+  }
+  .icon-btn:hover { border-color: #0d9488; color: #0d9488; }
+  .icon-btn.danger:hover { border-color: #dc2626; color: #dc2626; }
+
+  /* Version badge */
+  .version-badge { font-size: 10px; font-weight: 600; color: #94a3b8; background: #f8fafc; padding: 2px 8px; border-radius: 4px; border: 1px solid #e2e8f0; }
+</style>
+</head>
+<body>
+
+<!-- App Header -->
+<div style="background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%); padding: 0 40px; height: 56px; display: flex; align-items: center; justify-content: space-between;">
+  <div style="display: flex; align-items: center; gap: 10px; color: #fff;">
+    <svg viewBox="0 0 32 32" fill="none" width="28" height="28"><path d="M16 2L4 8v8c0 7.7 5.1 14.9 12 16.9 6.9-2 12-9.2 12-16.9V8L16 2z" stroke="#fff" stroke-width="2" fill="rgba(255,255,255,0.15)"/><path d="M12 16l3 3 5-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div><div style="font-size:15px;font-weight:700;">Policy Manager</div><div style="font-size:8px;text-transform:uppercase;letter-spacing:2px;opacity:0.7;">POLICY GOVERNANCE &amp; COMPLIANCE</div></div>
+  </div>
+  <div style="flex:1;max-width:400px;margin:0 40px;">
+    <div style="background:rgba(255,255,255,0.15);border-radius:6px;padding:8px 16px;display:flex;align-items:center;gap:8px;">
+      <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><circle cx="11" cy="11" r="7" stroke="rgba(255,255,255,0.7)" stroke-width="2"/><path d="M21 21l-4-4" stroke="rgba(255,255,255,0.7)" stroke-width="2" stroke-linecap="round"/></svg>
+      <span style="color:rgba(255,255,255,0.5);font-size:13px;">Search policies...</span>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <div style="background:#fff;color:#0d9488;padding:6px 14px;border-radius:4px;font-size:12px;font-weight:600;cursor:pointer;">+ New Policy</div>
+    <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;">GF</div>
+  </div>
+</div>
+
+<!-- Navigation Bar -->
+<div style="background:#fff;padding:0 40px;display:flex;align-items:center;height:44px;box-shadow:0 2px 4px rgba(0,0,0,0.08);">
+  <a style="padding:0 16px;height:44px;display:flex;align-items:center;font-size:13px;font-weight:500;color:#64748b;cursor:pointer;text-decoration:none;border-bottom:2px solid transparent;">My Policies</a>
+  <a style="padding:0 16px;height:44px;display:flex;align-items:center;font-size:13px;font-weight:500;color:#64748b;cursor:pointer;text-decoration:none;border-bottom:2px solid transparent;">Policy Hub</a>
+  <a style="padding:0 16px;height:44px;display:flex;align-items:center;font-size:13px;font-weight:600;color:#0d9488;cursor:pointer;text-decoration:none;border-bottom:2px solid #0d9488;">Author &#9662;</a>
+  <a style="padding:0 16px;height:44px;display:flex;align-items:center;font-size:13px;font-weight:500;color:#64748b;cursor:pointer;text-decoration:none;border-bottom:2px solid transparent;">Manager &#9662;</a>
+  <a style="padding:0 16px;height:44px;display:flex;align-items:center;font-size:13px;font-weight:500;color:#64748b;cursor:pointer;text-decoration:none;border-bottom:2px solid transparent;">Secure Policies &#9662;</a>
+</div>
+
+<div class="page">
+
+<!-- Page Header -->
+<div class="page-header">
+  <div>
+    <h1>Policy Author</h1>
+    <div class="subtitle">Manage your policies, track approvals, and collaborate with reviewers</div>
+  </div>
+  <div style="display:flex;gap:8px;">
+    <button class="btn">Import Template</button>
+    <button class="btn btn-primary">+ New Policy</button>
+  </div>
+</div>
+
+<!-- KPI Strip -->
+<div class="kpi-strip">
+  <div class="kpi-card teal">
+    <div class="kpi-value" style="color:#0d9488;">12</div>
+    <div class="kpi-label">My Policies</div>
+  </div>
+  <div class="kpi-card green">
+    <div class="kpi-value" style="color:#059669;">8</div>
+    <div class="kpi-label">Published</div>
+  </div>
+  <div class="kpi-card blue">
+    <div class="kpi-value" style="color:#2563eb;">2</div>
+    <div class="kpi-label">In Review</div>
+  </div>
+  <div class="kpi-card slate">
+    <div class="kpi-value" style="color:#64748b;">2</div>
+    <div class="kpi-label">Drafts</div>
+  </div>
+  <div class="kpi-card amber">
+    <div class="kpi-value" style="color:#d97706;">1</div>
+    <div class="kpi-label">Pending Approval</div>
+  </div>
+</div>
+
+<!-- Tab Bar -->
+<div class="tab-bar">
+  <div class="tab active">My Policies <span class="tab-count">12</span></div>
+  <div class="tab">Approvals <span class="tab-count">3</span></div>
+  <div class="tab">Delegations <span class="tab-count">1</span></div>
+  <div class="tab">Activity</div>
+</div>
+
+<!-- Policy Cards -->
+<div class="policy-card status-published">
+  <div class="policy-info">
+    <div class="policy-title">POPIA Compliance Framework</div>
+    <div class="policy-meta">
+      <span>POL-2024-001</span>
+      <span>&middot;</span>
+      <span class="badge badge-cat">Compliance</span>
+      <span>&middot;</span>
+      <span>Modified 15 Mar 2026</span>
+    </div>
+  </div>
+  <span class="version-badge">v3.0</span>
+  <span class="status status-green">Published</span>
+  <div class="card-actions">
+    <div class="icon-btn" title="Edit">&#9998;</div>
+    <div class="icon-btn" title="Version History">&#128337;</div>
+    <div class="icon-btn danger" title="Archive">&#128451;</div>
+  </div>
+</div>
+
+<div class="policy-card status-published">
+  <div class="policy-info">
+    <div class="policy-title">Anti-Harassment &amp; Workplace Dignity</div>
+    <div class="policy-meta">
+      <span>POL-2024-008</span>
+      <span>&middot;</span>
+      <span class="badge badge-cat">HR</span>
+      <span>&middot;</span>
+      <span>Modified 10 Mar 2026</span>
+    </div>
+  </div>
+  <span class="version-badge">v2.1</span>
+  <span class="status status-green">Published</span>
+  <div class="card-actions">
+    <div class="icon-btn" title="Edit">&#9998;</div>
+    <div class="icon-btn" title="Version History">&#128337;</div>
+    <div class="icon-btn danger" title="Archive">&#128451;</div>
+  </div>
+</div>
+
+<div class="policy-card status-review">
+  <div class="policy-info">
+    <div class="policy-title">Remote Work &amp; Flexible Arrangements</div>
+    <div class="policy-meta">
+      <span>POL-2024-014</span>
+      <span>&middot;</span>
+      <span class="badge badge-cat">HR</span>
+      <span>&middot;</span>
+      <span>Modified 18 Mar 2026</span>
+      <span>&middot;</span>
+      <span style="color:#2563eb;">Reviewer: Priya Naidoo</span>
+    </div>
+  </div>
+  <span class="version-badge">v0.3</span>
+  <span class="status status-blue">In Review</span>
+  <div class="card-actions">
+    <div class="icon-btn" title="Edit">&#9998;</div>
+    <div class="icon-btn" title="View Comments">&#128172;</div>
+    <div class="icon-btn" title="Recall">&#8634;</div>
+  </div>
+</div>
+
+<div class="policy-card status-review">
+  <div class="policy-info">
+    <div class="policy-title">Supplier Due Diligence Standards</div>
+    <div class="policy-meta">
+      <span>POL-2024-015</span>
+      <span>&middot;</span>
+      <span class="badge badge-cat">Governance</span>
+      <span>&middot;</span>
+      <span>Modified 17 Mar 2026</span>
+      <span>&middot;</span>
+      <span style="color:#2563eb;">Reviewer: Johan van der Merwe</span>
+    </div>
+  </div>
+  <span class="version-badge">v0.2</span>
+  <span class="status status-blue">In Review</span>
+  <div class="card-actions">
+    <div class="icon-btn" title="Edit">&#9998;</div>
+    <div class="icon-btn" title="View Comments">&#128172;</div>
+    <div class="icon-btn" title="Recall">&#8634;</div>
+  </div>
+</div>
+
+<div class="policy-card status-pending">
+  <div class="policy-info">
+    <div class="policy-title">Travel &amp; Expense Reimbursement</div>
+    <div class="policy-meta">
+      <span>POL-2024-016</span>
+      <span>&middot;</span>
+      <span class="badge badge-cat">Finance</span>
+      <span>&middot;</span>
+      <span>Modified 16 Mar 2026</span>
+      <span>&middot;</span>
+      <span style="color:#d97706;">Awaiting: Zanele Mthembu (CFO)</span>
+    </div>
+  </div>
+  <span class="version-badge">v1.0</span>
+  <span class="status status-amber">Pending Approval</span>
+  <div class="card-actions">
+    <div class="icon-btn" title="View">&#128065;</div>
+    <div class="icon-btn" title="Recall">&#8634;</div>
+  </div>
+</div>
+
+<div class="policy-card status-draft">
+  <div class="policy-info">
+    <div class="policy-title">Social Media Usage Guidelines</div>
+    <div class="policy-meta">
+      <span>POL-2024-017</span>
+      <span>&middot;</span>
+      <span class="badge badge-cat">Communications</span>
+      <span>&middot;</span>
+      <span>Modified 19 Mar 2026</span>
+    </div>
+  </div>
+  <span class="version-badge">v0.1</span>
+  <span class="status status-slate">Draft</span>
+  <div class="card-actions">
+    <div class="icon-btn" title="Edit">&#9998;</div>
+    <div class="icon-btn" title="Submit for Review">&#9993;</div>
+    <div class="icon-btn danger" title="Delete">&#128465;</div>
+  </div>
+</div>
+
+<div class="policy-card status-draft">
+  <div class="policy-info">
+    <div class="policy-title">Environmental Sustainability Commitment</div>
+    <div class="policy-meta">
+      <span>POL-2024-018</span>
+      <span>&middot;</span>
+      <span class="badge badge-cat">ESG</span>
+      <span>&middot;</span>
+      <span>Modified 14 Mar 2026</span>
+    </div>
+  </div>
+  <span class="version-badge">v0.1</span>
+  <span class="status status-slate">Draft</span>
+  <div class="card-actions">
+    <div class="icon-btn" title="Edit">&#9998;</div>
+    <div class="icon-btn" title="Submit for Review">&#9993;</div>
+    <div class="icon-btn danger" title="Delete">&#128465;</div>
+  </div>
+</div>
+
+<div class="policy-card status-published">
+  <div class="policy-info">
+    <div class="policy-title">Code of Conduct &amp; Ethics</div>
+    <div class="policy-meta">
+      <span>POL-2024-005</span>
+      <span>&middot;</span>
+      <span class="badge badge-cat">Ethics</span>
+      <span>&middot;</span>
+      <span>Modified 28 Feb 2026</span>
+    </div>
+  </div>
+  <span class="version-badge">v4.0</span>
+  <span class="status status-green">Published</span>
+  <div class="card-actions">
+    <div class="icon-btn" title="Edit">&#9998;</div>
+    <div class="icon-btn" title="Version History">&#128337;</div>
+    <div class="icon-btn danger" title="Archive">&#128451;</div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

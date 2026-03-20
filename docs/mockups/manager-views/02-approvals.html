@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Approvals — Premium Mockup</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', -apple-system, sans-serif; background: #f8fafc; color: #0f172a; }
+  .page { max-width: 1400px; margin: 0 auto; padding: 32px 40px; }
+
+  .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; }
+  .page-header h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+  .page-header .subtitle { font-size: 13px; color: #64748b; margin-top: 4px; }
+
+  /* KPI Row */
+  .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
+  .kpi-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px 20px; border-top: 3px solid transparent; }
+  .kpi-card.amber { border-top-color: #d97706; }
+  .kpi-card.red { border-top-color: #dc2626; }
+  .kpi-card.green { border-top-color: #059669; }
+  .kpi-card.blue { border-top-color: #2563eb; }
+  .kpi-value { font-size: 28px; font-weight: 700; line-height: 1.1; }
+  .kpi-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; font-weight: 600; margin-top: 4px; }
+
+  /* Filter tabs */
+  .filter-tabs { display: flex; gap: 6px; margin-bottom: 20px; }
+  .filter-tab {
+    padding: 6px 16px; border-radius: 6px; font-size: 12px; font-weight: 600;
+    cursor: pointer; border: 1px solid #e2e8f0; background: #fff; color: #64748b;
+    transition: all 0.15s;
+  }
+  .filter-tab:hover { border-color: #0d9488; color: #0d9488; }
+  .filter-tab.active { background: #0d9488; color: #fff; border-color: #0d9488; }
+  .filter-tab .count { display: inline-block; min-width: 18px; height: 18px; border-radius: 9px; background: rgba(0,0,0,0.1); font-size: 10px; line-height: 18px; text-align: center; margin-left: 6px; }
+  .filter-tab.active .count { background: rgba(255,255,255,0.25); }
+
+  /* Approval cards */
+  .approval-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px 24px;
+    margin-bottom: 12px; transition: border-color 0.15s, box-shadow 0.15s;
+    display: flex; gap: 20px; align-items: flex-start;
+  }
+  .approval-card:hover { border-color: #0d9488; box-shadow: 0 2px 12px rgba(13,148,136,0.06); }
+
+  .approval-priority { width: 4px; border-radius: 2px; min-height: 80px; flex-shrink: 0; }
+  .priority-high { background: #dc2626; }
+  .priority-medium { background: #d97706; }
+  .priority-low { background: #059669; }
+
+  .approval-content { flex: 1; }
+  .approval-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .approval-meta { display: flex; gap: 16px; margin-bottom: 8px; font-size: 11px; color: #94a3b8; }
+  .approval-meta-item { display: flex; align-items: center; gap: 4px; }
+  .approval-desc { font-size: 12px; color: #64748b; line-height: 1.5; margin-bottom: 10px; }
+  .approval-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag { font-size: 9px; font-weight: 600; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.3px; }
+  .tag-cat { background: #f0fdfa; color: #0d9488; }
+  .tag-risk { background: #fee2e2; color: #dc2626; }
+  .tag-status { background: #fef3c7; color: #d97706; }
+
+  .approval-actions { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; min-width: 120px; }
+  .btn { padding: 8px 16px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid; text-align: center; font-family: inherit; transition: all 0.15s; }
+  .btn-approve { background: #059669; color: #fff; border-color: #059669; }
+  .btn-approve:hover { background: #047857; }
+  .btn-return { background: #fff; color: #d97706; border-color: #fbbf24; }
+  .btn-return:hover { background: #fffbeb; }
+  .btn-view { background: #fff; color: #64748b; border-color: #e2e8f0; }
+  .btn-view:hover { border-color: #0d9488; color: #0d9488; }
+
+  .approval-dates { text-align: right; flex-shrink: 0; min-width: 100px; }
+  .date-label { font-size: 9px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+  .date-value { font-size: 12px; font-weight: 600; color: #334155; }
+  .date-due { color: #dc2626; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1>Approvals</h1>
+      <div class="subtitle">Review and approve pending policy submissions</div>
+    </div>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi-card amber"><div class="kpi-value" style="color:#d97706;">5</div><div class="kpi-label">Pending</div></div>
+    <div class="kpi-card red"><div class="kpi-value" style="color:#dc2626;">2</div><div class="kpi-label">Urgent</div></div>
+    <div class="kpi-card green"><div class="kpi-value" style="color:#059669;">18</div><div class="kpi-label">Approved (30d)</div></div>
+    <div class="kpi-card blue"><div class="kpi-value" style="color:#2563eb;">1</div><div class="kpi-label">Returned</div></div>
+  </div>
+
+  <div class="filter-tabs">
+    <div class="filter-tab active">All<span class="count">5</span></div>
+    <div class="filter-tab">Pending<span class="count">3</span></div>
+    <div class="filter-tab">Urgent<span class="count">2</span></div>
+    <div class="filter-tab">Approved</div>
+    <div class="filter-tab">Returned</div>
+  </div>
+
+  <!-- Approval Card 1 — Urgent -->
+  <div class="approval-card">
+    <div class="approval-priority priority-high"></div>
+    <div class="approval-content">
+      <div class="approval-title">POPIA Data Protection Policy v2.0</div>
+      <div class="approval-meta">
+        <div class="approval-meta-item">Submitted by <strong style="color:#0f172a;margin-left:4px;">Johan van der Merwe</strong></div>
+        <div class="approval-meta-item">Level 2 of 2</div>
+        <div class="approval-meta-item">IT & Security</div>
+      </div>
+      <div class="approval-desc">Major revision incorporating Information Regulator feedback on breach notification procedures and cross-border data transfer requirements.</div>
+      <div class="approval-tags">
+        <span class="tag tag-cat">IT & Security</span>
+        <span class="tag tag-risk">Critical Risk</span>
+        <span class="tag tag-status">Urgent — Due Today</span>
+      </div>
+    </div>
+    <div class="approval-dates">
+      <div class="date-label">Submitted</div>
+      <div class="date-value">17 Mar 2026</div>
+      <div style="margin-top:8px;"><div class="date-label">Due</div><div class="date-value date-due">Today</div></div>
+    </div>
+    <div class="approval-actions">
+      <button class="btn btn-approve">Approve</button>
+      <button class="btn btn-return">Return</button>
+      <button class="btn btn-view">View Policy</button>
+    </div>
+  </div>
+
+  <!-- Approval Card 2 -->
+  <div class="approval-card">
+    <div class="approval-priority priority-medium"></div>
+    <div class="approval-content">
+      <div class="approval-title">Anti-Harassment and Discrimination Policy</div>
+      <div class="approval-meta">
+        <div class="approval-meta-item">Submitted by <strong style="color:#0f172a;margin-left:4px;">Zanele Mthembu</strong></div>
+        <div class="approval-meta-item">Level 1 of 2</div>
+        <div class="approval-meta-item">HR Policies</div>
+      </div>
+      <div class="approval-desc">Annual review update with expanded definitions and updated reporting channels per PEPUDA amendments.</div>
+      <div class="approval-tags">
+        <span class="tag tag-cat">HR Policies</span>
+        <span class="tag" style="background:#fef3c7;color:#92400e;">High Risk</span>
+      </div>
+    </div>
+    <div class="approval-dates">
+      <div class="date-label">Submitted</div>
+      <div class="date-value">15 Mar 2026</div>
+      <div style="margin-top:8px;"><div class="date-label">Due</div><div class="date-value">22 Mar 2026</div></div>
+    </div>
+    <div class="approval-actions">
+      <button class="btn btn-approve">Approve</button>
+      <button class="btn btn-return">Return</button>
+      <button class="btn btn-view">View Policy</button>
+    </div>
+  </div>
+
+  <!-- Approval Card 3 -->
+  <div class="approval-card">
+    <div class="approval-priority priority-low"></div>
+    <div class="approval-content">
+      <div class="approval-title">Remote Work and Flexible Working Policy</div>
+      <div class="approval-meta">
+        <div class="approval-meta-item">Submitted by <strong style="color:#0f172a;margin-left:4px;">Priya Naidoo</strong></div>
+        <div class="approval-meta-item">Level 1 of 1</div>
+        <div class="approval-meta-item">HR Policies</div>
+      </div>
+      <div class="approval-desc">New policy covering hybrid work arrangements, equipment provisions, and health and safety for remote workers.</div>
+      <div class="approval-tags">
+        <span class="tag tag-cat">HR Policies</span>
+        <span class="tag" style="background:#f0f9ff;color:#0369a1;">Medium Risk</span>
+        <span class="tag" style="background:#f0fdf4;color:#059669;">New Policy</span>
+      </div>
+    </div>
+    <div class="approval-dates">
+      <div class="date-label">Submitted</div>
+      <div class="date-value">18 Mar 2026</div>
+      <div style="margin-top:8px;"><div class="date-label">Due</div><div class="date-value">25 Mar 2026</div></div>
+    </div>
+    <div class="approval-actions">
+      <button class="btn btn-approve">Approve</button>
+      <button class="btn btn-return">Return</button>
+      <button class="btn btn-view">View Policy</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Policy Manager — Start Screen V3: Minimal Focus</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', -apple-system, sans-serif; background: #fff; min-height: 100vh; display: flex; flex-direction: column; }
+
+  /* Top bar */
+  .topbar {
+    background: linear-gradient(135deg, #0d9488, #0f766e);
+    padding: 12px 48px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #fff;
+  }
+  .topbar-brand { display: flex; align-items: center; gap: 8px; }
+  .topbar-brand svg { width: 24px; height: 24px; }
+  .topbar-brand span { font-size: 14px; font-weight: 700; }
+  .topbar-skip { background: none; border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 6px 16px; border-radius: 4px; font-size: 11px; cursor: pointer; }
+  .topbar-skip:hover { background: rgba(255,255,255,0.1); }
+
+  /* Main content — centered */
+  .center-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px;
+    max-width: 960px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  /* Welcome */
+  .welcome-icon {
+    width: 64px; height: 64px; border-radius: 16px;
+    background: linear-gradient(135deg, #f0fdfa, #ccfbf1);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 20px;
+  }
+  .welcome-icon svg { width: 32px; height: 32px; }
+
+  .center-content h1 { font-size: 28px; font-weight: 700; color: #0f172a; text-align: center; margin-bottom: 4px; }
+  .center-content .date { font-size: 13px; color: #94a3b8; text-align: center; margin-bottom: 8px; }
+  .center-content .desc { font-size: 14px; color: #64748b; text-align: center; max-width: 500px; line-height: 1.6; margin-bottom: 36px; }
+
+  /* Search bar */
+  .search-bar {
+    width: 100%;
+    max-width: 560px;
+    position: relative;
+    margin-bottom: 40px;
+  }
+  .search-bar input {
+    width: 100%;
+    padding: 14px 20px 14px 48px;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 15px;
+    color: #0f172a;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    font-family: inherit;
+  }
+  .search-bar input:focus {
+    border-color: #0d9488;
+    box-shadow: 0 0 0 3px rgba(13,148,136,0.12);
+  }
+  .search-bar input::placeholder { color: #94a3b8; }
+  .search-bar svg {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    color: #94a3b8;
+  }
+
+  /* Action grid */
+  .actions-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    width: 100%;
+    margin-bottom: 40px;
+  }
+  .action-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .action-card:hover { border-color: #0d9488; box-shadow: 0 2px 12px rgba(13,148,136,0.08); transform: translateY(-1px); }
+  .action-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 10px;
+  }
+  .action-icon svg { width: 20px; height: 20px; }
+  .action-title { font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 3px; }
+  .action-desc { font-size: 10px; color: #94a3b8; line-height: 1.4; }
+
+  /* Bottom section — recent + stats */
+  .bottom-section {
+    width: 100%;
+    display: flex;
+    gap: 24px;
+  }
+
+  /* Recent */
+  .recent-panel {
+    flex: 1;
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .recent-title { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: #94a3b8; font-weight: 600; margin-bottom: 12px; }
+  .recent-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid #e2e8f0;
+    cursor: pointer;
+  }
+  .recent-item:last-child { border-bottom: none; }
+  .recent-item:hover .recent-name { color: #0d9488; }
+  .recent-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .recent-name { flex: 1; font-size: 12px; color: #334155; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .recent-meta { font-size: 10px; color: #94a3b8; }
+
+  /* Compliance ring */
+  .compliance-panel {
+    width: 240px;
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .ring-container {
+    width: 120px;
+    height: 120px;
+    margin: 8px auto 16px;
+    position: relative;
+  }
+  .ring-bg {
+    fill: none;
+    stroke: #e2e8f0;
+    stroke-width: 8;
+  }
+  .ring-progress {
+    fill: none;
+    stroke: #0d9488;
+    stroke-width: 8;
+    stroke-linecap: round;
+    stroke-dasharray: 339.3;
+    stroke-dashoffset: 44.1; /* 87% = 339.3 * 0.13 */
+    transform: rotate(-90deg);
+    transform-origin: center;
+    transition: stroke-dashoffset 1s ease;
+  }
+  .ring-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 28px;
+    font-weight: 700;
+    color: #0d9488;
+  }
+  .ring-text span { font-size: 14px; font-weight: 400; }
+  .compliance-label { font-size: 11px; color: #64748b; margin-bottom: 12px; }
+
+  .mini-stats { display: flex; justify-content: center; gap: 16px; }
+  .mini-stat { text-align: center; }
+  .mini-stat-value { font-size: 18px; font-weight: 700; }
+  .mini-stat-label { font-size: 9px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+</style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div class="topbar">
+  <div class="topbar-brand">
+    <svg viewBox="0 0 32 32" fill="none"><path d="M16 2L4 8v8c0 7.7 5.1 14.9 12 16.9 6.9-2 12-9.2 12-16.9V8L16 2z" stroke="#fff" stroke-width="2" fill="rgba(255,255,255,0.1)"/><path d="M12 16l3 3 5-6" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span>Policy Manager</span>
+  </div>
+  <button class="topbar-skip">Skip to Policy Hub &rarr;</button>
+</div>
+
+<!-- Centered Content -->
+<div class="center-content">
+  <div class="welcome-icon">
+    <svg viewBox="0 0 32 32" fill="none"><path d="M16 2L4 8v8c0 7.7 5.1 14.9 12 16.9 6.9-2 12-9.2 12-16.9V8L16 2z" stroke="#0d9488" stroke-width="2" fill="rgba(13,148,136,0.08)"/><path d="M12 16l3 3 5-6" stroke="#0d9488" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </div>
+
+  <h1>Good evening, Gary</h1>
+  <div class="date">Thursday, 19 March 2026</div>
+  <p class="desc">Your policy governance command centre. Search for a policy, take a quick action, or review your compliance status below.</p>
+
+  <!-- Search -->
+  <div class="search-bar">
+    <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    <input type="text" placeholder="Search policies by name, number, or keyword..." />
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="actions-grid">
+    <div class="action-card">
+      <div class="action-icon" style="background: #f0fdfa; color: #0d9488;">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+      <div class="action-title">Browse Policies</div>
+      <div class="action-desc">Explore the full policy library</div>
+    </div>
+    <div class="action-card">
+      <div class="action-icon" style="background: #eff6ff; color: #2563eb;">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 5h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+      <div class="action-title">My Policies</div>
+      <div class="action-desc">Assigned policies & acknowledgements</div>
+    </div>
+    <div class="action-card">
+      <div class="action-icon" style="background: #f0fdf4; color: #16a34a;">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 4v16m8-8H4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+      <div class="action-title">New Policy</div>
+      <div class="action-desc">Create from scratch or template</div>
+    </div>
+    <div class="action-card">
+      <div class="action-icon" style="background: #f5f3ff; color: #7c3aed;">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+      <div class="action-title">Search</div>
+      <div class="action-desc">Find by name, number, or keyword</div>
+    </div>
+    <div class="action-card">
+      <div class="action-icon" style="background: #fffbeb; color: #d97706;">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 16v-4M12 8h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+      <div class="action-title">Help Centre</div>
+      <div class="action-desc">Articles, FAQs, and support</div>
+    </div>
+    <div class="action-card">
+      <div class="action-icon" style="background: #f1f5f9; color: #475569;">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.573-1.066z" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/></svg>
+      </div>
+      <div class="action-title">Admin Centre</div>
+      <div class="action-desc">Settings and system configuration</div>
+    </div>
+  </div>
+
+  <!-- Bottom: Recent + Compliance -->
+  <div class="bottom-section">
+    <div class="recent-panel">
+      <div class="recent-title">Recently Viewed</div>
+      <div class="recent-item"><span class="recent-dot" style="background:#34d399;"></span><span class="recent-name">Data Protection and Privacy Policy</span><span class="recent-meta">5m ago</span></div>
+      <div class="recent-item"><span class="recent-dot" style="background:#34d399;"></span><span class="recent-name">Employee Code of Conduct</span><span class="recent-meta">15m ago</span></div>
+      <div class="recent-item"><span class="recent-dot" style="background:#fbbf24;"></span><span class="recent-name">Information Security Policy</span><span class="recent-meta">1h ago</span></div>
+      <div class="recent-item"><span class="recent-dot" style="background:#34d399;"></span><span class="recent-name">Anti-Harassment and Discrimination Policy</span><span class="recent-meta">2h ago</span></div>
+      <div class="recent-item"><span class="recent-dot" style="background:#f87171;"></span><span class="recent-name">Health and Safety Policy</span><span class="recent-meta">1d ago</span></div>
+    </div>
+
+    <div class="compliance-panel">
+      <div class="recent-title">Your Compliance</div>
+      <div class="ring-container">
+        <svg viewBox="0 0 120 120" width="120" height="120">
+          <circle class="ring-bg" cx="60" cy="60" r="54" />
+          <circle class="ring-progress" cx="60" cy="60" r="54" />
+        </svg>
+        <div class="ring-text">87<span>%</span></div>
+      </div>
+      <div class="compliance-label">Overall Policy Compliance</div>
+      <div class="mini-stats">
+        <div class="mini-stat"><div class="mini-stat-value" style="color:#16a34a;">12</div><div class="mini-stat-label">Done</div></div>
+        <div class="mini-stat"><div class="mini-stat-value" style="color:#d97706;">3</div><div class="mini-stat-label">Pending</div></div>
+        <div class="mini-stat"><div class="mini-stat-value" style="color:#dc2626;">1</div><div class="mini-stat-label">Overdue</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

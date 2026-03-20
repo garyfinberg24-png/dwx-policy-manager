@@ -3,7 +3,8 @@
 # Also adds DocumentTemplateURL field if missing
 # Idempotent — safe to run multiple times
 
-$SiteUrl = "https://mf7m.sharepoint.com/sites/PolicyManager"
+# Site: https://mf7m.sharepoint.com/sites/PolicyManager
+# Assumes you are already connected via Connect-PnPOnline
 
 Write-Host "Updating PM_PolicyTemplates for Template Manager..." -ForegroundColor Cyan
 
@@ -11,9 +12,8 @@ Write-Host "Updating PM_PolicyTemplates for Template Manager..." -ForegroundColo
 $field = Get-PnPField -List "PM_PolicyTemplates" -Identity "TemplateType" -ErrorAction SilentlyContinue
 if ($null -ne $field) {
     # Update the choices to include new template types
-    Set-PnPField -List "PM_PolicyTemplates" -Identity "TemplateType" -Values @{
-        Choices = @("richtext","word","excel","powerpoint","corporate","regulatory","Standard Policy","Procedure","Guideline","Code of Conduct","Custom")
-    }
+    $choices = [string[]]@("richtext","word","excel","powerpoint","corporate","regulatory","Standard Policy","Procedure","Guideline","Code of Conduct","Custom")
+    Set-PnPField -List "PM_PolicyTemplates" -Identity "TemplateType" -Values @{Choices = $choices}
     Write-Host "  OK  TemplateType choices updated" -ForegroundColor Green
 } else {
     Write-Host "  WARN  TemplateType field not found — run Create-PolicyTemplatesLibrary.ps1 first" -ForegroundColor Yellow

@@ -1811,8 +1811,14 @@ export class PolicyService {
       : (rawDocUrl && typeof rawDocUrl === 'object' && rawDocUrl.Url) ? rawDocUrl.Url
       : undefined;
 
+    // Normalize User fields — SP expands these as objects {odata.type, Id, Title, EMail}
+    const policyOwner = item.PolicyOwner;
+    const ownerName: string = typeof policyOwner === 'string' ? policyOwner
+      : (policyOwner && typeof policyOwner === 'object') ? (policyOwner.Title || policyOwner.EMail || '') : (item.PolicyOwner || '');
+
     return {
       ...item,
+      PolicyOwner: ownerName,
       DocumentURL: documentUrl,
       Tags: item.Tags ? JSON.parse(item.Tags) : [],
       RelatedPolicyIds: item.RelatedPolicyIds ? JSON.parse(item.RelatedPolicyIds) : [],

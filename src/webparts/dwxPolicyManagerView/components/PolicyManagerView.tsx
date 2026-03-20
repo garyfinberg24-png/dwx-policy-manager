@@ -162,9 +162,12 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
     const urlParams = new URLSearchParams(window.location.search);
     const tabParam = urlParams.get('tab');
     let initialTab: ManagerViewTab = 'dashboard';
-    if (tabParam === 'team-compliance' || tabParam === 'approvals' || tabParam === 'delegations' || tabParam === 'reviews' || tabParam === 'reports') {
-      initialTab = tabParam;
+    const isDirectNav = tabParam === 'team-compliance' || tabParam === 'approvals' || tabParam === 'delegations' || tabParam === 'reviews';
+    if (isDirectNav) {
+      initialTab = tabParam as ManagerViewTab;
     }
+    // When deep-linked to a specific tab, hide the tab bar
+    (this as any)._isDirectNav = isDirectNav;
 
     this.state = {
       activeTab: initialTab,
@@ -714,36 +717,37 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
         activeNavKey="manager"
         breadcrumbs={[{ text: 'Policy Manager', url: '/sites/PolicyManager' }, { text: 'Policy Manager' }]}
       >
-        <Pivot
-          selectedKey={this.state.activeTab}
-          onLinkClick={(item) => {
-            if (item?.props.itemKey) {
-              this.setState({ activeTab: item.props.itemKey as ManagerViewTab });
-            }
-          }}
-          styles={{
-            root: { borderBottom: '1px solid #edebe9', marginBottom: 0 },
-            link: { fontSize: 14, height: 44, lineHeight: '44px', color: '#605e5c' },
-            linkIsSelected: { fontSize: 14, height: 44, lineHeight: '44px', color: '#0d9488', fontWeight: 600 },
-            linkContent: {},
-            itemContainer: {}
-          }}
-          linkFormat="links"
-        >
-          <PivotItem headerText="Dashboard" itemKey="dashboard" itemIcon="ViewDashboard" />
-          <PivotItem headerText="Team Compliance" itemKey="team-compliance" itemIcon="Group" itemCount={this.state.teamMembers.filter(m => m.PoliciesOverdue > 0).length || undefined} />
-          <PivotItem headerText="Approvals" itemKey="approvals" itemIcon="CheckboxComposite" itemCount={this.state.approvals.filter(a => a.Status === 'Pending').length || undefined} />
-          <PivotItem headerText="Delegations" itemKey="delegations" itemIcon="People" itemCount={this.state.delegations.filter(d => d.Status === 'Pending' || d.Status === 'Overdue').length || undefined} />
-          <PivotItem headerText="Policy Reviews" itemKey="reviews" itemIcon="ReviewSolid" itemCount={this.state.reviews.filter(r => r.Status === 'Due' || r.Status === 'Overdue').length || undefined} />
-          <PivotItem headerText="Reports" itemKey="reports" itemIcon="ReportDocument" />
-        </Pivot>
+        {/* Only show tab bar when on the full Dashboard view (not deep-linked) */}
+        {!(this as any)._isDirectNav && (
+          <Pivot
+            selectedKey={this.state.activeTab}
+            onLinkClick={(item) => {
+              if (item?.props.itemKey) {
+                this.setState({ activeTab: item.props.itemKey as ManagerViewTab });
+              }
+            }}
+            styles={{
+              root: { borderBottom: '1px solid #edebe9', marginBottom: 0 },
+              link: { fontSize: 14, height: 44, lineHeight: '44px', color: '#605e5c' },
+              linkIsSelected: { fontSize: 14, height: 44, lineHeight: '44px', color: '#0d9488', fontWeight: 600 },
+              linkContent: {},
+              itemContainer: {}
+            }}
+            linkFormat="links"
+          >
+            <PivotItem headerText="Dashboard" itemKey="dashboard" itemIcon="ViewDashboard" />
+            <PivotItem headerText="Team Compliance" itemKey="team-compliance" itemIcon="Group" itemCount={this.state.teamMembers.filter(m => m.PoliciesOverdue > 0).length || undefined} />
+            <PivotItem headerText="Approvals" itemKey="approvals" itemIcon="CheckboxComposite" itemCount={this.state.approvals.filter(a => a.Status === 'Pending').length || undefined} />
+            <PivotItem headerText="Delegations" itemKey="delegations" itemIcon="People" itemCount={this.state.delegations.filter(d => d.Status === 'Pending' || d.Status === 'Overdue').length || undefined} />
+            <PivotItem headerText="Policy Reviews" itemKey="reviews" itemIcon="ReviewSolid" itemCount={this.state.reviews.filter(r => r.Status === 'Due' || r.Status === 'Overdue').length || undefined} />
+          </Pivot>
+        )}
 
         {this.state.activeTab === 'dashboard' && this.renderDashboard()}
         {this.state.activeTab === 'team-compliance' && this.renderTeamCompliance()}
         {this.state.activeTab === 'approvals' && this.renderApprovalsTab()}
         {this.state.activeTab === 'delegations' && this.renderDelegationsTab()}
         {this.state.activeTab === 'reviews' && this.renderReviewsTab()}
-        {this.state.activeTab === 'reports' && this.renderReportsTab()}
 
         {this.renderDelegationPanel()}
       </JmlAppLayout>
@@ -759,117 +763,149 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
     const { teamMembers, approvals, delegations, reviews, activities, loading } = this.state;
 
     if (loading) {
-      return (
-        <Stack horizontalAlign="center" tokens={{ padding: 40 }}>
-          <Spinner size={SpinnerSize.large} label="Loading dashboard..." />
-        </Stack>
-      );
+      return <Stack horizontalAlign="center" tokens={{ padding: 40 }}><Spinner size={SpinnerSize.large} label="Loading dashboard..." /></Stack>;
     }
 
     const totalAssigned = teamMembers.reduce((sum, m) => sum + m.PoliciesAssigned, 0);
     const totalAcknowledged = teamMembers.reduce((sum, m) => sum + m.PoliciesAcknowledged, 0);
+    const totalPending = teamMembers.reduce((sum, m) => sum + m.PoliciesPending, 0);
     const totalOverdue = teamMembers.reduce((sum, m) => sum + m.PoliciesOverdue, 0);
     const overallCompliance = totalAssigned > 0 ? Math.round((totalAcknowledged / totalAssigned) * 100) : 0;
     const pendingApprovals = approvals.filter(a => a.Status === 'Pending').length;
-    const overdueReviews = reviews.filter(r => r.Status === 'Overdue').length;
+    const urgentApprovals = approvals.filter(a => a.Status === 'Pending' && a.Priority === 'High').length;
+    const reviewsDue = reviews.filter(r => r.Status === 'Due' || r.Status === 'Overdue').length;
     const activeDelegations = delegations.filter(d => d.Status === 'Pending' || d.Status === 'InProgress').length;
+    const atRisk = teamMembers.filter(m => m.CompliancePercent < 75);
+    const complianceColor = overallCompliance >= 90 ? '#059669' : overallCompliance >= 75 ? '#d97706' : '#dc2626';
+    // SVG ring: circumference = 2 * PI * 65 = 408.4
+    const ringOffset = 408.4 * (1 - overallCompliance / 100);
+
+    const kpiData = [
+      { label: 'Team Compliance', value: `${overallCompliance}%`, color: '#0d9488', trend: '+3% from last month', trendUp: true },
+      { label: 'Pending Approvals', value: pendingApprovals, color: '#d97706', trend: urgentApprovals > 0 ? `${urgentApprovals} urgent` : undefined },
+      { label: 'Overdue Ack', value: totalOverdue, color: '#dc2626', trend: totalOverdue > 0 ? `${atRisk.length} at risk` : undefined },
+      { label: 'Active Delegations', value: activeDelegations, color: '#2563eb' },
+      { label: 'Reviews Due', value: reviewsDue, color: '#059669', trend: 'This quarter' },
+      { label: 'Team Members', value: teamMembers.length, color: '#7c3aed' }
+    ];
 
     return (
-      <>
-        <PageSubheader
-          iconName="ViewDashboard"
-          title="Manager Dashboard"
-          description="Overview of your team's policy compliance, pending actions, and recent activity"
-        />
-
-        {/* Big Compliance Score */}
-        <div className={(styles as Record<string, string>).bigScore}>
-          <div className={(styles as Record<string, string>).bigScoreValue} style={{ color: overallCompliance >= 90 ? '#107c10' : overallCompliance >= 75 ? '#f59e0b' : '#d13438' }}>
-            {overallCompliance}%
+      <div style={{ padding: '24px 0' }}>
+        {/* Page Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+          <div>
+            <Text style={{ fontSize: 26, fontWeight: 700, color: '#0f172a', display: 'block', letterSpacing: -0.5 }}>Manager Dashboard</Text>
+            <Text style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>Team compliance overview and pending actions</Text>
           </div>
-          <div className={(styles as Record<string, string>).bigScoreLabel}>Team Compliance Score</div>
-          <div className={(styles as Record<string, string>).bigScoreSub}>{totalAcknowledged} of {totalAssigned} policies acknowledged across {teamMembers.length} team members</div>
+          <Stack horizontal tokens={{ childrenGap: 8 }}>
+            <DefaultButton text="Export Report" iconProps={{ iconName: 'Download' }} styles={{ root: { borderRadius: 6 } }} />
+            <DefaultButton text="Send Reminders" iconProps={{ iconName: 'Mail' }} styles={{ root: { borderRadius: 6 } }} />
+          </Stack>
         </div>
 
-        {/* KPI Row */}
-        <div className={(styles as Record<string, string>).kpiGrid}>
-          {this.renderKpiCard('Pending Approvals', pendingApprovals, 'Clock', '#f59e0b', '#fff8e6', () => this.setState({ activeTab: 'approvals' }))}
-          {this.renderKpiCard('Overdue Ack.', totalOverdue, 'Warning', '#d13438', '#fef2f2', () => this.setState({ activeTab: 'team-compliance' }))}
-          {this.renderKpiCard('Active Delegations', activeDelegations, 'People', '#0078d4', '#e8f4fd', () => this.setState({ activeTab: 'delegations' }))}
-          {this.renderKpiCard('Reviews Due', overdueReviews, 'ReviewSolid', '#8764b8', '#f3eefc', () => this.setState({ activeTab: 'reviews' }))}
-          {this.renderKpiCard('Team Members', teamMembers.length, 'Group', '#0d9488', '#f0fdfa')}
-          {this.renderKpiCard('At Risk', teamMembers.filter(m => m.CompliancePercent < 75).length, 'ShieldAlert', '#d13438', '#fef2f2', () => this.setState({ activeTab: 'team-compliance' }))}
-        </div>
-
-        {/* Alerts */}
-        {totalOverdue > 0 && (
-          <MessageBar messageBarType={MessageBarType.severeWarning} style={{ marginBottom: 16 }}>
-            <strong>{totalOverdue} overdue acknowledgement{totalOverdue > 1 ? 's' : ''}</strong> across your team. Consider sending reminders or escalating.
-          </MessageBar>
-        )}
-        {pendingApprovals > 0 && (
-          <MessageBar messageBarType={MessageBarType.warning} style={{ marginBottom: 16 }}>
-            You have <strong>{pendingApprovals} policy approval{pendingApprovals > 1 ? 's' : ''}</strong> awaiting your review.
-          </MessageBar>
-        )}
-
-        {/* Two-column: Team at Risk + Activity Feed */}
-        <Stack horizontal tokens={{ childrenGap: 20 }} style={{ marginTop: 4 }}>
-          {/* Team Members at Risk */}
-          <div style={{ flex: 1 }}>
-            <div className={(styles as Record<string, string>).sectionCard}>
-              <div className={(styles as Record<string, string>).sectionTitle}>
-                <Icon iconName="ShieldAlert" style={{ color: '#d13438' }} />
-                Team Members at Risk
-              </div>
-              {teamMembers.filter(m => m.CompliancePercent < 85).sort((a, b) => a.CompliancePercent - b.CompliancePercent).slice(0, 5).map(member => (
-                <Stack key={member.Id} horizontal verticalAlign="center" tokens={{ childrenGap: 12 }} style={{ padding: '10px 0', borderBottom: '1px solid #f3f2f1' }}>
-                  <Persona text={member.Name} size={PersonaSize.size32} secondaryText={member.Department} />
-                  <div style={{ flex: 1 }} />
-                  <Stack horizontalAlign="end" tokens={{ childrenGap: 2 }}>
-                    <Text style={{ fontWeight: 600, color: member.CompliancePercent < 75 ? '#d13438' : '#f59e0b' }}>{member.CompliancePercent}%</Text>
-                    <Text variant="tiny" style={{ color: '#a19f9d' }}>{member.PoliciesOverdue} overdue</Text>
-                  </Stack>
-                </Stack>
-              ))}
-              {teamMembers.filter(m => m.CompliancePercent < 85).length === 0 && (
-                <Stack horizontalAlign="center" tokens={{ padding: 20 }}>
-                  <Icon iconName="SkypeCircleCheck" style={{ fontSize: 32, color: '#107c10', marginBottom: 8 }} />
-                  <Text style={{ color: '#605e5c' }}>All team members are compliant</Text>
-                </Stack>
-              )}
+        {/* KPI Strip */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 12, marginBottom: 24 }}>
+          {kpiData.map((kpi, i) => (
+            <div key={i} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '18px 16px', borderTop: `3px solid ${kpi.color}` }}>
+              <div style={{ fontSize: 28, fontWeight: 700, color: kpi.color, lineHeight: 1.1 }}>{kpi.value}</div>
+              <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#94a3b8', fontWeight: 600, marginTop: 4 }}>{kpi.label}</div>
+              {kpi.trend && <div style={{ fontSize: 10, marginTop: 6, color: kpi.trendUp ? '#059669' : '#94a3b8' }}>{kpi.trend}</div>}
             </div>
-          </div>
+          ))}
+        </div>
 
-          {/* Recent Activity */}
-          <div style={{ flex: 1 }}>
-            <div className={(styles as Record<string, string>).sectionCard}>
-              <div className={(styles as Record<string, string>).sectionTitle}>
-                <Icon iconName="ActivityFeed" style={{ color: '#0d9488' }} />
-                Recent Activity
+        {/* Two-column: Compliance Ring + At Risk */}
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 20, marginBottom: 20 }}>
+          {/* Compliance Ring */}
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text style={{ fontSize: 14, fontWeight: 700 }}>Team Compliance Score</Text>
+              <span style={{ fontSize: 9, fontWeight: 700, padding: '3px 10px', borderRadius: 4, background: overallCompliance >= 80 ? '#dcfce7' : '#fef3c7', color: overallCompliance >= 80 ? '#16a34a' : '#d97706' }}>
+                {overallCompliance >= 80 ? 'On Track' : 'Needs Attention'}
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 24, padding: 20 }}>
+              <div style={{ width: 140, height: 140, position: 'relative', flexShrink: 0 }}>
+                <svg viewBox="0 0 140 140" width="140" height="140">
+                  <circle cx="70" cy="70" r="65" fill="none" stroke="#e2e8f0" strokeWidth="10" />
+                  <circle cx="70" cy="70" r="65" fill="none" stroke={complianceColor} strokeWidth="10" strokeLinecap="round"
+                    strokeDasharray="408.4" strokeDashoffset={ringOffset}
+                    style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }} />
+                </svg>
+                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
+                  <div style={{ fontSize: 36, fontWeight: 700, color: complianceColor }}>{overallCompliance}%</div>
+                  <div style={{ fontSize: 10, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1 }}>Compliance</div>
+                </div>
               </div>
-              <div className={(styles as Record<string, string>).activityFeed}>
-                {activities.slice(0, 8).map(activity => (
-                  <div key={activity.Id} className={(styles as Record<string, string>).activityItem}>
-                    <div className={(styles as Record<string, string>).activityIcon} style={{
-                      background: activity.Type === 'acknowledgement' ? '#dff6dd' : activity.Type === 'approval' ? '#fff8e6' : activity.Type === 'overdue' ? '#fef2f2' : '#e8f4fd',
-                      color: activity.Type === 'acknowledgement' ? '#107c10' : activity.Type === 'approval' ? '#f59e0b' : activity.Type === 'overdue' ? '#d13438' : '#0078d4'
-                    }}>
-                      <Icon iconName={activity.Type === 'acknowledgement' ? 'CheckMark' : activity.Type === 'approval' ? 'CheckboxComposite' : activity.Type === 'overdue' ? 'Warning' : 'People'} />
-                    </div>
-                    <div className={(styles as Record<string, string>).activityContent}>
-                      <div className={(styles as Record<string, string>).activityText}>
-                        <strong>{activity.User}</strong> {activity.Action} <em>{activity.PolicyTitle}</em>
-                      </div>
-                      <div className={(styles as Record<string, string>).activityTime}>{activity.Timestamp}</div>
-                    </div>
+              <div style={{ flex: 1 }}>
+                {[
+                  { label: 'Total Policies Assigned', value: totalAssigned },
+                  { label: 'Acknowledged', value: totalAcknowledged, color: '#059669' },
+                  { label: 'Pending', value: totalPending, color: '#d97706' },
+                  { label: 'Overdue', value: totalOverdue, color: '#dc2626' },
+                  { label: 'Target', value: '95%' }
+                ].map((item, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f1f5f9', fontSize: 12 }}>
+                    <span style={{ color: '#64748b' }}>{item.label}</span>
+                    <span style={{ fontWeight: 600, color: item.color || '#0f172a' }}>{item.value}</span>
                   </div>
                 ))}
               </div>
             </div>
           </div>
-        </Stack>
-      </>
+
+          {/* At Risk Members */}
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text style={{ fontSize: 14, fontWeight: 700 }}>At Risk Members</Text>
+              {atRisk.length > 0 && <span style={{ fontSize: 9, fontWeight: 700, padding: '3px 10px', borderRadius: 4, background: '#fee2e2', color: '#dc2626' }}>Action Required</span>}
+            </div>
+            <div style={{ padding: '8px 20px' }}>
+              {teamMembers.filter(m => m.CompliancePercent < 85).sort((a, b) => a.CompliancePercent - b.CompliancePercent).slice(0, 5).map(member => {
+                const pctColor = member.CompliancePercent < 50 ? '#dc2626' : member.CompliancePercent < 75 ? '#d97706' : '#059669';
+                const initials = member.Name.split(' ').map((n: string) => n[0]).join('').slice(0, 2);
+                return (
+                  <div key={member.Id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid #f8fafc' }}>
+                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: pctColor, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 13, fontWeight: 700, flexShrink: 0 }}>{initials}</div>
+                    <div style={{ flex: 1 }}><div style={{ fontSize: 13, fontWeight: 600 }}>{member.Name}</div><div style={{ fontSize: 11, color: '#94a3b8' }}>{member.Department}</div></div>
+                    <div style={{ width: 80, height: 6, borderRadius: 3, background: '#e2e8f0', overflow: 'hidden' }}><div style={{ height: '100%', borderRadius: 3, background: pctColor, width: `${member.CompliancePercent}%` }} /></div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: pctColor, minWidth: 36, textAlign: 'right' }}>{member.CompliancePercent}%</div>
+                  </div>
+                );
+              })}
+              {teamMembers.filter(m => m.CompliancePercent < 85).length === 0 && (
+                <div style={{ textAlign: 'center', padding: 20 }}>
+                  <Icon iconName="CompletedSolid" styles={{ root: { fontSize: 32, color: '#059669', marginBottom: 8 } }} />
+                  <Text style={{ color: '#64748b', display: 'block' }}>All team members are compliant</Text>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Recent Activity */}
+        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
+          <div style={{ padding: '16px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Text style={{ fontSize: 14, fontWeight: 700 }}>Recent Activity</Text>
+            <Text style={{ fontSize: 11, color: '#94a3b8' }}>Last 24 hours</Text>
+          </div>
+          <div style={{ padding: '8px 20px' }}>
+            {activities.slice(0, 8).map(activity => {
+              const dotColors: Record<string, string> = { acknowledgement: '#059669', approval: '#2563eb', overdue: '#dc2626', review: '#7c3aed', delegation: '#d97706' };
+              return (
+                <div key={activity.Id} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 0', borderBottom: '1px solid #f8fafc', fontSize: 12 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: dotColors[activity.Type] || '#94a3b8', marginTop: 4, flexShrink: 0 }} />
+                  <div style={{ flex: 1, color: '#334155', lineHeight: 1.5 }}>
+                    <strong style={{ color: '#0f172a' }}>{activity.User}</strong> {activity.Action} <em>{activity.PolicyTitle}</em>
+                  </div>
+                  <div style={{ fontSize: 10, color: '#94a3b8', flexShrink: 0 }}>{activity.Timestamp}</div>
+                </div>
+              );
+            })}
+            {activities.length === 0 && <Text style={{ color: '#94a3b8', padding: '16px 0', display: 'block', textAlign: 'center' }}>No recent activity</Text>}
+          </div>
+        </div>
+      </div>
     );
   }
 
@@ -1005,112 +1041,118 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
     const { approvals, approvalFilter, loading } = this.state;
     const filters: Array<'All' | 'Pending' | 'Approved' | 'Rejected' | 'Returned'> = ['All', 'Pending', 'Approved', 'Rejected', 'Returned'];
     const filtered = approvalFilter === 'All' ? approvals : approvals.filter(a => a.Status === approvalFilter);
-
     const pendingCount = approvals.filter(a => a.Status === 'Pending').length;
     const urgentCount = approvals.filter(a => a.Status === 'Pending' && a.Priority === 'Urgent').length;
 
-    return (
-      <>
-        <PageSubheader
-          iconName="CheckboxComposite"
-          title="Policy Approvals"
-          description="Review and approve policy drafts awaiting your sign-off"
-        />
+    const priorityColors: Record<string, string> = { Urgent: '#dc2626', High: '#d97706', Normal: '#059669', Low: '#94a3b8' };
+    const riskBadges: Record<string, { bg: string; color: string }> = { Critical: { bg: '#fee2e2', color: '#dc2626' }, High: { bg: '#fef3c7', color: '#92400e' }, Medium: { bg: '#f0f9ff', color: '#0369a1' }, Low: { bg: '#f0fdf4', color: '#059669' } };
 
-        <div className={(styles as Record<string, string>).kpiGrid}>
-          {this.renderKpiCard('Pending', pendingCount, 'Clock', '#f59e0b', '#fff8e6', () => this.setState({ approvalFilter: 'Pending' }))}
-          {this.renderKpiCard('Urgent', urgentCount, 'Warning', '#d13438', '#fef2f2', () => this.setState({ approvalFilter: 'Pending' }))}
-          {this.renderKpiCard('Approved', approvals.filter(a => a.Status === 'Approved').length, 'CheckMark', '#107c10', '#dff6dd', () => this.setState({ approvalFilter: 'Approved' }))}
-          {this.renderKpiCard('Returned', approvals.filter(a => a.Status === 'Returned').length, 'Undo', '#8764b8', '#f3eefc', () => this.setState({ approvalFilter: 'Returned' }))}
+    return (
+      <div style={{ padding: '24px 0' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+          <div>
+            <Text style={{ fontSize: 26, fontWeight: 700, color: '#0f172a', display: 'block', letterSpacing: -0.5 }}>Approvals</Text>
+            <Text style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>Review and approve pending policy submissions</Text>
+          </div>
         </div>
 
-        <Stack horizontal tokens={{ childrenGap: 8 }} style={{ marginBottom: 16, flexWrap: 'wrap' }}>
-          {filters.map(f => (
-            <DefaultButton
-              key={f}
-              text={`${f} (${f === 'All' ? approvals.length : approvals.filter(a => a.Status === f).length})`}
-              styles={{
-                root: {
-                  borderRadius: 4, minWidth: 'auto', padding: '2px 14px', height: 32,
-                  border: approvalFilter === f ? '2px solid #0d9488' : '1px solid #e1dfdd',
-                  background: approvalFilter === f ? '#f0fdfa' : 'transparent',
-                  color: approvalFilter === f ? '#0d9488' : '#605e5c',
-                  fontWeight: approvalFilter === f ? 600 : 400
-                },
-                rootHovered: { borderColor: '#0d9488', color: '#0d9488' }
-              }}
-              onClick={() => this.setState({ approvalFilter: f })}
-            />
-          ))}
-        </Stack>
-
-        {loading ? (
-          <Stack horizontalAlign="center" tokens={{ padding: 40 }}>
-            <Spinner size={SpinnerSize.large} label="Loading approvals..." />
-          </Stack>
-        ) : filtered.length === 0 ? (
-          <Stack horizontalAlign="center" tokens={{ padding: 40 }}>
-            <Icon iconName="CheckboxComposite" style={{ fontSize: 48, color: '#a19f9d', marginBottom: 16 }} />
-            <Text variant="large" style={{ fontWeight: 600 }}>No approvals</Text>
-            <Text style={{ color: '#605e5c' }}>No approvals match the selected filter</Text>
-          </Stack>
-        ) : (
-          <div className={(styles as Record<string, string>).requestList}>
-            {filtered.map(approval => (
-              <div key={approval.Id} className={(styles as Record<string, string>).requestCard}
-                style={{ borderLeft: `4px solid ${approval.Priority === 'Urgent' ? '#d13438' : approval.Status === 'Pending' ? '#f59e0b' : approval.Status === 'Approved' ? '#107c10' : '#8764b8'}` }}>
-                <Stack horizontal horizontalAlign="space-between" verticalAlign="start">
-                  <div style={{ flex: 1 }}>
-                    <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
-                      <Text variant="mediumPlus" style={{ fontWeight: 600 }}>{approval.PolicyTitle}</Text>
-                      {approval.Priority === 'Urgent' && (
-                        <span className={(styles as Record<string, string>).criticalBadge}>URGENT</span>
-                      )}
-                      <span style={{ fontSize: 11, color: '#605e5c', background: '#f3f2f1', padding: '2px 8px', borderRadius: 4 }}>v{approval.Version}</span>
-                    </Stack>
-                    <Text variant="small" style={{ color: '#605e5c', display: 'block', marginTop: 4 }}>
-                      Submitted by <strong>{approval.SubmittedBy}</strong> ({approval.Department}) &bull; {approval.Category}
-                    </Text>
-                    <Text variant="small" style={{ marginTop: 8, display: 'block', color: '#323130' }}>{approval.ChangeSummary}</Text>
-                    <Stack horizontal tokens={{ childrenGap: 16 }} style={{ marginTop: 10 }}>
-                      <Text variant="small" style={{ color: '#605e5c' }}>
-                        <Icon iconName="Calendar" style={{ marginRight: 4, fontSize: 12 }} />
-                        Submitted: {new Date(approval.SubmittedDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                      </Text>
-                      <Text variant="small" style={{ color: new Date(approval.DueDate) < new Date() && approval.Status === 'Pending' ? '#d13438' : '#605e5c' }}>
-                        <Icon iconName="Clock" style={{ marginRight: 4, fontSize: 12 }} />
-                        Due: {new Date(approval.DueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                      </Text>
-                    </Stack>
-                  </div>
-                  <Stack horizontalAlign="end" tokens={{ childrenGap: 8 }}>
-                    <span style={{
-                      background: `${this.getApprovalStatusColor(approval.Status)}15`,
-                      color: this.getApprovalStatusColor(approval.Status),
-                      padding: '4px 12px', borderRadius: 12, fontSize: 12, fontWeight: 600
-                    }}>{approval.Status}</span>
-                    {approval.Status === 'Pending' && (
-                      <Stack horizontal tokens={{ childrenGap: 6 }}>
-                        <PrimaryButton text="Approve" iconProps={{ iconName: 'CheckMark' }}
-                          styles={{ root: { height: 28, padding: '0 10px', fontSize: 12, background: '#107c10', borderColor: '#107c10' }, rootHovered: { background: '#0e6b0e' } }}
-                          onClick={() => { if (window.confirm('Are you sure you want to approve this policy?')) { this.updateApprovalStatus(approval.Id, 'Approved'); } }} />
-                        <DefaultButton text="Return" iconProps={{ iconName: 'Undo' }}
-                          styles={{ root: { height: 28, padding: '0 10px', fontSize: 12 } }}
-                          onClick={() => {
-                            const reason = window.prompt('Please provide a reason for returning this policy for revision:');
-                            if (reason !== null && reason.trim()) {
-                              this.updateApprovalStatus(approval.Id, 'Returned', reason.trim());
-                            }
-                          }} />
-                      </Stack>
-                    )}
-                  </Stack>
-                </Stack>
-              </div>
-            ))}
+        {/* KPI Row */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '18px 20px', borderTop: '3px solid #d97706' }}>
+            <div style={{ fontSize: 28, fontWeight: 700, color: '#d97706' }}>{pendingCount}</div><div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#94a3b8', fontWeight: 600, marginTop: 4 }}>Pending</div>
           </div>
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '18px 20px', borderTop: '3px solid #dc2626' }}>
+            <div style={{ fontSize: 28, fontWeight: 700, color: '#dc2626' }}>{urgentCount}</div><div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#94a3b8', fontWeight: 600, marginTop: 4 }}>Urgent</div>
+          </div>
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '18px 20px', borderTop: '3px solid #059669' }}>
+            <div style={{ fontSize: 28, fontWeight: 700, color: '#059669' }}>{approvals.filter(a => a.Status === 'Approved').length}</div><div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#94a3b8', fontWeight: 600, marginTop: 4 }}>Approved (30d)</div>
+          </div>
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '18px 20px', borderTop: '3px solid #2563eb' }}>
+            <div style={{ fontSize: 28, fontWeight: 700, color: '#2563eb' }}>{approvals.filter(a => a.Status === 'Returned').length}</div><div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#94a3b8', fontWeight: 600, marginTop: 4 }}>Returned</div>
+          </div>
+        </div>
+
+        {/* Filter Tabs */}
+        <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
+          {filters.map(f => {
+            const count = f === 'All' ? approvals.length : approvals.filter(a => a.Status === f).length;
+            const isActive = approvalFilter === f;
+            return (
+              <span key={f} role="button" tabIndex={0}
+                onClick={() => this.setState({ approvalFilter: f })}
+                onKeyDown={(e) => { if (e.key === 'Enter') this.setState({ approvalFilter: f }); }}
+                style={{
+                  padding: '6px 16px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                  border: `1px solid ${isActive ? '#0d9488' : '#e2e8f0'}`,
+                  background: isActive ? '#0d9488' : '#fff', color: isActive ? '#fff' : '#64748b'
+                }}>
+                {f} <span style={{ display: 'inline-block', minWidth: 18, height: 18, borderRadius: 9, background: isActive ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.06)', fontSize: 10, lineHeight: '18px', textAlign: 'center', marginLeft: 4 }}>{count}</span>
+              </span>
+            );
+          })}
+        </div>
+
+        {/* Approval Cards */}
+        {loading ? <Spinner size={SpinnerSize.large} label="Loading approvals..." /> :
+        filtered.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: 40 }}>
+            <Icon iconName="CheckboxComposite" styles={{ root: { fontSize: 48, color: '#94a3b8', marginBottom: 16 } }} />
+            <Text style={{ fontWeight: 600, fontSize: 16, display: 'block' }}>No approvals</Text>
+            <Text style={{ color: '#64748b' }}>No approvals match the selected filter</Text>
+          </div>
+        ) : (
+          <Stack tokens={{ childrenGap: 12 }}>
+            {filtered.map(approval => {
+              const priColor = priorityColors[approval.Priority] || '#059669';
+              const isOverdue = new Date(approval.DueDate) < new Date() && approval.Status === 'Pending';
+              const risk = riskBadges[(approval as any).ComplianceRisk || 'Medium'] || riskBadges.Medium;
+              return (
+                <div key={approval.Id} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '20px 24px', display: 'flex', gap: 20, alignItems: 'flex-start', transition: 'border-color 0.15s' }}
+                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#0d9488')} onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#e2e8f0')}>
+                  {/* Priority bar */}
+                  <div style={{ width: 4, borderRadius: 2, minHeight: 80, background: priColor, flexShrink: 0 }} />
+                  {/* Content */}
+                  <div style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 15, fontWeight: 700, display: 'block', marginBottom: 4 }}>{approval.PolicyTitle}</Text>
+                    <div style={{ display: 'flex', gap: 16, marginBottom: 8, fontSize: 11, color: '#94a3b8' }}>
+                      <span>Submitted by <strong style={{ color: '#0f172a' }}>{approval.SubmittedBy}</strong></span>
+                      <span>{approval.Department}</span>
+                      <span>{approval.Category}</span>
+                    </div>
+                    <Text style={{ fontSize: 12, color: '#64748b', lineHeight: 1.5, display: 'block', marginBottom: 10 }}>{approval.ChangeSummary}</Text>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 9, fontWeight: 600, padding: '3px 8px', borderRadius: 4, background: '#f0fdfa', color: '#0d9488', textTransform: 'uppercase' }}>{approval.Category}</span>
+                      <span style={{ fontSize: 9, fontWeight: 600, padding: '3px 8px', borderRadius: 4, background: risk.bg, color: risk.color, textTransform: 'uppercase' }}>{(approval as any).ComplianceRisk || 'Medium'} Risk</span>
+                      {isOverdue && <span style={{ fontSize: 9, fontWeight: 600, padding: '3px 8px', borderRadius: 4, background: '#fee2e2', color: '#dc2626', textTransform: 'uppercase' }}>Overdue</span>}
+                    </div>
+                  </div>
+                  {/* Dates */}
+                  <div style={{ textAlign: 'right', flexShrink: 0, minWidth: 100 }}>
+                    <div style={{ fontSize: 9, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.5 }}>Submitted</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: '#334155' }}>{new Date(approval.SubmittedDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+                    <div style={{ marginTop: 8 }}>
+                      <div style={{ fontSize: 9, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.5 }}>Due</div>
+                      <div style={{ fontSize: 12, fontWeight: isOverdue ? 700 : 600, color: isOverdue ? '#dc2626' : '#334155' }}>
+                        {isOverdue ? 'Overdue' : new Date(approval.DueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </div>
+                    </div>
+                  </div>
+                  {/* Action buttons */}
+                  {approval.Status === 'Pending' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0, minWidth: 110 }}>
+                      <button onClick={() => { if (window.confirm('Approve this policy?')) this.updateApprovalStatus(approval.Id, 'Approved'); }}
+                        style={{ padding: '8px 16px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: '1px solid #059669', background: '#059669', color: '#fff', fontFamily: 'inherit' }}>Approve</button>
+                      <button onClick={() => { const r = window.prompt('Reason for returning:'); if (r?.trim()) this.updateApprovalStatus(approval.Id, 'Returned', r.trim()); }}
+                        style={{ padding: '8px 16px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: '1px solid #fbbf24', background: '#fff', color: '#d97706', fontFamily: 'inherit' }}>Return</button>
+                      <button style={{ padding: '8px 16px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: '1px solid #e2e8f0', background: '#fff', color: '#64748b', fontFamily: 'inherit' }}>View Policy</button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </Stack>
         )}
-      </>
+      </div>
     );
   }
 
@@ -1122,110 +1164,90 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
     const { delegations, delegationFilter, loading } = this.state;
     const filters: Array<'All' | 'Pending' | 'InProgress' | 'Completed' | 'Overdue'> = ['All', 'Pending', 'InProgress', 'Completed', 'Overdue'];
     const filtered = delegationFilter === 'All' ? delegations : delegations.filter(d => d.Status === delegationFilter);
-
-    const overdueCount = delegations.filter(d => d.Status === 'Overdue').length;
+    const typeStyles: Record<string, { bg: string; color: string }> = { Review: { bg: '#dbeafe', color: '#2563eb' }, Draft: { bg: '#f0fdf4', color: '#16a34a' }, Approve: { bg: '#fef3c7', color: '#d97706' }, Distribute: { bg: '#ede9fe', color: '#7c3aed' } };
+    const statusStyles: Record<string, { bg: string; color: string }> = { Pending: { bg: '#fef3c7', color: '#d97706' }, InProgress: { bg: '#dbeafe', color: '#2563eb' }, Completed: { bg: '#dcfce7', color: '#16a34a' }, Overdue: { bg: '#fee2e2', color: '#dc2626' } };
+    const priDots: Record<string, string> = { High: '#dc2626', Critical: '#dc2626', Normal: '#059669', Low: '#94a3b8' };
 
     return (
-      <>
-        <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
-          <PageSubheader
-            iconName="People"
-            title="Delegations"
-            description="Manage tasks delegated to team members"
-          />
-          <PrimaryButton text="Add Delegation" iconProps={{ iconName: 'AddFriend' }}
-            styles={{
-              root: { background: '#0d9488', borderColor: '#0d9488', borderRadius: 4, height: 36 },
-              rootHovered: { background: '#0f766e', borderColor: '#0f766e' }
-            }}
+      <div style={{ padding: '24px 0' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+          <div>
+            <Text style={{ fontSize: 26, fontWeight: 700, color: '#0f172a', display: 'block', letterSpacing: -0.5 }}>Delegations</Text>
+            <Text style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>Manage policy tasks delegated to your team</Text>
+          </div>
+          <PrimaryButton text="+ New Delegation" iconProps={{ iconName: 'AddFriend' }}
+            styles={{ root: { background: '#0d9488', borderColor: '#0d9488', borderRadius: 6 }, rootHovered: { background: '#0f766e' } }}
             onClick={() => this.setState({ showDelegationPanel: true })} />
-        </Stack>
-
-        <div className={(styles as Record<string, string>).kpiGrid}>
-          {this.renderKpiCard('Pending', delegations.filter(d => d.Status === 'Pending').length, 'Clock', '#0078d4', '#e8f4fd', () => this.setState({ delegationFilter: 'Pending' }))}
-          {this.renderKpiCard('In Progress', delegations.filter(d => d.Status === 'InProgress').length, 'Edit', '#f59e0b', '#fff8e6', () => this.setState({ delegationFilter: 'InProgress' }))}
-          {this.renderKpiCard('Overdue', overdueCount, 'Warning', '#d13438', '#fef2f2', () => this.setState({ delegationFilter: 'Overdue' }))}
-          {this.renderKpiCard('Completed', delegations.filter(d => d.Status === 'Completed').length, 'CheckMark', '#107c10', '#dff6dd', () => this.setState({ delegationFilter: 'Completed' }))}
         </div>
 
-        {overdueCount > 0 && (
-          <MessageBar messageBarType={MessageBarType.severeWarning} style={{ marginBottom: 24 }}>
-            <strong>{overdueCount} delegation{overdueCount > 1 ? 's are' : ' is'} overdue</strong> — follow up with assigned team members.
-          </MessageBar>
-        )}
-
-        <Stack horizontal tokens={{ childrenGap: 8 }} style={{ marginBottom: 16, flexWrap: 'wrap' }}>
-          {filters.map(f => (
-            <DefaultButton key={f}
-              text={`${f === 'InProgress' ? 'In Progress' : f} (${f === 'All' ? delegations.length : delegations.filter(d => d.Status === f).length})`}
-              styles={{
-                root: {
-                  borderRadius: 4, minWidth: 'auto', padding: '2px 14px', height: 32,
-                  border: delegationFilter === f ? '2px solid #0d9488' : '1px solid #e1dfdd',
-                  background: delegationFilter === f ? '#f0fdfa' : 'transparent',
-                  color: delegationFilter === f ? '#0d9488' : '#605e5c',
-                  fontWeight: delegationFilter === f ? 600 : 400
-                },
-                rootHovered: { borderColor: '#0d9488', color: '#0d9488' }
-              }}
-              onClick={() => this.setState({ delegationFilter: f })} />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
+          {[{ l: 'Pending', c: '#d97706', v: delegations.filter(d => d.Status === 'Pending').length },
+            { l: 'In Progress', c: '#2563eb', v: delegations.filter(d => d.Status === 'InProgress').length },
+            { l: 'Overdue', c: '#dc2626', v: delegations.filter(d => d.Status === 'Overdue').length },
+            { l: 'Completed (30d)', c: '#059669', v: delegations.filter(d => d.Status === 'Completed').length }
+          ].map((k, i) => (
+            <div key={i} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '18px 20px', borderTop: `3px solid ${k.c}` }}>
+              <div style={{ fontSize: 28, fontWeight: 700, color: k.c }}>{k.v}</div>
+              <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#94a3b8', fontWeight: 600, marginTop: 4 }}>{k.l}</div>
+            </div>
           ))}
-        </Stack>
+        </div>
 
-        {loading ? (
-          <Stack horizontalAlign="center" tokens={{ padding: 40 }}><Spinner size={SpinnerSize.large} label="Loading delegations..." /></Stack>
-        ) : filtered.length === 0 ? (
-          <Stack horizontalAlign="center" tokens={{ padding: 40 }}>
-            <Icon iconName="People" style={{ fontSize: 48, color: '#a19f9d', marginBottom: 16 }} />
-            <Text variant="large" style={{ fontWeight: 600 }}>No delegations</Text>
-            <Text style={{ color: '#605e5c' }}>No delegations match the selected filter</Text>
-          </Stack>
+        <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
+          {filters.map(f => {
+            const count = f === 'All' ? delegations.length : delegations.filter(d => d.Status === f).length;
+            const isActive = delegationFilter === f;
+            return (
+              <span key={f} role="button" tabIndex={0} onClick={() => this.setState({ delegationFilter: f })}
+                onKeyDown={(e) => { if (e.key === 'Enter') this.setState({ delegationFilter: f }); }}
+                style={{ padding: '6px 16px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: `1px solid ${isActive ? '#0d9488' : '#e2e8f0'}`, background: isActive ? '#0d9488' : '#fff', color: isActive ? '#fff' : '#64748b' }}>
+                {f === 'InProgress' ? 'In Progress' : f} <span style={{ display: 'inline-block', minWidth: 18, height: 18, borderRadius: 9, background: isActive ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.06)', fontSize: 10, lineHeight: '18px', textAlign: 'center', marginLeft: 4 }}>{count}</span>
+              </span>
+            );
+          })}
+        </div>
+
+        {loading ? <Spinner size={SpinnerSize.large} label="Loading delegations..." /> :
+        filtered.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: 40 }}><Icon iconName="People" styles={{ root: { fontSize: 48, color: '#94a3b8', marginBottom: 16 } }} /><Text style={{ fontWeight: 600, fontSize: 16, display: 'block' }}>No delegations</Text></div>
         ) : (
-          <div className={(styles as Record<string, string>).requestList}>
-            {filtered.map(delegation => (
-              <div key={delegation.Id} className={(styles as Record<string, string>).requestCard}
-                style={{ borderLeft: `4px solid ${delegation.Status === 'Overdue' ? '#d13438' : delegation.Status === 'InProgress' ? '#f59e0b' : delegation.Status === 'Completed' ? '#107c10' : '#0078d4'}` }}>
-                <Stack horizontal horizontalAlign="space-between" verticalAlign="start">
-                  <div style={{ flex: 1 }}>
-                    <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
-                      <Text variant="mediumPlus" style={{ fontWeight: 600 }}>{delegation.PolicyTitle}</Text>
-                      <span style={{
-                        fontSize: 11, padding: '2px 8px', borderRadius: 4, fontWeight: 600,
-                        background: delegation.TaskType === 'Review' ? '#e8f4fd' : delegation.TaskType === 'Draft' ? '#fff8e6' : delegation.TaskType === 'Approve' ? '#dff6dd' : '#f3eefc',
-                        color: delegation.TaskType === 'Review' ? '#0078d4' : delegation.TaskType === 'Draft' ? '#f59e0b' : delegation.TaskType === 'Approve' ? '#107c10' : '#8764b8'
-                      }}>{delegation.TaskType}</span>
-                      {delegation.Priority === 'High' && <span className={(styles as Record<string, string>).criticalBadge}>HIGH</span>}
-                    </Stack>
-                    <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }} style={{ marginTop: 6 }}>
-                      <Persona text={delegation.DelegatedTo} size={PersonaSize.size24} hidePersonaDetails={false}
-                        secondaryText={delegation.Department} styles={{ root: { cursor: 'default' } }} />
-                    </Stack>
-                    {delegation.Notes && (
-                      <Text variant="small" style={{ marginTop: 8, display: 'block', color: '#323130', fontStyle: 'italic' }}>"{delegation.Notes}"</Text>
-                    )}
-                    <Stack horizontal tokens={{ childrenGap: 16 }} style={{ marginTop: 10 }}>
-                      <Text variant="small" style={{ color: '#605e5c' }}>
-                        <Icon iconName="Calendar" style={{ marginRight: 4, fontSize: 12 }} />
-                        Assigned: {new Date(delegation.AssignedDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                      </Text>
-                      <Text variant="small" style={{ color: delegation.Status === 'Overdue' ? '#d13438' : '#605e5c', fontWeight: delegation.Status === 'Overdue' ? 600 : 400 }}>
-                        <Icon iconName="Clock" style={{ marginRight: 4, fontSize: 12 }} />
-                        Due: {new Date(delegation.DueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                        {delegation.Status === 'Overdue' && ' — OVERDUE'}
-                      </Text>
-                    </Stack>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
+            {filtered.map(d => {
+              const ts = typeStyles[d.TaskType] || typeStyles.Review;
+              const ss = statusStyles[d.Status] || statusStyles.Pending;
+              const initials = d.DelegatedTo.split(' ').map((n: string) => n[0]).join('').slice(0, 2);
+              const isOverdue = d.Status === 'Overdue';
+              return (
+                <div key={d.Id} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden', transition: 'border-color 0.15s' }}
+                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#0d9488')} onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#e2e8f0')}>
+                  <div style={{ padding: '16px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text style={{ fontSize: 14, fontWeight: 700 }}>{d.PolicyTitle}</Text>
+                    <span style={{ fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, background: ts.bg, color: ts.color, textTransform: 'uppercase', letterSpacing: 0.3 }}>{d.TaskType}</span>
                   </div>
-                  <span style={{
-                    background: `${this.getDelegationStatusColor(delegation.Status)}15`,
-                    color: this.getDelegationStatusColor(delegation.Status),
-                    padding: '4px 12px', borderRadius: 12, fontSize: 12, fontWeight: 600
-                  }}>{delegation.Status === 'InProgress' ? 'In Progress' : delegation.Status}</span>
-                </Stack>
-              </div>
-            ))}
+                  <div style={{ padding: '16px 20px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: '50%', background: ts.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700 }}>{initials}</div>
+                      <div><div style={{ fontSize: 13, fontWeight: 600 }}>{d.DelegatedTo}</div><div style={{ fontSize: 10, color: '#94a3b8' }}>{(d as any).DelegatedToEmail || d.Department}</div></div>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
+                      <div><div style={{ fontSize: 9, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.5 }}>Assigned</div><div style={{ fontSize: 12, fontWeight: 600 }}>{new Date(d.AssignedDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</div></div>
+                      <div><div style={{ fontSize: 9, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.5 }}>Due</div><div style={{ fontSize: 12, fontWeight: 600, color: isOverdue ? '#dc2626' : '#334155' }}>{new Date(d.DueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</div></div>
+                    </div>
+                    {d.Notes && <div style={{ background: '#f8fafc', borderRadius: 6, padding: '10px 12px', fontSize: 11, color: '#64748b', lineHeight: 1.5, borderLeft: '3px solid #e2e8f0' }}>{d.Notes}</div>}
+                  </div>
+                  <div style={{ padding: '10px 20px', background: '#fafafa', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, background: ss.bg, color: ss.color, textTransform: 'uppercase' }}>{d.Status === 'InProgress' ? 'In Progress' : d.Status}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: '#94a3b8' }}>
+                      <div style={{ width: 6, height: 6, borderRadius: '50%', background: priDots[d.Priority] || '#059669' }} />
+                      {d.Priority} Priority
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
-      </>
+      </div>
     );
   }
 
@@ -1237,91 +1259,88 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
     const { reviews, reviewFilter, loading } = this.state;
     const filters: Array<'All' | 'Due' | 'Overdue' | 'Upcoming' | 'Completed'> = ['All', 'Due', 'Overdue', 'Upcoming', 'Completed'];
     const filtered = reviewFilter === 'All' ? reviews : reviews.filter(r => r.Status === reviewFilter);
+    const statusStyles: Record<string, { bg: string; color: string }> = { Due: { bg: '#fef3c7', color: '#d97706' }, Overdue: { bg: '#fee2e2', color: '#dc2626' }, Upcoming: { bg: '#f1f5f9', color: '#64748b' }, Completed: { bg: '#dcfce7', color: '#16a34a' } };
+    const catBadges: Record<string, { bg: string; color: string }> = { 'HR Policies': { bg: '#f0fdfa', color: '#0d9488' }, 'IT & Security': { bg: '#eff6ff', color: '#2563eb' }, Compliance: { bg: '#fef3c7', color: '#92400e' } };
+    const cycleLabelMap: Record<number, string> = { 90: '3 Months', 180: '6 Months', 365: 'Annual', 730: '2 Years', 1095: '3 Years' };
 
     return (
-      <>
-        <PageSubheader
-          iconName="ReviewSolid"
-          title="Policy Reviews"
-          description="Track periodic policy reviews assigned to you or your team"
-        />
-
-        <div className={(styles as Record<string, string>).kpiGrid}>
-          {this.renderKpiCard('Due Now', reviews.filter(r => r.Status === 'Due').length, 'Clock', '#f59e0b', '#fff8e6', () => this.setState({ reviewFilter: 'Due' }))}
-          {this.renderKpiCard('Overdue', reviews.filter(r => r.Status === 'Overdue').length, 'Warning', '#d13438', '#fef2f2', () => this.setState({ reviewFilter: 'Overdue' }))}
-          {this.renderKpiCard('Upcoming', reviews.filter(r => r.Status === 'Upcoming').length, 'Calendar', '#0078d4', '#e8f4fd', () => this.setState({ reviewFilter: 'Upcoming' }))}
-          {this.renderKpiCard('Completed', reviews.filter(r => r.Status === 'Completed').length, 'CheckMark', '#107c10', '#dff6dd', () => this.setState({ reviewFilter: 'Completed' }))}
+      <div style={{ padding: '24px 0' }}>
+        <div style={{ marginBottom: 24 }}>
+          <Text style={{ fontSize: 26, fontWeight: 700, color: '#0f172a', display: 'block', letterSpacing: -0.5 }}>Policy Reviews</Text>
+          <Text style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>Manage scheduled policy reviews and ensure timely completion</Text>
         </div>
 
-        <Stack horizontal tokens={{ childrenGap: 8 }} style={{ marginBottom: 16, flexWrap: 'wrap' }}>
-          {filters.map(f => (
-            <DefaultButton key={f}
-              text={`${f} (${f === 'All' ? reviews.length : reviews.filter(r => r.Status === f).length})`}
-              styles={{
-                root: {
-                  borderRadius: 4, minWidth: 'auto', padding: '2px 14px', height: 32,
-                  border: reviewFilter === f ? '2px solid #0d9488' : '1px solid #e1dfdd',
-                  background: reviewFilter === f ? '#f0fdfa' : 'transparent',
-                  color: reviewFilter === f ? '#0d9488' : '#605e5c',
-                  fontWeight: reviewFilter === f ? 600 : 400
-                },
-                rootHovered: { borderColor: '#0d9488', color: '#0d9488' }
-              }}
-              onClick={() => this.setState({ reviewFilter: f })} />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
+          {[{ l: 'Due Now', c: '#d97706', v: reviews.filter(r => r.Status === 'Due').length },
+            { l: 'Overdue', c: '#dc2626', v: reviews.filter(r => r.Status === 'Overdue').length },
+            { l: 'Upcoming (90d)', c: '#2563eb', v: reviews.filter(r => r.Status === 'Upcoming').length },
+            { l: 'Completed (YTD)', c: '#059669', v: reviews.filter(r => r.Status === 'Completed').length }
+          ].map((k, i) => (
+            <div key={i} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '18px 20px', borderTop: `3px solid ${k.c}` }}>
+              <div style={{ fontSize: 28, fontWeight: 700, color: k.c }}>{k.v}</div>
+              <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#94a3b8', fontWeight: 600, marginTop: 4 }}>{k.l}</div>
+            </div>
           ))}
-        </Stack>
+        </div>
 
-        {loading ? (
-          <Stack horizontalAlign="center" tokens={{ padding: 40 }}><Spinner size={SpinnerSize.large} label="Loading reviews..." /></Stack>
-        ) : filtered.length === 0 ? (
-          <Stack horizontalAlign="center" tokens={{ padding: 40 }}>
-            <Icon iconName="ReviewSolid" style={{ fontSize: 48, color: '#a19f9d', marginBottom: 16 }} />
-            <Text variant="large" style={{ fontWeight: 600 }}>No reviews</Text>
-            <Text style={{ color: '#605e5c' }}>No reviews match the selected filter</Text>
-          </Stack>
+        {/* Filter Tabs */}
+        <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
+          {filters.map(f => {
+            const count = f === 'All' ? reviews.length : reviews.filter(r => r.Status === f).length;
+            const isActive = reviewFilter === f;
+            return (
+              <span key={f} role="button" tabIndex={0} onClick={() => this.setState({ reviewFilter: f })}
+                onKeyDown={(e) => { if (e.key === 'Enter') this.setState({ reviewFilter: f }); }}
+                style={{ padding: '6px 16px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: `1px solid ${isActive ? '#0d9488' : '#e2e8f0'}`, background: isActive ? '#0d9488' : '#fff', color: isActive ? '#fff' : '#64748b' }}>
+                {f} <span style={{ display: 'inline-block', minWidth: 18, height: 18, borderRadius: 9, background: isActive ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.06)', fontSize: 10, lineHeight: '18px', textAlign: 'center', marginLeft: 4 }}>{count}</span>
+              </span>
+            );
+          })}
+        </div>
+
+        {/* Review Table */}
+        {loading ? <Spinner size={SpinnerSize.large} label="Loading reviews..." /> :
+        filtered.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: 40 }}><Icon iconName="ReviewSolid" styles={{ root: { fontSize: 48, color: '#94a3b8', marginBottom: 16 } }} /><Text style={{ fontWeight: 600, fontSize: 16, display: 'block' }}>No reviews</Text></div>
         ) : (
-          <div className={(styles as Record<string, string>).requestList}>
-            {filtered.map(review => (
-              <div key={review.Id} className={(styles as Record<string, string>).reviewCard}
-                style={{ borderLeft: `4px solid ${review.Status === 'Overdue' ? '#d13438' : review.Status === 'Due' ? '#f59e0b' : review.Status === 'Completed' ? '#107c10' : '#0078d4'}` }}>
-                <Stack horizontal horizontalAlign="space-between" verticalAlign="start">
-                  <div style={{ flex: 1 }}>
-                    <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
-                      <Text variant="mediumPlus" style={{ fontWeight: 600 }}>{review.PolicyTitle}</Text>
-                      <span style={{ fontSize: 11, color: '#605e5c', background: '#f3f2f1', padding: '2px 8px', borderRadius: 4 }}>{review.PolicyNumber}</span>
-                    </Stack>
-                    <Text variant="small" style={{ color: '#605e5c', display: 'block', marginTop: 4 }}>
-                      {review.Category} &bull; Review cycle: every {review.ReviewCycleDays} days &bull; Reviewer: <strong>{review.AssignedReviewer}</strong>
-                    </Text>
-                    <Stack horizontal tokens={{ childrenGap: 16 }} style={{ marginTop: 10 }}>
-                      <Text variant="small" style={{ color: '#605e5c' }}>
-                        <Icon iconName="History" style={{ marginRight: 4, fontSize: 12 }} />
-                        Last reviewed: {new Date(review.LastReviewDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                      </Text>
-                      <Text variant="small" style={{ color: review.Status === 'Overdue' ? '#d13438' : review.Status === 'Due' ? '#f59e0b' : '#605e5c', fontWeight: review.Status === 'Overdue' || review.Status === 'Due' ? 600 : 400 }}>
-                        <Icon iconName="Clock" style={{ marginRight: 4, fontSize: 12 }} />
-                        Next review: {new Date(review.NextReviewDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                      </Text>
-                    </Stack>
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
+            {/* Table Header */}
+            <div style={{ display: 'grid', gridTemplateColumns: '3fr 1.5fr 1fr 1.2fr 1.2fr 1.5fr 110px', padding: '12px 20px', background: '#f8fafc', borderBottom: '2px solid #e2e8f0', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.8, color: '#64748b' }}>
+              <div>Policy</div><div>Category</div><div>Cycle</div><div>Last Review</div><div>Next Due</div><div>Reviewer</div><div>Action</div>
+            </div>
+            {/* Rows */}
+            {filtered.map((r, i) => {
+              const ss = statusStyles[r.Status] || statusStyles.Upcoming;
+              const cb = catBadges[r.Category] || catBadges['HR Policies'];
+              const cycleLabel = cycleLabelMap[r.ReviewCycleDays] || `${r.ReviewCycleDays}d`;
+              const initials = r.AssignedReviewer.split(' ').map((n: string) => n[0]).join('').slice(0, 2);
+              const dateColor = r.Status === 'Overdue' ? '#dc2626' : r.Status === 'Due' ? '#d97706' : r.Status === 'Completed' ? '#059669' : '#64748b';
+              return (
+                <div key={r.Id} style={{ display: 'grid', gridTemplateColumns: '3fr 1.5fr 1fr 1.2fr 1.2fr 1.5fr 110px', padding: '14px 20px', borderBottom: '1px solid #f1f5f9', alignItems: 'center', background: r.Status === 'Completed' ? '#f0fdf4' : i % 2 === 1 ? '#fafafa' : '#fff' }}>
+                  <div><div style={{ fontSize: 13, fontWeight: 600, color: '#0f172a' }}>{r.PolicyTitle}</div><div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>{r.PolicyNumber}</div></div>
+                  <div><span style={{ fontSize: 9, fontWeight: 600, padding: '3px 8px', borderRadius: 4, background: cb.bg, color: cb.color }}>{r.Category}</span></div>
+                  <div style={{ fontSize: 12, color: '#64748b' }}>{cycleLabel}</div>
+                  <div style={{ fontSize: 12 }}>{new Date(r.LastReviewDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+                  <div style={{ fontSize: 12, fontWeight: r.Status === 'Overdue' ? 700 : 600, color: dateColor }}>{new Date(r.NextReviewDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: ss.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 700 }}>{initials}</div>
+                    <span style={{ fontSize: 12, fontWeight: 500 }}>{r.AssignedReviewer}</span>
                   </div>
-                  <Stack horizontalAlign="end" tokens={{ childrenGap: 8 }}>
-                    <span style={{
-                      background: `${this.getReviewStatusColor(review.Status)}15`,
-                      color: this.getReviewStatusColor(review.Status),
-                      padding: '4px 12px', borderRadius: 12, fontSize: 12, fontWeight: 600
-                    }}>{review.Status}</span>
-                    {(review.Status === 'Due' || review.Status === 'Overdue') && (
-                      <PrimaryButton text="Start Review" iconProps={{ iconName: 'RedEye' }}
-                        styles={{ root: { height: 28, padding: '0 10px', fontSize: 12, background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e' } }}
-                        onClick={() => alert(`Opening review for ${review.PolicyTitle}`)} />
+                  <div>
+                    {(r.Status === 'Due' || r.Status === 'Overdue') ? (
+                      <button onClick={() => alert(`Opening review for ${r.PolicyTitle}`)} style={{ padding: '5px 12px', borderRadius: 4, fontSize: 11, fontWeight: 600, cursor: 'pointer', border: '1px solid #0d9488', background: '#0d9488', color: '#fff', fontFamily: 'inherit' }}>Start Review</button>
+                    ) : r.Status === 'Upcoming' ? (
+                      <button style={{ padding: '5px 12px', borderRadius: 4, fontSize: 11, fontWeight: 600, cursor: 'pointer', border: '1px solid #e2e8f0', background: '#fff', color: '#64748b', fontFamily: 'inherit' }}>Schedule</button>
+                    ) : (
+                      <span style={{ fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, background: ss.bg, color: ss.color, textTransform: 'uppercase' }}>{r.Status}</span>
                     )}
-                  </Stack>
-                </Stack>
-              </div>
-            ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
-      </>
+      </div>
     );
   }
 

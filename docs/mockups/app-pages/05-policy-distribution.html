@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Policy Distribution — Premium Mockup</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', -apple-system, sans-serif; background: #f8fafc; color: #0f172a; }
+
+  .page { max-width: 1400px; margin: 0 auto; padding: 32px 40px; }
+
+  /* Page Header */
+  .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; }
+  .page-header h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+  .page-header .subtitle { font-size: 13px; color: #64748b; margin-top: 4px; }
+  .btn { padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid #e2e8f0; background: #fff; color: #334155; font-family: inherit; transition: all 0.15s; }
+  .btn:hover { border-color: #0d9488; color: #0d9488; }
+  .btn-primary { background: #0d9488; color: #fff; border-color: #0d9488; }
+  .btn-primary:hover { background: #0f766e; }
+
+  /* KPI Strip */
+  .kpi-strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; margin-bottom: 28px; }
+  .kpi-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px 16px;
+    position: relative; overflow: hidden;
+  }
+  .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 10px 10px 0 0; }
+  .kpi-card.teal::before { background: #0d9488; }
+  .kpi-card.blue::before { background: #2563eb; }
+  .kpi-card.green::before { background: #059669; }
+  .kpi-card.amber::before { background: #d97706; }
+  .kpi-card.red::before { background: #dc2626; }
+  .kpi-card.purple::before { background: #7c3aed; }
+  .kpi-card.slate::before { background: #94a3b8; }
+  .kpi-value { font-size: 28px; font-weight: 700; line-height: 1.1; }
+  .kpi-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; font-weight: 600; margin-top: 4px; }
+
+  /* Campaign Cards */
+  .campaign-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 28px; }
+  .campaign-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden;
+    transition: all 0.2s; cursor: pointer;
+  }
+  .campaign-card:hover { border-color: #0d9488; box-shadow: 0 4px 16px rgba(13,148,136,0.1); transform: translateY(-2px); }
+  .campaign-card.selected { border-color: #0d9488; box-shadow: 0 4px 16px rgba(13,148,136,0.15); }
+  .campaign-header {
+    padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;
+  }
+  .campaign-title { font-size: 14px; font-weight: 700; }
+  .campaign-body { padding: 16px 20px; }
+  .campaign-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+
+  /* Status/Type Badges */
+  .status { font-size: 9px; font-weight: 700; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .status-active { background: #ccfbf1; color: #0d9488; }
+  .status-scheduled { background: #fef3c7; color: #d97706; }
+  .status-completed { background: #dcfce7; color: #16a34a; }
+  .status-draft { background: #f1f5f9; color: #64748b; }
+  .badge { font-size: 9px; font-weight: 700; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .badge-policy { background: #dbeafe; color: #2563eb; }
+  .badge-pack { background: #ede9fe; color: #7c3aed; }
+
+  /* Progress Bar */
+  .progress-container { margin: 8px 0; }
+  .progress-bar { height: 6px; border-radius: 3px; background: #e2e8f0; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 3px; }
+  .progress-label { display: flex; justify-content: space-between; margin-top: 4px; font-size: 10px; color: #94a3b8; }
+
+  /* Campaign footer */
+  .campaign-footer { padding: 12px 20px; border-top: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
+  .campaign-date { font-size: 11px; color: #94a3b8; }
+  .campaign-actions { display: flex; gap: 6px; }
+  .icon-btn {
+    width: 32px; height: 32px; border-radius: 6px; border: 1px solid #e2e8f0; background: #fff;
+    display: flex; align-items: center; justify-content: center; cursor: pointer; color: #64748b;
+    transition: all 0.15s; font-size: 14px;
+  }
+  .icon-btn:hover { border-color: #0d9488; color: #0d9488; }
+
+  /* Detail Panel */
+  .section-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+
+  .detail-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+  .detail-stat {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; text-align: center;
+  }
+  .detail-stat-value { font-size: 22px; font-weight: 700; }
+  .detail-stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; font-weight: 600; margin-top: 2px; }
+
+  /* Recipients Table */
+  .recipients-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; margin-bottom: 20px; }
+  .recipients-header { padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
+  .recipients-header h3 { font-size: 14px; font-weight: 700; }
+  .table-row {
+    display: grid; grid-template-columns: 2fr 1.5fr 1fr 1fr 100px; padding: 10px 20px;
+    border-bottom: 1px solid #f8fafc; font-size: 12px; align-items: center;
+  }
+  .table-row:last-child { border-bottom: none; }
+  .table-header { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; border-bottom: 2px solid #e2e8f0; }
+  .avatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #fff; flex-shrink: 0; }
+  .user-info { display: flex; align-items: center; gap: 8px; }
+  .user-name { font-weight: 600; }
+
+  /* Timeline */
+  .timeline-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; }
+  .timeline-header { padding: 16px 20px; border-bottom: 1px solid #f1f5f9; }
+  .timeline-header h3 { font-size: 14px; font-weight: 700; }
+  .timeline-body { padding: 16px 20px; }
+  .timeline-item { display: flex; align-items: flex-start; gap: 12px; padding: 8px 0; position: relative; }
+  .timeline-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+  .timeline-text { flex: 1; font-size: 12px; color: #334155; line-height: 1.5; }
+  .timeline-text strong { color: #0f172a; }
+  .timeline-time { font-size: 10px; color: #94a3b8; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<!-- App Header -->
+<div style="background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%); padding: 0 40px; height: 56px; display: flex; align-items: center; justify-content: space-between;">
+  <div style="display: flex; align-items: center; gap: 10px; color: #fff;">
+    <svg viewBox="0 0 32 32" fill="none" width="28" height="28"><path d="M16 2L4 8v8c0 7.7 5.1 14.9 12 16.9 6.9-2 12-9.2 12-16.9V8L16 2z" stroke="#fff" stroke-width="2" fill="rgba(255,255,255,0.15)"/><path d="M12 16l3 3 5-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div><div style="font-size:15px;font-weight:700;">Policy Manager</div><div style="font-size:8px;text-transform:uppercase;letter-spacing:2px;opacity:0.7;">POLICY GOVERNANCE &amp; COMPLIANCE</div></div>
+  </div>
+  <div style="flex:1;max-width:400px;margin:0 40px;">
+    <div style="background:rgba(255,255,255,0.15);border-radius:6px;padding:8px 16px;display:flex;align-items:center;gap:8px;">
+      <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><circle cx="11" cy="11" r="7" stroke="rgba(255,255,255,0.7)" stroke-width="2"/><path d="M21 21l-4-4" stroke="rgba(255,255,255,0.7)" stroke-width="2" stroke-linecap="round"/></svg>
+      <span style="color:rgba(255,255,255,0.5);font-size:13px;">Search policies...</span>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <div style="background:#fff;color:#0d9488;padding:6px 14px;border-radius:4px;font-size:12px;font-weight:600;cursor:pointer;">+ New Policy</div>
+    <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;">GF</div>
+  </div>
+</div>
+
+<!-- Navigation Bar -->
+<div style="background:#fff;padding:0 40px;display:flex;align-items:center;height:44px;box-shadow:0 2px 4px rgba(0,0,0,0.08);">
+  <a style="padding:0 16px;height:44px;display:flex;align-items:center;font-size:13px;font-weight:500;color:#64748b;cursor:pointer;text-decoration:none;border-bottom:2px solid transparent;">My Policies</a>
+  <a style="padding:0 16px;height:44px;display:flex;align-items:center;font-size:13px;font-weight:500;color:#64748b;cursor:pointer;text-decoration:none;border-bottom:2px solid transparent;">Policy Hub</a>
+  <a style="padding:0 16px;height:44px;display:flex;align-items:center;font-size:13px;font-weight:500;color:#64748b;cursor:pointer;text-decoration:none;border-bottom:2px solid transparent;">Author &#9662;</a>
+  <a style="padding:0 16px;height:44px;display:flex;align-items:center;font-size:13px;font-weight:600;color:#0d9488;cursor:pointer;text-decoration:none;border-bottom:2px solid #0d9488;">Manager &#9662;</a>
+  <a style="padding:0 16px;height:44px;display:flex;align-items:center;font-size:13px;font-weight:500;color:#64748b;cursor:pointer;text-decoration:none;border-bottom:2px solid transparent;">Secure Policies &#9662;</a>
+</div>
+
+<div class="page">
+
+<!-- Page Header -->
+<div class="page-header">
+  <div>
+    <h1>Policy Distribution</h1>
+    <div class="subtitle">Create, manage, and track policy distribution campaigns across the organisation</div>
+  </div>
+  <button class="btn btn-primary">+ New Campaign</button>
+</div>
+
+<!-- KPI Strip -->
+<div class="kpi-strip">
+  <div class="kpi-card teal"><div class="kpi-value" style="color:#0d9488;">8</div><div class="kpi-label">Total Campaigns</div></div>
+  <div class="kpi-card blue"><div class="kpi-value" style="color:#2563eb;">3</div><div class="kpi-label">Active</div></div>
+  <div class="kpi-card purple"><div class="kpi-value" style="color:#7c3aed;">847</div><div class="kpi-label">Total Sent</div></div>
+  <div class="kpi-card green"><div class="kpi-value" style="color:#059669;">612</div><div class="kpi-label">Acknowledged</div></div>
+  <div class="kpi-card teal"><div class="kpi-value" style="color:#0d9488;">72%</div><div class="kpi-label">Ack Rate</div></div>
+  <div class="kpi-card amber"><div class="kpi-value" style="color:#d97706;">48</div><div class="kpi-label">Overdue</div></div>
+  <div class="kpi-card red"><div class="kpi-value" style="color:#dc2626;">5</div><div class="kpi-label">Failed</div></div>
+</div>
+
+<!-- Campaign Cards -->
+<div class="campaign-grid">
+  <div class="campaign-card selected">
+    <div class="campaign-header">
+      <div class="campaign-title">Q1 2026 POPIA Refresh</div>
+      <span class="status status-active">Active</span>
+    </div>
+    <div class="campaign-body">
+      <div class="campaign-meta">
+        <span class="badge badge-policy">Policy</span>
+        <span style="font-size:11px;color:#64748b;">All Employees &middot; 340 recipients</span>
+      </div>
+      <div class="progress-container">
+        <div class="progress-bar"><div class="progress-fill" style="width:78%;background:#0d9488;"></div></div>
+        <div class="progress-label"><span>265 of 340 acknowledged</span><span style="font-weight:600;color:#0d9488;">78%</span></div>
+      </div>
+    </div>
+    <div class="campaign-footer">
+      <span class="campaign-date">Due: 31 Mar 2026</span>
+      <div class="campaign-actions">
+        <div class="icon-btn" title="Edit">&#9998;</div>
+        <div class="icon-btn" title="Send Reminder">&#9993;</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="campaign-card">
+    <div class="campaign-header">
+      <div class="campaign-title">New Joiner Onboarding Pack</div>
+      <span class="status status-active">Active</span>
+    </div>
+    <div class="campaign-body">
+      <div class="campaign-meta">
+        <span class="badge badge-pack">Pack</span>
+        <span style="font-size:11px;color:#64748b;">New Joiners &middot; 24 recipients</span>
+      </div>
+      <div class="progress-container">
+        <div class="progress-bar"><div class="progress-fill" style="width:62%;background:#0d9488;"></div></div>
+        <div class="progress-label"><span>15 of 24 complete</span><span style="font-weight:600;color:#0d9488;">62%</span></div>
+      </div>
+    </div>
+    <div class="campaign-footer">
+      <span class="campaign-date">Due: 15 Apr 2026</span>
+      <div class="campaign-actions">
+        <div class="icon-btn" title="Edit">&#9998;</div>
+        <div class="icon-btn" title="Send Reminder">&#9993;</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="campaign-card">
+    <div class="campaign-header">
+      <div class="campaign-title">IT Security Annual Review</div>
+      <span class="status status-active">Active</span>
+    </div>
+    <div class="campaign-body">
+      <div class="campaign-meta">
+        <span class="badge badge-policy">Policy</span>
+        <span style="font-size:11px;color:#64748b;">IT Department &middot; 87 recipients</span>
+      </div>
+      <div class="progress-container">
+        <div class="progress-bar"><div class="progress-fill" style="width:45%;background:#d97706;"></div></div>
+        <div class="progress-label"><span>39 of 87 acknowledged</span><span style="font-weight:600;color:#d97706;">45%</span></div>
+      </div>
+    </div>
+    <div class="campaign-footer">
+      <span class="campaign-date">Due: 28 Mar 2026</span>
+      <div class="campaign-actions">
+        <div class="icon-btn" title="Edit">&#9998;</div>
+        <div class="icon-btn" title="Send Reminder">&#9993;</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="campaign-card">
+    <div class="campaign-header">
+      <div class="campaign-title">King IV Board Review</div>
+      <span class="status status-scheduled">Scheduled</span>
+    </div>
+    <div class="campaign-body">
+      <div class="campaign-meta">
+        <span class="badge badge-policy">Policy</span>
+        <span style="font-size:11px;color:#64748b;">Executives &middot; 12 recipients</span>
+      </div>
+      <div class="progress-container">
+        <div class="progress-bar"><div class="progress-fill" style="width:0%;background:#e2e8f0;"></div></div>
+        <div class="progress-label"><span>Starts 1 Apr 2026</span><span style="font-weight:600;color:#94a3b8;">0%</span></div>
+      </div>
+    </div>
+    <div class="campaign-footer">
+      <span class="campaign-date">Due: 30 Apr 2026</span>
+      <div class="campaign-actions">
+        <div class="icon-btn" title="Edit">&#9998;</div>
+        <div class="icon-btn" title="Delete" style="color:#dc2626;">&#128465;</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="campaign-card">
+    <div class="campaign-header">
+      <div class="campaign-title">Code of Conduct 2025 Refresh</div>
+      <span class="status status-completed">Completed</span>
+    </div>
+    <div class="campaign-body">
+      <div class="campaign-meta">
+        <span class="badge badge-policy">Policy</span>
+        <span style="font-size:11px;color:#64748b;">All Employees &middot; 328 recipients</span>
+      </div>
+      <div class="progress-container">
+        <div class="progress-bar"><div class="progress-fill" style="width:96%;background:#059669;"></div></div>
+        <div class="progress-label"><span>315 of 328 acknowledged</span><span style="font-weight:600;color:#059669;">96%</span></div>
+      </div>
+    </div>
+    <div class="campaign-footer">
+      <span class="campaign-date">Completed 28 Feb 2026</span>
+      <div class="campaign-actions">
+        <div class="icon-btn" title="View Report">&#128202;</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="campaign-card">
+    <div class="campaign-header">
+      <div class="campaign-title">Finance Dept Policy Update</div>
+      <span class="status status-draft">Draft</span>
+    </div>
+    <div class="campaign-body">
+      <div class="campaign-meta">
+        <span class="badge badge-pack">Pack</span>
+        <span style="font-size:11px;color:#64748b;">Finance &middot; 45 recipients</span>
+      </div>
+      <div class="progress-container">
+        <div class="progress-bar"><div class="progress-fill" style="width:0%;"></div></div>
+        <div class="progress-label"><span>Not started</span><span style="font-weight:600;color:#94a3b8;">Draft</span></div>
+      </div>
+    </div>
+    <div class="campaign-footer">
+      <span class="campaign-date">Created 19 Mar 2026</span>
+      <div class="campaign-actions">
+        <div class="icon-btn" title="Edit">&#9998;</div>
+        <div class="icon-btn" title="Delete" style="color:#dc2626;">&#128465;</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Selected Campaign Detail -->
+<div class="section-title">Q1 2026 POPIA Refresh &mdash; Campaign Details</div>
+
+<div class="detail-grid">
+  <div class="detail-stat"><div class="detail-stat-value" style="color:#0d9488;">340</div><div class="detail-stat-label">Recipients</div></div>
+  <div class="detail-stat"><div class="detail-stat-value" style="color:#059669;">265</div><div class="detail-stat-label">Acknowledged</div></div>
+  <div class="detail-stat"><div class="detail-stat-value" style="color:#d97706;">48</div><div class="detail-stat-label">Pending</div></div>
+  <div class="detail-stat"><div class="detail-stat-value" style="color:#dc2626;">27</div><div class="detail-stat-label">Overdue</div></div>
+  <div class="detail-stat"><div class="detail-stat-value" style="color:#2563eb;">3</div><div class="detail-stat-label">Reminders Sent</div></div>
+  <div class="detail-stat"><div class="detail-stat-value" style="color:#7c3aed;">4.2</div><div class="detail-stat-label">Avg Days to Ack</div></div>
+  <div class="detail-stat"><div class="detail-stat-value" style="color:#0d9488;">92%</div><div class="detail-stat-label">Quiz Pass Rate</div></div>
+  <div class="detail-stat"><div class="detail-stat-value" style="color:#dc2626;">5</div><div class="detail-stat-label">Failed Sends</div></div>
+</div>
+
+<!-- Overall Progress -->
+<div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:20px;margin-bottom:20px;">
+  <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+    <span style="font-size:13px;font-weight:600;">Overall Progress</span>
+    <span style="font-size:13px;font-weight:700;color:#0d9488;">78%</span>
+  </div>
+  <div class="progress-bar" style="height:10px;border-radius:5px;">
+    <div class="progress-fill" style="width:78%;background:linear-gradient(90deg,#0d9488,#059669);border-radius:5px;"></div>
+  </div>
+  <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:10px;color:#94a3b8;">
+    <span>Started 1 Mar 2026</span>
+    <span>Due 31 Mar 2026 &middot; 11 days remaining</span>
+  </div>
+</div>
+
+<!-- Recipients Table -->
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;">
+  <div class="recipients-card">
+    <div class="recipients-header">
+      <h3>Recipients</h3>
+      <span style="font-size:11px;color:#94a3b8;">Showing 6 of 340</span>
+    </div>
+    <div class="table-row table-header">
+      <span>Employee</span><span>Department</span><span>Status</span><span>Date</span><span></span>
+    </div>
+    <div class="table-row">
+      <div class="user-info"><div class="avatar" style="background:#0d9488;">TM</div><div><div class="user-name">Thabo Mokoena</div></div></div>
+      <span>Operations</span>
+      <span class="status" style="background:#dcfce7;color:#16a34a;">Acknowledged</span>
+      <span>12 Mar 2026</span>
+      <span></span>
+    </div>
+    <div class="table-row">
+      <div class="user-info"><div class="avatar" style="background:#2563eb;">ND</div><div><div class="user-name">Nomsa Dlamini</div></div></div>
+      <span>Legal</span>
+      <span class="status" style="background:#dcfce7;color:#16a34a;">Acknowledged</span>
+      <span>8 Mar 2026</span>
+      <span></span>
+    </div>
+    <div class="table-row">
+      <div class="user-info"><div class="avatar" style="background:#7c3aed;">SN</div><div><div class="user-name">Sipho Nkosi</div></div></div>
+      <span>IT</span>
+      <span class="status" style="background:#fef3c7;color:#d97706;">Pending</span>
+      <span>&mdash;</span>
+      <span><button class="btn" style="padding:4px 8px;font-size:10px;">Remind</button></span>
+    </div>
+    <div class="table-row">
+      <div class="user-info"><div class="avatar" style="background:#db2777;">PN</div><div><div class="user-name">Priya Naidoo</div></div></div>
+      <span>Finance</span>
+      <span class="status" style="background:#fee2e2;color:#dc2626;">Overdue</span>
+      <span>&mdash;</span>
+      <span><button class="btn" style="padding:4px 8px;font-size:10px;">Remind</button></span>
+    </div>
+    <div class="table-row">
+      <div class="user-info"><div class="avatar" style="background:#d97706;">JV</div><div><div class="user-name">Johan van der Merwe</div></div></div>
+      <span>Engineering</span>
+      <span class="status" style="background:#dcfce7;color:#16a34a;">Acknowledged</span>
+      <span>15 Mar 2026</span>
+      <span></span>
+    </div>
+    <div class="table-row">
+      <div class="user-info"><div class="avatar" style="background:#059669;">ZM</div><div><div class="user-name">Zanele Mthembu</div></div></div>
+      <span>Executive</span>
+      <span class="status" style="background:#dcfce7;color:#16a34a;">Acknowledged</span>
+      <span>5 Mar 2026</span>
+      <span></span>
+    </div>
+  </div>
+
+  <!-- Activity Timeline -->
+  <div class="timeline-card">
+    <div class="timeline-header"><h3>Activity Timeline</h3></div>
+    <div class="timeline-body">
+      <div class="timeline-item">
+        <div class="timeline-dot" style="background:#0d9488;"></div>
+        <div class="timeline-text"><strong>Johan van der Merwe</strong> acknowledged the policy</div>
+        <div class="timeline-time">2h ago</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot" style="background:#d97706;"></div>
+        <div class="timeline-text">Automatic reminder sent to <strong>48 pending</strong> recipients</div>
+        <div class="timeline-time">6h ago</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot" style="background:#0d9488;"></div>
+        <div class="timeline-text"><strong>Lindiwe Khumalo</strong> passed the quiz (88%)</div>
+        <div class="timeline-time">1d ago</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot" style="background:#dc2626;"></div>
+        <div class="timeline-text"><strong>5 recipients</strong> marked as overdue</div>
+        <div class="timeline-time">2d ago</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot" style="background:#2563eb;"></div>
+        <div class="timeline-text"><strong>Fatima Essop</strong> completed all 3 steps</div>
+        <div class="timeline-time">3d ago</div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot" style="background:#059669;"></div>
+        <div class="timeline-text">Campaign launched by <strong>Nomsa Dlamini</strong></div>
+        <div class="timeline-time">1 Mar</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

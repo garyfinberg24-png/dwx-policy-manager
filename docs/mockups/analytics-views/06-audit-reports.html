@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit — Premium Analytics</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', -apple-system, sans-serif; background: #f8fafc; color: #0f172a; }
+  .page { max-width: 1400px; margin: 0 auto; padding: 32px 40px; }
+  .page-header { margin-bottom: 28px; }
+  .page-header h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+  .page-header .subtitle { font-size: 13px; color: #64748b; margin-top: 4px; }
+  .tab-bar { display: flex; gap: 0; border-bottom: 2px solid #e2e8f0; margin-bottom: 28px; }
+  .tab { padding: 10px 20px; font-size: 13px; font-weight: 500; color: #64748b; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; }
+  .tab:hover { color: #0d9488; }
+  .tab.active { color: #0d9488; font-weight: 700; border-bottom-color: #0d9488; }
+
+  .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; margin-bottom: 20px; }
+  .card-header { padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
+  .card-header h3 { font-size: 14px; font-weight: 700; }
+  .card-body { padding: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+
+  /* Filter bar */
+  .filter-bar { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; }
+  .filter-select { padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; font-family: inherit; color: #334155; background: #fff; min-width: 180px; }
+  .filter-search { padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; font-family: inherit; color: #334155; background: #fff; flex: 1; max-width: 320px; }
+  .filter-search::placeholder { color: #94a3b8; }
+  .btn { padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid #e2e8f0; background: #fff; color: #334155; font-family: inherit; }
+  .btn:hover { border-color: #0d9488; color: #0d9488; }
+  .btn-primary { background: #0d9488; color: #fff; border-color: #0d9488; }
+
+  /* Audit table */
+  .audit-table { width: 100%; border-collapse: collapse; }
+  .audit-table th { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; padding: 8px 12px; text-align: left; border-bottom: 2px solid #e2e8f0; }
+  .audit-table td { padding: 10px 12px; font-size: 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+  .audit-table tr:last-child td { border-bottom: none; }
+  .badge { font-size: 9px; font-weight: 700; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; display: inline-block; }
+
+  /* User cell with avatar */
+  .user-cell { display: flex; align-items: center; gap: 8px; }
+  .avatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #fff; flex-shrink: 0; }
+
+  /* Report cards */
+  .report-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; }
+  .report-title { font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 12px; }
+  .report-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; }
+  .report-label { font-size: 11px; color: #94a3b8; }
+  .report-value { font-size: 12px; font-weight: 600; color: #334155; }
+  .report-actions { margin-top: 12px; padding-top: 12px; border-top: 1px solid #f1f5f9; display: flex; gap: 8px; }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="page-header">
+    <h1>Policy Analytics</h1>
+    <div class="subtitle">Enterprise compliance intelligence and governance metrics</div>
+  </div>
+
+  <div class="tab-bar">
+    <div class="tab">Executive</div>
+    <div class="tab">Policy Metrics</div>
+    <div class="tab">Acknowledgements</div>
+    <div class="tab">SLA Tracking</div>
+    <div class="tab">Compliance & Risk</div>
+    <div class="tab active">Audit</div>
+    <div class="tab">Quiz Analytics</div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-bar">
+    <select class="filter-select">
+      <option>All Categories</option>
+      <option>Policy Changes</option>
+      <option>Approvals</option>
+      <option>Acknowledgements</option>
+      <option>Access Changes</option>
+      <option>Configuration</option>
+    </select>
+    <input type="text" class="filter-search" placeholder="Search audit log...">
+    <button class="btn">Last 7 Days</button>
+    <button class="btn">Last 30 Days</button>
+    <button class="btn btn-primary">Export</button>
+  </div>
+
+  <!-- Audit Log Table -->
+  <div class="card">
+    <div class="card-header">
+      <h3>Audit Log</h3>
+      <span style="font-size:11px;color:#94a3b8;">1,247 events total</span>
+    </div>
+    <div class="card-body">
+      <table class="audit-table">
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>User</th>
+            <th>Action</th>
+            <th>Category</th>
+            <th>Resource</th>
+            <th>Department</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="color:#94a3b8;white-space:nowrap;">20 Mar 2026, 14:32</td>
+            <td>
+              <div class="user-cell">
+                <div class="avatar" style="background:#0d9488;">GM</div>
+                <span>Gary Mhlongo</span>
+              </div>
+            </td>
+            <td><span class="badge" style="background:#dcfce7;color:#16a34a;">Published</span></td>
+            <td>Policy Changes</td>
+            <td style="font-weight:600;">POPIA Data Protection Policy v2.1</td>
+            <td>Legal & Compliance</td>
+          </tr>
+          <tr>
+            <td style="color:#94a3b8;white-space:nowrap;">20 Mar 2026, 13:15</td>
+            <td>
+              <div class="user-cell">
+                <div class="avatar" style="background:#2563eb;">NP</div>
+                <span>Nomsa Phiri</span>
+              </div>
+            </td>
+            <td><span class="badge" style="background:#dbeafe;color:#2563eb;">Approved</span></td>
+            <td>Approvals</td>
+            <td style="font-weight:600;">King IV Governance Framework</td>
+            <td>Finance</td>
+          </tr>
+          <tr>
+            <td style="color:#94a3b8;white-space:nowrap;">20 Mar 2026, 11:48</td>
+            <td>
+              <div class="user-cell">
+                <div class="avatar" style="background:#7c3aed;">TM</div>
+                <span>Thabo Mokoena</span>
+              </div>
+            </td>
+            <td><span class="badge" style="background:#fef3c7;color:#d97706;">Updated</span></td>
+            <td>Policy Changes</td>
+            <td style="font-weight:600;">BCEA Leave Management Policy</td>
+            <td>Human Resources</td>
+          </tr>
+          <tr>
+            <td style="color:#94a3b8;white-space:nowrap;">20 Mar 2026, 10:22</td>
+            <td>
+              <div class="user-cell">
+                <div class="avatar" style="background:#059669;">LN</div>
+                <span>Lerato Nkosi</span>
+              </div>
+            </td>
+            <td><span class="badge" style="background:#f0fdfa;color:#0d9488;">Acknowledged</span></td>
+            <td>Acknowledgements</td>
+            <td style="font-weight:600;">Employee Code of Conduct</td>
+            <td>Finance</td>
+          </tr>
+          <tr>
+            <td style="color:#94a3b8;white-space:nowrap;">19 Mar 2026, 16:45</td>
+            <td>
+              <div class="user-cell">
+                <div class="avatar" style="background:#d97706;">SV</div>
+                <span>Sipho van der Merwe</span>
+              </div>
+            </td>
+            <td><span class="badge" style="background:#fee2e2;color:#dc2626;">Rejected</span></td>
+            <td>Approvals</td>
+            <td style="font-weight:600;">FICA AML Compliance Policy</td>
+            <td>Legal & Compliance</td>
+          </tr>
+          <tr>
+            <td style="color:#94a3b8;white-space:nowrap;">19 Mar 2026, 14:10</td>
+            <td>
+              <div class="user-cell">
+                <div class="avatar" style="background:#dc2626;">AM</div>
+                <span>Anele Mbeki</span>
+              </div>
+            </td>
+            <td><span class="badge" style="background:#e0e7ff;color:#4f46e5;">Created</span></td>
+            <td>Policy Changes</td>
+            <td style="font-weight:600;">Whistleblower Protection Policy</td>
+            <td>Legal & Compliance</td>
+          </tr>
+          <tr>
+            <td style="color:#94a3b8;white-space:nowrap;">19 Mar 2026, 11:30</td>
+            <td>
+              <div class="user-cell">
+                <div class="avatar" style="background:#0d9488;">PB</div>
+                <span>Pieter Botha</span>
+              </div>
+            </td>
+            <td><span class="badge" style="background:#fef3c7;color:#d97706;">Config Change</span></td>
+            <td>Configuration</td>
+            <td style="font-weight:600;">SLA Target: Acknowledgement (7 → 5 days)</td>
+            <td>IT & Security</td>
+          </tr>
+          <tr>
+            <td style="color:#94a3b8;white-space:nowrap;">19 Mar 2026, 09:05</td>
+            <td>
+              <div class="user-cell">
+                <div class="avatar" style="background:#94a3b8;">ND</div>
+                <span>Naledi Dlamini</span>
+              </div>
+            </td>
+            <td><span class="badge" style="background:#fef3c7;color:#d97706;">Role Changed</span></td>
+            <td>Access Changes</td>
+            <td style="font-weight:600;">User promoted: Author → Manager</td>
+            <td>Marketing</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Scheduled Reports -->
+  <div class="card">
+    <div class="card-header">
+      <h3>Scheduled Reports</h3>
+      <span style="font-size:11px;color:#94a3b8;">3 active schedules</span>
+    </div>
+    <div class="card-body">
+      <div class="grid-3">
+        <div class="report-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <div class="report-title">Monthly Compliance Summary</div>
+            <span class="badge" style="background:#dbeafe;color:#2563eb;">Compliance</span>
+          </div>
+          <div class="report-row"><span class="report-label">Schedule</span><span class="report-value">1st of every month</span></div>
+          <div class="report-row"><span class="report-label">Last Run</span><span class="report-value">1 Mar 2026</span></div>
+          <div class="report-row"><span class="report-label">Next Run</span><span class="report-value">1 Apr 2026</span></div>
+          <div class="report-row"><span class="report-label">Format</span><span class="badge" style="background:#fee2e2;color:#dc2626;">PDF</span></div>
+          <div class="report-actions">
+            <button class="btn" style="font-size:11px;padding:4px 10px;">Run Now</button>
+            <button class="btn" style="font-size:11px;padding:4px 10px;">Edit</button>
+          </div>
+        </div>
+
+        <div class="report-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <div class="report-title">Weekly Acknowledgement Status</div>
+            <span class="badge" style="background:#dcfce7;color:#16a34a;">Acknowledgements</span>
+          </div>
+          <div class="report-row"><span class="report-label">Schedule</span><span class="report-value">Every Monday, 08:00</span></div>
+          <div class="report-row"><span class="report-label">Last Run</span><span class="report-value">16 Mar 2026</span></div>
+          <div class="report-row"><span class="report-label">Next Run</span><span class="report-value">23 Mar 2026</span></div>
+          <div class="report-row"><span class="report-label">Format</span><span class="badge" style="background:#dcfce7;color:#16a34a;">Excel</span></div>
+          <div class="report-actions">
+            <button class="btn" style="font-size:11px;padding:4px 10px;">Run Now</button>
+            <button class="btn" style="font-size:11px;padding:4px 10px;">Edit</button>
+          </div>
+        </div>
+
+        <div class="report-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <div class="report-title">Quarterly Audit Trail Export</div>
+            <span class="badge" style="background:#fef3c7;color:#d97706;">Audit</span>
+          </div>
+          <div class="report-row"><span class="report-label">Schedule</span><span class="report-value">1 Jan, 1 Apr, 1 Jul, 1 Oct</span></div>
+          <div class="report-row"><span class="report-label">Last Run</span><span class="report-value">1 Jan 2026</span></div>
+          <div class="report-row"><span class="report-label">Next Run</span><span class="report-value">1 Apr 2026</span></div>
+          <div class="report-row"><span class="report-label">Format</span><span class="badge" style="background:#f1f5f9;color:#64748b;">CSV</span></div>
+          <div class="report-actions">
+            <button class="btn" style="font-size:11px;padding:4px 10px;">Run Now</button>
+            <button class="btn" style="font-size:11px;padding:4px 10px;">Edit</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

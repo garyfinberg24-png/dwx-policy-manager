@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Policy Manager — Start Screen V1: Command Centre</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', -apple-system, sans-serif; background: #f8fafc; height: 100vh; display: flex; }
+
+  /* Sidebar */
+  .sidebar {
+    width: 300px;
+    background: linear-gradient(180deg, #0d9488 0%, #0f766e 60%, #134e4a 100%);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    padding: 32px 24px;
+    flex-shrink: 0;
+  }
+  .sidebar-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 32px; }
+  .sidebar-brand svg { width: 32px; height: 32px; }
+  .sidebar-brand-text { font-size: 16px; font-weight: 700; }
+  .sidebar-brand-sub { font-size: 8px; text-transform: uppercase; letter-spacing: 2px; opacity: 0.7; }
+
+  .greeting { margin-bottom: 4px; }
+  .greeting h2 { font-size: 22px; font-weight: 600; }
+  .greeting-date { font-size: 12px; opacity: 0.7; margin-bottom: 4px; }
+  .greeting-desc { font-size: 11px; opacity: 0.6; line-height: 1.5; margin-bottom: 24px; }
+
+  .pickup-card {
+    background: rgba(255,255,255,0.12);
+    border-radius: 8px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 28px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .pickup-card:hover { background: rgba(255,255,255,0.2); }
+  .pickup-icon { width: 36px; height: 36px; background: rgba(255,255,255,0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .pickup-icon svg { width: 16px; height: 16px; }
+  .pickup-text { flex: 1; }
+  .pickup-label { font-size: 11px; font-weight: 600; opacity: 0.9; }
+  .pickup-policy { font-size: 12px; opacity: 0.7; margin-top: 2px; }
+
+  .sidebar-section { margin-bottom: 20px; }
+  .sidebar-section-title { font-size: 9px; text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.5; font-weight: 600; margin-bottom: 10px; }
+
+  .recent-item {
+    display: flex; align-items: center; gap: 8px; padding: 7px 0;
+    font-size: 12px; cursor: pointer; opacity: 0.85;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .recent-item:hover { opacity: 1; }
+  .recent-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .recent-dot.green { background: #34d399; }
+  .recent-dot.amber { background: #fbbf24; }
+  .recent-dot.red { background: #f87171; }
+  .recent-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .recent-time { font-size: 10px; opacity: 0.5; }
+
+  .glance-card {
+    background: rgba(255,255,255,0.08);
+    border-radius: 6px;
+    padding: 10px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+  .glance-label { font-size: 12px; opacity: 0.8; }
+  .glance-value { font-size: 18px; font-weight: 700; }
+
+  .skip-btn {
+    margin-top: auto;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: background 0.2s;
+  }
+  .skip-btn:hover { background: rgba(255,255,255,0.2); }
+
+  /* Main Content */
+  .main {
+    flex: 1;
+    padding: 48px 56px;
+    overflow-y: auto;
+  }
+  .main h1 { font-size: 28px; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
+  .main-desc { font-size: 14px; color: #64748b; line-height: 1.7; max-width: 700px; margin-bottom: 8px; }
+  .main-hint { font-size: 12px; color: #94a3b8; margin-bottom: 32px; }
+
+  .section-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: #94a3b8; font-weight: 600; margin-bottom: 16px; }
+
+  .actions-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 40px;
+  }
+
+  .action-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 28px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .action-card:hover {
+    border-color: #0d9488;
+    box-shadow: 0 4px 16px rgba(13,148,136,0.1);
+    transform: translateY(-2px);
+  }
+  .action-icon {
+    width: 48px; height: 48px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 14px;
+  }
+  .action-icon svg { width: 24px; height: 24px; }
+  .action-icon.teal { background: #f0fdfa; color: #0d9488; }
+  .action-icon.blue { background: #eff6ff; color: #2563eb; }
+  .action-icon.purple { background: #f5f3ff; color: #7c3aed; }
+  .action-icon.amber { background: #fffbeb; color: #d97706; }
+  .action-icon.green { background: #f0fdf4; color: #16a34a; }
+  .action-icon.slate { background: #f1f5f9; color: #475569; }
+  .action-title { font-size: 15px; font-weight: 700; color: #0f172a; margin-bottom: 6px; }
+  .action-desc { font-size: 12px; color: #94a3b8; line-height: 1.5; }
+
+  /* Stats bar */
+  .stats-bar {
+    display: flex; gap: 16px; margin-bottom: 32px;
+  }
+  .stat-card {
+    flex: 1;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .stat-icon { width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .stat-value { font-size: 22px; font-weight: 700; color: #0f172a; }
+  .stat-label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <div class="sidebar-brand">
+    <svg viewBox="0 0 32 32" fill="none"><path d="M16 2L4 8v8c0 7.7 5.1 14.9 12 16.9 6.9-2 12-9.2 12-16.9V8L16 2z" stroke="#fff" stroke-width="2" fill="rgba(255,255,255,0.15)"/><path d="M12 16l3 3 5-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div>
+      <div class="sidebar-brand-text">Policy Manager</div>
+      <div class="sidebar-brand-sub">Policy Governance & Compliance</div>
+    </div>
+  </div>
+
+  <div class="greeting">
+    <h2>Good evening, Gary</h2>
+    <div class="greeting-date">Thursday, 19 March 2026</div>
+    <div class="greeting-desc">Your policy governance command centre. Start fresh or pick up where you left off.</div>
+  </div>
+
+  <div class="pickup-card">
+    <div class="pickup-icon">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M12 5l7 7-7 7" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="pickup-text">
+      <div class="pickup-label">Pick up where you left off</div>
+      <div class="pickup-policy">Data Protection Policy &mdash; Just now</div>
+    </div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-title">Recent Policies</div>
+    <div class="recent-item"><span class="recent-dot green"></span><span class="recent-name">Data Protection Policy</span><span class="recent-time">now</span></div>
+    <div class="recent-item"><span class="recent-dot green"></span><span class="recent-name">Employee Code of Conduct</span><span class="recent-time">15m</span></div>
+    <div class="recent-item"><span class="recent-dot amber"></span><span class="recent-name">Information Security Policy</span><span class="recent-time">1h</span></div>
+    <div class="recent-item"><span class="recent-dot green"></span><span class="recent-name">Anti-Harassment Policy</span><span class="recent-time">2h</span></div>
+    <div class="recent-item"><span class="recent-dot red"></span><span class="recent-name">Health and Safety Policy</span><span class="recent-time">1d</span></div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-title">At a Glance</div>
+    <div class="glance-card"><span class="glance-label">Published Policies</span><span class="glance-value">19</span></div>
+    <div class="glance-card"><span class="glance-label">Pending Ack</span><span class="glance-value" style="color: #fbbf24;">3</span></div>
+    <div class="glance-card"><span class="glance-label">Overdue</span><span class="glance-value" style="color: #f87171;">1</span></div>
+  </div>
+
+  <div class="skip-btn">Skip to Policy Hub &rarr;</div>
+</div>
+
+<!-- Main Content -->
+<div class="main">
+  <h1>What would you like to do?</h1>
+  <p class="main-desc">Policy Manager gives you everything you need to create, distribute, and track policy compliance across your organisation. Browse policies, acknowledge required reading, or manage your team's compliance.</p>
+  <p class="main-hint">Choose an action below to get started, or use the sidebar to jump back to a recent policy.</p>
+
+  <div class="section-label">Quick Actions</div>
+  <div class="actions-grid">
+    <div class="action-card">
+      <div class="action-icon teal">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+      <div class="action-title">Browse Policies</div>
+      <div class="action-desc">Explore all published policies in the Policy Hub with search and filters.</div>
+    </div>
+    <div class="action-card">
+      <div class="action-icon blue">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 5h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M9 14l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="action-title">My Policies</div>
+      <div class="action-desc">View your assigned policies, pending acknowledgements, and read history.</div>
+    </div>
+    <div class="action-card">
+      <div class="action-icon purple">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+      <div class="action-title">Search</div>
+      <div class="action-desc">Find policies by name, number, keywords, or category across the entire library.</div>
+    </div>
+    <div class="action-card">
+      <div class="action-icon green">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 4v16m8-8H4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+      <div class="action-title">New Policy</div>
+      <div class="action-desc">Create a new policy from scratch, template, or document upload.</div>
+    </div>
+    <div class="action-card">
+      <div class="action-icon amber">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 8v4l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+      <div class="action-title">Help Centre</div>
+      <div class="action-desc">Browse articles, FAQs, keyboard shortcuts, and contact support.</div>
+    </div>
+    <div class="action-card">
+      <div class="action-icon slate">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 15V9m0 0l-3 3m3-3l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><rect x="3" y="3" width="18" height="18" rx="4" stroke="currentColor" stroke-width="2"/></svg>
+      </div>
+      <div class="action-title">Admin Centre</div>
+      <div class="action-desc">Configure settings, manage users, templates, and system options.</div>
+    </div>
+  </div>
+
+  <div class="section-label">Your Compliance Summary</div>
+  <div class="stats-bar">
+    <div class="stat-card">
+      <div class="stat-icon" style="background: #f0fdf4;"><svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M9 12l2 2 4-4" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="10" stroke="#16a34a" stroke-width="2"/></svg></div>
+      <div><div class="stat-value" style="color: #16a34a;">12</div><div class="stat-label">Acknowledged</div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background: #fef3c7;"><svg viewBox="0 0 24 24" fill="none" width="20" height="20"><circle cx="12" cy="12" r="10" stroke="#d97706" stroke-width="2"/><path d="M12 8v4" stroke="#d97706" stroke-width="2.5" stroke-linecap="round"/><circle cx="12" cy="16" r="1" fill="#d97706"/></svg></div>
+      <div><div class="stat-value" style="color: #d97706;">3</div><div class="stat-label">Pending</div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background: #fee2e2;"><svg viewBox="0 0 24 24" fill="none" width="20" height="20"><circle cx="12" cy="12" r="10" stroke="#dc2626" stroke-width="2"/><path d="M15 9l-6 6M9 9l6 6" stroke="#dc2626" stroke-width="2" stroke-linecap="round"/></svg></div>
+      <div><div class="stat-value" style="color: #dc2626;">1</div><div class="stat-label">Overdue</div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background: #f0fdfa;"><svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M16 2L4 8v8c0 7.7 5.1 14.9 12 16.9 6.9-2 12-9.2 12-16.9V8L16 2z" stroke="#0d9488" stroke-width="2" fill="none" transform="translate(-4,-2) scale(0.83)"/></svg></div>
+      <div><div class="stat-value" style="color: #0d9488;">87%</div><div class="stat-label">Compliance</div></div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

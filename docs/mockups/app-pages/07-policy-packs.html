@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Policy Packs — Premium Mockup</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', -apple-system, sans-serif; background: #f8fafc; color: #0f172a; }
+
+  .page { max-width: 1400px; margin: 0 auto; padding: 32px 40px; }
+
+  /* Page Header */
+  .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; }
+  .page-header h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+  .page-header .subtitle { font-size: 13px; color: #64748b; margin-top: 4px; }
+  .btn { padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid #e2e8f0; background: #fff; color: #334155; font-family: inherit; transition: all 0.15s; }
+  .btn:hover { border-color: #0d9488; color: #0d9488; }
+  .btn-primary { background: #0d9488; color: #fff; border-color: #0d9488; }
+  .btn-primary:hover { background: #0f766e; }
+
+  /* KPI Strip */
+  .kpi-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 28px; }
+  .kpi-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px 16px;
+    position: relative; overflow: hidden;
+  }
+  .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 10px 10px 0 0; }
+  .kpi-card.teal::before { background: #0d9488; }
+  .kpi-card.green::before { background: #059669; }
+  .kpi-card.blue::before { background: #2563eb; }
+  .kpi-value { font-size: 28px; font-weight: 700; line-height: 1.1; }
+  .kpi-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; font-weight: 600; margin-top: 4px; }
+
+  /* Pack Grid */
+  .pack-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .pack-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden;
+    transition: all 0.2s; cursor: pointer;
+  }
+  .pack-card:hover { border-color: #0d9488; box-shadow: 0 4px 16px rgba(13,148,136,0.1); transform: translateY(-2px); }
+
+  /* Gradient Top Strips by Type */
+  .pack-strip { height: 6px; }
+  .strip-onboarding { background: linear-gradient(90deg, #0d9488, #059669); }
+  .strip-department { background: linear-gradient(90deg, #2563eb, #7c3aed); }
+  .strip-role { background: linear-gradient(90deg, #d97706, #dc2626); }
+  .strip-custom { background: linear-gradient(90deg, #64748b, #475569); }
+
+  .pack-body { padding: 20px; }
+  .pack-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .pack-title { font-size: 16px; font-weight: 700; }
+  .pack-desc { font-size: 12px; color: #64748b; line-height: 1.5; margin-bottom: 14px; }
+
+  /* Pack meta row */
+  .pack-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; align-items: center; }
+  .badge { font-size: 9px; font-weight: 700; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .badge-onboarding { background: #ccfbf1; color: #0d9488; }
+  .badge-department { background: #dbeafe; color: #2563eb; }
+  .badge-role { background: #fef3c7; color: #d97706; }
+  .badge-custom { background: #f1f5f9; color: #64748b; }
+  .meta-item { font-size: 11px; color: #94a3b8; display: flex; align-items: center; gap: 4px; }
+
+  /* Feature badges */
+  .features { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+  .feature {
+    font-size: 10px; font-weight: 600; padding: 4px 10px; border-radius: 12px;
+    background: #f0fdfa; color: #0d9488; border: 1px solid #ccfbf1;
+  }
+
+  /* Pack footer */
+  .pack-footer {
+    padding: 14px 20px; border-top: 1px solid #f1f5f9;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .assigned-info { display: flex; align-items: center; gap: 8px; }
+  .avatar-stack { display: flex; }
+  .avatar-sm {
+    width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 9px; font-weight: 700; color: #fff; border: 2px solid #fff; margin-left: -8px;
+  }
+  .avatar-sm:first-child { margin-left: 0; }
+  .assigned-count { font-size: 11px; color: #64748b; }
+  .pack-actions { display: flex; gap: 8px; align-items: center; }
+
+  /* Toggle Switch */
+  .toggle { position: relative; width: 40px; height: 22px; cursor: pointer; }
+  .toggle-track { width: 40px; height: 22px; border-radius: 11px; background: #e2e8f0; transition: background 0.2s; }
+  .toggle-track.on { background: #0d9488; }
+  .toggle-knob {
+    position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%;
+    background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.15); transition: left 0.2s;
+  }
+  .toggle-track.on + .toggle-knob { left: 21px; }
+
+  .icon-btn {
+    width: 32px; height: 32px; border-radius: 6px; border: 1px solid #e2e8f0; background: #fff;
+    display: flex; align-items: center; justify-content: center; cursor: pointer; color: #64748b;
+    transition: all 0.15s; font-size: 14px;
+  }
+  .icon-btn:hover { border-color: #0d9488; color: #0d9488; }
+  .icon-btn.danger:hover { border-color: #dc2626; color: #dc2626; }
+
+  /* Policy count */
+  .policy-count {
+    display: flex; align-items: center; gap: 6px; font-size: 22px; font-weight: 700; color: #0d9488;
+  }
+  .policy-count-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<!-- App Header -->
+<div style="background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%); padding: 0 40px; height: 56px; display: flex; align-items: center; justify-content: space-between;">
+  <div style="display: flex; align-items: center; gap: 10px; color: #fff;">
+    <svg viewBox="0 0 32 32" fill="none" width="28" height="28"><path d="M16 2L4 8v8c0 7.7 5.1 14.9 12 16.9 6.9-2 12-9.2 12-16.9V8L16 2z" stroke="#fff" stroke-width="2" fill="rgba(255,255,255,0.15)"/><path d="M12 16l3 3 5-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div><div style="font-size:15px;font-weight:700;">Policy Manager</div><div style="font-size:8px;text-transform:uppercase;letter-spacing:2px;opacity:0.7;">POLICY GOVERNANCE &amp; COMPLIANCE</div></div>
+  </div>
+  <div style="flex:1;max-width:400px;margin:0 40px;">
+    <div style="background:rgba(255,255,255,0.15);border-radius:6px;padding:8px 16px;display:flex;align-items:center;gap:8px;">
+      <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><circle cx="11" cy="11" r="7" stroke="rgba(255,255,255,0.7)" stroke-width="2"/><path d="M21 21l-4-4" stroke="rgba(255,255,255,0.7)" stroke-width="2" stroke-linecap="round"/></svg>
+      <span style="color:rgba(255,255,255,0.5);font-size:13px;">Search policies...</span>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <div style="background:#fff;color:#0d9488;padding:6px 14px;border-radius:4px;font-size:12px;font-weight:600;cursor:pointer;">+ New Policy</div>
+    <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;">GF</div>
+  </div>
+</div>
+
+<!-- Navigation Bar -->
+<div style="background:#fff;padding:0 40px;display:flex;align-items:center;height:44px;box-shadow:0 2px 4px rgba(0,0,0,0.08);">
+  <a style="padding:0 16px;height:44px;display:flex;align-items:center;font-size:13px;font-weight:500;color:#64748b;cursor:pointer;text-decoration:none;border-bottom:2px solid transparent;">My Policies</a>
+  <a style="padding:0 16px;height:44px;display:flex;align-items:center;font-size:13px;font-weight:500;color:#64748b;cursor:pointer;text-decoration:none;border-bottom:2px solid transparent;">Policy Hub</a>
+  <a style="padding:0 16px;height:44px;display:flex;align-items:center;font-size:13px;font-weight:600;color:#0d9488;cursor:pointer;text-decoration:none;border-bottom:2px solid #0d9488;">Author &#9662;</a>
+  <a style="padding:0 16px;height:44px;display:flex;align-items:center;font-size:13px;font-weight:500;color:#64748b;cursor:pointer;text-decoration:none;border-bottom:2px solid transparent;">Manager &#9662;</a>
+  <a style="padding:0 16px;height:44px;display:flex;align-items:center;font-size:13px;font-weight:500;color:#64748b;cursor:pointer;text-decoration:none;border-bottom:2px solid transparent;">Secure Policies &#9662;</a>
+</div>
+
+<div class="page">
+
+<!-- Page Header -->
+<div class="page-header">
+  <div>
+    <h1>Policy Packs</h1>
+    <div class="subtitle">Bundle policies together for streamlined distribution and onboarding</div>
+  </div>
+  <button class="btn btn-primary">+ Create Pack</button>
+</div>
+
+<!-- KPI Strip -->
+<div class="kpi-strip">
+  <div class="kpi-card teal"><div class="kpi-value" style="color:#0d9488;">6</div><div class="kpi-label">Total Packs</div></div>
+  <div class="kpi-card green"><div class="kpi-value" style="color:#059669;">4</div><div class="kpi-label">Active</div></div>
+  <div class="kpi-card blue"><div class="kpi-value" style="color:#2563eb;">24</div><div class="kpi-label">Total Policies in Packs</div></div>
+</div>
+
+<!-- Pack Grid -->
+<div class="pack-grid">
+
+  <!-- Pack 1: Onboarding -->
+  <div class="pack-card">
+    <div class="pack-strip strip-onboarding"></div>
+    <div class="pack-body">
+      <div class="pack-header">
+        <div class="pack-title">New Employee Onboarding</div>
+        <div>
+          <div class="policy-count">6</div>
+          <div class="policy-count-label">Policies</div>
+        </div>
+      </div>
+      <div class="pack-desc">Essential policies every new employee must read and acknowledge within their first 30 days. Includes Code of Conduct, POPIA, IT Acceptable Use, Anti-Harassment, Leave Management, and Whistleblower.</div>
+      <div class="pack-meta">
+        <span class="badge badge-onboarding">Onboarding</span>
+        <span class="meta-item">
+          <svg width="12" height="12" viewBox="0 0 20 20" fill="#94a3b8"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"/></svg>
+          30-day deadline
+        </span>
+      </div>
+      <div class="features">
+        <span class="feature">Auto-assign</span>
+        <span class="feature">Email Notifications</span>
+        <span class="feature">30-Day Deadline</span>
+      </div>
+    </div>
+    <div class="pack-footer">
+      <div class="assigned-info">
+        <div class="avatar-stack">
+          <div class="avatar-sm" style="background:#0d9488;">TM</div>
+          <div class="avatar-sm" style="background:#2563eb;">ND</div>
+          <div class="avatar-sm" style="background:#7c3aed;">SN</div>
+          <div class="avatar-sm" style="background:#94a3b8;">+21</div>
+        </div>
+        <span class="assigned-count">24 assigned</span>
+      </div>
+      <div class="pack-actions">
+        <div class="toggle"><div class="toggle-track on"></div><div class="toggle-knob" style="left:21px;"></div></div>
+        <div class="icon-btn" title="Edit">&#9998;</div>
+        <div class="icon-btn danger" title="Delete">&#128465;</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pack 2: Department -->
+  <div class="pack-card">
+    <div class="pack-strip strip-department"></div>
+    <div class="pack-body">
+      <div class="pack-header">
+        <div class="pack-title">Finance Department Essentials</div>
+        <div>
+          <div class="policy-count">5</div>
+          <div class="policy-count-label">Policies</div>
+        </div>
+      </div>
+      <div class="pack-desc">Policies specific to Finance department operations including Travel &amp; Expense, Procurement, Anti-Money Laundering, Financial Controls, and BCEA compliance.</div>
+      <div class="pack-meta">
+        <span class="badge badge-department">Department</span>
+        <span class="meta-item">
+          <svg width="12" height="12" viewBox="0 0 20 20" fill="#94a3b8"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z"/></svg>
+          Finance team
+        </span>
+      </div>
+      <div class="features">
+        <span class="feature">Auto-assign</span>
+        <span class="feature">Quarterly Review</span>
+      </div>
+    </div>
+    <div class="pack-footer">
+      <div class="assigned-info">
+        <div class="avatar-stack">
+          <div class="avatar-sm" style="background:#db2777;">PN</div>
+          <div class="avatar-sm" style="background:#059669;">ZM</div>
+          <div class="avatar-sm" style="background:#94a3b8;">+43</div>
+        </div>
+        <span class="assigned-count">45 assigned</span>
+      </div>
+      <div class="pack-actions">
+        <div class="toggle"><div class="toggle-track on"></div><div class="toggle-knob" style="left:21px;"></div></div>
+        <div class="icon-btn" title="Edit">&#9998;</div>
+        <div class="icon-btn danger" title="Delete">&#128465;</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pack 3: Role -->
+  <div class="pack-card">
+    <div class="pack-strip strip-role"></div>
+    <div class="pack-body">
+      <div class="pack-header">
+        <div class="pack-title">Manager Compliance Pack</div>
+        <div>
+          <div class="policy-count">4</div>
+          <div class="policy-count-label">Policies</div>
+        </div>
+      </div>
+      <div class="pack-desc">Additional policies for people managers covering performance management, disciplinary procedures, EE Act obligations, and workplace safety responsibilities.</div>
+      <div class="pack-meta">
+        <span class="badge badge-role">Role</span>
+        <span class="meta-item">
+          <svg width="12" height="12" viewBox="0 0 20 20" fill="#94a3b8"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z"/></svg>
+          All Managers
+        </span>
+      </div>
+      <div class="features">
+        <span class="feature">Auto-assign</span>
+        <span class="feature">Annual Review</span>
+        <span class="feature">Quiz Required</span>
+      </div>
+    </div>
+    <div class="pack-footer">
+      <div class="assigned-info">
+        <div class="avatar-stack">
+          <div class="avatar-sm" style="background:#d97706;">JV</div>
+          <div class="avatar-sm" style="background:#0d9488;">LK</div>
+          <div class="avatar-sm" style="background:#94a3b8;">+30</div>
+        </div>
+        <span class="assigned-count">32 assigned</span>
+      </div>
+      <div class="pack-actions">
+        <div class="toggle"><div class="toggle-track on"></div><div class="toggle-knob" style="left:21px;"></div></div>
+        <div class="icon-btn" title="Edit">&#9998;</div>
+        <div class="icon-btn danger" title="Delete">&#128465;</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pack 4: Department -->
+  <div class="pack-card">
+    <div class="pack-strip strip-department"></div>
+    <div class="pack-body">
+      <div class="pack-header">
+        <div class="pack-title">IT Security Awareness</div>
+        <div>
+          <div class="policy-count">4</div>
+          <div class="policy-count-label">Policies</div>
+        </div>
+      </div>
+      <div class="pack-desc">IT-specific policies covering Cybersecurity Incident Response, IT Acceptable Use, Data Classification, and Remote Access Security for IT department staff.</div>
+      <div class="pack-meta">
+        <span class="badge badge-department">Department</span>
+        <span class="meta-item">
+          <svg width="12" height="12" viewBox="0 0 20 20" fill="#94a3b8"><path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/></svg>
+          IT Department
+        </span>
+      </div>
+      <div class="features">
+        <span class="feature">Notifications</span>
+        <span class="feature">Bi-Annual Review</span>
+      </div>
+    </div>
+    <div class="pack-footer">
+      <div class="assigned-info">
+        <div class="avatar-stack">
+          <div class="avatar-sm" style="background:#7c3aed;">SN</div>
+          <div class="avatar-sm" style="background:#2563eb;">FE</div>
+          <div class="avatar-sm" style="background:#94a3b8;">+85</div>
+        </div>
+        <span class="assigned-count">87 assigned</span>
+      </div>
+      <div class="pack-actions">
+        <div class="toggle"><div class="toggle-track on"></div><div class="toggle-knob" style="left:21px;"></div></div>
+        <div class="icon-btn" title="Edit">&#9998;</div>
+        <div class="icon-btn danger" title="Delete">&#128465;</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pack 5: Custom (Inactive) -->
+  <div class="pack-card" style="opacity: 0.7;">
+    <div class="pack-strip strip-custom"></div>
+    <div class="pack-body">
+      <div class="pack-header">
+        <div class="pack-title">Board Governance Pack</div>
+        <div>
+          <div class="policy-count" style="color:#64748b;">3</div>
+          <div class="policy-count-label">Policies</div>
+        </div>
+      </div>
+      <div class="pack-desc">Governance policies for board members and executive committee. Includes King IV, Conflict of Interest, and Board Ethics Charter.</div>
+      <div class="pack-meta">
+        <span class="badge badge-custom">Custom</span>
+        <span class="meta-item">Executive Committee</span>
+      </div>
+      <div class="features">
+        <span class="feature" style="background:#f1f5f9;color:#64748b;border-color:#e2e8f0;">Annual Review</span>
+      </div>
+    </div>
+    <div class="pack-footer">
+      <div class="assigned-info">
+        <div class="avatar-stack">
+          <div class="avatar-sm" style="background:#94a3b8;">ZM</div>
+          <div class="avatar-sm" style="background:#94a3b8;">+11</div>
+        </div>
+        <span class="assigned-count">12 assigned</span>
+      </div>
+      <div class="pack-actions">
+        <div class="toggle"><div class="toggle-track"></div><div class="toggle-knob"></div></div>
+        <div class="icon-btn" title="Edit">&#9998;</div>
+        <div class="icon-btn danger" title="Delete">&#128465;</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pack 6: Custom (Draft) -->
+  <div class="pack-card" style="opacity: 0.7;">
+    <div class="pack-strip strip-custom"></div>
+    <div class="pack-body">
+      <div class="pack-header">
+        <div class="pack-title">Contractor Compliance Pack</div>
+        <div>
+          <div class="policy-count" style="color:#64748b;">2</div>
+          <div class="policy-count-label">Policies</div>
+        </div>
+      </div>
+      <div class="pack-desc">Minimum compliance requirements for external contractors and consultants. POPIA and Code of Conduct acknowledgement required before site access.</div>
+      <div class="pack-meta">
+        <span class="badge badge-custom">Custom</span>
+        <span class="meta-item">External Contractors</span>
+        <span class="badge" style="background:#f1f5f9;color:#64748b;">Draft</span>
+      </div>
+      <div class="features">
+        <span class="feature" style="background:#f1f5f9;color:#64748b;border-color:#e2e8f0;">Auto-assign</span>
+        <span class="feature" style="background:#f1f5f9;color:#64748b;border-color:#e2e8f0;">7-Day Deadline</span>
+      </div>
+    </div>
+    <div class="pack-footer">
+      <div class="assigned-info">
+        <span class="assigned-count" style="color:#94a3b8;">Not yet assigned</span>
+      </div>
+      <div class="pack-actions">
+        <div class="toggle"><div class="toggle-track"></div><div class="toggle-knob"></div></div>
+        <div class="icon-btn" title="Edit">&#9998;</div>
+        <div class="icon-btn danger" title="Delete">&#128465;</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+</body>
+</html>

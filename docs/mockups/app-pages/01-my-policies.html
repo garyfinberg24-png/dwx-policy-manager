@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Policies — Premium Mockup</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', -apple-system, sans-serif; background: #f8fafc; color: #0f172a; }
+
+  .page { max-width: 1400px; margin: 0 auto; padding: 0 40px 40px; }
+
+  /* Hero Section */
+  .hero {
+    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%); border-radius: 0 0 16px 16px;
+    padding: 32px 40px 28px; margin: 0 -40px 28px; color: #fff; position: relative; overflow: hidden;
+  }
+  .hero::after { content: ''; position: absolute; right: -60px; top: -60px; width: 280px; height: 280px; background: rgba(255,255,255,0.04); border-radius: 50%; }
+  .hero-content { display: flex; align-items: center; gap: 40px; position: relative; z-index: 1; }
+  .hero-text h1 { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+  .hero-text p { font-size: 13px; opacity: 0.85; }
+  .hero-ring { position: relative; width: 120px; height: 120px; flex-shrink: 0; }
+  .hero-ring svg { width: 120px; height: 120px; }
+  .ring-bg { fill: none; stroke: rgba(255,255,255,0.2); stroke-width: 10; }
+  .ring-fill { fill: none; stroke: #fff; stroke-width: 10; stroke-linecap: round; stroke-dasharray: 326; stroke-dashoffset: 42; transform: rotate(-90deg); transform-origin: center; transition: stroke-dashoffset 1s ease; }
+  .ring-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+  .ring-value { font-size: 30px; font-weight: 700; color: #fff; line-height: 1; }
+  .ring-label { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8; }
+  .hero-stats { display: flex; gap: 12px; margin-left: auto; }
+  .hero-stat {
+    background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px;
+    padding: 14px 20px; text-align: center; min-width: 100px; backdrop-filter: blur(4px);
+  }
+  .hero-stat-value { font-size: 24px; font-weight: 700; }
+  .hero-stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8; margin-top: 2px; }
+
+  /* Filter Tabs */
+  .filter-tabs { display: flex; gap: 0; border-bottom: 2px solid #e2e8f0; margin-bottom: 20px; }
+  .filter-tab {
+    padding: 10px 20px; font-size: 13px; font-weight: 500; color: #64748b; cursor: pointer;
+    border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.15s; display: flex; align-items: center; gap: 6px;
+  }
+  .filter-tab:hover { color: #0d9488; }
+  .filter-tab.active { color: #0d9488; font-weight: 700; border-bottom-color: #0d9488; }
+  .tab-count { font-size: 10px; font-weight: 700; background: #f1f5f9; color: #64748b; padding: 2px 7px; border-radius: 10px; }
+  .filter-tab.active .tab-count { background: #ccfbf1; color: #0d9488; }
+
+  /* Policy Cards */
+  .policy-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden;
+    padding: 20px 24px; margin-bottom: 12px; display: flex; align-items: center; gap: 16px;
+    transition: all 0.2s; cursor: pointer; border-left: 4px solid transparent;
+  }
+  .policy-card:hover { border-color: #0d9488; box-shadow: 0 4px 16px rgba(13,148,136,0.1); transform: translateY(-2px); }
+  .policy-card.overdue { border-left-color: #dc2626; background: #fffbfb; }
+  .policy-card.pending { border-left-color: #d97706; }
+  .policy-icon {
+    width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  .policy-icon.compliance { background: #dbeafe; color: #2563eb; }
+  .policy-icon.hr { background: #fce7f3; color: #db2777; }
+  .policy-icon.governance { background: #e0e7ff; color: #6366f1; }
+  .policy-icon.it { background: #ccfbf1; color: #0d9488; }
+  .policy-icon.safety { background: #fef3c7; color: #d97706; }
+  .policy-info { flex: 1; min-width: 0; }
+  .policy-title { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+  .policy-meta { font-size: 11px; color: #94a3b8; display: flex; align-items: center; gap: 8px; }
+  .policy-badges { display: flex; gap: 6px; flex-shrink: 0; }
+  .badge { font-size: 9px; font-weight: 700; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .badge-category { background: #f0f9ff; color: #0369a1; }
+  .badge-risk-high { background: #fef3c7; color: #d97706; }
+  .badge-risk-critical { background: #fee2e2; color: #dc2626; }
+  .badge-risk-medium { background: #e0e7ff; color: #6366f1; }
+
+  /* Status Badges */
+  .status { font-size: 9px; font-weight: 700; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .status-published { background: #dcfce7; color: #16a34a; }
+  .status-pending { background: #fef3c7; color: #d97706; }
+  .status-overdue { background: #fee2e2; color: #dc2626; }
+  .status-complete { background: #ccfbf1; color: #0d9488; }
+
+  /* Deadline */
+  .deadline { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #64748b; flex-shrink: 0; min-width: 120px; }
+  .deadline.urgent { color: #dc2626; font-weight: 600; }
+  .deadline.warning { color: #d97706; font-weight: 600; }
+
+  /* Steps Progress */
+  .steps { display: flex; gap: 4px; align-items: center; flex-shrink: 0; }
+  .step { width: 52px; height: 22px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+  .step-done { background: #dcfce7; color: #16a34a; }
+  .step-current { background: #dbeafe; color: #2563eb; border: 1.5px solid #2563eb; }
+  .step-todo { background: #f1f5f9; color: #94a3b8; }
+
+  /* Action Button */
+  .btn { padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid #e2e8f0; background: #fff; color: #334155; font-family: inherit; transition: all 0.15s; white-space: nowrap; }
+  .btn:hover { border-color: #0d9488; color: #0d9488; }
+  .btn-primary { background: #0d9488; color: #fff; border-color: #0d9488; }
+  .btn-primary:hover { background: #0f766e; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+  /* Section header */
+  .section-header { font-size: 14px; font-weight: 700; margin: 28px 0 12px; display: flex; align-items: center; gap: 8px; }
+  .section-header .count { font-size: 10px; font-weight: 600; background: #f1f5f9; color: #64748b; padding: 2px 8px; border-radius: 10px; }
+
+  /* Completed cards */
+  .completed-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 20px;
+    display: flex; align-items: center; gap: 12px; margin-bottom: 8px; opacity: 0.75;
+  }
+  .completed-card .check { width: 28px; height: 28px; border-radius: 50%; background: #dcfce7; color: #16a34a; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; flex-shrink: 0; }
+  .completed-info { flex: 1; }
+  .completed-title { font-size: 13px; font-weight: 600; color: #334155; }
+  .completed-meta { font-size: 11px; color: #94a3b8; }
+</style>
+</head>
+<body>
+
+<!-- App Header -->
+<div style="background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%); padding: 0 40px; height: 56px; display: flex; align-items: center; justify-content: space-between;">
+  <div style="display: flex; align-items: center; gap: 10px; color: #fff;">
+    <svg viewBox="0 0 32 32" fill="none" width="28" height="28"><path d="M16 2L4 8v8c0 7.7 5.1 14.9 12 16.9 6.9-2 12-9.2 12-16.9V8L16 2z" stroke="#fff" stroke-width="2" fill="rgba(255,255,255,0.15)"/><path d="M12 16l3 3 5-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div><div style="font-size:15px;font-weight:700;">Policy Manager</div><div style="font-size:8px;text-transform:uppercase;letter-spacing:2px;opacity:0.7;">POLICY GOVERNANCE &amp; COMPLIANCE</div></div>
+  </div>
+  <div style="flex:1;max-width:400px;margin:0 40px;">
+    <div style="background:rgba(255,255,255,0.15);border-radius:6px;padding:8px 16px;display:flex;align-items:center;gap:8px;">
+      <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><circle cx="11" cy="11" r="7" stroke="rgba(255,255,255,0.7)" stroke-width="2"/><path d="M21 21l-4-4" stroke="rgba(255,255,255,0.7)" stroke-width="2" stroke-linecap="round"/></svg>
+      <span style="color:rgba(255,255,255,0.5);font-size:13px;">Search policies...</span>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <div style="background:#fff;color:#0d9488;padding:6px 14px;border-radius:4px;font-size:12px;font-weight:600;cursor:pointer;">+ New Policy</div>
+    <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;">GF</div>
+  </div>
+</div>
+
+<!-- Navigation Bar -->
+<div style="background:#fff;padding:0 40px;display:flex;align-items:center;height:44px;box-shadow:0 2px 4px rgba(0,0,0,0.08);">
+  <a style="padding:0 16px;height:44px;display:flex;align-items:center;font-size:13px;font-weight:600;color:#0d9488;cursor:pointer;text-decoration:none;border-bottom:2px solid #0d9488;">My Policies</a>
+  <a style="padding:0 16px;height:44px;display:flex;align-items:center;font-size:13px;font-weight:500;color:#64748b;cursor:pointer;text-decoration:none;border-bottom:2px solid transparent;">Policy Hub</a>
+  <a style="padding:0 16px;height:44px;display:flex;align-items:center;font-size:13px;font-weight:500;color:#64748b;cursor:pointer;text-decoration:none;border-bottom:2px solid transparent;">Author &#9662;</a>
+  <a style="padding:0 16px;height:44px;display:flex;align-items:center;font-size:13px;font-weight:500;color:#64748b;cursor:pointer;text-decoration:none;border-bottom:2px solid transparent;">Manager &#9662;</a>
+  <a style="padding:0 16px;height:44px;display:flex;align-items:center;font-size:13px;font-weight:500;color:#64748b;cursor:pointer;text-decoration:none;border-bottom:2px solid transparent;">Secure Policies &#9662;</a>
+</div>
+
+<div class="page">
+
+<!-- Hero Section -->
+<div class="hero">
+  <div class="hero-content">
+    <div class="hero-ring">
+      <svg viewBox="0 0 120 120">
+        <circle class="ring-bg" cx="60" cy="60" r="52"/>
+        <circle class="ring-fill" cx="60" cy="60" r="52"/>
+      </svg>
+      <div class="ring-text">
+        <div class="ring-value">87%</div>
+        <div class="ring-label">Compliant</div>
+      </div>
+    </div>
+    <div class="hero-text">
+      <h1>Good morning, Thabo</h1>
+      <p>You have 3 policies requiring your attention. Stay compliant to maintain your streak!</p>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-value">16</div>
+        <div class="hero-stat-label">Assigned</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-value">12</div>
+        <div class="hero-stat-label">Acknowledged</div>
+      </div>
+      <div class="hero-stat" style="border-color: rgba(217,119,6,0.5);">
+        <div class="hero-stat-value">3</div>
+        <div class="hero-stat-label">Pending</div>
+      </div>
+      <div class="hero-stat" style="border-color: rgba(220,38,38,0.5);">
+        <div class="hero-stat-value">1</div>
+        <div class="hero-stat-label">Overdue</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Filter Tabs -->
+<div class="filter-tabs">
+  <div class="filter-tab active">All Policies <span class="tab-count">16</span></div>
+  <div class="filter-tab">Pending <span class="tab-count">3</span></div>
+  <div class="filter-tab">Overdue <span class="tab-count">1</span></div>
+</div>
+
+<!-- Overdue Policy -->
+<div class="policy-card overdue">
+  <div class="policy-icon compliance">&#128203;</div>
+  <div class="policy-info">
+    <div class="policy-title">POPIA Compliance Framework</div>
+    <div class="policy-meta">
+      <span>POL-2024-001</span>
+      <span>&middot;</span>
+      <span>v3.0</span>
+      <span>&middot;</span>
+      <span>Compliance</span>
+    </div>
+  </div>
+  <div class="policy-badges">
+    <span class="badge badge-risk-critical">Critical</span>
+    <span class="status status-overdue">Overdue</span>
+  </div>
+  <div class="deadline urgent">
+    <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"/></svg>
+    2 days overdue
+  </div>
+  <div class="steps">
+    <div class="step step-done">Read</div>
+    <div class="step step-current">Quiz</div>
+    <div class="step step-todo">Ack</div>
+  </div>
+  <button class="btn btn-primary btn-sm">Continue</button>
+</div>
+
+<!-- Pending Policies -->
+<div class="policy-card pending">
+  <div class="policy-icon hr">&#128101;</div>
+  <div class="policy-info">
+    <div class="policy-title">Anti-Harassment &amp; Workplace Dignity</div>
+    <div class="policy-meta">
+      <span>POL-2024-008</span>
+      <span>&middot;</span>
+      <span>v2.1</span>
+      <span>&middot;</span>
+      <span>Human Resources</span>
+    </div>
+  </div>
+  <div class="policy-badges">
+    <span class="badge badge-risk-high">High</span>
+    <span class="status status-pending">Pending</span>
+  </div>
+  <div class="deadline warning">
+    <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"/></svg>
+    2 days left
+  </div>
+  <div class="steps">
+    <div class="step step-done">Read</div>
+    <div class="step step-done">Quiz</div>
+    <div class="step step-current">Ack</div>
+  </div>
+  <button class="btn btn-primary btn-sm">Acknowledge</button>
+</div>
+
+<div class="policy-card pending">
+  <div class="policy-icon governance">&#9878;</div>
+  <div class="policy-info">
+    <div class="policy-title">King IV Corporate Governance</div>
+    <div class="policy-meta">
+      <span>POL-2024-004</span>
+      <span>&middot;</span>
+      <span>v1.2</span>
+      <span>&middot;</span>
+      <span>Governance</span>
+    </div>
+  </div>
+  <div class="policy-badges">
+    <span class="badge badge-risk-high">High</span>
+    <span class="status status-pending">Pending</span>
+  </div>
+  <div class="deadline">
+    <svg width="14" height="14" viewBox="0 0 20 20" fill="#64748b"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"/></svg>
+    5 days left
+  </div>
+  <div class="steps">
+    <div class="step step-current">Read</div>
+    <div class="step step-todo">Quiz</div>
+    <div class="step step-todo">Ack</div>
+  </div>
+  <button class="btn btn-primary btn-sm">Read Policy</button>
+</div>
+
+<div class="policy-card pending">
+  <div class="policy-icon it">&#128187;</div>
+  <div class="policy-info">
+    <div class="policy-title">Cybersecurity Incident Response</div>
+    <div class="policy-meta">
+      <span>POL-2024-010</span>
+      <span>&middot;</span>
+      <span>v1.0</span>
+      <span>&middot;</span>
+      <span>IT Security</span>
+    </div>
+  </div>
+  <div class="policy-badges">
+    <span class="badge badge-risk-medium">Medium</span>
+    <span class="status status-pending">Pending</span>
+  </div>
+  <div class="deadline">
+    <svg width="14" height="14" viewBox="0 0 20 20" fill="#64748b"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"/></svg>
+    12 days left
+  </div>
+  <div class="steps">
+    <div class="step step-current">Read</div>
+    <div class="step step-todo">Ack</div>
+  </div>
+  <button class="btn btn-primary btn-sm">Read Policy</button>
+</div>
+
+<!-- Acknowledged policies -->
+<div class="policy-card" style="opacity: 0.7;">
+  <div class="policy-icon hr">&#128214;</div>
+  <div class="policy-info">
+    <div class="policy-title">BCEA Leave Management Policy</div>
+    <div class="policy-meta">
+      <span>POL-2024-007</span>
+      <span>&middot;</span>
+      <span>v2.0</span>
+      <span>&middot;</span>
+      <span>Human Resources</span>
+    </div>
+  </div>
+  <div class="policy-badges">
+    <span class="badge badge-category">HR</span>
+    <span class="status status-complete">Completed</span>
+  </div>
+  <div class="deadline" style="color: #059669;">
+    <svg width="14" height="14" viewBox="0 0 20 20" fill="#059669"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/></svg>
+    Completed
+  </div>
+  <div class="steps">
+    <div class="step step-done">Read</div>
+    <div class="step step-done">Quiz</div>
+    <div class="step step-done">Ack</div>
+  </div>
+  <button class="btn btn-sm">View</button>
+</div>
+
+<div class="policy-card" style="opacity: 0.7;">
+  <div class="policy-icon compliance">&#128196;</div>
+  <div class="policy-info">
+    <div class="policy-title">Employment Equity Act Compliance</div>
+    <div class="policy-meta">
+      <span>POL-2024-003</span>
+      <span>&middot;</span>
+      <span>v1.4</span>
+      <span>&middot;</span>
+      <span>Compliance</span>
+    </div>
+  </div>
+  <div class="policy-badges">
+    <span class="badge badge-category">Compliance</span>
+    <span class="status status-complete">Completed</span>
+  </div>
+  <div class="deadline" style="color: #059669;">
+    <svg width="14" height="14" viewBox="0 0 20 20" fill="#059669"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/></svg>
+    Completed
+  </div>
+  <div class="steps">
+    <div class="step step-done">Read</div>
+    <div class="step step-done">Ack</div>
+  </div>
+  <button class="btn btn-sm">View</button>
+</div>
+
+<!-- Recently Completed Section -->
+<div class="section-header">
+  Recently Completed <span class="count">4 this month</span>
+</div>
+
+<div class="completed-card">
+  <div class="check">&#10003;</div>
+  <div class="completed-info">
+    <div class="completed-title">Code of Conduct &amp; Ethics</div>
+    <div class="completed-meta">POL-2024-005 &middot; Completed 15 Mar 2026</div>
+  </div>
+  <span class="status status-complete">Completed</span>
+</div>
+
+<div class="completed-card">
+  <div class="check">&#10003;</div>
+  <div class="completed-info">
+    <div class="completed-title">IT Acceptable Use Policy</div>
+    <div class="completed-meta">POL-2024-009 &middot; Completed 12 Mar 2026</div>
+  </div>
+  <span class="status status-complete">Completed</span>
+</div>
+
+<div class="completed-card">
+  <div class="check">&#10003;</div>
+  <div class="completed-info">
+    <div class="completed-title">Whistleblower Protection Policy</div>
+    <div class="completed-meta">POL-2024-011 &middot; Completed 8 Mar 2026</div>
+  </div>
+  <span class="status status-complete">Completed</span>
+</div>
+
+<div class="completed-card">
+  <div class="check">&#10003;</div>
+  <div class="completed-info">
+    <div class="completed-title">BCEA Working Hours &amp; Overtime</div>
+    <div class="completed-meta">POL-2024-006 &middot; Completed 3 Mar 2026</div>
+  </div>
+  <span class="status status-complete">Completed</span>
+</div>
+
+</div>
+</body>
+</html>

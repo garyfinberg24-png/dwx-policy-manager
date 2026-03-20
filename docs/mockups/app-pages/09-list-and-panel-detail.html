@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>List + Detail Panel — Premium Pattern</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', -apple-system, sans-serif; background: #f8fafc; color: #0f172a; display: flex; height: 100vh; overflow: hidden; }
+
+  /* Main content area */
+  .main { flex: 1; overflow-y: auto; padding: 32px 40px; }
+
+  /* Page header */
+  .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
+  .page-header h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+  .page-header .subtitle { font-size: 13px; color: #64748b; margin-top: 4px; }
+
+  /* KPI strip */
+  .kpi-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+  .kpi-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; border-top: 3px solid transparent; }
+  .kpi-value { font-size: 24px; font-weight: 700; line-height: 1.1; }
+  .kpi-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; font-weight: 600; margin-top: 4px; }
+
+  /* List */
+  .list { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; }
+  .list-toolbar { padding: 12px 20px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; background: #fafafa; }
+  .list-search { background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 7px 12px; font-size: 12px; width: 240px; outline: none; font-family: inherit; }
+  .list-search:focus { border-color: #0d9488; box-shadow: 0 0 0 2px rgba(13,148,136,0.12); }
+  .toolbar-btns { display: flex; gap: 6px; }
+  .tbtn { padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; border: 1px solid #e2e8f0; background: #fff; color: #334155; cursor: pointer; font-family: inherit; }
+  .tbtn:hover { border-color: #0d9488; color: #0d9488; }
+  .tbtn.active { background: #0d9488; color: #fff; border-color: #0d9488; }
+  .count { font-size: 11px; color: #94a3b8; margin-left: 8px; }
+
+  /* Policy row */
+  .policy-row {
+    display: flex; align-items: center; gap: 14px; padding: 14px 20px;
+    border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: all 0.1s;
+  }
+  .policy-row:hover { background: #f0fdfa; }
+  .policy-row:last-child { border-bottom: none; }
+  .policy-row.selected { background: #f0fdfa; border-left: 3px solid #0d9488; padding-left: 17px; }
+
+  .policy-icon { width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 18px; }
+  .policy-content { flex: 1; min-width: 0; }
+  .policy-title { font-size: 14px; font-weight: 600; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .policy-meta { display: flex; gap: 12px; margin-top: 3px; font-size: 11px; color: #94a3b8; }
+  .policy-badges { display: flex; gap: 4px; flex-shrink: 0; }
+  .badge { font-size: 9px; font-weight: 700; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.3px; }
+  .b-green { background: #dcfce7; color: #16a34a; }
+  .b-amber { background: #fef3c7; color: #d97706; }
+  .b-red { background: #fee2e2; color: #dc2626; }
+  .b-teal { background: #ccfbf1; color: #0d9488; }
+  .b-blue { background: #dbeafe; color: #2563eb; }
+  .b-slate { background: #f1f5f9; color: #64748b; }
+
+  .policy-due { font-size: 11px; color: #94a3b8; text-align: right; min-width: 90px; flex-shrink: 0; }
+  .policy-due.overdue { color: #dc2626; font-weight: 600; }
+  .policy-due.soon { color: #d97706; font-weight: 600; }
+
+  .view-btn { width: 32px; height: 32px; border-radius: 6px; border: 1px solid #e2e8f0; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #94a3b8; flex-shrink: 0; transition: all 0.15s; }
+  .view-btn:hover { border-color: #0d9488; color: #0d9488; background: #f0fdfa; }
+
+  /* ═══════════════════════════════════════ */
+  /* DETAIL PANEL (right side)              */
+  /* ═══════════════════════════════════════ */
+
+  .detail-panel {
+    width: 420px; background: #fff; border-left: 1px solid #e2e8f0;
+    display: flex; flex-direction: column; flex-shrink: 0;
+    box-shadow: -4px 0 16px rgba(0,0,0,0.06);
+  }
+
+  .detail-header {
+    background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%);
+    padding: 16px 24px;
+    border-bottom: 1px solid #99f6e4;
+  }
+  .detail-close { float: right; width: 28px; height: 28px; border-radius: 4px; border: none; background: transparent; cursor: pointer; font-size: 16px; color: #0f766e; }
+  .detail-close:hover { background: rgba(13,148,136,0.1); }
+  .detail-title { font-size: 18px; font-weight: 700; color: #0f766e; margin-top: 4px; }
+  .detail-subtitle { font-size: 12px; color: #0d9488; margin-top: 2px; }
+
+  .detail-body { flex: 1; overflow-y: auto; padding: 20px 24px; }
+
+  /* Status banner */
+  .status-banner { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; }
+  .status-banner.pending { background: #fef3c7; border: 1px solid #fbbf24; }
+  .status-banner.completed { background: #dcfce7; border: 1px solid #86efac; }
+  .status-banner.overdue { background: #fee2e2; border: 1px solid #fca5a5; }
+  .status-icon { font-size: 20px; }
+  .status-text { flex: 1; }
+  .status-label { font-size: 13px; font-weight: 600; }
+  .status-desc { font-size: 11px; color: #64748b; margin-top: 2px; }
+
+  /* Detail sections */
+  .detail-section { margin-bottom: 20px; }
+  .detail-section-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9; }
+
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .detail-item { }
+  .detail-label { font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+  .detail-value { font-size: 13px; font-weight: 600; color: #0f172a; margin-top: 2px; }
+
+  /* Progress steps */
+  .progress-steps { display: flex; gap: 0; margin: 16px 0; }
+  .step { flex: 1; text-align: center; position: relative; }
+  .step-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 6px; font-size: 11px; font-weight: 700; }
+  .step-dot.done { background: #059669; color: #fff; }
+  .step-dot.current { background: #0d9488; color: #fff; box-shadow: 0 0 0 3px rgba(13,148,136,0.2); }
+  .step-dot.pending { background: #e2e8f0; color: #94a3b8; }
+  .step-label { font-size: 9px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+  .step-line { position: absolute; top: 14px; left: 50%; width: 100%; height: 2px; background: #e2e8f0; z-index: 0; }
+  .step-line.done { background: #059669; }
+
+  /* Action buttons */
+  .detail-actions { display: flex; gap: 8px; margin-top: 16px; }
+  .act-btn { flex: 1; padding: 10px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid; font-family: inherit; text-align: center; }
+  .act-primary { background: #0d9488; color: #fff; border-color: #0d9488; }
+  .act-primary:hover { background: #0f766e; }
+  .act-secondary { background: #fff; color: #0d9488; border-color: #0d9488; }
+  .act-secondary:hover { background: #f0fdfa; }
+
+  /* Related info */
+  .related-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f8fafc; }
+  .related-item:last-child { border-bottom: none; }
+  .related-icon { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
+  .related-text { flex: 1; font-size: 12px; color: #334155; }
+  .related-meta { font-size: 10px; color: #94a3b8; }
+</style>
+</head>
+<body>
+
+<!-- Main content with list -->
+<div class="main">
+  <div style="max-width: 960px;">
+    <div class="page-header">
+      <div>
+        <h1>My Policies</h1>
+        <div class="subtitle">Your assigned policies and acknowledgement status</div>
+      </div>
+    </div>
+
+    <div class="kpi-strip">
+      <div class="kpi-card" style="border-top-color:#2563eb;"><div class="kpi-value" style="color:#2563eb;">16</div><div class="kpi-label">Assigned</div></div>
+      <div class="kpi-card" style="border-top-color:#059669;"><div class="kpi-value" style="color:#059669;">12</div><div class="kpi-label">Acknowledged</div></div>
+      <div class="kpi-card" style="border-top-color:#d97706;"><div class="kpi-value" style="color:#d97706;">3</div><div class="kpi-label">Pending</div></div>
+      <div class="kpi-card" style="border-top-color:#dc2626;"><div class="kpi-value" style="color:#dc2626;">1</div><div class="kpi-label">Overdue</div></div>
+    </div>
+
+    <div class="list">
+      <div class="list-toolbar">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input type="text" class="list-search" placeholder="Search my policies..." />
+          <div class="toolbar-btns">
+            <button class="tbtn active">All</button>
+            <button class="tbtn">Pending <span style="background:rgba(0,0,0,0.06);padding:1px 6px;border-radius:8px;font-size:10px;margin-left:2px;">3</span></button>
+            <button class="tbtn">Overdue <span style="background:#fee2e2;color:#dc2626;padding:1px 6px;border-radius:8px;font-size:10px;margin-left:2px;">1</span></button>
+            <button class="tbtn">Completed</button>
+          </div>
+        </div>
+        <span class="count">16 policies</span>
+      </div>
+
+      <!-- Policy rows — click opens detail panel -->
+      <div class="policy-row" style="border-left: 3px solid #dc2626; padding-left: 17px;">
+        <div class="policy-icon" style="background:#fee2e2;color:#dc2626;">!</div>
+        <div class="policy-content">
+          <div class="policy-title">Information Security Policy</div>
+          <div class="policy-meta"><span>POL-IT-002</span><span>IT & Security</span><span>v4.2</span></div>
+        </div>
+        <div class="policy-badges"><span class="badge b-red">Overdue</span><span class="badge b-red">Critical</span></div>
+        <div class="policy-due overdue">5 days overdue</div>
+        <button class="view-btn" title="View details">&#8250;</button>
+      </div>
+
+      <div class="policy-row">
+        <div class="policy-icon" style="background:#fef3c7;color:#d97706;">&#9888;</div>
+        <div class="policy-content">
+          <div class="policy-title">POPIA Data Protection Policy</div>
+          <div class="policy-meta"><span>POL-IT-001</span><span>IT & Security</span><span>v2.0</span></div>
+        </div>
+        <div class="policy-badges"><span class="badge b-amber">Pending</span><span class="badge b-red">Critical</span></div>
+        <div class="policy-due soon">Due in 3 days</div>
+        <button class="view-btn">&#8250;</button>
+      </div>
+
+      <div class="policy-row selected">
+        <div class="policy-icon" style="background:#fef3c7;color:#d97706;">&#9888;</div>
+        <div class="policy-content">
+          <div class="policy-title">Employee Code of Conduct</div>
+          <div class="policy-meta"><span>POL-HR-001</span><span>HR Policies</span><span>v4.0</span></div>
+        </div>
+        <div class="policy-badges"><span class="badge b-amber">Pending</span></div>
+        <div class="policy-due soon">Due in 7 days</div>
+        <button class="view-btn" style="border-color:#0d9488;color:#0d9488;background:#f0fdfa;">&#8250;</button>
+      </div>
+
+      <div class="policy-row">
+        <div class="policy-icon" style="background:#dcfce7;color:#059669;">&#10003;</div>
+        <div class="policy-content">
+          <div class="policy-title">Anti-Harassment and Discrimination Policy</div>
+          <div class="policy-meta"><span>POL-HR-005</span><span>HR Policies</span><span>v3.0</span></div>
+        </div>
+        <div class="policy-badges"><span class="badge b-green">Acknowledged</span></div>
+        <div class="policy-due">Completed 12 Mar</div>
+        <button class="view-btn">&#8250;</button>
+      </div>
+
+      <div class="policy-row">
+        <div class="policy-icon" style="background:#dcfce7;color:#059669;">&#10003;</div>
+        <div class="policy-content">
+          <div class="policy-title">Leave Management Policy</div>
+          <div class="policy-meta"><span>POL-HR-004</span><span>HR Policies</span><span>v5.0</span></div>
+        </div>
+        <div class="policy-badges"><span class="badge b-green">Acknowledged</span></div>
+        <div class="policy-due">Completed 8 Mar</div>
+        <button class="view-btn">&#8250;</button>
+      </div>
+
+      <div class="policy-row">
+        <div class="policy-icon" style="background:#dcfce7;color:#059669;">&#10003;</div>
+        <div class="policy-content">
+          <div class="policy-title">Cybersecurity Incident Response Plan</div>
+          <div class="policy-meta"><span>POL-IT-003</span><span>IT & Security</span><span>v2.1</span></div>
+        </div>
+        <div class="policy-badges"><span class="badge b-green">Acknowledged</span></div>
+        <div class="policy-due">Completed 5 Mar</div>
+        <button class="view-btn">&#8250;</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Detail Panel (right side) -->
+<div class="detail-panel">
+  <div class="detail-header">
+    <button class="detail-close">&times;</button>
+    <div class="detail-title">Employee Code of Conduct</div>
+    <div class="detail-subtitle">POL-HR-001 | Version 4.0</div>
+  </div>
+
+  <div class="detail-body">
+    <!-- Status Banner -->
+    <div class="status-banner pending">
+      <div class="status-icon">&#9888;</div>
+      <div class="status-text">
+        <div class="status-label">Acknowledgement Pending</div>
+        <div class="status-desc">Due in 7 days — 25 March 2026</div>
+      </div>
+    </div>
+
+    <!-- Progress Steps -->
+    <div class="detail-section">
+      <div class="detail-section-title">Your Progress</div>
+      <div class="progress-steps">
+        <div class="step">
+          <div class="step-line done"></div>
+          <div class="step-dot done">&#10003;</div>
+          <div class="step-label">Assigned</div>
+        </div>
+        <div class="step">
+          <div class="step-line"></div>
+          <div class="step-dot current">2</div>
+          <div class="step-label">Read</div>
+        </div>
+        <div class="step">
+          <div class="step-line"></div>
+          <div class="step-dot pending">3</div>
+          <div class="step-label">Quiz</div>
+        </div>
+        <div class="step">
+          <div class="step-dot pending">4</div>
+          <div class="step-label">Acknowledge</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Policy Details -->
+    <div class="detail-section">
+      <div class="detail-section-title">Policy Details</div>
+      <div class="detail-grid">
+        <div class="detail-item"><div class="detail-label">Category</div><div class="detail-value"><span class="badge b-teal" style="font-size:10px;">HR Policies</span></div></div>
+        <div class="detail-item"><div class="detail-label">Risk Level</div><div class="detail-value"><span class="badge b-amber" style="font-size:10px;">Medium</span></div></div>
+        <div class="detail-item"><div class="detail-label">Department</div><div class="detail-value">All Departments</div></div>
+        <div class="detail-item"><div class="detail-label">Owner</div><div class="detail-value">Nomsa Dlamini</div></div>
+        <div class="detail-item"><div class="detail-label">Effective Date</div><div class="detail-value">15 Jan 2026</div></div>
+        <div class="detail-item"><div class="detail-label">Review Cycle</div><div class="detail-value">Annual</div></div>
+      </div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="detail-section">
+      <div class="detail-section-title">Timeline</div>
+      <div class="detail-grid">
+        <div class="detail-item"><div class="detail-label">Assigned</div><div class="detail-value">10 Mar 2026</div></div>
+        <div class="detail-item"><div class="detail-label">Due Date</div><div class="detail-value" style="color:#d97706;">25 Mar 2026</div></div>
+        <div class="detail-item"><div class="detail-label">Priority</div><div class="detail-value"><span class="badge b-amber" style="font-size:10px;">Medium</span></div></div>
+        <div class="detail-item"><div class="detail-label">Days Remaining</div><div class="detail-value" style="color:#d97706;font-size:18px;">5</div></div>
+      </div>
+    </div>
+
+    <!-- Requirements -->
+    <div class="detail-section">
+      <div class="detail-section-title">Requirements</div>
+      <div class="related-item">
+        <div class="related-icon" style="background:#f0fdfa;color:#0d9488;">&#128196;</div>
+        <div class="related-text">Read the full policy document</div>
+        <span class="badge b-green" style="font-size:8px;">Done</span>
+      </div>
+      <div class="related-item">
+        <div class="related-icon" style="background:#ede9fe;color:#7c3aed;">&#9997;</div>
+        <div class="related-text">Complete comprehension quiz (75% to pass)</div>
+        <span class="badge b-amber" style="font-size:8px;">Required</span>
+      </div>
+      <div class="related-item">
+        <div class="related-icon" style="background:#dbeafe;color:#2563eb;">&#10003;</div>
+        <div class="related-text">Sign digital acknowledgement</div>
+        <span class="badge b-slate" style="font-size:8px;">Pending</span>
+      </div>
+    </div>
+
+    <!-- Related Policies -->
+    <div class="detail-section">
+      <div class="detail-section-title">Related Policies</div>
+      <div class="related-item">
+        <div class="related-icon" style="background:#f0fdfa;color:#0d9488;">&#128196;</div>
+        <div>
+          <div class="related-text" style="font-weight:600;">Anti-Harassment Policy</div>
+          <div class="related-meta">POL-HR-005 | Acknowledged</div>
+        </div>
+      </div>
+      <div class="related-item">
+        <div class="related-icon" style="background:#f0fdfa;color:#0d9488;">&#128196;</div>
+        <div>
+          <div class="related-text" style="font-weight:600;">Whistleblower Protection</div>
+          <div class="related-meta">POL-COM-003 | Pending</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="detail-actions">
+      <button class="act-btn act-primary">Read Policy</button>
+      <button class="act-btn act-secondary">Start Quiz</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Executive Dashboard — Premium Analytics</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', -apple-system, sans-serif; background: #f8fafc; color: #0f172a; }
+  .page { max-width: 1400px; margin: 0 auto; padding: 32px 40px; }
+
+  /* Shared Premium Styles */
+  .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; }
+  .page-header h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+  .page-header .subtitle { font-size: 13px; color: #64748b; margin-top: 4px; }
+  .btn { padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid #e2e8f0; background: #fff; color: #334155; font-family: inherit; }
+  .btn:hover { border-color: #0d9488; color: #0d9488; }
+  .btn-primary { background: #0d9488; color: #fff; border-color: #0d9488; }
+
+  /* Tab Bar */
+  .tab-bar { display: flex; gap: 0; border-bottom: 2px solid #e2e8f0; margin-bottom: 28px; }
+  .tab { padding: 10px 20px; font-size: 13px; font-weight: 500; color: #64748b; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.15s; }
+  .tab:hover { color: #0d9488; }
+  .tab.active { color: #0d9488; font-weight: 700; border-bottom-color: #0d9488; }
+
+  /* KPI Strip */
+  .kpi-strip { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 28px; }
+  .kpi-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px 16px; border-top: 3px solid transparent; }
+  .kpi-value { font-size: 28px; font-weight: 700; line-height: 1.1; }
+  .kpi-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; font-weight: 600; margin-top: 4px; }
+  .kpi-trend { font-size: 10px; margin-top: 6px; display: flex; align-items: center; gap: 4px; }
+
+  /* Cards */
+  .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; margin-bottom: 20px; }
+  .card-header { padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
+  .card-header h3 { font-size: 14px; font-weight: 700; }
+  .card-body { padding: 20px; }
+
+  /* Grid layouts */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+
+  /* Chart placeholder */
+  .chart-area { background: #f8fafc; border: 1px dashed #e2e8f0; border-radius: 8px; padding: 40px; text-align: center; color: #94a3b8; min-height: 200px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 8px; }
+  .chart-area .label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+
+  /* Bar chart visual */
+  .bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 160px; padding: 0 20px; }
+  .bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .bar { width: 100%; border-radius: 4px 4px 0 0; transition: height 0.5s; min-width: 20px; }
+  .bar-label { font-size: 9px; color: #94a3b8; text-align: center; }
+  .bar-value { font-size: 10px; font-weight: 700; color: #334155; }
+
+  /* Risk cards */
+  .risk-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; }
+  .risk-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .risk-score { font-size: 24px; font-weight: 700; }
+  .risk-level { font-size: 9px; font-weight: 700; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; }
+  .risk-bar { height: 6px; border-radius: 3px; background: #e2e8f0; margin: 8px 0; overflow: hidden; }
+  .risk-fill { height: 100%; border-radius: 3px; }
+  .risk-label { font-size: 11px; color: #64748b; }
+  .risk-mitigation { font-size: 10px; color: #94a3b8; margin-top: 6px; font-style: italic; }
+
+  /* Alert items */
+  .alert-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
+  .alert-item:last-child { border-bottom: none; }
+  .alert-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .alert-text { flex: 1; font-size: 12px; color: #334155; }
+  .alert-time { font-size: 10px; color: #94a3b8; }
+  .alert-badge { font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 3px; text-transform: uppercase; }
+
+  /* Deadline table */
+  .deadline-row { display: grid; grid-template-columns: 3fr 1fr 1fr 80px; padding: 10px 0; border-bottom: 1px solid #f1f5f9; font-size: 12px; align-items: center; }
+  .deadline-row:last-child { border-bottom: none; }
+  .deadline-header { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0; }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1>Policy Analytics</h1>
+      <div class="subtitle">Enterprise compliance intelligence and governance metrics</div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn">Export PDF</button>
+      <button class="btn">Schedule Report</button>
+    </div>
+  </div>
+
+  <!-- Tab Bar -->
+  <div class="tab-bar">
+    <div class="tab active">Executive</div>
+    <div class="tab">Policy Metrics</div>
+    <div class="tab">Acknowledgements</div>
+    <div class="tab">SLA Tracking</div>
+    <div class="tab">Compliance & Risk</div>
+    <div class="tab">Audit</div>
+    <div class="tab">Quiz Analytics</div>
+  </div>
+
+  <!-- KPI Strip -->
+  <div class="kpi-strip">
+    <div class="kpi-card" style="border-top-color:#0d9488;">
+      <div class="kpi-value" style="color:#0d9488;">87%</div>
+      <div class="kpi-label">Overall Compliance</div>
+      <div class="kpi-trend" style="color:#059669;">+3.2% vs last month</div>
+    </div>
+    <div class="kpi-card" style="border-top-color:#2563eb;">
+      <div class="kpi-value" style="color:#2563eb;">42</div>
+      <div class="kpi-label">Active Policies</div>
+      <div class="kpi-trend" style="color:#94a3b8;">4 new this quarter</div>
+    </div>
+    <div class="kpi-card" style="border-top-color:#d97706;">
+      <div class="kpi-value" style="color:#d97706;">7</div>
+      <div class="kpi-label">Pending Reviews</div>
+      <div class="kpi-trend" style="color:#dc2626;">2 overdue</div>
+    </div>
+    <div class="kpi-card" style="border-top-color:#dc2626;">
+      <div class="kpi-value" style="color:#dc2626;">12</div>
+      <div class="kpi-label">Overdue Ack</div>
+      <div class="kpi-trend" style="color:#dc2626;">Needs attention</div>
+    </div>
+    <div class="kpi-card" style="border-top-color:#7c3aed;">
+      <div class="kpi-value" style="color:#7c3aed;">0</div>
+      <div class="kpi-label">Critical Violations</div>
+      <div class="kpi-trend" style="color:#059669;">No issues</div>
+    </div>
+    <div class="kpi-card" style="border-top-color:#059669;">
+      <div class="kpi-value" style="color:#059669;">4.2</div>
+      <div class="kpi-label">Avg Resolution (days)</div>
+      <div class="kpi-trend" style="color:#059669;">-1.5 days improvement</div>
+    </div>
+  </div>
+
+  <!-- Compliance Trend + Risk Indicators -->
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header">
+        <h3>Compliance Trend (12 Months)</h3>
+        <span style="font-size:11px;color:#94a3b8;">Organisation-wide</span>
+      </div>
+      <div class="card-body">
+        <div class="bar-chart">
+          <div class="bar-group"><div class="bar-value">72%</div><div class="bar" style="height:72%;background:linear-gradient(180deg,#0d9488,#14b8a6);"></div><div class="bar-label">Apr</div></div>
+          <div class="bar-group"><div class="bar-value">74%</div><div class="bar" style="height:74%;background:linear-gradient(180deg,#0d9488,#14b8a6);"></div><div class="bar-label">May</div></div>
+          <div class="bar-group"><div class="bar-value">71%</div><div class="bar" style="height:71%;background:linear-gradient(180deg,#0d9488,#14b8a6);"></div><div class="bar-label">Jun</div></div>
+          <div class="bar-group"><div class="bar-value">78%</div><div class="bar" style="height:78%;background:linear-gradient(180deg,#0d9488,#14b8a6);"></div><div class="bar-label">Jul</div></div>
+          <div class="bar-group"><div class="bar-value">76%</div><div class="bar" style="height:76%;background:linear-gradient(180deg,#0d9488,#14b8a6);"></div><div class="bar-label">Aug</div></div>
+          <div class="bar-group"><div class="bar-value">80%</div><div class="bar" style="height:80%;background:linear-gradient(180deg,#0d9488,#14b8a6);"></div><div class="bar-label">Sep</div></div>
+          <div class="bar-group"><div class="bar-value">79%</div><div class="bar" style="height:79%;background:linear-gradient(180deg,#0d9488,#14b8a6);"></div><div class="bar-label">Oct</div></div>
+          <div class="bar-group"><div class="bar-value">82%</div><div class="bar" style="height:82%;background:linear-gradient(180deg,#0d9488,#14b8a6);"></div><div class="bar-label">Nov</div></div>
+          <div class="bar-group"><div class="bar-value">81%</div><div class="bar" style="height:81%;background:linear-gradient(180deg,#0d9488,#14b8a6);"></div><div class="bar-label">Dec</div></div>
+          <div class="bar-group"><div class="bar-value">83%</div><div class="bar" style="height:83%;background:linear-gradient(180deg,#0d9488,#14b8a6);"></div><div class="bar-label">Jan</div></div>
+          <div class="bar-group"><div class="bar-value">84%</div><div class="bar" style="height:84%;background:linear-gradient(180deg,#0d9488,#14b8a6);"></div><div class="bar-label">Feb</div></div>
+          <div class="bar-group"><div class="bar-value">87%</div><div class="bar" style="height:87%;background:linear-gradient(180deg,#059669,#10b981);"></div><div class="bar-label">Mar</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h3>Risk Indicators</h3>
+        <span style="font-size:11px;color:#94a3b8;">By category</span>
+      </div>
+      <div class="card-body" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="risk-card">
+          <div class="risk-header">
+            <span class="risk-label">Data Privacy</span>
+            <span class="risk-level" style="background:#fee2e2;color:#dc2626;">High</span>
+          </div>
+          <div class="risk-score" style="color:#dc2626;">72<span style="font-size:12px;font-weight:400;color:#94a3b8;">/100</span></div>
+          <div class="risk-bar"><div class="risk-fill" style="width:72%;background:#dc2626;"></div></div>
+          <div class="risk-mitigation">POPIA audit findings pending remediation</div>
+        </div>
+        <div class="risk-card">
+          <div class="risk-header">
+            <span class="risk-label">Employment Law</span>
+            <span class="risk-level" style="background:#fef3c7;color:#d97706;">Medium</span>
+          </div>
+          <div class="risk-score" style="color:#d97706;">58<span style="font-size:12px;font-weight:400;color:#94a3b8;">/100</span></div>
+          <div class="risk-bar"><div class="risk-fill" style="width:58%;background:#d97706;"></div></div>
+          <div class="risk-mitigation">EE Plan review overdue by 15 days</div>
+        </div>
+        <div class="risk-card">
+          <div class="risk-header">
+            <span class="risk-label">IT Security</span>
+            <span class="risk-level" style="background:#dcfce7;color:#16a34a;">Low</span>
+          </div>
+          <div class="risk-score" style="color:#059669;">34<span style="font-size:12px;font-weight:400;color:#94a3b8;">/100</span></div>
+          <div class="risk-bar"><div class="risk-fill" style="width:34%;background:#059669;"></div></div>
+          <div class="risk-mitigation">All IT policies current and acknowledged</div>
+        </div>
+        <div class="risk-card">
+          <div class="risk-header">
+            <span class="risk-label">Health & Safety</span>
+            <span class="risk-level" style="background:#dcfce7;color:#16a34a;">Low</span>
+          </div>
+          <div class="risk-score" style="color:#059669;">28<span style="font-size:12px;font-weight:400;color:#94a3b8;">/100</span></div>
+          <div class="risk-bar"><div class="risk-fill" style="width:28%;background:#059669;"></div></div>
+          <div class="risk-mitigation">OHS compliance at 95%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alerts + Deadlines -->
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header">
+        <h3>Active Alerts</h3>
+        <span style="font-size:11px;color:#94a3b8;">5 active</span>
+      </div>
+      <div class="card-body">
+        <div class="alert-item">
+          <div class="alert-dot" style="background:#dc2626;"></div>
+          <div class="alert-text"><strong>POPIA breach notification window</strong> — 48 hours remaining for incident #2026-003</div>
+          <span class="alert-badge" style="background:#fee2e2;color:#dc2626;">Critical</span>
+        </div>
+        <div class="alert-item">
+          <div class="alert-dot" style="background:#dc2626;"></div>
+          <div class="alert-text"><strong>12 employees</strong> have overdue policy acknowledgements exceeding 14 days</div>
+          <span class="alert-badge" style="background:#fee2e2;color:#dc2626;">Critical</span>
+        </div>
+        <div class="alert-item">
+          <div class="alert-dot" style="background:#d97706;"></div>
+          <div class="alert-text"><strong>Employment Equity Plan</strong> review is 15 days overdue — regulatory deadline approaching</div>
+          <span class="alert-badge" style="background:#fef3c7;color:#d97706;">Warning</span>
+        </div>
+        <div class="alert-item">
+          <div class="alert-dot" style="background:#d97706;"></div>
+          <div class="alert-text"><strong>5 policy approvals</strong> pending for more than 5 business days</div>
+          <span class="alert-badge" style="background:#fef3c7;color:#d97706;">Warning</span>
+        </div>
+        <div class="alert-item">
+          <div class="alert-dot" style="background:#2563eb;"></div>
+          <div class="alert-text"><strong>Cybersecurity Incident Response Plan</strong> — 6-month review cycle due next week</div>
+          <span class="alert-badge" style="background:#dbeafe;color:#2563eb;">Info</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h3>Upcoming Deadlines</h3>
+        <span style="font-size:11px;color:#94a3b8;">Next 30 days</span>
+      </div>
+      <div class="card-body">
+        <div class="deadline-row deadline-header">
+          <div>Policy</div><div>Due Date</div><div>Days Left</div><div>Priority</div>
+        </div>
+        <div class="deadline-row">
+          <div style="font-weight:600;">POPIA Data Protection</div>
+          <div>20 Mar 2026</div>
+          <div style="color:#dc2626;font-weight:700;">Today</div>
+          <div><span class="alert-badge" style="background:#fee2e2;color:#dc2626;">Critical</span></div>
+        </div>
+        <div class="deadline-row">
+          <div style="font-weight:600;">Anti-Harassment Policy</div>
+          <div>22 Mar 2026</div>
+          <div style="color:#d97706;font-weight:600;">2 days</div>
+          <div><span class="alert-badge" style="background:#fef3c7;color:#d97706;">High</span></div>
+        </div>
+        <div class="deadline-row">
+          <div style="font-weight:600;">Remote Work Policy</div>
+          <div>25 Mar 2026</div>
+          <div>5 days</div>
+          <div><span class="alert-badge" style="background:#f1f5f9;color:#64748b;">Normal</span></div>
+        </div>
+        <div class="deadline-row">
+          <div style="font-weight:600;">Cybersecurity Response</div>
+          <div>28 Mar 2026</div>
+          <div>8 days</div>
+          <div><span class="alert-badge" style="background:#f1f5f9;color:#64748b;">Normal</span></div>
+        </div>
+        <div class="deadline-row">
+          <div style="font-weight:600;">FICA AML Policy</div>
+          <div>15 Apr 2026</div>
+          <div>26 days</div>
+          <div><span class="alert-badge" style="background:#dcfce7;color:#16a34a;">Low</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

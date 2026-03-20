@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Policy Manager — Start Screen V2: Hero + Cards</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', -apple-system, sans-serif; background: #f1f5f9; min-height: 100vh; }
+
+  /* Full-width hero */
+  .hero {
+    background: linear-gradient(135deg, #0d9488 0%, #0f766e 50%, #134e4a 100%);
+    color: #fff;
+    padding: 40px 56px 48px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .hero-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .hero-brand { display: flex; align-items: center; gap: 10px; }
+  .hero-brand svg { width: 28px; height: 28px; }
+  .hero-brand-name { font-size: 15px; font-weight: 700; }
+  .hero-brand-sub { font-size: 8px; text-transform: uppercase; letter-spacing: 2px; opacity: 0.6; }
+  .hero-skip { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); color: #fff; padding: 8px 20px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .hero-skip:hover { background: rgba(255,255,255,0.25); }
+
+  .hero h1 { font-size: 32px; font-weight: 300; margin-bottom: 4px; }
+  .hero h1 strong { font-weight: 700; }
+  .hero-date { font-size: 13px; opacity: 0.6; margin-bottom: 16px; }
+  .hero-desc { font-size: 14px; opacity: 0.8; max-width: 600px; line-height: 1.6; }
+
+  /* Pickup bar */
+  .pickup-bar {
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 8px;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 20px;
+    max-width: 500px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .pickup-bar:hover { background: rgba(255,255,255,0.18); }
+  .pickup-bar svg { width: 20px; height: 20px; opacity: 0.8; }
+  .pickup-bar-text { font-size: 13px; flex: 1; }
+  .pickup-bar-text strong { display: block; font-size: 11px; opacity: 0.7; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .pickup-bar-arrow { font-size: 16px; opacity: 0.5; }
+
+  /* Content */
+  .content {
+    max-width: 1200px;
+    margin: -24px auto 0;
+    padding: 0 40px 48px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Stats row — overlapping hero */
+  .stats-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .stat-card {
+    flex: 1;
+    background: #fff;
+    border-radius: 10px;
+    padding: 20px 24px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .stat-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+  .stat-value { font-size: 28px; font-weight: 700; line-height: 1; }
+  .stat-label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+  /* Section */
+  .section-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: #94a3b8; font-weight: 600; margin-bottom: 14px; }
+
+  /* Action cards */
+  .actions-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .action-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 24px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  .action-card:hover { border-color: #0d9488; box-shadow: 0 4px 16px rgba(13,148,136,0.08); }
+  .action-icon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .action-icon svg { width: 20px; height: 20px; }
+  .action-title { font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
+  .action-desc { font-size: 11px; color: #94a3b8; line-height: 1.5; }
+
+  /* Recent policies */
+  .recent-row {
+    display: flex;
+    gap: 12px;
+  }
+  .recent-card {
+    flex: 1;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .recent-card:hover { border-color: #0d9488; }
+  .recent-card-title { font-size: 13px; font-weight: 600; color: #0f172a; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .recent-card-meta { font-size: 10px; color: #94a3b8; }
+  .recent-card-badge { display: inline-block; font-size: 9px; font-weight: 600; padding: 2px 6px; border-radius: 3px; margin-top: 6px; }
+  .badge-green { background: #dcfce7; color: #16a34a; }
+  .badge-amber { background: #fef3c7; color: #d97706; }
+</style>
+</head>
+<body>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-top">
+    <div class="hero-brand">
+      <svg viewBox="0 0 32 32" fill="none"><path d="M16 2L4 8v8c0 7.7 5.1 14.9 12 16.9 6.9-2 12-9.2 12-16.9V8L16 2z" stroke="#fff" stroke-width="2" fill="rgba(255,255,255,0.1)"/><path d="M12 16l3 3 5-6" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div><div class="hero-brand-name">Policy Manager</div><div class="hero-brand-sub">Policy Governance & Compliance</div></div>
+    </div>
+    <button class="hero-skip">Skip to Policy Hub &rarr;</button>
+  </div>
+
+  <h1>Good evening, <strong>Gary</strong></h1>
+  <div class="hero-date">Thursday, 19 March 2026</div>
+  <p class="hero-desc">Welcome to your policy governance command centre. Browse policies, track your acknowledgements, or manage your team's compliance.</p>
+
+  <div class="pickup-bar">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M12 5l7 7-7 7" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div class="pickup-bar-text">
+      <strong>Pick up where you left off</strong>
+      Data Protection and Privacy Policy &mdash; 5 minutes ago
+    </div>
+    <span class="pickup-bar-arrow">&rsaquo;</span>
+  </div>
+</div>
+
+<!-- Content -->
+<div class="content">
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon" style="background: #f0fdf4;"><svg viewBox="0 0 24 24" fill="none" width="22" height="22"><path d="M9 12l2 2 4-4" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="10" stroke="#16a34a" stroke-width="2"/></svg></div>
+      <div><div class="stat-value" style="color: #16a34a;">12</div><div class="stat-label">Acknowledged</div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background: #fef3c7;"><svg viewBox="0 0 24 24" fill="none" width="22" height="22"><circle cx="12" cy="12" r="10" stroke="#d97706" stroke-width="2"/><path d="M12 8v4" stroke="#d97706" stroke-width="2.5" stroke-linecap="round"/><circle cx="12" cy="16" r="1" fill="#d97706"/></svg></div>
+      <div><div class="stat-value" style="color: #d97706;">3</div><div class="stat-label">Pending</div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background: #fee2e2;"><svg viewBox="0 0 24 24" fill="none" width="22" height="22"><circle cx="12" cy="12" r="10" stroke="#dc2626" stroke-width="2"/><path d="M15 9l-6 6M9 9l6 6" stroke="#dc2626" stroke-width="2" stroke-linecap="round"/></svg></div>
+      <div><div class="stat-value" style="color: #dc2626;">1</div><div class="stat-label">Overdue</div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background: #f0fdfa;"><svg viewBox="0 0 24 24" fill="none" width="22" height="22"><path d="M16 2L4 8v8c0 7.7 5.1 14.9 12 16.9 6.9-2 12-9.2 12-16.9V8L16 2z" stroke="#0d9488" stroke-width="2" fill="none" transform="translate(-4,-2) scale(0.83)"/></svg></div>
+      <div><div class="stat-value" style="color: #0d9488;">87%</div><div class="stat-label">Compliance</div></div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="section-label">Quick Actions</div>
+  <div class="actions-grid">
+    <div class="action-card">
+      <div class="action-icon" style="background: #f0fdfa; color: #0d9488;">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+      <div><div class="action-title">Browse Policies</div><div class="action-desc">Explore the full policy library with search, filters, and categories.</div></div>
+    </div>
+    <div class="action-card">
+      <div class="action-icon" style="background: #eff6ff; color: #2563eb;">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 5h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+      <div><div class="action-title">My Policies</div><div class="action-desc">View assigned policies and pending acknowledgements.</div></div>
+    </div>
+    <div class="action-card">
+      <div class="action-icon" style="background: #f5f3ff; color: #7c3aed;">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+      <div><div class="action-title">Search</div><div class="action-desc">Find policies by name, number, or keyword.</div></div>
+    </div>
+    <div class="action-card">
+      <div class="action-icon" style="background: #f0fdf4; color: #16a34a;">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 4v16m8-8H4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+      <div><div class="action-title">New Policy</div><div class="action-desc">Create a new policy from scratch or template.</div></div>
+    </div>
+    <div class="action-card">
+      <div class="action-icon" style="background: #fffbeb; color: #d97706;">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 16v-4M12 8h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+      <div><div class="action-title">Help Centre</div><div class="action-desc">Articles, FAQs, and support resources.</div></div>
+    </div>
+    <div class="action-card">
+      <div class="action-icon" style="background: #f1f5f9; color: #475569;">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.573-1.066z" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/></svg>
+      </div>
+      <div><div class="action-title">Admin Centre</div><div class="action-desc">System settings, users, templates, and configuration.</div></div>
+    </div>
+  </div>
+
+  <!-- Recent Policies -->
+  <div class="section-label">Recently Viewed</div>
+  <div class="recent-row">
+    <div class="recent-card">
+      <div class="recent-card-title">Data Protection and Privacy Policy</div>
+      <div class="recent-card-meta">POL-IT-001 | IT & Security | 5 min ago</div>
+      <div class="recent-card-badge badge-green">Published</div>
+    </div>
+    <div class="recent-card">
+      <div class="recent-card-title">Employee Code of Conduct</div>
+      <div class="recent-card-meta">POL-HR-001 | HR Policies | 15 min ago</div>
+      <div class="recent-card-badge badge-green">Published</div>
+    </div>
+    <div class="recent-card">
+      <div class="recent-card-title">Information Security Policy</div>
+      <div class="recent-card-meta">POL-IT-002 | IT & Security | 1 hour ago</div>
+      <div class="recent-card-badge badge-amber">Pending Ack</div>
+    </div>
+    <div class="recent-card">
+      <div class="recent-card-title">Anti-Harassment Policy</div>
+      <div class="recent-card-meta">POL-HR-005 | HR Policies | 2 hours ago</div>
+      <div class="recent-card-badge badge-green">Acknowledged</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

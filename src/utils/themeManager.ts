@@ -59,7 +59,18 @@ export class ThemeManager {
    * Reset theme to Forest Teal defaults.
    */
   public static reset(): void {
-    this.apply(DEFAULT_THEME);
+    // Remove injected style block
+    const existing = document.getElementById(THEME_STYLE_ID);
+    if (existing) existing.remove();
+
+    // Clear all CSS custom properties from root
+    const root = document.documentElement;
+    const pmProps = ['--pm-primary', '--pm-primary-dark', '--pm-accent', '--pm-success', '--pm-warning',
+      '--pm-danger', '--pm-sidebar-bg', '--pm-content-bg', '--pm-card-bg', '--pm-card-radius',
+      '--pm-control-radius', '--pm-font-family', '--pm-header-bg'];
+    pmProps.forEach(prop => root.style.removeProperty(prop));
+
+    // Clear localStorage
     try { localStorage.removeItem(THEME_STORAGE_KEY); } catch { /* */ }
   }
 

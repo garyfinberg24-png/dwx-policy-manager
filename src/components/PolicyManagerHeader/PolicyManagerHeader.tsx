@@ -406,7 +406,7 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutsideSearch);
   }, []);
 
-  // Debounced inline search
+  // Debounced inline search — queries PM_Policies + secure document libraries
   const handleSearchInputChange = (value: string) => {
     setSearchQuery(value);
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
@@ -420,26 +420,54 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
       setHeaderSearching(true);
       setShowSearchDropdown(true);
       try {
-        const items = await sp.web.lists.getByTitle('PM_Policies')
-          .items.select('Id', 'Title', 'PolicyName', 'PolicyNumber', 'PolicyCategory', 'PolicyStatus')
-          .filter(`substringof('${value.trim().replace(/'/g, "''")}', Title) or substringof('${value.trim().replace(/'/g, "''")}', PolicyName) or substringof('${value.trim().replace(/'/g, "''")}', PolicyNumber)`)
+        // Primary query: PM_Policies list (client-side filter for reliability)
+        const allItems = await sp.web.lists.getByTitle('PM_Policies')
+          .items.select('Id', 'Title', 'PolicyName', 'PolicyNumber', 'PolicyCategory', 'PolicyStatus', 'PolicyDescription')
           .orderBy('Title')
-          .top(8)();
-        setHeaderSearchResults(items);
-      } catch {
-        // Fallback: get all and filter client-side
+          .top(500)();
+
+        const q = value.trim().toLowerCase();
+        const filtered = allItems.filter((p: any) =>
+          (p.PolicyName || p.Title || '').toLowerCase().includes(q) ||
+          (p.PolicyNumber || '').toLowerCase().includes(q) ||
+          (p.PolicyCategory || '').toLowerCase().includes(q) ||
+          (p.PolicyDescription || '').toLowerCase().includes(q)
+        ).slice(0, 8);
+
+        // Also search secure document libraries if configured
+        let secureResults: any[] = [];
         try {
-          const allItems = await sp.web.lists.getByTitle('PM_Policies')
-            .items.select('Id', 'Title', 'PolicyName', 'PolicyNumber', 'PolicyCategory', 'PolicyStatus')
-            .top(200)();
-          const q = value.trim().toLowerCase();
-          const filtered = allItems.filter((p: any) =>
-            (p.PolicyName || p.Title || '').toLowerCase().includes(q) ||
-            (p.PolicyNumber || '').toLowerCase().includes(q) ||
-            (p.PolicyCategory || '').toLowerCase().includes(q)
-          ).slice(0, 8);
-          setHeaderSearchResults(filtered);
-        } catch { setHeaderSearchResults([]); }
+          const configItems = await sp.web.lists.getByTitle('PM_Configuration')
+            .items.filter("ConfigKey eq 'Admin.SecureLibraries.Config'")
+            .select('ConfigValue')
+            .top(1)();
+          if (configItems.length > 0 && configItems[0].ConfigValue) {
+            const secureLibs = JSON.parse(configItems[0].ConfigValue);
+            for (const lib of secureLibs.filter((l: any) => l.isActive)) {
+              try {
+                const libItems = await sp.web.lists.getByTitle(lib.title || lib.libraryName)
+                  .items.select('Id', 'Title', 'FileLeafRef')
+                  .top(50)();
+                const libMatches = libItems.filter((item: any) =>
+                  (item.Title || item.FileLeafRef || '').toLowerCase().includes(q)
+                ).slice(0, 3).map((item: any) => ({
+                  ...item,
+                  PolicyName: item.Title || item.FileLeafRef,
+                  PolicyNumber: '',
+                  PolicyCategory: lib.title,
+                  PolicyStatus: 'Secure',
+                  _isSecureLib: true,
+                  _libraryUrl: lib.libraryUrl
+                }));
+                secureResults = [...secureResults, ...libMatches];
+              } catch { /* library may not exist or no access */ }
+            }
+          }
+        } catch { /* PM_Configuration may not exist */ }
+
+        setHeaderSearchResults([...filtered, ...secureResults].slice(0, 10));
+      } catch {
+        setHeaderSearchResults([]);
       }
       setHeaderSearching(false);
     }, 300);
@@ -493,11 +521,12 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
     {
       key: 'manager-group', text: 'Manager', icon: NavIcons.manager, minRole: 'Manager',
       children: [
+        { key: 'manager-dashboard', text: 'Dashboard', icon: NavIcons.manager, href: '/sites/PolicyManager/SitePages/PolicyManagerView.aspx' },
+        { key: 'approvals', text: 'Approvals', icon: NavIcons.approvals, href: '/sites/PolicyManager/SitePages/PolicyManagerView.aspx?tab=approvals' },
+        { key: 'delegations', text: 'Delegations', icon: NavIcons.details, href: '/sites/PolicyManager/SitePages/PolicyManagerView.aspx?tab=delegations' },
+        { key: 'reviews', text: 'Reviews', icon: NavIcons.details, href: '/sites/PolicyManager/SitePages/PolicyManagerView.aspx?tab=reviews' },
         { key: 'distribution', text: 'Distribution', icon: NavIcons.distribution, href: '/sites/PolicyManager/SitePages/PolicyDistribution.aspx' },
-        { key: 'approvals', text: 'Approvals', icon: NavIcons.approvals, href: '/sites/PolicyManager/SitePages/PolicyManagerView.aspx' },
-        { key: 'reports', text: 'Reports', icon: NavIcons.details, href: '/sites/PolicyManager/SitePages/PolicyManagerView.aspx?tab=reports' },
         { key: 'analytics', text: 'Analytics', icon: NavIcons.analytics, href: '/sites/PolicyManager/SitePages/PolicyAnalytics.aspx' },
-        { key: 'executive', text: 'Executive Dashboard', icon: NavIcons.analytics, href: '/sites/PolicyManager/SitePages/PolicyAnalytics.aspx?tab=executive' },
       ]
     }
   ];
@@ -676,7 +705,8 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
                         Published: { bg: '#dcfce7', color: '#16a34a' },
                         Draft: { bg: '#f1f5f9', color: '#64748b' },
                         'In Review': { bg: '#fef3c7', color: '#d97706' },
-                        Archived: { bg: '#f1f5f9', color: '#94a3b8' }
+                        Archived: { bg: '#f1f5f9', color: '#94a3b8' },
+                        Secure: { bg: '#ede9fe', color: '#7c3aed' }
                       };
                       const sc = statusColors[policy.PolicyStatus] || statusColors.Draft;
                       return (

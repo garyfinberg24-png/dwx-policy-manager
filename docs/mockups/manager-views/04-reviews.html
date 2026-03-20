@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Policy Reviews — Premium Mockup</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', -apple-system, sans-serif; background: #f8fafc; color: #0f172a; }
+  .page { max-width: 1400px; margin: 0 auto; padding: 32px 40px; }
+  .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; }
+  .page-header h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+  .page-header .subtitle { font-size: 13px; color: #64748b; margin-top: 4px; }
+
+  .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
+  .kpi-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px 20px; border-top: 3px solid transparent; }
+  .kpi-value { font-size: 28px; font-weight: 700; line-height: 1.1; }
+  .kpi-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; font-weight: 600; margin-top: 4px; }
+
+  .filter-tabs { display: flex; gap: 6px; margin-bottom: 20px; }
+  .filter-tab { padding: 6px 16px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid #e2e8f0; background: #fff; color: #64748b; }
+  .filter-tab.active { background: #0d9488; color: #fff; border-color: #0d9488; }
+  .filter-tab .count { display: inline-block; min-width: 18px; height: 18px; border-radius: 9px; background: rgba(0,0,0,0.1); font-size: 10px; line-height: 18px; text-align: center; margin-left: 6px; }
+  .filter-tab.active .count { background: rgba(255,255,255,0.25); }
+
+  /* Review timeline table */
+  .review-table { width: 100%; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; }
+
+  .review-table-header {
+    display: grid; grid-template-columns: 3fr 1.5fr 1.5fr 1fr 1fr 1.5fr 120px;
+    padding: 12px 20px; background: #f8fafc; border-bottom: 2px solid #e2e8f0;
+    font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: #64748b;
+  }
+
+  .review-row {
+    display: grid; grid-template-columns: 3fr 1.5fr 1.5fr 1fr 1fr 1.5fr 120px;
+    padding: 14px 20px; border-bottom: 1px solid #f1f5f9; align-items: center;
+    transition: background 0.1s;
+  }
+  .review-row:hover { background: #fafafa; }
+  .review-row:last-child { border-bottom: none; }
+
+  .review-policy { }
+  .review-policy-title { font-size: 13px; font-weight: 600; color: #0f172a; }
+  .review-policy-number { font-size: 10px; color: #94a3b8; margin-top: 2px; }
+
+  .review-category { font-size: 11px; }
+  .cat-badge { font-size: 9px; font-weight: 600; padding: 3px 8px; border-radius: 4px; background: #f0fdfa; color: #0d9488; }
+
+  .review-cycle { font-size: 12px; color: #64748b; }
+  .review-date { font-size: 12px; }
+  .review-date.overdue { color: #dc2626; font-weight: 700; }
+  .review-date.due { color: #d97706; font-weight: 600; }
+  .review-date.upcoming { color: #64748b; }
+
+  .review-reviewer { display: flex; align-items: center; gap: 8px; }
+  .avatar-sm { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #fff; flex-shrink: 0; }
+  .reviewer-name { font-size: 12px; font-weight: 500; }
+
+  .status { font-size: 9px; font-weight: 700; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; white-space: nowrap; }
+  .status-due { background: #fef3c7; color: #d97706; }
+  .status-overdue { background: #fee2e2; color: #dc2626; }
+  .status-upcoming { background: #f1f5f9; color: #64748b; }
+  .status-complete { background: #dcfce7; color: #16a34a; }
+
+  .btn-sm { padding: 5px 12px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid #0d9488; background: #fff; color: #0d9488; font-family: inherit; }
+  .btn-sm:hover { background: #f0fdfa; }
+  .btn-sm.primary { background: #0d9488; color: #fff; }
+  .btn-sm.primary:hover { background: #0f766e; }
+
+  /* Review timeline visual */
+  .timeline-bar { margin-bottom: 28px; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px 24px; }
+  .timeline-title { font-size: 13px; font-weight: 700; margin-bottom: 16px; }
+  .timeline-months { display: flex; gap: 4px; }
+  .timeline-month {
+    flex: 1; height: 32px; border-radius: 4px; display: flex; align-items: center; justify-content: center;
+    font-size: 9px; font-weight: 600; color: #64748b; position: relative;
+  }
+  .timeline-month.has-reviews { background: #f0fdfa; color: #0d9488; }
+  .timeline-month.current { background: #0d9488; color: #fff; }
+  .timeline-month.overdue { background: #fee2e2; color: #dc2626; }
+  .review-count-dot {
+    position: absolute; top: -4px; right: -4px; width: 16px; height: 16px; border-radius: 50%;
+    background: #0d9488; color: #fff; font-size: 8px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1>Policy Reviews</h1>
+      <div class="subtitle">Manage scheduled policy reviews and ensure timely completion</div>
+    </div>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi-card" style="border-top-color:#d97706;"><div class="kpi-value" style="color:#d97706;">3</div><div class="kpi-label">Due Now</div></div>
+    <div class="kpi-card" style="border-top-color:#dc2626;"><div class="kpi-value" style="color:#dc2626;">1</div><div class="kpi-label">Overdue</div></div>
+    <div class="kpi-card" style="border-top-color:#2563eb;"><div class="kpi-value" style="color:#2563eb;">6</div><div class="kpi-label">Upcoming (90d)</div></div>
+    <div class="kpi-card" style="border-top-color:#059669;"><div class="kpi-value" style="color:#059669;">14</div><div class="kpi-label">Completed (YTD)</div></div>
+  </div>
+
+  <!-- Review Timeline -->
+  <div class="timeline-bar">
+    <div class="timeline-title">Review Schedule — 2026</div>
+    <div class="timeline-months">
+      <div class="timeline-month">Jan</div>
+      <div class="timeline-month has-reviews">Feb <div class="review-count-dot">2</div></div>
+      <div class="timeline-month current overdue">Mar <div class="review-count-dot" style="background:#dc2626;">4</div></div>
+      <div class="timeline-month has-reviews">Apr <div class="review-count-dot">1</div></div>
+      <div class="timeline-month">May</div>
+      <div class="timeline-month has-reviews">Jun <div class="review-count-dot">3</div></div>
+      <div class="timeline-month">Jul</div>
+      <div class="timeline-month">Aug</div>
+      <div class="timeline-month has-reviews">Sep <div class="review-count-dot">2</div></div>
+      <div class="timeline-month">Oct</div>
+      <div class="timeline-month">Nov</div>
+      <div class="timeline-month has-reviews">Dec <div class="review-count-dot">1</div></div>
+    </div>
+  </div>
+
+  <div class="filter-tabs">
+    <div class="filter-tab active">All<span class="count">10</span></div>
+    <div class="filter-tab">Due<span class="count">3</span></div>
+    <div class="filter-tab">Overdue<span class="count">1</span></div>
+    <div class="filter-tab">Upcoming<span class="count">6</span></div>
+    <div class="filter-tab">Completed</div>
+  </div>
+
+  <!-- Review Table -->
+  <div class="review-table">
+    <div class="review-table-header">
+      <div>Policy</div>
+      <div>Category</div>
+      <div>Review Cycle</div>
+      <div>Last Review</div>
+      <div>Next Due</div>
+      <div>Reviewer</div>
+      <div>Action</div>
+    </div>
+
+    <div class="review-row">
+      <div class="review-policy"><div class="review-policy-title">Employment Equity Plan</div><div class="review-policy-number">POL-HR-001</div></div>
+      <div><span class="cat-badge">HR Policies</span></div>
+      <div class="review-cycle">Annual</div>
+      <div class="review-date">15 Mar 2025</div>
+      <div class="review-date overdue">15 Mar 2026</div>
+      <div class="review-reviewer"><div class="avatar-sm" style="background:#dc2626;">ND</div><div class="reviewer-name">Nomsa Dlamini</div></div>
+      <div><button class="btn-sm primary">Start Review</button></div>
+    </div>
+
+    <div class="review-row">
+      <div class="review-policy"><div class="review-policy-title">POPIA Data Protection</div><div class="review-policy-number">POL-IT-001</div></div>
+      <div><span class="cat-badge" style="background:#eff6ff;color:#2563eb;">IT & Security</span></div>
+      <div class="review-cycle">Annual</div>
+      <div class="review-date">20 Mar 2025</div>
+      <div class="review-date due">20 Mar 2026</div>
+      <div class="review-reviewer"><div class="avatar-sm" style="background:#d97706;">JM</div><div class="reviewer-name">Johan van der Merwe</div></div>
+      <div><button class="btn-sm primary">Start Review</button></div>
+    </div>
+
+    <div class="review-row">
+      <div class="review-policy"><div class="review-policy-title">Anti-Harassment Policy</div><div class="review-policy-number">POL-HR-005</div></div>
+      <div><span class="cat-badge">HR Policies</span></div>
+      <div class="review-cycle">Annual</div>
+      <div class="review-date">25 Mar 2025</div>
+      <div class="review-date due">25 Mar 2026</div>
+      <div class="review-reviewer"><div class="avatar-sm" style="background:#d97706;">ZM</div><div class="reviewer-name">Zanele Mthembu</div></div>
+      <div><button class="btn-sm primary">Start Review</button></div>
+    </div>
+
+    <div class="review-row">
+      <div class="review-policy"><div class="review-policy-title">Cybersecurity Incident Response</div><div class="review-policy-number">POL-IT-003</div></div>
+      <div><span class="cat-badge" style="background:#eff6ff;color:#2563eb;">IT & Security</span></div>
+      <div class="review-cycle">6 Months</div>
+      <div class="review-date">15 Dec 2025</div>
+      <div class="review-date upcoming">15 Jun 2026</div>
+      <div class="review-reviewer"><div class="avatar-sm" style="background:#2563eb;">RP</div><div class="reviewer-name">Ravi Pillay</div></div>
+      <div><button class="btn-sm">Schedule</button></div>
+    </div>
+
+    <div class="review-row">
+      <div class="review-policy"><div class="review-policy-title">King IV Corporate Governance</div><div class="review-policy-number">POL-COM-002</div></div>
+      <div><span class="cat-badge" style="background:#fef3c7;color:#92400e;">Compliance</span></div>
+      <div class="review-cycle">2 Years</div>
+      <div class="review-date">10 Sep 2025</div>
+      <div class="review-date upcoming">10 Sep 2027</div>
+      <div class="review-reviewer"><div class="avatar-sm" style="background:#059669;">FC</div><div class="reviewer-name">Fatima Cassim</div></div>
+      <div><span class="status status-upcoming">Upcoming</span></div>
+    </div>
+
+    <div class="review-row" style="background:#f0fdf4;">
+      <div class="review-policy"><div class="review-policy-title">Leave Management Policy</div><div class="review-policy-number">POL-HR-004</div></div>
+      <div><span class="cat-badge">HR Policies</span></div>
+      <div class="review-cycle">2 Years</div>
+      <div class="review-date">01 Feb 2026</div>
+      <div class="review-date" style="color:#059669;">01 Feb 2028</div>
+      <div class="review-reviewer"><div class="avatar-sm" style="background:#059669;">PN</div><div class="reviewer-name">Priya Naidoo</div></div>
+      <div><span class="status status-complete">Completed</span></div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

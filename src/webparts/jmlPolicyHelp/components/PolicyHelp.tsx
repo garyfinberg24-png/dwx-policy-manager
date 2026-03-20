@@ -356,51 +356,73 @@ export default class PolicyHelp extends React.Component<IPolicyHelpProps, IPolic
   }
 
   private renderHome(): React.ReactNode {
+    const quickCardStyle: React.CSSProperties = {
+      background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '24px 20px',
+      textAlign: 'center', transition: 'all 0.2s', cursor: 'pointer'
+    };
+    const quickIconBgs = [
+      'linear-gradient(135deg, #ccfbf1, #99f6e4)',
+      'linear-gradient(135deg, #dbeafe, #bfdbfe)',
+      'linear-gradient(135deg, #ede9fe, #ddd6fe)',
+      'linear-gradient(135deg, #fef3c7, #fde68a)'
+    ];
+    const quickCards = [
+      { title: 'Getting Started', desc: 'New to Policy Manager? Learn the basics and set up your profile.', tab: 'articles' as HelpTab, iconSvg: '<path d="M22 11.08V12a10 10 0 11-5.93-9.14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M22 4L12 14.01l-3-3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' },
+      { title: 'Policy Guidelines', desc: 'Writing standards, templates, and best practices for policy authors.', tab: 'articles' as HelpTab, iconSvg: '<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' },
+      { title: 'Keyboard Shortcuts', desc: 'Navigate faster with keyboard shortcuts and power-user tips.', tab: 'shortcuts' as HelpTab, iconSvg: '<rect x="2" y="4" width="20" height="16" rx="2" stroke="currentColor" stroke-width="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h8M6 16h.01M18 16h.01M10 16h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>' },
+      { title: 'Contact Support', desc: "Can't find what you need? Reach out to our support team directly.", tab: 'support' as HelpTab, iconSvg: '<path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.362 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0122 16.92z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' }
+    ];
+
     return (
       <div>
-        <div className={styles.section}>
-          <h2 className={styles.sectionTitle}>
-            <Icon iconName="FavoriteStar" />
-            Featured Articles
-          </h2>
-          <div className={styles.cardGrid}>
-            {helpArticles.filter(a => a.isFeatured).map(article => (
-              <div key={article.id} className={styles.card} onClick={() => this.setState({ selectedArticle: article })}>
-                <div className={styles.cardIcon} style={{ backgroundColor: getCategoryColor(article.category) }}>
-                  <Icon iconName="BookAnswers" />
-                </div>
-                <div className={styles.cardTitle}>{article.title}</div>
-                <div className={styles.cardSummary}>{article.summary}</div>
+        {/* Quick Link Cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 36 }}>
+          {quickCards.map((card, idx) => (
+            <div
+              key={idx}
+              style={quickCardStyle}
+              onClick={() => this.setState({ currentTab: card.tab })}
+              onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = '#0d9488'; el.style.boxShadow = '0 4px 16px rgba(13,148,136,0.1)'; el.style.transform = 'translateY(-2px)'; }}
+              onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = '#e2e8f0'; el.style.boxShadow = 'none'; el.style.transform = 'translateY(0)'; }}
+            >
+              <div style={{ width: 56, height: 56, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px', background: quickIconBgs[idx], color: '#0d9488' }}>
+                <svg viewBox="0 0 24 24" fill="none" width="24" height="24" dangerouslySetInnerHTML={{ __html: card.iconSvg }} />
               </div>
-            ))}
-          </div>
+              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>{card.title}</div>
+              <div style={{ fontSize: 12, color: '#64748b', lineHeight: 1.5 }}>{card.desc}</div>
+            </div>
+          ))}
         </div>
 
-        <div className={styles.quickLinks}>
-          <div className={styles.quickLink} style={{ background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)' }}
-            onClick={() => this.setState({ currentTab: 'articles' })}>
-            <Icon iconName="BookAnswers" className={styles.quickLinkIcon} />
-            <div className={styles.quickLinkTitle}>Browse All Articles</div>
-            <div className={styles.quickLinkText}>Explore our complete knowledge base</div>
-          </div>
-          <div className={styles.quickLink} style={{ background: 'linear-gradient(135deg, #107c10 0%, #0b5a08 100%)' }}
-            onClick={() => this.setState({ currentTab: 'faqs' })}>
-            <Icon iconName="Unknown" className={styles.quickLinkIcon} />
-            <div className={styles.quickLinkTitle}>FAQs</div>
-            <div className={styles.quickLinkText}>Quick answers to common questions</div>
-          </div>
-          <div className={styles.quickLink} style={{ background: 'linear-gradient(135deg, #8764b8 0%, #6b4fa0 100%)' }}
-            onClick={() => this.setState({ currentTab: 'shortcuts' })}>
-            <Icon iconName="KeyboardClassic" className={styles.quickLinkIcon} />
-            <div className={styles.quickLinkTitle}>Keyboard Shortcuts</div>
-            <div className={styles.quickLinkText}>Work faster with shortcuts</div>
-          </div>
-          <div className={styles.quickLink} style={{ background: 'linear-gradient(135deg, #f7630c 0%, #ca5010 100%)' }}
-            onClick={() => this.setState({ currentTab: 'support' })}>
-            <Icon iconName="Headset" className={styles.quickLinkIcon} />
-            <div className={styles.quickLinkTitle}>Get Support</div>
-            <div className={styles.quickLinkText}>Contact our support team</div>
-          </div>
+        {/* Featured Articles */}
+        <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>Featured Articles</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 36 }}>
+          {helpArticles.filter(a => a.isFeatured).map((article, idx) => {
+            const gradientBgs = ['linear-gradient(135deg, #f0fdfa, #ccfbf1)', 'linear-gradient(135deg, #eff6ff, #dbeafe)', 'linear-gradient(135deg, #f5f3ff, #ede9fe)'];
+            return (
+              <div
+                key={article.id}
+                style={{
+                  background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden',
+                  transition: 'all 0.2s', cursor: 'pointer'
+                }}
+                onClick={() => this.setState({ selectedArticle: article })}
+                onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = '#0d9488'; el.style.boxShadow = '0 4px 16px rgba(13,148,136,0.1)'; el.style.transform = 'translateY(-2px)'; }}
+                onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = '#e2e8f0'; el.style.boxShadow = 'none'; el.style.transform = 'translateY(0)'; }}
+              >
+                <div style={{ height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', background: gradientBgs[idx % 3] }}>
+                  <svg viewBox="0 0 24 24" fill="none" width="48" height="48" style={{ color: '#0d9488' }}><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" strokeWidth="1.5"/><path d="M14 2v6h6" stroke="currentColor" strokeWidth="1.5"/></svg>
+                </div>
+                <div style={{ padding: '16px 20px' }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>{article.title}</div>
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                    <span style={{ fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: 0.5, background: '#f0f9ff', color: '#0369a1' }}>{article.category}</span>
+                  </div>
+                  <div style={{ fontSize: 12, color: '#64748b', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' } as React.CSSProperties}>{article.summary}</div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     );
@@ -440,61 +462,77 @@ export default class PolicyHelp extends React.Component<IPolicyHelpProps, IPolic
 
   private renderFAQs(): React.ReactNode {
     const filtered = this.getFilteredFAQs();
+    const catDotColors: Record<string, string> = {
+      'General': '#94a3b8', 'My Policies': '#059669', 'Policy Author': '#7c3aed',
+      'Approvals': '#d97706', 'Policy Packs': '#2563eb', 'Analytics': '#0d9488',
+      'Compliance': '#2563eb', 'Human Resources': '#db2777', 'IT & Access': '#0d9488'
+    };
     return (
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>
-          <Icon iconName="Unknown" />
-          Frequently Asked Questions
-        </h2>
-        {filtered.map(faq => (
-          <div key={faq.id} className={styles.faqItem}>
-            <div className={styles.faqQuestion} onClick={() => this.toggleFAQ(faq.id)}>
-              <span>{faq.question}</span>
-              <Icon iconName={this.state.expandedFAQs.has(faq.id) ? 'ChevronUp' : 'ChevronDown'} />
+      <div style={{ marginBottom: 36 }}>
+        <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>Frequently Asked Questions</div>
+        {filtered.map(faq => {
+          const isOpen = this.state.expandedFAQs.has(faq.id);
+          const dotColor = catDotColors[faq.category] || '#94a3b8';
+          return (
+            <div
+              key={faq.id}
+              style={{
+                background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, marginBottom: 8,
+                overflow: 'hidden', transition: 'all 0.2s'
+              }}
+            >
+              <div
+                onClick={() => this.toggleFAQ(faq.id)}
+                style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}
+              >
+                <div style={{ width: 4, height: 32, borderRadius: 2, flexShrink: 0, background: dotColor }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600 }}>{faq.question}</div>
+                  <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>{faq.category}</div>
+                </div>
+                <svg viewBox="0 0 24 24" fill="none" width="16" height="16" style={{ color: isOpen ? '#0d9488' : '#94a3b8', transition: 'transform 0.2s', transform: isOpen ? 'rotate(180deg)' : 'rotate(0)' }}>
+                  <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              {isOpen && (
+                <div style={{ padding: '0 20px 16px 36px', fontSize: 13, color: '#64748b', lineHeight: 1.7 }}>
+                  {faq.answer}
+                </div>
+              )}
             </div>
-            {this.state.expandedFAQs.has(faq.id) && (
-              <div className={styles.faqAnswer}>{faq.answer}</div>
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
     );
   }
 
   private renderShortcuts(): React.ReactNode {
     return (
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>
-          <Icon iconName="KeyboardClassic" />
-          Keyboard Shortcuts
-        </h2>
-        <table className={styles.shortcutTable}>
-          <thead>
-            <tr style={{ backgroundColor: '#f3f2f1' }}>
-              <th className={styles.shortcutCell}>Shortcut</th>
-              <th className={styles.shortcutCell}>Action</th>
-              <th className={styles.shortcutCell}>Category</th>
-            </tr>
-          </thead>
-          <tbody>
-            {shortcuts.map((shortcut, index) => (
-              <tr key={index} className={styles.shortcutRow}>
-                <td className={styles.shortcutCell}>
-                  <div className={styles.shortcutKeys}>
-                    {shortcut.keys.map((key, i) => (
-                      <React.Fragment key={i}>
-                        {i > 0 && <span>+</span>}
-                        <span className={styles.keyBadge}>{key}</span>
-                      </React.Fragment>
-                    ))}
-                  </div>
-                </td>
-                <td className={styles.shortcutCell}>{shortcut.description}</td>
-                <td className={styles.shortcutCell}>{shortcut.category}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div style={{ marginBottom: 36 }}>
+        <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>Keyboard Shortcuts</div>
+        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
+          <div style={{ padding: '16px 20px', borderBottom: '1px solid #f1f5f9' }}>
+            <h3 style={{ fontSize: 14, fontWeight: 700, margin: 0 }}>Navigation &amp; Actions</h3>
+          </div>
+          {shortcuts.map((shortcut, index) => (
+            <div key={index} style={{
+              display: 'grid', gridTemplateColumns: '200px 1fr', padding: '12px 20px',
+              borderBottom: index < shortcuts.length - 1 ? '1px solid #f8fafc' : 'none',
+              alignItems: 'center', fontSize: 13
+            }}>
+              <div style={{ display: 'flex', gap: 4 }}>
+                {shortcut.keys.map((key, i) => (
+                  <span key={i} style={{
+                    background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 4, padding: '3px 8px',
+                    fontSize: 11, fontWeight: 700, color: '#334155', fontFamily: "'Segoe UI', monospace",
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                  }}>{key}</span>
+                ))}
+              </div>
+              <div style={{ color: '#64748b' }}>{shortcut.description}</div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -615,42 +653,55 @@ export default class PolicyHelp extends React.Component<IPolicyHelpProps, IPolic
       <JmlAppLayout context={this.props.context} breadcrumbs={[{ text: 'Policy Manager', url: '/sites/PolicyManager' }, { text: 'Help' }]}>
         <div className={styles.policyHelp}>
           <div className={styles.contentWrapper}>
-            {/* Hero Section */}
-            <div className={styles.heroSection}>
-              <div className={styles.heroHeader}>
-                <Icon iconName="Help" className={styles.heroIcon} />
-                <div>
-                  <h1 className={styles.heroTitle}>Policy Help Center</h1>
-                  <p className={styles.heroSubtitle}>
-                    Find answers, learn features, and get support
-                  </p>
-                </div>
+            {/* Hero Section — Premium */}
+            <div style={{
+              background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)', padding: '48px 40px 40px',
+              textAlign: 'center', position: 'relative', overflow: 'hidden', margin: '0 -24px'
+            }}>
+              <div style={{ position: 'absolute', left: -100, top: -100, width: 400, height: 400, background: 'rgba(255,255,255,0.03)', borderRadius: '50%' }} />
+              <div style={{ position: 'absolute', right: -60, bottom: -60, width: 300, height: 300, background: 'rgba(255,255,255,0.03)', borderRadius: '50%' }} />
+              <h1 style={{ fontSize: 28, fontWeight: 700, color: '#fff', marginBottom: 6, position: 'relative', zIndex: 1 }}>How can we help?</h1>
+              <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.8)', marginBottom: 24, position: 'relative', zIndex: 1 }}>Find answers, learn best practices, and get support for Policy Manager</p>
+              <div style={{ maxWidth: 560, margin: '0 auto', position: 'relative', zIndex: 1 }}>
+                <SearchBox
+                  placeholder="Search help articles, FAQs, and guides..."
+                  value={searchQuery}
+                  onChange={(_, value) => this.setState({ searchQuery: value || '' })}
+                  onSearch={(value) => this.handleSearch(value)}
+                  onClear={() => this.setState({ searchQuery: '' })}
+                  styles={{
+                    root: { maxWidth: 560, borderRadius: 10, border: '2px solid rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.15)' },
+                    field: { color: '#fff', fontSize: 15 },
+                    icon: { color: 'rgba(255,255,255,0.6)' },
+                    clearButton: { color: 'rgba(255,255,255,0.6)' }
+                  }}
+                />
               </div>
-              <SearchBox
-                placeholder="Search for help articles, FAQs, or topics..."
-                value={searchQuery}
-                onChange={(_, value) => this.setState({ searchQuery: value || '' })}
-                onSearch={(value) => this.handleSearch(value)}
-                onClear={() => this.setState({ searchQuery: '' })}
-                styles={{
-                  root: { maxWidth: '600px', backgroundColor: '#ffffff', borderRadius: '4px' },
-                }}
-              />
             </div>
 
-            {/* Tab Navigation */}
-            <Pivot
-              selectedKey={currentTab}
-              onLinkClick={(item) => this.setState({ currentTab: (item?.props.itemKey as HelpTab) || 'home' })}
-              styles={{ root: { marginBottom: '24px' } }}
-            >
-              <PivotItem headerText="Home" itemKey="home" itemIcon="Home" />
-              <PivotItem headerText="Articles" itemKey="articles" itemIcon="BookAnswers" />
-              <PivotItem headerText="FAQs" itemKey="faqs" itemIcon="Unknown" />
-              <PivotItem headerText="Shortcuts" itemKey="shortcuts" itemIcon="KeyboardClassic" />
-              <PivotItem headerText="Videos" itemKey="videos" itemIcon="Video" />
-              <PivotItem headerText="Support" itemKey="support" itemIcon="Headset" />
-            </Pivot>
+            {/* Tab Bar — Premium */}
+            <div style={{ display: 'flex', gap: 0, borderBottom: '2px solid #e2e8f0', marginBottom: 28, background: '#fff', margin: '0 -24px 28px', padding: '0 40px' }}>
+              {[
+                { key: 'home' as HelpTab, label: 'Home' },
+                { key: 'articles' as HelpTab, label: 'Articles' },
+                { key: 'faqs' as HelpTab, label: 'FAQs' },
+                { key: 'shortcuts' as HelpTab, label: 'Shortcuts' },
+                { key: 'videos' as HelpTab, label: 'Videos' },
+                { key: 'support' as HelpTab, label: 'Support' }
+              ].map(tab => (
+                <div
+                  key={tab.key}
+                  onClick={() => this.setState({ currentTab: tab.key })}
+                  style={{
+                    padding: '12px 20px', fontSize: 13, cursor: 'pointer',
+                    fontWeight: currentTab === tab.key ? 700 : 500,
+                    color: currentTab === tab.key ? '#0d9488' : '#64748b',
+                    borderBottom: currentTab === tab.key ? '2px solid #0d9488' : '2px solid transparent',
+                    marginBottom: -2, transition: 'all 0.15s'
+                  }}
+                >{tab.label}</div>
+              ))}
+            </div>
 
             {/* Tab Content */}
             {currentTab === 'home' && this.renderHome()}

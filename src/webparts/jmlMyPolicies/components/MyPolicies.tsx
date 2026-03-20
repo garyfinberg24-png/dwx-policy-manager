@@ -1,18 +1,15 @@
 // @ts-nocheck
-import { Icon } from '@fluentui/react/lib/Icon';
 import * as React from 'react';
 import styles from './MyPolicies.module.scss';
 import { IMyPoliciesProps } from './IMyPoliciesProps';
 import {
   Spinner,
   SpinnerSize,
-  SearchBox,
-  PrimaryButton,
-  DefaultButton
 } from '@fluentui/react';
+import { PanelType } from '@fluentui/react/lib/Panel';
 import { JmlAppLayout } from '../../../components/JmlAppLayout';
 import { ErrorBoundary } from '../../../components/ErrorBoundary/ErrorBoundary';
-import { PageSubheader } from '../../../components/PageSubheader';
+import { StyledPanel } from '../../../components/StyledPanel';
 import { PM_LISTS } from '../../../constants/SharePointListNames';
 
 // Assigned policy interface
@@ -34,10 +31,9 @@ interface IAssignedPolicy {
 interface IMyPoliciesState {
   loading: boolean;
   policies: IAssignedPolicy[];
-  activeTab: 'all' | 'unread' | 'dueSoon' | 'completed';
+  activeTab: 'all' | 'pending' | 'overdue' | 'completed';
   searchQuery: string;
-  viewMode: 'list' | 'card';
-  expandedPolicyId: number | null;
+  selectedPolicyId: number | null;
   compliancePercent: number;
 }
 
@@ -88,24 +84,28 @@ const mockPolicies: IAssignedPolicy[] = [
 // Helpers
 const getStatusLabel = (status: string): string => {
   const labels: Record<string, string> = {
-    'unread': 'Unread', 'in-progress': 'In Progress', 'completed': 'Completed', 'overdue': 'Overdue'
+    'unread': 'Pending', 'in-progress': 'Pending', 'completed': 'Acknowledged', 'overdue': 'Overdue'
   };
   return labels[status] || status;
 };
 
-const getStatusColor = (status: string): { bg: string; text: string } => {
+const getStatusBadgeClass = (status: string): { bg: string; text: string } => {
   const colors: Record<string, { bg: string; text: string }> = {
-    'unread': { bg: '#ccfbf1', text: '#0d9488' },
-    'in-progress': { bg: '#fff4ce', text: '#9d5d00' },
-    'completed': { bg: '#dff6dd', text: '#107c10' },
-    'overdue': { bg: '#fde7e9', text: '#d13438' },
+    'unread': { bg: '#fef3c7', text: '#d97706' },
+    'in-progress': { bg: '#fef3c7', text: '#d97706' },
+    'completed': { bg: '#dcfce7', text: '#16a34a' },
+    'overdue': { bg: '#fee2e2', text: '#dc2626' },
   };
-  return colors[status] || { bg: '#f3f2f1', text: '#605e5c' };
+  return colors[status] || { bg: '#f1f5f9', text: '#64748b' };
 };
 
-const getPriorityColor = (priority: string): string => {
-  const colors: Record<string, string> = { high: '#d13438', medium: '#ff8c00', low: '#107c10' };
-  return colors[priority] || '#605e5c';
+const getRiskBadge = (priority: string): { bg: string; text: string; label: string } => {
+  const map: Record<string, { bg: string; text: string; label: string }> = {
+    high: { bg: '#fee2e2', text: '#dc2626', label: 'Critical' },
+    medium: { bg: '#fef3c7', text: '#d97706', label: 'Medium' },
+    low: { bg: '#f1f5f9', text: '#64748b', label: 'Low' },
+  };
+  return map[priority] || { bg: '#f1f5f9', text: '#64748b', label: priority };
 };
 
 const formatDate = (date: Date | null): string => {
@@ -119,6 +119,72 @@ const getDaysUntilDue = (date: Date | null): number | null => {
   return Math.ceil(diff / 86400000);
 };
 
+// SVG icon components
+const DocumentIcon: React.FC<{ size?: number; color?: string }> = ({ size = 18, color = 'currentColor' }) => (
+  <svg viewBox="0 0 24 24" fill="none" width={size} height={size}>
+    <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
+const CheckIcon: React.FC<{ size?: number; color?: string }> = ({ size = 14, color = 'currentColor' }) => (
+  <svg viewBox="0 0 24 24" fill="none" width={size} height={size}>
+    <path d="M9 12l2 2 4-4" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
+const WarningIcon: React.FC<{ size?: number; color?: string }> = ({ size = 18, color = 'currentColor' }) => (
+  <svg viewBox="0 0 24 24" fill="none" width={size} height={size}>
+    <path d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke={color} strokeWidth="2"/>
+  </svg>
+);
+
+const ClockIcon: React.FC<{ size?: number; color?: string }> = ({ size = 18, color = 'currentColor' }) => (
+  <svg viewBox="0 0 24 24" fill="none" width={size} height={size}>
+    <circle cx="12" cy="12" r="10" stroke={color} strokeWidth="2"/>
+    <path d="M12 6v6l4 2" stroke={color} strokeWidth="2" strokeLinecap="round"/>
+  </svg>
+);
+
+const ChevronRightIcon: React.FC<{ size?: number; color?: string }> = ({ size = 14, color = 'currentColor' }) => (
+  <svg viewBox="0 0 24 24" fill="none" width={size} height={size}>
+    <path d="M9 5l7 7-7 7" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
+const CloseIcon: React.FC<{ size?: number; color?: string }> = ({ size = 16, color = 'currentColor' }) => (
+  <svg viewBox="0 0 24 24" fill="none" width={size} height={size}>
+    <path d="M6 18L18 6M6 6l12 12" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
+const ShieldIcon: React.FC<{ size?: number; color?: string }> = ({ size = 16, color = 'currentColor' }) => (
+  <svg viewBox="0 0 24 24" fill="none" width={size} height={size}>
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke={color} strokeWidth="2"/>
+  </svg>
+);
+
+const QuizIcon: React.FC<{ size?: number; color?: string }> = ({ size = 16, color = 'currentColor' }) => (
+  <svg viewBox="0 0 24 24" fill="none" width={size} height={size}>
+    <path d="M12 14l9-5-9-5-9 5 9 5z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M12 14v7" stroke={color} strokeWidth="2" strokeLinecap="round"/>
+    <path d="M21 9v7l-9 5-9-5V9" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
+const SearchIcon: React.FC<{ size?: number; color?: string }> = ({ size = 14, color = 'currentColor' }) => (
+  <svg viewBox="0 0 24 24" fill="none" width={size} height={size}>
+    <circle cx="11" cy="11" r="8" stroke={color} strokeWidth="2"/>
+    <path d="M21 21l-4.35-4.35" stroke={color} strokeWidth="2" strokeLinecap="round"/>
+  </svg>
+);
+
+const ExclamationIcon: React.FC<{ size?: number; color?: string }> = ({ size = 18, color = 'currentColor' }) => (
+  <svg viewBox="0 0 24 24" fill="none" width={size} height={size}>
+    <path d="M12 8v4m0 4h.01" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
 export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPoliciesState> {
   constructor(props: IMyPoliciesProps) {
     super(props);
@@ -127,8 +193,7 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
       policies: [],
       activeTab: 'all',
       searchQuery: '',
-      viewMode: 'list',
-      expandedPolicyId: null,
+      selectedPolicyId: null,
       compliancePercent: 0,
     };
   }
@@ -219,14 +284,11 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
     let filtered = [...policies];
 
     switch (activeTab) {
-      case 'unread':
-        filtered = filtered.filter(p => p.status === 'unread' || p.status === 'overdue');
+      case 'pending':
+        filtered = filtered.filter(p => p.status === 'unread' || p.status === 'in-progress');
         break;
-      case 'dueSoon':
-        filtered = filtered.filter(p => {
-          const days = getDaysUntilDue(p.dueDate);
-          return days !== null && days <= 7 && p.status !== 'completed';
-        });
+      case 'overdue':
+        filtered = filtered.filter(p => p.status === 'overdue');
         break;
       case 'completed':
         filtered = filtered.filter(p => p.status === 'completed');
@@ -249,322 +311,735 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
     window.location.href = `/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${policyId}`;
   };
 
-  private toggleExpand = (policyId: number): void => {
+  private selectPolicy = (policyId: number): void => {
     this.setState(prev => ({
-      expandedPolicyId: prev.expandedPolicyId === policyId ? null : policyId
+      selectedPolicyId: prev.selectedPolicyId === policyId ? null : policyId
     }));
   };
 
-  private renderProgressHeader(): React.ReactNode {
-    const { policies, compliancePercent } = this.state;
-    const total = policies.length;
-    const completed = policies.filter(p => p.status === 'completed').length;
-    const unread = policies.filter(p => p.status === 'unread' || p.status === 'overdue').length;
-    const dueSoon = policies.filter(p => {
-      const days = getDaysUntilDue(p.dueDate);
-      return days !== null && days <= 7 && p.status !== 'completed';
-    }).length;
-
-    const strokeDashoffset = 264 - (264 * compliancePercent / 100);
-
-    return (
-      <div className={styles.progressHeader}>
-        <div className={styles.progressHeaderLeft}>
-          <div className={styles.progressRingContainer}>
-            <svg className={styles.progressRingSvg} viewBox="0 0 100 100">
-              <circle className={styles.progressRingBg} cx="50" cy="50" r="42" />
-              <circle
-                className={styles.progressRingFill}
-                cx="50" cy="50" r="42"
-                style={{ strokeDashoffset }}
-              />
-            </svg>
-            <div className={styles.progressRingText}>
-              <div className={styles.progressRingPercent}>{compliancePercent}%</div>
-              <div className={styles.progressRingLabel}>Complete</div>
-            </div>
-          </div>
-          <div className={styles.progressHeaderInfo}>
-            <h3>My Policy Compliance</h3>
-            <p>{completed} of {total} policies acknowledged</p>
-          </div>
-        </div>
-        <div className={styles.miniStats}>
-          <div className={`${styles.miniStat} ${unread > 0 ? styles.danger : ''}`}>
-            <div className={styles.miniStatNumber}>{unread}</div>
-            <div className={styles.miniStatLabel}>Unread</div>
-          </div>
-          <div className={`${styles.miniStat} ${dueSoon > 0 ? styles.warning : ''}`}>
-            <div className={styles.miniStatNumber}>{dueSoon}</div>
-            <div className={styles.miniStatLabel}>Due Soon</div>
-          </div>
-          <div className={`${styles.miniStat} ${styles.success}`}>
-            <div className={styles.miniStatNumber}>{completed}</div>
-            <div className={styles.miniStatLabel}>Done</div>
-          </div>
-        </div>
-      </div>
-    );
+  private getKpiCounts(): { assigned: number; acknowledged: number; pending: number; overdue: number } {
+    const { policies } = this.state;
+    return {
+      assigned: policies.length,
+      acknowledged: policies.filter(p => p.status === 'completed').length,
+      pending: policies.filter(p => p.status === 'unread' || p.status === 'in-progress').length,
+      overdue: policies.filter(p => p.status === 'overdue').length,
+    };
   }
 
-  private renderTabBar(): React.ReactNode {
-    const { activeTab, viewMode, policies } = this.state;
-    const unreadCount = policies.filter(p => p.status === 'unread' || p.status === 'overdue').length;
-    const dueSoonCount = policies.filter(p => {
-      const days = getDaysUntilDue(p.dueDate);
-      return days !== null && days <= 7 && p.status !== 'completed';
-    }).length;
+  private getPolicyIconColors(status: string): { bg: string; color: string } {
+    switch (status) {
+      case 'completed': return { bg: '#dcfce7', color: '#059669' };
+      case 'overdue': return { bg: '#fee2e2', color: '#dc2626' };
+      default: return { bg: '#fef3c7', color: '#d97706' };
+    }
+  }
 
-    const tabs = [
-      { key: 'all', label: 'All Assigned', count: policies.length },
-      { key: 'unread', label: 'Unread', count: unreadCount },
-      { key: 'dueSoon', label: 'Due Soon', count: dueSoonCount },
-      { key: 'completed', label: 'Completed', count: policies.filter(p => p.status === 'completed').length },
+  private getDueText(policy: IAssignedPolicy): { text: string; color: string; bold: boolean } {
+    if (policy.status === 'completed' && policy.acknowledgementDate) {
+      return { text: `Completed ${formatDate(policy.acknowledgementDate)}`, color: '#94a3b8', bold: false };
+    }
+    const days = getDaysUntilDue(policy.dueDate);
+    if (days === null) return { text: 'No due date', color: '#94a3b8', bold: false };
+    if (days < 0) return { text: `${Math.abs(days)} days overdue`, color: '#dc2626', bold: true };
+    if (days <= 3) return { text: `Due in ${days} days`, color: '#d97706', bold: true };
+    if (days <= 7) return { text: `Due in ${days} days`, color: '#d97706', bold: true };
+    return { text: `Due ${formatDate(policy.dueDate)}`, color: '#94a3b8', bold: false };
+  }
+
+  private getProgressSteps(policy: IAssignedPolicy): Array<{ label: string; state: 'done' | 'current' | 'pending' }> {
+    const steps: Array<{ label: string; state: 'done' | 'current' | 'pending' }> = [];
+
+    if (policy.status === 'completed') {
+      steps.push({ label: 'Assigned', state: 'done' });
+      steps.push({ label: 'Read', state: 'done' });
+      steps.push({ label: 'Quiz', state: policy.hasQuiz ? 'done' : 'done' });
+      steps.push({ label: 'Acknowledge', state: 'done' });
+    } else if (policy.status === 'in-progress') {
+      steps.push({ label: 'Assigned', state: 'done' });
+      steps.push({ label: 'Read', state: 'current' });
+      steps.push({ label: 'Quiz', state: 'pending' });
+      steps.push({ label: 'Acknowledge', state: 'pending' });
+    } else {
+      // unread or overdue
+      steps.push({ label: 'Assigned', state: 'done' });
+      steps.push({ label: 'Read', state: 'current' });
+      steps.push({ label: 'Quiz', state: 'pending' });
+      steps.push({ label: 'Acknowledge', state: 'pending' });
+    }
+
+    // Remove quiz step if not required
+    if (!policy.hasQuiz) {
+      steps = steps.filter(s => s.label !== 'Quiz');
+    }
+
+    // Add Complete/Certificate step
+    steps.push({ label: 'Complete', state: policy.status === 'completed' ? 'done' : 'pending' });
+
+    return steps;
+  }
+
+  private renderKpiStrip(): React.ReactNode {
+    const kpi = this.getKpiCounts();
+    const cards = [
+      { label: 'Assigned', value: kpi.assigned, color: '#2563eb' },
+      { label: 'Acknowledged', value: kpi.acknowledged, color: '#059669' },
+      { label: 'Pending', value: kpi.pending, color: '#d97706' },
+      { label: 'Overdue', value: kpi.overdue, color: '#dc2626' },
     ];
 
     return (
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
-        <div className={styles.tabContainer}>
-          {tabs.map(tab => (
-            <button
-              key={tab.key}
-              type="button"
-              className={`${styles.tabButton} ${activeTab === tab.key ? styles.activeTab : ''}`}
-              onClick={() => this.setState({ activeTab: tab.key as any })}
-            >
-              {tab.label}
-              {tab.count > 0 && <span className={styles.tabBadge}>{tab.count}</span>}
-            </button>
-          ))}
-        </div>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <SearchBox
-            placeholder="Search policies..."
-            value={this.state.searchQuery}
-            onChange={(_, v) => this.setState({ searchQuery: v || '' })}
-            onClear={() => this.setState({ searchQuery: '' })}
-            styles={{ root: { width: 220 } }}
-          />
-          <div className={styles.viewToggle}>
-            <button
-              type="button"
-              className={`${styles.toggleButton} ${viewMode === 'list' ? styles.activeToggle : ''}`}
-              onClick={() => this.setState({ viewMode: 'list' })}
-              title="List View"
-            >
-              <Icon iconName="List" />
-            </button>
-            <button
-              type="button"
-              className={`${styles.toggleButton} ${viewMode === 'card' ? styles.activeToggle : ''}`}
-              onClick={() => this.setState({ viewMode: 'card' })}
-              title="Card View"
-            >
-              <Icon iconName="GridViewMedium" />
-            </button>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '24px' }}>
+        {cards.map(card => (
+          <div key={card.label} style={{
+            background: '#fff',
+            border: '1px solid #e2e8f0',
+            borderRadius: '10px',
+            padding: '16px',
+            borderTop: `3px solid ${card.color}`,
+          }}>
+            <div style={{ fontSize: '28px', fontWeight: 700, lineHeight: 1.1, color: card.color }}>{card.value}</div>
+            <div style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px', color: '#94a3b8', fontWeight: 600, marginTop: '4px' }}>{card.label}</div>
           </div>
-        </div>
+        ))}
       </div>
     );
   }
 
-  private renderListView(policies: IAssignedPolicy[]): React.ReactNode {
-    const { expandedPolicyId } = this.state;
+  private renderToolbar(): React.ReactNode {
+    const { activeTab, searchQuery, policies } = this.state;
+    const kpi = this.getKpiCounts();
+    const filteredPolicies = this.getFilteredPolicies();
 
-    if (policies.length === 0) {
-      return this.renderEmptyState();
-    }
+    const tabs = [
+      { key: 'all' as const, label: 'All', count: null },
+      { key: 'pending' as const, label: 'Pending', count: kpi.pending, countBg: 'rgba(0,0,0,0.06)', countColor: '#334155' },
+      { key: 'overdue' as const, label: 'Overdue', count: kpi.overdue, countBg: '#fee2e2', countColor: '#dc2626' },
+      { key: 'completed' as const, label: 'Completed', count: null },
+    ];
 
     return (
-      <div className={styles.policyListView}>
-        {policies.map(policy => {
-          const days = getDaysUntilDue(policy.dueDate);
-          const isExpanded = expandedPolicyId === policy.id;
-          const statusColor = getStatusColor(policy.status);
-          const itemClass = policy.status === 'overdue' ? styles.urgentItem :
-            (days !== null && days <= 3 && policy.status !== 'completed') ? styles.dueSoonItem : '';
-
-          return (
-            <div key={policy.id}>
-              <div className={`${styles.policyListItem} ${itemClass}`}>
+      <div style={{
+        padding: '12px 20px',
+        borderBottom: '1px solid #f1f5f9',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        background: '#fafafa',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <div style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', display: 'flex', alignItems: 'center' }}>
+              <SearchIcon size={13} color="#94a3b8" />
+            </div>
+            <input
+              type="text"
+              placeholder="Search my policies..."
+              value={searchQuery}
+              onChange={(e) => this.setState({ searchQuery: e.target.value })}
+              style={{
+                background: '#fff',
+                border: '1px solid #e2e8f0',
+                borderRadius: '6px',
+                padding: '7px 12px 7px 30px',
+                fontSize: '12px',
+                width: '240px',
+                outline: 'none',
+                fontFamily: 'inherit',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = '#0d9488';
+                e.currentTarget.style.boxShadow = '0 0 0 2px rgba(13,148,136,0.12)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = '#e2e8f0';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+            />
+          </div>
+          <div style={{ display: 'flex', gap: '6px' }}>
+            {tabs.map(tab => {
+              const isActive = activeTab === tab.key;
+              return (
                 <button
+                  key={tab.key}
                   type="button"
-                  onClick={(e) => { e.stopPropagation(); this.toggleExpand(policy.id); }}
+                  onClick={() => this.setState({ activeTab: tab.key })}
                   style={{
-                    background: 'none', border: 'none', cursor: 'pointer', padding: '4px',
-                    marginRight: '8px', color: '#605e5c', fontSize: '14px'
+                    padding: '6px 14px',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    border: `1px solid ${isActive ? '#0d9488' : '#e2e8f0'}`,
+                    background: isActive ? '#0d9488' : '#fff',
+                    color: isActive ? '#fff' : '#334155',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
                   }}
                 >
-                  <Icon iconName={isExpanded ? 'ChevronDown' : 'ChevronRight'} />
+                  {tab.label}
+                  {tab.count !== null && tab.count > 0 && (
+                    <span style={{
+                      background: isActive ? 'rgba(255,255,255,0.25)' : (tab.countBg || 'rgba(0,0,0,0.06)'),
+                      color: isActive ? '#fff' : (tab.countColor || '#334155'),
+                      padding: '1px 6px',
+                      borderRadius: '8px',
+                      fontSize: '10px',
+                      marginLeft: '2px',
+                    }}>{tab.count}</span>
+                  )}
                 </button>
-
-                <div className={styles.policyIcon}>
-                  <Icon iconName="Library" />
-                </div>
-                <div className={styles.policyInfo} onClick={() => this.handlePolicyClick(policy.id)} style={{ cursor: 'pointer' }}>
-                  <div className={styles.policyName}>{policy.title}</div>
-                  <div className={styles.policyMeta}>
-                    <span><Icon iconName="Tag" style={{ fontSize: 11, marginRight: 3 }} />{policy.category}</span>
-                    <span>&bull;</span>
-                    <span><Icon iconName="Org" style={{ fontSize: 11, marginRight: 3 }} />{policy.department}</span>
-                    <span>&bull;</span>
-                    <span>v{policy.version}</span>
-                    {policy.packName && <><span>&bull;</span><span><Icon iconName="Package" style={{ fontSize: 11, marginRight: 3 }} />{policy.packName}</span></>}
-                    {policy.hasQuiz && <><span>&bull;</span><span><Icon iconName="Questionnaire" style={{ fontSize: 11, marginRight: 3 }} />Quiz</span></>}
-                  </div>
-                  <div className={styles.policyMeta} style={{ marginTop: '2px' }}>
-                    <span><Icon iconName="Calendar" style={{ fontSize: 11, marginRight: 3 }} />Assigned: {formatDate(policy.assignedDate)}</span>
-                    <span>&bull;</span>
-                    <span style={{ color: getPriorityColor(policy.priority), fontWeight: 600 }}>
-                      <Icon iconName="Flag" style={{ fontSize: 11, marginRight: 3 }} />{policy.priority.charAt(0).toUpperCase() + policy.priority.slice(1)} Priority
-                    </span>
-                    {days !== null && days > 0 && policy.status !== 'completed' && (
-                      <><span>&bull;</span><span style={{ color: days <= 3 ? '#d13438' : '#605e5c' }}>{days} days remaining</span></>
-                    )}
-                  </div>
-                </div>
-                <div className={styles.policyStatus}>
-                  <span style={{
-                    display: 'inline-block', padding: '4px 12px', borderRadius: '16px',
-                    fontSize: '12px', fontWeight: 500,
-                    backgroundColor: statusColor.bg, color: statusColor.text
-                  }}>
-                    {getStatusLabel(policy.status)}
-                  </span>
-                  <div className={styles.dueDate}>
-                    {policy.status === 'completed' && policy.acknowledgementDate
-                      ? `Acknowledged ${formatDate(policy.acknowledgementDate)}`
-                      : policy.dueDate
-                        ? `Due ${formatDate(policy.dueDate)}`
-                        : 'No due date'
-                    }
-                  </div>
-                </div>
-              </div>
-
-              {isExpanded && (
-                <div style={{
-                  padding: '16px 20px 16px 76px', background: '#fafafa',
-                  borderBottom: '1px solid #edebe9', borderLeft: '4px solid #0d9488'
-                }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-                    <div style={{ background: '#fff', borderRadius: '8px', padding: '14px', border: '1px solid #edebe9' }}>
-                      <div style={{ fontSize: '12px', color: '#605e5c', marginBottom: '8px', fontWeight: 600 }}>
-                        <Icon iconName="Info" style={{ marginRight: '6px' }} />Policy Details
-                      </div>
-                      <div style={{ fontSize: '13px', color: '#323130' }}>
-                        <div>Category: {policy.category}</div>
-                        <div>Department: {policy.department}</div>
-                        <div>Version: {policy.version}</div>
-                      </div>
-                    </div>
-                    <div style={{ background: '#fff', borderRadius: '8px', padding: '14px', border: '1px solid #edebe9' }}>
-                      <div style={{ fontSize: '12px', color: '#605e5c', marginBottom: '8px', fontWeight: 600 }}>
-                        <Icon iconName="Calendar" style={{ marginRight: '6px' }} />Timeline
-                      </div>
-                      <div style={{ fontSize: '13px', color: '#323130' }}>
-                        <div>Assigned: {formatDate(policy.assignedDate)}</div>
-                        <div>Due: {formatDate(policy.dueDate)}</div>
-                        {days !== null && days > 0 && <div style={{ color: days <= 3 ? '#d13438' : '#605e5c' }}>{days} days remaining</div>}
-                      </div>
-                    </div>
-                    <div style={{ background: '#fff', borderRadius: '8px', padding: '14px', border: '1px solid #edebe9' }}>
-                      <div style={{ fontSize: '12px', color: '#605e5c', marginBottom: '8px', fontWeight: 600 }}>
-                        <Icon iconName="Shield" style={{ marginRight: '6px' }} />Requirements
-                      </div>
-                      <div style={{ fontSize: '13px', color: '#323130' }}>
-                        <div>Priority: <span style={{ color: getPriorityColor(policy.priority), fontWeight: 600 }}>{policy.priority}</span></div>
-                        <div>Quiz Required: {policy.hasQuiz ? 'Yes' : 'No'}</div>
-                        {policy.packName && <div>Pack: {policy.packName}</div>}
-                      </div>
-                    </div>
-                    <div style={{ background: '#fff', borderRadius: '8px', padding: '14px', border: '1px solid #edebe9', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '8px' }}>
-                      <PrimaryButton
-                        text={policy.status === 'completed' ? 'View Again' : 'Read Policy'}
-                        onClick={() => this.handlePolicyClick(policy.id)}
-                        styles={{ root: { width: '100%', backgroundColor: '#0d9488', borderColor: '#0d9488' }, rootHovered: { backgroundColor: '#0f766e', borderColor: '#0f766e' }, rootPressed: { backgroundColor: '#115e59', borderColor: '#115e59' } }}
-                      />
-                      {policy.status !== 'completed' && (
-                        <DefaultButton
-                          text="Mark as Read"
-                          iconProps={{ iconName: 'Accept' }}
-                          styles={{ root: { width: '100%', color: '#0d9488', borderColor: '#0d9488' }, rootHovered: { color: '#0f766e', borderColor: '#0f766e', background: '#ccfbf1' } }}
-                        />
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
+              );
+            })}
+          </div>
+        </div>
+        <span style={{ fontSize: '11px', color: '#94a3b8' }}>{filteredPolicies.length} policies</span>
       </div>
     );
   }
 
-  private renderCardView(policies: IAssignedPolicy[]): React.ReactNode {
+  private renderPolicyRow(policy: IAssignedPolicy): React.ReactNode {
+    const { selectedPolicyId } = this.state;
+    const isSelected = selectedPolicyId === policy.id;
+    const iconColors = this.getPolicyIconColors(policy.status);
+    const statusBadge = getStatusBadgeClass(policy.status);
+    const riskBadge = getRiskBadge(policy.priority);
+    const dueInfo = this.getDueText(policy);
+    const isOverdueRow = policy.status === 'overdue';
+
+    return (
+      <div
+        key={policy.id}
+        onClick={() => this.selectPolicy(policy.id)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.selectPolicy(policy.id); } }}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '14px',
+          padding: isSelected || isOverdueRow ? '14px 20px 14px 17px' : '14px 20px',
+          borderBottom: '1px solid #f1f5f9',
+          cursor: 'pointer',
+          transition: 'all 0.1s',
+          background: isSelected ? '#f0fdfa' : 'transparent',
+          borderLeft: isSelected ? '3px solid #0d9488' : isOverdueRow ? '3px solid #dc2626' : '3px solid transparent',
+        }}
+        onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = '#f0fdfa'; }}
+        onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
+      >
+        {/* Policy icon circle */}
+        <div style={{
+          width: '40px',
+          height: '40px',
+          borderRadius: '8px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+          background: iconColors.bg,
+          color: iconColors.color,
+        }}>
+          {policy.status === 'completed' ? (
+            <CheckIcon size={20} color={iconColors.color} />
+          ) : policy.status === 'overdue' ? (
+            <ExclamationIcon size={20} color={iconColors.color} />
+          ) : (
+            <WarningIcon size={20} color={iconColors.color} />
+          )}
+        </div>
+
+        {/* Content */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {policy.title}
+          </div>
+          <div style={{ display: 'flex', gap: '12px', marginTop: '3px', fontSize: '11px', color: '#94a3b8' }}>
+            <span>POL-{policy.id.toString().padStart(3, '0')}</span>
+            <span>{policy.category}</span>
+            <span>v{policy.version}</span>
+          </div>
+        </div>
+
+        {/* Badges */}
+        <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+          <span style={{
+            fontSize: '9px',
+            fontWeight: 700,
+            padding: '3px 8px',
+            borderRadius: '4px',
+            textTransform: 'uppercase',
+            letterSpacing: '0.3px',
+            background: statusBadge.bg,
+            color: statusBadge.text,
+          }}>{getStatusLabel(policy.status)}</span>
+          {policy.priority === 'high' && (
+            <span style={{
+              fontSize: '9px',
+              fontWeight: 700,
+              padding: '3px 8px',
+              borderRadius: '4px',
+              textTransform: 'uppercase',
+              letterSpacing: '0.3px',
+              background: riskBadge.bg,
+              color: riskBadge.text,
+            }}>{riskBadge.label}</span>
+          )}
+        </div>
+
+        {/* Due date */}
+        <div style={{
+          fontSize: '11px',
+          color: dueInfo.color,
+          textAlign: 'right',
+          minWidth: '90px',
+          flexShrink: 0,
+          fontWeight: dueInfo.bold ? 600 : 400,
+        }}>
+          {dueInfo.text}
+        </div>
+
+        {/* View button */}
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); this.selectPolicy(policy.id); }}
+          style={{
+            width: '32px',
+            height: '32px',
+            borderRadius: '6px',
+            border: `1px solid ${isSelected ? '#0d9488' : '#e2e8f0'}`,
+            background: isSelected ? '#f0fdfa' : '#fff',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: isSelected ? '#0d9488' : '#94a3b8',
+            flexShrink: 0,
+            transition: 'all 0.15s',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#0d9488'; e.currentTarget.style.color = '#0d9488'; e.currentTarget.style.background = '#f0fdfa'; }}
+          onMouseLeave={(e) => { if (!isSelected) { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.background = '#fff'; } }}
+          title="View details"
+          aria-label={`View details for ${policy.title}`}
+        >
+          <ChevronRightIcon size={14} />
+        </button>
+      </div>
+    );
+  }
+
+  private renderPolicyList(policies: IAssignedPolicy[]): React.ReactNode {
     if (policies.length === 0) {
       return this.renderEmptyState();
     }
 
     return (
-      <div className={styles.policyCardGrid}>
-        {policies.map(policy => {
-          const days = getDaysUntilDue(policy.dueDate);
-          const statusColor = getStatusColor(policy.status);
-          const borderColor = policy.status === 'overdue' ? '#d13438' :
-            (days !== null && days <= 3 && policy.status !== 'completed') ? '#ff8c00' : '#0d9488';
+      <div style={{
+        background: '#fff',
+        border: '1px solid #e2e8f0',
+        borderRadius: '10px',
+        overflow: 'hidden',
+      }}>
+        {this.renderToolbar()}
+        <div>
+          {policies.map(policy => this.renderPolicyRow(policy))}
+        </div>
+      </div>
+    );
+  }
 
-          return (
-            <div
-              key={policy.id}
-              className={styles.policyCard}
-              style={{ borderLeftColor: borderColor, cursor: 'pointer' }}
-              onClick={() => this.handlePolicyClick(policy.id)}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                <div className={styles.policyTitle}>{policy.title}</div>
-                <span style={{
-                  padding: '4px 10px', borderRadius: '16px', fontSize: '11px', fontWeight: 500,
-                  backgroundColor: statusColor.bg, color: statusColor.text, flexShrink: 0
-                }}>
-                  {getStatusLabel(policy.status)}
-                </span>
+  private renderDetailPanel(): React.ReactNode {
+    const { selectedPolicyId, policies } = this.state;
+    const policy = selectedPolicyId !== null ? policies.find(p => p.id === selectedPolicyId) : null;
+
+    const statusBadge = getStatusBadgeClass(policy.status);
+    const riskBadge = getRiskBadge(policy.priority);
+    const dueInfo = this.getDueText(policy);
+    const days = getDaysUntilDue(policy.dueDate);
+    const steps = this.getProgressSteps(policy);
+
+    // Status banner config
+    let bannerBg = '#fef3c7';
+    let bannerBorder = '#fbbf24';
+    let bannerLabel = 'Acknowledgement Pending';
+    let bannerDesc = '';
+    let bannerIconColor = '#d97706';
+
+    if (policy.status === 'completed') {
+      bannerBg = '#dcfce7';
+      bannerBorder = '#86efac';
+      bannerLabel = 'Acknowledged';
+      bannerDesc = policy.acknowledgementDate ? `Completed on ${formatDate(policy.acknowledgementDate)}` : 'Policy acknowledged';
+      bannerIconColor = '#059669';
+    } else if (policy.status === 'overdue') {
+      bannerBg = '#fee2e2';
+      bannerBorder = '#fca5a5';
+      bannerLabel = 'Overdue';
+      bannerDesc = days !== null ? `${Math.abs(days)} days overdue` : 'Past due date';
+      bannerIconColor = '#dc2626';
+    } else {
+      bannerDesc = policy.dueDate ? `Due in ${days} days -- ${formatDate(policy.dueDate)}` : 'No due date set';
+    }
+
+    // Related policies (pick 2 others from the list)
+    const relatedPolicies = policies.filter(p => p.id !== policy.id).slice(0, 2);
+
+    return (
+      <StyledPanel
+        isOpen={selectedPolicyId !== null && policy !== undefined}
+        onDismiss={() => this.setState({ selectedPolicyId: null })}
+        type={PanelType.medium}
+        headerText={policy ? policy.title : ''}
+        isLightDismiss
+      >
+        {policy && (
+        <div style={{ padding: '0' }}>
+          {/* Policy number subtitle */}
+          <div style={{ fontSize: '12px', color: '#0d9488', marginBottom: '16px' }}>POL-{policy.id.toString().padStart(3, '0')} | Version {policy.version}</div>
+          {/* Status Banner */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            padding: '12px 16px',
+            borderRadius: '8px',
+            marginBottom: '16px',
+            background: bannerBg,
+            border: `1px solid ${bannerBorder}`,
+          }}>
+            <div style={{ flexShrink: 0 }}>
+              {policy.status === 'completed' ? (
+                <CheckIcon size={22} color={bannerIconColor} />
+              ) : policy.status === 'overdue' ? (
+                <ExclamationIcon size={22} color={bannerIconColor} />
+              ) : (
+                <ClockIcon size={22} color={bannerIconColor} />
+              )}
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a' }}>{bannerLabel}</div>
+              <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>{bannerDesc}</div>
+            </div>
+          </div>
+
+          {/* Progress Steps */}
+          <div style={{ marginBottom: '20px' }}>
+            <div style={{
+              fontSize: '10px',
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '1px',
+              color: '#94a3b8',
+              marginBottom: '10px',
+              paddingBottom: '6px',
+              borderBottom: '1px solid #f1f5f9',
+            }}>Your Progress</div>
+            <div style={{ display: 'flex', gap: 0, margin: '16px 0' }}>
+              {steps.map((step, idx) => {
+                const dotBg = step.state === 'done' ? '#059669' : step.state === 'current' ? '#0d9488' : '#e2e8f0';
+                const dotColor = step.state === 'pending' ? '#94a3b8' : '#fff';
+                const dotShadow = step.state === 'current' ? '0 0 0 3px rgba(13,148,136,0.2)' : 'none';
+                const lineBg = step.state === 'done' ? '#059669' : '#e2e8f0';
+
+                return (
+                  <div key={step.label} style={{ flex: 1, textAlign: 'center', position: 'relative' }}>
+                    {idx < steps.length - 1 && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '14px',
+                        left: '50%',
+                        width: '100%',
+                        height: '2px',
+                        background: lineBg,
+                        zIndex: 0,
+                      }} />
+                    )}
+                    <div style={{
+                      width: '28px',
+                      height: '28px',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      margin: '0 auto 6px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      background: dotBg,
+                      color: dotColor,
+                      boxShadow: dotShadow,
+                      position: 'relative',
+                      zIndex: 1,
+                    }}>
+                      {step.state === 'done' ? (
+                        <CheckIcon size={14} color="#fff" />
+                      ) : (
+                        idx + 1
+                      )}
+                    </div>
+                    <div style={{ fontSize: '9px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{step.label}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Policy Details */}
+          <div style={{ marginBottom: '20px' }}>
+            <div style={{
+              fontSize: '10px',
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '1px',
+              color: '#94a3b8',
+              marginBottom: '10px',
+              paddingBottom: '6px',
+              borderBottom: '1px solid #f1f5f9',
+            }}>Policy Details</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div>
+                <div style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Category</div>
+                <div style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a', marginTop: '2px' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 700, padding: '3px 8px', borderRadius: '4px', background: '#ccfbf1', color: '#0d9488' }}>{policy.category}</span>
+                </div>
               </div>
-              <div className={styles.category} style={{ fontSize: '12px', marginBottom: '8px' }}>
-                {policy.category} &bull; {policy.department}
+              <div>
+                <div style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Risk Level</div>
+                <div style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a', marginTop: '2px' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 700, padding: '3px 8px', borderRadius: '4px', background: riskBadge.bg, color: riskBadge.text }}>{riskBadge.label}</span>
+                </div>
               </div>
-              <div style={{ fontSize: '12px', color: '#605e5c', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <div><Icon iconName="Calendar" className={styles.icon} /> Due: {formatDate(policy.dueDate)}</div>
-                <div><Icon iconName="PageList" className={styles.icon} /> Version {policy.version}</div>
-                {policy.hasQuiz && <div><Icon iconName="Questionnaire" className={styles.icon} /> Quiz required</div>}
-                {policy.packName && <div><Icon iconName="Package" className={styles.icon} /> {policy.packName}</div>}
+              <div>
+                <div style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Department</div>
+                <div style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a', marginTop: '2px' }}>{policy.department}</div>
               </div>
-              <div className={styles.actions}>
-                <PrimaryButton
-                  text={policy.status === 'completed' ? 'View' : 'Read'}
-                  styles={{ root: { minWidth: 0, padding: '4px 16px', height: '28px', backgroundColor: '#0d9488', borderColor: '#0d9488' }, rootHovered: { backgroundColor: '#0f766e', borderColor: '#0f766e' }, rootPressed: { backgroundColor: '#115e59', borderColor: '#115e59' } }}
-                />
+              <div>
+                <div style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Version</div>
+                <div style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a', marginTop: '2px' }}>{policy.version}</div>
               </div>
             </div>
-          );
-        })}
-      </div>
+          </div>
+
+          {/* Timeline */}
+          <div style={{ marginBottom: '20px' }}>
+            <div style={{
+              fontSize: '10px',
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '1px',
+              color: '#94a3b8',
+              marginBottom: '10px',
+              paddingBottom: '6px',
+              borderBottom: '1px solid #f1f5f9',
+            }}>Timeline</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div>
+                <div style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Assigned</div>
+                <div style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a', marginTop: '2px' }}>{formatDate(policy.assignedDate)}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Due Date</div>
+                <div style={{ fontSize: '13px', fontWeight: 600, color: dueInfo.color, marginTop: '2px' }}>{formatDate(policy.dueDate)}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Priority</div>
+                <div style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a', marginTop: '2px' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 700, padding: '3px 8px', borderRadius: '4px', background: riskBadge.bg, color: riskBadge.text }}>
+                    {policy.priority.charAt(0).toUpperCase() + policy.priority.slice(1)}
+                  </span>
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Days Remaining</div>
+                <div style={{ fontSize: '18px', fontWeight: 700, color: dueInfo.color, marginTop: '2px' }}>
+                  {days !== null ? (days < 0 ? Math.abs(days) : days) : '--'}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Requirements */}
+          <div style={{ marginBottom: '20px' }}>
+            <div style={{
+              fontSize: '10px',
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '1px',
+              color: '#94a3b8',
+              marginBottom: '10px',
+              paddingBottom: '6px',
+              borderBottom: '1px solid #f1f5f9',
+            }}>Requirements</div>
+
+            {/* Read requirement */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 0', borderBottom: '1px solid #f8fafc' }}>
+              <div style={{
+                width: '28px', height: '28px', borderRadius: '6px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0, background: '#f0fdfa',
+              }}>
+                <DocumentIcon size={14} color="#0d9488" />
+              </div>
+              <div style={{ flex: 1, fontSize: '12px', color: '#334155' }}>Read the full policy document</div>
+              <span style={{
+                fontSize: '8px', fontWeight: 700, padding: '3px 8px', borderRadius: '4px', textTransform: 'uppercase',
+                background: policy.status === 'in-progress' || policy.status === 'completed' ? '#dcfce7' : '#fef3c7',
+                color: policy.status === 'in-progress' || policy.status === 'completed' ? '#16a34a' : '#d97706',
+              }}>
+                {policy.status === 'in-progress' || policy.status === 'completed' ? 'Done' : 'Required'}
+              </span>
+            </div>
+
+            {/* Quiz requirement */}
+            {policy.hasQuiz && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 0', borderBottom: '1px solid #f8fafc' }}>
+                <div style={{
+                  width: '28px', height: '28px', borderRadius: '6px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0, background: '#ede9fe',
+                }}>
+                  <QuizIcon size={14} color="#7c3aed" />
+                </div>
+                <div style={{ flex: 1, fontSize: '12px', color: '#334155' }}>Complete comprehension quiz (75% to pass)</div>
+                <span style={{
+                  fontSize: '8px', fontWeight: 700, padding: '3px 8px', borderRadius: '4px', textTransform: 'uppercase',
+                  background: policy.status === 'completed' ? '#dcfce7' : '#fef3c7',
+                  color: policy.status === 'completed' ? '#16a34a' : '#d97706',
+                }}>
+                  {policy.status === 'completed' ? 'Done' : 'Required'}
+                </span>
+              </div>
+            )}
+
+            {/* Acknowledgement requirement */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 0' }}>
+              <div style={{
+                width: '28px', height: '28px', borderRadius: '6px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0, background: '#dbeafe',
+              }}>
+                <ShieldIcon size={14} color="#2563eb" />
+              </div>
+              <div style={{ flex: 1, fontSize: '12px', color: '#334155' }}>Sign digital acknowledgement</div>
+              <span style={{
+                fontSize: '8px', fontWeight: 700, padding: '3px 8px', borderRadius: '4px', textTransform: 'uppercase',
+                background: policy.status === 'completed' ? '#dcfce7' : '#f1f5f9',
+                color: policy.status === 'completed' ? '#16a34a' : '#64748b',
+              }}>
+                {policy.status === 'completed' ? 'Done' : 'Pending'}
+              </span>
+            </div>
+          </div>
+
+          {/* Related Policies */}
+          {relatedPolicies.length > 0 && (
+            <div style={{ marginBottom: '20px' }}>
+              <div style={{
+                fontSize: '10px',
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '1px',
+                color: '#94a3b8',
+                marginBottom: '10px',
+                paddingBottom: '6px',
+                borderBottom: '1px solid #f1f5f9',
+              }}>Related Policies</div>
+              {relatedPolicies.map(rp => (
+                <div
+                  key={rp.id}
+                  style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 0', borderBottom: '1px solid #f8fafc', cursor: 'pointer' }}
+                  onClick={() => this.selectPolicy(rp.id)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.selectPolicy(rp.id); } }}
+                >
+                  <div style={{
+                    width: '28px', height: '28px', borderRadius: '6px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0, background: '#f0fdfa',
+                  }}>
+                    <DocumentIcon size={14} color="#0d9488" />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '12px', color: '#334155', fontWeight: 600 }}>{rp.title}</div>
+                    <div style={{ fontSize: '10px', color: '#94a3b8' }}>POL-{rp.id.toString().padStart(3, '0')} | {getStatusLabel(rp.status)}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Primary Action buttons */}
+          <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
+            <button type="button" onClick={() => this.handlePolicyClick(policy.id)}
+              style={{ flex: 1, padding: '10px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', border: '1px solid #0d9488', fontFamily: 'inherit', textAlign: 'center', background: '#0d9488', color: '#fff' }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = '#0f766e'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = '#0d9488'; }}>
+              {policy.status === 'completed' ? 'View Policy' : 'Read Policy'}
+            </button>
+            {policy.hasQuiz && policy.status !== 'completed' && (
+              <button type="button" onClick={() => this.handlePolicyClick(policy.id)}
+                style={{ flex: 1, padding: '10px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', border: '1px solid #0d9488', fontFamily: 'inherit', textAlign: 'center', background: '#fff', color: '#0d9488' }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = '#f0fdfa'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = '#fff'; }}>
+                Start Quiz
+              </button>
+            )}
+          </div>
+
+          {/* Secondary Actions */}
+          {policy.status !== 'completed' && (
+            <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+              <button type="button" style={{ flex: 1, padding: '8px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', border: '1px solid #e2e8f0', fontFamily: 'inherit', textAlign: 'center', background: '#fff', color: '#64748b' }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#0d9488'; e.currentTarget.style.color = '#0d9488'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#64748b'; }}>
+                Mark as Read
+              </button>
+              <button type="button" style={{ flex: 1, padding: '8px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', border: '1px solid #e2e8f0', fontFamily: 'inherit', textAlign: 'center', background: '#fff', color: '#64748b' }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#d97706'; e.currentTarget.style.color = '#d97706'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#64748b'; }}>
+                Snooze Reminder
+              </button>
+              <button type="button" style={{ flex: 1, padding: '8px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', border: '1px solid #e2e8f0', fontFamily: 'inherit', textAlign: 'center', background: '#fff', color: '#64748b' }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#2563eb'; e.currentTarget.style.color = '#2563eb'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#64748b'; }}>
+                Request Extension
+              </button>
+            </div>
+          )}
+        </div>
+        )}
+      </StyledPanel>
     );
   }
 
   private renderEmptyState(): React.ReactNode {
     return (
-      <div className={styles.emptyState}>
-        <Icon iconName="CompletedSolid" className={styles.emptyIcon} />
-        <h3 style={{ margin: '16px 0 8px', color: '#323130' }}>All caught up!</h3>
-        <p style={{ color: '#605e5c' }}>No policies matching your current filter. Try a different tab or clear search.</p>
+      <div style={{
+        background: '#fff',
+        border: '1px solid #e2e8f0',
+        borderRadius: '10px',
+        overflow: 'hidden',
+      }}>
+        {this.renderToolbar()}
+        <div style={{
+          padding: '60px 20px',
+          textAlign: 'center',
+        }}>
+          <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'center' }}>
+            <CheckIcon size={48} color="#059669" />
+          </div>
+          <h3 style={{ margin: '16px 0 8px', color: '#323130', fontSize: '16px', fontWeight: 600 }}>All caught up!</h3>
+          <p style={{ color: '#605e5c', fontSize: '13px' }}>No policies matching your current filter. Try a different tab or clear search.</p>
+        </div>
       </div>
     );
   }
 
   public render(): React.ReactElement<IMyPoliciesProps> {
-    const { loading, viewMode } = this.state;
+    const { loading, selectedPolicyId } = this.state;
     const filteredPolicies = this.getFilteredPolicies();
 
     return (
@@ -575,23 +1050,50 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
         breadcrumbs={[{ text: 'Policy Manager', url: '/sites/PolicyManager' }, { text: 'My Policies' }]}
         activeNavKey="my-policies"
       >
-        <div className={styles.myPolicies}>
-          <div style={{ width: '100%', padding: '8px 24px', boxSizing: 'border-box' }}>
-            {loading ? (
-              <div style={{ padding: '60px', textAlign: 'center' }}>
-                <Spinner size={SpinnerSize.large} label="Loading your policies..." />
+        <div className={styles.myPolicies} style={{ width: '100%', height: '100%' }}>
+          {loading ? (
+            <div style={{ padding: '60px', textAlign: 'center', width: '100%' }}>
+              <Spinner size={SpinnerSize.large} label="Loading your policies..." />
+            </div>
+          ) : (
+            <div style={{
+              display: 'flex',
+              width: '100%',
+              height: '100%',
+              minHeight: 'calc(100vh - 180px)',
+            }}>
+              {/* Main content area */}
+              <div style={{
+                flex: 1,
+                overflowY: 'auto',
+                padding: '32px 40px',
+              }}>
+                <div style={{ maxWidth: '960px' }}>
+                  {/* Page Header */}
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
+                    marginBottom: '24px',
+                  }}>
+                    <div>
+                      <h1 style={{ fontSize: '26px', fontWeight: 700, letterSpacing: '-0.5px', margin: 0, color: '#0f172a' }}>My Policies</h1>
+                      <div style={{ fontSize: '13px', color: '#64748b', marginTop: '4px' }}>Your assigned policies and acknowledgement status</div>
+                    </div>
+                  </div>
+
+                  {/* KPI Strip */}
+                  {this.renderKpiStrip()}
+
+                  {/* Policy List */}
+                  {this.renderPolicyList(filteredPolicies)}
+                </div>
               </div>
-            ) : (
-              <>
-                {this.renderProgressHeader()}
-                {this.renderTabBar()}
-                {viewMode === 'list'
-                  ? this.renderListView(filteredPolicies)
-                  : this.renderCardView(filteredPolicies)
-                }
-              </>
-            )}
-          </div>
+
+              {/* Detail Panel (slide-in from right) */}
+              {this.renderDetailPanel()}
+            </div>
+          )}
         </div>
       </JmlAppLayout>
       </ErrorBoundary>

@@ -860,22 +860,33 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
 
   private renderKPIs(): React.ReactElement {
     const kpis = this.getKPIs();
+    const kpiColors = ['#0d9488', '#2563eb', '#7c3aed', '#059669', '#0d9488', '#d97706', '#dc2626'];
+    const kpiValueColors = ['#0d9488', '#2563eb', '#7c3aed', '#059669', '#0d9488', '#d97706', '#dc2626'];
     return (
-      <div className={styles.kpiSection}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <span style={{ fontWeight: 600, fontSize: 14, color: '#334155' }}>Distribution Overview</span>
-          <IconButton
-            iconProps={{ iconName: 'Refresh' }}
-            title="Refresh distributions"
-            onClick={this.reloadDistributions}
-            styles={{ root: { color: '#0d9488' }, rootHovered: { color: '#0f766e' } }}
-          />
+      <div style={{ padding: '0 40px', maxWidth: 1400, margin: '0 auto', marginBottom: 28 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <div>
+            <h1 style={{ fontSize: 26, fontWeight: 700, letterSpacing: -0.5, margin: 0 }}>Policy Distribution</h1>
+            <div style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>Create, manage, and track policy distribution campaigns across the organisation</div>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <IconButton
+              iconProps={{ iconName: 'Refresh' }}
+              title="Refresh distributions"
+              ariaLabel="Refresh distributions"
+              onClick={this.reloadDistributions}
+              styles={{ root: { color: '#0d9488' }, rootHovered: { color: '#0f766e' } }}
+            />
+          </div>
         </div>
-        <div className={styles.kpiGrid}>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${kpis.length}, 1fr)`, gap: 12 }}>
           {kpis.map((kpi, idx) => (
-            <div key={idx} className={`${styles.kpiCard} ${kpi.className || ''}`}>
-              <div className={styles.kpiValue}>{kpi.value}</div>
-              <div className={styles.kpiLabel}>{kpi.label}</div>
+            <div key={idx} style={{
+              background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '18px 16px',
+              position: 'relative', overflow: 'hidden', borderTop: `3px solid ${kpiColors[idx] || '#94a3b8'}`
+            }}>
+              <div style={{ fontSize: 28, fontWeight: 700, lineHeight: 1.1, color: kpiValueColors[idx] || '#0f172a' }}>{kpi.value}</div>
+              <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#94a3b8', fontWeight: 600, marginTop: 4 }}>{kpi.label}</div>
             </div>
           ))}
         </div>
@@ -921,75 +932,85 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
   // ──────────── RENDER: Campaign Table ────────────
 
   private renderCampaignTable(): React.ReactElement {
-    const { filteredCampaigns } = this.state;
+    const { filteredCampaigns, selectedCampaign } = this.state;
 
     if (filteredCampaigns.length === 0) {
       return (
-        <div className={styles.emptyState}>
-          <div className={styles.emptyIcon}><Icon iconName="MailForward" /></div>
-          <div className={styles.emptyTitle}>No campaigns found</div>
-          <div className={styles.emptyText}>Create your first distribution campaign to start distributing policies to your team.</div>
+        <div style={{ padding: '60px 40px', textAlign: 'center' }}>
+          <svg viewBox="0 0 24 24" fill="none" width="48" height="48" style={{ margin: '0 auto 16px', display: 'block' }}><path d="M22 12h-6l-2 3h-4l-2-3H2" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4, color: '#0f172a' }}>No campaigns found</div>
+          <div style={{ fontSize: 13, color: '#64748b' }}>Create your first distribution campaign to start distributing policies to your team.</div>
         </div>
       );
     }
 
+    const statusColors: Record<string, { bg: string; color: string }> = {
+      'Active': { bg: '#ccfbf1', color: '#0d9488' },
+      'Scheduled': { bg: '#fef3c7', color: '#d97706' },
+      'Completed': { bg: '#dcfce7', color: '#16a34a' },
+      'Draft': { bg: '#f1f5f9', color: '#64748b' },
+      'Paused': { bg: '#fee2e2', color: '#dc2626' }
+    };
+
     return (
-      <div className={styles.campaignList}>
-        <table className={styles.campaignTable}>
-          <thead>
-            <tr>
-              <th>Campaign</th>
-              <th>Type</th>
-              <th>Content</th>
-              <th>Scope</th>
-              <th>Status</th>
-              <th>Progress</th>
-              <th>Due Date</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredCampaigns.map(campaign => {
-              const pct = this.getAckPercentage(campaign);
-              return (
-                <tr key={campaign.id}>
-                  <td>
-                    <span className={styles.campaignName} onClick={() => this.selectCampaign(campaign)}>
-                      <Icon iconName="MailForward" style={{ fontSize: 14, color: '#0d9488' }} />
-                      {campaign.campaignName}
-                    </span>
-                  </td>
-                  <td>
-                    <span className={`${styles.statusBadge} ${campaign.contentType === 'Policy Pack' ? styles.statusCompleted : styles.statusDraft}`}>
-                      <Icon iconName={campaign.contentType === 'Policy Pack' ? 'Package' : 'Document'} style={{ fontSize: 11 }} />
+      <div style={{ padding: '0 40px', maxWidth: 1400, margin: '0 auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 28 }}>
+          {filteredCampaigns.map(campaign => {
+            const pct = this.getAckPercentage(campaign);
+            const sColors = statusColors[campaign.status] || statusColors['Draft'];
+            const isSelected = selectedCampaign && selectedCampaign.id === campaign.id;
+            const progressColor = pct >= 70 ? '#0d9488' : pct >= 40 ? '#d97706' : '#94a3b8';
+
+            return (
+              <div
+                key={campaign.id}
+                style={{
+                  background: '#fff', border: isSelected ? '1px solid #0d9488' : '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden',
+                  transition: 'all 0.2s', cursor: 'pointer',
+                  boxShadow: isSelected ? '0 4px 16px rgba(13,148,136,0.15)' : 'none'
+                }}
+                onClick={() => this.selectCampaign(campaign)}
+                onMouseEnter={(e) => { if (!isSelected) { (e.currentTarget as HTMLElement).style.borderColor = '#0d9488'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 16px rgba(13,148,136,0.1)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; } }}
+                onMouseLeave={(e) => { if (!isSelected) { (e.currentTarget as HTMLElement).style.borderColor = '#e2e8f0'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; } }}
+              >
+                {/* Campaign Header */}
+                <div style={{ padding: '16px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ fontSize: 14, fontWeight: 700 }}>{campaign.campaignName}</div>
+                  <span style={{ fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: 0.5, background: sColors.bg, color: sColors.color }}>
+                    {campaign.status}
+                  </span>
+                </div>
+                {/* Campaign Body */}
+                <div style={{ padding: '16px 20px' }}>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+                    <span style={{ fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: 0.5, background: campaign.contentType === 'Policy Pack' ? '#ede9fe' : '#dbeafe', color: campaign.contentType === 'Policy Pack' ? '#7c3aed' : '#2563eb' }}>
                       {campaign.contentType}
                     </span>
-                  </td>
-                  <td>{campaign.contentType === 'Policy Pack' ? campaign.policyPackName : campaign.policyTitle}</td>
-                  <td>{campaign.scope}{campaign.targetGroups.length > 0 && campaign.scope !== 'All Employees' ? ` (${campaign.targetGroups.join(', ')})` : ''}</td>
-                  <td>
-                    <span className={`${styles.statusBadge} ${this.getStatusStyle(campaign.status)}`}>
-                      {campaign.status}
-                    </span>
-                  </td>
-                  <td>
-                    <div className={styles.progressBarContainer}>
-                      <div className={styles.progressTrack}>
-                        <div className={styles.progressFill} style={{ width: `${pct}%` }} />
-                      </div>
-                      <span className={styles.progressLabel}>{pct}%</span>
+                    <span style={{ fontSize: 11, color: '#64748b' }}>{campaign.scope} &middot; {campaign.targetCount} recipients</span>
+                  </div>
+                  {/* Progress Bar */}
+                  <div style={{ margin: '8px 0' }}>
+                    <div style={{ height: 6, borderRadius: 3, background: '#e2e8f0', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', borderRadius: 3, width: `${pct}%`, background: progressColor, transition: 'width 0.3s' }} />
                     </div>
-                  </td>
-                  <td>{this.formatDate(campaign.dueDate)}</td>
-                  <td>
-                    <IconButton iconProps={{ iconName: 'Edit' }} title="Edit" onClick={() => this.openEditPanel(campaign)} />
-                    <IconButton iconProps={{ iconName: 'Delete' }} title="Delete" onClick={() => this.deleteCampaign(campaign.id)} styles={{ root: { color: '#ef4444' }, rootHovered: { color: '#dc2626' } }} />
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: 10, color: '#94a3b8' }}>
+                      <span>{campaign.totalAcknowledged} of {campaign.targetCount} acknowledged</span>
+                      <span style={{ fontWeight: 600, color: progressColor }}>{pct}%</span>
+                    </div>
+                  </div>
+                </div>
+                {/* Campaign Footer */}
+                <div style={{ padding: '12px 20px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 11, color: '#94a3b8' }}>Due: {this.formatDate(campaign.dueDate)}</span>
+                  <div style={{ display: 'flex', gap: 6 }} onClick={(e) => e.stopPropagation()}>
+                    <IconButton iconProps={{ iconName: 'Edit' }} title="Edit" ariaLabel="Edit campaign" onClick={() => this.openEditPanel(campaign)} styles={{ root: { width: 32, height: 32 } }} />
+                    <IconButton iconProps={{ iconName: 'Delete' }} title="Delete" ariaLabel="Delete campaign" onClick={() => this.deleteCampaign(campaign.id)} styles={{ root: { width: 32, height: 32, color: '#dc2626' }, rootHovered: { color: '#dc2626' } }} />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     );
   }

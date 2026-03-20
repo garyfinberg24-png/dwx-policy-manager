@@ -1542,28 +1542,46 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
     if (featuredPolicies.length === 0) return null;
 
     return (
-      <div className={styles.featuredSection}>
-        <div className={styles.sectionHeader}>
-          <div className={styles.sectionTitle}>
-            <Icon iconName="Pinned" className={styles.sectionTitleIcon} />
-            <span>Featured Policies</span>
+      <div style={{ marginBottom: 28 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="#0d9488" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            <span style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>Featured Policies</span>
           </div>
-          <Link className={styles.sectionToggle} onClick={this.handleToggleFeaturedSection}>
+          <Link style={{ fontSize: 12, color: '#0d9488', cursor: 'pointer' }} onClick={this.handleToggleFeaturedSection}>
             {showFeaturedSection ? 'Hide' : 'Show'}
           </Link>
         </div>
         {showFeaturedSection && (
-          <div className={styles.featuredGrid}>
+          <div style={{ display: 'flex', gap: 16 }}>
             {featuredPolicies.map(policy => (
-              <div key={policy.id} className={styles.featuredCard}>
-                <div className={styles.featuredCardIcon}>
-                  <Icon iconName={policy.iconName} />
-                </div>
-                <div className={styles.featuredCardContent}>
-                  <Text className={styles.featuredCardTitle}>{policy.title}</Text>
-                  <Text className={styles.featuredCardMeta}>
-                    {policy.isMandatory ? 'Mandatory' : 'Optional'} • {policy.readTime} min read
-                  </Text>
+              <div
+                key={policy.id}
+                style={{
+                  background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden',
+                  display: 'flex', flex: 1, cursor: 'pointer', transition: 'all 0.2s'
+                }}
+                onClick={() => {
+                  window.location.href = `/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${policy.id}&mode=browse`;
+                }}
+                onMouseEnter={(e) => {
+                  const el = e.currentTarget as HTMLElement;
+                  el.style.borderColor = '#0d9488';
+                  el.style.boxShadow = '0 4px 16px rgba(13,148,136,0.1)';
+                }}
+                onMouseLeave={(e) => {
+                  const el = e.currentTarget as HTMLElement;
+                  el.style.borderColor = '#e2e8f0';
+                  el.style.boxShadow = 'none';
+                }}
+              >
+                <div style={{ width: 6, background: 'linear-gradient(180deg, #0d9488, #2563eb)', flexShrink: 0 }} />
+                <div style={{ padding: '16px 20px', flex: 1 }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#0d9488', marginBottom: 6 }}>Featured</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>{policy.title}</div>
+                  <div style={{ fontSize: 11, color: '#94a3b8' }}>
+                    {policy.isMandatory ? 'Mandatory' : 'Optional'} &middot; {policy.readTime} min read
+                  </div>
                 </div>
               </div>
             ))}
@@ -1887,79 +1905,110 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
     const isNew = publishedDate && publishedDate > twoWeeksAgo;
     const isUpdated = !isNew && modifiedDate && modifiedDate > twoWeeksAgo;
 
-    // Get estimated read time (use EstimatedReadTimeMinutes from IPolicy or provide mock data)
+    // Get estimated read time
     const readTime = policy.EstimatedReadTimeMinutes || Math.floor(Math.random() * 20) + 5;
-    // ViewCount is not on IPolicy interface, use mock data for display
     const viewCount = Math.floor(Math.random() * 3000) + 100;
 
+    // Category color strip mapping
+    const categoryStripColors: Record<string, string> = {
+      'Compliance': '#2563eb', 'HR': '#db2777', 'Human Resources': '#db2777',
+      'Governance': '#6366f1', 'IT Security': '#0d9488', 'IT': '#0d9488',
+      'Safety': '#d97706', 'Health & Safety': '#d97706', 'Ethics': '#059669',
+      'Finance': '#7c3aed', 'Data Protection': '#2563eb', 'Security': '#0d9488'
+    };
+    const stripColor = categoryStripColors[policy.PolicyCategory || ''] || '#94a3b8';
+
+    // Risk badge colors
+    const riskBadgeStyles: Record<string, { bg: string; color: string }> = {
+      'Critical': { bg: '#fee2e2', color: '#dc2626' },
+      'High': { bg: '#fef3c7', color: '#d97706' },
+      'Medium': { bg: '#e0e7ff', color: '#6366f1' },
+      'Low': { bg: '#dcfce7', color: '#16a34a' },
+      'Informational': { bg: '#f1f5f9', color: '#64748b' }
+    };
+    const riskStyle = riskBadgeStyles[policy.ComplianceRisk || ''] || { bg: '#f1f5f9', color: '#64748b' };
+
     return (
-      <div key={policy.Id} className={styles.enhancedPolicyCard}>
-        {/* Left accent bar — coloured by risk level */}
-        <div className={`${styles.accentBar} ${this.getAccentClass(policy.ComplianceRisk)}`} />
+      <div
+        key={policy.Id}
+        style={{
+          background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden',
+          transition: 'all 0.2s', cursor: 'pointer', display: 'flex', flexDirection: 'column',
+          position: 'relative'
+        }}
+        onClick={() => {
+          RecentlyViewedService.trackView(policy.Id, policy.PolicyName || policy.Title, policy.PolicyCategory || '');
+          window.location.href = `/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${policy.Id}&mode=browse`;
+        }}
+        onMouseEnter={(e) => {
+          const el = e.currentTarget as HTMLElement;
+          el.style.borderColor = '#0d9488';
+          el.style.boxShadow = '0 4px 16px rgba(13,148,136,0.1)';
+          el.style.transform = 'translateY(-2px)';
+        }}
+        onMouseLeave={(e) => {
+          const el = e.currentTarget as HTMLElement;
+          el.style.borderColor = '#e2e8f0';
+          el.style.boxShadow = 'none';
+          el.style.transform = 'translateY(0)';
+        }}
+      >
+        {/* Category color strip at top */}
+        <div style={{ height: 8, background: stripColor, flexShrink: 0 }} />
 
-        {/* Card content */}
-        <div className={styles.cardContent}>
-          {/* Top: Title + Risk badge */}
-          <div className={styles.cardTop}>
-            <div className={styles.policyTitleSection}>
-              <Text className={styles.policyTitle}>{policy.PolicyName}</Text>
-              <Text className={styles.policyNumber}>{policy.PolicyNumber}</Text>
-            </div>
-            {policy.ComplianceRisk && (
-              <span className={`${styles.riskBadge} ${this.getRiskBadgeClass(policy.ComplianceRisk)}`}>
-                {policy.ComplianceRisk}
-              </span>
-            )}
-          </div>
-
-          {/* Tags */}
-          <div className={styles.policyMeta}>
-            <span className={`${styles.policyBadge} ${styles.badgeCategory}`}>{policy.PolicyCategory}</span>
-            <span className={`${styles.policyBadge} ${policy.PolicyStatus === 'Published' ? styles.badgeActive : styles.badgePending}`}>
-              {policy.PolicyStatus}
-            </span>
-            {policy.IsMandatory && <span className={`${styles.policyBadge} ${styles.badgeMandatory}`}>Mandatory</span>}
+        {/* Card body */}
+        <div style={{ padding: '18px 20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4, lineHeight: 1.35 }}>{policy.PolicyName}</div>
+          <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 8 }}>
+            {policy.PolicyNumber}{policy.PolicyVersion ? ` \u00B7 v${policy.PolicyVersion}` : ''}
           </div>
 
           {/* Description */}
           {policy.PolicySummary && (
-            <Text className={styles.policyDescription}>
-              {policy.PolicySummary.substring(0, 150)}...
-            </Text>
+            <div style={{
+              fontSize: 12, color: '#64748b', lineHeight: 1.5, marginBottom: 12, flex: 1,
+              display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'
+            } as React.CSSProperties}>
+              {policy.PolicySummary.substring(0, 150)}{policy.PolicySummary.length > 150 ? '...' : ''}
+            </div>
           )}
 
-          {/* Footer: meta + view button */}
-          <div className={styles.policyFooter}>
-            <div className={styles.policyInfoRow}>
-              <span className={styles.policyInfoItem}>
-                <Icon iconName="Clock" /> {readTime} min
+          {/* Badges */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 12 }}>
+            <span style={{ fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: 0.5, background: '#f0f9ff', color: '#0369a1' }}>
+              {policy.PolicyCategory}
+            </span>
+            {policy.ComplianceRisk && (
+              <span style={{ fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: 0.5, background: riskStyle.bg, color: riskStyle.color }}>
+                {policy.ComplianceRisk}
               </span>
-              <span className={styles.policyInfoItem}>
-                <Icon iconName="View" /> {viewCount.toLocaleString()}
-              </span>
-              <span className={styles.policyInfoItem}>
-                <Icon iconName="Calendar" /> {modifiedDate ? modifiedDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}
-              </span>
-            </div>
-            <button
-              className={styles.btnView}
-              onClick={() => {
-                RecentlyViewedService.trackView(policy.Id, policy.PolicyName || policy.Title, policy.PolicyCategory || '');
-                window.location.href = `/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${policy.Id}&mode=browse`;
-              }}
-            >
-              View →
-            </button>
+            )}
+            <span style={{
+              fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: 0.5,
+              background: policy.PolicyStatus === 'Published' ? '#dcfce7' : '#f1f5f9',
+              color: policy.PolicyStatus === 'Published' ? '#16a34a' : '#64748b'
+            }}>
+              {policy.PolicyStatus}
+            </span>
+            {isNew && (
+              <span style={{ fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: 0.5, background: '#dbeafe', color: '#2563eb' }}>New</span>
+            )}
+            {isUpdated && (
+              <span style={{ fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: 0.5, background: '#fef3c7', color: '#d97706' }}>Updated</span>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 12, borderTop: '1px solid #f1f5f9' }}>
+            <span style={{ fontSize: 10, color: '#94a3b8' }}>
+              {modifiedDate ? `Updated ${modifiedDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}
+            </span>
+            <span style={{ fontSize: 10, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <svg width="12" height="12" viewBox="0 0 20 20" fill="#94a3b8"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+              {viewCount.toLocaleString()}
+            </span>
           </div>
         </div>
-
-        {/* Ribbon badge (New / Updated) */}
-        {(isNew || isUpdated) && (
-          <div className={styles.policyCardBadges}>
-            {isNew && <span className={styles.badgeNew}>New</span>}
-            {isUpdated && <span className={styles.badgeUpdated}>Updated</span>}
-          </div>
-        )}
       </div>
     );
   }
@@ -2260,40 +2309,52 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
       ...Object.values(ComplianceRisk).map(risk => ({ key: risk, text: risk }))
     ];
 
+    const facetGroupStyle: React.CSSProperties = {
+      background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: 16, marginBottom: 12
+    };
+    const facetTitleStyle: React.CSSProperties = {
+      fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#94a3b8', marginBottom: 10
+    };
+
     return (
-      <div className={styles.facetsPanel}>
-        <Stack tokens={{ childrenGap: 16 }}>
-          <Text variant="large" className={styles.facetsTitle}>
-            <Icon iconName="Filter" className={styles.filterIcon} />
-            Filters
-          </Text>
-
+      <div style={{ position: 'sticky', top: 20, alignSelf: 'start' }}>
+        {/* Status Facet */}
+        <div style={facetGroupStyle}>
+          <div style={facetTitleStyle}>Status</div>
           <Dropdown
-            label="Category"
-            selectedKey={selectedCategory}
-            options={categoryOptions}
-            onChange={(e, option) => this.handleFilterChange('selectedCategory', option?.key as string)}
-          />
-
-          <Dropdown
-            label="Status"
             selectedKey={selectedStatus}
             options={statusOptions}
             onChange={(e, option) => this.handleFilterChange('selectedStatus', option?.key as string)}
+            styles={{ root: { marginBottom: 0 }, title: { border: '1px solid #e2e8f0', borderRadius: 6, fontSize: 12 } }}
           />
+        </div>
 
+        {/* Category Facet */}
+        <div style={facetGroupStyle}>
+          <div style={facetTitleStyle}>Category</div>
           <Dropdown
-            label="Compliance Risk"
+            selectedKey={selectedCategory}
+            options={categoryOptions}
+            onChange={(e, option) => this.handleFilterChange('selectedCategory', option?.key as string)}
+            styles={{ root: { marginBottom: 0 }, title: { border: '1px solid #e2e8f0', borderRadius: 6, fontSize: 12 } }}
+          />
+        </div>
+
+        {/* Risk Level Facet */}
+        <div style={facetGroupStyle}>
+          <div style={facetTitleStyle}>Risk Level</div>
+          <Dropdown
             selectedKey={selectedRisk}
             options={riskOptions}
             onChange={(e, option) => this.handleFilterChange('selectedRisk', option?.key as string)}
+            styles={{ root: { marginBottom: 0 }, title: { border: '1px solid #e2e8f0', borderRadius: 6, fontSize: 12 } }}
           />
+        </div>
 
-          {searchResults.facets && this.renderDynamicFacets(this.convertFacetsToArray(searchResults.facets))}
+        {searchResults.facets && this.renderDynamicFacets(this.convertFacetsToArray(searchResults.facets))}
 
-          {/* Category Tree Navigation */}
-          {this.renderCategoryTree(searchResults.policies)}
-        </Stack>
+        {/* Category Tree Navigation */}
+        {this.renderCategoryTree(searchResults.policies)}
       </div>
     );
   }

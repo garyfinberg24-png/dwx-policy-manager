@@ -480,26 +480,43 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
         activeNavKey="author"
         breadcrumbs={[{ text: 'Policy Manager', url: '/sites/PolicyManager' }, { text: 'Policy Author' }]}
       >
-        <Pivot
-          selectedKey={this.state.activeTab}
-          onLinkClick={(item) => {
-            if (item?.props.itemKey) {
-              this.setState({ activeTab: item.props.itemKey as AuthorViewTab });
-            }
-          }}
-          styles={{
-            root: { borderBottom: '1px solid #edebe9', marginBottom: 0 },
-            link: { fontSize: 14, height: 44, lineHeight: '44px', color: '#605e5c' },
-            linkIsSelected: { fontSize: 14, height: 44, lineHeight: '44px', color: '#0d9488', fontWeight: 600 },
-            linkContent: {},
-            itemContainer: {}
-          }}
-          linkFormat="links"
-        >
-          <PivotItem headerText="Policy Requests" itemKey="requests" itemIcon="PageAdd" itemCount={this.state.policyRequests.filter(r => r.Status === 'New').length} />
-          <PivotItem headerText="Approvals" itemKey="approvals" itemIcon="CheckboxComposite" itemCount={this.state.approvals.filter(a => a.Status === 'Pending').length} />
-          <PivotItem headerText="Delegations" itemKey="delegations" itemIcon="People" itemCount={this.state.delegations.filter(d => d.Status === 'Pending' || d.Status === 'Overdue').length} />
-        </Pivot>
+        {/* Page Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '32px 40px 0', maxWidth: 1400, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+          <div>
+            <h1 style={{ fontSize: 26, fontWeight: 700, letterSpacing: -0.5, margin: 0 }}>Policy Author</h1>
+            <div style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>Manage your policies, track approvals, and collaborate with reviewers</div>
+          </div>
+        </div>
+
+        {/* Tab Bar */}
+        <div style={{ display: 'flex', gap: 0, borderBottom: '2px solid #e2e8f0', margin: '24px 40px 0', maxWidth: 1400 }}>
+          {[
+            { key: 'requests' as AuthorViewTab, label: 'Policy Requests', count: this.state.policyRequests.filter(r => r.Status === 'New').length },
+            { key: 'approvals' as AuthorViewTab, label: 'Approvals', count: this.state.approvals.filter(a => a.Status === 'Pending').length },
+            { key: 'delegations' as AuthorViewTab, label: 'Delegations', count: this.state.delegations.filter(d => d.Status === 'Pending' || d.Status === 'Overdue').length }
+          ].map(tab => (
+            <div
+              key={tab.key}
+              onClick={() => this.setState({ activeTab: tab.key })}
+              style={{
+                padding: '10px 20px', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+                fontWeight: this.state.activeTab === tab.key ? 700 : 500,
+                color: this.state.activeTab === tab.key ? '#0d9488' : '#64748b',
+                borderBottom: this.state.activeTab === tab.key ? '2px solid #0d9488' : '2px solid transparent',
+                marginBottom: -2, transition: 'all 0.15s'
+              }}
+            >
+              {tab.label}
+              {tab.count > 0 && (
+                <span style={{
+                  fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 10,
+                  background: this.state.activeTab === tab.key ? '#ccfbf1' : '#f1f5f9',
+                  color: this.state.activeTab === tab.key ? '#0d9488' : '#64748b'
+                }}>{tab.count}</span>
+              )}
+            </div>
+          ))}
+        </div>
         {this.state.activeTab === 'requests' && this.renderContent()}
         {this.state.activeTab === 'approvals' && this.renderApprovalsTab()}
         {this.state.activeTab === 'delegations' && this.renderDelegationsTab()}
@@ -560,7 +577,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
 
         {/* KPI Summary Cards — including Critical as a card */}
         <div className={(styles as Record<string, string>).kpiGrid}>
-          {this.renderKpiCard('New Requests', newCount, 'NewMail', '#0078d4', '#e8f4fd', () => this.setState({ statusFilter: 'New' }))}
+          {this.renderKpiCard('New Requests', newCount, 'NewMail', '#0d9488', '#e8f4fd', () => this.setState({ statusFilter: 'New' }))}
           {this.renderKpiCard('Assigned', assignedCount, 'People', '#8764b8', '#f3eefc', () => this.setState({ statusFilter: 'Assigned' }))}
           {this.renderKpiCard('In Progress', inProgressCount, 'Edit', '#f59e0b', '#fff8e6', () => this.setState({ statusFilter: 'InProgress' }))}
           {this.renderKpiCard('Completed', completedCount, 'CheckMark', '#107c10', '#dff6dd', () => this.setState({ statusFilter: 'All' }))}
@@ -641,16 +658,20 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
   // KPI CARD
   // ==========================================================================
 
-  private renderKpiCard(label: string, value: number, icon: string, color: string, bgColor: string, onClick: () => void): JSX.Element {
+  private renderKpiCard(label: string, value: number, _icon: string, color: string, _bgColor: string, onClick: () => void): JSX.Element {
     return (
-      <div className={(styles as Record<string, string>).kpiCard} onClick={onClick} style={{ cursor: 'pointer' }}>
-        <div className={(styles as Record<string, string>).kpiIcon} style={{ background: bgColor }}>
-          <Icon iconName={icon} style={{ fontSize: 20, color }} />
-        </div>
-        <div className={(styles as Record<string, string>).kpiContent}>
-          <Text variant="xxLarge" style={{ fontWeight: 700, color }}>{value}</Text>
-          <Text variant="small" style={{ color: '#605e5c' }}>{label}</Text>
-        </div>
+      <div
+        onClick={onClick}
+        style={{
+          background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '18px 16px',
+          position: 'relative', overflow: 'hidden', cursor: 'pointer', transition: 'all 0.2s',
+          borderTop: `3px solid ${color}`
+        }}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 16px rgba(13,148,136,0.1)'; }}
+        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
+      >
+        <div style={{ fontSize: 28, fontWeight: 700, lineHeight: 1.1, color }}>{value}</div>
+        <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#94a3b8', fontWeight: 600, marginTop: 4 }}>{label}</div>
       </div>
     );
   }
@@ -912,13 +933,13 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
 
   private getStatusColor(status: string): string {
     switch (status) {
-      case 'New': return '#0078d4';
-      case 'Assigned': return '#8764b8';
-      case 'InProgress': return '#f59e0b';
-      case 'Draft Ready': return '#14b8a6';
-      case 'Completed': return '#107c10';
-      case 'Rejected': return '#d13438';
-      default: return '#605e5c';
+      case 'New': return '#2563eb';
+      case 'Assigned': return '#7c3aed';
+      case 'InProgress': return '#d97706';
+      case 'Draft Ready': return '#0d9488';
+      case 'Completed': return '#059669';
+      case 'Rejected': return '#dc2626';
+      default: return '#94a3b8';
     }
   }
 
@@ -1104,7 +1125,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
 
         {/* KPI Row */}
         <div className={(styles as Record<string, string>).kpiGrid}>
-          {this.renderKpiCard('Pending', pendingCount, 'Clock', '#0078d4', '#e8f4fd', () => this.setState({ delegationFilter: 'Pending' }))}
+          {this.renderKpiCard('Pending', pendingCount, 'Clock', '#0d9488', '#e8f4fd', () => this.setState({ delegationFilter: 'Pending' }))}
           {this.renderKpiCard('In Progress', delegations.filter(d => d.Status === 'InProgress').length, 'Edit', '#f59e0b', '#fff8e6', () => this.setState({ delegationFilter: 'InProgress' }))}
           {this.renderKpiCard('Overdue', overdueCount, 'Warning', '#d13438', '#fef2f2', () => this.setState({ delegationFilter: 'Overdue' }))}
           {this.renderKpiCard('Completed', delegations.filter(d => d.Status === 'Completed').length, 'CheckMark', '#107c10', '#dff6dd', () => this.setState({ delegationFilter: 'Completed' }))}
@@ -1148,7 +1169,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
               <div
                 key={delegation.Id}
                 className={(styles as Record<string, string>).requestCard}
-                style={{ borderLeft: `4px solid ${delegation.Status === 'Overdue' ? '#d13438' : delegation.Status === 'InProgress' ? '#f59e0b' : delegation.Status === 'Completed' ? '#107c10' : '#0078d4'}` }}
+                style={{ borderLeft: `4px solid ${delegation.Status === 'Overdue' ? '#d13438' : delegation.Status === 'InProgress' ? '#f59e0b' : delegation.Status === 'Completed' ? '#107c10' : '#0d9488'}` }}
               >
                 <Stack horizontal horizontalAlign="space-between" verticalAlign="start">
                   <div style={{ flex: 1 }}>
@@ -1157,7 +1178,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                       <span style={{
                         fontSize: 11, padding: '2px 8px', borderRadius: 4, fontWeight: 600,
                         background: delegation.TaskType === 'Review' ? '#e8f4fd' : delegation.TaskType === 'Draft' ? '#fff8e6' : delegation.TaskType === 'Approve' ? '#dff6dd' : '#f3eefc',
-                        color: delegation.TaskType === 'Review' ? '#0078d4' : delegation.TaskType === 'Draft' ? '#f59e0b' : delegation.TaskType === 'Approve' ? '#107c10' : '#8764b8'
+                        color: delegation.TaskType === 'Review' ? '#0d9488' : delegation.TaskType === 'Draft' ? '#f59e0b' : delegation.TaskType === 'Approve' ? '#107c10' : '#8764b8'
                       }}>
                         {delegation.TaskType}
                       </span>
@@ -1210,7 +1231,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
 
   private getDelegationStatusColor(status: string): string {
     switch (status) {
-      case 'Pending': return '#0078d4';
+      case 'Pending': return '#0d9488';
       case 'InProgress': return '#f59e0b';
       case 'Completed': return '#107c10';
       case 'Overdue': return '#d13438';

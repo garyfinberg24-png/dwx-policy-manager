@@ -385,93 +385,156 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
   private renderPolicyPacksList(): JSX.Element {
     const { policyPacks } = this.state;
 
+    // Gradient strip colors by pack type
+    const stripGradients: Record<string, string> = {
+      'Onboarding': 'linear-gradient(90deg, #0d9488, #059669)',
+      'Department': 'linear-gradient(90deg, #2563eb, #7c3aed)',
+      'Role': 'linear-gradient(90deg, #d97706, #dc2626)',
+      'Location': 'linear-gradient(90deg, #059669, #0d9488)',
+      'Custom': 'linear-gradient(90deg, #64748b, #475569)'
+    };
+
+    const badgeColors: Record<string, { bg: string; color: string }> = {
+      'Onboarding': { bg: '#ccfbf1', color: '#0d9488' },
+      'Department': { bg: '#dbeafe', color: '#2563eb' },
+      'Role': { bg: '#fef3c7', color: '#d97706' },
+      'Location': { bg: '#dcfce7', color: '#059669' },
+      'Custom': { bg: '#f1f5f9', color: '#64748b' }
+    };
+
     if (policyPacks.length === 0) {
       return (
-        <div className={styles.emptyState}>
-          <Stack tokens={{ childrenGap: 16 }} horizontalAlign="center">
-            <Icon iconName="BulletedList" className={styles.emptyIcon} />
-            <Text variant="xLarge">No Policy Packs</Text>
-            <Text variant="medium" className={styles.subText}>
-              Create your first policy pack to get started
-            </Text>
-            <PrimaryButton
-              text="Create Policy Pack"
-              iconProps={{ iconName: 'Add' }}
-              onClick={this.handleCreatePack}
-            />
-          </Stack>
+        <div style={{ textAlign: 'center', padding: '60px 40px' }}>
+          <svg viewBox="0 0 24 24" fill="none" width="48" height="48" style={{ margin: '0 auto 16px', display: 'block' }}>
+            <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 4, color: '#0f172a' }}>No Policy Packs</div>
+          <div style={{ fontSize: 13, color: '#64748b', marginBottom: 20 }}>Create your first policy pack to bundle policies for streamlined distribution</div>
+          <PrimaryButton
+            text="+ Create Pack"
+            onClick={this.handleCreatePack}
+            styles={{ root: { background: '#0d9488', borderColor: '#0d9488', borderRadius: 6 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+          />
         </div>
       );
     }
 
     return (
-      <div className={styles.packsGrid}>
-        {policyPacks.map((pack: IPolicyPack) => (
-          <div key={pack.Id} className={styles.packCard}>
-            <Stack tokens={{ childrenGap: 12 }}>
-              <Stack horizontal horizontalAlign="space-between" verticalAlign="start">
-                <Text variant="large" className={styles.packTitle}>
-                  {pack.PackName}
-                </Text>
-                <div className={styles.packTypeBadge}>
-                  {pack.PackType}
-                </div>
-              </Stack>
-
-              {pack.PackDescription && (
-                <Text variant="small" className={styles.description}>
-                  {pack.PackDescription}
-                </Text>
-              )}
-
-              <Stack horizontal tokens={{ childrenGap: 16 }}>
-                <Stack tokens={{ childrenGap: 4 }}>
-                  <Text variant="small" className={styles.statLabel}>Policies</Text>
-                  <Text variant="medium" className={styles.statValue}>
-                    {pack.PolicyIds ? pack.PolicyIds.length : 0}
-                  </Text>
-                </Stack>
-                <Stack tokens={{ childrenGap: 4 }}>
-                  <Text variant="small" className={styles.statLabel}>Type</Text>
-                  <Text variant="medium" className={styles.statValue}>
-                    {pack.IsSequential ? 'Sequential' : 'Parallel'}
-                  </Text>
-                </Stack>
-              </Stack>
-
-              <Stack horizontal tokens={{ childrenGap: 8 }}>
-                {pack.SendWelcomeEmail && (
-                  <div className={styles.featureBadge}>
-                    <Icon iconName="Mail" /> Email
-                  </div>
-                )}
-                {pack.SendTeamsNotification && (
-                  <div className={styles.featureBadge}>
-                    <Icon iconName="TeamsLogo" /> Teams
-                  </div>
-                )}
-              </Stack>
-
-              <Stack horizontal tokens={{ childrenGap: 8 }} className={styles.cardActions}>
-                <DefaultButton
-                  text="Assign"
-                  iconProps={{ iconName: 'PeopleAdd' }}
-                  onClick={() => this.handleAssignPack(pack)}
-                />
-                <DefaultButton
-                  text="Edit"
-                  iconProps={{ iconName: 'Edit' }}
-                  onClick={() => this.handleEditPack(pack)}
-                />
-                <IconButton
-                  iconProps={{ iconName: 'Delete' }}
-                  title="Delete"
-                  onClick={() => this.handleDeletePack(pack.Id)}
-                />
-              </Stack>
-            </Stack>
+      <div>
+        {/* Page Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 }}>
+          <div>
+            <h1 style={{ fontSize: 26, fontWeight: 700, letterSpacing: -0.5, margin: 0 }}>Policy Packs</h1>
+            <div style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>Bundle policies together for streamlined distribution and onboarding</div>
           </div>
-        ))}
+          <button
+            onClick={this.handleCreatePack}
+            style={{
+              padding: '8px 16px', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+              border: '1px solid #0d9488', background: '#0d9488', color: '#fff', fontFamily: 'inherit'
+            }}
+          >+ Create Pack</button>
+        </div>
+
+        {/* KPI Strip */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 28 }}>
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '18px 16px', borderTop: '3px solid #0d9488' }}>
+            <div style={{ fontSize: 28, fontWeight: 700, lineHeight: 1.1, color: '#0d9488' }}>{policyPacks.length}</div>
+            <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#94a3b8', fontWeight: 600, marginTop: 4 }}>Total Packs</div>
+          </div>
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '18px 16px', borderTop: '3px solid #059669' }}>
+            <div style={{ fontSize: 28, fontWeight: 700, lineHeight: 1.1, color: '#059669' }}>{policyPacks.filter(p => p.IsActive !== false).length}</div>
+            <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#94a3b8', fontWeight: 600, marginTop: 4 }}>Active</div>
+          </div>
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '18px 16px', borderTop: '3px solid #2563eb' }}>
+            <div style={{ fontSize: 28, fontWeight: 700, lineHeight: 1.1, color: '#2563eb' }}>{policyPacks.reduce((sum, p) => sum + (p.PolicyIds ? p.PolicyIds.length : 0), 0)}</div>
+            <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#94a3b8', fontWeight: 600, marginTop: 4 }}>Total Policies in Packs</div>
+          </div>
+        </div>
+
+        {/* Pack Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          {policyPacks.map((pack: IPolicyPack) => {
+            const packType = pack.PackType || 'Custom';
+            const strip = stripGradients[packType] || stripGradients['Custom'];
+            const badge = badgeColors[packType] || badgeColors['Custom'];
+            const policyCount = pack.PolicyIds ? pack.PolicyIds.length : 0;
+            const isInactive = pack.IsActive === false;
+
+            return (
+              <div
+                key={pack.Id}
+                style={{
+                  background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden',
+                  transition: 'all 0.2s', cursor: 'pointer', opacity: isInactive ? 0.7 : 1
+                }}
+                onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = '#0d9488'; el.style.boxShadow = '0 4px 16px rgba(13,148,136,0.1)'; el.style.transform = 'translateY(-2px)'; }}
+                onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = '#e2e8f0'; el.style.boxShadow = 'none'; el.style.transform = 'translateY(0)'; }}
+              >
+                {/* Gradient top strip */}
+                <div style={{ height: 6, background: strip }} />
+
+                {/* Pack body */}
+                <div style={{ padding: 20 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+                    <div style={{ fontSize: 16, fontWeight: 700 }}>{pack.PackName}</div>
+                    <div>
+                      <div style={{ fontSize: 22, fontWeight: 700, color: isInactive ? '#64748b' : '#0d9488', textAlign: 'right' }}>{policyCount}</div>
+                      <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#94a3b8', fontWeight: 600 }}>Policies</div>
+                    </div>
+                  </div>
+
+                  {pack.PackDescription && (
+                    <div style={{ fontSize: 12, color: '#64748b', lineHeight: 1.5, marginBottom: 14 }}>
+                      {pack.PackDescription}
+                    </div>
+                  )}
+
+                  {/* Meta badges */}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14, alignItems: 'center' }}>
+                    <span style={{ fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: 0.5, background: badge.bg, color: badge.color }}>
+                      {packType}
+                    </span>
+                    <span style={{ fontSize: 11, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#94a3b8" strokeWidth="2"/><path d="M12 6v6l4 2" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round"/></svg>
+                      {pack.IsSequential ? 'Sequential' : 'Any order'}
+                    </span>
+                  </div>
+
+                  {/* Feature badges */}
+                  <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
+                    {pack.SendWelcomeEmail && (
+                      <span style={{ fontSize: 10, fontWeight: 600, padding: '4px 10px', borderRadius: 12, background: isInactive ? '#f1f5f9' : '#f0fdfa', color: isInactive ? '#64748b' : '#0d9488', border: `1px solid ${isInactive ? '#e2e8f0' : '#ccfbf1'}` }}>
+                        Email Notifications
+                      </span>
+                    )}
+                    {pack.SendTeamsNotification && (
+                      <span style={{ fontSize: 10, fontWeight: 600, padding: '4px 10px', borderRadius: 12, background: isInactive ? '#f1f5f9' : '#f0fdfa', color: isInactive ? '#64748b' : '#0d9488', border: `1px solid ${isInactive ? '#e2e8f0' : '#ccfbf1'}` }}>
+                        Teams Notifications
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Pack footer */}
+                <div style={{ padding: '14px 20px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 11, color: '#64748b' }}>{policyCount} {policyCount === 1 ? 'policy' : 'policies'} bundled</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); this.handleAssignPack(pack); }}
+                      style={{ padding: '6px 12px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: '1px solid #e2e8f0', background: '#fff', color: '#334155', fontFamily: 'inherit' }}
+                    >Assign</button>
+                    <IconButton iconProps={{ iconName: 'Edit' }} title="Edit" ariaLabel="Edit pack" onClick={() => this.handleEditPack(pack)} styles={{ root: { width: 32, height: 32 } }} />
+                    <IconButton iconProps={{ iconName: 'Delete' }} title="Delete" ariaLabel="Delete pack" onClick={() => this.handleDeletePack(pack.Id)} styles={{ root: { width: 32, height: 32, color: '#dc2626' }, rootHovered: { color: '#dc2626' } }} />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     );
   }

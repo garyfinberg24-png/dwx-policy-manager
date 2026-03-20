@@ -543,9 +543,9 @@
     border-radius: 4px !important;
   }
 
-  // Panels (slide-in — rounded left corners) — 8px for larger surface
+  // Panels (slide-in — square corners, flush to edge)
   .ms-Panel-main {
-    border-radius: 8px 0 0 8px !important;
+    border-radius: 0 !important;
   }
 
   // Panel header and footer controls — 4px

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analytics Tab Bar — Style Alternatives</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', -apple-system, sans-serif; background: #f1f5f9; color: #0f172a; }
+  .page { max-width: 1400px; margin: 0 auto; padding: 24px 40px; }
+  .label { display: inline-block; background: #2563eb; color: #fff; padding: 4px 12px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+  .divider { border-top: 3px solid #e2e8f0; margin: 40px 0 24px; }
+  .desc { font-size: 12px; color: #64748b; margin-bottom: 16px; }
+
+  /* KPI strip for context */
+  .kpi-strip { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-top: 16px; }
+  .kpi { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; border-top: 3px solid #0d9488; }
+  .kpi-val { font-size: 24px; font-weight: 700; color: #0d9488; }
+  .kpi-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; margin-top: 4px; }
+
+  /* ═══════════ OPTION A: Pill/Chip Tabs ═══════════ */
+  .tabs-a { display: flex; gap: 6px; padding: 12px 0; }
+  .tabs-a .tab {
+    padding: 7px 16px; border-radius: 20px; font-size: 13px; font-weight: 500; cursor: pointer;
+    background: #fff; color: #64748b; border: 1px solid #e2e8f0; transition: all 0.15s;
+  }
+  .tabs-a .tab:hover { border-color: #0d9488; color: #0d9488; }
+  .tabs-a .tab.active { background: #0d9488; color: #fff; border-color: #0d9488; font-weight: 600; }
+
+  /* ═══════════ OPTION B: Filled Rectangle Tabs ═══════════ */
+  .tabs-b { display: flex; gap: 4px; padding: 12px 0; }
+  .tabs-b .tab {
+    padding: 8px 18px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer;
+    background: transparent; color: #64748b; border: none; transition: all 0.15s;
+  }
+  .tabs-b .tab:hover { background: #f0fdfa; color: #0d9488; }
+  .tabs-b .tab.active { background: #f0fdfa; color: #0d9488; font-weight: 600; }
+
+  /* ═══════════ OPTION C: Top Border (inverted) ═══════════ */
+  .tabs-c { display: flex; gap: 0; border-bottom: 1px solid #e2e8f0; }
+  .tabs-c .tab {
+    padding: 10px 20px; font-size: 13px; font-weight: 500; cursor: pointer;
+    color: #64748b; border-top: 3px solid transparent; transition: all 0.15s;
+    margin-bottom: -1px; background: transparent;
+  }
+  .tabs-c .tab:hover { color: #0d9488; }
+  .tabs-c .tab.active { color: #0d9488; font-weight: 600; border-top-color: #0d9488; background: #fff; border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #fff; }
+
+  /* ═══════════ OPTION D: Left Dot Indicator ═══════════ */
+  .tabs-d { display: flex; gap: 0; border-bottom: 1px solid #e2e8f0; }
+  .tabs-d .tab {
+    padding: 10px 20px; font-size: 13px; font-weight: 500; cursor: pointer;
+    color: #64748b; display: flex; align-items: center; gap: 6px; transition: all 0.15s;
+  }
+  .tabs-d .tab:hover { color: #0d9488; }
+  .tabs-d .tab.active { color: #0d9488; font-weight: 600; }
+  .tabs-d .tab .dot { width: 6px; height: 6px; border-radius: 50%; background: transparent; }
+  .tabs-d .tab.active .dot { background: #0d9488; }
+
+  /* ═══════════ OPTION E: Segmented Control ═══════════ */
+  .tabs-e { display: inline-flex; gap: 0; padding: 12px 0; background: #f1f5f9; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; }
+  .tabs-e .tab {
+    padding: 8px 18px; font-size: 12px; font-weight: 500; cursor: pointer;
+    color: #64748b; background: transparent; border: none; border-right: 1px solid #e2e8f0; transition: all 0.15s;
+  }
+  .tabs-e .tab:last-child { border-right: none; }
+  .tabs-e .tab:hover { color: #0d9488; background: #f0fdfa; }
+  .tabs-e .tab.active { background: #fff; color: #0d9488; font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ OPTION A: Pill/Chip Tabs ═══════════ -->
+<div class="page">
+  <div class="label">Option A — Pill / Chip Tabs</div>
+  <div class="desc">Rounded pill buttons. Active = filled teal. No underline — zero clash with KPI top accents.</div>
+  <div class="tabs-a">
+    <div class="tab active">Executive Dashboard</div>
+    <div class="tab">Policy Metrics</div>
+    <div class="tab">Acknowledgement Tracking</div>
+    <div class="tab">SLA Tracking</div>
+    <div class="tab">Compliance & Risk</div>
+    <div class="tab">Audit & Reports</div>
+    <div class="tab">Quiz Analytics</div>
+  </div>
+  <div class="kpi-strip">
+    <div class="kpi"><div class="kpi-val">87.3%</div><div class="kpi-label">Overall Compliance</div></div>
+    <div class="kpi"><div class="kpi-val">142</div><div class="kpi-label">Active Policies</div></div>
+    <div class="kpi"><div class="kpi-val">18</div><div class="kpi-label">Pending Reviews</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:#d97706;">23</div><div class="kpi-label">Overdue Ack</div></div>
+    <div class="kpi" style="border-top-color:#dc2626;"><div class="kpi-val" style="color:#dc2626;">4</div><div class="kpi-label">Critical Violations</div></div>
+    <div class="kpi"><div class="kpi-val">3.2</div><div class="kpi-label">Avg Resolution (Days)</div></div>
+  </div>
+</div>
+
+<!-- ═══════════ OPTION B: Filled Rectangle Tabs ═══════════ -->
+<div class="divider"></div>
+<div class="page">
+  <div class="label">Option B — Filled Background (no border)</div>
+  <div class="desc">Light teal fill on active. No borders or lines. Subtle and clean.</div>
+  <div class="tabs-b">
+    <div class="tab active">Executive Dashboard</div>
+    <div class="tab">Policy Metrics</div>
+    <div class="tab">Acknowledgement Tracking</div>
+    <div class="tab">SLA Tracking</div>
+    <div class="tab">Compliance & Risk</div>
+    <div class="tab">Audit & Reports</div>
+    <div class="tab">Quiz Analytics</div>
+  </div>
+  <div class="kpi-strip">
+    <div class="kpi"><div class="kpi-val">87.3%</div><div class="kpi-label">Overall Compliance</div></div>
+    <div class="kpi"><div class="kpi-val">142</div><div class="kpi-label">Active Policies</div></div>
+    <div class="kpi"><div class="kpi-val">18</div><div class="kpi-label">Pending Reviews</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:#d97706;">23</div><div class="kpi-label">Overdue Ack</div></div>
+    <div class="kpi" style="border-top-color:#dc2626;"><div class="kpi-val" style="color:#dc2626;">4</div><div class="kpi-label">Critical Violations</div></div>
+    <div class="kpi"><div class="kpi-val">3.2</div><div class="kpi-label">Avg Resolution (Days)</div></div>
+  </div>
+</div>
+
+<!-- ═══════════ OPTION C: Top Border (inverted underline) ═══════════ -->
+<div class="divider"></div>
+<div class="page">
+  <div class="label">Option C — Top Border (inverted)</div>
+  <div class="desc">Active tab has teal TOP border instead of bottom. Classic browser-tab style. Separates from KPI accents below.</div>
+  <div class="tabs-c">
+    <div class="tab active">Executive Dashboard</div>
+    <div class="tab">Policy Metrics</div>
+    <div class="tab">Acknowledgement Tracking</div>
+    <div class="tab">SLA Tracking</div>
+    <div class="tab">Compliance & Risk</div>
+    <div class="tab">Audit & Reports</div>
+    <div class="tab">Quiz Analytics</div>
+  </div>
+  <div class="kpi-strip">
+    <div class="kpi"><div class="kpi-val">87.3%</div><div class="kpi-label">Overall Compliance</div></div>
+    <div class="kpi"><div class="kpi-val">142</div><div class="kpi-label">Active Policies</div></div>
+    <div class="kpi"><div class="kpi-val">18</div><div class="kpi-label">Pending Reviews</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:#d97706;">23</div><div class="kpi-label">Overdue Ack</div></div>
+    <div class="kpi" style="border-top-color:#dc2626;"><div class="kpi-val" style="color:#dc2626;">4</div><div class="kpi-label">Critical Violations</div></div>
+    <div class="kpi"><div class="kpi-val">3.2</div><div class="kpi-label">Avg Resolution (Days)</div></div>
+  </div>
+</div>
+
+<!-- ═══════════ OPTION D: Dot Indicator ═══════════ -->
+<div class="divider"></div>
+<div class="page">
+  <div class="label">Option D — Dot Indicator</div>
+  <div class="desc">Small teal dot before the active tab label. Minimal, no lines at all.</div>
+  <div class="tabs-d">
+    <div class="tab active"><span class="dot"></span>Executive Dashboard</div>
+    <div class="tab"><span class="dot"></span>Policy Metrics</div>
+    <div class="tab"><span class="dot"></span>Acknowledgement Tracking</div>
+    <div class="tab"><span class="dot"></span>SLA Tracking</div>
+    <div class="tab"><span class="dot"></span>Compliance & Risk</div>
+    <div class="tab"><span class="dot"></span>Audit & Reports</div>
+    <div class="tab"><span class="dot"></span>Quiz Analytics</div>
+  </div>
+  <div class="kpi-strip">
+    <div class="kpi"><div class="kpi-val">87.3%</div><div class="kpi-label">Overall Compliance</div></div>
+    <div class="kpi"><div class="kpi-val">142</div><div class="kpi-label">Active Policies</div></div>
+    <div class="kpi"><div class="kpi-val">18</div><div class="kpi-label">Pending Reviews</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:#d97706;">23</div><div class="kpi-label">Overdue Ack</div></div>
+    <div class="kpi" style="border-top-color:#dc2626;"><div class="kpi-val" style="color:#dc2626;">4</div><div class="kpi-label">Critical Violations</div></div>
+    <div class="kpi"><div class="kpi-val">3.2</div><div class="kpi-label">Avg Resolution (Days)</div></div>
+  </div>
+</div>
+
+<!-- ═══════════ OPTION E: Segmented Control ═══════════ -->
+<div class="divider"></div>
+<div class="page">
+  <div class="label">Option E — Segmented Control</div>
+  <div class="desc">iOS-style segmented control. Active tab pops out with white background + shadow. Contained and distinct.</div>
+  <div class="tabs-e">
+    <div class="tab active">Executive Dashboard</div>
+    <div class="tab">Policy Metrics</div>
+    <div class="tab">Acknowledgement Tracking</div>
+    <div class="tab">SLA Tracking</div>
+    <div class="tab">Compliance & Risk</div>
+    <div class="tab">Audit & Reports</div>
+    <div class="tab">Quiz Analytics</div>
+  </div>
+  <div class="kpi-strip">
+    <div class="kpi"><div class="kpi-val">87.3%</div><div class="kpi-label">Overall Compliance</div></div>
+    <div class="kpi"><div class="kpi-val">142</div><div class="kpi-label">Active Policies</div></div>
+    <div class="kpi"><div class="kpi-val">18</div><div class="kpi-label">Pending Reviews</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:#d97706;">23</div><div class="kpi-label">Overdue Ack</div></div>
+    <div class="kpi" style="border-top-color:#dc2626;"><div class="kpi-val" style="color:#dc2626;">4</div><div class="kpi-label">Critical Violations</div></div>
+    <div class="kpi"><div class="kpi-val">3.2</div><div class="kpi-label">Avg Resolution (Days)</div></div>
+  </div>
+</div>
+
+<!-- Summary -->
+<div class="divider"></div>
+<div class="page">
+  <table style="width:100%;border-collapse:collapse;font-size:13px;">
+    <tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;">
+      <th style="padding:10px 14px;text-align:left;">Option</th>
+      <th style="padding:10px 14px;text-align:left;">Style</th>
+      <th style="padding:10px 14px;text-align:left;">Clash with KPI accents?</th>
+      <th style="padding:10px 14px;text-align:left;">Best for</th>
+    </tr>
+    <tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:8px 14px;font-weight:600;">A — Pills</td><td style="padding:8px 14px;">Rounded buttons</td><td style="padding:8px 14px;color:#16a34a;">No clash</td><td style="padding:8px 14px;">Modern, casual</td></tr>
+    <tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:8px 14px;font-weight:600;">B — Filled</td><td style="padding:8px 14px;">Background highlight</td><td style="padding:8px 14px;color:#16a34a;">No clash</td><td style="padding:8px 14px;">Subtle, minimal</td></tr>
+    <tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:8px 14px;font-weight:600;">C — Top Border</td><td style="padding:8px 14px;">Browser tab style</td><td style="padding:8px 14px;color:#16a34a;">No clash</td><td style="padding:8px 14px;">Traditional, formal</td></tr>
+    <tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:8px 14px;font-weight:600;">D — Dot</td><td style="padding:8px 14px;">Dot + bold text</td><td style="padding:8px 14px;color:#16a34a;">No clash</td><td style="padding:8px 14px;">Ultra-minimal</td></tr>
+    <tr><td style="padding:8px 14px;font-weight:600;">E — Segmented</td><td style="padding:8px 14px;">iOS control</td><td style="padding:8px 14px;color:#16a34a;">No clash</td><td style="padding:8px 14px;">Contained, app-like</td></tr>
+  </table>
+</div>
+
+</body>
+</html>

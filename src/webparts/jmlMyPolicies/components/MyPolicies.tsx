@@ -379,6 +379,85 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
     return steps;
   }
 
+  private renderHeroBanner(): React.ReactNode {
+    const kpi = this.getKpiCounts();
+    const complianceRate = kpi.assigned > 0 ? Math.round((kpi.acknowledged / kpi.assigned) * 100) : 100;
+    const circumference = 2 * Math.PI * 17; // r=17
+    const offset = circumference - (complianceRate / 100) * circumference;
+
+    // Greeting based on time of day
+    const hour = new Date().getHours();
+    const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+    const userName = this.props.context?.pageContext?.user?.displayName?.split(' ')[0] || 'there';
+
+    return (
+      <div style={{
+        background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
+        padding: '16px 40px', position: 'relative', overflow: 'hidden', margin: '0 -24px'
+      }}>
+        <div style={{ position: 'absolute', right: -60, bottom: -60, width: 200, height: 200, background: 'rgba(255,255,255,0.03)', borderRadius: '50%' }} />
+        <div style={{ maxWidth: 1400, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', alignItems: 'flex-end', position: 'relative', zIndex: 1 }}>
+
+          {/* Column 1: Ring + Greeting */}
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12 }}>
+            <div style={{ position: 'relative', width: 48, height: 48, flexShrink: 0 }}>
+              <svg viewBox="0 0 40 40" width="48" height="48">
+                <circle cx="20" cy="20" r="17" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="4.5" />
+                <circle cx="20" cy="20" r="17" fill="none" stroke="#fff" strokeWidth="4.5" strokeLinecap="round"
+                  strokeDasharray={circumference} strokeDashoffset={offset} transform="rotate(-90 20 20)" />
+              </svg>
+              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: 12, fontWeight: 700, color: '#fff' }}>{complianceRate}%</div>
+            </div>
+            <div>
+              <h1 style={{ fontSize: 20, fontWeight: 700, color: '#fff', marginBottom: 1 }}>{greeting}, {userName}</h1>
+              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)' }}>
+                {kpi.pending > 0 || kpi.overdue > 0
+                  ? `${kpi.pending} pending${kpi.overdue > 0 ? `, ${kpi.overdue} overdue` : ''}`
+                  : 'Fully compliant'}
+              </p>
+            </div>
+          </div>
+
+          {/* Column 2: Search — centred in middle third */}
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <div style={{ width: '100%', maxWidth: 480, position: 'relative' }}>
+              <svg viewBox="0 0 24 24" fill="none" width="16" height="16" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.6)' }}>
+                <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
+                <path d="M21 21l-4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+              <input
+                type="text"
+                value={(this.state as any).searchText || ''}
+                onChange={(e) => this.setState({ searchText: (e.target as HTMLInputElement).value } as any)}
+                placeholder="Search my policies..."
+                style={{
+                  width: '100%', padding: '10px 18px 10px 44px', borderRadius: 8,
+                  border: '2px solid rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.15)',
+                  fontSize: 13, color: '#fff', outline: 'none', fontFamily: 'inherit',
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Column 3: KPI mini cards — right-aligned */}
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+            {[
+              { label: 'Assigned', value: kpi.assigned, color: '#fff' },
+              { label: 'Done', value: kpi.acknowledged, color: '#fff' },
+              { label: 'Pending', value: kpi.pending, color: '#fbbf24' },
+              { label: 'Overdue', value: kpi.overdue, color: '#f87171' },
+            ].map(k => (
+              <div key={k.label} style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '8px 14px', textAlign: 'center', minWidth: 70 }}>
+                <div style={{ fontSize: 18, fontWeight: 700, color: k.color, lineHeight: 1.1 }}>{k.value}</div>
+                <div style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: 0.8, color: 'rgba(255,255,255,0.6)', marginTop: 2 }}>{k.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   private renderKpiStrip(): React.ReactNode {
     const kpi = this.getKpiCounts();
     const cards = [
@@ -655,6 +734,8 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
     const { selectedPolicyId, policies } = this.state;
     const policy = selectedPolicyId !== null ? policies.find(p => p.id === selectedPolicyId) : null;
 
+    if (!policy) return null;
+
     const statusBadge = getStatusBadgeClass(policy.status);
     const riskBadge = getRiskBadge(policy.priority);
     const dueInfo = this.getDueText(policy);
@@ -726,15 +807,15 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
           </div>
 
           {/* Progress Steps */}
-          <div style={{ marginBottom: '20px' }}>
+          <div style={{ marginBottom: '24px' }}>
             <div style={{
-              fontSize: '10px',
-              fontWeight: 600,
+              fontSize: '12px',
+              fontWeight: 700,
               textTransform: 'uppercase',
-              letterSpacing: '1px',
-              color: '#94a3b8',
-              marginBottom: '10px',
-              paddingBottom: '6px',
+              letterSpacing: '0.8px',
+              color: '#64748b',
+              marginBottom: '12px',
+              paddingBottom: '8px',
               borderBottom: '1px solid #f1f5f9',
             }}>Your Progress</div>
             <div style={{ display: 'flex', gap: 0, margin: '16px 0' }}>
@@ -787,18 +868,18 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
           </div>
 
           {/* Policy Details */}
-          <div style={{ marginBottom: '20px' }}>
+          <div style={{ marginBottom: '24px' }}>
             <div style={{
-              fontSize: '10px',
-              fontWeight: 600,
+              fontSize: '12px',
+              fontWeight: 700,
               textTransform: 'uppercase',
-              letterSpacing: '1px',
-              color: '#94a3b8',
-              marginBottom: '10px',
-              paddingBottom: '6px',
+              letterSpacing: '0.8px',
+              color: '#64748b',
+              marginBottom: '12px',
+              paddingBottom: '8px',
               borderBottom: '1px solid #f1f5f9',
             }}>Policy Details</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
               <div>
                 <div style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Category</div>
                 <div style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a', marginTop: '2px' }}>
@@ -823,18 +904,18 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
           </div>
 
           {/* Timeline */}
-          <div style={{ marginBottom: '20px' }}>
+          <div style={{ marginBottom: '24px' }}>
             <div style={{
-              fontSize: '10px',
-              fontWeight: 600,
+              fontSize: '12px',
+              fontWeight: 700,
               textTransform: 'uppercase',
-              letterSpacing: '1px',
-              color: '#94a3b8',
-              marginBottom: '10px',
-              paddingBottom: '6px',
+              letterSpacing: '0.8px',
+              color: '#64748b',
+              marginBottom: '12px',
+              paddingBottom: '8px',
               borderBottom: '1px solid #f1f5f9',
             }}>Timeline</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
               <div>
                 <div style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Assigned</div>
                 <div style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a', marginTop: '2px' }}>{formatDate(policy.assignedDate)}</div>
@@ -861,15 +942,15 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
           </div>
 
           {/* Requirements */}
-          <div style={{ marginBottom: '20px' }}>
+          <div style={{ marginBottom: '24px' }}>
             <div style={{
-              fontSize: '10px',
-              fontWeight: 600,
+              fontSize: '12px',
+              fontWeight: 700,
               textTransform: 'uppercase',
-              letterSpacing: '1px',
-              color: '#94a3b8',
-              marginBottom: '10px',
-              paddingBottom: '6px',
+              letterSpacing: '0.8px',
+              color: '#64748b',
+              marginBottom: '12px',
+              paddingBottom: '8px',
               borderBottom: '1px solid #f1f5f9',
             }}>Requirements</div>
 
@@ -935,15 +1016,15 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
 
           {/* Related Policies */}
           {relatedPolicies.length > 0 && (
-            <div style={{ marginBottom: '20px' }}>
+            <div style={{ marginBottom: '24px' }}>
               <div style={{
-                fontSize: '10px',
-                fontWeight: 600,
+                fontSize: '12px',
+                fontWeight: 700,
                 textTransform: 'uppercase',
-                letterSpacing: '1px',
-                color: '#94a3b8',
-                marginBottom: '10px',
-                paddingBottom: '6px',
+                letterSpacing: '0.8px',
+                color: '#64748b',
+                marginBottom: '12px',
+                paddingBottom: '8px',
                 borderBottom: '1px solid #f1f5f9',
               }}>Related Policies</div>
               {relatedPolicies.map(rp => (
@@ -1056,42 +1137,22 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
               <Spinner size={SpinnerSize.large} label="Loading your policies..." />
             </div>
           ) : (
-            <div style={{
-              display: 'flex',
-              width: '100%',
-              height: '100%',
-              minHeight: 'calc(100vh - 180px)',
-            }}>
+            <div style={{ width: '100%', height: '100%', minHeight: 'calc(100vh - 180px)' }}>
+              {/* Hero Banner — single row: ring + greeting + search + KPIs */}
+              {this.renderHeroBanner()}
+
               {/* Main content area */}
-              <div style={{
-                flex: 1,
-                overflowY: 'auto',
-                padding: '32px 40px',
-              }}>
-                <div style={{ maxWidth: '960px' }}>
-                  {/* Page Header */}
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'flex-start',
-                    marginBottom: '24px',
-                  }}>
-                    <div>
-                      <h1 style={{ fontSize: '26px', fontWeight: 700, letterSpacing: '-0.5px', margin: 0, color: '#0f172a' }}>My Policies</h1>
-                      <div style={{ fontSize: '13px', color: '#64748b', marginTop: '4px' }}>Your assigned policies and acknowledgement status</div>
-                    </div>
+              <div style={{ display: 'flex', width: '100%', flex: 1 }}>
+                <div style={{ flex: 1, overflowY: 'auto', padding: '24px 40px' }}>
+                  <div style={{ maxWidth: '960px' }}>
+                    {/* Policy List */}
+                    {this.renderPolicyList(filteredPolicies)}
                   </div>
-
-                  {/* KPI Strip */}
-                  {this.renderKpiStrip()}
-
-                  {/* Policy List */}
-                  {this.renderPolicyList(filteredPolicies)}
                 </div>
-              </div>
 
-              {/* Detail Panel (slide-in from right) */}
-              {this.renderDetailPanel()}
+                {/* Detail Panel (slide-in from right) */}
+                {this.renderDetailPanel()}
+              </div>
             </div>
           )}
         </div>

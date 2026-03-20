@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Policy Hub — Hero Variations + Card Grid</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', -apple-system, sans-serif; background: #f1f5f9; color: #0f172a; }
+
+  .page { max-width: 1400px; margin: 0 auto; padding: 32px 40px; }
+  .label { display: inline-block; background: #2563eb; color: #fff; padding: 4px 12px; border-radius: 4px; font-size: 11px; font-weight: 700; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 1px; }
+  .divider { border-top: 3px solid #e2e8f0; margin: 48px 0 32px; }
+  h2 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .desc { font-size: 13px; color: #64748b; margin-bottom: 20px; }
+
+  /* Shared search input */
+  .search-box { position: relative; }
+  .search-input {
+    width: 100%; padding: 12px 18px 12px 44px; border-radius: 8px;
+    border: 2px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.15);
+    font-size: 14px; color: #fff; outline: none; font-family: inherit;
+  }
+  .search-input::placeholder { color: rgba(255,255,255,0.5); }
+  .search-input-light { border-color: #e2e8f0; background: #fff; color: #0f172a; }
+  .search-input-light::placeholder { color: #94a3b8; }
+  .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); }
+
+  /* Chip styles */
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip {
+    padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 500; cursor: pointer;
+    background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.9); border: 1px solid rgba(255,255,255,0.2);
+  }
+  .chip.active { background: #fff; color: #0d9488; font-weight: 600; border-color: #fff; }
+
+  /* ══════════════════════════════════════════════════ */
+  /* VARIATION A — Full Hero (current, 48px padding)   */
+  /* ══════════════════════════════════════════════════ */
+  .hero-a {
+    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+    padding: 48px 40px 40px; text-align: center; position: relative; overflow: hidden;
+  }
+  .hero-a::after { content: ''; position: absolute; right: -100px; bottom: -100px; width: 400px; height: 400px; background: rgba(255,255,255,0.03); border-radius: 50%; }
+  .hero-a h1 { font-size: 28px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+  .hero-a p { font-size: 14px; color: rgba(255,255,255,0.8); margin-bottom: 24px; }
+  .hero-a .search-box { max-width: 640px; margin: 0 auto 20px; }
+  .hero-a .chips { justify-content: center; }
+
+  /* ══════════════════════════════════════════════════ */
+  /* VARIATION B — Compact Hero (no chips, 32px pad)   */
+  /* ══════════════════════════════════════════════════ */
+  .hero-b {
+    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+    padding: 28px 40px 24px; text-align: center; position: relative; overflow: hidden;
+  }
+  .hero-b::after { content: ''; position: absolute; right: -80px; bottom: -80px; width: 300px; height: 300px; background: rgba(255,255,255,0.03); border-radius: 50%; }
+  .hero-b h1 { font-size: 24px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+  .hero-b p { font-size: 13px; color: rgba(255,255,255,0.75); margin-bottom: 16px; }
+  .hero-b .search-box { max-width: 600px; margin: 0 auto; }
+
+  /* ══════════════════════════════════════════════════ */
+  /* VARIATION C — Slim Banner (single line + search)  */
+  /* ══════════════════════════════════════════════════ */
+  .hero-c {
+    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+    padding: 20px 40px; display: flex; align-items: center; gap: 24px; position: relative; overflow: hidden;
+  }
+  .hero-c::after { content: ''; position: absolute; right: -60px; bottom: -60px; width: 200px; height: 200px; background: rgba(255,255,255,0.03); border-radius: 50%; }
+  .hero-c .hero-text { flex-shrink: 0; }
+  .hero-c h1 { font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 2px; }
+  .hero-c p { font-size: 12px; color: rgba(255,255,255,0.7); }
+  .hero-c .search-box { flex: 1; max-width: 500px; }
+
+  /* ══════════════════════════════════════════════════ */
+  /* VARIATION D — Minimal Bar (search only, no text)  */
+  /* ══════════════════════════════════════════════════ */
+  .hero-d {
+    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+    padding: 16px 40px; display: flex; align-items: center; justify-content: center; gap: 16px;
+  }
+  .hero-d .search-box { width: 100%; max-width: 640px; }
+  .hero-d .search-input { padding: 10px 18px 10px 44px; font-size: 13px; border-radius: 6px; }
+
+  /* ══════════════════════════════════════════════════ */
+  /* VARIATION E — White Bar (search inside page bg)   */
+  /* ══════════════════════════════════════════════════ */
+  .hero-e {
+    background: #fff; border-bottom: 1px solid #e2e8f0;
+    padding: 20px 40px; display: flex; align-items: center; gap: 20px;
+  }
+  .hero-e .hero-icon { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #0d9488, #0f766e); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .hero-e .hero-text h1 { font-size: 18px; font-weight: 700; color: #0f172a; }
+  .hero-e .hero-text p { font-size: 12px; color: #64748b; }
+  .hero-e .search-box { flex: 1; max-width: 480px; margin-left: auto; }
+
+  /* ══════════════════════════════════════════════════ */
+  /* POLICY CARD GRID — 3 columns with accent strip   */
+  /* ══════════════════════════════════════════════════ */
+  .content-layout { display: grid; grid-template-columns: 240px 1fr; gap: 24px; margin-top: 24px; }
+
+  .facet-panel { }
+  .facet-group { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; margin-bottom: 12px; }
+  .facet-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; margin-bottom: 10px; }
+  .facet-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 12px; color: #334155; cursor: pointer; }
+  .facet-checkbox { width: 16px; height: 16px; border: 2px solid #cbd5e1; border-radius: 3px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .facet-checkbox.checked { background: #0d9488; border-color: #0d9488; color: #fff; font-size: 10px; font-weight: 700; }
+  .facet-count { margin-left: auto; font-size: 10px; color: #94a3b8; }
+
+  .results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .results-count { font-size: 13px; color: #64748b; }
+
+  .policy-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .policy-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden;
+    transition: all 0.2s; cursor: pointer; display: flex; flex-direction: column;
+  }
+  .policy-card:hover { border-color: #0d9488; box-shadow: 0 4px 16px rgba(13,148,136,0.1); transform: translateY(-2px); }
+  .card-strip { height: 4px; }
+  .strip-compliance { background: #2563eb; }
+  .strip-hr { background: #db2777; }
+  .strip-governance { background: #6366f1; }
+  .strip-it { background: #0d9488; }
+  .strip-safety { background: #d97706; }
+  .strip-ethics { background: #059669; }
+  .card-body { padding: 18px 20px; flex: 1; display: flex; flex-direction: column; }
+  .card-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; line-height: 1.35; }
+  .card-number { font-size: 11px; color: #94a3b8; margin-bottom: 8px; }
+  .card-summary { font-size: 12px; color: #64748b; line-height: 1.5; margin-bottom: 12px; flex: 1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .card-badges { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px; }
+  .badge { font-size: 9px; font-weight: 700; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .badge-cat { background: #f0f9ff; color: #0369a1; }
+  .badge-risk-critical { background: #fee2e2; color: #dc2626; }
+  .badge-risk-high { background: #fef3c7; color: #d97706; }
+  .badge-risk-medium { background: #e0e7ff; color: #6366f1; }
+  .badge-risk-low { background: #dcfce7; color: #16a34a; }
+  .status-published { background: #dcfce7; color: #16a34a; }
+  .card-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 12px; border-top: 1px solid #f1f5f9; }
+  .card-date { font-size: 10px; color: #94a3b8; }
+  .card-views { font-size: 10px; color: #94a3b8; display: flex; align-items: center; gap: 4px; }
+
+  .view-toggle { display: flex; border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden; }
+  .view-btn { padding: 6px 10px; font-size: 12px; cursor: pointer; background: #fff; border: none; color: #94a3b8; }
+  .view-btn.active { background: #0d9488; color: #fff; }
+  .sort-select { padding: 6px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 12px; font-family: inherit; color: #334155; background: #fff; }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <h2>Policy Hub — Hero Variations</h2>
+  <div class="desc">5 options from full-height to minimal. All wire into the same search logic.</div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- VARIATION A — Full Hero (current)          -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="page"><div class="label">Variation A — Full Hero (current)</div></div>
+<div class="hero-a">
+  <h1>Policy Hub</h1>
+  <p>Browse, search, and discover all organisational policies in one place</p>
+  <div class="search-box">
+    <svg class="search-icon" viewBox="0 0 24 24" fill="none" width="16" height="16"><circle cx="11" cy="11" r="7" stroke="rgba(255,255,255,0.6)" stroke-width="2"/><path d="M21 21l-4-4" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-linecap="round"/></svg>
+    <input class="search-input" placeholder="Search by policy name, number, or keyword..." />
+  </div>
+  <div class="chips" style="justify-content:center;">
+    <span class="chip active">All</span><span class="chip">Compliance</span><span class="chip">HR</span><span class="chip">Governance</span><span class="chip">IT Security</span><span class="chip">Safety</span>
+  </div>
+</div>
+<div class="page"><div class="desc" style="margin-top:8px;">Height: ~200px. Title + subtitle + search + category chips. Most visual impact but tall.</div></div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- VARIATION B — Compact Hero (no chips)      -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="divider" style="margin:32px 40px;"></div>
+<div class="page"><div class="label">Variation B — Compact Hero (no chips)</div></div>
+<div class="hero-b">
+  <h1>Policy Hub</h1>
+  <p>Browse, search, and discover all organisational policies in one place</p>
+  <div class="search-box">
+    <svg class="search-icon" viewBox="0 0 24 24" fill="none" width="16" height="16"><circle cx="11" cy="11" r="7" stroke="rgba(255,255,255,0.6)" stroke-width="2"/><path d="M21 21l-4-4" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-linecap="round"/></svg>
+    <input class="search-input" placeholder="Search by policy name, number, or keyword..." />
+  </div>
+</div>
+<div class="page"><div class="desc" style="margin-top:8px;">Height: ~120px. Title + subtitle + search. No chips — categories are in the sidebar facets. Cleaner.</div></div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- VARIATION C — Slim Banner (inline)         -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="divider" style="margin:32px 40px;"></div>
+<div class="page"><div class="label">Variation C — Slim Banner (inline layout)</div></div>
+<div class="hero-c">
+  <div class="hero-text">
+    <h1>Policy Hub</h1>
+    <p>Browse and discover organisational policies</p>
+  </div>
+  <div class="search-box">
+    <svg class="search-icon" viewBox="0 0 24 24" fill="none" width="16" height="16"><circle cx="11" cy="11" r="7" stroke="rgba(255,255,255,0.6)" stroke-width="2"/><path d="M21 21l-4-4" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-linecap="round"/></svg>
+    <input class="search-input" placeholder="Search policies..." />
+  </div>
+</div>
+<div class="page"><div class="desc" style="margin-top:8px;">Height: ~70px. Title left, search right. Efficient — leaves maximum room for content.</div></div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- VARIATION D — Minimal Bar (search only)    -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="divider" style="margin:32px 40px;"></div>
+<div class="page"><div class="label">Variation D — Minimal Bar (search only)</div></div>
+<div class="hero-d">
+  <div class="search-box">
+    <svg class="search-icon" viewBox="0 0 24 24" fill="none" width="16" height="16"><circle cx="11" cy="11" r="7" stroke="rgba(255,255,255,0.6)" stroke-width="2"/><path d="M21 21l-4-4" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-linecap="round"/></svg>
+    <input class="search-input" placeholder="Search by policy name, number, or keyword..." style="font-size:13px;padding:10px 18px 10px 44px;border-radius:6px;" />
+  </div>
+</div>
+<div class="page"><div class="desc" style="margin-top:8px;">Height: ~50px. Just a teal search bar. Maximum content density, minimal branding.</div></div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- VARIATION E — White Bar (no gradient)      -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="divider" style="margin:32px 40px;"></div>
+<div class="page"><div class="label">Variation E — White Bar (no teal gradient)</div></div>
+<div class="hero-e">
+  <div class="hero-icon">
+    <svg viewBox="0 0 32 32" fill="none" width="22" height="22"><path d="M16 2L4 8v8c0 7.7 5.1 14.9 12 16.9 6.9-2 12-9.2 12-16.9V8L16 2z" stroke="#fff" stroke-width="2" fill="rgba(255,255,255,0.15)"/><path d="M12 16l3 3 5-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </div>
+  <div class="hero-text">
+    <h1>Policy Hub</h1>
+    <p>Browse and discover organisational policies</p>
+  </div>
+  <div class="search-box">
+    <svg class="search-icon" viewBox="0 0 24 24" fill="none" width="16" height="16"><circle cx="11" cy="11" r="7" stroke="#94a3b8" stroke-width="2"/><path d="M21 21l-4-4" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/></svg>
+    <input class="search-input search-input-light" placeholder="Search policies..." />
+  </div>
+</div>
+<div class="page"><div class="desc" style="margin-top:8px;">Height: ~70px. White background, icon + title left, search right. Minimal, blends with page. No teal gradient.</div></div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- CARD GRID — 3 columns with accent strip   -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="divider" style="margin:32px 40px;"></div>
+
+<div class="page">
+  <div class="label">Card Grid — 3 Columns with Top Accent Strip</div>
+  <h2>Policy Cards with Category Accent</h2>
+  <div class="desc">3 per row, 4px colour strip at top to indicate category. Facet sidebar on left (no Status filter — Hub shows published only).</div>
+
+  <div class="content-layout">
+    <!-- Facet Sidebar (no Status) -->
+    <div class="facet-panel">
+      <div class="facet-group">
+        <div class="facet-title">Category</div>
+        <div class="facet-item"><div class="facet-checkbox checked">&#10003;</div> Compliance <span class="facet-count">12</span></div>
+        <div class="facet-item"><div class="facet-checkbox checked">&#10003;</div> Human Resources <span class="facet-count">9</span></div>
+        <div class="facet-item"><div class="facet-checkbox"></div> Governance <span class="facet-count">6</span></div>
+        <div class="facet-item"><div class="facet-checkbox"></div> IT &amp; Security <span class="facet-count">7</span></div>
+        <div class="facet-item"><div class="facet-checkbox"></div> Safety &amp; Health <span class="facet-count">4</span></div>
+        <div class="facet-item"><div class="facet-checkbox"></div> Ethics <span class="facet-count">4</span></div>
+      </div>
+      <div class="facet-group">
+        <div class="facet-title">Risk Level</div>
+        <div class="facet-item"><div class="facet-checkbox"></div> Critical <span class="facet-count">4</span></div>
+        <div class="facet-item"><div class="facet-checkbox"></div> High <span class="facet-count">11</span></div>
+        <div class="facet-item"><div class="facet-checkbox"></div> Medium <span class="facet-count">15</span></div>
+        <div class="facet-item"><div class="facet-checkbox"></div> Low <span class="facet-count">12</span></div>
+      </div>
+      <div class="facet-group">
+        <div class="facet-title">Department</div>
+        <div class="facet-item"><div class="facet-checkbox"></div> All Employees <span class="facet-count">18</span></div>
+        <div class="facet-item"><div class="facet-checkbox"></div> Finance <span class="facet-count">6</span></div>
+        <div class="facet-item"><div class="facet-checkbox"></div> Operations <span class="facet-count">8</span></div>
+        <div class="facet-item"><div class="facet-checkbox"></div> IT <span class="facet-count">7</span></div>
+        <div class="facet-item"><div class="facet-checkbox"></div> Legal <span class="facet-count">5</span></div>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div>
+      <div class="results-header">
+        <div class="results-count">Showing <strong>34</strong> published policies</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <select class="sort-select"><option>Sort: Most Recent</option><option>Sort: A-Z</option><option>Sort: Risk Level</option></select>
+          <div class="view-toggle"><button class="view-btn active">&#9638;</button><button class="view-btn">&#9776;</button></div>
+        </div>
+      </div>
+
+      <div class="policy-grid">
+        <div class="policy-card"><div class="card-strip strip-compliance"></div><div class="card-body"><div class="card-title">POPIA Compliance Framework</div><div class="card-number">POL-2024-001 &middot; v3.0</div><div class="card-summary">Comprehensive framework for Protection of Personal Information Act compliance, covering data processing, consent, and breach notification.</div><div class="card-badges"><span class="badge badge-cat">Compliance</span><span class="badge badge-risk-critical">Critical</span><span class="badge status-published">Published</span></div><div class="card-footer"><span class="card-date">Updated 15 Mar 2026</span><span class="card-views"><svg width="12" height="12" viewBox="0 0 20 20" fill="#94a3b8"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"/></svg> 342</span></div></div></div>
+
+        <div class="policy-card"><div class="card-strip strip-hr"></div><div class="card-body"><div class="card-title">Anti-Harassment &amp; Workplace Dignity</div><div class="card-number">POL-2024-008 &middot; v2.1</div><div class="card-summary">Zero-tolerance policy for workplace harassment, discrimination, and bullying. Outlines reporting procedures and disciplinary actions.</div><div class="card-badges"><span class="badge badge-cat">HR</span><span class="badge badge-risk-high">High</span><span class="badge status-published">Published</span></div><div class="card-footer"><span class="card-date">Updated 10 Mar 2026</span><span class="card-views"><svg width="12" height="12" viewBox="0 0 20 20" fill="#94a3b8"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"/></svg> 287</span></div></div></div>
+
+        <div class="policy-card"><div class="card-strip strip-governance"></div><div class="card-body"><div class="card-title">King IV Corporate Governance</div><div class="card-number">POL-2024-004 &middot; v1.2</div><div class="card-summary">King IV principles applied to organisational governance, board responsibilities, risk management, and stakeholder engagement.</div><div class="card-badges"><span class="badge badge-cat">Governance</span><span class="badge badge-risk-high">High</span><span class="badge status-published">Published</span></div><div class="card-footer"><span class="card-date">Updated 5 Mar 2026</span><span class="card-views"><svg width="12" height="12" viewBox="0 0 20 20" fill="#94a3b8"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"/></svg> 198</span></div></div></div>
+
+        <div class="policy-card"><div class="card-strip strip-ethics"></div><div class="card-body"><div class="card-title">Code of Conduct &amp; Ethics</div><div class="card-number">POL-2024-005 &middot; v4.0</div><div class="card-summary">Foundational ethical standards, conflicts of interest, gifts policy, and professional conduct expectations for all employees.</div><div class="card-badges"><span class="badge badge-cat">Ethics</span><span class="badge badge-risk-high">High</span><span class="badge status-published">Published</span></div><div class="card-footer"><span class="card-date">Updated 28 Feb 2026</span><span class="card-views"><svg width="12" height="12" viewBox="0 0 20 20" fill="#94a3b8"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"/></svg> 456</span></div></div></div>
+
+        <div class="policy-card"><div class="card-strip strip-it"></div><div class="card-body"><div class="card-title">IT Acceptable Use Policy</div><div class="card-number">POL-2024-009 &middot; v2.3</div><div class="card-summary">Standards for acceptable use of company IT resources including email, internet access, software installation, and BYOD.</div><div class="card-badges"><span class="badge badge-cat">IT</span><span class="badge badge-risk-medium">Medium</span><span class="badge status-published">Published</span></div><div class="card-footer"><span class="card-date">Updated 20 Feb 2026</span><span class="card-views"><svg width="12" height="12" viewBox="0 0 20 20" fill="#94a3b8"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"/></svg> 312</span></div></div></div>
+
+        <div class="policy-card"><div class="card-strip strip-hr"></div><div class="card-body"><div class="card-title">BCEA Leave Management</div><div class="card-number">POL-2024-007 &middot; v2.0</div><div class="card-summary">Annual, sick, family responsibility, and maternity leave entitlements per the Basic Conditions of Employment Act.</div><div class="card-badges"><span class="badge badge-cat">HR</span><span class="badge badge-risk-low">Low</span><span class="badge status-published">Published</span></div><div class="card-footer"><span class="card-date">Updated 14 Feb 2026</span><span class="card-views"><svg width="12" height="12" viewBox="0 0 20 20" fill="#94a3b8"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"/></svg> 523</span></div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

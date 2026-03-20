@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Policy Simple Reader — Browse Mode</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', -apple-system, sans-serif; background: #f8fafc; color: #0f172a; }
+
+  /* ═══════════════════════════════════════════ */
+  /* APP HEADER + NAV (context only)            */
+  /* ═══════════════════════════════════════════ */
+  .app-header {
+    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+    padding: 0 40px; height: 56px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .nav-bar {
+    background: #fff; padding: 0 40px; display: flex; align-items: center; height: 44px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+  }
+  .nav-item {
+    padding: 0 16px; height: 44px; display: flex; align-items: center; font-size: 13px;
+    font-weight: 500; color: #64748b; cursor: pointer; text-decoration: none; border-bottom: 2px solid transparent;
+  }
+  .nav-item.active { font-weight: 600; color: #0d9488; border-bottom-color: #0d9488; }
+
+  /* ═══════════════════════════════════════════ */
+  /* BREADCRUMB BAR                             */
+  /* ═══════════════════════════════════════════ */
+  .breadcrumb-bar {
+    background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 10px 40px;
+    display: flex; align-items: center; gap: 8px; font-size: 12px; color: #64748b;
+  }
+  .breadcrumb-bar a { color: #0d9488; text-decoration: none; font-weight: 500; }
+  .breadcrumb-bar a:hover { text-decoration: underline; }
+  .breadcrumb-sep { color: #cbd5e1; }
+  .breadcrumb-current { color: #0f172a; font-weight: 600; }
+
+  /* ═══════════════════════════════════════════ */
+  /* POLICY HEADER                              */
+  /* ═══════════════════════════════════════════ */
+  .policy-header {
+    background: #fff; border-bottom: 1px solid #e2e8f0; padding: 24px 40px;
+  }
+  .policy-header-inner { max-width: 1400px; margin: 0 auto; }
+  .policy-header-top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .policy-title { font-size: 24px; font-weight: 700; color: #0f172a; margin-bottom: 6px; }
+  .policy-meta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .policy-number { font-size: 12px; color: #0d9488; font-weight: 600; }
+  .badge {
+    font-size: 9px; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+    text-transform: uppercase; letter-spacing: 0.5px; display: inline-block;
+  }
+  .b-cat { background: #f0f9ff; color: #0369a1; }
+  .b-risk-high { background: #fef3c7; color: #d97706; }
+  .b-risk-critical { background: #fee2e2; color: #dc2626; }
+  .b-risk-medium { background: #e0e7ff; color: #6366f1; }
+  .b-published { background: #dcfce7; color: #16a34a; }
+  .b-version { background: #f1f5f9; color: #64748b; }
+  .meta-text { font-size: 11px; color: #94a3b8; }
+  .back-btn {
+    display: flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 6px;
+    font-size: 13px; font-weight: 600; color: #0d9488; background: #fff; border: 1px solid #e2e8f0;
+    cursor: pointer; font-family: inherit; transition: all 0.15s; flex-shrink: 0;
+  }
+  .back-btn:hover { border-color: #0d9488; background: #f0fdfa; }
+
+  /* ═══════════════════════════════════════════ */
+  /* DOCUMENT TOOLBAR                           */
+  /* ═══════════════════════════════════════════ */
+  .doc-toolbar {
+    background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 8px 40px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .doc-toolbar-inner { max-width: 1400px; margin: 0 auto; width: 100%; display: flex; align-items: center; justify-content: space-between; }
+  .doc-info { display: flex; align-items: center; gap: 8px; }
+  .doc-icon { color: #dc2626; font-size: 16px; }
+  .doc-name { font-size: 12px; color: #334155; font-weight: 500; }
+  .doc-type { font-size: 10px; color: #94a3b8; background: #f1f5f9; padding: 2px 6px; border-radius: 3px; }
+  .toolbar-actions { display: flex; gap: 4px; }
+  .toolbar-btn {
+    display: flex; align-items: center; gap: 5px; padding: 6px 12px; border-radius: 4px;
+    font-size: 11px; font-weight: 500; color: #64748b; background: #fff; border: 1px solid #e2e8f0;
+    cursor: pointer; font-family: inherit; transition: all 0.15s;
+  }
+  .toolbar-btn:hover { border-color: #0d9488; color: #0d9488; }
+  .toolbar-btn-primary {
+    background: #0d9488; color: #fff; border-color: #0d9488;
+  }
+  .toolbar-btn-primary:hover { background: #0f766e; }
+
+  /* ═══════════════════════════════════════════ */
+  /* DOCUMENT CONTENT                           */
+  /* ═══════════════════════════════════════════ */
+  .content-area {
+    max-width: 900px; margin: 0 auto; padding: 40px 40px 80px;
+  }
+  .doc-content {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+    padding: 48px 56px; min-height: 600px; line-height: 1.8; font-size: 14px; color: #334155;
+  }
+  .doc-content h1 { font-size: 22px; font-weight: 700; color: #0f172a; margin: 0 0 16px; }
+  .doc-content h2 { font-size: 17px; font-weight: 700; color: #0f172a; margin: 32px 0 12px; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0; }
+  .doc-content h3 { font-size: 15px; font-weight: 600; color: #0f172a; margin: 24px 0 8px; }
+  .doc-content p { margin: 0 0 14px; }
+  .doc-content ul, .doc-content ol { margin: 8px 0 16px 24px; }
+  .doc-content li { margin-bottom: 6px; }
+  .doc-content .highlight-box {
+    background: #f0fdfa; border-left: 4px solid #0d9488; padding: 16px 20px;
+    border-radius: 0 8px 8px 0; margin: 20px 0; font-size: 13px; color: #0f766e;
+  }
+  .doc-content .warning-box {
+    background: #fffbeb; border-left: 4px solid #d97706; padding: 16px 20px;
+    border-radius: 0 8px 8px 0; margin: 20px 0; font-size: 13px; color: #92400e;
+  }
+  .doc-content table {
+    width: 100%; border-collapse: collapse; margin: 16px 0;
+  }
+  .doc-content th {
+    background: #f8fafc; padding: 10px 14px; text-align: left; font-size: 12px;
+    font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;
+    border-bottom: 2px solid #e2e8f0;
+  }
+  .doc-content td {
+    padding: 10px 14px; border-bottom: 1px solid #f1f5f9; font-size: 13px;
+  }
+
+  /* ═══════════════════════════════════════════ */
+  /* BOTTOM BAR                                 */
+  /* ═══════════════════════════════════════════ */
+  .bottom-bar {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 10;
+    background: #fff; border-top: 1px solid #e2e8f0; padding: 12px 40px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.06);
+  }
+  .bottom-bar-inner { max-width: 1400px; width: 100%; display: flex; align-items: center; justify-content: space-between; }
+  .reading-info { display: flex; align-items: center; gap: 12px; font-size: 12px; color: #64748b; }
+  .reading-dot { width: 8px; height: 8px; border-radius: 50%; background: #0d9488; }
+</style>
+</head>
+<body>
+
+<!-- App Header -->
+<div class="app-header">
+  <div style="display: flex; align-items: center; gap: 10px; color: #fff;">
+    <svg viewBox="0 0 32 32" fill="none" width="28" height="28"><path d="M16 2L4 8v8c0 7.7 5.1 14.9 12 16.9 6.9-2 12-9.2 12-16.9V8L16 2z" stroke="#fff" stroke-width="2" fill="rgba(255,255,255,0.15)"/><path d="M12 16l3 3 5-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div><div style="font-size:15px;font-weight:700;">Policy Manager</div><div style="font-size:8px;text-transform:uppercase;letter-spacing:2px;opacity:0.7;">POLICY GOVERNANCE &amp; COMPLIANCE</div></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;">GF</div>
+  </div>
+</div>
+
+<!-- Navigation Bar -->
+<div class="nav-bar">
+  <a class="nav-item">My Policies</a>
+  <a class="nav-item active">Policy Hub</a>
+  <a class="nav-item">Author &#9662;</a>
+  <a class="nav-item">Manager &#9662;</a>
+  <a class="nav-item">Secure Policies &#9662;</a>
+</div>
+
+<!-- Breadcrumb -->
+<div class="breadcrumb-bar">
+  <a href="#">Policy Manager</a>
+  <span class="breadcrumb-sep">/</span>
+  <a href="#">Policy Hub</a>
+  <span class="breadcrumb-sep">/</span>
+  <span class="breadcrumb-current">Bring Your Own Device (BYOD) Policy</span>
+</div>
+
+<!-- Policy Header -->
+<div class="policy-header">
+  <div class="policy-header-inner">
+    <div class="policy-header-top">
+      <div>
+        <div class="policy-title">Bring Your Own Device (BYOD) Policy</div>
+        <div class="policy-meta">
+          <span class="policy-number">POL-IT-005</span>
+          <span class="badge b-cat">IT &amp; Security</span>
+          <span class="badge b-risk-medium">Medium</span>
+          <span class="badge b-published">Published</span>
+          <span class="badge b-version">v2.1</span>
+          <span class="meta-text">Published 5 Jun 2025</span>
+          <span class="meta-text">&middot; 10 min read</span>
+        </div>
+      </div>
+      <button class="back-btn" onclick="history.back()">
+        <svg viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Back to Policy Hub
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Document Toolbar -->
+<div class="doc-toolbar">
+  <div class="doc-toolbar-inner">
+    <div class="doc-info">
+      <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="#dc2626" stroke-width="2"/><path d="M14 2v6h6" stroke="#dc2626" stroke-width="2"/></svg>
+      <span class="doc-name">BYOD-Policy-v2.1.pdf</span>
+      <span class="doc-type">PDF</span>
+    </div>
+    <div class="toolbar-actions">
+      <button class="toolbar-btn">
+        <svg viewBox="0 0 24 24" fill="none" width="12" height="12"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Download
+      </button>
+      <button class="toolbar-btn">
+        <svg viewBox="0 0 24 24" fill="none" width="12" height="12"><path d="M6 2v4M18 2v4M3 10h18M5 4h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        Print
+      </button>
+      <button class="toolbar-btn toolbar-btn-primary">
+        <svg viewBox="0 0 24 24" fill="none" width="12" height="12"><path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Fullscreen
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Document Content -->
+<div class="content-area">
+  <div class="doc-content">
+    <h1>Bring Your Own Device (BYOD) Policy</h1>
+
+    <div class="highlight-box">
+      <strong>Purpose:</strong> This policy establishes guidelines for employees who use personal devices (smartphones, tablets, laptops) to access company resources, systems, and data.
+    </div>
+
+    <h2>1. Scope</h2>
+    <p>This policy applies to all employees, contractors, and temporary workers who use personally owned devices to access company email, documents, applications, or internal networks.</p>
+
+    <h2>2. Device Registration</h2>
+    <p>All personal devices used for work purposes must be registered with the IT department before accessing any company resources. Registration includes:</p>
+    <ul>
+      <li>Device make, model, and operating system version</li>
+      <li>Employee acknowledgement of BYOD terms</li>
+      <li>Installation of required Mobile Device Management (MDM) software</li>
+      <li>Verification of minimum security requirements (encryption, screen lock)</li>
+    </ul>
+
+    <h2>3. Security Requirements</h2>
+    <p>Registered devices must comply with the following minimum security standards at all times:</p>
+
+    <table>
+      <thead>
+        <tr><th>Requirement</th><th>Standard</th><th>Enforced By</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Screen Lock</td><td>PIN (6+ digits) or biometric</td><td>MDM Policy</td></tr>
+        <tr><td>Encryption</td><td>Full device encryption enabled</td><td>MDM Policy</td></tr>
+        <tr><td>OS Updates</td><td>Within 30 days of release</td><td>MDM Compliance Check</td></tr>
+        <tr><td>Antivirus</td><td>Active and up to date</td><td>Self-attestation</td></tr>
+        <tr><td>Jailbreak/Root</td><td>Not permitted</td><td>MDM Detection</td></tr>
+      </tbody>
+    </table>
+
+    <h2>4. Data Protection</h2>
+    <p>Company data accessed on personal devices is subject to the same data protection requirements as data on company-owned devices:</p>
+    <ul>
+      <li>Company data must not be stored locally on personal devices outside of approved applications</li>
+      <li>Cloud backup of company data to personal accounts is prohibited</li>
+      <li>Screenshots or recordings of confidential information are restricted</li>
+    </ul>
+
+    <div class="warning-box">
+      <strong>Important:</strong> Lost or stolen devices that have accessed company resources must be reported to IT within 24 hours. IT reserves the right to remotely wipe company data from registered devices.
+    </div>
+
+    <h2>5. Acceptable Use</h2>
+    <p>Employees using personal devices for work acknowledge that:</p>
+    <ul>
+      <li>Work-related communications may be subject to legal discovery</li>
+      <li>IT may monitor work-related applications and data on the device</li>
+      <li>The company is not responsible for personal data loss during a remote wipe</li>
+      <li>Devices must not be used in a manner that violates the IT Acceptable Use Policy</li>
+    </ul>
+
+    <h2>6. Support</h2>
+    <p>IT support for personal devices is limited to:</p>
+    <ul>
+      <li>MDM software installation and configuration</li>
+      <li>Company email and application setup</li>
+      <li>VPN configuration</li>
+    </ul>
+    <p>IT does not provide support for personal applications, hardware issues, or operating system problems on personal devices.</p>
+
+    <h2>7. Non-Compliance</h2>
+    <p>Failure to comply with this policy may result in revocation of BYOD privileges, disciplinary action, and in cases involving data breaches, legal proceedings in accordance with applicable laws including POPIA.</p>
+  </div>
+</div>
+
+<!-- Bottom Bar -->
+<div class="bottom-bar">
+  <div class="bottom-bar-inner">
+    <div class="reading-info">
+      <div class="reading-dot"></div>
+      <span>Reading: <strong>Bring Your Own Device (BYOD) Policy</strong></span>
+      <span style="color:#94a3b8;">&middot; POL-IT-005 &middot; v2.1</span>
+    </div>
+    <button class="back-btn" onclick="history.back()">
+      <svg viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Back to Policy Hub
+    </button>
+  </div>
+</div>
+
+</body>
+</html>

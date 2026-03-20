@@ -653,29 +653,41 @@ export default class PolicyHelp extends React.Component<IPolicyHelpProps, IPolic
       <JmlAppLayout context={this.props.context} breadcrumbs={[{ text: 'Policy Manager', url: '/sites/PolicyManager' }, { text: 'Help' }]}>
         <div className={styles.policyHelp}>
           <div className={styles.contentWrapper}>
-            {/* Hero Section — Premium */}
+            {/* Hero Section — Single row: title left, search centre, bottom-aligned */}
             <div style={{
-              background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)', padding: '48px 40px 40px',
-              textAlign: 'center', position: 'relative', overflow: 'hidden', margin: '0 -24px'
+              background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)', padding: '16px 40px',
+              position: 'relative', overflow: 'hidden', margin: '0 -24px'
             }}>
-              <div style={{ position: 'absolute', left: -100, top: -100, width: 400, height: 400, background: 'rgba(255,255,255,0.03)', borderRadius: '50%' }} />
-              <div style={{ position: 'absolute', right: -60, bottom: -60, width: 300, height: 300, background: 'rgba(255,255,255,0.03)', borderRadius: '50%' }} />
-              <h1 style={{ fontSize: 28, fontWeight: 700, color: '#fff', marginBottom: 6, position: 'relative', zIndex: 1 }}>How can we help?</h1>
-              <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.8)', marginBottom: 24, position: 'relative', zIndex: 1 }}>Find answers, learn best practices, and get support for Policy Manager</p>
-              <div style={{ maxWidth: 560, margin: '0 auto', position: 'relative', zIndex: 1 }}>
-                <SearchBox
-                  placeholder="Search help articles, FAQs, and guides..."
-                  value={searchQuery}
-                  onChange={(_, value) => this.setState({ searchQuery: value || '' })}
-                  onSearch={(value) => this.handleSearch(value)}
-                  onClear={() => this.setState({ searchQuery: '' })}
-                  styles={{
-                    root: { maxWidth: 560, borderRadius: 10, border: '2px solid rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.15)' },
-                    field: { color: '#fff', fontSize: 15 },
-                    icon: { color: 'rgba(255,255,255,0.6)' },
-                    clearButton: { color: 'rgba(255,255,255,0.6)' }
-                  }}
-                />
+              <div style={{ position: 'absolute', right: -60, bottom: -60, width: 200, height: 200, background: 'rgba(255,255,255,0.03)', borderRadius: '50%' }} />
+              <div style={{ maxWidth: 1400, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', alignItems: 'flex-end', position: 'relative', zIndex: 1 }}>
+                {/* Column 1: Title + subtitle */}
+                <div>
+                  <h1 style={{ fontSize: 22, fontWeight: 700, color: '#fff', marginBottom: 2 }}>Help Centre</h1>
+                  <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)' }}>Find answers, learn best practices, and get support</p>
+                </div>
+                {/* Column 2: Search — centred in middle third */}
+                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                  <div style={{ width: '100%', maxWidth: 480, position: 'relative' }}>
+                    <svg viewBox="0 0 24 24" fill="none" width="16" height="16" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.6)' }}>
+                      <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
+                      <path d="M21 21l-4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => this.setState({ searchQuery: (e.target as HTMLInputElement).value })}
+                      onKeyDown={(e) => { if (e.key === 'Enter') this.handleSearch(searchQuery); }}
+                      placeholder="Search help articles, FAQs, and guides..."
+                      style={{
+                        width: '100%', padding: '10px 18px 10px 44px', borderRadius: 8,
+                        border: '2px solid rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.15)',
+                        fontSize: 13, color: '#fff', outline: 'none', fontFamily: 'inherit',
+                      }}
+                    />
+                  </div>
+                </div>
+                {/* Column 3: empty spacer */}
+                <div />
               </div>
             </div>
 

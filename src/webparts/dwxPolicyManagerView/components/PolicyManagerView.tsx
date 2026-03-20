@@ -162,12 +162,11 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
     const urlParams = new URLSearchParams(window.location.search);
     const tabParam = urlParams.get('tab');
     let initialTab: ManagerViewTab = 'dashboard';
-    const isDirectNav = tabParam === 'team-compliance' || tabParam === 'approvals' || tabParam === 'delegations' || tabParam === 'reviews';
-    if (isDirectNav) {
+    if (tabParam && ['team-compliance', 'approvals', 'delegations', 'reviews', 'reports'].includes(tabParam)) {
       initialTab = tabParam as ManagerViewTab;
     }
-    // When deep-linked to a specific tab, hide the tab bar
-    (this as any)._isDirectNav = isDirectNav;
+    // Always hide the tab bar — navigation is via the Manager dropdown menu
+    (this as any)._isDirectNav = true;
 
     this.state = {
       activeTab: initialTab,
@@ -748,6 +747,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
         {this.state.activeTab === 'approvals' && this.renderApprovalsTab()}
         {this.state.activeTab === 'delegations' && this.renderDelegationsTab()}
         {this.state.activeTab === 'reviews' && this.renderReviewsTab()}
+        {this.state.activeTab === 'reports' && this.renderReportsTab()}
 
         {this.renderDelegationPanel()}
       </JmlAppLayout>
@@ -790,7 +790,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
     ];
 
     return (
-      <div style={{ padding: '24px 0' }}>
+      <div style={{ padding: '24px 40px', maxWidth: 1400, margin: '0 auto' }}>
         {/* Page Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
           <div>
@@ -933,12 +933,17 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
     const totalOverdue = teamMembers.reduce((sum, m) => sum + m.PoliciesOverdue, 0);
 
     return (
-      <>
-        <PageSubheader
-          iconName="Group"
-          title="Team Compliance"
-          description="Track policy acknowledgement and compliance status for all team members"
-        />
+      <div style={{ padding: '24px 40px', maxWidth: 1400, margin: '0 auto' }}>
+        {/* Page Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+          <div>
+            <Text style={{ fontSize: 26, fontWeight: 700, color: '#0f172a', display: 'block', letterSpacing: -0.5 }}>Team Compliance</Text>
+            <Text style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>Track policy acknowledgement and compliance status for all team members</Text>
+          </div>
+          <Stack horizontal tokens={{ childrenGap: 8 }}>
+            <DefaultButton text="Export Report" iconProps={{ iconName: 'Download' }} styles={{ root: { borderRadius: 6 } }} />
+          </Stack>
+        </div>
 
         {/* Summary KPIs */}
         <div className={(styles as Record<string, string>).kpiGrid}>
@@ -1029,7 +1034,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
             ))}
           </tbody>
         </table>
-      </>
+      </div>
     );
   }
 
@@ -1048,7 +1053,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
     const riskBadges: Record<string, { bg: string; color: string }> = { Critical: { bg: '#fee2e2', color: '#dc2626' }, High: { bg: '#fef3c7', color: '#92400e' }, Medium: { bg: '#f0f9ff', color: '#0369a1' }, Low: { bg: '#f0fdf4', color: '#059669' } };
 
     return (
-      <div style={{ padding: '24px 0' }}>
+      <div style={{ padding: '24px 40px', maxWidth: 1400, margin: '0 auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
           <div>
             <Text style={{ fontSize: 26, fontWeight: 700, color: '#0f172a', display: 'block', letterSpacing: -0.5 }}>Approvals</Text>
@@ -1169,7 +1174,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
     const priDots: Record<string, string> = { High: '#dc2626', Critical: '#dc2626', Normal: '#059669', Low: '#94a3b8' };
 
     return (
-      <div style={{ padding: '24px 0' }}>
+      <div style={{ padding: '24px 40px', maxWidth: 1400, margin: '0 auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
           <div>
             <Text style={{ fontSize: 26, fontWeight: 700, color: '#0f172a', display: 'block', letterSpacing: -0.5 }}>Delegations</Text>
@@ -1264,7 +1269,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
     const cycleLabelMap: Record<number, string> = { 90: '3 Months', 180: '6 Months', 365: 'Annual', 730: '2 Years', 1095: '3 Years' };
 
     return (
-      <div style={{ padding: '24px 0' }}>
+      <div style={{ padding: '24px 40px', maxWidth: 1400, margin: '0 auto' }}>
         <div style={{ marginBottom: 24 }}>
           <Text style={{ fontSize: 26, fontWeight: 700, color: '#0f172a', display: 'block', letterSpacing: -0.5 }}>Policy Reviews</Text>
           <Text style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>Manage scheduled policy reviews and ensure timely completion</Text>
@@ -1361,12 +1366,14 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
     ];
 
     return (
-      <>
-        <PageSubheader
-          iconName="ReportDocument"
-          title="Reports"
-          description="Generate, schedule, and export compliance reports for your team"
-        />
+      <div style={{ padding: '24px 40px', maxWidth: 1400, margin: '0 auto' }}>
+        {/* Page Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+          <div>
+            <Text style={{ fontSize: 26, fontWeight: 700, color: '#0f172a', display: 'block', letterSpacing: -0.5 }}>Reports</Text>
+            <Text style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>Generate, schedule, and export compliance reports for your team</Text>
+          </div>
+        </div>
 
         <Pivot
           selectedKey={this.state.reportsSubTab}
@@ -1383,7 +1390,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
         >
           <PivotItem headerText="Report Hub" itemKey="hub" itemIcon="GridViewMedium" />
           <PivotItem headerText="Report Builder" itemKey="builder" itemIcon="BuildQueue" />
-          <PivotItem headerText="Executive Dashboard" itemKey="dashboard" itemIcon="BarChartVertical" />
+          <PivotItem headerText="Reports Analytics" itemKey="dashboard" itemIcon="BarChartVertical" />
         </Pivot>
 
         {this.state.reportsSubTab === 'hub' && this.renderReportHub(allReportCards)}
@@ -1391,7 +1398,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
         {this.state.reportsSubTab === 'dashboard' && this.renderExecDashboard(allReportCards)}
 
         {this.renderReportFlyout(allReportCards)}
-      </>
+      </div>
     );
   }
 

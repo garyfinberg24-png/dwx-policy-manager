@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Policy Hub — Detail Panel Refinement</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', -apple-system, sans-serif; background: rgba(0,0,0,0.4); color: #0f172a; display: flex; justify-content: flex-end; min-height: 100vh; }
+
+  /* Panel */
+  .panel {
+    width: 480px; background: #fff; height: 100vh; position: fixed; right: 0; top: 0;
+    display: flex; flex-direction: column; box-shadow: -8px 0 32px rgba(0,0,0,0.12);
+  }
+
+  /* Panel header — teal gradient */
+  .panel-nav {
+    background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%);
+    padding: 8px 8px 0 0; display: flex; justify-content: flex-end;
+  }
+  .panel-close {
+    width: 32px; height: 32px; border-radius: 4px; border: none; background: transparent;
+    cursor: pointer; font-size: 16px; color: #0f766e; display: flex; align-items: center; justify-content: center;
+  }
+  .panel-header {
+    background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%);
+    padding: 0 32px 16px; border-bottom: 1px solid #99f6e4;
+  }
+  .panel-title { font-size: 18px; font-weight: 700; color: #0f766e; }
+
+  /* Panel body — generous padding */
+  .panel-body { flex: 1; overflow-y: auto; padding: 20px 32px; }
+
+  /* Subtitle */
+  .policy-subtitle { font-size: 12px; color: #0d9488; margin-bottom: 20px; }
+
+  /* Section headers — 12px bold, darker */
+  .section { margin-bottom: 24px; }
+  .section-title {
+    font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;
+    color: #64748b; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #f1f5f9;
+  }
+
+  /* Detail grid */
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .detail-label { font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+  .detail-value { font-size: 13px; font-weight: 600; color: #0f172a; margin-top: 3px; }
+
+  /* Badges */
+  .badge {
+    font-size: 9px; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+    text-transform: uppercase; letter-spacing: 0.3px; display: inline-block;
+  }
+  .b-teal { background: #ccfbf1; color: #0d9488; }
+  .b-amber { background: #fef3c7; color: #d97706; }
+  .b-green { background: #dcfce7; color: #16a34a; }
+  .b-slate { background: #f1f5f9; color: #64748b; }
+
+  /* Description */
+  .description { font-size: 13px; color: #64748b; line-height: 1.6; margin-bottom: 20px; }
+
+  /* Key points */
+  .key-points ul { margin: 0; padding-left: 18px; }
+  .key-points li { font-size: 12px; color: #334155; margin-bottom: 4px; line-height: 1.5; }
+
+  /* Action buttons */
+  .actions { display: flex; gap: 8px; margin-top: 20px; }
+  .btn {
+    flex: 1; padding: 10px; border-radius: 6px; font-size: 13px; font-weight: 600;
+    cursor: pointer; border: 1px solid; font-family: inherit; text-align: center;
+  }
+  .btn-primary { background: #0d9488; color: #fff; border-color: #0d9488; }
+  .btn-secondary { background: #fff; color: #0d9488; border-color: #0d9488; }
+
+  /* Comparison labels */
+  .compare { position: fixed; left: 20px; top: 20px; z-index: 100; }
+  .compare h2 { color: #fff; font-size: 16px; margin-bottom: 8px; }
+  .compare p { color: rgba(255,255,255,0.7); font-size: 12px; line-height: 1.6; }
+  .change { background: #059669; color: #fff; padding: 2px 8px; border-radius: 3px; font-size: 10px; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<!-- Info overlay -->
+<div class="compare">
+  <h2>Detail Panel — Refined</h2>
+  <p>
+    <span class="change">CHANGED</span> Content padding: 28px → 32px (both sides)<br>
+    <span class="change">CHANGED</span> Header padding matches: 32px<br>
+    <span class="change">KEPT</span> Section headers: 12px/700/#64748b<br>
+    <span class="change">KEPT</span> Grid gap: 14px<br>
+    <span class="change">KEPT</span> Section spacing: 24px<br>
+    <br>
+    The extra 4px per side adds 8px total breathing room,<br>
+    balancing the left and right margins visually.
+  </p>
+</div>
+
+<!-- Panel -->
+<div class="panel">
+  <div class="panel-nav">
+    <button class="panel-close">&times;</button>
+  </div>
+
+  <div class="panel-header">
+    <div class="panel-title">Bring Your Own Device (BYOD) Policy</div>
+  </div>
+
+  <div class="panel-body">
+    <div class="policy-subtitle">POL-IT-005 | Version 2.1</div>
+
+    <!-- Description -->
+    <div class="description">
+      Guidelines for employees using personal devices for work purposes. Covers security requirements, data protection, acceptable use, and IT support boundaries for BYOD devices.
+    </div>
+
+    <!-- Policy Details -->
+    <div class="section">
+      <div class="section-title">Policy Details</div>
+      <div class="detail-grid">
+        <div><div class="detail-label">Category</div><div style="margin-top:3px;"><span class="badge b-teal">IT &amp; Security</span></div></div>
+        <div><div class="detail-label">Risk Level</div><div style="margin-top:3px;"><span class="badge b-amber">Medium</span></div></div>
+        <div><div class="detail-label">Department</div><div class="detail-value">All Employees</div></div>
+        <div><div class="detail-label">Owner</div><div class="detail-value">N/A</div></div>
+        <div><div class="detail-label">Type</div><div class="detail-value">Corporate</div></div>
+        <div><div class="detail-label">Version</div><div class="detail-value">2.1</div></div>
+      </div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="section">
+      <div class="section-title">Timeline</div>
+      <div class="detail-grid">
+        <div><div class="detail-label">Effective Date</div><div class="detail-value">5 Jun 2025</div></div>
+        <div><div class="detail-label">Expiry Date</div><div class="detail-value">N/A</div></div>
+        <div><div class="detail-label">Published</div><div class="detail-value">5 Jun 2025</div></div>
+        <div><div class="detail-label">Next Review</div><div class="detail-value">5 Jun 2026</div></div>
+      </div>
+    </div>
+
+    <!-- Compliance -->
+    <div class="section">
+      <div class="section-title">Compliance</div>
+      <div class="detail-grid">
+        <div><div class="detail-label">Mandatory</div><div class="detail-value">No</div></div>
+        <div><div class="detail-label">Requires Ack</div><div class="detail-value">Yes</div></div>
+        <div><div class="detail-label">Requires Quiz</div><div class="detail-value">No</div></div>
+        <div><div class="detail-label">Read Timeframe</div><div class="detail-value">Week 2</div></div>
+      </div>
+    </div>
+
+    <!-- Key Points -->
+    <div class="section key-points">
+      <div class="section-title">Key Points</div>
+      <ul>
+        <li>All personal devices must be registered with IT before accessing company resources</li>
+        <li>MDM software installation is required for email and document access</li>
+        <li>Company data must not be stored locally on personal devices</li>
+        <li>Lost or stolen devices must be reported within 24 hours</li>
+      </ul>
+    </div>
+
+    <!-- Actions -->
+    <div class="actions">
+      <button class="btn btn-primary">View Full Policy</button>
+      <button class="btn btn-secondary">Bookmark</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

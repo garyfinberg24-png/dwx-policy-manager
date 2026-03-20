@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Policies — Hero Banner Variations</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', -apple-system, sans-serif; background: #f1f5f9; color: #0f172a; }
+  .page { max-width: 1400px; margin: 0 auto; padding: 32px 40px; }
+  .label { display: inline-block; background: #2563eb; color: #fff; padding: 4px 12px; border-radius: 4px; font-size: 11px; font-weight: 700; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 1px; }
+  .divider { border-top: 3px solid #e2e8f0; margin: 48px 0 32px; }
+  h2 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .desc { font-size: 13px; color: #64748b; margin-bottom: 20px; }
+
+  /* KPI mini cards inside hero */
+  .kpi-row { display: flex; gap: 12px; }
+  .kpi-mini { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 10px 16px; text-align: center; min-width: 80px; }
+  .kpi-mini-value { font-size: 20px; font-weight: 700; color: #fff; }
+  .kpi-mini-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; color: rgba(255,255,255,0.6); margin-top: 2px; }
+
+  /* Compliance ring */
+  .ring-container { position: relative; width: 56px; height: 56px; flex-shrink: 0; }
+  .ring-bg { fill: none; stroke: rgba(255,255,255,0.15); stroke-width: 5; }
+  .ring-fill { fill: none; stroke: #fff; stroke-width: 5; stroke-linecap: round; transition: stroke-dashoffset 0.5s; }
+  .ring-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 14px; font-weight: 700; color: #fff; }
+
+  /* Below-hero KPI strip (for comparison) */
+  .kpi-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; max-width: 1400px; margin: 0 auto; padding: 20px 40px 0; }
+  .kpi-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; border-top: 3px solid transparent; }
+  .kpi-value { font-size: 24px; font-weight: 700; line-height: 1.1; }
+  .kpi-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; font-weight: 600; margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <h2>My Policies — Hero Banner Variations</h2>
+  <div class="desc">5 options from slim to feature-rich. All show the same data: greeting, compliance stats, search.</div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- VARIATION A — Slim (matches Policy Hub)    -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="page"><div class="label">Variation A — Slim Banner (matches Policy Hub)</div></div>
+<div style="background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%); padding: 16px 40px 28px; position: relative; overflow: visible;">
+  <div style="position: absolute; right: -60px; bottom: -60px; width: 200px; height: 200px; background: rgba(255,255,255,0.03); border-radius: 50%;"></div>
+  <div style="max-width: 1400px; margin: 0 auto; position: relative; z-index: 1;">
+    <div>
+      <h1 style="font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 2px;">My Policies</h1>
+      <p style="font-size: 13px; color: rgba(255,255,255,0.75);">Your assigned policies and acknowledgement status</p>
+    </div>
+    <div style="position: absolute; left: 33.33%; right: 33.33%; bottom: -20px; z-index: 2;">
+      <div style="position: relative;">
+        <svg viewBox="0 0 24 24" fill="none" width="16" height="16" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.6);"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <input placeholder="Search my policies..." style="width: 100%; padding: 10px 18px 10px 44px; border-radius: 8px; border: 2px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.15); font-size: 13px; color: #fff; outline: none; font-family: inherit;" />
+      </div>
+    </div>
+  </div>
+</div>
+<div class="page"><div class="desc" style="margin-top: 8px;">Height: ~65px. Identical to Policy Hub. KPIs stay as cards below the hero. Clean and consistent.</div></div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- VARIATION B — Slim + Inline KPIs           -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="divider" style="margin: 32px 40px;"></div>
+<div class="page"><div class="label">Variation B — Slim + Inline KPI Stats</div></div>
+<div style="background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%); padding: 16px 40px; position: relative; overflow: hidden;">
+  <div style="position: absolute; right: -60px; bottom: -60px; width: 200px; height: 200px; background: rgba(255,255,255,0.03); border-radius: 50%;"></div>
+  <div style="max-width: 1400px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 1;">
+    <div style="flex-shrink: 0;">
+      <h1 style="font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 2px;">My Policies</h1>
+      <p style="font-size: 13px; color: rgba(255,255,255,0.75);">Your assigned policies and acknowledgement status</p>
+    </div>
+    <div class="kpi-row">
+      <div class="kpi-mini"><div class="kpi-mini-value">16</div><div class="kpi-mini-label">Assigned</div></div>
+      <div class="kpi-mini"><div class="kpi-mini-value">12</div><div class="kpi-mini-label">Acknowledged</div></div>
+      <div class="kpi-mini"><div class="kpi-mini-value" style="color: #fbbf24;">3</div><div class="kpi-mini-label">Pending</div></div>
+      <div class="kpi-mini"><div class="kpi-mini-value" style="color: #f87171;">1</div><div class="kpi-mini-label">Overdue</div></div>
+    </div>
+  </div>
+</div>
+<div class="page"><div class="desc" style="margin-top: 8px;">Height: ~65px. KPIs embedded in the hero as glass-morphic mini cards. No separate KPI strip below. Search moves to toolbar.</div></div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- VARIATION C — Slim + Compliance Ring        -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="divider" style="margin: 32px 40px;"></div>
+<div class="page"><div class="label">Variation C — Slim + Compliance Ring</div></div>
+<div style="background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%); padding: 16px 40px; position: relative; overflow: hidden;">
+  <div style="position: absolute; right: -60px; bottom: -60px; width: 200px; height: 200px; background: rgba(255,255,255,0.03); border-radius: 50%;"></div>
+  <div style="max-width: 1400px; margin: 0 auto; display: flex; align-items: center; gap: 24px; position: relative; z-index: 1;">
+    <!-- Compliance ring -->
+    <div class="ring-container">
+      <svg viewBox="0 0 40 40" width="56" height="56">
+        <circle class="ring-bg" cx="20" cy="20" r="17" />
+        <circle class="ring-fill" cx="20" cy="20" r="17" stroke-dasharray="106.8" stroke-dashoffset="13.9" transform="rotate(-90 20 20)" />
+      </svg>
+      <div class="ring-text">87%</div>
+    </div>
+    <div style="flex-shrink: 0;">
+      <h1 style="font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 2px;">My Policies</h1>
+      <p style="font-size: 13px; color: rgba(255,255,255,0.75);">87% compliant — 3 pending, 1 overdue</p>
+    </div>
+    <div style="flex: 1; display: flex; justify-content: center;">
+      <div style="width: 100%; max-width: 400px; position: relative;">
+        <svg viewBox="0 0 24 24" fill="none" width="16" height="16" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.6);"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <input placeholder="Search my policies..." style="width: 100%; padding: 10px 18px 10px 44px; border-radius: 8px; border: 2px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.15); font-size: 13px; color: #fff; outline: none; font-family: inherit;" />
+      </div>
+    </div>
+  </div>
+</div>
+<div class="page"><div class="desc" style="margin-top: 8px;">Height: ~65px. Compliance ring on the left, title + dynamic subtitle, search centred. Ring gives instant compliance pulse.</div></div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- VARIATION D — Greeting + Ring + KPIs        -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="divider" style="margin: 32px 40px;"></div>
+<div class="page"><div class="label">Variation D — Greeting + Ring + KPIs (taller)</div></div>
+<div style="background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%); padding: 24px 40px; position: relative; overflow: hidden;">
+  <div style="position: absolute; right: -60px; bottom: -60px; width: 200px; height: 200px; background: rgba(255,255,255,0.03); border-radius: 50%;"></div>
+  <div style="max-width: 1400px; margin: 0 auto; position: relative; z-index: 1;">
+    <!-- Top row: greeting + ring + KPIs -->
+    <div style="display: flex; align-items: center; gap: 24px;">
+      <div class="ring-container">
+        <svg viewBox="0 0 40 40" width="56" height="56">
+          <circle class="ring-bg" cx="20" cy="20" r="17" />
+          <circle class="ring-fill" cx="20" cy="20" r="17" stroke-dasharray="106.8" stroke-dashoffset="13.9" transform="rotate(-90 20 20)" />
+        </svg>
+        <div class="ring-text">87%</div>
+      </div>
+      <div style="flex: 1;">
+        <h1 style="font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 2px;">Good afternoon, Gary</h1>
+        <p style="font-size: 12px; color: rgba(255,255,255,0.7);">You have 3 policies pending acknowledgement and 1 overdue</p>
+      </div>
+      <div class="kpi-row">
+        <div class="kpi-mini"><div class="kpi-mini-value">16</div><div class="kpi-mini-label">Assigned</div></div>
+        <div class="kpi-mini"><div class="kpi-mini-value">12</div><div class="kpi-mini-label">Done</div></div>
+        <div class="kpi-mini"><div class="kpi-mini-value" style="color: #fbbf24;">3</div><div class="kpi-mini-label">Pending</div></div>
+        <div class="kpi-mini"><div class="kpi-mini-value" style="color: #f87171;">1</div><div class="kpi-mini-label">Overdue</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="page"><div class="desc" style="margin-top: 8px;">Height: ~85px. Personalised greeting, compliance ring, inline KPIs. More information density but taller. Search moves to toolbar below.</div></div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- VARIATION E — Full Hero (greeting + ring + KPIs + search) -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="divider" style="margin: 32px 40px;"></div>
+<div class="page"><div class="label">Variation E — Full Hero (two rows)</div></div>
+<div style="background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%); padding: 24px 40px 36px; position: relative; overflow: visible;">
+  <div style="position: absolute; right: -60px; bottom: -60px; width: 200px; height: 200px; background: rgba(255,255,255,0.03); border-radius: 50%;"></div>
+  <div style="max-width: 1400px; margin: 0 auto; position: relative; z-index: 1;">
+    <!-- Row 1: greeting + ring + KPIs -->
+    <div style="display: flex; align-items: center; gap: 24px; margin-bottom: 16px;">
+      <div class="ring-container">
+        <svg viewBox="0 0 40 40" width="56" height="56">
+          <circle class="ring-bg" cx="20" cy="20" r="17" />
+          <circle class="ring-fill" cx="20" cy="20" r="17" stroke-dasharray="106.8" stroke-dashoffset="13.9" transform="rotate(-90 20 20)" />
+        </svg>
+        <div class="ring-text">87%</div>
+      </div>
+      <div style="flex: 1;">
+        <h1 style="font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 2px;">Good afternoon, Gary</h1>
+        <p style="font-size: 12px; color: rgba(255,255,255,0.7);">You have 3 policies pending acknowledgement and 1 overdue</p>
+      </div>
+      <div class="kpi-row">
+        <div class="kpi-mini"><div class="kpi-mini-value">16</div><div class="kpi-mini-label">Assigned</div></div>
+        <div class="kpi-mini"><div class="kpi-mini-value">12</div><div class="kpi-mini-label">Done</div></div>
+        <div class="kpi-mini"><div class="kpi-mini-value" style="color: #fbbf24;">3</div><div class="kpi-mini-label">Pending</div></div>
+        <div class="kpi-mini"><div class="kpi-mini-value" style="color: #f87171;">1</div><div class="kpi-mini-label">Overdue</div></div>
+      </div>
+    </div>
+    <!-- Row 2: search centred in middle third -->
+    <div style="position: absolute; left: 33.33%; right: 33.33%; bottom: -20px; z-index: 2;">
+      <div style="position: relative;">
+        <svg viewBox="0 0 24 24" fill="none" width="16" height="16" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.6);"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <input placeholder="Search my policies..." style="width: 100%; padding: 10px 18px 10px 44px; border-radius: 8px; border: 2px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.15); font-size: 13px; color: #fff; outline: none; font-family: inherit;" />
+      </div>
+    </div>
+  </div>
+</div>
+<div class="page"><div class="desc" style="margin-top: 28px;">Height: ~115px. The full experience: greeting, compliance ring, KPIs, and search. Most information-dense. Two rows with search overlapping below.</div></div>
+
+<!-- Summary -->
+<div class="divider" style="margin: 32px 40px;"></div>
+<div class="page">
+  <h2>Summary</h2>
+  <table style="width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 13px;">
+    <thead>
+      <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0;">
+        <th style="padding: 10px 14px; text-align: left; font-weight: 600; color: #64748b;">Variation</th>
+        <th style="padding: 10px 14px; text-align: left; font-weight: 600; color: #64748b;">Height</th>
+        <th style="padding: 10px 14px; text-align: left; font-weight: 600; color: #64748b;">Features</th>
+        <th style="padding: 10px 14px; text-align: left; font-weight: 600; color: #64748b;">Best For</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="border-bottom: 1px solid #f1f5f9;"><td style="padding: 10px 14px; font-weight: 600;">A — Slim</td><td style="padding: 10px 14px;">~65px</td><td style="padding: 10px 14px;">Title + search</td><td style="padding: 10px 14px;">Consistency with Policy Hub</td></tr>
+      <tr style="border-bottom: 1px solid #f1f5f9;"><td style="padding: 10px 14px; font-weight: 600;">B — Slim + KPIs</td><td style="padding: 10px 14px;">~65px</td><td style="padding: 10px 14px;">Title + inline KPIs</td><td style="padding: 10px 14px;">Quick status at a glance</td></tr>
+      <tr style="border-bottom: 1px solid #f1f5f9;"><td style="padding: 10px 14px; font-weight: 600;">C — Ring + Search</td><td style="padding: 10px 14px;">~65px</td><td style="padding: 10px 14px;">Ring + title + search</td><td style="padding: 10px 14px;">Compliance focus</td></tr>
+      <tr style="border-bottom: 1px solid #f1f5f9;"><td style="padding: 10px 14px; font-weight: 600;">D — Greeting + All</td><td style="padding: 10px 14px;">~85px</td><td style="padding: 10px 14px;">Greeting + ring + KPIs</td><td style="padding: 10px 14px;">Personalised dashboard feel</td></tr>
+      <tr><td style="padding: 10px 14px; font-weight: 600;">E — Full Hero</td><td style="padding: 10px 14px;">~115px</td><td style="padding: 10px 14px;">Everything + search</td><td style="padding: 10px 14px;">Maximum information density</td></tr>
+    </tbody>
+  </table>
+</div>
+
+</body>
+</html>

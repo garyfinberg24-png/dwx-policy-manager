@@ -8,24 +8,23 @@ import { IJmlAppFooterProps, IFooterLinkGroup } from './IJmlAppFooterProps';
 
 const footerStyles: Record<string, React.CSSProperties> = {
   footer: {
-    background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-    color: '#94a3b8',
+    background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
+    color: 'rgba(255,255,255,0.8)',
     padding: 0,
     marginTop: 'auto',
     width: '100%',
     fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
   },
   footerCompact: {
-    background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-    color: '#94a3b8',
+    background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
+    color: 'rgba(255,255,255,0.8)',
     padding: 0,
     marginTop: 'auto',
     width: '100%',
     fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
   },
   topBar: {
-    height: 3,
-    background: 'linear-gradient(90deg, #0d9488, #14b8a6, #0d9488)',
+    height: 0,  // No top bar needed when footer matches header
     width: '100%'
   },
   mainContent: {
@@ -105,13 +104,13 @@ const footerStyles: Record<string, React.CSSProperties> = {
   },
   divider: {
     height: 1,
-    background: '#1e293b',
+    background: 'rgba(255,255,255,0.15)',
     margin: '20px 0 16px',
     border: 'none'
   },
   dividerCompact: {
     height: 1,
-    background: '#1e293b',
+    background: 'rgba(255,255,255,0.15)',
     margin: '12px 0',
     border: 'none'
   },
@@ -124,7 +123,7 @@ const footerStyles: Record<string, React.CSSProperties> = {
   },
   copyright: {
     fontSize: 11,
-    color: '#475569'
+    color: 'rgba(255,255,255,0.6)'
   },
   bottomLinks: {
     display: 'flex',
@@ -133,18 +132,18 @@ const footerStyles: Record<string, React.CSSProperties> = {
   },
   bottomLink: {
     fontSize: 11,
-    color: '#475569',
+    color: 'rgba(255,255,255,0.5)',
     textDecoration: 'none',
     transition: 'color 0.15s',
     cursor: 'pointer'
   },
   versionBadge: {
     fontSize: 10,
-    color: '#64748b',
+    color: 'rgba(255,255,255,0.7)',
     padding: '2px 8px',
     borderRadius: 10,
-    background: 'rgba(255,255,255,0.05)',
-    border: '1px solid rgba(255,255,255,0.08)'
+    background: 'rgba(255,255,255,0.1)',
+    border: '1px solid rgba(255,255,255,0.15)'
   },
   supportLink: {
     fontSize: 12,
@@ -207,7 +206,7 @@ export const DwxAppFooter: React.FC<IJmlAppFooterProps> = ({
           <div style={footerStyles.compactRow}>
             <div style={footerStyles.compactLeft}>
               <div style={footerStyles.brandIcon}>PM</div>
-              <span style={{ fontSize: 13, color: '#cbd5e1', fontWeight: 500 }}>Policy Manager</span>
+              <span style={{ fontSize: 13, color: '#fff', fontWeight: 500 }}>Policy Manager</span>
               <span style={footerStyles.versionBadge}>v{version}</span>
               <span style={footerStyles.copyright}>
                 © {currentYear} {organizationName}. All rights reserved.
@@ -221,7 +220,7 @@ export const DwxAppFooter: React.FC<IJmlAppFooterProps> = ({
               )}
               <a href="#" style={footerStyles.bottomLink}>Privacy</a>
               <a href="#" style={footerStyles.bottomLink}>Terms</a>
-              <span style={{ fontSize: 11, color: '#334155' }}>
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>
                 Powered by DWx
               </span>
             </div>
@@ -294,7 +293,7 @@ export const DwxAppFooter: React.FC<IJmlAppFooterProps> = ({
               onMouseLeave={e => (e.currentTarget.style.color = '#475569')}
             >Accessibility</a>
             <span style={footerStyles.versionBadge}>v{version}</span>
-            <span style={{ fontSize: 11, color: '#334155' }}>
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>
               Powered by DWx
             </span>
           </div>

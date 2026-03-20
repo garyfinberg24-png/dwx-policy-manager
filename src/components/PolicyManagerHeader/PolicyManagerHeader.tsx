@@ -8,7 +8,7 @@ import { RecentlyViewedService, IRecentlyViewedDisplay } from '../../services/Re
 import { PolicyRequestWizard } from './PolicyRequestWizard';
 import { DwxHubService, DwxNotificationService, DwxNotificationBell } from '@dwx/core';
 import { PolicyChatPanel } from '../PolicyChatPanel';
-import { PolicyHelpPanel } from '../PolicyHelpPanel';
+// PolicyHelpPanel deprecated — Help now uses full page at PolicyHelp.aspx
 
 export interface INavItem {
   key: string;
@@ -163,6 +163,26 @@ const NavIcons = {
       <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   ),
+  teamCompliance: (
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  ),
+  reviews: (
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2"/>
+    </svg>
+  ),
+  dashboard: (
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="2"/>
+      <rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="2"/>
+      <rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="2"/>
+      <rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="2"/>
+    </svg>
+  ),
   distribution: (
     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M22 2L11 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -298,7 +318,7 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
   const [showChatPanel, setShowChatPanel] = React.useState(false);
 
   // Help Center panel
-  const [showHelpPanel, setShowHelpPanel] = React.useState(false);
+  // Help panel state removed — Help now navigates to full page
 
   // Admin navigation visibility toggles (loaded from localStorage, set via PolicyAdmin)
   const [navVisibility, setNavVisibility] = React.useState<Record<string, boolean>>({});
@@ -521,10 +541,12 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
     {
       key: 'manager-group', text: 'Manager', icon: NavIcons.manager, minRole: 'Manager',
       children: [
-        { key: 'manager-dashboard', text: 'Dashboard', icon: NavIcons.manager, href: '/sites/PolicyManager/SitePages/PolicyManagerView.aspx' },
+        { key: 'manager-dashboard', text: 'Dashboard', icon: NavIcons.dashboard, href: '/sites/PolicyManager/SitePages/PolicyManagerView.aspx' },
+        { key: 'team-compliance', text: 'Team Compliance', icon: NavIcons.teamCompliance, href: '/sites/PolicyManager/SitePages/PolicyManagerView.aspx?tab=team-compliance' },
         { key: 'approvals', text: 'Approvals', icon: NavIcons.approvals, href: '/sites/PolicyManager/SitePages/PolicyManagerView.aspx?tab=approvals' },
-        { key: 'delegations', text: 'Delegations', icon: NavIcons.details, href: '/sites/PolicyManager/SitePages/PolicyManagerView.aspx?tab=delegations' },
-        { key: 'reviews', text: 'Reviews', icon: NavIcons.details, href: '/sites/PolicyManager/SitePages/PolicyManagerView.aspx?tab=reviews' },
+        { key: 'delegations', text: 'Delegations', icon: NavIcons.delegations, href: '/sites/PolicyManager/SitePages/PolicyManagerView.aspx?tab=delegations' },
+        { key: 'reviews', text: 'Reviews', icon: NavIcons.reviews, href: '/sites/PolicyManager/SitePages/PolicyManagerView.aspx?tab=reviews' },
+        { key: 'reports', text: 'Reports', icon: NavIcons.analytics, href: '/sites/PolicyManager/SitePages/PolicyManagerView.aspx?tab=reports' },
         { key: 'distribution', text: 'Distribution', icon: NavIcons.distribution, href: '/sites/PolicyManager/SitePages/PolicyDistribution.aspx' },
         { key: 'analytics', text: 'Analytics', icon: NavIcons.analytics, href: '/sites/PolicyManager/SitePages/PolicyAnalytics.aspx' },
       ]
@@ -620,12 +642,12 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
     window.location.href = '/sites/PolicyManager/SitePages/PolicySearch.aspx';
   };
 
-  // Handle help icon click — open Help Center panel
+  // Handle help icon click — navigate to full Help Center page
   const handleHelpClick = () => {
     if (onHelpClick) {
       onHelpClick();
     } else {
-      setShowHelpPanel(true);
+      window.location.href = '/sites/PolicyManager/SitePages/PolicyHelp.aspx';
     }
   };
 
@@ -1277,11 +1299,7 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
       />
     )}
 
-    {/* Help Center Panel */}
-    <PolicyHelpPanel
-      isOpen={showHelpPanel}
-      onDismiss={() => setShowHelpPanel(false)}
-    />
+    {/* Help Center — now uses full page at PolicyHelp.aspx (panel deprecated) */}
 
     </>
   );

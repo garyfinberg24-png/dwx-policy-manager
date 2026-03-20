@@ -80,8 +80,8 @@ $pm-font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue'
   align-items: center;
   justify-content: space-between;
   padding: 16px 40px;
-  background: #ffffff;
-  border-bottom: 1px solid #e2e8f0;
+  max-width: 1400px;
+  margin: 0 auto;
   gap: 16px;
   flex-wrap: wrap;
 }

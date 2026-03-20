@@ -27,6 +27,7 @@ import {
   ProgressIndicator
 } from '@fluentui/react';
 import { injectPortalStyles } from '../../../utils/injectPortalStyles';
+import { signalAppReady } from '../../../utils/SharePointOverrides';
 import { sanitizeHtml } from '../../../utils/sanitizeHtml';
 import { JmlAppLayout } from '../../../components/JmlAppLayout';
 import { ErrorBoundary } from '../../../components/ErrorBoundary/ErrorBoundary';
@@ -312,7 +313,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
   }
 
   private async loadPolicyDetails(): Promise<void> {
-    const { policyId } = this.state;
+    const { policyId, browseMode } = this.state;
     if (!policyId) {
       this.setState({ error: 'No policy ID provided', loading: false });
       return;
@@ -320,10 +321,35 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
 
     try {
       this.setState({ loading: true, error: null });
+
+      // Browse mode (from Policy Hub): ultra-lightweight direct SP query
+      // Skip service initialization, audit, social, dashboard, quiz lookups
+      if (browseMode) {
+        try {
+          const item = await this.props.sp.web.lists
+            .getByTitle('PM_Policies')
+            .items.getById(policyId)
+            .select('*')();
+          if (this._isMounted) {
+            this.setState({ policy: item as any, loading: false });
+          }
+          RecentlyViewedService.trackView(item.Id, item.PolicyName || item.Title, item.PolicyCategory || '');
+        } catch (browseErr) {
+          if (this._isMounted) {
+            this.setState({ error: `Failed to load policy: ${(browseErr as Error).message}`, loading: false });
+          }
+        }
+        return;
+      }
+
+      // Full load for assigned read mode (from My Policies)
       await this.policyService.initialize();
-      await this.socialService.initialize();
 
       const policy = await this.policyService.getPolicyById(policyId);
+
+      // Full load for assigned read mode (from My Policies)
+      await this.socialService.initialize();
+
       const currentUser = await this.props.sp.web.currentUser();
       const dashboard = await this.policyService.getUserDashboard(currentUser.Id);
       const acknowledgement = dashboard.pendingAcknowledgements.find(
@@ -1951,7 +1977,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
             <PrimaryButton
               text="Return to My Policies"
               iconProps={{ iconName: 'Back' }}
-              onClick={() => window.location.href = '/sites/PolicyManager/SitePages/PolicyHub.aspx'}
+              onClick={() => window.location.href = '/sites/PolicyManager/SitePages/MyPolicies.aspx'}
             />
           </div>
         </div>
@@ -2339,6 +2365,231 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
   }
 
   // ============================================
+  // SIMPLE READER — Browse mode (from Policy Hub)
+  // No wizard steps, no quiz, no acknowledgement.
+  // Just a clean document viewer with back button.
+  // ============================================
+
+  private renderSimpleReader(): JSX.Element {
+    // Signal SharePoint that the app is ready — hides the SP loading skeleton
+    // This is normally done by JmlAppLayout, but the simple reader bypasses it
+    try { signalAppReady(); } catch { /* ignore */ }
+
+    const { policy, loading, error } = this.state;
+
+    if (loading) {
+      return (
+        <ErrorBoundary fallbackMessage="An error occurred loading policy details. Please try again.">
+          <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Spinner size={SpinnerSize.large} label="Loading policy..." />
+          </div>
+        </ErrorBoundary>
+      );
+    }
+
+    if (error || !policy) {
+      return (
+        <ErrorBoundary fallbackMessage="An error occurred loading policy details. Please try again.">
+          <div style={{ minHeight: '100vh', padding: 40 }}>
+            <MessageBar messageBarType={MessageBarType.error}>{error || 'Policy not found'}</MessageBar>
+          </div>
+        </ErrorBoundary>
+      );
+    }
+
+    // Resolve document URL
+    const rawDocUrl = policy.DocumentURL;
+    const documentUrl: string | undefined = typeof rawDocUrl === 'string' ? rawDocUrl
+      : (rawDocUrl && typeof rawDocUrl === 'object' && (rawDocUrl as { Url?: string }).Url)
+        ? (rawDocUrl as { Url: string }).Url
+        : undefined;
+    // Policy body content — check all possible content fields:
+    // 1. HTMLContent: from doc conversion pipeline (Word/PPT/Excel → styled HTML)
+    // 2. PolicyContent: from rich text editor in Policy Builder
+    // 3. Description: basic text fallback
+    const bodyHtml = policy.HTMLContent || policy.PolicyContent || policy.Description || '';
+    const hasContent = bodyHtml.length > 10;
+    const isPdf = ext === 'pdf';
+    const viewerUrl = documentUrl ? this.getDocumentViewerUrl(documentUrl) : '';
+    const ext = documentUrl?.split('.').pop()?.toLowerCase() || '';
+
+    // Category badge color
+    const catColors: Record<string, { bg: string; color: string }> = {
+      'Compliance': { bg: '#fef3c7', color: '#92400e' }, 'HR Policies': { bg: '#ccfbf1', color: '#0d9488' },
+      'IT & Security': { bg: '#dbeafe', color: '#2563eb' }, 'Health & Safety': { bg: '#fef3c7', color: '#d97706' },
+      'Governance': { bg: '#ede9fe', color: '#7c3aed' }, 'Ethics': { bg: '#dcfce7', color: '#059669' },
+      'Financial': { bg: '#ede9fe', color: '#7c3aed' }, 'Data Privacy': { bg: '#dbeafe', color: '#0284c7' },
+    };
+    const cat = catColors[policy.PolicyCategory || ''] || { bg: '#f0f9ff', color: '#0369a1' };
+
+    const riskColors: Record<string, { bg: string; color: string }> = {
+      'Critical': { bg: '#fee2e2', color: '#dc2626' }, 'High': { bg: '#fef3c7', color: '#d97706' },
+      'Medium': { bg: '#e0e7ff', color: '#6366f1' }, 'Low': { bg: '#dcfce7', color: '#16a34a' },
+    };
+    const risk = riskColors[policy.ComplianceRisk || ''] || { bg: '#f1f5f9', color: '#64748b' };
+
+    const badgeStyle = (bg: string, color: string): React.CSSProperties => ({
+      fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, textTransform: 'uppercase',
+      letterSpacing: 0.5, background: bg, color, display: 'inline-block'
+    });
+
+    return (
+      <ErrorBoundary fallbackMessage="An error occurred loading policy details. Please try again.">
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#f8fafc' }}>
+
+        {/* Breadcrumb bar */}
+        <div style={{
+          background: '#f8fafc', borderBottom: '1px solid #e2e8f0', padding: '10px 40px',
+          display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#64748b'
+        }}>
+          <a href="/sites/PolicyManager" style={{ color: '#0d9488', textDecoration: 'none', fontWeight: 500 }}>Policy Manager</a>
+          <span style={{ color: '#cbd5e1' }}>/</span>
+          <a href="/sites/PolicyManager/SitePages/PolicyHub.aspx" style={{ color: '#0d9488', textDecoration: 'none', fontWeight: 500 }}>Policy Hub</a>
+          <span style={{ color: '#cbd5e1' }}>/</span>
+          <span style={{ color: '#0f172a', fontWeight: 600 }}>{policy.PolicyName}</span>
+        </div>
+
+        {/* Policy header */}
+        <div style={{ background: '#fff', borderBottom: '1px solid #e2e8f0', padding: '24px 40px' }}>
+          <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <h1 style={{ fontSize: 24, fontWeight: 700, color: '#0f172a', marginBottom: 6 }}>{policy.PolicyName}</h1>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 12, color: '#0d9488', fontWeight: 600 }}>{policy.PolicyNumber}</span>
+                  <span style={badgeStyle(cat.bg, cat.color)}>{policy.PolicyCategory}</span>
+                  {policy.ComplianceRisk && <span style={badgeStyle(risk.bg, risk.color)}>{policy.ComplianceRisk}</span>}
+                  <span style={badgeStyle('#dcfce7', '#16a34a')}>Published</span>
+                  <span style={badgeStyle('#f1f5f9', '#64748b')}>v{policy.VersionNumber || policy.PolicyVersion || '1.0'}</span>
+                  {policy.PublishedDate && <span style={{ fontSize: 11, color: '#94a3b8' }}>Published {new Date(policy.PublishedDate as any).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>}
+                  {policy.EstimatedReadTimeMinutes && <span style={{ fontSize: 11, color: '#94a3b8' }}>&middot; {policy.EstimatedReadTimeMinutes} min read</span>}
+                </div>
+              </div>
+              <button
+                onClick={() => { window.location.href = '/sites/PolicyManager/SitePages/PolicyHub.aspx'; }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 6,
+                  fontSize: 13, fontWeight: 600, color: '#0d9488', background: '#fff', border: '1px solid #e2e8f0',
+                  cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0
+                }}
+              >
+                <svg viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                Back to Policy Hub
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Document toolbar */}
+        <div style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', padding: '8px 40px' }}>
+          <div style={{ maxWidth: 1400, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="#dc2626" strokeWidth="2"/><path d="M14 2v6h6" stroke="#dc2626" strokeWidth="2"/></svg>
+              <span style={{ fontSize: 12, color: '#334155', fontWeight: 500 }}>{policy.PolicyNumber}-v{policy.VersionNumber || '1.0'}</span>
+              <span style={{ fontSize: 10, color: '#94a3b8', background: '#f1f5f9', padding: '2px 6px', borderRadius: 3 }}>
+                {ext.toUpperCase() || 'HTML'}
+              </span>
+            </div>
+            <div style={{ display: 'flex', gap: 4 }}>
+              {documentUrl && (
+                <button
+                  onClick={() => window.open(documentUrl, '_blank')}
+                  style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 4, fontSize: 11, fontWeight: 500, color: '#64748b', background: '#fff', border: '1px solid #e2e8f0', cursor: 'pointer', fontFamily: 'inherit' }}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" width="12" height="12"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  Download
+                </button>
+              )}
+              <button
+                onClick={() => window.print()}
+                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 4, fontSize: 11, fontWeight: 500, color: '#64748b', background: '#fff', border: '1px solid #e2e8f0', cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                <svg viewBox="0 0 24 24" fill="none" width="12" height="12"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                Print
+              </button>
+              <button
+                onClick={() => {
+                  const el = document.documentElement;
+                  if (!document.fullscreenElement) { el.requestFullscreen().catch(() => {}); }
+                  else { document.exitFullscreen().catch(() => {}); }
+                }}
+                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 4, fontSize: 11, fontWeight: 500, color: '#fff', background: '#0d9488', border: '1px solid #0d9488', cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                <svg viewBox="0 0 24 24" fill="none" width="12" height="12"><path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                Fullscreen
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Document content */}
+        <div style={{ flex: 1, paddingBottom: 80 }}>
+          {/* PDF: full-width iframe, no card wrapper */}
+          {isPdf && documentUrl ? (
+            <div style={{ maxWidth: 1100, margin: '0 auto', padding: '20px 40px 80px' }}>
+              <iframe
+                src={documentUrl}
+                style={{ width: '100%', height: 'calc(100vh - 220px)', border: '1px solid #e2e8f0', borderRadius: 10, background: '#fff' }}
+                title={policy.PolicyName}
+              />
+            </div>
+          ) : (
+          <div style={{ maxWidth: 900, margin: '0 auto', padding: '40px 40px 80px' }}>
+            <div style={{
+              background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10,
+              padding: '48px 56px', minHeight: 400, lineHeight: 1.8, fontSize: 14, color: '#334155'
+            }}>
+              {/* HTML content or fallback */}
+              {hasContent ? (
+                <div dangerouslySetInnerHTML={{ __html: bodyHtml }} />
+              ) : documentUrl ? (
+                <iframe
+                  src={viewerUrl}
+                  style={{ width: '100%', minHeight: 700, border: 'none' }}
+                  title={policy.PolicyName}
+                />
+              ) : (
+                <div style={{ textAlign: 'center', padding: 40, color: '#94a3b8' }}>
+                  <p style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>No document content available</p>
+                  <p style={{ fontSize: 13 }}>This policy has not been converted to HTML yet. Use the Admin Centre to run the document conversion.</p>
+                </div>
+              )}
+            </div>
+          </div>
+          )}
+        </div>
+
+        {/* Bottom bar */}
+        <div style={{
+          position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 10,
+          background: '#fff', borderTop: '1px solid #e2e8f0', padding: '12px 40px',
+          boxShadow: '0 -2px 8px rgba(0,0,0,0.06)'
+        }}>
+          <div style={{ maxWidth: 1400, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 12, color: '#64748b' }}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#0d9488' }} />
+              <span>Reading: <strong style={{ color: '#0f172a' }}>{policy.PolicyName}</strong></span>
+              <span style={{ color: '#94a3b8' }}>&middot; {policy.PolicyNumber} &middot; v{policy.VersionNumber || policy.PolicyVersion || '1.0'}</span>
+            </div>
+            <button
+              onClick={() => { window.location.href = '/sites/PolicyManager/SitePages/PolicyHub.aspx'; }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 6,
+                fontSize: 13, fontWeight: 600, color: '#0d9488', background: '#fff', border: '1px solid #e2e8f0',
+                cursor: 'pointer', fontFamily: 'inherit'
+              }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              Back to Policy Hub
+            </button>
+          </div>
+        </div>
+      </div>
+      </ErrorBoundary>
+    );
+  }
+
+  // ============================================
   // MAIN RENDER
   // ============================================
 
@@ -2348,10 +2599,15 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
       showCommentDialog, newComment, submittingComment, browseMode
     } = this.state;
 
+    // ─── Browse mode: Simple Reader (from Policy Hub) ─────────────
+    // No wizard, no quiz, no acknowledgement. Just read and go back.
+    if (browseMode) {
+      return this.renderSimpleReader();
+    }
+
     // Determine if this is an active read flow
-    // Browse mode (from Policy Hub) always shows read-only view
     // Active flow = not browse mode AND either no acknowledgement yet OR acknowledgement is still pending
-    const isActiveFlow = !browseMode && (!acknowledgement || acknowledgement.AckStatus !== 'Acknowledged');
+    const isActiveFlow = !acknowledgement || acknowledgement.AckStatus !== 'Acknowledged';
 
     // ─── VARIATION C: Focused Reader (active flow) ─────────────────
     // No nav distractions. Minimal header. Reading progress bar.

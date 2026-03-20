@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Policies — Detail Panel Refinement</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', -apple-system, sans-serif; background: #f8fafc; color: #0f172a; display: flex; justify-content: flex-end; min-height: 100vh; }
+
+  /* Simulated panel overlay */
+  .panel-backdrop { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 10; }
+
+  /* Panel container */
+  .panel {
+    width: 480px; background: #fff; height: 100vh; position: fixed; right: 0; top: 0; z-index: 20;
+    display: flex; flex-direction: column; box-shadow: -8px 0 32px rgba(0,0,0,0.12);
+  }
+
+  /* Panel header — teal gradient (from StyledPanel) */
+  .panel-nav {
+    background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%);
+    padding: 8px 8px 0 0; display: flex; justify-content: flex-end;
+  }
+  .panel-close {
+    width: 32px; height: 32px; border-radius: 4px; border: none; background: transparent;
+    cursor: pointer; font-size: 16px; color: #0f766e; display: flex; align-items: center; justify-content: center;
+  }
+  .panel-close:hover { background: rgba(13,148,136,0.1); }
+  .panel-header {
+    background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%);
+    padding: 0 24px 16px; border-bottom: 1px solid #99f6e4;
+  }
+  .panel-title { font-size: 18px; font-weight: 700; color: #0f766e; }
+
+  /* Panel body — KEY CHANGE: increased padding */
+  .panel-body { flex: 1; overflow-y: auto; padding: 20px 28px; }
+
+  /* Policy number subtitle */
+  .policy-subtitle { font-size: 12px; color: #0d9488; margin-bottom: 20px; }
+
+  /* Status banner */
+  .status-banner {
+    display: flex; align-items: center; gap: 10px; padding: 12px 16px;
+    border-radius: 8px; margin-bottom: 20px;
+  }
+  .status-banner.pending { background: #fef3c7; border: 1px solid #fbbf24; }
+  .status-icon { font-size: 20px; flex-shrink: 0; }
+  .status-label { font-size: 13px; font-weight: 600; color: #0f172a; }
+  .status-desc { font-size: 11px; color: #64748b; margin-top: 2px; }
+
+  /* ═══════════════════════════════════════ */
+  /* SECTION HEADERS — KEY CHANGE           */
+  /* Was: 10px, 600 weight                  */
+  /* Now: 12px, 700 weight, darker color    */
+  /* ═══════════════════════════════════════ */
+  .section-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #64748b;            /* was #94a3b8 — now darker for readability */
+    margin-bottom: 12px;       /* was 10px */
+    padding-bottom: 8px;       /* was 6px */
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  /* Section spacing — KEY CHANGE: more breathing room */
+  .section { margin-bottom: 24px; }  /* was 20px */
+
+  /* Detail grid */
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; } /* was 12px */
+  .detail-label {
+    font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .detail-value { font-size: 13px; font-weight: 600; color: #0f172a; margin-top: 3px; }
+
+  /* Badges */
+  .badge {
+    font-size: 9px; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+    text-transform: uppercase; letter-spacing: 0.3px; display: inline-block;
+  }
+  .b-teal { background: #ccfbf1; color: #0d9488; }
+  .b-red { background: #fee2e2; color: #dc2626; }
+  .b-amber { background: #fef3c7; color: #d97706; }
+  .b-green { background: #dcfce7; color: #16a34a; }
+  .b-blue { background: #dbeafe; color: #2563eb; }
+  .b-slate { background: #f1f5f9; color: #64748b; }
+
+  /* Progress steps */
+  .progress-steps { display: flex; gap: 0; margin: 16px 0 4px; }
+  .step { flex: 1; text-align: center; position: relative; }
+  .step-dot {
+    width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center;
+    justify-content: center; margin: 0 auto 6px; font-size: 11px; font-weight: 700;
+  }
+  .step-dot.done { background: #059669; color: #fff; }
+  .step-dot.current { background: #0d9488; color: #fff; box-shadow: 0 0 0 3px rgba(13,148,136,0.2); }
+  .step-dot.pending { background: #e2e8f0; color: #94a3b8; }
+  .step-label { font-size: 9px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+  .step-line { position: absolute; top: 14px; left: 50%; width: 100%; height: 2px; background: #e2e8f0; z-index: 0; }
+  .step-line.done { background: #059669; }
+
+  /* Requirements list */
+  .req-item {
+    display: flex; align-items: center; gap: 10px; padding: 10px 0;
+    border-bottom: 1px solid #f8fafc;
+  }
+  .req-item:last-child { border-bottom: none; }
+  .req-icon {
+    width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center;
+    justify-content: center; font-size: 12px; flex-shrink: 0;
+  }
+  .req-text { flex: 1; font-size: 12px; color: #334155; }
+
+  /* Related policies */
+  .related-item {
+    display: flex; align-items: center; gap: 10px; padding: 10px 0;
+    border-bottom: 1px solid #f8fafc;
+  }
+  .related-item:last-child { border-bottom: none; }
+  .related-icon {
+    width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center;
+    justify-content: center; font-size: 12px; flex-shrink: 0; background: #f0fdfa; color: #0d9488;
+  }
+  .related-title { font-size: 12px; font-weight: 600; color: #334155; }
+  .related-meta { font-size: 10px; color: #94a3b8; }
+
+  /* Action buttons */
+  .actions { display: flex; gap: 8px; margin-top: 20px; }
+  .btn {
+    flex: 1; padding: 10px; border-radius: 6px; font-size: 13px; font-weight: 600;
+    cursor: pointer; border: 1px solid; font-family: inherit; text-align: center;
+  }
+  .btn-primary { background: #0d9488; color: #fff; border-color: #0d9488; }
+  .btn-secondary { background: #fff; color: #0d9488; border-color: #0d9488; }
+  .btn-row { display: flex; gap: 6px; margin-top: 8px; }
+  .btn-sm {
+    flex: 1; padding: 7px; border-radius: 6px; font-size: 11px; font-weight: 500;
+    cursor: pointer; border: 1px solid #e2e8f0; background: #fff; color: #334155;
+    font-family: inherit; text-align: center;
+  }
+  .btn-sm:hover { border-color: #0d9488; color: #0d9488; }
+
+  /* Annotation callouts */
+  .callout {
+    position: absolute; background: #2563eb; color: #fff; padding: 4px 10px;
+    border-radius: 4px; font-size: 10px; font-weight: 700; white-space: nowrap;
+    z-index: 30;
+  }
+  .callout::after {
+    content: ''; position: absolute; border: 5px solid transparent;
+  }
+  .callout-left::after { right: -10px; top: 50%; transform: translateY(-50%); border-left-color: #2563eb; }
+</style>
+</head>
+<body>
+
+<div class="panel-backdrop"></div>
+
+<div class="panel">
+  <!-- Panel nav -->
+  <div class="panel-nav">
+    <button class="panel-close">&times;</button>
+  </div>
+
+  <!-- Panel header -->
+  <div class="panel-header">
+    <div class="panel-title">Information Security Policy</div>
+  </div>
+
+  <!-- Panel body -->
+  <div class="panel-body">
+    <!-- Policy subtitle -->
+    <div class="policy-subtitle">POL-001 | Version 3.2</div>
+
+    <!-- Status Banner -->
+    <div class="status-banner pending">
+      <div class="status-icon">
+        <svg viewBox="0 0 24 24" fill="none" width="22" height="22"><circle cx="12" cy="12" r="10" stroke="#d97706" stroke-width="2"/><path d="M12 8v4l2 2" stroke="#d97706" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+      <div>
+        <div class="status-label">Acknowledgement Pending</div>
+        <div class="status-desc">Due in 2 days — 22 Mar 2026</div>
+      </div>
+    </div>
+
+    <!-- YOUR PROGRESS -->
+    <div class="section">
+      <div class="section-title">Your Progress</div>
+      <div class="progress-steps">
+        <div class="step">
+          <div class="step-line done"></div>
+          <div class="step-dot done">&#10003;</div>
+          <div class="step-label">Assigned</div>
+        </div>
+        <div class="step">
+          <div class="step-line"></div>
+          <div class="step-dot current">2</div>
+          <div class="step-label">Read</div>
+        </div>
+        <div class="step">
+          <div class="step-line"></div>
+          <div class="step-dot pending">3</div>
+          <div class="step-label">Quiz</div>
+        </div>
+        <div class="step">
+          <div class="step-line"></div>
+          <div class="step-dot pending">4</div>
+          <div class="step-label">Acknowledge</div>
+        </div>
+        <div class="step">
+          <div class="step-dot pending">5</div>
+          <div class="step-label">Complete</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- POLICY DETAILS -->
+    <div class="section">
+      <div class="section-title">Policy Details</div>
+      <div class="detail-grid">
+        <div><div class="detail-label">Category</div><div style="margin-top:3px;"><span class="badge b-teal">IT Security</span></div></div>
+        <div><div class="detail-label">Risk Level</div><div style="margin-top:3px;"><span class="badge b-red">Critical</span></div></div>
+        <div><div class="detail-label">Department</div><div class="detail-value">IT</div></div>
+        <div><div class="detail-label">Version</div><div class="detail-value">3.2</div></div>
+      </div>
+    </div>
+
+    <!-- TIMELINE -->
+    <div class="section">
+      <div class="section-title">Timeline</div>
+      <div class="detail-grid">
+        <div><div class="detail-label">Assigned</div><div class="detail-value">13 Mar 2026</div></div>
+        <div><div class="detail-label">Due Date</div><div class="detail-value" style="color:#d97706;">22 Mar 2026</div></div>
+        <div><div class="detail-label">Priority</div><div style="margin-top:3px;"><span class="badge b-amber">High</span></div></div>
+        <div><div class="detail-label">Days Remaining</div><div class="detail-value" style="color:#d97706;font-size:18px;">2</div></div>
+      </div>
+    </div>
+
+    <!-- REQUIREMENTS -->
+    <div class="section">
+      <div class="section-title">Requirements</div>
+      <div class="req-item">
+        <div class="req-icon" style="background:#f0fdfa;color:#0d9488;">
+          <svg viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" stroke-width="2"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </div>
+        <div class="req-text">Read the full policy document</div>
+        <span class="badge b-amber" style="font-size:8px;">Required</span>
+      </div>
+      <div class="req-item">
+        <div class="req-icon" style="background:#ede9fe;color:#7c3aed;">
+          <svg viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M9 11l3 3L22 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" stroke="currentColor" stroke-width="2"/></svg>
+        </div>
+        <div class="req-text">Complete comprehension quiz (75% to pass)</div>
+        <span class="badge b-amber" style="font-size:8px;">Required</span>
+      </div>
+      <div class="req-item">
+        <div class="req-icon" style="background:#dbeafe;color:#2563eb;">
+          <svg viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="req-text">Sign digital acknowledgement</div>
+        <span class="badge b-slate" style="font-size:8px;">Pending</span>
+      </div>
+    </div>
+
+    <!-- RELATED POLICIES -->
+    <div class="section">
+      <div class="section-title">Related Policies</div>
+      <div class="related-item">
+        <div class="related-icon">
+          <svg viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" stroke-width="2"/><path d="M14 2v6h6" stroke="currentColor" stroke-width="2"/></svg>
+        </div>
+        <div>
+          <div class="related-title">Code of Conduct</div>
+          <div class="related-meta">POL-002 | Pending</div>
+        </div>
+      </div>
+      <div class="related-item">
+        <div class="related-icon">
+          <svg viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" stroke-width="2"/><path d="M14 2v6h6" stroke="currentColor" stroke-width="2"/></svg>
+        </div>
+        <div>
+          <div class="related-title">Data Privacy & Protection Policy</div>
+          <div class="related-meta">POL-003 | Overdue</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACTION BUTTONS -->
+    <div class="actions">
+      <button class="btn btn-primary">Read Policy</button>
+      <button class="btn btn-secondary">Start Quiz</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn-sm">Mark as Read</button>
+      <button class="btn-sm">Snooze Reminder</button>
+      <button class="btn-sm">Request Extension</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -56,7 +56,9 @@ const PANEL_STYLES: Partial<IPanelStyles> = {
     },
   },
   content: {
-    paddingTop: '16px',
+    paddingTop: '20px',
+    paddingLeft: '32px',
+    paddingRight: '32px',
   },
   footerInner: {
     background: '#f8fafc',

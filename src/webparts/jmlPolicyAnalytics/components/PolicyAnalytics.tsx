@@ -1097,25 +1097,32 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
         breadcrumbs={[{ text: 'Policy Manager', url: '/sites/PolicyManager' }, { text: 'Analytics' }]}
       >
         <div className={styles.policyAnalytics}>
-          {/* Tab Navigation */}
-          <div className={styles.tabSection}>
-            <Pivot
-              selectedKey={activeTab}
-              onLinkClick={(item) => { if (item) this.setState({ activeTab: item.props.itemKey || 'executive' }); }}
-              styles={{
-                root: { borderBottom: '1px solid #e2e8f0', paddingLeft: 40 },
-                link: { fontSize: 13, fontWeight: 400, color: '#64748b', height: 44 },
-                linkIsSelected: { fontSize: 13, fontWeight: 400, color: '#0d9488' },
-              }}
-            >
-              <PivotItem headerText="Executive Dashboard" itemKey="executive" itemIcon="ViewDashboard" />
-              <PivotItem headerText="Policy Metrics" itemKey="metrics" itemIcon="BarChartVertical" />
-              <PivotItem headerText="Acknowledgement Tracking" itemKey="acknowledgements" itemIcon="CheckMark" />
-              <PivotItem headerText="SLA Tracking" itemKey="sla" itemIcon="Timer" />
-              <PivotItem headerText="Compliance & Risk" itemKey="compliance" itemIcon="Shield" />
-              <PivotItem headerText="Audit & Reports" itemKey="audit" itemIcon="ReportDocument" />
-              <PivotItem headerText="Quiz Analytics" itemKey="quiz" itemIcon="Questionnaire" />
-            </Pivot>
+          {/* Tab Navigation — Pill Style */}
+          <div style={{ display: 'flex', gap: 6, padding: '12px 40px', flexWrap: 'wrap' }}>
+            {[
+              { key: 'executive', text: 'Executive Dashboard' },
+              { key: 'metrics', text: 'Policy Metrics' },
+              { key: 'acknowledgements', text: 'Acknowledgement Tracking' },
+              { key: 'sla', text: 'SLA Tracking' },
+              { key: 'compliance', text: 'Compliance & Risk' },
+              { key: 'audit', text: 'Audit & Reports' },
+              { key: 'quiz', text: 'Quiz Analytics' },
+            ].map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => this.setState({ activeTab: tab.key })}
+                style={{
+                  padding: '7px 16px', borderRadius: 20, fontSize: 13, cursor: 'pointer',
+                  fontFamily: 'inherit', transition: 'all 0.15s',
+                  fontWeight: activeTab === tab.key ? 600 : 500,
+                  background: activeTab === tab.key ? '#0d9488' : '#fff',
+                  color: activeTab === tab.key ? '#fff' : '#64748b',
+                  border: `1px solid ${activeTab === tab.key ? '#0d9488' : '#e2e8f0'}`,
+                }}
+              >
+                {tab.text}
+              </button>
+            ))}
           </div>
 
           {/* Tab Content */}

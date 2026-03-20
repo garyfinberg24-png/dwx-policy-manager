@@ -46,6 +46,7 @@ import { Icon } from '@fluentui/react/lib/Icon';
 import { injectPortalStyles } from '../../../utils/injectPortalStyles';
 import { JmlAppLayout } from '../../../components/JmlAppLayout';
 import { ErrorBoundary } from '../../../components/ErrorBoundary/ErrorBoundary';
+import { StyledPanel } from '../../../components/StyledPanel';
 import { PageSubheader } from '../../../components/PageSubheader';
 import { PolicyHubService, IUserVisibilityContext } from '../../../services/PolicyHubService';
 import { PolicyManagerRole } from '../../../services/PolicyRoleService';
@@ -673,7 +674,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
         searchText: searchText || undefined,
         filters: {
           policyCategories: selectedCategory ? [selectedCategory] : undefined,
-          statuses: selectedStatus ? [selectedStatus as PolicyStatus] : undefined,
+          statuses: [PolicyStatus.Published],  // Policy Hub always shows Published only
           complianceRisks: selectedRisk ? [selectedRisk as ComplianceRisk] : undefined,
           departments: selectedDepartment ? [selectedDepartment] : undefined,
           targetRoles: selectedRole ? [selectedRole] : undefined
@@ -1543,14 +1544,28 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
 
     return (
       <div style={{ marginBottom: 28 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <div
+          style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: showFeaturedSection ? 12 : 0, cursor: 'pointer' }}
+          role="button"
+          tabIndex={0}
+          onClick={this.handleToggleFeaturedSection}
+          onKeyDown={(e) => { if (e.key === 'Enter') this.handleToggleFeaturedSection(); }}
+        >
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="#0d9488" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            <span style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>Featured Policies</span>
+            <span style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>Featured Policy</span>
           </div>
-          <Link style={{ fontSize: 12, color: '#0d9488', cursor: 'pointer' }} onClick={this.handleToggleFeaturedSection}>
-            {showFeaturedSection ? 'Hide' : 'Show'}
-          </Link>
+          <div
+            style={{
+              width: 28, height: 28, borderRadius: 6, border: '1px solid #e2e8f0', background: '#fff',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', transition: 'all 0.15s'
+            }}
+            title={showFeaturedSection ? 'Collapse' : 'Expand'}
+          >
+            <svg viewBox="0 0 24 24" fill="none" width="14" height="14">
+              <path d={showFeaturedSection ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
         </div>
         {showFeaturedSection && (
           <div style={{ display: 'flex', gap: 16 }}>
@@ -1575,13 +1590,35 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
                   el.style.boxShadow = 'none';
                 }}
               >
-                <div style={{ width: 6, background: 'linear-gradient(180deg, #0d9488, #2563eb)', flexShrink: 0 }} />
-                <div style={{ padding: '16px 20px', flex: 1 }}>
-                  <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#0d9488', marginBottom: 6 }}>Featured</div>
-                  <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>{policy.title}</div>
-                  <div style={{ fontSize: 11, color: '#94a3b8' }}>
-                    {policy.isMandatory ? 'Mandatory' : 'Optional'} &middot; {policy.readTime} min read
+                <div style={{ width: 8, background: 'linear-gradient(180deg, #0d9488, #2563eb)', flexShrink: 0 }} />
+                <div style={{ padding: '24px 28px', flex: 1 }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#0d9488', marginBottom: 8 }}>&#9733; Featured Policy</div>
+                  <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 6 }}>{policy.title}</div>
+                  {policy.description && (
+                    <div style={{ fontSize: 13, color: '#64748b', lineHeight: 1.6, marginBottom: 16 }}>
+                      {policy.description.length > 200 ? `${policy.description.substring(0, 200)}...` : policy.description}
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                    <span style={{ fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, textTransform: 'uppercase', background: '#f0f9ff', color: '#0369a1' }}>{policy.category || 'Policy'}</span>
+                    {policy.isMandatory && <span style={{ fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, textTransform: 'uppercase', background: '#fee2e2', color: '#dc2626' }}>Mandatory</span>}
+                    <span style={{ fontSize: 11, color: '#94a3b8' }}>{policy.readTime} min read</span>
                   </div>
+                </div>
+                <div style={{ width: 220, background: 'linear-gradient(135deg, #f0fdfa, #ecfdf5)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, flexShrink: 0 }}>
+                  <div style={{ textAlign: 'center', marginBottom: 12 }}>
+                    <div style={{ fontSize: 32, fontWeight: 700, color: '#0d9488' }}>{policy.acknowledgedPercent || 0}%</div>
+                    <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#64748b' }}>Acknowledged</div>
+                  </div>
+                  <button
+                    style={{
+                      padding: '8px 16px', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                      background: '#0d9488', color: '#fff', border: 'none', fontFamily: 'inherit'
+                    }}
+                    onClick={(e) => { e.stopPropagation(); window.location.href = `/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${policy.id}&mode=browse`; }}
+                  >
+                    View Policy
+                  </button>
                 </div>
               </div>
             ))}
@@ -1631,6 +1668,189 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
   /**
    * Render the Filter Bar with all dropdown filters
    */
+  // ============================================
+  // PREMIUM BROWSE VIEW COMPONENTS
+  // ============================================
+
+  /**
+   * Hero search section — teal gradient with title, search input, category chips
+   */
+  private renderHeroSearch(): JSX.Element {
+    const { searchText } = this.state;
+
+    return (
+      <div style={{
+        background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
+        padding: '16px 40px', position: 'relative', overflow: 'hidden'
+      }}>
+        {/* Decorative background circle */}
+        <div style={{ position: 'absolute', right: -60, bottom: -60, width: 200, height: 200, background: 'rgba(255,255,255,0.03)', borderRadius: '50%' }} />
+
+        <div style={{ maxWidth: 1400, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', alignItems: 'flex-end', position: 'relative', zIndex: 1 }}>
+          {/* Column 1: Title + subtitle */}
+          <div>
+            <h1 style={{ fontSize: 22, fontWeight: 700, color: '#fff', marginBottom: 2 }}>Policy Hub</h1>
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)' }}>Browse and discover organisational policies</p>
+          </div>
+
+          {/* Column 2: Search — centred in middle third, bottom-aligned with subtitle */}
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <div style={{ width: '100%', maxWidth: 480, position: 'relative' }}>
+              <svg viewBox="0 0 24 24" fill="none" width="16" height="16" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.6)' }}>
+                <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
+                <path d="M21 21l-4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+              <input
+                type="text"
+                value={searchText}
+                onChange={(e) => this.handleSearchAsYouType((e.target as HTMLInputElement).value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') this.handleSearch(searchText); }}
+                placeholder="Search by policy name, number, or keyword..."
+                style={{
+                  width: '100%', padding: '10px 18px 10px 44px', borderRadius: 8,
+                  border: '2px solid rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.15)',
+                  fontSize: 13, color: '#fff', outline: 'none', fontFamily: 'inherit',
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Column 3: empty spacer */}
+          <div />
+        </div>
+      </div>
+    );
+  }
+
+  /**
+   * Facet sidebar — 5 filter groups with checkbox-style items
+   */
+  private renderFacetSidebar(): JSX.Element {
+    const { selectedStatus, selectedCategory, selectedRisk, selectedDepartment, searchResults } = this.state;
+    const policies = searchResults?.policies || [];
+
+    // Count policies per facet value
+    const countBy = (field: string): Record<string, number> => {
+      const counts: Record<string, number> = {};
+      policies.forEach((p: any) => {
+        const val = p[field];
+        if (val) counts[val] = (counts[val] || 0) + 1;
+      });
+      return counts;
+    };
+
+    const statusCounts = countBy('PolicyStatus');
+    const categoryCounts = countBy('PolicyCategory');
+    const riskCounts = countBy('ComplianceRisk');
+
+    const facetItemStyle: React.CSSProperties = {
+      display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0', fontSize: 12, color: '#334155', cursor: 'pointer'
+    };
+    const checkboxStyle = (checked: boolean): React.CSSProperties => ({
+      width: 16, height: 16, border: `2px solid ${checked ? '#0d9488' : '#cbd5e1'}`, borderRadius: 3,
+      flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: checked ? '#0d9488' : 'transparent', color: '#fff', fontSize: 10, fontWeight: 700
+    });
+    const countStyle: React.CSSProperties = { marginLeft: 'auto', fontSize: 10, color: '#94a3b8' };
+    const groupStyle: React.CSSProperties = { background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: 16, marginBottom: 12 };
+    const titleStyle: React.CSSProperties = { fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#94a3b8', marginBottom: 10 };
+
+    const renderFacetItem = (label: string, count: number, isChecked: boolean, onClick: () => void): JSX.Element => (
+      <div key={label} style={facetItemStyle} role="button" tabIndex={0} onClick={onClick} onKeyDown={(e) => { if (e.key === 'Enter') onClick(); }}>
+        <div style={checkboxStyle(isChecked)}>{isChecked ? '✓' : ''}</div>
+        <span>{label}</span>
+        <span style={countStyle}>{count}</span>
+      </div>
+    );
+
+    return (
+      <div style={{ position: 'sticky', top: 20, alignSelf: 'start' }}>
+        {/* Category */}
+        <div style={groupStyle}>
+          <div style={titleStyle}>Category</div>
+          {Object.values(PolicyCategory).slice(0, 8).map(c =>
+            renderFacetItem(c, categoryCounts[c] || 0, selectedCategory === c, () =>
+              this.handleFilterChange('selectedCategory', selectedCategory === c ? '' : c)
+            )
+          )}
+        </div>
+
+        {/* Risk Level */}
+        <div style={groupStyle}>
+          <div style={titleStyle}>Risk Level</div>
+          {Object.values(ComplianceRisk).map(r =>
+            renderFacetItem(r, riskCounts[r] || 0, selectedRisk === r, () =>
+              this.handleFilterChange('selectedRisk', selectedRisk === r ? '' : r)
+            )
+          )}
+        </div>
+
+        {/* Department */}
+        <div style={groupStyle}>
+          <div style={titleStyle}>Department</div>
+          {['All Employees', 'Finance', 'Operations', 'IT', 'Legal', 'HR'].map(d =>
+            renderFacetItem(d, 0, selectedDepartment === d, () =>
+              this.handleFilterChange('selectedDepartment', selectedDepartment === d ? '' : d)
+            )
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  /**
+   * Simplified results header — count + sort + view toggle
+   */
+  private renderResultsHeader(): JSX.Element {
+    const { searchResults, sortOption, viewMode } = this.state;
+    const totalCount = searchResults?.totalCount || 0;
+
+    const sortOptions: IDropdownOption[] = [
+      { key: 'most-recent', text: 'Sort: Most Recent' },
+      { key: 'name-asc', text: 'Sort: A-Z' },
+      { key: 'risk', text: 'Sort: Risk Level' },
+      { key: 'most-read', text: 'Sort: Most Viewed' }
+    ];
+
+    return (
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <div style={{ fontSize: 13, color: '#64748b' }}>
+          Showing <strong>{totalCount}</strong> policies
+        </div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <Dropdown
+            options={sortOptions}
+            selectedKey={sortOption || 'most-recent'}
+            onChange={(e, option) => this.setState({ sortOption: option?.key as string, currentPage: 1 }, () => this.loadPolicies())}
+            styles={{ root: { minWidth: 160 }, dropdown: { border: '1px solid #e2e8f0', borderRadius: 6 }, title: { fontSize: 12, fontFamily: 'inherit', color: '#334155', borderColor: '#e2e8f0' } }}
+          />
+          <div style={{ display: 'flex', border: '1px solid #e2e8f0', borderRadius: 6, overflow: 'hidden' }}>
+            <button
+              onClick={() => this.setState({ viewMode: 'grid' })}
+              style={{
+                padding: '6px 10px', fontSize: 12, cursor: 'pointer', border: 'none', fontFamily: 'inherit',
+                background: viewMode === 'grid' ? '#0d9488' : '#fff', color: viewMode === 'grid' ? '#fff' : '#94a3b8'
+              }}
+              aria-label="Grid view"
+            >
+              <svg viewBox="0 0 24 24" fill="none" width="14" height="14"><rect x="3" y="3" width="7" height="7" stroke="currentColor" strokeWidth="2" rx="1" /><rect x="14" y="3" width="7" height="7" stroke="currentColor" strokeWidth="2" rx="1" /><rect x="3" y="14" width="7" height="7" stroke="currentColor" strokeWidth="2" rx="1" /><rect x="14" y="14" width="7" height="7" stroke="currentColor" strokeWidth="2" rx="1" /></svg>
+            </button>
+            <button
+              onClick={() => this.setState({ viewMode: 'list' })}
+              style={{
+                padding: '6px 10px', fontSize: 12, cursor: 'pointer', border: 'none', fontFamily: 'inherit',
+                background: viewMode === 'list' ? '#0d9488' : '#fff', color: viewMode === 'list' ? '#fff' : '#94a3b8'
+              }}
+              aria-label="List view"
+            >
+              <svg viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   /**
    * Render consolidated toolbar — Variation 2: Two Rows in One Panel
    * Row 1: Filter dropdowns
@@ -1911,10 +2131,15 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
 
     // Category color strip mapping
     const categoryStripColors: Record<string, string> = {
-      'Compliance': '#2563eb', 'HR': '#db2777', 'Human Resources': '#db2777',
-      'Governance': '#6366f1', 'IT Security': '#0d9488', 'IT': '#0d9488',
-      'Safety': '#d97706', 'Health & Safety': '#d97706', 'Ethics': '#059669',
-      'Finance': '#7c3aed', 'Data Protection': '#2563eb', 'Security': '#0d9488'
+      'Compliance': '#2563eb', 'HR': '#db2777', 'Human Resources': '#db2777', 'HR Policies': '#db2777',
+      'Governance': '#6366f1',
+      'IT Security': '#0d9488', 'IT': '#0d9488', 'IT & Security': '#0d9488',
+      'Safety': '#d97706', 'Health & Safety': '#d97706',
+      'Ethics': '#059669', 'Environmental': '#059669',
+      'Finance': '#7c3aed', 'Financial': '#7c3aed',
+      'Data Protection': '#2563eb', 'Data Privacy': '#0284c7',
+      'Operational': '#6366f1', 'Legal': '#475569',
+      'Quality Assurance': '#7c3aed', 'Custom': '#94a3b8'
     };
     const stripColor = categoryStripColors[policy.PolicyCategory || ''] || '#94a3b8';
 
@@ -1932,29 +2157,25 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
       <div
         key={policy.Id}
         style={{
-          background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden',
-          transition: 'all 0.2s', cursor: 'pointer', display: 'flex', flexDirection: 'column',
+          background: '#fff', border: '1px solid #e2e8f0', borderTop: `4px solid ${stripColor}`,
+          borderRadius: 10, overflow: 'hidden',
+          transition: 'box-shadow 0.2s, transform 0.2s', cursor: 'pointer', display: 'flex', flexDirection: 'column',
           position: 'relative'
         }}
         onClick={() => {
-          RecentlyViewedService.trackView(policy.Id, policy.PolicyName || policy.Title, policy.PolicyCategory || '');
-          window.location.href = `/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${policy.Id}&mode=browse`;
+          this.setState({ expandedPolicyId: this.state.expandedPolicyId === policy.Id ? null : policy.Id });
         }}
         onMouseEnter={(e) => {
           const el = e.currentTarget as HTMLElement;
-          el.style.borderColor = '#0d9488';
           el.style.boxShadow = '0 4px 16px rgba(13,148,136,0.1)';
           el.style.transform = 'translateY(-2px)';
         }}
         onMouseLeave={(e) => {
           const el = e.currentTarget as HTMLElement;
-          el.style.borderColor = '#e2e8f0';
           el.style.boxShadow = 'none';
           el.style.transform = 'translateY(0)';
         }}
       >
-        {/* Category color strip at top */}
-        <div style={{ height: 8, background: stripColor, flexShrink: 0 }} />
 
         {/* Card body */}
         <div style={{ padding: '18px 20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
@@ -1985,10 +2206,15 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
             )}
             <span style={{
               fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: 0.5,
-              background: policy.PolicyStatus === 'Published' ? '#dcfce7' : '#f1f5f9',
-              color: policy.PolicyStatus === 'Published' ? '#16a34a' : '#64748b'
+              background: '#dcfce7', color: '#16a34a'
             }}>
-              {policy.PolicyStatus}
+              Published
+            </span>
+            <span style={{
+              fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: 0.5,
+              background: '#f1f5f9', color: '#64748b'
+            }}>
+              v{policy.PolicyVersion || '1.0'}
             </span>
             {isNew && (
               <span style={{ fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: 0.5, background: '#dbeafe', color: '#2563eb' }}>New</span>
@@ -2031,7 +2257,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
   }
 
   /**
-   * Render enhanced list view with additional columns
+   * Render premium list view with slide-in detail panel
    */
   private renderEnhancedListView(): JSX.Element {
     const { searchResults, bookmarkedPolicyIds, expandedPolicyId } = this.state;
@@ -2039,195 +2265,296 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
       return this.renderEmptyState();
     }
 
-    const riskColors: Record<string, string> = {
-      'Critical': '#a4262c', 'High': '#d83b01', 'Medium': '#ffaa44', 'Low': '#107c10'
+    const riskBadge: Record<string, { bg: string; color: string }> = {
+      'Critical': { bg: '#fee2e2', color: '#dc2626' },
+      'High': { bg: '#fef3c7', color: '#d97706' },
+      'Medium': { bg: '#e0e7ff', color: '#6366f1' },
+      'Low': { bg: '#dcfce7', color: '#16a34a' },
+      'Informational': { bg: '#f1f5f9', color: '#64748b' }
     };
 
+    const statusBadge: Record<string, { bg: string; color: string }> = {
+      'Published': { bg: '#dcfce7', color: '#16a34a' },
+      'Draft': { bg: '#f1f5f9', color: '#64748b' },
+      'In Review': { bg: '#fef3c7', color: '#d97706' },
+      'Archived': { bg: '#f1f5f9', color: '#94a3b8' }
+    };
+
+    const catBadge: Record<string, { bg: string; color: string }> = {
+      'Compliance': { bg: '#fef3c7', color: '#92400e' },
+      'HR': { bg: '#ccfbf1', color: '#0d9488' },
+      'Human Resources': { bg: '#ccfbf1', color: '#0d9488' },
+      'IT': { bg: '#dbeafe', color: '#2563eb' },
+      'IT Security': { bg: '#dbeafe', color: '#2563eb' },
+      'Governance': { bg: '#ede9fe', color: '#7c3aed' },
+      'Safety': { bg: '#fef3c7', color: '#d97706' },
+      'Health & Safety': { bg: '#fef3c7', color: '#d97706' },
+      'Ethics': { bg: '#dcfce7', color: '#059669' },
+      'Finance': { bg: '#ede9fe', color: '#7c3aed' }
+    };
+
+    const selectedPolicy = expandedPolicyId
+      ? searchResults.policies.find(p => p.Id === expandedPolicyId) || null
+      : null;
+
     return (
-      <div className={styles.policiesListView}>
-        <table className={styles.policyTable}>
-          <thead>
-            <tr>
-              <th style={{ width: '32px' }}></th>
-              <th style={{ width: '40px' }}></th>
-              <th>Policy #</th>
-              <th>Policy Name</th>
-              <th>Category</th>
-              <th>Status</th>
-              <th>Risk</th>
-              <th>Read Time</th>
-              <th>Updated</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {searchResults.policies.map(policy => {
-              const isBookmarked = bookmarkedPolicyIds.has(policy.Id);
-              const isExpanded = expandedPolicyId === policy.Id;
-              const modifiedDate = policy.Modified ? new Date(policy.Modified) : null;
-              const publishedDate = policy.PublishedDate ? new Date(policy.PublishedDate) : null;
-              const twoWeeksAgo = new Date();
-              twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-              const isNew = publishedDate && publishedDate > twoWeeksAgo;
-              const isUpdated = !isNew && modifiedDate && modifiedDate > twoWeeksAgo;
-              const readTime = policy.EstimatedReadTimeMinutes || Math.floor(Math.random() * 20) + 5;
+      <>
+        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
+          {/* List header */}
+          <div style={{
+            display: 'grid', gridTemplateColumns: '3fr 1.5fr 0.8fr 0.7fr 0.8fr 1fr 80px',
+            padding: '10px 20px', background: '#f8fafc', borderBottom: '2px solid #e2e8f0',
+            fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.8, color: '#64748b', alignItems: 'center'
+          }}>
+            <div>Policy</div>
+            <div>Category</div>
+            <div>Version</div>
+            <div>Risk</div>
+            <div>Status</div>
+            <div>Modified</div>
+            <div>Actions</div>
+          </div>
 
-              return (
-                <React.Fragment key={policy.Id}>
-                  <tr className={isExpanded ? styles.expandedTableRow : ''}>
-                    <td>
-                      <IconButton
-                        iconProps={{ iconName: isExpanded ? 'ChevronDown' : 'ChevronRight' }}
-                        title={isExpanded ? 'Collapse' : 'Expand'}
-                        onClick={() => this.setState({ expandedPolicyId: isExpanded ? null : policy.Id })}
-                        styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 12 } }}
-                      />
-                    </td>
-                    <td>
-                      <IconButton
-                        iconProps={{ iconName: isBookmarked ? 'SingleBookmarkSolid' : 'SingleBookmark' }}
-                        className={`${styles.tableBookmark} ${isBookmarked ? styles.bookmarkActive : ''}`}
-                        onClick={() => this.handleToggleBookmark(policy.Id)}
-                        title={isBookmarked ? 'Remove bookmark' : 'Add bookmark'}
-                      />
-                    </td>
-                    <td className={styles.policyNumberCell}>{policy.PolicyNumber}</td>
-                    <td className={styles.policyNameCell}>
-                      {policy.PolicyName}
-                      {isNew && <span className={styles.tableBadgeNew}>NEW</span>}
-                      {isUpdated && <span className={styles.tableBadgeUpdated}>UPD</span>}
-                    </td>
-                    <td><span className={`${styles.policyBadge} ${styles.badgeCategory}`}>{policy.PolicyCategory}</span></td>
-                    <td><span className={`${styles.policyBadge} ${policy.PolicyStatus === 'Published' ? styles.badgeActive : styles.badgePending}`}>{policy.PolicyStatus}</span></td>
-                    <td>
-                      {policy.ComplianceRisk && (
-                        <span style={{
-                          display: 'inline-block', padding: '2px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 600,
-                          backgroundColor: riskColors[policy.ComplianceRisk] || '#8a8886', color: 'white'
-                        }}>
-                          {policy.ComplianceRisk}
-                        </span>
-                      )}
-                    </td>
-                    <td>{readTime} min</td>
-                    <td>{modifiedDate ? modifiedDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}</td>
-                    <td>
-                      <PrimaryButton text="View" href={`/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${policy.Id}&mode=browse`} className={styles.btnViewSmall} />
-                    </td>
-                  </tr>
-                  {isExpanded && (
-                    <tr className={styles.expandedDetailRow}>
-                      <td colSpan={10} style={{ padding: 0 }}>
-                        <div className={styles.expandedRow}>
-                          <div className={styles.expandedGrid}>
-                            {/* Policy Details Card */}
-                            <div className={styles.expandedCard}>
-                              <div className={styles.expandedCardHeader}>
-                                <Icon iconName="Document" className={styles.expandedCardIcon} />
-                                <Text className={styles.expandedCardTitle}>Policy Details</Text>
-                              </div>
-                              <div className={styles.expandedCardBody}>
-                                {policy.Description && (
-                                  <Text variant="small" className={styles.expandedDescription}>
-                                    {policy.Description.length > 150 ? `${policy.Description.substring(0, 150)}...` : policy.Description}
-                                  </Text>
-                                )}
-                                <div className={styles.expandedField}>
-                                  <Text variant="small" className={styles.expandedLabel}>Type</Text>
-                                  <Text variant="small">{policy.PolicyType || 'N/A'}</Text>
-                                </div>
-                                <div className={styles.expandedField}>
-                                  <Text variant="small" className={styles.expandedLabel}>Owner</Text>
-                                  <Text variant="small">{policy.PolicyOwner?.Title || 'N/A'}</Text>
-                                </div>
-                                <div className={styles.expandedField}>
-                                  <Text variant="small" className={styles.expandedLabel}>Version</Text>
-                                  <Text variant="small">{policy.VersionNumber || 'N/A'}</Text>
-                                </div>
-                              </div>
-                            </div>
+          {/* List rows */}
+          {searchResults.policies.map(policy => {
+            const isSelected = expandedPolicyId === policy.Id;
+            const modifiedDate = policy.Modified ? new Date(policy.Modified) : null;
+            const publishedDate = policy.PublishedDate ? new Date(policy.PublishedDate) : null;
+            const twoWeeksAgo = new Date();
+            twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+            const isNew = publishedDate && publishedDate > twoWeeksAgo;
+            const isUpdated = !isNew && modifiedDate && modifiedDate > twoWeeksAgo;
+            const risk = riskBadge[policy.ComplianceRisk || ''] || { bg: '#f1f5f9', color: '#64748b' };
+            const status = statusBadge[policy.PolicyStatus || ''] || { bg: '#f1f5f9', color: '#64748b' };
+            const cat = catBadge[policy.PolicyCategory || ''] || { bg: '#f0f9ff', color: '#0369a1' };
 
-                            {/* Compliance Card */}
-                            <div className={styles.expandedCard}>
-                              <div className={styles.expandedCardHeader}>
-                                <Icon iconName="Shield" className={styles.expandedCardIcon} />
-                                <Text className={styles.expandedCardTitle}>Compliance</Text>
-                              </div>
-                              <div className={styles.expandedCardBody}>
-                                <div className={styles.expandedField}>
-                                  <Text variant="small" className={styles.expandedLabel}>Risk Level</Text>
-                                  <span style={{
-                                    display: 'inline-block', padding: '2px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 600,
-                                    backgroundColor: riskColors[policy.ComplianceRisk] || '#8a8886', color: 'white'
-                                  }}>
-                                    {policy.ComplianceRisk || 'N/A'}
-                                  </span>
-                                </div>
-                                <div className={styles.expandedField}>
-                                  <Text variant="small" className={styles.expandedLabel}>Scope</Text>
-                                  <Text variant="small">{policy.DistributionScope || 'N/A'}</Text>
-                                </div>
-                                <div className={styles.expandedField}>
-                                  <Text variant="small" className={styles.expandedLabel}>Mandatory</Text>
-                                  <Text variant="small">{policy.IsMandatory ? 'Yes' : 'No'}</Text>
-                                </div>
-                              </div>
-                            </div>
+            return (
+              <div
+                key={policy.Id}
+                role="button"
+                tabIndex={0}
+                onClick={() => this.setState({ expandedPolicyId: isSelected ? null : policy.Id })}
+                onKeyDown={(e) => { if (e.key === 'Enter') this.setState({ expandedPolicyId: isSelected ? null : policy.Id }); }}
+                style={{
+                  display: 'grid', gridTemplateColumns: '3fr 1.5fr 0.8fr 0.7fr 0.8fr 1fr 80px',
+                  padding: '12px 20px', borderBottom: '1px solid #f1f5f9', alignItems: 'center',
+                  cursor: 'pointer', transition: 'background 0.1s',
+                  background: isSelected ? '#f0fdfa' : undefined,
+                  borderLeft: isSelected ? '3px solid #0d9488' : '3px solid transparent',
+                }}
+                onMouseEnter={(e) => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = '#f0fdfa'; }}
+                onMouseLeave={(e) => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = ''; }}
+              >
+                {/* Policy name + number */}
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {policy.PolicyName}
+                    {isNew && <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: 0.3, background: '#dbeafe', color: '#2563eb', marginLeft: 8 }}>New</span>}
+                    {isUpdated && <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: 0.3, background: '#fef3c7', color: '#d97706', marginLeft: 8 }}>Updated</span>}
+                  </div>
+                  <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>
+                    {policy.PolicyNumber}
+                  </div>
+                </div>
 
-                            {/* Timeline Card */}
-                            <div className={styles.expandedCard}>
-                              <div className={styles.expandedCardHeader}>
-                                <Icon iconName="Calendar" className={styles.expandedCardIcon} />
-                                <Text className={styles.expandedCardTitle}>Timeline</Text>
-                              </div>
-                              <div className={styles.expandedCardBody}>
-                                <div className={styles.expandedField}>
-                                  <Text variant="small" className={styles.expandedLabel}>Effective</Text>
-                                  <Text variant="small">{policy.EffectiveDate ? new Date(policy.EffectiveDate).toLocaleDateString() : 'N/A'}</Text>
-                                </div>
-                                <div className={styles.expandedField}>
-                                  <Text variant="small" className={styles.expandedLabel}>Expires</Text>
-                                  <Text variant="small">{policy.ExpiryDate ? new Date(policy.ExpiryDate).toLocaleDateString() : 'N/A'}</Text>
-                                </div>
-                                <div className={styles.expandedField}>
-                                  <Text variant="small" className={styles.expandedLabel}>Next Review</Text>
-                                  <Text variant="small">{policy.NextReviewDate ? new Date(policy.NextReviewDate).toLocaleDateString() : 'N/A'}</Text>
-                                </div>
-                              </div>
-                            </div>
+                {/* Category badge */}
+                <div>
+                  <span style={{ fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: 0.3, background: cat.bg, color: cat.color }}>
+                    {policy.PolicyCategory}
+                  </span>
+                </div>
 
-                            {/* Actions Card */}
-                            <div className={styles.expandedCard}>
-                              <div className={styles.expandedCardHeader}>
-                                <Icon iconName="CheckMark" className={styles.expandedCardIcon} />
-                                <Text className={styles.expandedCardTitle}>Actions</Text>
-                              </div>
-                              <div className={styles.expandedCardBody} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                <PrimaryButton
-                                  text="View Details"
-                                  iconProps={{ iconName: 'View' }}
-                                  href={`/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${policy.Id}&mode=browse`}
-                                  styles={{ root: { width: '100%' } }}
-                                />
-                                <DefaultButton
-                                  text={isBookmarked ? 'Remove Bookmark' : 'Add Bookmark'}
-                                  iconProps={{ iconName: isBookmarked ? 'SingleBookmarkSolid' : 'SingleBookmark' }}
-                                  onClick={() => this.handleToggleBookmark(policy.Id)}
-                                  styles={{ root: { width: '100%' } }}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
+                {/* Version */}
+                <div>
+                  <span style={{ fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: 0.3, background: '#f1f5f9', color: '#64748b' }}>
+                    v{policy.PolicyVersion || '1.0'}
+                  </span>
+                </div>
+
+                {/* Risk badge */}
+                <div>
+                  {policy.ComplianceRisk && (
+                    <span style={{ fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: 0.3, background: risk.bg, color: risk.color }}>
+                      {policy.ComplianceRisk}
+                    </span>
                   )}
-                </React.Fragment>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+                </div>
+
+                {/* Status badge */}
+                <div>
+                  <span style={{ fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: 0.3, background: '#dcfce7', color: '#16a34a' }}>
+                    Published
+                  </span>
+                </div>
+
+                {/* Modified date */}
+                <div style={{ fontSize: 12, color: '#94a3b8' }}>
+                  {modifiedDate ? modifiedDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A'}
+                </div>
+
+                {/* Action buttons */}
+                <div style={{ display: 'flex', gap: 4 }} onClick={(e) => e.stopPropagation()}>
+                  <button
+                    style={{ width: 28, height: 28, borderRadius: 4, border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: '#64748b' }}
+                    title="View details"
+                    onClick={() => {
+                      RecentlyViewedService.trackView(policy.Id, policy.PolicyName || policy.Title, policy.PolicyCategory || '');
+                      window.location.href = `/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${policy.Id}&mode=browse`;
+                    }}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" stroke="currentColor" strokeWidth="2" /><circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" /></svg>
+                  </button>
+                  <button
+                    style={{ width: 28, height: 28, borderRadius: 4, border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: bookmarkedPolicyIds.has(policy.Id) ? '#0d9488' : '#64748b' }}
+                    title={bookmarkedPolicyIds.has(policy.Id) ? 'Remove bookmark' : 'Add bookmark'}
+                    onClick={() => this.handleToggleBookmark(policy.Id)}
+                  >
+                    <svg viewBox="0 0 24 24" fill={bookmarkedPolicyIds.has(policy.Id) ? 'currentColor' : 'none'} width="14" height="14"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Pagination footer */}
+          <div style={{ padding: '12px 20px', background: '#fafafa', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: 11, color: '#94a3b8' }}>
+              Showing {searchResults.policies.length} of {searchResults.totalCount || searchResults.policies.length} policies
+            </span>
+          </div>
+        </div>
+
+        {/* Detail Panel — slides in from right */}
+        {this.renderListDetailPanel(selectedPolicy)}
+      </>
+    );
+  }
+
+  /**
+   * Render the slide-in detail panel for list view
+   */
+  private renderListDetailPanel(policy: IPolicy | null): JSX.Element {
+    const riskBadge: Record<string, { bg: string; color: string }> = {
+      'Critical': { bg: '#fee2e2', color: '#dc2626' },
+      'High': { bg: '#fef3c7', color: '#d97706' },
+      'Medium': { bg: '#e0e7ff', color: '#6366f1' },
+      'Low': { bg: '#dcfce7', color: '#16a34a' },
+      'Informational': { bg: '#f1f5f9', color: '#64748b' }
+    };
+    const catBadge: Record<string, { bg: string; color: string }> = {
+      'Compliance': { bg: '#fef3c7', color: '#92400e' },
+      'HR': { bg: '#ccfbf1', color: '#0d9488' }, 'Human Resources': { bg: '#ccfbf1', color: '#0d9488' },
+      'IT': { bg: '#dbeafe', color: '#2563eb' }, 'IT Security': { bg: '#dbeafe', color: '#2563eb' },
+      'Governance': { bg: '#ede9fe', color: '#7c3aed' },
+      'Safety': { bg: '#fef3c7', color: '#d97706' }, 'Health & Safety': { bg: '#fef3c7', color: '#d97706' },
+      'Ethics': { bg: '#dcfce7', color: '#059669' }, 'Finance': { bg: '#ede9fe', color: '#7c3aed' }
+    };
+    const risk = riskBadge[policy?.ComplianceRisk || ''] || { bg: '#f1f5f9', color: '#64748b' };
+    const cat = catBadge[policy?.PolicyCategory || ''] || { bg: '#f0f9ff', color: '#0369a1' };
+
+    const sectionTitleStyle: React.CSSProperties = {
+      fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8,
+      color: '#64748b', marginBottom: 12, paddingBottom: 8, borderBottom: '1px solid #f1f5f9'
+    };
+    const gridStyle: React.CSSProperties = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 };
+    const labelStyle: React.CSSProperties = { fontSize: 10, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.5 };
+    const valueStyle: React.CSSProperties = { fontSize: 13, fontWeight: 600, color: '#0f172a', marginTop: 2 };
+
+    return (
+      <StyledPanel
+        isOpen={policy !== null}
+        onDismiss={() => this.setState({ expandedPolicyId: null })}
+        type={PanelType.medium}
+        headerText={policy?.PolicyName || ''}
+        isLightDismiss
+      >
+        {policy && (
+          <div style={{ padding: 0 }}>
+            {/* Policy number subtitle */}
+            <div style={{ fontSize: 12, color: '#0d9488', marginBottom: 16 }}>
+              {policy.PolicyNumber}{policy.PolicyVersion ? ` | Version ${policy.PolicyVersion}` : ''}
+            </div>
+
+            {/* Description */}
+            {policy.PolicySummary && (
+              <div style={{ fontSize: 13, color: '#64748b', lineHeight: 1.6, marginBottom: 20 }}>
+                {policy.PolicySummary}
+              </div>
+            )}
+            {!policy.PolicySummary && policy.Description && (
+              <div style={{ fontSize: 13, color: '#64748b', lineHeight: 1.6, marginBottom: 20 }}>
+                {policy.Description.length > 300 ? `${policy.Description.substring(0, 300)}...` : policy.Description}
+              </div>
+            )}
+
+            {/* Policy Details section */}
+            <div style={{ marginBottom: 24 }}>
+              <div style={sectionTitleStyle}>Policy Details</div>
+              <div style={gridStyle}>
+                <div><div style={labelStyle}>Category</div><div style={{ marginTop: 2 }}><span style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 4, textTransform: 'uppercase', background: cat.bg, color: cat.color }}>{policy.PolicyCategory}</span></div></div>
+                <div><div style={labelStyle}>Risk Level</div><div style={{ marginTop: 2 }}><span style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 4, textTransform: 'uppercase', background: risk.bg, color: risk.color }}>{policy.ComplianceRisk || 'N/A'}</span></div></div>
+                <div><div style={labelStyle}>Department</div><div style={valueStyle}>{policy.DistributionScope || policy.Departments || 'All Departments'}</div></div>
+                <div><div style={labelStyle}>Owner</div><div style={valueStyle}>{policy.PolicyOwner?.Title || 'N/A'}</div></div>
+                <div><div style={labelStyle}>Type</div><div style={valueStyle}>{policy.PolicyType || 'N/A'}</div></div>
+                <div><div style={labelStyle}>Version</div><div style={valueStyle}>{policy.VersionNumber || policy.PolicyVersion || 'N/A'}</div></div>
+              </div>
+            </div>
+
+            {/* Timeline section */}
+            <div style={{ marginBottom: 24 }}>
+              <div style={sectionTitleStyle}>Timeline</div>
+              <div style={gridStyle}>
+                <div><div style={labelStyle}>Effective Date</div><div style={valueStyle}>{policy.EffectiveDate ? new Date(policy.EffectiveDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A'}</div></div>
+                <div><div style={labelStyle}>Expiry Date</div><div style={valueStyle}>{policy.ExpiryDate ? new Date(policy.ExpiryDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A'}</div></div>
+                <div><div style={labelStyle}>Published</div><div style={valueStyle}>{policy.PublishedDate ? new Date(policy.PublishedDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A'}</div></div>
+                <div><div style={labelStyle}>Next Review</div><div style={valueStyle}>{policy.NextReviewDate ? new Date(policy.NextReviewDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A'}</div></div>
+              </div>
+            </div>
+
+            {/* Compliance section */}
+            <div style={{ marginBottom: 24 }}>
+              <div style={sectionTitleStyle}>Compliance</div>
+              <div style={gridStyle}>
+                <div><div style={labelStyle}>Mandatory</div><div style={valueStyle}>{policy.IsMandatory ? 'Yes' : 'No'}</div></div>
+                <div><div style={labelStyle}>Requires Ack</div><div style={valueStyle}>{policy.RequiresAcknowledgement ? 'Yes' : 'No'}</div></div>
+                <div><div style={labelStyle}>Requires Quiz</div><div style={valueStyle}>{policy.RequiresQuiz ? 'Yes' : 'No'}</div></div>
+                <div><div style={labelStyle}>Read Timeframe</div><div style={valueStyle}>{policy.ReadTimeframe || 'N/A'}</div></div>
+              </div>
+            </div>
+
+            {/* Key Points */}
+            {policy.KeyPoints && (
+              <div style={{ marginBottom: 24 }}>
+                <div style={sectionTitleStyle}>Key Points</div>
+                <ul style={{ margin: 0, paddingLeft: 18 }}>
+                  {policy.KeyPoints.split(';').map((point: string, i: number) => (
+                    point.trim() && <li key={i} style={{ fontSize: 12, color: '#334155', marginBottom: 4, lineHeight: 1.5 }}>{point.trim()}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Action buttons */}
+            <div style={{ display: 'flex', gap: 8, marginTop: 20 }}>
+              <PrimaryButton
+                text="View Full Policy"
+                iconProps={{ iconName: 'View' }}
+                onClick={() => {
+                  RecentlyViewedService.trackView(policy.Id, policy.PolicyName || policy.Title, policy.PolicyCategory || '');
+                  window.location.href = `/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${policy.Id}&mode=browse`;
+                }}
+                styles={{ root: { flex: 1 } }}
+              />
+              <DefaultButton
+                text={this.state.bookmarkedPolicyIds.has(policy.Id) ? 'Bookmarked' : 'Bookmark'}
+                iconProps={{ iconName: this.state.bookmarkedPolicyIds.has(policy.Id) ? 'SingleBookmarkSolid' : 'SingleBookmark' }}
+                onClick={() => this.handleToggleBookmark(policy.Id)}
+                styles={{ root: { flex: 1 } }}
+              />
+            </div>
+          </div>
+        )}
+      </StyledPanel>
     );
   }
 
@@ -2879,7 +3206,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
   }
 
   private renderCurrentView(): JSX.Element {
-    const { currentView, selectedTab, showFacets, viewMode, searchResults } = this.state;
+    const { currentView, selectedTab, showFacets, viewMode, searchResults, expandedPolicyId } = this.state;
     const { showDocumentCenter } = this.props;
 
     switch (currentView) {
@@ -2902,31 +3229,51 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
       case 'browse':
       default:
         return (
-          <div className={styles.browseView}>
-            {/* Consolidated Filter + Results Toolbar */}
-            {this.renderConsolidatedToolbar()}
+          <div>
+            {/* Hero Search Section */}
+            {this.renderHeroSearch()}
 
-            {/* Featured Policies */}
-            {this.renderFeaturedPolicies()}
+            {/* Content area: facets + results in 2-column grid */}
+            <div style={{ maxWidth: 1400, margin: '0 auto', padding: '20px 40px 40px' }}>
+              {/* Featured Policies */}
+              {this.renderFeaturedPolicies()}
 
-            {/* Recently Viewed */}
-            {this.renderRecentlyViewed()}
+              {/* 2-Column Layout: Facets + Results */}
+              <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', gap: 24 }}>
+                {/* Left: Facet Sidebar */}
+                {this.renderFacetSidebar()}
 
-            {/* Policy Cards or List */}
-            {viewMode === 'grid' ? (
-              <div className={styles.enhancedPoliciesGrid}>
-                {searchResults && searchResults.policies.length > 0 ? (
-                  searchResults.policies.map((policy: IPolicy) => this.renderEnhancedPolicyCard(policy))
-                ) : (
-                  this.renderEmptyState()
-                )}
+                {/* Right: Results */}
+                <div>
+                  {/* Results Header */}
+                  {this.renderResultsHeader()}
+
+                  {/* Policy Cards or List */}
+                  {viewMode === 'grid' ? (
+                    <>
+                      <div className={styles.enhancedPoliciesGrid}>
+                        {searchResults && searchResults.policies.length > 0 ? (
+                          searchResults.policies.map((policy: IPolicy) => this.renderEnhancedPolicyCard(policy))
+                        ) : (
+                          this.renderEmptyState()
+                        )}
+                      </div>
+                      {/* Detail Panel for grid view */}
+                      {this.renderListDetailPanel(
+                        expandedPolicyId && searchResults
+                          ? searchResults.policies.find(p => p.Id === expandedPolicyId) || null
+                          : null
+                      )}
+                    </>
+                  ) : (
+                    this.renderEnhancedListView()
+                  )}
+
+                  {/* Pagination */}
+                  {this.renderPagination()}
+                </div>
               </div>
-            ) : (
-              this.renderEnhancedListView()
-            )}
-
-            {/* Pagination */}
-            {this.renderPagination()}
+            </div>
           </div>
         );
     }

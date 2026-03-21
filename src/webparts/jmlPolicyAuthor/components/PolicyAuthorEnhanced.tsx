@@ -558,23 +558,43 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       this.setState({ loading: true, error: null });
       const policy = await this.policyService.getPolicyById(policyId);
 
+      // Fix 4: Parse KeyPoints from InternalNotes JSON, fallback to KeyPoints field
+      let parsedKeyPoints: string[] = [];
+      try {
+        if (policy.InternalNotes) {
+          parsedKeyPoints = JSON.parse(policy.InternalNotes);
+        } else if (policy.KeyPoints) {
+          parsedKeyPoints = Array.isArray(policy.KeyPoints) ? policy.KeyPoints : (policy.KeyPoints as string).split(';').filter(Boolean);
+        }
+      } catch { parsedKeyPoints = []; }
+
       if (this._isMounted) { this.setState({
         policyNumber: policy.PolicyNumber,
         policyName: policy.PolicyName,
         policyCategory: policy.PolicyCategory,
-        policySummary: policy.PolicySummary || '',
-        policyContent: policy.PolicyContent || '',
-        keyPoints: policy.KeyPoints || [],
+        policySummary: policy.PolicySummary || policy.Description || '',
+        policyContent: policy.PolicyContent || policy.HTMLContent || '',
+        keyPoints: parsedKeyPoints,
         complianceRisk: policy.ComplianceRisk || 'Medium',
-        readTimeframe: policy.ReadTimeframe || ReadTimeframe.Week1,
+        readTimeframe: policy.ReadTimeframe || 'Week 1',
         readTimeframeDays: policy.ReadTimeframeDays || 7,
         requiresAcknowledgement: policy.RequiresAcknowledgement,
         requiresQuiz: policy.RequiresQuiz || false,
         selectedQuizId: policy.LinkedQuizId || null,
         effectiveDate: (typeof policy.EffectiveDate === 'string' ? policy.EffectiveDate : policy.EffectiveDate?.toISOString() || '').split('T')[0],
         expiryDate: policy.ExpiryDate ? (typeof policy.ExpiryDate === 'string' ? policy.ExpiryDate : policy.ExpiryDate.toISOString()).split('T')[0] : '',
+        // Load audience fields (Fix 1 counterpart)
+        targetAllEmployees: policy.DistributionScope === 'AllEmployees',
+        targetDepartments: policy.Departments ? (policy.Departments as string).split(';').filter(Boolean) : [],
+        targetRoles: policy.TargetRoles ? (policy.TargetRoles as string).split(';').filter(Boolean) : [],
+        targetLocations: policy.TargetLocations ? (policy.TargetLocations as string).split(';').filter(Boolean) : [],
+        includeContractors: !!(policy as any).IncludeContractors,
+        // Load review fields (Fix 2 counterpart)
+        reviewFrequency: (policy as any).ReviewFrequency || 'Annual',
+        nextReviewDate: policy.NextReviewDate ? (typeof policy.NextReviewDate === 'string' ? policy.NextReviewDate : policy.NextReviewDate.toISOString()).split('T')[0] : '',
+        supersedesPolicy: (policy as any).SupersedesPolicy || '',
         loading: false
-      }); }
+      } as any); }
 
       // Post-publish quiz reminder: if policy is Published, requires quiz, but no quiz linked
       if (policy.PolicyStatus === 'Published' && policy.RequiresQuiz && !policy.LinkedQuizId) {
@@ -911,7 +931,15 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       requiresAcknowledgement,
       requiresQuiz,
       effectiveDate,
-      expiryDate
+      expiryDate,
+      targetAllEmployees,
+      targetDepartments,
+      targetRoles,
+      targetLocations,
+      includeContractors,
+      reviewFrequency,
+      nextReviewDate,
+      supersedesPolicy
     } = this.state;
 
     if (!policyName || !policyCategory) {
@@ -943,7 +971,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         PolicyOwnerId: currentUserId
       };
       // Persist linked quiz, source request, and source template
-      const { selectedQuizId } = this.state;
+      const { selectedQuizId, policyOwner } = this.state;
       const sourceRequestId = (this.state as any).sourceRequestId;
       const selectedTemplate = (this.state as any).selectedTemplate;
       if (selectedQuizId) { spData.LinkedQuizId = selectedQuizId; }
@@ -952,6 +980,27 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       if (effectiveDate) { spData.EffectiveDate = new Date(effectiveDate).toISOString(); }
       if (expiryDate) { spData.ExpiryDate = new Date(expiryDate).toISOString(); }
       if (keyPoints && keyPoints.length > 0) { spData.InternalNotes = JSON.stringify(keyPoints); }
+
+      // Fix 1: Save audience fields (Step 4)
+      try {
+        spData.DistributionScope = targetAllEmployees ? 'AllEmployees' : 'Targeted';
+        if (targetDepartments && targetDepartments.length > 0) { spData.Departments = targetDepartments.join(';'); }
+        if (targetRoles && targetRoles.length > 0) { spData.TargetRoles = targetRoles.join(';'); }
+        if (targetLocations && targetLocations.length > 0) { spData.TargetLocations = targetLocations.join(';'); }
+        if (includeContractors) { spData.IncludeContractors = true; }
+      } catch { /* columns may not exist yet */ }
+
+      // Fix 2: Save dates & review fields (Step 5)
+      try {
+        if (reviewFrequency) { spData.ReviewFrequency = reviewFrequency; }
+        if (nextReviewDate) { spData.NextReviewDate = new Date(nextReviewDate).toISOString(); }
+        if (supersedesPolicy) { spData.SupersedesPolicy = supersedesPolicy; }
+      } catch { /* columns may not exist yet */ }
+
+      // Fix 5: Save PolicyOwner from PeoplePicker (not hardcoded)
+      if (policyOwner && policyOwner.length > 0 && (policyOwner[0] as any)?.id) {
+        try { spData.PolicyOwnerId = (policyOwner[0] as any).id; } catch { /* fallback to current user */ }
+      }
 
       // Save linked Office document URL so PolicyDetails can render it
       const { linkedDocumentUrl: docUrl, linkedDocumentType: docType } = this.state;
@@ -976,6 +1025,9 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
           .getByTitle(PM_LISTS.POLICIES)
           .items.getById(policyId)
           .update(spData);
+
+        // Fix 3: Save reviewers on update too (not just create)
+        try { await this.saveReviewers(policyId); } catch { /* non-blocking */ }
       } else {
         // Create new policy
         const genNumber = policyNumber || `POL-${Date.now()}`;

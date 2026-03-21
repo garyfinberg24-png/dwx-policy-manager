@@ -85,7 +85,6 @@ export class PolicyPackService {
         TotalCompleted: 0,
         AverageCompletionDays: 0,
         CompletionRate: 0,
-        CreatedById: this.currentUserId,
         CreatedDate: new Date().toISOString(),
         Version: '1.0'
       };

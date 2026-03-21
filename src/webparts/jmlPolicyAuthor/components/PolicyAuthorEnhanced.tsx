@@ -406,11 +406,13 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
   }
 
   private handleBeforeUnload = (e: BeforeUnloadEvent): void => {
-    const { policyName, policyContent, saving } = this.state;
-    const hasUnsavedChanges = (policyName || policyContent) && !saving;
-    if (hasUnsavedChanges) {
+    const { policyName, policyContent, saving, lastSaved } = this.state;
+    // Warn if there's content and either never saved or content exists
+    const hasContent = !!(policyName || policyContent);
+    const neverSaved = !lastSaved;
+    if (hasContent && !saving && (neverSaved || this.state.currentStep > 0)) {
       e.preventDefault();
-      e.returnValue = '';
+      e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
     }
   };
 
@@ -1158,8 +1160,41 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
           SubmittedForReviewDate: new Date().toISOString()
         });
 
+      // Create notification for reviewers/approvers
+      try {
+        const policyName = this.state.policyName;
+        const currentUser = this.props.context.pageContext.user;
+        for (const reviewer of [...reviewers, ...approvers]) {
+          try {
+            await this.props.sp.web.lists.getByTitle('PM_Notifications').items.add({
+              Title: `Policy submitted for review: ${policyName}`,
+              NotificationType: 'ApprovalRequest',
+              Message: `${currentUser?.displayName || 'An author'} has submitted "${policyName}" for your review.`,
+              RecipientEmail: (reviewer as any).secondaryText || (reviewer as any).loginName || '',
+              PolicyId: policyId,
+              IsRead: false,
+              Priority: 'Normal',
+              CreatedDate: new Date().toISOString()
+            });
+          } catch { /* notification failure is non-blocking */ }
+        }
+      } catch { /* notifications are best-effort */ }
+
+      // Log to audit trail
+      try {
+        await this.props.sp.web.lists.getByTitle('PM_PolicyAuditLog').items.add({
+          Title: `Policy submitted for review: ${this.state.policyName}`,
+          ActionType: 'SubmittedForReview',
+          ActionCategory: 'Approval',
+          ResourceTitle: this.state.policyName,
+          PerformedBy: this.props.context.pageContext.user?.displayName || 'Unknown',
+          PerformedDate: new Date().toISOString(),
+          Department: ''
+        });
+      } catch { /* audit failure is non-blocking */ }
+
       this.setState({ saving: false });
-      await this.dialogManager.showAlert('Policy submitted for review successfully!', { variant: 'success' });
+      await this.dialogManager.showAlert('Policy submitted for review successfully! Reviewers have been notified.', { variant: 'success' });
     } catch (error) {
       console.error('Failed to submit for review:', error);
       const errMsg = error instanceof Error ? error.message : String(error);
@@ -1597,9 +1632,12 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
           )}
         </div>
 
-        {/* Center - Step indicator */}
-        <div className={styles.wizardNavCenter}>
-          Step {currentStep + 1} of {WIZARD_STEPS.length}
+        {/* Center - Step indicator with progress bar */}
+        <div className={styles.wizardNavCenter} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ fontSize: 12, color: '#64748b', whiteSpace: 'nowrap' }}>Step {currentStep + 1} of {WIZARD_STEPS.length}</span>
+          <div style={{ width: 120, height: 4, background: '#e2e8f0', borderRadius: 2, overflow: 'hidden' }}>
+            <div style={{ height: '100%', background: '#0d9488', borderRadius: 2, width: `${((currentStep + 1) / WIZARD_STEPS.length) * 100}%`, transition: 'width 0.3s' }} />
+          </div>
         </div>
 
         {/* Right side - Next/Submit buttons */}
@@ -2470,9 +2508,24 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       this.setState({ expandedReviewSections: next });
     };
 
+    const selectedQuizTitle = (this.state as any).selectedQuizTitle || '';
+    const nextReviewDate = (this.state as any).nextReviewDate || '';
+    const supersedesPolicy = (this.state as any).supersedesPolicy || '';
+
+    // Helper to render edit button that jumps to specific step
+    const editBtn = (step: number): JSX.Element => (
+      <button
+        onClick={() => this.setState({ currentStep: step })}
+        style={{ background: 'none', border: 'none', color: '#0d9488', fontSize: 12, fontWeight: 600, cursor: 'pointer', padding: '2px 8px', borderRadius: 4 }}
+        title={`Edit Step ${step + 1}`}
+      >
+        Edit
+      </button>
+    );
+
     const sections = [
       {
-        key: 'basic', icon: 'Info', title: 'Basic Information',
+        key: 'basic', icon: 'Info', title: 'Basic Information', step: 1,
         content: (
           <div className={styles.reviewGrid}>
             <div className={styles.reviewItem}><Label>Policy Number</Label><Text>{policyNumber || '(Auto-generated on save)'}</Text></div>
@@ -2483,28 +2536,28 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         )
       },
       {
-        key: 'content', icon: 'Edit', title: 'Content',
+        key: 'content', icon: 'Edit', title: 'Content', step: 2,
         content: (
           <div className={styles.reviewGrid}>
-            <div className={styles.reviewItem}><Label>Content Preview</Label><Text>{policyContent ? `${policyContent.substring(0, 200).replace(/<[^>]*>/g, '')}...` : '-'}</Text></div>
+            <div className={styles.reviewItem}><Label>Content</Label><Text>{policyContent ? `${policyContent.substring(0, 500).replace(/<[^>]*>/g, '').trim()}${policyContent.length > 500 ? '...' : ''}` : '-'}</Text></div>
             {linkedDocumentUrl && <div className={styles.reviewItem}><Label>Linked Document</Label><Text>{linkedDocumentType}: {linkedDocumentUrl}</Text></div>}
-            <div className={styles.reviewItem}><Label>Key Points</Label><Text>{keyPoints.length > 0 ? keyPoints.join(', ') : 'None specified'}</Text></div>
+            <div className={styles.reviewItem}><Label>Key Points</Label><Text>{keyPoints.length > 0 ? keyPoints.join(' • ') : 'None specified'}</Text></div>
           </div>
         )
       },
       {
-        key: 'compliance', icon: 'Tag', title: 'Metadata Profile',
+        key: 'compliance', icon: 'Tag', title: 'Compliance & Metadata', step: 3,
         content: (
           <div className={styles.reviewGrid}>
             <div className={styles.reviewItem}><Label>Risk Level</Label><Text>{complianceRisk}</Text></div>
             <div className={styles.reviewItem}><Label>Read Timeframe</Label><Text>{readTimeframe}</Text></div>
             <div className={styles.reviewItem}><Label>Acknowledgement Required</Label><Text>{requiresAcknowledgement ? 'Yes' : 'No'}</Text></div>
-            <div className={styles.reviewItem}><Label>Quiz Required</Label><Text>{requiresQuiz ? 'Yes' : 'No'}</Text></div>
+            <div className={styles.reviewItem}><Label>Quiz Required</Label><Text>{requiresQuiz ? (selectedQuizTitle ? `Yes — ${selectedQuizTitle}` : 'Yes (no quiz linked)') : 'No'}</Text></div>
           </div>
         )
       },
       {
-        key: 'audience', icon: 'People', title: 'Target Audience',
+        key: 'audience', icon: 'People', title: 'Target Audience', step: 4,
         content: (
           <div className={styles.reviewGrid}>
             <div className={styles.reviewItem}><Label>Audience</Label><Text>{targetAllEmployees ? 'All Employees' : 'Specific groups'}</Text></div>
@@ -2517,21 +2570,23 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         )
       },
       {
-        key: 'dates', icon: 'Calendar', title: 'Dates',
+        key: 'dates', icon: 'Calendar', title: 'Dates & Review', step: 5,
         content: (
           <div className={styles.reviewGrid}>
             <div className={styles.reviewItem}><Label>Effective Date</Label><Text>{effectiveDate || '-'}</Text></div>
             <div className={styles.reviewItem}><Label>Expiry Date</Label><Text>{expiryDate || 'No expiry'}</Text></div>
             <div className={styles.reviewItem}><Label>Review Frequency</Label><Text>{reviewFrequency}</Text></div>
+            <div className={styles.reviewItem}><Label>Next Review</Label><Text>{nextReviewDate || 'Not set'}</Text></div>
+            {supersedesPolicy && <div className={styles.reviewItem}><Label>Supersedes</Label><Text>{supersedesPolicy}</Text></div>}
           </div>
         )
       },
       {
-        key: 'workflow', icon: 'Flow', title: 'Workflow',
+        key: 'workflow', icon: 'Flow', title: 'Workflow', step: 6,
         content: (
           <div className={styles.reviewGrid}>
-            <div className={styles.reviewItem}><Label>Reviewers</Label><Text>{reviewers.length > 0 ? `${reviewers.length} assigned` : 'None assigned'}</Text></div>
-            <div className={styles.reviewItem}><Label>Approvers</Label><Text>{approvers.length > 0 ? `${approvers.length} assigned` : 'None assigned'}</Text></div>
+            <div className={styles.reviewItem}><Label>Reviewers</Label><Text>{reviewers.length > 0 ? reviewers.map((r: any) => r.text || r.loginName || r).join(', ') : 'None assigned'}</Text></div>
+            <div className={styles.reviewItem}><Label>Approvers</Label><Text>{approvers.length > 0 ? approvers.map((a: any) => a.text || a.loginName || a).join(', ') : 'None assigned'}</Text></div>
           </div>
         )
       }
@@ -2548,10 +2603,11 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                   className={styles.reviewSectionToggle}
                   onClick={() => toggleSection(section.key)}
                 >
-                  <Text variant="mediumPlus" className={styles.reviewSectionTitle}>
+                  <Text variant="mediumPlus" className={styles.reviewSectionTitle} style={{ flex: 1 }}>
                     <Icon iconName={section.icon} style={{ marginRight: 8 }} />
                     {section.title}
                   </Text>
+                  {editBtn((section as any).step)}
                   <Icon iconName={isExpanded ? 'ChevronUp' : 'ChevronDown'} style={IconStyles.small} />
                 </div>
                 <div className={isExpanded ? styles.reviewSectionBody : styles.reviewSectionBodyCollapsed}>
@@ -6083,6 +6139,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             value={policyName}
             onChange={(e, value) => this.setState({ policyName: value || '' })}
             placeholder="Enter policy name"
+            errorMessage={this.state.stepErrors.get(1)?.includes('Policy name is required') && !policyName.trim() ? 'Policy name is required' : undefined}
           />
 
           <Dropdown
@@ -6091,6 +6148,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             selectedKey={policyCategory}
             options={categoryOptions}
             onChange={(e, option) => this.setState({ policyCategory: option?.key as string })}
+            errorMessage={this.state.stepErrors.get(1)?.includes('Policy category is required') && !policyCategory ? 'Please select a category' : undefined}
           />
 
           <Dropdown

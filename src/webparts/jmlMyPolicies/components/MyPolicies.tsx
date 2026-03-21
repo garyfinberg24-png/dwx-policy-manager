@@ -396,20 +396,25 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
         padding: '16px 40px', position: 'relative', overflow: 'hidden', margin: '0 -24px'
       }}>
         <div style={{ position: 'absolute', right: -60, bottom: -60, width: 200, height: 200, background: 'rgba(255,255,255,0.03)', borderRadius: '50%' }} />
-        <div style={{ maxWidth: 1400, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', alignItems: 'flex-end', position: 'relative', zIndex: 1 }}>
+        <div style={{ maxWidth: 1400, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', zIndex: 1 }}>
 
-          {/* Column 1: Ring + Greeting */}
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12 }}>
-            <div style={{ position: 'relative', width: 48, height: 48, flexShrink: 0 }}>
-              <svg viewBox="0 0 40 40" width="48" height="48">
-                <circle cx="20" cy="20" r="17" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="4.5" />
-                <circle cx="20" cy="20" r="17" fill="none" stroke="#fff" strokeWidth="4.5" strokeLinecap="round"
-                  strokeDasharray={circumference} strokeDashoffset={offset} transform="rotate(-90 20 20)" />
-              </svg>
-              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: 12, fontWeight: 700, color: '#fff' }}>{complianceRate}%</div>
+          {/* Left: Ring + Greeting */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            {/* Compliance ring */}
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ position: 'relative', width: 56, height: 56 }}>
+                <svg viewBox="0 0 40 40" width="56" height="56">
+                  <circle cx="20" cy="20" r="17" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="4" />
+                  <circle cx="20" cy="20" r="17" fill="none" stroke="#fff" strokeWidth="4" strokeLinecap="round"
+                    strokeDasharray={circumference} strokeDashoffset={offset} transform="rotate(-90 20 20)" />
+                </svg>
+                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: 14, fontWeight: 700, color: '#fff' }}>{complianceRate}%</div>
+              </div>
+              <div style={{ fontSize: 8, textTransform: 'uppercase', letterSpacing: 0.5, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>Compliance</div>
             </div>
+            {/* Greeting */}
             <div>
-              <h1 style={{ fontSize: 20, fontWeight: 700, color: '#fff', marginBottom: 1 }}>{greeting}, {userName}</h1>
+              <h1 style={{ fontSize: 20, fontWeight: 700, color: '#fff', marginBottom: 2 }}>{greeting}, {userName}</h1>
               <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)' }}>
                 {kpi.pending > 0 || kpi.overdue > 0
                   ? `${kpi.pending} pending${kpi.overdue > 0 ? `, ${kpi.overdue} overdue` : ''}`
@@ -418,29 +423,8 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
             </div>
           </div>
 
-          {/* Column 2: Search — centred in middle third */}
-          <div style={{ display: 'flex', justifyContent: 'center' }}>
-            <div style={{ width: '100%', maxWidth: 480, position: 'relative' }}>
-              <svg viewBox="0 0 24 24" fill="none" width="16" height="16" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.6)' }}>
-                <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
-                <path d="M21 21l-4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-              <input
-                type="text"
-                value={(this.state as any).searchText || ''}
-                onChange={(e) => this.setState({ searchText: (e.target as HTMLInputElement).value } as any)}
-                placeholder="Search my policies..."
-                style={{
-                  width: '100%', padding: '10px 18px 10px 44px', borderRadius: 8,
-                  border: '2px solid rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.15)',
-                  fontSize: 13, color: '#fff', outline: 'none', fontFamily: 'inherit',
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Column 3: KPI mini cards — right-aligned */}
-          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+          {/* Right: KPI mini cards */}
+          <div style={{ display: 'flex', gap: 10 }}>
             {[
               { label: 'Assigned', value: kpi.assigned, color: '#fff' },
               { label: 'Done', value: kpi.acknowledged, color: '#fff' },
@@ -1144,7 +1128,7 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
               {/* Main content area */}
               <div style={{ display: 'flex', width: '100%', flex: 1 }}>
                 <div style={{ flex: 1, overflowY: 'auto', padding: '24px 40px' }}>
-                  <div style={{ maxWidth: '960px' }}>
+                  <div style={{ maxWidth: '1400px' }}>
                     {/* Policy List */}
                     {this.renderPolicyList(filteredPolicies)}
                   </div>

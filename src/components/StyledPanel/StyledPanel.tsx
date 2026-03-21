@@ -36,7 +36,7 @@ const PANEL_STYLES: Partial<IPanelStyles> = {
   },
   header: {
     background: 'linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%)',
-    padding: '16px 24px 12px 24px',
+    padding: '0 24px 12px 24px',
     marginBottom: 0,
     borderBottom: '1px solid #99f6e4',
   },
@@ -44,6 +44,7 @@ const PANEL_STYLES: Partial<IPanelStyles> = {
     color: '#0f766e',
     fontWeight: 700,
     fontSize: '18px',
+    lineHeight: '24px',
   },
   closeButton: {
     borderRadius: '4px',

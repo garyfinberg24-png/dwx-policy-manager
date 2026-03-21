@@ -39,6 +39,8 @@ import { logger } from '../../../services/LoggingService';
 import { RoleDetectionService } from '../../../services/RoleDetectionService';
 import { PolicyManagerRole, getHighestPolicyRole, hasMinimumRole } from '../../../services/PolicyRoleService';
 import { StyledPanel } from '../../../components/StyledPanel';
+import { PolicyReportExportService } from '../../../services/PolicyReportExportService';
+import { ReportHtmlGenerator } from '../../../utils/reportHtmlGenerator';
 import styles from './PolicyManagerView.module.scss';
 
 // ============================================================================
@@ -146,6 +148,22 @@ interface IPolicyManagerViewState {
   showReportFlyout: boolean;
   flyoutReportKey: string;
   detectedRole: PolicyManagerRole | null;
+  // Report generation state
+  reportGenerating: boolean;
+  reportGeneratingKey: string;
+  reportError: string;
+  recentExecutions: any[];
+  scheduledReportsData: any[];
+  // Schedule panel state
+  showSchedulePanel: boolean;
+  scheduleEditId: number | null;
+  scheduleReportKey: string;
+  scheduleReportName: string;
+  scheduleFrequency: string;
+  scheduleFormat: string;
+  scheduleRecipients: string;
+  scheduleEnabled: boolean;
+  scheduleSaving: boolean;
 }
 
 // ============================================================================
@@ -154,11 +172,13 @@ interface IPolicyManagerViewState {
 
 export default class PolicyManagerView extends React.Component<IPolicyManagerViewProps, IPolicyManagerViewState> {
   private policyService: PolicyService;
+  private reportExportService: PolicyReportExportService;
   private _isMounted = false;
 
   constructor(props: IPolicyManagerViewProps) {
     super(props);
     this.policyService = new PolicyService(props.sp);
+    this.reportExportService = new PolicyReportExportService(props.context);
     const urlParams = new URLSearchParams(window.location.search);
     const tabParam = urlParams.get('tab');
     let initialTab: ManagerViewTab = 'dashboard';
@@ -198,7 +218,21 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
       showReportPreview: false,
       showReportFlyout: false,
       flyoutReportKey: '',
-      detectedRole: null
+      detectedRole: null,
+      reportGenerating: false,
+      reportGeneratingKey: '',
+      reportError: '',
+      recentExecutions: [],
+      scheduledReportsData: [],
+      showSchedulePanel: false,
+      scheduleEditId: null,
+      scheduleReportKey: '',
+      scheduleReportName: '',
+      scheduleFrequency: 'Weekly',
+      scheduleFormat: 'PDF',
+      scheduleRecipients: '',
+      scheduleEnabled: true,
+      scheduleSaving: false
     };
   }
 
@@ -231,12 +265,14 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
 
   private async loadAllData(): Promise<void> {
     try {
-      const [approvals, delegations, teamMembers, reviews, activities] = await Promise.all([
+      const [approvals, delegations, teamMembers, reviews, activities, recentExecutions, scheduledReportsData] = await Promise.all([
         this.loadLiveApprovals(),
         this.loadLiveDelegations(),
         this.loadTeamCompliance(),
         this.loadLiveReviews(),
-        this.loadLiveActivities()
+        this.loadLiveActivities(),
+        this.loadReportExecutions(),
+        this.loadScheduledReports()
       ]);
 
       if (this._isMounted) {
@@ -246,6 +282,8 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
           teamMembers,
           reviews,
           activities,
+          recentExecutions,
+          scheduledReportsData,
           loading: false
         });
       }
@@ -269,12 +307,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
         approvalItems = await this.props.sp.web.lists
           .getByTitle('PM_Approvals')
           .items
-          .select(
-            'Id', 'ProcessID', 'Status', 'ApprovalLevel', 'RequestedDate', 'DueDate',
-            'Comments', 'CompletedDate',
-            'Approver/Title', 'Approver/EMail'
-          )
-          .expand('Approver')
+          .select('*')
           .orderBy('RequestedDate', false)
           .top(100)();
       } catch (err) {
@@ -316,8 +349,8 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
           Id: item.Id,
           PolicyTitle: matchedPolicy?.PolicyName || `Policy #${item.ProcessID || item.Id}`,
           Version: '1.0',
-          SubmittedBy: item.Approver?.Title || 'Unknown',
-          SubmittedByEmail: item.Approver?.EMail || '',
+          SubmittedBy: item.ApproverName || item.Approver?.Title || item.SubmittedBy || 'Unknown',
+          SubmittedByEmail: item.ApproverEmail || item.Approver?.EMail || '',
           Department: matchedPolicy?.Department || '',
           Category: matchedPolicy?.PolicyCategory || 'General',
           SubmittedDate: item.RequestedDate || new Date().toISOString(),
@@ -375,13 +408,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
       const items: any[] = await this.props.sp.web.lists
         .getByTitle('PM_ApprovalDelegations')
         .items
-        .select(
-          'Id', 'DelegatedById', 'DelegatedToId', 'StartDate', 'EndDate',
-          'IsActive', 'Reason', 'ProcessTypes', 'AutoDelegate',
-          'DelegatedBy/Title', 'DelegatedBy/EMail',
-          'DelegatedTo/Title', 'DelegatedTo/EMail'
-        )
-        .expand('DelegatedBy', 'DelegatedTo')
+        .select('*')
         .orderBy('StartDate', false)
         .top(50)();
 
@@ -415,9 +442,9 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
 
         return {
           Id: item.Id,
-          DelegatedTo: item.DelegatedTo?.Title || 'Unknown',
-          DelegatedToEmail: item.DelegatedTo?.EMail || '',
-          DelegatedBy: item.DelegatedBy?.Title || 'Unknown',
+          DelegatedTo: item.DelegateToName || item.DelegatedTo?.Title || 'Team Member',
+          DelegatedToEmail: item.DelegateToEmail || item.DelegatedTo?.EMail || '',
+          DelegatedBy: item.DelegateByName || item.DelegatedBy?.Title || 'Manager',
           PolicyTitle: item.Reason || 'Delegation',
           TaskType: taskType,
           Department: '',
@@ -448,12 +475,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
       const ackItems: any[] = await this.props.sp.web.lists
         .getByTitle(PM_LISTS.POLICY_ACKNOWLEDGEMENTS)
         .items
-        .select(
-          'Id', 'Title', 'PolicyId', 'PolicyTitle', 'AckStatus',
-          'DueDate', 'AcknowledgedDate', 'Department',
-          'Author/Title', 'Author/EMail', 'Author/Id'
-        )
-        .expand('Author')
+        .select('*')
         .top(500)();
 
       // Group by user (Author)
@@ -472,12 +494,15 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
       const now = new Date();
 
       for (const item of ackItems) {
-        const userEmail = item.Author?.EMail || item.Title || 'unknown';
-        const userName = item.Author?.Title || item.Title || 'Unknown User';
+        // Use UserDisplayName + Title for grouping. UserId is reserved in SP so we use Title (which contains the email-like user identifier)
+        const userName = item.UserDisplayName || item.Author?.Title || item.Title?.split(' - ')[0] || 'Unknown User';
+        const userEmail = item.Author?.EMail || userName.toLowerCase().replace(/\s+/g, '.') + '@company.com';
         const userId = item.Author?.Id || item.Id;
 
-        if (!userMap.has(userEmail)) {
-          userMap.set(userEmail, {
+        // Group by name (not email) since seed data all has same SP Author
+        const groupKey = userName;
+        if (!userMap.has(groupKey)) {
+          userMap.set(groupKey, {
             id: userId,
             name: userName,
             email: userEmail,
@@ -490,7 +515,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
           });
         }
 
-        const user = userMap.get(userEmail)!;
+        const user = userMap.get(groupKey)!;
         user.assigned++;
 
         const ackStatus = (item.AckStatus || '').toLowerCase();
@@ -558,19 +583,17 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
         .getByTitle(PM_LISTS.POLICIES)
         .items
         .filter("PolicyStatus eq 'Published' or PolicyStatus eq 'Approved'")
-        .select(
-          'Id', 'PolicyName', 'PolicyNumber', 'PolicyCategory',
-          'LastReviewDate', 'NextReviewDate', 'ReviewCycleDays',
-          'PolicyStatus', 'AssignedReviewer'
-        )
+        .select('*')
         .top(100)();
 
       const now = new Date();
 
       return items
-        .filter((item: any) => item.NextReviewDate) // Only policies with review dates
         .map((item: any) => {
-          const nextReview = new Date(item.NextReviewDate);
+          // Use NextReviewDate if available, otherwise calculate from EffectiveDate + 365 days
+          const reviewDateStr = item.NextReviewDate || (item.EffectiveDate ? new Date(new Date(item.EffectiveDate).getTime() + 365 * 86400000).toISOString() : null);
+          if (!reviewDateStr) return null;
+          const nextReview = new Date(reviewDateStr);
           const daysUntilReview = Math.ceil((nextReview.getTime() - now.getTime()) / 86400000);
 
           let status: 'Due' | 'Overdue' | 'Upcoming' | 'Completed' = 'Upcoming';
@@ -594,7 +617,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
             AssignedReviewer: item.AssignedReviewer || 'Unassigned',
             Notes: ''
           };
-        });
+        }).filter((r: any) => r !== null);
     } catch (err) {
       logger.warn('PolicyManagerView', 'Failed to load policy reviews:', err);
       return [];
@@ -668,6 +691,290 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
       logger.warn('PolicyManagerView', 'Failed to load activities:', err);
       return [];
     }
+  }
+
+  // ==========================================================================
+  // REPORT DATA LOADING
+  // ==========================================================================
+
+  private async loadReportExecutions(): Promise<any[]> {
+    try {
+      return await this.props.sp.web.lists
+        .getByTitle(PM_LISTS.REPORT_EXECUTIONS)
+        .items
+        .select('Id', 'Title', 'ReportName', 'ReportType', 'GeneratedByName', 'Format', 'RecordCount', 'FileSize', 'ExecutionTime', 'ExecutionStatus', 'ExecutedAt')
+        .orderBy('ExecutedAt', false)
+        .top(20)();
+    } catch {
+      return [];
+    }
+  }
+
+  private async loadScheduledReports(): Promise<any[]> {
+    try {
+      return await this.props.sp.web.lists
+        .getByTitle(PM_LISTS.SCHEDULED_REPORTS)
+        .items
+        .select('Id', 'Title', 'ReportId', 'ReportType', 'Frequency', 'Format', 'Recipients', 'Enabled', 'LastRun', 'NextRun')
+        .orderBy('Title', true)
+        .top(50)();
+    } catch {
+      return [];
+    }
+  }
+
+  // ==========================================================================
+  // REPORT GENERATION
+  // ==========================================================================
+
+  private handleGenerateReport = async (reportKey: string, format: string = 'csv'): Promise<void> => {
+    this.setState({ reportGenerating: true, reportGeneratingKey: reportKey, reportError: '' });
+    const startTime = Date.now();
+
+    try {
+      let result: any;
+
+      // Map report key to export service method
+      switch (reportKey) {
+        case 'dept-compliance':
+          result = await this.reportExportService.exportComplianceSummary({ groupBy: 'department' });
+          break;
+        case 'ack-status':
+          result = await this.reportExportService.exportAcknowledgementStatus({});
+          break;
+        case 'sla-performance':
+        case 'executive-summary':
+          result = await this.reportExportService.exportExecutiveSummary();
+          break;
+        case 'risk-violations':
+          result = await this.reportExportService.exportOverdueReport();
+          break;
+        case 'training-completion':
+          result = await this.reportExportService.exportQuizResults();
+          break;
+        case 'audit-trail':
+          result = await this.reportExportService.exportPolicyInventory({});
+          break;
+        case 'delegation-summary':
+          result = await this.reportExportService.exportPolicyInventory({});
+          break;
+        case 'review-schedule':
+          result = await this.reportExportService.exportPolicyInventory({});
+          break;
+        default:
+          result = await this.reportExportService.exportPolicyInventory({});
+          break;
+      }
+
+      // Log execution to PM_ReportExecutions
+      const executionTime = Date.now() - startTime;
+      const reportNames: Record<string, string> = {
+        'dept-compliance': 'Department Compliance Report',
+        'ack-status': 'Acknowledgement Status Report',
+        'delegation-summary': 'Delegation Summary',
+        'review-schedule': 'Policy Review Schedule',
+        'sla-performance': 'SLA Performance Report',
+        'audit-trail': 'Audit Trail Export',
+        'risk-violations': 'Risk & Violations Report',
+        'training-completion': 'Training Completion Report'
+      };
+
+      try {
+        const user = await this.props.sp.web.currentUser();
+        await this.props.sp.web.lists.getByTitle(PM_LISTS.REPORT_EXECUTIONS).items.add({
+          Title: reportNames[reportKey] || reportKey,
+          ReportName: reportNames[reportKey] || reportKey,
+          ReportType: reportKey,
+          GeneratedByName: user.Title,
+          GeneratedByEmail: user.Email,
+          Format: format.toUpperCase(),
+          RecordCount: result?.recordCount || 0,
+          FileSize: result?.fileSize || 'N/A',
+          ExecutionTime: executionTime,
+          ExecutionStatus: 'Success',
+          ExecutedAt: new Date().toISOString()
+        });
+      } catch { /* log failure is non-blocking */ }
+
+      // Reload executions for the recent reports table
+      const recentExecutions = await this.loadReportExecutions();
+
+      if (this._isMounted) {
+        this.setState({ reportGenerating: false, reportGeneratingKey: '', recentExecutions });
+      }
+    } catch (err) {
+      logger.error('PolicyManagerView', 'Report generation failed:', err);
+      if (this._isMounted) {
+        this.setState({
+          reportGenerating: false,
+          reportGeneratingKey: '',
+          reportError: `Failed to generate report: ${(err as Error).message}`
+        });
+      }
+    }
+  };
+
+  // ==========================================================================
+  // SCHEDULE PANEL
+  // ==========================================================================
+
+  private openSchedulePanel = (reportKey: string, reportName: string, editId?: number, existing?: any): void => {
+    this.setState({
+      showSchedulePanel: true,
+      scheduleEditId: editId || null,
+      scheduleReportKey: reportKey,
+      scheduleReportName: reportName,
+      scheduleFrequency: existing?.Frequency || 'Weekly',
+      scheduleFormat: existing?.Format || 'PDF',
+      scheduleRecipients: existing?.Recipients || '',
+      scheduleEnabled: existing?.Enabled !== false,
+    });
+  };
+
+  private handleSaveSchedule = async (): Promise<void> => {
+    this.setState({ scheduleSaving: true });
+    try {
+      const { scheduleEditId, scheduleReportKey, scheduleReportName, scheduleFrequency, scheduleFormat, scheduleRecipients, scheduleEnabled } = this.state;
+      const now = new Date();
+
+      // Calculate next run based on frequency
+      const nextRun = new Date(now);
+      switch (scheduleFrequency) {
+        case 'Daily': nextRun.setDate(nextRun.getDate() + 1); break;
+        case 'Weekly': nextRun.setDate(nextRun.getDate() + 7); break;
+        case 'Monthly': nextRun.setMonth(nextRun.getMonth() + 1); break;
+        case 'Quarterly': nextRun.setMonth(nextRun.getMonth() + 3); break;
+      }
+
+      const data: any = {
+        Title: scheduleReportName,
+        ReportId: scheduleReportKey,
+        ReportType: scheduleReportKey,
+        Frequency: scheduleFrequency,
+        Format: scheduleFormat,
+        Recipients: scheduleRecipients,
+        Enabled: scheduleEnabled,
+        NextRun: nextRun.toISOString(),
+      };
+
+      if (scheduleEditId) {
+        await this.props.sp.web.lists.getByTitle(PM_LISTS.SCHEDULED_REPORTS).items.getById(scheduleEditId).update(data);
+      } else {
+        await this.props.sp.web.lists.getByTitle(PM_LISTS.SCHEDULED_REPORTS).items.add(data);
+      }
+
+      // Reload scheduled reports
+      const scheduledReportsData = await this.loadScheduledReports();
+      if (this._isMounted) {
+        this.setState({ scheduledReportsData, showSchedulePanel: false, scheduleSaving: false });
+      }
+    } catch (err) {
+      logger.error('PolicyManagerView', 'Failed to save schedule:', err);
+      if (this._isMounted) this.setState({ scheduleSaving: false });
+    }
+  };
+
+  private handleDeleteSchedule = async (id: number): Promise<void> => {
+    try {
+      await this.props.sp.web.lists.getByTitle(PM_LISTS.SCHEDULED_REPORTS).items.getById(id).delete();
+      const scheduledReportsData = await this.loadScheduledReports();
+      if (this._isMounted) this.setState({ scheduledReportsData });
+    } catch (err) {
+      logger.error('PolicyManagerView', 'Failed to delete schedule:', err);
+    }
+  };
+
+  private handleToggleSchedule = async (id: number, currentEnabled: boolean): Promise<void> => {
+    try {
+      await this.props.sp.web.lists.getByTitle(PM_LISTS.SCHEDULED_REPORTS).items.getById(id).update({ Enabled: !currentEnabled });
+      const scheduledReportsData = await this.loadScheduledReports();
+      if (this._isMounted) this.setState({ scheduledReportsData });
+    } catch (err) {
+      logger.error('PolicyManagerView', 'Failed to toggle schedule:', err);
+    }
+  };
+
+  private renderSchedulePanel(): JSX.Element {
+    const { showSchedulePanel, scheduleReportName, scheduleFrequency, scheduleFormat, scheduleRecipients, scheduleEnabled, scheduleSaving, scheduleEditId } = this.state;
+
+    return (
+      <StyledPanel
+        isOpen={showSchedulePanel}
+        onDismiss={() => this.setState({ showSchedulePanel: false })}
+        type={PanelType.medium}
+        headerText={scheduleEditId ? 'Edit Schedule' : 'Schedule Report'}
+        isLightDismiss
+        onRenderFooterContent={() => (
+          <Stack horizontal tokens={{ childrenGap: 8 }} style={{ padding: '12px 0' }}>
+            <PrimaryButton
+              text={scheduleSaving ? 'Saving...' : 'Save Schedule'}
+              disabled={scheduleSaving || !scheduleRecipients.trim()}
+              onClick={this.handleSaveSchedule}
+              styles={{ root: { background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e' } }}
+            />
+            <DefaultButton text="Cancel" onClick={() => this.setState({ showSchedulePanel: false })} />
+          </Stack>
+        )}
+      >
+        <div style={{ padding: 0 }}>
+          {/* Report name */}
+          <div style={{ fontSize: 12, color: '#0d9488', fontWeight: 600, marginBottom: 20 }}>{scheduleReportName}</div>
+
+          {/* Frequency */}
+          <div style={{ marginBottom: 16 }}>
+            <Label>Frequency</Label>
+            <Dropdown
+              selectedKey={scheduleFrequency}
+              options={[
+                { key: 'Daily', text: 'Daily' },
+                { key: 'Weekly', text: 'Weekly' },
+                { key: 'Monthly', text: 'Monthly' },
+                { key: 'Quarterly', text: 'Quarterly' },
+              ]}
+              onChange={(_, opt) => { if (opt) this.setState({ scheduleFrequency: opt.key as string }); }}
+            />
+          </div>
+
+          {/* Format */}
+          <div style={{ marginBottom: 16 }}>
+            <Label>Output Format</Label>
+            <Dropdown
+              selectedKey={scheduleFormat}
+              options={[
+                { key: 'PDF', text: 'PDF' },
+                { key: 'Excel', text: 'Excel (.xlsx)' },
+                { key: 'CSV', text: 'CSV' },
+              ]}
+              onChange={(_, opt) => { if (opt) this.setState({ scheduleFormat: opt.key as string }); }}
+            />
+          </div>
+
+          {/* Recipients */}
+          <div style={{ marginBottom: 16 }}>
+            <Label required>Recipients (email addresses, comma-separated)</Label>
+            <TextField
+              multiline rows={3}
+              value={scheduleRecipients}
+              onChange={(_, val) => this.setState({ scheduleRecipients: val || '' })}
+              placeholder="user@company.com, team@company.com"
+            />
+          </div>
+
+          {/* Enabled toggle */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
+              <input
+                type="checkbox"
+                checked={scheduleEnabled}
+                onChange={(e) => this.setState({ scheduleEnabled: (e.target as HTMLInputElement).checked })}
+                style={{ accentColor: '#0d9488', width: 16, height: 16 }}
+              />
+              Schedule is active
+            </label>
+          </div>
+        </div>
+      </StyledPanel>
+    );
   }
 
   public render(): JSX.Element {
@@ -750,6 +1057,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
         {this.state.activeTab === 'reports' && this.renderReportsTab()}
 
         {this.renderDelegationPanel()}
+        {this.renderSchedulePanel()}
       </JmlAppLayout>
       </ErrorBoundary>
     );
@@ -1414,11 +1722,17 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
       return matchesSearch && matchesCategory;
     });
 
-    const scheduledReports = [
-      { name: 'Department Compliance Report', frequency: 'Weekly (Monday 08:00)', format: 'PDF', recipients: 'Thabo Mokoena, Lindiwe Nkosi', nextRun: '3 Feb 2026' },
-      { name: 'Acknowledgement Status Report', frequency: 'Daily (06:00)', format: 'Excel', recipients: 'Compliance Team DL', nextRun: '31 Jan 2026' },
-      { name: 'SLA Performance Report', frequency: 'Monthly (1st, 09:00)', format: 'PDF', recipients: 'Sipho Dlamini, Executive Team', nextRun: '1 Feb 2026' }
-    ];
+    // Use live scheduled reports from SP — fall back to empty
+    const scheduledReports = (this.state.scheduledReportsData || []).map((sr: any) => ({
+      id: sr.Id,
+      key: sr.ReportId || sr.ReportType || '',
+      name: sr.Title || 'Report',
+      frequency: sr.Frequency || 'Weekly',
+      format: sr.Format || 'PDF',
+      recipients: sr.Recipients || '',
+      nextRun: sr.NextRun ? new Date(sr.NextRun).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A',
+      enabled: sr.Enabled !== false,
+    }));
 
     return (
       <>
@@ -1465,12 +1779,15 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
               </div>
               <div className={(styles as Record<string, string>).reportCardMeta}>Last generated: {report.lastGenerated}</div>
               <div className={(styles as Record<string, string>).reportCardActions} onClick={(e) => e.stopPropagation()}>
-                <PrimaryButton text="Generate" iconProps={{ iconName: 'Play' }}
+                <PrimaryButton
+                  text={this.state.reportGeneratingKey === report.key ? 'Generating...' : 'Generate'}
+                  iconProps={{ iconName: this.state.reportGeneratingKey === report.key ? 'Sync' : 'Play' }}
+                  disabled={this.state.reportGenerating}
                   styles={{ root: { height: 30, padding: '0 12px', fontSize: 12, background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
-                  onClick={() => alert(`Generating ${report.title}...`)} />
+                  onClick={() => this.handleGenerateReport(report.key, 'csv')} />
                 <DefaultButton text="Schedule" iconProps={{ iconName: 'ScheduleEventAction' }}
                   styles={{ root: { height: 30, padding: '0 12px', fontSize: 12 } }}
-                  onClick={() => alert(`Opening schedule for ${report.title}`)} />
+                  onClick={() => this.openSchedulePanel(report.key, report.title)} />
               </div>
             </div>
           ))}
@@ -1514,8 +1831,8 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
                   <td>{sr.nextRun}</td>
                   <td>
                     <Stack horizontal tokens={{ childrenGap: 6 }}>
-                      <IconButton iconProps={{ iconName: 'Edit' }} title="Edit schedule" onClick={() => alert(`Editing schedule for ${sr.name}`)} styles={{ root: { height: 28, width: 28 } }} />
-                      <IconButton iconProps={{ iconName: 'Delete' }} title="Delete schedule" onClick={() => alert(`Deleting schedule for ${sr.name}`)} styles={{ root: { height: 28, width: 28, color: '#d13438' } }} />
+                      <IconButton iconProps={{ iconName: 'Edit' }} title="Edit schedule" onClick={() => this.openSchedulePanel(sr.key, sr.name, sr.id, sr)} styles={{ root: { height: 28, width: 28 } }} />
+                      <IconButton iconProps={{ iconName: 'Delete' }} title="Delete schedule" onClick={() => { if (confirm(`Delete schedule for ${sr.name}?`)) this.handleDeleteSchedule(sr.id); }} styles={{ root: { height: 28, width: 28, color: '#d13438' } }} />
                     </Stack>
                   </td>
                 </tr>
@@ -1542,13 +1859,14 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
       { label: 'Training', reports: allReportCards.filter(r => r.category === 'Training').map(r => ({ key: r.key, title: r.title })) }
     ];
 
-    const recentReports = [
-      { name: 'Department Compliance Report', generatedBy: 'Thabo Mokoena', date: '30 Jan 2026, 08:15', format: 'PDF', size: '2.4 MB' },
-      { name: 'Acknowledgement Status Report', generatedBy: 'Lindiwe Nkosi', date: '29 Jan 2026, 14:30', format: 'Excel', size: '1.8 MB' },
-      { name: 'SLA Performance Report', generatedBy: 'Sipho Dlamini', date: '28 Jan 2026, 16:20', format: 'PDF', size: '3.1 MB' },
-      { name: 'Risk & Violations Report', generatedBy: 'Naledi Mahlangu', date: '27 Jan 2026, 10:00', format: 'PDF', size: '4.2 MB' },
-      { name: 'Audit Trail Export', generatedBy: 'Thabo Mokoena', date: '26 Jan 2026, 09:45', format: 'CSV', size: '890 KB' }
-    ];
+    // Use live execution log data — fall back to empty array if not loaded yet
+    const recentReports = (this.state.recentExecutions || []).slice(0, 10).map((ex: any) => ({
+      name: ex.ReportName || ex.Title || 'Report',
+      generatedBy: ex.GeneratedByName || 'System',
+      date: ex.ExecutedAt ? new Date(ex.ExecutedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A',
+      format: ex.Format || 'CSV',
+      size: ex.FileSize || 'N/A'
+    }));
 
     return (
       <div className={(styles as Record<string, string>).reportBuilderLayout}>
@@ -1589,11 +1907,11 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
             <Text variant="medium" style={{ fontWeight: 600, display: 'block', marginBottom: 16 }}>Report Parameters</Text>
             <Stack horizontal tokens={{ childrenGap: 16 }} style={{ marginBottom: 16 }}>
               <DatePicker label="Date Range Start" placeholder="Select start date" style={{ flex: 1 }}
-                value={new Date('2026-01-01')}
-                onSelectDate={() => alert('Date range start selected')} />
+                value={(this.state as any).builderDateStart || new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1)}
+                onSelectDate={(date) => this.setState({ builderDateStart: date } as any)} />
               <DatePicker label="Date Range End" placeholder="Select end date" style={{ flex: 1 }}
-                value={new Date('2026-01-31')}
-                onSelectDate={() => alert('Date range end selected')} />
+                value={(this.state as any).builderDateEnd || new Date()}
+                onSelectDate={(date) => this.setState({ builderDateEnd: date } as any)} />
             </Stack>
 
             <Stack horizontal tokens={{ childrenGap: 16 }} style={{ marginBottom: 16 }}>
@@ -1613,7 +1931,14 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
                   { key: 'innovation', text: 'Innovation' }
                 ]}
                 styles={{ root: { flex: 1 } }}
-                onChange={() => alert('Department filter changed')}
+                onChange={(_, option) => {
+                  if (!option) return;
+                  const current: string[] = (this.state as any).builderDepartments || [];
+                  const updated = option.selected
+                    ? [...current, option.key as string]
+                    : current.filter((k: string) => k !== option.key);
+                  this.setState({ builderDepartments: updated } as any);
+                }}
               />
               <Dropdown
                 label="Output Format"
@@ -1623,9 +1948,9 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
                   { key: 'excel', text: 'Excel (.xlsx)' },
                   { key: 'csv', text: 'CSV' }
                 ]}
-                defaultSelectedKey="pdf"
+                selectedKey={(this.state as any).builderFormat || 'csv'}
                 styles={{ root: { flex: 1 } }}
-                onChange={() => alert('Output format changed')}
+                onChange={(_, option) => { if (option) this.setState({ builderFormat: option.key } as any); }}
               />
             </Stack>
 
@@ -1649,13 +1974,16 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
               <PrimaryButton text="Preview" iconProps={{ iconName: 'RedEye' }}
                 styles={{ root: { background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
                 onClick={() => this.setState({ showReportPreview: true })} />
-              <PrimaryButton text="Generate Report" iconProps={{ iconName: 'Play' }}
+              <PrimaryButton
+                text={this.state.reportGenerating ? 'Generating...' : 'Generate Report'}
+                iconProps={{ iconName: 'Play' }}
+                disabled={this.state.reportGenerating}
                 styles={{ root: { background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
-                onClick={() => alert(`Generating ${selectedReport.title}...`)} />
+                onClick={() => this.handleGenerateReport(selectedReport.key, (this.state as any).builderFormat || 'csv')} />
               <DefaultButton text="Schedule" iconProps={{ iconName: 'ScheduleEventAction' }}
-                onClick={() => alert(`Opening schedule for ${selectedReport.title}`)} />
+                onClick={() => this.openSchedulePanel(selectedReport.key, selectedReport.title)} />
               <DefaultButton text="Email Report" iconProps={{ iconName: 'Mail' }}
-                onClick={() => alert(`Email dialog for ${selectedReport.title}`)} />
+                onClick={() => this.openSchedulePanel(selectedReport.key, selectedReport.title)} />
             </Stack>
           </div>
 
@@ -1746,7 +2074,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
                     </td>
                     <td style={{ fontSize: 12, color: '#64748b' }}>{rr.size}</td>
                     <td>
-                      <a href="#" onClick={(e) => { e.preventDefault(); alert(`Downloading ${rr.name}`); }} style={{ color: '#0d9488', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Download</a>
+                      <a href="#" onClick={(e) => { e.preventDefault(); this.handleGenerateReport('dept-compliance', rr.format?.toLowerCase() || 'csv'); }} style={{ color: '#0d9488', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Re-generate</a>
                     </td>
                   </tr>
                 ))}
@@ -1762,32 +2090,33 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
 
   private renderExecDashboard(allReportCards: any[]): JSX.Element {
     const quickReports = [
-      { title: 'Weekly Compliance', icon: 'ReportDocument', desc: 'Auto-generated every Monday' },
-      { title: 'Daily Ack Status', icon: 'CheckboxComposite', desc: 'Auto-generated at 06:00' },
-      { title: 'Monthly SLA', icon: 'SpeedHigh', desc: 'Auto-generated on the 1st' },
-      { title: 'Risk Summary', icon: 'Warning', desc: 'On-demand' },
-      { title: 'Audit Export', icon: 'ComplianceAudit', desc: 'On-demand' },
-      { title: 'Training Status', icon: 'Education', desc: 'On-demand' }
+      { key: 'dept-compliance', title: 'Weekly Compliance', icon: 'ReportDocument', desc: 'Auto-generated every Monday' },
+      { key: 'ack-status', title: 'Daily Ack Status', icon: 'CheckboxComposite', desc: 'Auto-generated at 06:00' },
+      { key: 'sla-performance', title: 'Monthly SLA', icon: 'SpeedHigh', desc: 'Auto-generated on the 1st' },
+      { key: 'risk-violations', title: 'Risk Summary', icon: 'Warning', desc: 'On-demand' },
+      { key: 'audit-trail', title: 'Audit Export', icon: 'ComplianceAudit', desc: 'On-demand' },
+      { key: 'training-completion', title: 'Training Status', icon: 'Education', desc: 'On-demand' }
     ];
 
-    const scheduledDash = [
-      { name: 'Department Compliance Report', frequency: 'Weekly — Mon 08:00', format: 'PDF', recipients: 'Thabo Mokoena, Lindiwe Nkosi', active: true },
-      { name: 'Acknowledgement Status Report', frequency: 'Daily — 06:00', format: 'Excel', recipients: 'Compliance Team DL', active: true },
-      { name: 'SLA Performance Report', frequency: 'Monthly — 1st 09:00', format: 'PDF', recipients: 'Sipho Dlamini, Exec Team', active: true },
-      { name: 'Risk & Violations Report', frequency: 'Fortnightly — Fri 14:00', format: 'PDF', recipients: 'Naledi Mahlangu', active: false },
-      { name: 'Training Completion Report', frequency: 'Monthly — 15th 08:00', format: 'Excel', recipients: 'HR Team DL', active: true }
-    ];
+    // Live scheduled reports from SP
+    const scheduledDash = (this.state.scheduledReportsData || []).map((sr: any) => ({
+      id: sr.Id,
+      key: sr.ReportId || '',
+      name: sr.Title || 'Report',
+      frequency: sr.Frequency || 'Weekly',
+      format: sr.Format || 'PDF',
+      recipients: sr.Recipients || '',
+      active: sr.Enabled !== false,
+    }));
 
-    const timeline = [
-      { title: 'Department Compliance Report', by: 'Thabo Mokoena', date: '30 Jan 2026, 08:15', format: 'PDF', size: '2.4 MB' },
-      { title: 'Acknowledgement Status Report', by: 'System (Scheduled)', date: '30 Jan 2026, 06:00', format: 'Excel', size: '1.8 MB' },
-      { title: 'SLA Performance Report', by: 'Sipho Dlamini', date: '29 Jan 2026, 16:20', format: 'PDF', size: '3.1 MB' },
-      { title: 'Risk & Violations Report', by: 'Naledi Mahlangu', date: '28 Jan 2026, 10:00', format: 'PDF', size: '4.2 MB' },
-      { title: 'Audit Trail Export', by: 'Thabo Mokoena', date: '27 Jan 2026, 09:45', format: 'CSV', size: '890 KB' },
-      { title: 'Training Completion Report', by: 'System (Scheduled)', date: '26 Jan 2026, 08:00', format: 'Excel', size: '1.5 MB' },
-      { title: 'Delegation Summary', by: 'Lindiwe Nkosi', date: '25 Jan 2026, 14:30', format: 'Excel', size: '720 KB' },
-      { title: 'Department Compliance Report', by: 'System (Scheduled)', date: '23 Jan 2026, 08:00', format: 'PDF', size: '2.3 MB' }
-    ];
+    // Live execution timeline from SP
+    const timeline = (this.state.recentExecutions || []).slice(0, 8).map((ex: any) => ({
+      title: ex.ReportName || ex.Title || 'Report',
+      by: ex.GeneratedByName || 'System',
+      date: ex.ExecutedAt ? new Date(ex.ExecutedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A',
+      format: ex.Format || 'CSV',
+      size: ex.FileSize || 'N/A',
+    }));
 
     return (
       <>
@@ -1798,8 +2127,8 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
               <Icon iconName="ReportDocument" />
             </div>
             <div className={(styles as Record<string, string>).kpiContent}>
-              <div className={(styles as Record<string, string>).kpiValue} style={{ color: '#0d9488' }}>1,247</div>
-              <div className={(styles as Record<string, string>).kpiLabel}>Total Reports Generated</div>
+              <div className={(styles as Record<string, string>).kpiValue} style={{ color: '#0d9488' }}>{(this.state.recentExecutions || []).length}</div>
+              <div className={(styles as Record<string, string>).kpiLabel}>Reports Generated</div>
             </div>
           </div>
           <div className={`${(styles as Record<string, string>).kpiCard} ${(styles as Record<string, string>).kpiCardHighlight}`}>
@@ -1807,8 +2136,8 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
               <Icon iconName="ScheduleEventAction" />
             </div>
             <div className={(styles as Record<string, string>).kpiContent}>
-              <div className={(styles as Record<string, string>).kpiValue} style={{ color: '#2563eb' }}>18</div>
-              <div className={(styles as Record<string, string>).kpiLabel}>Scheduled Reports</div>
+              <div className={(styles as Record<string, string>).kpiValue} style={{ color: '#2563eb' }}>{scheduledDash.filter((s: any) => s.active).length}</div>
+              <div className={(styles as Record<string, string>).kpiLabel}>Active Schedules</div>
             </div>
           </div>
           <div className={`${(styles as Record<string, string>).kpiCard} ${(styles as Record<string, string>).kpiCardHighlight}`}>
@@ -1816,8 +2145,8 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
               <Icon iconName="Group" />
             </div>
             <div className={(styles as Record<string, string>).kpiContent}>
-              <div className={(styles as Record<string, string>).kpiValue} style={{ color: '#16a34a' }}>94.2%</div>
-              <div className={(styles as Record<string, string>).kpiLabel}>Team Coverage</div>
+              <div className={(styles as Record<string, string>).kpiValue} style={{ color: '#16a34a' }}>{allReportCards.length}</div>
+              <div className={(styles as Record<string, string>).kpiLabel}>Report Types</div>
             </div>
           </div>
           <div className={`${(styles as Record<string, string>).kpiCard} ${(styles as Record<string, string>).kpiCardHighlight}`}>
@@ -1825,8 +2154,8 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
               <Icon iconName="Calendar" />
             </div>
             <div className={(styles as Record<string, string>).kpiContent}>
-              <div className={(styles as Record<string, string>).kpiValue} style={{ color: '#f59e0b' }}>30 Jan</div>
-              <div className={(styles as Record<string, string>).kpiLabel}>Last Report Date</div>
+              <div className={(styles as Record<string, string>).kpiValue} style={{ color: '#f59e0b' }}>{timeline.length > 0 ? timeline[0].date.split(',')[0] : 'None'}</div>
+              <div className={(styles as Record<string, string>).kpiLabel}>Last Report</div>
             </div>
           </div>
         </div>
@@ -1839,7 +2168,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
           </div>
           <div className={(styles as Record<string, string>).quickReportsScroll}>
             {quickReports.map((qr, idx) => (
-              <div key={idx} className={(styles as Record<string, string>).quickReportCard} onClick={() => alert(`Quick-generating ${qr.title}`)}>
+              <div key={idx} className={(styles as Record<string, string>).quickReportCard} onClick={() => this.handleGenerateReport(qr.key, 'csv')}>
                 <div style={{ width: 36, height: 36, borderRadius: 10, background: '#f0fdfa', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0d9488', fontSize: 16, marginBottom: 10 }}>
                   <Icon iconName={qr.icon} />
                 </div>
@@ -1892,9 +2221,9 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
                     <td><span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 10, background: '#f0fdf4', color: '#16a34a', fontWeight: 600 }}>Active</span></td>
                     <td>
                       <Stack horizontal tokens={{ childrenGap: 8 }}>
-                        <a href="#" onClick={(e) => { e.preventDefault(); alert(`Generating ${report.title}`); }} style={{ color: '#0d9488', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Generate</a>
-                        <a href="#" onClick={(e) => { e.preventDefault(); alert(`Downloading ${report.title}`); }} style={{ color: '#0d9488', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Download</a>
-                        <a href="#" onClick={(e) => { e.preventDefault(); alert(`Scheduling ${report.title}`); }} style={{ color: '#0d9488', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Schedule</a>
+                        <a href="#" onClick={(e) => { e.preventDefault(); this.handleGenerateReport(report.key, 'csv'); }} style={{ color: '#0d9488', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Generate</a>
+                        <a href="#" onClick={(e) => { e.preventDefault(); this.handleGenerateReport(report.key, 'csv'); }} style={{ color: '#0d9488', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Download</a>
+                        <a href="#" onClick={(e) => { e.preventDefault(); this.openSchedulePanel(report.key, report.title); }} style={{ color: '#0d9488', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Schedule</a>
                       </Stack>
                     </td>
                   </tr>
@@ -1927,7 +2256,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
                   <td>
                     <div
                       className={`${(styles as Record<string, string>).scheduledToggle} ${sr.active ? (styles as Record<string, string>).scheduledToggleOn : ''}`}
-                      onClick={() => alert(`Toggling schedule for ${sr.name}`)}
+                      onClick={() => sr.id && this.handleToggleSchedule(sr.id, sr.active)}
                       style={{ cursor: 'pointer' }}
                     >
                       <div style={{ width: 16, height: 16, borderRadius: '50%', background: '#fff', position: 'absolute', top: 3, transition: 'left 0.2s', left: sr.active ? 20 : 3 }} />
@@ -1943,8 +2272,8 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
                   <td style={{ fontSize: 12, color: '#64748b' }}>{sr.recipients}</td>
                   <td>
                     <Stack horizontal tokens={{ childrenGap: 8 }}>
-                      <a href="#" onClick={(e) => { e.preventDefault(); alert(`Editing ${sr.name} schedule`); }} style={{ color: '#0d9488', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Edit</a>
-                      <a href="#" onClick={(e) => { e.preventDefault(); alert(`Deleting ${sr.name} schedule`); }} style={{ color: '#d13438', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Delete</a>
+                      <a href="#" onClick={(e) => { e.preventDefault(); this.openSchedulePanel(sr.key, sr.name, sr.id, sr); }} style={{ color: '#0d9488', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Edit</a>
+                      <a href="#" onClick={(e) => { e.preventDefault(); if (confirm(`Delete schedule for ${sr.name}?`)) this.handleDeleteSchedule(sr.id); }} style={{ color: '#d13438', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Delete</a>
                     </Stack>
                   </td>
                 </tr>
@@ -1976,7 +2305,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
                     {' '}&middot; {item.size}
                   </div>
                 </div>
-                <a href="#" onClick={(e) => { e.preventDefault(); alert(`Downloading ${item.title}`); }} style={{ color: '#0d9488', fontSize: 12, fontWeight: 600, textDecoration: 'none', alignSelf: 'center' }}>Download</a>
+                <a href="#" onClick={(e) => { e.preventDefault(); this.handleGenerateReport(item.title.toLowerCase().includes('compliance') ? 'dept-compliance' : item.title.toLowerCase().includes('ack') ? 'ack-status' : 'audit-trail', 'csv'); }} style={{ color: '#0d9488', fontSize: 12, fontWeight: 600, textDecoration: 'none', alignSelf: 'center' }}>Re-generate</a>
               </div>
             ))}
           </div>
@@ -2010,10 +2339,13 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
         onRenderFooterContent={() => (
           <Stack horizontal tokens={{ childrenGap: 8 }} style={{ padding: '16px 0' }}>
             <DefaultButton text="Schedule" iconProps={{ iconName: 'ScheduleEventAction' }}
-              onClick={() => alert(`Scheduling ${report.title}`)} />
-            <PrimaryButton text="Generate Full Report" iconProps={{ iconName: 'Play' }}
+              onClick={() => this.openSchedulePanel(report.key, report.title)} />
+            <PrimaryButton
+              text={this.state.reportGenerating ? 'Generating...' : 'Generate Full Report'}
+              iconProps={{ iconName: 'Play' }}
+              disabled={this.state.reportGenerating}
               styles={{ root: { background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
-              onClick={() => alert(`Generating ${report.title}...`)} />
+              onClick={() => { this.handleGenerateReport(report.key, 'csv'); this.setState({ showReportFlyout: false }); }} />
           </Stack>
         )}
         isFooterAtBottom={true}

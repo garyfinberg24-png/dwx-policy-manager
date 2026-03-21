@@ -70,7 +70,7 @@ export interface IExcelSheetConfig {
 export class ExcelGenerationService {
   private readonly defaultHeaderStyle: Partial<ExcelJS.Style> = {
     font: { bold: true, color: { argb: 'FFFFFFFF' } },
-    fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0078D4' } },
+    fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0D9488' } },
     alignment: { horizontal: 'center', vertical: 'middle' },
     border: {
       top: { style: 'thin', color: { argb: 'FF000000' } },

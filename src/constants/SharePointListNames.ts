@@ -153,7 +153,9 @@ export const AnalyticsLists = {
   COMPLIANCE_VIOLATIONS: 'PM_ComplianceViolations',
   /** Department-level analytics */
   DEPARTMENT_ANALYTICS: 'PM_DepartmentAnalytics',
-  /** Scheduled report definitions */
+  /** Report definitions and templates */
+  REPORT_DEFINITIONS: 'PM_ReportDefinitions',
+  /** Scheduled report configurations */
   SCHEDULED_REPORTS: 'PM_ScheduledReports',
   /** Report execution history */
   REPORT_EXECUTIONS: 'PM_ReportExecutions',

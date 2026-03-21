@@ -6523,6 +6523,9 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       { key: 'feedback', title: 'PM_PolicyFeedback', description: 'User feedback', seedable: true },
       { key: 'userProfiles', title: 'PM_UserProfiles', description: 'User profile data', seedable: true },
       { key: 'sourceDocs', title: 'PM_PolicySourceDocuments', description: 'Supporting documents', seedable: false },
+      { key: 'reportDefs', title: 'PM_ReportDefinitions', description: 'Report definitions and templates', seedable: false },
+      { key: 'scheduledReports', title: 'PM_ScheduledReports', description: 'Scheduled report configurations', seedable: false },
+      { key: 'reportExec', title: 'PM_ReportExecutions', description: 'Report execution history', seedable: false },
     ];
 
     // Check list statuses on first load

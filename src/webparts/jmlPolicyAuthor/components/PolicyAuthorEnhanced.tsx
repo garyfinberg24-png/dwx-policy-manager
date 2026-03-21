@@ -596,6 +596,14 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         loading: false
       } as any); }
 
+      // Fix 7: Load quiz title if LinkedQuizId is set
+      if (policy.LinkedQuizId) {
+        try {
+          const quiz = await this.props.sp.web.lists.getByTitle('PM_PolicyQuizzes').items.getById(policy.LinkedQuizId).select('Id', 'Title')();
+          if (this._isMounted) { this.setState({ selectedQuizTitle: quiz.Title || `Quiz #${quiz.Id}` } as any); }
+        } catch { /* quiz may have been deleted */ }
+      }
+
       // Post-publish quiz reminder: if policy is Published, requires quiz, but no quiz linked
       if (policy.PolicyStatus === 'Published' && policy.RequiresQuiz && !policy.LinkedQuizId) {
         this.dialogManager.showDialog({
@@ -1226,12 +1234,24 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         break;
 
       case 4: // Target Audience
-        // Optional - no required fields
+        {
+          const { targetAllEmployees, targetDepartments } = this.state;
+          if (!targetAllEmployees && (!targetDepartments || targetDepartments.length === 0)) {
+            errors.push('Select at least one department or choose "All Employees"');
+          }
+        }
         break;
 
       case 5: // Dates
         if (!effectiveDate) {
           errors.push('Effective date is required');
+        }
+        // Fix 8: Validate expiry > effective
+        {
+          const { expiryDate } = this.state;
+          if (effectiveDate && expiryDate && new Date(expiryDate) <= new Date(effectiveDate)) {
+            errors.push('Expiry date must be after the effective date');
+          }
         }
         break;
 
@@ -6042,10 +6062,9 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       policySummary,
     } = this.state;
 
-    const categoryOptions: IDropdownOption[] = Object.values(PolicyCategory).map(cat => ({
-      key: cat,
-      text: cat
-    }));
+    const categoryOptions: IDropdownOption[] = Object.values(PolicyCategory)
+      .sort((a, b) => a.localeCompare(b))
+      .map(cat => ({ key: cat, text: cat }));
 
     return (
       <div className={styles.section}>

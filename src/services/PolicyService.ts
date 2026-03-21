@@ -111,10 +111,26 @@ export class PolicyService {
    */
   public async initialize(): Promise<void> {
     try {
+      // Check sessionStorage cache first to avoid redundant API calls across pages
+      const cached = sessionStorage.getItem('pm_current_user');
+      if (cached) {
+        try {
+          const u = JSON.parse(cached);
+          this.currentUserId = u.Id;
+          this.currentUserEmail = u.Email;
+          this.currentUserName = u.Title;
+          await this.auditService.initialize();
+          return;
+        } catch { /* cache corrupted, fetch fresh */ }
+      }
+
       const user = await this.sp.web.currentUser();
       this.currentUserId = user.Id;
       this.currentUserEmail = user.Email;
       this.currentUserName = user.Title;
+
+      // Cache for 10 minutes
+      try { sessionStorage.setItem('pm_current_user', JSON.stringify({ Id: user.Id, Email: user.Email, Title: user.Title })); } catch { /* ignore */ }
 
       // Initialize audit service with current user context
       await this.auditService.initialize();

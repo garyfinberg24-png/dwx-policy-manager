@@ -307,9 +307,9 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
         approvalItems = await this.props.sp.web.lists
           .getByTitle('PM_Approvals')
           .items
-          .select('*')
+          .select('Id', 'Title', 'ProcessID', 'Status', 'ApprovalLevel', 'RequestedDate', 'DueDate', 'Comments', 'CompletedDate', 'ApproverId', 'ApproverName', 'ApproverEmail', 'SubmittedBy', 'ApprovalType')
           .orderBy('RequestedDate', false)
-          .top(100)();
+          .top(50)();
       } catch (err) {
         logger.warn('PolicyManagerView', 'PM_Approvals list not available:', err);
       }
@@ -408,9 +408,9 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
       const items: any[] = await this.props.sp.web.lists
         .getByTitle('PM_ApprovalDelegations')
         .items
-        .select('*')
+        .select('Id', 'Title', 'DelegatedById', 'DelegatedToId', 'DelegateToName', 'DelegateByName', 'DelegateToEmail', 'StartDate', 'EndDate', 'IsActive', 'Reason', 'ProcessTypes', 'AutoDelegate')
         .orderBy('StartDate', false)
-        .top(50)();
+        .top(30)();
 
       return items.map((item: any) => {
         const now = new Date();
@@ -475,8 +475,8 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
       const ackItems: any[] = await this.props.sp.web.lists
         .getByTitle(PM_LISTS.POLICY_ACKNOWLEDGEMENTS)
         .items
-        .select('*')
-        .top(500)();
+        .select('Id', 'Title', 'PolicyId', 'PolicyTitle', 'AckStatus', 'DueDate', 'AcknowledgedDate', 'Department', 'UserDisplayName')
+        .top(200)();
 
       // Group by user (Author)
       const userMap = new Map<string, {
@@ -583,8 +583,8 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
         .getByTitle(PM_LISTS.POLICIES)
         .items
         .filter("PolicyStatus eq 'Published' or PolicyStatus eq 'Approved'")
-        .select('*')
-        .top(100)();
+        .select('Id', 'Title', 'PolicyName', 'PolicyNumber', 'PolicyCategory', 'LastReviewDate', 'NextReviewDate', 'ReviewCycleDays', 'PolicyStatus', 'AssignedReviewer', 'EffectiveDate')
+        .top(50)();
 
       const now = new Date();
 

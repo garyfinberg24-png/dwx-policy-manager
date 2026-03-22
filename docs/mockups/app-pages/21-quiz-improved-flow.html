@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz — Improved Flow with Instant Feedback</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', -apple-system, sans-serif; background: #f8fafc; color: #0f172a; }
+
+  /* Header */
+  .quiz-header {
+    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+    padding: 12px 40px; display: flex; align-items: center; justify-content: space-between; color: #fff;
+  }
+  .quiz-header-left { display: flex; align-items: center; gap: 12px; }
+  .quiz-header-left h2 { font-size: 15px; font-weight: 700; }
+  .quiz-header-right { display: flex; align-items: center; gap: 16px; font-size: 13px; }
+  .badge-pass { font-size: 9px; font-weight: 700; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; background: rgba(255,255,255,0.2); color: #fff; }
+  .exit-btn { padding: 6px 14px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.3); background: transparent; color: #fff; font-size: 12px; font-weight: 600; cursor: pointer; }
+
+  /* Page label */
+  .page { max-width: 1400px; margin: 0 auto; padding: 24px 40px; }
+  .label { display: inline-block; background: #2563eb; color: #fff; padding: 4px 12px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+  .desc { font-size: 13px; color: #64748b; margin-bottom: 24px; line-height: 1.6; }
+  .divider { border-top: 3px solid #e2e8f0; margin: 48px 0 32px; }
+
+  /* Quiz container */
+  .quiz { max-width: 680px; margin: 32px auto; }
+
+  /* Progress */
+  .progress-row { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+  .progress-bar { flex: 1; height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+  .progress-fill.active { background: #0d9488; }
+  .progress-fill.complete { background: #059669; }
+  .progress-text { font-size: 12px; color: #64748b; white-space: nowrap; }
+  .timer { font-size: 13px; font-weight: 700; color: #0d9488; display: flex; align-items: center; gap: 6px; }
+
+  /* Question card */
+  .question-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 32px; margin-bottom: 20px; }
+  .q-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; margin-bottom: 8px; }
+  .q-text { font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 28px; line-height: 1.4; }
+
+  /* Options */
+  .option {
+    display: flex; align-items: center; gap: 14px; padding: 14px 18px; margin-bottom: 8px;
+    border: 2px solid #e2e8f0; border-radius: 8px; cursor: pointer; transition: all 0.2s; font-size: 14px;
+    position: relative;
+  }
+  .option:hover { border-color: #94a3b8; background: #fafafa; }
+
+  /* Selected but not yet confirmed */
+  .option.selected { border-color: #0d9488; background: #f0fdfa; }
+
+  /* After answer confirmed — correct */
+  .option.correct { border-color: #059669; background: #f0fdf4; cursor: default; }
+  .option.correct .option-icon { background: #059669; border-color: #059669; }
+  .option.correct .option-icon::after { content: '✓'; color: #fff; font-size: 12px; font-weight: 700; }
+
+  /* After answer confirmed — incorrect */
+  .option.incorrect { border-color: #dc2626; background: #fef2f2; cursor: default; }
+  .option.incorrect .option-icon { background: #dc2626; border-color: #dc2626; }
+  .option.incorrect .option-icon::after { content: '✗'; color: #fff; font-size: 12px; font-weight: 700; }
+
+  /* After answer confirmed — correct answer highlight (when user chose wrong) */
+  .option.reveal-correct { border-color: #059669; background: #f0fdf4; border-style: dashed; }
+
+  .option-icon {
+    width: 22px; height: 22px; border-radius: 50%; border: 2px solid #cbd5e1; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+  }
+  .option.selected .option-icon { border-color: #0d9488; background: #0d9488; }
+  .option.selected .option-icon::after { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #fff; }
+
+  .option-text { flex: 1; }
+
+  /* Feedback banner after answering */
+  .feedback {
+    display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 8px;
+    margin-bottom: 20px; font-size: 13px; animation: slideIn 0.3s ease;
+  }
+  @keyframes slideIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+  .feedback.correct { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+  .feedback.incorrect { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+  .feedback-icon { font-size: 18px; flex-shrink: 0; }
+  .feedback-text { flex: 1; }
+  .feedback-text strong { display: block; margin-bottom: 2px; }
+  .feedback-text span { font-size: 12px; opacity: 0.8; }
+
+  /* Navigation */
+  .nav-row { display: flex; justify-content: space-between; align-items: center; }
+  .nav-btn {
+    padding: 10px 24px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+    border: 1px solid #e2e8f0; background: #fff; color: #334155; display: flex; align-items: center; gap: 6px;
+    transition: all 0.15s;
+  }
+  .nav-btn:hover { border-color: #0d9488; color: #0d9488; }
+  .nav-btn-primary { background: #0d9488; color: #fff; border-color: #0d9488; }
+  .nav-btn-primary:hover { background: #0f766e; }
+  .nav-btn:disabled { opacity: 0.4; cursor: default; }
+  .q-counter { font-size: 13px; color: #64748b; }
+
+  /* Question dots */
+  .q-dots { display: flex; justify-content: center; gap: 6px; margin-bottom: 24px; }
+  .q-dot {
+    width: 32px; height: 32px; border-radius: 50%; border: 2px solid #e2e8f0;
+    display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600;
+    color: #94a3b8; cursor: pointer; transition: all 0.2s;
+  }
+  .q-dot.current { border-color: #0d9488; background: #f0fdfa; color: #0d9488; }
+  .q-dot.answered-correct { background: #059669; border-color: #059669; color: #fff; }
+  .q-dot.answered-incorrect { background: #dc2626; border-color: #dc2626; color: #fff; }
+
+  /* Results section */
+  .results { max-width: 680px; margin: 32px auto; }
+  .results-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 32px; text-align: center; margin-bottom: 24px; }
+  .results-score { font-size: 48px; font-weight: 700; margin-bottom: 4px; }
+  .results-score.pass { color: #059669; }
+  .results-score.fail { color: #dc2626; }
+  .results-label { font-size: 14px; color: #64748b; margin-bottom: 16px; }
+  .results-badge { display: inline-block; padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 700; }
+  .results-badge.pass { background: #dcfce7; color: #166534; }
+  .results-badge.fail { background: #fee2e2; color: #991b1b; }
+  .results-stats { display: flex; justify-content: center; gap: 32px; margin-top: 20px; }
+  .stat { text-align: center; }
+  .stat-value { font-size: 20px; font-weight: 700; }
+  .stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; margin-top: 2px; }
+  .review-item { display: flex; align-items: flex-start; gap: 12px; padding: 14px 0; border-bottom: 1px solid #f1f5f9; text-align: left; }
+  .review-item:last-child { border-bottom: none; }
+  .review-status { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+  .review-status.correct { background: #dcfce7; color: #059669; }
+  .review-status.incorrect { background: #fee2e2; color: #dc2626; }
+  .review-q { font-size: 13px; font-weight: 600; color: #0f172a; margin-bottom: 4px; }
+  .review-a { font-size: 12px; color: #64748b; }
+  .review-a.wrong { color: #dc2626; text-decoration: line-through; }
+  .review-a.right { color: #059669; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- STEP 1: ANSWERING A QUESTION (before confirm) -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="page"><div class="label">Step 1 — Answering (before confirm)</div>
+<div class="desc">User selects an answer. Option highlights in teal. "Confirm Answer" button appears. No auto-advance — user controls the pace.</div></div>
+
+<div class="quiz-header">
+  <div class="quiz-header-left">
+    <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <h2>Employee Code of Conduct — Quiz</h2>
+    <span class="badge-pass">80% to pass</span>
+  </div>
+  <div class="quiz-header-right">
+    <div class="timer">
+      <svg viewBox="0 0 24 24" fill="none" width="14" height="14"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      14:32
+    </div>
+    <button class="exit-btn">Exit</button>
+  </div>
+</div>
+
+<div class="quiz">
+  <div class="progress-row">
+    <div class="progress-bar"><div class="progress-fill active" style="width: 20%;"></div></div>
+    <span class="progress-text">1 / 5</span>
+  </div>
+
+  <div class="q-dots">
+    <div class="q-dot current">1</div>
+    <div class="q-dot">2</div>
+    <div class="q-dot">3</div>
+    <div class="q-dot">4</div>
+    <div class="q-dot">5</div>
+  </div>
+
+  <div class="question-card">
+    <div class="q-label">Question 1 of 5</div>
+    <div class="q-text">What is the minimum password length required by the policy?</div>
+    <div class="option"><div class="option-icon"></div><span class="option-text">8 characters</span></div>
+    <div class="option selected"><div class="option-icon"></div><span class="option-text">10 characters</span></div>
+    <div class="option"><div class="option-icon"></div><span class="option-text">12 characters</span></div>
+    <div class="option"><div class="option-icon"></div><span class="option-text">16 characters</span></div>
+  </div>
+
+  <div class="nav-row">
+    <button class="nav-btn" disabled>← Previous</button>
+    <span class="q-counter">Question 1 of 5</span>
+    <button class="nav-btn nav-btn-primary">Confirm Answer →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- STEP 2: CORRECT ANSWER FEEDBACK            -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="divider"></div>
+<div class="page"><div class="label">Step 2 — Correct Answer Feedback</div>
+<div class="desc">After confirming, correct answer shows green check. Feedback banner slides in with explanation. "Next Question" button appears. Question dot turns green.</div></div>
+
+<div class="quiz">
+  <div class="progress-row">
+    <div class="progress-bar"><div class="progress-fill active" style="width: 20%;"></div></div>
+    <span class="progress-text">1 / 5</span>
+  </div>
+
+  <div class="q-dots">
+    <div class="q-dot answered-correct">✓</div>
+    <div class="q-dot current">2</div>
+    <div class="q-dot">3</div>
+    <div class="q-dot">4</div>
+    <div class="q-dot">5</div>
+  </div>
+
+  <div class="feedback correct">
+    <div class="feedback-icon">✓</div>
+    <div class="feedback-text">
+      <strong>Correct!</strong>
+      <span>The policy requires a minimum of 10 characters for all passwords.</span>
+    </div>
+  </div>
+
+  <div class="question-card">
+    <div class="q-label">Question 1 of 5</div>
+    <div class="q-text">What is the minimum password length required by the policy?</div>
+    <div class="option"><div class="option-icon"></div><span class="option-text">8 characters</span></div>
+    <div class="option correct"><div class="option-icon"></div><span class="option-text">10 characters</span></div>
+    <div class="option"><div class="option-icon"></div><span class="option-text">12 characters</span></div>
+    <div class="option"><div class="option-icon"></div><span class="option-text">16 characters</span></div>
+  </div>
+
+  <div class="nav-row">
+    <button class="nav-btn" disabled>← Previous</button>
+    <span class="q-counter">Question 1 of 5</span>
+    <button class="nav-btn nav-btn-primary">Next Question →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- STEP 3: INCORRECT ANSWER FEEDBACK          -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="divider"></div>
+<div class="page"><div class="label">Step 3 — Incorrect Answer Feedback</div>
+<div class="desc">Wrong answer shows red cross. Correct answer revealed with green dashed border. Feedback explains why. Question dot turns red. User learns immediately.</div></div>
+
+<div class="quiz">
+  <div class="progress-row">
+    <div class="progress-bar"><div class="progress-fill active" style="width: 40%;"></div></div>
+    <span class="progress-text">2 / 5</span>
+  </div>
+
+  <div class="q-dots">
+    <div class="q-dot answered-correct">✓</div>
+    <div class="q-dot answered-incorrect">✗</div>
+    <div class="q-dot current">3</div>
+    <div class="q-dot">4</div>
+    <div class="q-dot">5</div>
+  </div>
+
+  <div class="feedback incorrect">
+    <div class="feedback-icon">✗</div>
+    <div class="feedback-text">
+      <strong>Incorrect</strong>
+      <span>Employees must report incidents within 24 hours, not 48. See Section 4.2 of the policy.</span>
+    </div>
+  </div>
+
+  <div class="question-card">
+    <div class="q-label">Question 2 of 5</div>
+    <div class="q-text">Within how many hours must a security incident be reported?</div>
+    <div class="option reveal-correct"><div class="option-icon" style="background:#059669;border-color:#059669;"><span style="color:#fff;font-size:12px;font-weight:700;">✓</span></div><span class="option-text">24 hours</span></div>
+    <div class="option incorrect"><div class="option-icon"></div><span class="option-text">48 hours</span></div>
+    <div class="option"><div class="option-icon"></div><span class="option-text">72 hours</span></div>
+    <div class="option"><div class="option-icon"></div><span class="option-text">1 week</span></div>
+  </div>
+
+  <div class="nav-row">
+    <button class="nav-btn">← Previous</button>
+    <span class="q-counter">Question 2 of 5</span>
+    <button class="nav-btn nav-btn-primary">Next Question →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- STEP 4: RESULTS SCREEN                     -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="divider"></div>
+<div class="page"><div class="label">Step 4 — Results Screen</div>
+<div class="desc">After all questions answered, shows score with pass/fail badge, stats (correct, time, attempts), and full answer review with correct/incorrect indicators.</div></div>
+
+<div class="results">
+  <div class="results-card">
+    <div class="results-score pass">80%</div>
+    <div class="results-label">4 of 5 correct</div>
+    <div class="results-badge pass">✓ Passed — You may proceed to acknowledgement</div>
+    <div class="results-stats">
+      <div class="stat"><div class="stat-value" style="color:#059669;">4</div><div class="stat-label">Correct</div></div>
+      <div class="stat"><div class="stat-value" style="color:#dc2626;">1</div><div class="stat-label">Incorrect</div></div>
+      <div class="stat"><div class="stat-value" style="color:#0d9488;">3:28</div><div class="stat-label">Time Taken</div></div>
+      <div class="stat"><div class="stat-value" style="color:#64748b;">1/3</div><div class="stat-label">Attempt</div></div>
+    </div>
+  </div>
+
+  <!-- Answer Review -->
+  <div class="question-card" style="padding: 24px;">
+    <div class="q-label" style="margin-bottom: 16px;">Answer Review</div>
+    <div class="review-item">
+      <div class="review-status correct">✓</div>
+      <div>
+        <div class="review-q">Q1: What is the minimum password length?</div>
+        <div class="review-a right">Your answer: 10 characters ✓</div>
+      </div>
+    </div>
+    <div class="review-item">
+      <div class="review-status incorrect">✗</div>
+      <div>
+        <div class="review-q">Q2: Within how many hours must incidents be reported?</div>
+        <div class="review-a wrong">Your answer: 48 hours</div>
+        <div class="review-a right">Correct: 24 hours</div>
+      </div>
+    </div>
+    <div class="review-item">
+      <div class="review-status correct">✓</div>
+      <div>
+        <div class="review-q">Q3: Who is responsible for data classification?</div>
+        <div class="review-a right">Your answer: Data Owner ✓</div>
+      </div>
+    </div>
+    <div class="review-item">
+      <div class="review-status correct">✓</div>
+      <div>
+        <div class="review-q">Q4: What is the penalty for policy violation?</div>
+        <div class="review-a right">Your answer: Disciplinary action ✓</div>
+      </div>
+    </div>
+    <div class="review-item">
+      <div class="review-status correct">✓</div>
+      <div>
+        <div class="review-q">Q5: How often must the policy be reviewed?</div>
+        <div class="review-a right">Your answer: Annually ✓</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; justify-content: center; gap: 12px;">
+    <button class="nav-btn nav-btn-primary" style="padding: 12px 32px; font-size: 14px;">Proceed to Acknowledgement →</button>
+  </div>
+</div>
+
+<!-- Flow summary -->
+<div class="divider"></div>
+<div class="page">
+  <div class="label">Improved Flow Summary</div>
+  <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:16px;">
+    <tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;">
+      <th style="padding:10px 14px;text-align:left;">Current</th>
+      <th style="padding:10px 14px;text-align:left;">Proposed</th>
+      <th style="padding:10px 14px;text-align:left;">Why</th>
+    </tr>
+    <tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:8px 14px;">Auto-advance after 400ms</td><td style="padding:8px 14px;font-weight:600;">Manual: Select → Confirm → Feedback → Next</td><td style="padding:8px 14px;">User controls pace, can change mind before confirming</td></tr>
+    <tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:8px 14px;">No correct/incorrect feedback</td><td style="padding:8px 14px;font-weight:600;">Instant feedback with explanation after each question</td><td style="padding:8px 14px;">Learning-focused — user understands the policy better</td></tr>
+    <tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:8px 14px;">Question dots: numbered only</td><td style="padding:8px 14px;font-weight:600;">Green ✓ / Red ✗ on answered dots</td><td style="padding:8px 14px;">Visual progress of correct vs incorrect at a glance</td></tr>
+    <tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:8px 14px;">Results: percentage only</td><td style="padding:8px 14px;font-weight:600;">Full answer review with correct answers shown</td><td style="padding:8px 14px;">Transparency, learning opportunity, trust</td></tr>
+    <tr><td style="padding:8px 14px;">Submit button always visible</td><td style="padding:8px 14px;font-weight:600;">Submit only after all questions answered</td><td style="padding:8px 14px;">Prevents accidental submission with unanswered questions</td></tr>
+  </table>
+</div>
+
+</body>
+</html>

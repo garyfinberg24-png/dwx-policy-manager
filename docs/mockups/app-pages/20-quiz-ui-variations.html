@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz UI — 3 Variations</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', -apple-system, sans-serif; background: #f1f5f9; color: #0f172a; }
+  .page { max-width: 1400px; margin: 0 auto; padding: 32px 40px; }
+  .label { display: inline-block; background: #2563eb; color: #fff; padding: 4px 12px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; }
+  .divider { border-top: 3px solid #e2e8f0; margin: 48px 0 32px; }
+  .desc { font-size: 13px; color: #64748b; margin-bottom: 24px; line-height: 1.6; }
+
+  /* Shared header bar */
+  .quiz-header {
+    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+    padding: 12px 40px; display: flex; align-items: center; justify-content: space-between; color: #fff;
+  }
+  .quiz-header-left { display: flex; align-items: center; gap: 12px; }
+  .quiz-header-left h2 { font-size: 15px; font-weight: 700; }
+  .quiz-header-right { display: flex; align-items: center; gap: 16px; font-size: 13px; }
+  .quiz-header .badge { font-size: 9px; font-weight: 700; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; }
+  .badge-pass { background: rgba(255,255,255,0.2); color: #fff; }
+  .exit-btn { padding: 6px 14px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.3); background: transparent; color: #fff; font-size: 12px; font-weight: 600; cursor: pointer; }
+
+  /* ═══════════════════════════════════════════ */
+  /* VARIATION A — Card-centred, progress bar   */
+  /* ═══════════════════════════════════════════ */
+  .quiz-a { max-width: 720px; margin: 32px auto; }
+  .quiz-a .progress-bar { height: 6px; background: #e2e8f0; border-radius: 3px; margin-bottom: 24px; overflow: hidden; }
+  .quiz-a .progress-fill { height: 100%; background: #0d9488; border-radius: 3px; transition: width 0.3s; }
+  .quiz-a .progress-label { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 11px; color: #94a3b8; }
+  .quiz-a .question-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 32px; margin-bottom: 24px;
+  }
+  .quiz-a .q-number { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #0d9488; margin-bottom: 8px; }
+  .quiz-a .q-text { font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 24px; line-height: 1.4; }
+  .quiz-a .option {
+    display: flex; align-items: center; gap: 14px; padding: 14px 18px; margin-bottom: 8px;
+    border: 2px solid #e2e8f0; border-radius: 8px; cursor: pointer; transition: all 0.15s; font-size: 14px;
+  }
+  .quiz-a .option:hover { border-color: #0d9488; background: #f0fdfa; }
+  .quiz-a .option.selected { border-color: #0d9488; background: #f0fdfa; }
+  .quiz-a .option-dot {
+    width: 20px; height: 20px; border-radius: 50%; border: 2px solid #cbd5e1; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .quiz-a .option.selected .option-dot { border-color: #0d9488; background: #0d9488; }
+  .quiz-a .option.selected .option-dot::after { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #fff; }
+  .quiz-a .nav-row { display: flex; justify-content: space-between; align-items: center; }
+  .quiz-a .nav-btn {
+    padding: 10px 24px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+    border: 1px solid #e2e8f0; background: #fff; color: #334155; display: flex; align-items: center; gap: 6px;
+  }
+  .quiz-a .nav-btn:hover { border-color: #0d9488; color: #0d9488; }
+  .quiz-a .nav-btn-primary { background: #0d9488; color: #fff; border-color: #0d9488; }
+  .quiz-a .nav-btn-primary:hover { background: #0f766e; }
+  .quiz-a .q-counter { font-size: 13px; color: #64748b; }
+
+  /* ═══════════════════════════════════════════ */
+  /* VARIATION B — Split layout, sidebar timer  */
+  /* ═══════════════════════════════════════════ */
+  .quiz-b { max-width: 960px; margin: 32px auto; display: grid; grid-template-columns: 1fr 240px; gap: 24px; }
+  .quiz-b .main-area { }
+  .quiz-b .question-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 32px;
+  }
+  .quiz-b .q-number { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #0d9488; margin-bottom: 8px; }
+  .quiz-b .q-text { font-size: 17px; font-weight: 700; color: #0f172a; margin-bottom: 24px; line-height: 1.4; }
+  .quiz-b .option {
+    display: flex; align-items: center; gap: 14px; padding: 14px 18px; margin-bottom: 8px;
+    border: 2px solid #e2e8f0; border-radius: 8px; cursor: pointer; transition: all 0.15s; font-size: 14px;
+  }
+  .quiz-b .option:hover { border-color: #0d9488; background: #f0fdfa; }
+  .quiz-b .option.selected { border-color: #0d9488; background: #f0fdfa; }
+  .quiz-b .option-letter {
+    width: 28px; height: 28px; border-radius: 6px; background: #f1f5f9; color: #64748b;
+    display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0;
+  }
+  .quiz-b .option.selected .option-letter { background: #0d9488; color: #fff; }
+  .quiz-b .sidebar {
+    display: flex; flex-direction: column; gap: 16px; position: sticky; top: 20px; align-self: start;
+  }
+  .quiz-b .sidebar-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; }
+  .quiz-b .sidebar-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; margin-bottom: 10px; }
+  .quiz-b .timer { font-size: 28px; font-weight: 700; color: #0d9488; text-align: center; }
+  .quiz-b .timer-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; text-align: center; margin-top: 4px; }
+  .quiz-b .q-dots { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  .quiz-b .q-dot {
+    width: 100%; aspect-ratio: 1; border-radius: 6px; border: 2px solid #e2e8f0;
+    display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #94a3b8; cursor: pointer;
+  }
+  .quiz-b .q-dot.current { border-color: #0d9488; background: #f0fdfa; color: #0d9488; }
+  .quiz-b .q-dot.answered { background: #0d9488; border-color: #0d9488; color: #fff; }
+  .quiz-b .info-row { display: flex; justify-content: space-between; font-size: 12px; color: #64748b; padding: 6px 0; border-bottom: 1px solid #f1f5f9; }
+  .quiz-b .info-row:last-child { border-bottom: none; }
+  .quiz-b .nav-row { display: flex; justify-content: space-between; margin-top: 24px; }
+  .quiz-b .nav-btn {
+    padding: 10px 24px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+    border: 1px solid #e2e8f0; background: #fff; color: #334155; display: flex; align-items: center; gap: 6px;
+  }
+  .quiz-b .nav-btn:hover { border-color: #0d9488; color: #0d9488; }
+  .quiz-b .nav-btn-primary { background: #0d9488; color: #fff; border-color: #0d9488; }
+
+  /* ═══════════════════════════════════════════ */
+  /* VARIATION C — Minimal, focus mode           */
+  /* ═══════════════════════════════════════════ */
+  .quiz-c { max-width: 640px; margin: 48px auto; }
+  .quiz-c .step-dots { display: flex; justify-content: center; gap: 8px; margin-bottom: 32px; }
+  .quiz-c .step-dot { width: 10px; height: 10px; border-radius: 50%; background: #e2e8f0; }
+  .quiz-c .step-dot.current { background: #0d9488; width: 32px; border-radius: 5px; }
+  .quiz-c .step-dot.done { background: #0d9488; }
+  .quiz-c .q-number { font-size: 12px; color: #94a3b8; margin-bottom: 8px; text-align: center; }
+  .quiz-c .q-text { font-size: 20px; font-weight: 700; color: #0f172a; margin-bottom: 32px; line-height: 1.4; text-align: center; }
+  .quiz-c .options { display: flex; flex-direction: column; gap: 10px; }
+  .quiz-c .option {
+    display: flex; align-items: center; gap: 16px; padding: 16px 20px;
+    background: #fff; border: 2px solid #e2e8f0; border-radius: 10px; cursor: pointer;
+    transition: all 0.15s; font-size: 15px; font-weight: 500;
+  }
+  .quiz-c .option:hover { border-color: #0d9488; background: #f0fdfa; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(13,148,136,0.08); }
+  .quiz-c .option.selected { border-color: #0d9488; background: #f0fdfa; }
+  .quiz-c .option-check {
+    width: 24px; height: 24px; border-radius: 50%; border: 2px solid #cbd5e1; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; transition: all 0.15s;
+  }
+  .quiz-c .option.selected .option-check { border-color: #0d9488; background: #0d9488; }
+  .quiz-c .option.selected .option-check::after { content: '✓'; color: #fff; font-size: 12px; font-weight: 700; }
+  .quiz-c .nav-row { display: flex; justify-content: center; gap: 12px; margin-top: 32px; }
+  .quiz-c .nav-btn {
+    padding: 12px 32px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;
+    border: none; display: flex; align-items: center; gap: 8px;
+  }
+  .quiz-c .nav-btn-secondary { background: #f1f5f9; color: #64748b; }
+  .quiz-c .nav-btn-primary { background: #0d9488; color: #fff; }
+  .quiz-c .nav-btn-primary:hover { background: #0f766e; }
+  .quiz-c .meta-bar { display: flex; justify-content: center; gap: 24px; margin-bottom: 32px; font-size: 12px; color: #94a3b8; }
+  .quiz-c .meta-item { display: flex; align-items: center; gap: 6px; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- VARIATION A — Card-centred, progress bar   -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="page"><div class="label">Variation A — Card Centred + Progress Bar</div>
+<div class="desc">Clean card layout, linear progress bar at top, question number indicator. Focused reading experience with generous spacing. Best for: straightforward quizzes.</div></div>
+
+<div class="quiz-header">
+  <div class="quiz-header-left">
+    <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <h2>Employee Code of Conduct — Quiz</h2>
+    <span class="badge badge-pass">80% to pass</span>
+  </div>
+  <div class="quiz-header-right">
+    <span>Step 2 of 4 — Quiz</span>
+    <button class="exit-btn">Exit</button>
+  </div>
+</div>
+
+<div class="quiz-a">
+  <div class="progress-label">
+    <span>Question 1 of 5</span>
+    <span>20%</span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" style="width: 20%;"></div></div>
+
+  <div class="question-card">
+    <div class="q-number">Question 1 of 5</div>
+    <div class="q-text">What is the minimum password length required by the policy?</div>
+    <div class="option"><div class="option-dot"></div><span>8 characters</span></div>
+    <div class="option selected"><div class="option-dot"></div><span>10 characters</span></div>
+    <div class="option"><div class="option-dot"></div><span>12 characters</span></div>
+    <div class="option"><div class="option-dot"></div><span>16 characters</span></div>
+  </div>
+
+  <div class="nav-row">
+    <button class="nav-btn" disabled style="opacity:0.4;">
+      <svg viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      Previous
+    </button>
+    <span class="q-counter">1 / 5</span>
+    <button class="nav-btn nav-btn-primary">
+      Next
+      <svg viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- VARIATION B — Split layout, sidebar timer  -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="divider"></div>
+<div class="page"><div class="label">Variation B — Split Layout + Sidebar</div>
+<div class="desc">Question on left, sidebar with timer, question navigator dots, and quiz info on right. Letter-keyed options (A, B, C, D). Best for: timed quizzes with many questions.</div></div>
+
+<div class="quiz-header">
+  <div class="quiz-header-left">
+    <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <h2>Employee Code of Conduct — Quiz</h2>
+    <span class="badge badge-pass">80% to pass</span>
+  </div>
+  <div class="quiz-header-right">
+    <span>Step 2 of 4 — Quiz</span>
+    <button class="exit-btn">Exit</button>
+  </div>
+</div>
+
+<div class="quiz-b">
+  <div class="main-area">
+    <div class="question-card">
+      <div class="q-number">Question 1 of 5</div>
+      <div class="q-text">What is the minimum password length required by the policy?</div>
+      <div class="option"><div class="option-letter">A</div><span>8 characters</span></div>
+      <div class="option selected"><div class="option-letter">B</div><span>10 characters</span></div>
+      <div class="option"><div class="option-letter">C</div><span>12 characters</span></div>
+      <div class="option"><div class="option-letter">D</div><span>16 characters</span></div>
+    </div>
+    <div class="nav-row">
+      <button class="nav-btn" disabled style="opacity:0.4;">← Previous</button>
+      <button class="nav-btn nav-btn-primary">Next →</button>
+    </div>
+  </div>
+
+  <div class="sidebar">
+    <!-- Timer -->
+    <div class="sidebar-card">
+      <div class="sidebar-title">Time Remaining</div>
+      <div class="timer">14:32</div>
+      <div class="timer-label">Minutes</div>
+    </div>
+
+    <!-- Question Navigator -->
+    <div class="sidebar-card">
+      <div class="sidebar-title">Questions</div>
+      <div class="q-dots">
+        <div class="q-dot current">1</div>
+        <div class="q-dot">2</div>
+        <div class="q-dot">3</div>
+        <div class="q-dot">4</div>
+        <div class="q-dot">5</div>
+      </div>
+    </div>
+
+    <!-- Quiz Info -->
+    <div class="sidebar-card">
+      <div class="sidebar-title">Quiz Info</div>
+      <div class="info-row"><span>Pass mark</span><strong>80%</strong></div>
+      <div class="info-row"><span>Answered</span><strong>1 / 5</strong></div>
+      <div class="info-row"><span>Attempts</span><strong>1 of 3</strong></div>
+    </div>
+
+    <!-- Submit -->
+    <button class="nav-btn nav-btn-primary" style="width:100%;justify-content:center;padding:12px;">
+      <svg viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Submit Quiz
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- VARIATION C — Minimal, focus mode           -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="divider"></div>
+<div class="page"><div class="label">Variation C — Minimal Focus Mode</div>
+<div class="desc">Centred, distraction-free. Pill-shaped progress dots, large question text, generous option cards with hover lift. No sidebar clutter. Best for: clean, modern, mobile-friendly experience.</div></div>
+
+<div class="quiz-header">
+  <div class="quiz-header-left">
+    <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <h2>Employee Code of Conduct — Quiz</h2>
+    <span class="badge badge-pass">80% to pass</span>
+  </div>
+  <div class="quiz-header-right">
+    <span>Step 2 of 4 — Quiz</span>
+    <button class="exit-btn">Exit</button>
+  </div>
+</div>
+
+<div class="quiz-c">
+  <!-- Meta bar -->
+  <div class="meta-bar">
+    <div class="meta-item">
+      <svg viewBox="0 0 24 24" fill="none" width="14" height="14"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      14:32 remaining
+    </div>
+    <div class="meta-item">
+      <svg viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      1 of 5 answered
+    </div>
+    <div class="meta-item">
+      <svg viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="2"/></svg>
+      80% to pass
+    </div>
+  </div>
+
+  <!-- Progress dots -->
+  <div class="step-dots">
+    <div class="step-dot current"></div>
+    <div class="step-dot"></div>
+    <div class="step-dot"></div>
+    <div class="step-dot"></div>
+    <div class="step-dot"></div>
+  </div>
+
+  <!-- Question -->
+  <div class="q-number">Question 1 of 5</div>
+  <div class="q-text">What is the minimum password length required by the policy?</div>
+
+  <!-- Options -->
+  <div class="options">
+    <div class="option"><div class="option-check"></div><span>8 characters</span></div>
+    <div class="option selected"><div class="option-check"></div><span>10 characters</span></div>
+    <div class="option"><div class="option-check"></div><span>12 characters</span></div>
+    <div class="option"><div class="option-check"></div><span>16 characters</span></div>
+  </div>
+
+  <!-- Navigation -->
+  <div class="nav-row">
+    <button class="nav-btn nav-btn-secondary">← Back</button>
+    <button class="nav-btn nav-btn-primary">
+      Next Question →
+    </button>
+  </div>
+</div>
+
+<!-- Summary -->
+<div class="divider"></div>
+<div class="page">
+  <table style="width:100%;border-collapse:collapse;font-size:13px;">
+    <tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;">
+      <th style="padding:10px 14px;text-align:left;">Variation</th>
+      <th style="padding:10px 14px;text-align:left;">Layout</th>
+      <th style="padding:10px 14px;text-align:left;">Progress Indicator</th>
+      <th style="padding:10px 14px;text-align:left;">Option Style</th>
+      <th style="padding:10px 14px;text-align:left;">Best For</th>
+    </tr>
+    <tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:8px 14px;font-weight:600;">A — Card Centred</td><td style="padding:8px 14px;">720px centred card</td><td style="padding:8px 14px;">Linear progress bar + percentage</td><td style="padding:8px 14px;">Radio dots</td><td style="padding:8px 14px;">Simple, clean, focused</td></tr>
+    <tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:8px 14px;font-weight:600;">B — Split + Sidebar</td><td style="padding:8px 14px;">960px grid: question + sidebar</td><td style="padding:8px 14px;">Question dot navigator + timer</td><td style="padding:8px 14px;">Letter keys (A/B/C/D)</td><td style="padding:8px 14px;">Timed quizzes, many questions</td></tr>
+    <tr><td style="padding:8px 14px;font-weight:600;">C — Minimal Focus</td><td style="padding:8px 14px;">640px centred, no card border</td><td style="padding:8px 14px;">Pill dots (current = wide)</td><td style="padding:8px 14px;">Checkmark circles with hover lift</td><td style="padding:8px 14px;">Modern, mobile-friendly, premium</td></tr>
+  </table>
+</div>
+
+</body>
+</html>

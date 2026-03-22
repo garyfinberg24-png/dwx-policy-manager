@@ -136,6 +136,7 @@ export interface IPolicyDetailsState {
   // Horizontal quiz state
   currentQuizQuestion: number;
   quizAnswers: number[];
+  quizConfirmed: boolean[];  // which questions have been confirmed (locked in)
   quizSubmitted: boolean;
   // Browse mode — read-only viewing from Policy Hub (no wizard/acknowledge flow)
   browseMode: boolean;
@@ -245,6 +246,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
       // Horizontal quiz
       currentQuizQuestion: 0,
       quizAnswers: new Array(MOCK_QUIZ_QUESTIONS.length).fill(-1),
+      quizConfirmed: new Array(MOCK_QUIZ_QUESTIONS.length).fill(false),
       quizSubmitted: false,
       // Browse mode detection — from Policy Hub browsing
       browseMode: this.getBrowseModeFromUrl(),
@@ -1023,17 +1025,25 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
 
   private handleQuizSelectAnswer = (questionIndex: number, optionIndex: number): void => {
     if (this.state.quizSubmitted) return;
+    if (this.state.quizConfirmed[questionIndex]) return; // Already confirmed — locked
     const newAnswers = [...this.state.quizAnswers];
     newAnswers[questionIndex] = optionIndex;
     this.setState({ quizAnswers: newAnswers });
+    // No auto-advance — user must click "Confirm Answer"
+  };
 
-    // Auto-advance after short delay
-    if (this.state.currentQuizQuestion < MOCK_QUIZ_QUESTIONS.length - 1) {
-      setTimeout(() => {
-        this.setState(prev => ({
-          currentQuizQuestion: prev.currentQuizQuestion + 1
-        }));
-      }, 400);
+  private handleQuizConfirmAnswer = (): void => {
+    const { currentQuizQuestion, quizAnswers } = this.state;
+    if (quizAnswers[currentQuizQuestion] < 0) return; // No answer selected
+    const newConfirmed = [...this.state.quizConfirmed];
+    newConfirmed[currentQuizQuestion] = true;
+    this.setState({ quizConfirmed: newConfirmed });
+  };
+
+  private handleQuizNextAfterConfirm = (): void => {
+    const { currentQuizQuestion } = this.state;
+    if (currentQuizQuestion < MOCK_QUIZ_QUESTIONS.length - 1) {
+      this.setState({ currentQuizQuestion: currentQuizQuestion + 1 });
     }
   };
 
@@ -1072,6 +1082,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
       quizCompleted: false,
       quizScore: 0,
       quizAnswers: new Array(MOCK_QUIZ_QUESTIONS.length).fill(-1),
+      quizConfirmed: new Array(MOCK_QUIZ_QUESTIONS.length).fill(false),
       currentQuizQuestion: 0,
       error: null
     });
@@ -1725,121 +1736,220 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
 
     // Fallback: mock quiz (for policies without a live quiz)
     const questions = MOCK_QUIZ_QUESTIONS;
-    const allAnswered = this.allQuizAnswered();
+    const allConfirmed = this.state.quizConfirmed.every(c => c);
+    const qi = currentQuizQuestion;
+    const q = questions[qi];
+    const isConfirmed = this.state.quizConfirmed[qi];
+    const isCorrect = isConfirmed && quizAnswers[qi] === q.correctIndex;
+    const isIncorrect = isConfirmed && quizAnswers[qi] !== q.correctIndex;
+    const passingScore = policy.QuizPassingScore || 80;
+
+    // Explanations per question (for feedback)
+    const explanations = [
+      'The policy requires a minimum of 12 characters for all passwords to ensure strong security.',
+      'Passwords must be changed every 90 days as per the security rotation schedule.',
+      'All security incidents must be reported directly to the Security Team for immediate triage.',
+      'Sharing login credentials is never permitted, regardless of circumstances. Each user must use their own credentials.',
+      'Suspected phishing emails should be forwarded to the Security Team for analysis. Never click links in suspicious emails.'
+    ];
 
     return (
       <div className={styles.stepContent}>
         {/* Quiz Banner */}
         <div className={styles.quizBanner}>
           <Icon iconName="Questionnaire" styles={{ root: { fontSize: 18 } }} />
-          <span>This policy requires a comprehension quiz. You must score at least <strong>{policy.QuizPassingScore || 80}%</strong> to proceed.</span>
+          <span>This policy requires a comprehension quiz. You must score at least <strong>{passingScore}%</strong> to proceed.</span>
         </div>
 
-        <div className={styles.wizardCard}>
-          <div className={styles.cardHeader}>
-            <div className={styles.cardIcon}>
-              <Icon iconName="Questionnaire" styles={{ root: { fontSize: 18 } }} />
-            </div>
-            <h2 style={{ fontSize: 17, fontWeight: 700, color: '#0f172a', margin: 0 }}>
-              {policy.PolicyName} — Comprehension Quiz
-            </h2>
-          </div>
-
-          {/* Question dots */}
-          <div className={styles.questionDots}>
-            {questions.map((_, i) => (
-              <div
-                key={i}
-                className={`${styles.qDot} ${quizAnswers[i] >= 0 ? styles.answered : ''} ${i === currentQuizQuestion && !quizSubmitted ? styles.current : ''}`}
-                onClick={() => !quizSubmitted && this.setState({ currentQuizQuestion: i })}
-              >
-                {i + 1}
+        {!quizSubmitted ? (
+          <div style={{ maxWidth: 680, margin: '0 auto' }}>
+            {/* Progress bar */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
+              <div style={{ flex: 1, height: 6, background: '#e2e8f0', borderRadius: 3, overflow: 'hidden' }}>
+                <div style={{ height: '100%', background: '#0d9488', borderRadius: 3, width: `${((qi + 1) / questions.length) * 100}%`, transition: 'width 0.5s' }} />
               </div>
-            ))}
-          </div>
+              <span style={{ fontSize: 12, color: '#64748b', whiteSpace: 'nowrap' }}>{qi + 1} / {questions.length}</span>
+            </div>
 
-          {/* Questions viewport */}
-          {!quizSubmitted ? (
-            <>
-              <div className={styles.questionsViewport}>
-                {questions.map((q, qi) => (
+            {/* Question dots — green ✓ / red ✗ / current / unanswered */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 24 }}>
+              {questions.map((_, i) => {
+                const confirmed = this.state.quizConfirmed[i];
+                const correct = confirmed && quizAnswers[i] === questions[i].correctIndex;
+                const incorrect = confirmed && quizAnswers[i] !== questions[i].correctIndex;
+                const isCurrent = i === qi && !quizSubmitted;
+                return (
                   <div
-                    key={qi}
-                    className={`${styles.questionCard} ${qi === currentQuizQuestion ? styles.visible : ''} ${quizAnswers[qi] >= 0 ? styles.answered : ''}`}
+                    key={i}
+                    role="button" tabIndex={0}
+                    onClick={() => this.setState({ currentQuizQuestion: i })}
+                    onKeyDown={(e) => { if (e.key === 'Enter') this.setState({ currentQuizQuestion: i }); }}
+                    style={{
+                      width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
+                      background: correct ? '#059669' : incorrect ? '#dc2626' : isCurrent ? '#f0fdfa' : '#fff',
+                      border: `2px solid ${correct ? '#059669' : incorrect ? '#dc2626' : isCurrent ? '#0d9488' : '#e2e8f0'}`,
+                      color: correct || incorrect ? '#fff' : isCurrent ? '#0d9488' : '#94a3b8',
+                    }}
                   >
-                    <div className={styles.questionNum}>Question {qi + 1} of {questions.length}</div>
-                    <div className={styles.questionText}>{q.question}</div>
-                    <div className={styles.optionGroup}>
-                      {q.options.map((opt, oi) => (
-                        <label
-                          key={oi}
-                          className={`${styles.optionLabel} ${quizAnswers[qi] === oi ? styles.selected : ''}`}
-                          onClick={() => this.handleQuizSelectAnswer(qi, oi)}
-                        >
-                          <input type="radio" name={`q${qi}`} checked={quizAnswers[qi] === oi} readOnly />
-                          <span>{opt}</span>
-                        </label>
-                      ))}
+                    {correct ? '✓' : incorrect ? '✗' : i + 1}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Feedback banner (shown after confirm) */}
+            {isCorrect && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 8, marginBottom: 20, background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#166534', fontSize: 13 }}>
+                <span style={{ fontSize: 18 }}>✓</span>
+                <div><strong style={{ display: 'block', marginBottom: 2 }}>Correct!</strong><span style={{ fontSize: 12, opacity: 0.8 }}>{explanations[qi]}</span></div>
+              </div>
+            )}
+            {isIncorrect && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 8, marginBottom: 20, background: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b', fontSize: 13 }}>
+                <span style={{ fontSize: 18 }}>✗</span>
+                <div><strong style={{ display: 'block', marginBottom: 2 }}>Incorrect</strong><span style={{ fontSize: 12, opacity: 0.8 }}>{explanations[qi]}</span></div>
+              </div>
+            )}
+
+            {/* Question card */}
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: 32, marginBottom: 20 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#94a3b8', marginBottom: 8 }}>Question {qi + 1} of {questions.length}</div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', marginBottom: 28, lineHeight: 1.4 }}>{q.question}</div>
+              {q.options.map((opt, oi) => {
+                const isSelected = quizAnswers[qi] === oi;
+                const isCorrectOption = isConfirmed && oi === q.correctIndex;
+                const isWrongSelection = isConfirmed && isSelected && oi !== q.correctIndex;
+                return (
+                  <div
+                    key={oi}
+                    role="button" tabIndex={0}
+                    onClick={() => this.handleQuizSelectAnswer(qi, oi)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') this.handleQuizSelectAnswer(qi, oi); }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', marginBottom: 8,
+                      border: `2px solid ${isWrongSelection ? '#dc2626' : isCorrectOption ? '#059669' : isSelected ? '#0d9488' : '#e2e8f0'}`,
+                      borderStyle: isCorrectOption && !isSelected ? 'dashed' : 'solid',
+                      borderRadius: 8, cursor: isConfirmed ? 'default' : 'pointer', transition: 'all 0.2s', fontSize: 14,
+                      background: isWrongSelection ? '#fef2f2' : isCorrectOption ? '#f0fdf4' : isSelected ? '#f0fdfa' : '#fff',
+                    }}
+                  >
+                    <div style={{
+                      width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700,
+                      border: `2px solid ${isWrongSelection ? '#dc2626' : isCorrectOption ? '#059669' : isSelected ? '#0d9488' : '#cbd5e1'}`,
+                      background: isWrongSelection ? '#dc2626' : isCorrectOption ? '#059669' : isSelected ? '#0d9488' : 'transparent',
+                      color: (isWrongSelection || isCorrectOption || isSelected) ? '#fff' : 'transparent',
+                    }}>
+                      {isWrongSelection ? '✗' : isCorrectOption ? '✓' : isSelected ? '•' : ''}
+                    </div>
+                    <span>{opt}</span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Navigation */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <DefaultButton
+                text="← Previous"
+                disabled={qi === 0}
+                onClick={() => this.setState({ currentQuizQuestion: qi - 1 })}
+                styles={{ root: { borderRadius: 6 } }}
+              />
+              <span style={{ fontSize: 13, color: '#64748b' }}>Question {qi + 1} of {questions.length}</span>
+              {!isConfirmed ? (
+                <PrimaryButton
+                  text="Confirm Answer →"
+                  disabled={quizAnswers[qi] < 0}
+                  onClick={this.handleQuizConfirmAnswer}
+                  styles={{ root: { borderRadius: 6, background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e' } }}
+                />
+              ) : qi < questions.length - 1 ? (
+                <PrimaryButton
+                  text="Next Question →"
+                  onClick={this.handleQuizNextAfterConfirm}
+                  styles={{ root: { borderRadius: 6, background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e' } }}
+                />
+              ) : allConfirmed ? (
+                <PrimaryButton
+                  text="View Results"
+                  iconProps={{ iconName: 'Accept' }}
+                  onClick={this.handleQuizSubmit}
+                  styles={{ root: { borderRadius: 6, background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e' } }}
+                />
+              ) : (
+                <PrimaryButton text="Answer remaining questions" disabled styles={{ root: { borderRadius: 6 } }} />
+              )}
+            </div>
+          </div>
+        ) : (
+          /* Results screen with answer review */
+          <div style={{ maxWidth: 680, margin: '0 auto' }}>
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: 32, textAlign: 'center', marginBottom: 24 }}>
+              <div style={{ fontSize: 48, fontWeight: 700, color: quizPassed ? '#059669' : '#dc2626' }}>{quizScore}%</div>
+              <div style={{ fontSize: 14, color: '#64748b', marginBottom: 16 }}>
+                {Math.round(quizScore / (100 / questions.length))}/{questions.length} correct
+              </div>
+              <div style={{
+                display: 'inline-block', padding: '6px 16px', borderRadius: 20, fontSize: 13, fontWeight: 700,
+                background: quizPassed ? '#dcfce7' : '#fee2e2', color: quizPassed ? '#166534' : '#991b1b'
+              }}>
+                {quizPassed ? '✓ Passed — You may proceed to acknowledgement' : `✗ Not passed — ${passingScore}% required`}
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 32, marginTop: 20 }}>
+                <div style={{ textAlign: 'center' }}><div style={{ fontSize: 20, fontWeight: 700, color: '#059669' }}>{questions.filter((qq, i) => quizAnswers[i] === qq.correctIndex).length}</div><div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#94a3b8', marginTop: 2 }}>Correct</div></div>
+                <div style={{ textAlign: 'center' }}><div style={{ fontSize: 20, fontWeight: 700, color: '#dc2626' }}>{questions.filter((qq, i) => quizAnswers[i] !== qq.correctIndex).length}</div><div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#94a3b8', marginTop: 2 }}>Incorrect</div></div>
+              </div>
+            </div>
+
+            {/* Answer review */}
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: 24, marginBottom: 24 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#94a3b8', marginBottom: 16 }}>Answer Review</div>
+              {questions.map((qq, i) => {
+                const correct = quizAnswers[i] === qq.correctIndex;
+                return (
+                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '14px 0', borderBottom: i < questions.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
+                    <div style={{
+                      width: 24, height: 24, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 11, fontWeight: 700, flexShrink: 0, marginTop: 2,
+                      background: correct ? '#dcfce7' : '#fee2e2', color: correct ? '#059669' : '#dc2626'
+                    }}>{correct ? '✓' : '✗'}</div>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#0f172a', marginBottom: 4 }}>Q{i + 1}: {qq.question}</div>
+                      {correct ? (
+                        <div style={{ fontSize: 12, color: '#059669', fontWeight: 600 }}>Your answer: {qq.options[quizAnswers[i]]} ✓</div>
+                      ) : (
+                        <>
+                          <div style={{ fontSize: 12, color: '#dc2626', textDecoration: 'line-through' }}>Your answer: {qq.options[quizAnswers[i]] || 'Not answered'}</div>
+                          <div style={{ fontSize: 12, color: '#059669', fontWeight: 600 }}>Correct: {qq.options[qq.correctIndex]}</div>
+                        </>
+                      )}
                     </div>
                   </div>
-                ))}
-              </div>
+                );
+              })}
+            </div>
 
-              {/* Nav row */}
-              <div className={styles.quizNavRow}>
-                <DefaultButton
-                  text="Previous"
-                  iconProps={{ iconName: 'ChevronLeft' }}
-                  disabled={currentQuizQuestion === 0}
-                  onClick={() => this.setState({ currentQuizQuestion: currentQuizQuestion - 1 })}
-                  styles={{ root: { height: 32 }, label: { fontSize: 12 } }}
-                />
-                <Text variant="small" style={{ color: '#64748b', fontWeight: 600 }}>
-                  Question {currentQuizQuestion + 1} of {questions.length}
-                </Text>
-                <DefaultButton
-                  text="Next"
-                  iconProps={{ iconName: 'ChevronRight' }}
-                  iconPosition="after"
-                  disabled={currentQuizQuestion === questions.length - 1}
-                  onClick={() => this.setState({ currentQuizQuestion: currentQuizQuestion + 1 })}
-                  styles={{ root: { height: 32 }, label: { fontSize: 12 } }}
-                />
-              </div>
-
-              {/* Submit */}
-              <div style={{ textAlign: 'center', marginTop: 20 }}>
+            {/* Actions */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
+              {quizPassed ? (
                 <PrimaryButton
-                  text="Submit Quiz"
-                  iconProps={{ iconName: 'Accept' }}
-                  disabled={!allAnswered}
-                  onClick={this.handleQuizSubmit}
+                  text="Proceed to Acknowledgement →"
+                  onClick={() => this.setState({ currentFlowStep: 'acknowledge', showAcknowledgePanel: true })}
+                  styles={{ root: { borderRadius: 6, background: '#0d9488', borderColor: '#0d9488', padding: '12px 32px' }, rootHovered: { background: '#0f766e' } }}
                 />
-              </div>
-            </>
-          ) : (
-            /* Post-submission result */
-            <div className={`${styles.quizResult} ${quizPassed ? styles.passed : styles.failed}`}>
-              <Text variant="xxLarge" style={{ fontWeight: 800 }}>{quizScore}%</Text>
-              <Text variant="medium" style={{ marginTop: 4 }}>
-                {Math.round(quizScore / (100 / questions.length))}/{questions.length} correct — {quizPassed ? 'PASSED' : `Required: ${policy.QuizPassingScore || 80}%`}
-              </Text>
-              {quizPassed && (
-                <Text variant="medium" style={{ marginTop: 8, color: '#16a34a' }}>
-                  <Icon iconName="CheckMark" /> You may now proceed to acknowledge the policy.
-                </Text>
-              )}
-              {!quizPassed && (
+              ) : (
                 <DefaultButton
                   text="Retake Quiz"
                   iconProps={{ iconName: 'Refresh' }}
                   onClick={this.handleQuizRetake}
-                  styles={{ root: { marginTop: 16 } }}
+                  styles={{ root: { borderRadius: 6 } }}
                 />
               )}
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     );
   }

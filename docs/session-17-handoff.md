@@ -102,7 +102,26 @@ The Reports feature (Manager > Reports) has:
 | PolicyHub.module.scss | 3-column grid |
 | PolicyHub.tsx | Hero, facets, featured accordion, list detail panel, card click, Published filter, version column |
 
+## Production Readiness Audit (22 Mar 2026)
+
+**78/79 PASS (99%)** — 20 fixes applied during audit.
+
+| Phase | Items | Result |
+|-------|-------|--------|
+| 1. Core CRUD | 16 | ALL PASS — 8 field mismatches fixed, 10 stubs eliminated |
+| 2. Azure Functions | 6 | ALL PASS — no secrets, proper validation |
+| 3. Admin Centre | 15 | ALL PASS — all sections save/load correctly |
+| 4. Manager Features | 10 | ALL PASS — delegation persist fix |
+| 5. Navigation/UI | 15 | 14 PASS, 1 PARTIAL (hero padding) |
+| 6. Error Handling | 9 | ALL PASS |
+| 7. Security | 8 | ALL PASS |
+
+Key fixes: zero alert() stubs, delegation persists to SP, Policy Builder loads all fields on edit, currentUser cached, select('*') replaced with specific columns.
+
+See: docs/production-readiness-results.md
+
 ## Build
 - Zero errors, 14 manifests, 7.6MB package
-- Commit: `05dd869`
+- Session commits: `05dd869` through `7bf325c` (13 commits)
+- Rollback tag: `pre-production-hardening` on `4693afc`
 - Pushed to ADO + GitHub

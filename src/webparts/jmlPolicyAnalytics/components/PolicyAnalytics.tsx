@@ -1990,7 +1990,15 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
             </button>
           ))}
           <div style={{ flex: 1 }} />
-          <button style={filterBtnActiveStyle} onClick={() => alert('Exporting audit log...')}>Export</button>
+          <button style={filterBtnActiveStyle} onClick={() => {
+            const rows = (this.state as any).auditEntries || [];
+            if (rows.length === 0) return;
+            const headers = ['Timestamp', 'User', 'Action', 'Category', 'Resource', 'Department'];
+            const csv = [headers.join(','), ...rows.map((r: any) => [r.timestamp || '', r.user || '', r.action || '', r.category || '', r.resource || '', r.department || ''].map((v: string) => `"${v.replace(/"/g, '""')}"`).join(','))].join('\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a'); link.href = url; link.download = `AuditLog_${new Date().toISOString().split('T')[0]}.csv`; link.click(); URL.revokeObjectURL(url);
+          }}>Export</button>
         </div>
 
         {/* Audit Log Table */}
@@ -2073,8 +2081,8 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
                       <span style={{ fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, textTransform: 'uppercase', background: fmtBadge.bg, color: fmtBadge.color }}>{rpt.format}</span>
                     </div>
                     <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #f1f5f9', display: 'flex', gap: 8 }}>
-                      <button style={{ ...filterBtnStyle, fontSize: 11, padding: '4px 10px' }} onClick={() => alert(`Running ${rpt.title}...`)}>Run Now</button>
-                      <button style={{ ...filterBtnStyle, fontSize: 11, padding: '4px 10px' }} onClick={() => alert(`Editing ${rpt.title}...`)}>Edit</button>
+                      <button style={{ ...filterBtnStyle, fontSize: 11, padding: '4px 10px' }} onClick={() => { window.location.href = '/sites/PolicyManager/SitePages/PolicyManagerView.aspx?tab=reports'; }}>Run Now</button>
+                      <button style={{ ...filterBtnStyle, fontSize: 11, padding: '4px 10px' }} onClick={() => { window.location.href = '/sites/PolicyManager/SitePages/PolicyManagerView.aspx?tab=reports'; }}>Edit</button>
                     </div>
                   </div>
                 );

@@ -5675,12 +5675,18 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             <DefaultButton
               text="Related Quizzes"
               iconProps={{ iconName: 'Questionnaire' }}
-              onClick={() => alert('Related quizzes will be shown')}
+              onClick={() => {
+                const siteUrl = this.props.context.pageContext.web.absoluteUrl;
+                window.open(`${siteUrl}/SitePages/QuizBuilder.aspx?policyId=${selectedPolicyDetails.Id}`, '_blank');
+              }}
             />
             <DefaultButton
               text="Acknowledgement Status"
               iconProps={{ iconName: 'UserFollowed' }}
-              onClick={() => alert('Acknowledgement tracking will be shown')}
+              onClick={() => {
+                const siteUrl = this.props.context.pageContext.web.absoluteUrl;
+                window.open(`${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${selectedPolicyDetails.Id}`, '_blank');
+              }}
             />
           </Stack>
         </Stack>

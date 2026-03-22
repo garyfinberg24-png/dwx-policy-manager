@@ -902,10 +902,24 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
   };
 
   private handleExport = (): void => {
-    // In production, this would export to Excel/CSV
-    console.log('Export functionality - would generate CSV/Excel file');
-    // For now, show a message
-    alert('Export functionality would generate a CSV/Excel file with the current filter results.');
+    const { searchResults } = this.state;
+    if (!searchResults || searchResults.policies.length === 0) return;
+
+    // Generate CSV from current filtered results
+    const headers = ['Policy Number', 'Policy Name', 'Category', 'Status', 'Risk Level', 'Version', 'Modified'];
+    const rows = searchResults.policies.map((p: any) => [
+      p.PolicyNumber || '', p.PolicyName || p.Title || '', p.PolicyCategory || '',
+      p.PolicyStatus || '', p.ComplianceRisk || '', p.PolicyVersion || '1.0',
+      p.Modified ? new Date(p.Modified).toLocaleDateString('en-GB') : ''
+    ]);
+    const csv = [headers.join(','), ...rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `PolicyHub_Export_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   private handlePrint = (): void => {

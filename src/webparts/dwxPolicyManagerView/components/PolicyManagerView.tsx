@@ -1272,7 +1272,23 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
         {/* Overdue alert */}
         {totalOverdue > 0 && (
           <MessageBar messageBarType={MessageBarType.severeWarning} style={{ marginBottom: 24 }}
-            actions={<DefaultButton text="Send Reminders" onClick={() => alert('Reminder functionality coming soon')} />}>
+            actions={<DefaultButton text="Send Reminders" onClick={async () => {
+              try {
+                const overdueMembers = this.state.teamMembers.filter(m => m.PoliciesOverdue > 0);
+                for (const member of overdueMembers) {
+                  await this.props.sp.web.lists.getByTitle('PM_Notifications').items.add({
+                    Title: `Overdue policy reminder for ${member.Name}`,
+                    NotificationType: 'Reminder',
+                    Message: `You have ${member.PoliciesOverdue} overdue policy acknowledgement(s). Please complete them as soon as possible.`,
+                    RecipientEmail: member.Email || '',
+                    IsRead: false,
+                    Priority: 'High',
+                    CreatedDate: new Date().toISOString()
+                  });
+                }
+                void this.dialogManager?.showAlert?.(`Reminders sent to ${overdueMembers.length} team member(s).`, { variant: 'success' });
+              } catch { void this.dialogManager?.showAlert?.('Failed to send reminders. Please try again.', { variant: 'error' }); }
+            }} />}>
             <strong>{totalOverdue} overdue acknowledgement{totalOverdue > 1 ? 's' : ''}</strong> — send reminders to keep your team compliant.
           </MessageBar>
         )}
@@ -1327,14 +1343,34 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
                       title={`Nudge ${member.Name} on Teams`}
                       ariaLabel="Nudge on Teams"
                       styles={{ root: { width: 28, height: 28, color: '#6264a7' }, rootHovered: { color: '#4b4d8f', background: '#f3f2f1' } }}
-                      onClick={() => alert(`Teams nudge sent to ${member.Name}`)}
+                      onClick={async () => {
+                        try {
+                          await this.props.sp.web.lists.getByTitle('PM_Notifications').items.add({
+                            Title: `Compliance nudge for ${member.Name}`,
+                            NotificationType: 'Nudge',
+                            Message: `Please complete your ${member.PoliciesOverdue} overdue and ${member.PoliciesPending} pending policy acknowledgement(s).`,
+                            RecipientEmail: member.Email || '',
+                            IsRead: false, Priority: 'Normal', CreatedDate: new Date().toISOString()
+                          });
+                        } catch { /* non-blocking */ }
+                      }}
                     />
                     <IconButton
                       iconProps={{ iconName: 'Mail' }}
                       title={`Email ${member.Name}`}
                       ariaLabel="Send email reminder"
                       styles={{ root: { width: 28, height: 28, color: '#0078d4' }, rootHovered: { color: '#005a9e', background: '#f3f2f1' } }}
-                      onClick={() => alert(`Email reminder sent to ${member.Name}`)}
+                      onClick={async () => {
+                        try {
+                          await this.props.sp.web.lists.getByTitle('PM_EmailQueue').items.add({
+                            Title: `Policy compliance reminder — ${member.Name}`,
+                            To: member.Email || '',
+                            Subject: 'Action Required: Overdue Policy Acknowledgements',
+                            Body: `<p>Dear ${member.Name},</p><p>You have <strong>${member.PoliciesOverdue} overdue</strong> and <strong>${member.PoliciesPending} pending</strong> policy acknowledgement(s). Please log in to Policy Manager and complete them at your earliest convenience.</p><p>Regards,<br/>Policy Manager</p>`,
+                            Status: 'Queued', Priority: 'Normal', QueuedAt: new Date().toISOString()
+                          });
+                        } catch { /* non-blocking */ }
+                      }}
                     />
                   </div>
                 </td>
@@ -1641,7 +1677,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
                   </div>
                   <div>
                     {(r.Status === 'Due' || r.Status === 'Overdue') ? (
-                      <button onClick={() => alert(`Opening review for ${r.PolicyTitle}`)} style={{ padding: '5px 12px', borderRadius: 4, fontSize: 11, fontWeight: 600, cursor: 'pointer', border: '1px solid #0d9488', background: '#0d9488', color: '#fff', fontFamily: 'inherit' }}>Start Review</button>
+                      <button onClick={() => { window.location.href = `/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${r.Id}&mode=browse`; }} style={{ padding: '5px 12px', borderRadius: 4, fontSize: 11, fontWeight: 600, cursor: 'pointer', border: '1px solid #0d9488', background: '#0d9488', color: '#fff', fontFamily: 'inherit' }}>Start Review</button>
                     ) : r.Status === 'Upcoming' ? (
                       <button style={{ padding: '5px 12px', borderRadius: 4, fontSize: 11, fontWeight: 600, cursor: 'pointer', border: '1px solid #e2e8f0', background: '#fff', color: '#64748b', fontFamily: 'inherit' }}>Schedule</button>
                     ) : (

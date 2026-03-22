@@ -595,6 +595,27 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         reviewFrequency: (policy as any).ReviewFrequency || 'Annual',
         nextReviewDate: policy.NextReviewDate ? (typeof policy.NextReviewDate === 'string' ? policy.NextReviewDate : policy.NextReviewDate.toISOString()).split('T')[0] : '',
         supersedesPolicy: (policy as any).SupersedesPolicy || '',
+        // Load linked document fields (were saved but not loaded)
+        linkedDocumentUrl: (() => {
+          const rawUrl = policy.DocumentURL;
+          if (typeof rawUrl === 'string') return rawUrl;
+          if (rawUrl && typeof rawUrl === 'object' && (rawUrl as any).Url) return (rawUrl as any).Url;
+          return '';
+        })(),
+        linkedDocumentType: (() => {
+          const fmt = (policy as any).DocumentFormat || '';
+          const fmtMap: Record<string, string> = { Word: 'Word Document', Excel: 'Excel Spreadsheet', PowerPoint: 'PowerPoint Presentation' };
+          return fmtMap[fmt] || fmt || '';
+        })(),
+        // Reconstruct creation method from document format
+        creationMethod: (() => {
+          const fmt = (policy as any).DocumentFormat || '';
+          if (fmt === 'Word') return 'word';
+          if (fmt === 'Excel') return 'excel';
+          if (fmt === 'PowerPoint') return 'powerpoint';
+          if (policy.DocumentURL) return 'upload';
+          return 'blank';
+        })(),
         loading: false
       } as any); }
 

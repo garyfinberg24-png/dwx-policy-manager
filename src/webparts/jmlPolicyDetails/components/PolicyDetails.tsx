@@ -136,7 +136,8 @@ export interface IPolicyDetailsState {
   // Horizontal quiz state
   currentQuizQuestion: number;
   quizAnswers: number[];
-  quizConfirmed: boolean[];  // which questions have been confirmed (locked in)
+  quizConfirmed: boolean[];  // which questions have been confirmed (locked in — after 2 attempts or correct)
+  quizAttempts: number[];    // how many attempts per question (max 2 before answer revealed)
   quizSubmitted: boolean;
   // Browse mode — read-only viewing from Policy Hub (no wizard/acknowledge flow)
   browseMode: boolean;
@@ -247,6 +248,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
       currentQuizQuestion: 0,
       quizAnswers: new Array(MOCK_QUIZ_QUESTIONS.length).fill(-1),
       quizConfirmed: new Array(MOCK_QUIZ_QUESTIONS.length).fill(false),
+      quizAttempts: new Array(MOCK_QUIZ_QUESTIONS.length).fill(0),
       quizSubmitted: false,
       // Browse mode detection — from Policy Hub browsing
       browseMode: this.getBrowseModeFromUrl(),
@@ -1035,9 +1037,24 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
   private handleQuizConfirmAnswer = (): void => {
     const { currentQuizQuestion, quizAnswers } = this.state;
     if (quizAnswers[currentQuizQuestion] < 0) return; // No answer selected
-    const newConfirmed = [...this.state.quizConfirmed];
-    newConfirmed[currentQuizQuestion] = true;
-    this.setState({ quizConfirmed: newConfirmed });
+
+    const qi = currentQuizQuestion;
+    const q = MOCK_QUIZ_QUESTIONS[qi];
+    const isCorrect = quizAnswers[qi] === q.correctIndex;
+    const newAttempts = [...this.state.quizAttempts];
+    newAttempts[qi] = (newAttempts[qi] || 0) + 1;
+
+    if (isCorrect || newAttempts[qi] >= 2) {
+      // Correct on any attempt, or used both attempts — lock the answer and reveal
+      const newConfirmed = [...this.state.quizConfirmed];
+      newConfirmed[qi] = true;
+      this.setState({ quizConfirmed: newConfirmed, quizAttempts: newAttempts });
+    } else {
+      // First incorrect attempt — let them try again (reset selection, keep attempt count)
+      const newAnswers = [...this.state.quizAnswers];
+      newAnswers[qi] = -1; // Clear selection so they can pick again
+      this.setState({ quizAnswers: newAnswers, quizAttempts: newAttempts });
+    }
   };
 
   private handleQuizNextAfterConfirm = (): void => {
@@ -1083,6 +1100,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
       quizScore: 0,
       quizAnswers: new Array(MOCK_QUIZ_QUESTIONS.length).fill(-1),
       quizConfirmed: new Array(MOCK_QUIZ_QUESTIONS.length).fill(false),
+      quizAttempts: new Array(MOCK_QUIZ_QUESTIONS.length).fill(0),
       currentQuizQuestion: 0,
       error: null
     });
@@ -1740,8 +1758,10 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
     const qi = currentQuizQuestion;
     const q = questions[qi];
     const isConfirmed = this.state.quizConfirmed[qi];
+    const attempts = this.state.quizAttempts[qi] || 0;
     const isCorrect = isConfirmed && quizAnswers[qi] === q.correctIndex;
     const isIncorrect = isConfirmed && quizAnswers[qi] !== q.correctIndex;
+    const isFirstWrongAttempt = !isConfirmed && attempts === 1; // Tried once, got it wrong, can try again
     const passingScore = policy.QuizPassingScore || 80;
 
     // Explanations per question (for feedback)
@@ -1775,8 +1795,10 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
             <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 24 }}>
               {questions.map((_, i) => {
                 const confirmed = this.state.quizConfirmed[i];
+                const att = this.state.quizAttempts[i] || 0;
                 const correct = confirmed && quizAnswers[i] === questions[i].correctIndex;
                 const incorrect = confirmed && quizAnswers[i] !== questions[i].correctIndex;
+                const tryingAgain = !confirmed && att === 1; // Amber — had one wrong, trying again
                 const isCurrent = i === qi && !quizSubmitted;
                 return (
                   <div
@@ -1787,12 +1809,12 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                     style={{
                       width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
-                      background: correct ? '#059669' : incorrect ? '#dc2626' : isCurrent ? '#f0fdfa' : '#fff',
-                      border: `2px solid ${correct ? '#059669' : incorrect ? '#dc2626' : isCurrent ? '#0d9488' : '#e2e8f0'}`,
-                      color: correct || incorrect ? '#fff' : isCurrent ? '#0d9488' : '#94a3b8',
+                      background: correct ? '#059669' : incorrect ? '#dc2626' : tryingAgain ? '#d97706' : isCurrent ? '#f0fdfa' : '#fff',
+                      border: `2px solid ${correct ? '#059669' : incorrect ? '#dc2626' : tryingAgain ? '#d97706' : isCurrent ? '#0d9488' : '#e2e8f0'}`,
+                      color: correct || incorrect || tryingAgain ? '#fff' : isCurrent ? '#0d9488' : '#94a3b8',
                     }}
                   >
-                    {correct ? '✓' : incorrect ? '✗' : i + 1}
+                    {correct ? '✓' : incorrect ? '✗' : tryingAgain ? '!' : i + 1}
                   </div>
                 );
               })}
@@ -1805,10 +1827,16 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                 <div><strong style={{ display: 'block', marginBottom: 2 }}>Correct!</strong><span style={{ fontSize: 12, opacity: 0.8 }}>{explanations[qi]}</span></div>
               </div>
             )}
+            {isFirstWrongAttempt && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 8, marginBottom: 20, background: '#fef3c7', border: '1px solid #fbbf24', color: '#92400e', fontSize: 13 }}>
+                <span style={{ fontSize: 18 }}>⚠</span>
+                <div><strong style={{ display: 'block', marginBottom: 2 }}>Not quite — try again!</strong><span style={{ fontSize: 12, opacity: 0.8 }}>You have one more attempt. Read the question carefully and select a different answer.</span></div>
+              </div>
+            )}
             {isIncorrect && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 8, marginBottom: 20, background: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b', fontSize: 13 }}>
                 <span style={{ fontSize: 18 }}>✗</span>
-                <div><strong style={{ display: 'block', marginBottom: 2 }}>Incorrect</strong><span style={{ fontSize: 12, opacity: 0.8 }}>{explanations[qi]}</span></div>
+                <div><strong style={{ display: 'block', marginBottom: 2 }}>Incorrect — the correct answer is shown below</strong><span style={{ fontSize: 12, opacity: 0.8 }}>{explanations[qi]}</span></div>
               </div>
             )}
 
@@ -1860,7 +1888,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
               <span style={{ fontSize: 13, color: '#64748b' }}>Question {qi + 1} of {questions.length}</span>
               {!isConfirmed ? (
                 <PrimaryButton
-                  text="Confirm Answer →"
+                  text={isFirstWrongAttempt ? 'Confirm 2nd Attempt →' : 'Confirm Answer →'}
                   disabled={quizAnswers[qi] < 0}
                   onClick={this.handleQuizConfirmAnswer}
                   styles={{ root: { borderRadius: 6, background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e' } }}

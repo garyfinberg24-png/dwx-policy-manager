@@ -670,15 +670,23 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       void this._copyTemplateDocument(template);
     }
 
+    // Parse key points from template if available
+    let templateKeyPoints: string[] = [];
+    try {
+      const kp = (template as any).KeyPoints || (template as any).TemplateKeyPoints || '';
+      if (kp) { templateKeyPoints = typeof kp === 'string' ? kp.split(';').map((s: string) => s.trim()).filter(Boolean) : kp; }
+    } catch { /* ignore */ }
+
     this.setState({
       selectedTemplate: template,
+      policyName: this.state.policyName || template.Title || template.TemplateName || '',  // Pre-fill name from template
       policyContent: isSectionBased ? '' : (template.TemplateContent || template.HTMLTemplate || ''),
       policyCategory: template.TemplateCategory,
       complianceRisk: template.ComplianceRisk,
       readTimeframe: template.SuggestedReadTimeframe,
       requiresAcknowledgement: template.RequiresAcknowledgement,
       requiresQuiz: template.RequiresQuiz,
-      keyPoints: [],
+      keyPoints: templateKeyPoints,
       showTemplatePanel: false,
       creationMethod: isDocBased ? templateType : 'template',
       _templateType: templateType,

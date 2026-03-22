@@ -2619,24 +2619,30 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
     });
   }
 
-  private handleCreateDelegation(): void {
-    const { delegationForm, delegations } = this.state;
-    const newDelegation: IManagerDelegation = {
-      Id: delegations.length + 100,
-      DelegatedTo: delegationForm.delegateTo,
-      DelegatedToEmail: delegationForm.delegateToEmail,
-      DelegatedBy: 'Current User',
-      PolicyTitle: delegationForm.policyTitle,
-      TaskType: delegationForm.taskType,
-      Department: delegationForm.department,
-      AssignedDate: new Date().toISOString(),
-      DueDate: delegationForm.dueDate,
-      Status: 'Pending',
-      Notes: delegationForm.notes,
-      Priority: delegationForm.priority
-    };
-    this.setState({ delegations: [newDelegation, ...delegations] });
-    this.dismissDelegationPanel();
+  private async handleCreateDelegation(): Promise<void> {
+    const { delegationForm } = this.state;
+    try {
+      const currentUser = this.props.context.pageContext.user;
+      await this.props.sp.web.lists.getByTitle('PM_ApprovalDelegations').items.add({
+        Title: `${delegationForm.taskType} — ${delegationForm.policyTitle}`,
+        DelegateToName: delegationForm.delegateTo,
+        DelegateToEmail: delegationForm.delegateToEmail,
+        DelegateByName: currentUser?.displayName || 'Manager',
+        Reason: delegationForm.notes || delegationForm.policyTitle,
+        ProcessTypes: JSON.stringify([delegationForm.taskType]),
+        StartDate: new Date().toISOString(),
+        EndDate: delegationForm.dueDate || new Date(Date.now() + 7 * 86400000).toISOString(),
+        IsActive: true,
+        AutoDelegate: delegationForm.priority === 'High'
+      });
+
+      // Reload live data from SP
+      const delegations = await this.loadLiveDelegations();
+      if (this._isMounted) { this.setState({ delegations }); }
+      this.dismissDelegationPanel();
+    } catch (err) {
+      logger.error('PolicyManagerView', 'Failed to create delegation:', err);
+    }
   }
 
   // ==========================================================================

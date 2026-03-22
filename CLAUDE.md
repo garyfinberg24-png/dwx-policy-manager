@@ -812,7 +812,13 @@ The QuizBuilder's "AI Generate" panel calls the Azure Function with:
 
 ---
 
-## Session State (Last Updated: 20 Mar 2026 — Session 17 In Progress)
+## Session State (Last Updated: 22 Mar 2026 — Session 17 Complete)
+
+### Production Readiness Rules (MANDATORY)
+- **Border Radius**: All controls (dropdowns, search, inputs, buttons) = 4px. KPI cards = 8px.
+- **No Stubs**: If a stub or incomplete feature is found, implement it FULLY. No "for later".
+- **Fluent Panels**: DO NOT modify any Fluent Panel. Log issues for manual review only.
+- **Rollback checkpoint**: Git tag `pre-production-hardening` on commit `4693afc`
 
 ### Recently Completed (Session 17 — 20 Mar 2026)
 

@@ -833,7 +833,21 @@ The QuizBuilder's "AI Generate" panel calls the Azure Function with:
 **Zero alert() stubs remaining across entire codebase.**
 **Zero border-radius violations.**
 
-See: docs/production-readiness-results.md for full audit report.
+**Quiz UI overhaul (22 Mar 2026):**
+- 2-attempt flow: 1st wrong = amber "try again", 2nd wrong = red + answer revealed, correct = green
+- Confirm → Feedback → Next (no auto-advance)
+- Results screen with full answer review (✓/✗ per question, correct answers shown)
+- Question dots: green ✓ / red ✗ / amber ! (trying again)
+
+**Template metadata pre-fill:**
+- Template title → policyName (if empty)
+- Template KeyPoints loaded (semicolon-delimited)
+
+See: docs/production-readiness-results.md, docs/production-hardening-script.md
+
+### Rollback Checkpoints
+- `pre-production-hardening` — before production audit (commit `4693afc`)
+- `session-17-complete` — end of Session 17 (commit `ec0077d`)
 
 ### Recently Completed (Session 17 — 20-22 Mar 2026)
 

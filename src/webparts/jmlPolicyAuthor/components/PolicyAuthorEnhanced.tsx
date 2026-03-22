@@ -1069,7 +1069,27 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         try { await this.saveReviewers(policyId); } catch { /* non-blocking */ }
       } else {
         // Create new policy
-        const genNumber = policyNumber || `POL-${Date.now()}`;
+        // Generate policy number from category prefix + counter
+        let genNumber = policyNumber;
+        if (!genNumber) {
+          const catPrefixes: Record<string, string> = {
+            'HR Policies': 'HR', 'IT & Security': 'IT', 'Health & Safety': 'HS',
+            'Compliance': 'COM', 'Financial': 'FI', 'Operational': 'OP',
+            'Legal': 'LG', 'Environmental': 'ENV', 'Quality Assurance': 'QA',
+            'Data Privacy': 'DP', 'Custom': 'GEN'
+          };
+          const prefix = catPrefixes[this.state.policyCategory] || 'POL';
+          // Count existing policies with same prefix to get next number
+          try {
+            const existing = await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES)
+              .items.filter(`startswith(PolicyNumber,'POL-${prefix}-')`)
+              .select('Id').top(500)();
+            const nextNum = (existing.length + 1).toString().padStart(3, '0');
+            genNumber = `POL-${prefix}-${nextNum}`;
+          } catch {
+            genNumber = `POL-${prefix}-${Date.now().toString().slice(-6)}`;
+          }
+        }
         spData.PolicyNumber = genNumber;
         const result = await this.props.sp.web.lists
           .getByTitle(PM_LISTS.POLICIES)
@@ -1485,6 +1505,10 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                   }}>
                     {step.title}
                   </span>
+                  {/* Validation error indicator */}
+                  {this.state.stepErrors.has(index) && (this.state.stepErrors.get(index) || []).length > 0 && !isCompleted && (
+                    <span style={{ width: 16, height: 16, borderRadius: '50%', background: '#dc2626', color: '#fff', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }} title={(this.state.stepErrors.get(index) || []).join(', ')}>!</span>
+                  )}
                   <span style={{
                     fontSize: 10,
                     color: '#9ca3af',
@@ -2174,24 +2198,30 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                     onChange={(_, opt) => opt && this.setState({ _newProfileData: { ...newProfile, PolicyCategory: opt.key as string } } as any)}
                     placeholder="Select a category"
                   />
-                  <Dropdown
-                    label="Compliance Risk"
-                    selectedKey={newProfile.ComplianceRisk || 'Medium'}
-                    options={[
-                      { key: 'Critical', text: 'Critical' }, { key: 'High', text: 'High' }, { key: 'Medium', text: 'Medium' },
-                      { key: 'Low', text: 'Low' }, { key: 'Informational', text: 'Informational' }
-                    ]}
-                    onChange={(_, opt) => opt && this.setState({ _newProfileData: { ...newProfile, ComplianceRisk: opt.key as string } } as any)}
-                  />
-                  <Dropdown
-                    label="Read Timeframe"
-                    selectedKey={newProfile.ReadTimeframe || 'Week 1'}
-                    options={[
-                      { key: 'Immediate', text: 'Immediate' }, { key: 'Day 1', text: 'Day 1' }, { key: 'Day 3', text: 'Day 3' },
-                      { key: 'Week 1', text: 'Week 1' }, { key: 'Week 2', text: 'Week 2' }, { key: 'Month 1', text: 'Month 1' }
-                    ]}
-                    onChange={(_, opt) => opt && this.setState({ _newProfileData: { ...newProfile, ReadTimeframe: opt.key as string } } as any)}
-                  />
+                  <div>
+                    <Dropdown
+                      label="Compliance Risk"
+                      selectedKey={newProfile.ComplianceRisk || 'Medium'}
+                      options={[
+                        { key: 'Critical', text: 'Critical' }, { key: 'High', text: 'High' }, { key: 'Medium', text: 'Medium' },
+                        { key: 'Low', text: 'Low' }, { key: 'Informational', text: 'Informational' }
+                      ]}
+                      onChange={(_, opt) => opt && this.setState({ _newProfileData: { ...newProfile, ComplianceRisk: opt.key as string } } as any)}
+                    />
+                    <Text variant="tiny" style={{ color: '#94a3b8', marginTop: 2, display: 'block' }}>How critical is this policy? Critical = regulatory/legal requirement. Low = best practice guidance.</Text>
+                  </div>
+                  <div>
+                    <Dropdown
+                      label="Read Timeframe"
+                      selectedKey={newProfile.ReadTimeframe || 'Week 1'}
+                      options={[
+                        { key: 'Immediate', text: 'Immediate' }, { key: 'Day 1', text: 'Day 1' }, { key: 'Day 3', text: 'Day 3' },
+                        { key: 'Week 1', text: 'Week 1' }, { key: 'Week 2', text: 'Week 2' }, { key: 'Month 1', text: 'Month 1' }
+                      ]}
+                      onChange={(_, opt) => opt && this.setState({ _newProfileData: { ...newProfile, ReadTimeframe: opt.key as string } } as any)}
+                    />
+                    <Text variant="tiny" style={{ color: '#94a3b8', marginTop: 2, display: 'block' }}>When must employees read this policy? Immediate = before starting work. Week 1 = within first week.</Text>
+                  </div>
                   <Toggle
                     label="Requires Acknowledgement"
                     checked={newProfile.RequiresAcknowledgement !== false}
@@ -3523,12 +3553,20 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                             </Stack>
                           </div>
                         </Stack>
-                        <PrimaryButton
-                          text="Use Template"
-                          iconProps={{ iconName: 'Accept' }}
-                          onClick={() => this.handleSelectTemplate(template)}
-                          styles={{ root: { height: 32, padding: '0 16px', borderRadius: 4 }, label: { fontSize: 13 } }}
-                        />
+                        <Stack horizontal tokens={{ childrenGap: 6 }}>
+                          <DefaultButton
+                            text="Preview"
+                            iconProps={{ iconName: 'RedEye' }}
+                            onClick={() => this.setState({ _previewTemplateId: (this.state as any)._previewTemplateId === template.Id ? null : template.Id } as any)}
+                            styles={{ root: { height: 32, padding: '0 12px', borderRadius: 4 }, label: { fontSize: 12 } }}
+                          />
+                          <PrimaryButton
+                            text="Use Template"
+                            iconProps={{ iconName: 'Accept' }}
+                            onClick={() => this.handleSelectTemplate(template)}
+                            styles={{ root: { height: 32, padding: '0 16px', borderRadius: 4 }, label: { fontSize: 13 } }}
+                          />
+                        </Stack>
                       </Stack>
 
                       <Text variant="small" style={{ color: Colors.textSecondary, lineHeight: 1.5 }}>
@@ -3569,6 +3607,20 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                             ))}
                             {keyPoints.length > 4 && <span style={{ fontSize: 11, color: '#94a3b8' }}>+{keyPoints.length - 4} more</span>}
                           </Stack>
+                        </div>
+                      )}
+
+                      {/* Content preview (toggle) */}
+                      {(this.state as any)._previewTemplateId === template.Id && (
+                        <div style={{ padding: 12, borderRadius: 4, background: '#f0fdfa', border: '1px solid #ccfbf1', maxHeight: 200, overflowY: 'auto' }}>
+                          <Text variant="tiny" style={{ fontWeight: 600, color: '#0f766e', display: 'block', marginBottom: 8 }}>Template Content Preview</Text>
+                          {template.TemplateContent || template.HTMLTemplate ? (
+                            <div style={{ fontSize: 12, lineHeight: 1.6, color: '#334155' }}
+                              dangerouslySetInnerHTML={{ __html: (template.TemplateContent || template.HTMLTemplate || '').substring(0, 1000) + ((template.TemplateContent || template.HTMLTemplate || '').length > 1000 ? '...' : '') }}
+                            />
+                          ) : (
+                            <Text variant="small" style={{ color: '#94a3b8', fontStyle: 'italic' }}>No content preview available for this template type.</Text>
+                          )}
                         </div>
                       )}
                     </Stack>

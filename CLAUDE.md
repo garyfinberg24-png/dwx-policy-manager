@@ -812,7 +812,7 @@ The QuizBuilder's "AI Generate" panel calls the Azure Function with:
 
 ---
 
-## Session State (Last Updated: 22 Mar 2026 — Session 17 Complete)
+## Session State (Last Updated: 25 Mar 2026 — Session 18 Complete)
 
 ### Production Readiness Rules (MANDATORY)
 
@@ -848,8 +848,64 @@ See: docs/production-readiness-results.md, docs/production-hardening-script.md
 ### Rollback Checkpoints
 - `pre-production-hardening` — before production audit (commit `4693afc`)
 - `session-17-complete` — end of Session 17 (commit `ec0077d`)
+- `session-18-complete` — end of Session 18 (commit `bcbaaca`)
 
-### Recently Completed (Session 17 — 20-22 Mar 2026)
+### Recently Completed (Session 18 — 25 Mar 2026)
+
+#### Email Pipeline Live, Field Name Audit, Wizard Redesign, Notification Wiring
+
+**Email Pipeline (NOW WORKING END-TO-END):**
+- Logic App updated: PM_EmailQueue → PM_NotificationQueue, Status 'Queued' → 'Pending'
+- Field mapping: RecipientEmail→To, Title→Subject, Message→Body
+- Full chain: SPFx → PM_NotificationQueue → Logic App → Office 365 → Outlook
+- Logic App in separate Azure subscription (`dwx-pm-email-rg-prod`, subscription `7784acd0-...`)
+
+**Field Name Audit (20+ Critical Fixes):**
+- Comprehensive audit of every SP list write against provisioning scripts
+- Root cause of ALL broken audit logs: `logAudit()` wrote `Action: undefined` — fixed to `AuditAction`
+- ApprovalService: `NotificationType`→`Type`, `LinkUrl`→`ActionUrl`, JML URLs→PolicyManager
+- PolicyService: `Description`→`PolicyDescription`, `ReviewerIds` removed, `Status`→`ExemptionStatus`
+- PolicyAuthorView: `EventType`→`EntityType`, `EventDescription`→`ActionDescription`
+- PolicyManagerView: delegation writes fixed — `DelegatedById`/`DelegatedToId` (was non-existent field names)
+- NotificationRouter: `PM_EmailQueue`→`PM_NotificationQueue`, `Body`→`Message`
+- PolicyNotificationService: 6 field names corrected to match PM_Notifications schema
+- PolicyDetails: `UserId`→`AckUserId` on PM_PolicyAcknowledgements
+- All `/sites/JML/` URLs replaced with `/sites/PolicyManager/` across 6 service files
+- Script `20-NotificationChoiceUpdate.ps1` adds approval/review types to notification choice fields
+
+**Wizard Redesign:**
+- Step order: Creation Method → Basic Info → Metadata → Audience → Dates → Workflow → **Content** → Review
+- Content moved from Step 3 → Step 7 (complete metadata before writing content)
+- Creation Method: horizontal strip (Word, Excel, PPT, HTML, Infographic, Upload) with templates per type
+- Target Audience: scope cards (All/Targeted/New Hires) + department chip grid + role/location tags
+- Wizard chrome: CSS Grid 240px/1fr/260px, anchored footer bar, inline styles for reliability
+- 12 sample templates across 4 types (Word 4, Excel 3, PPT 3, HTML 3)
+- Validation rules updated to match new step indices
+- STEP_FIELDS bullet points and tipsMap reordered
+
+**Pipeline Inline Actions:**
+- 6 status-dependent action buttons per row: Edit, View, Submit, Duplicate, Delete, Withdraw
+- Submit for Review: status change + audit + in-app notification + email queue
+- Duplicate: copies as new Draft with (Copy) suffix
+- Withdraw: reverts to Draft + notifies reviewers of cancellation
+- All actions use per-recipient try/catch resilience pattern
+
+**Admin Centre:**
+- Groups & Permissions: consolidated into 5 tabs (Role, Approvers, Reviewers, Library, All)
+- Template upload: file upload control replaces URL text field
+- Metadata profile list: scrollable at 5+ items, applied settings 2-column grid
+
+**Data Persistence:**
+- Draft pipeline query: `VersionNumber` (was `PolicyVersion`), `PolicyOwner` expand with fallback
+- Policy load: `PolicyDescription`, PolicyOwner email restore, reviewers from PM_PolicyReviewers
+- Save draft: 2-phase save (core + optional) prevents missing column errors
+- Document creation stays on current step (was jumping back)
+- Open in Office uses `Doc.aspx?sourcedoc=&action=edit`
+
+**Build:** Zero errors, 14 webpart manifests
+**Commit:** `bcbaaca` — pushed to both ADO and GitHub
+
+### Previously Completed (Session 17 — 20-22 Mar 2026)
 
 #### Policy Hub Upgrade, Simple Reader, Manager Consolidation, UI Consistency
 

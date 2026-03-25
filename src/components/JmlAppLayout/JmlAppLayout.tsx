@@ -90,13 +90,33 @@ const DwxAppLayout: React.FC<IJmlAppLayoutProps> = (props) => {
 
   React.useEffect(() => {
     if (!policyManagerRole && context) {
-      // Attempt auto-detection: first from PM_UserProfiles (admin-assigned roles), then SP groups
+      // Role detection chain: IsSiteAdmin → PM_UserProfiles → SP group membership → User fallback
       try {
         const spInstance = sp || (context as any)._sp || null;
         if (spInstance) {
-          // Try admin-assigned roles from PM_UserProfiles first
           const userEmail = context.pageContext?.user?.email || '';
-          if (userEmail) {
+
+          // Helper: fall back to SP group-based detection
+          const detectViaGroups = (): void => {
+            const roleService = new RoleDetectionService(spInstance);
+            roleService.getCurrentUserRoles().then(userRoles => {
+              if (userRoles && userRoles.length > 0) {
+                const role = getHighestPolicyRole(userRoles);
+                console.log('[PolicyManager] Role detected via SP groups:', role);
+                setDetectedRole(role);
+              } else {
+                console.log('[PolicyManager] No SP group roles found, defaulting to User');
+                setDetectedRole(PolicyManagerRole.User);
+              }
+            }).catch(() => {
+              console.warn('[PolicyManager] SP group detection failed, defaulting to User');
+              setDetectedRole(PolicyManagerRole.User);
+            });
+          };
+
+          // Helper: check PM_UserProfiles then fall back to groups
+          const detectViaProfiles = (): void => {
+            if (!userEmail) { detectViaGroups(); return; }
             spInstance.web.lists.getByTitle('PM_UserProfiles')
               .items.filter("Email eq '" + userEmail.replace(/'/g, "''") + "'")
               .select('PMRole', 'PMRoles')
@@ -104,42 +124,42 @@ const DwxAppLayout: React.FC<IJmlAppLayoutProps> = (props) => {
               .then((profiles: any[]) => {
                 if (profiles.length > 0) {
                   const profile = profiles[0];
-                  // Multi-role: check PMRoles field (semicolon-delimited)
                   const rolesStr = profile.PMRoles || profile.PMRole || 'User';
                   const roles = rolesStr.split(';').map((r: string) => r.trim()).filter(Boolean);
-                  // Use highest role for nav filtering
                   const LEVEL: Record<string, number> = { User: 0, Author: 1, Manager: 2, Admin: 3 };
                   const highest = roles.reduce((a: string, b: string) => (LEVEL[b] || 0) > (LEVEL[a] || 0) ? b : a, 'User');
+                  console.log('[PolicyManager] Role detected via PM_UserProfiles:', highest);
                   setDetectedRole(highest as PolicyManagerRole);
                   return;
                 }
-                // Fallback to SP group detection
-                const roleService = new RoleDetectionService(spInstance);
-                roleService.getCurrentUserRoles().then(userRoles => {
-                  if (userRoles && userRoles.length > 0) {
-                    setDetectedRole(getHighestPolicyRole(userRoles));
-                  }
-                }).catch(() => setDetectedRole(PolicyManagerRole.User));
+                console.log('[PolicyManager] No PM_UserProfiles record, falling back to SP groups');
+                detectViaGroups();
               })
               .catch(() => {
-                // PM_UserProfiles may not exist — fall back to SP groups
-                const roleService = new RoleDetectionService(spInstance);
-                roleService.getCurrentUserRoles().then(userRoles => {
-                  if (userRoles && userRoles.length > 0) {
-                    setDetectedRole(getHighestPolicyRole(userRoles));
-                  }
-                }).catch(() => setDetectedRole(PolicyManagerRole.User));
+                console.log('[PolicyManager] PM_UserProfiles unavailable, falling back to SP groups');
+                detectViaGroups();
               });
-          } else {
-            const roleService = new RoleDetectionService(spInstance);
-            roleService.getCurrentUserRoles().then(userRoles => {
-              if (userRoles && userRoles.length > 0) {
-                setDetectedRole(getHighestPolicyRole(userRoles));
+          };
+
+          // Step 1: Check IsSiteAdmin — Site Collection Admins are always Admin
+          spInstance.web.currentUser.select('IsSiteAdmin')()
+            .then((user: any) => {
+              if (user.IsSiteAdmin) {
+                console.log('[PolicyManager] User is Site Collection Admin → Admin role');
+                setDetectedRole(PolicyManagerRole.Admin);
+                return;
               }
-            }).catch(() => setDetectedRole(PolicyManagerRole.User));
-          }
+              // Step 2: Check PM_UserProfiles → Step 3: SP groups
+              detectViaProfiles();
+            })
+            .catch(() => {
+              // IsSiteAdmin check failed — continue with profile/group detection
+              console.warn('[PolicyManager] IsSiteAdmin check failed, continuing with profile detection');
+              detectViaProfiles();
+            });
         }
       } catch {
+        console.warn('[PolicyManager] Role detection failed entirely, defaulting to User');
         setDetectedRole(PolicyManagerRole.User);
       }
     }

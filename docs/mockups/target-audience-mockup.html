@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Target Audience — Step 4 Redesign</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f8fafc; color: #0f172a; }
+  .page { max-width: 900px; margin: 0 auto; padding: 32px 40px; }
+
+  /* Variation selector */
+  .variation-bar { display: flex; gap: 8px; margin-bottom: 32px; padding: 12px 16px; background: #1e293b; border-radius: 8px; }
+  .variation-btn { padding: 8px 18px; border-radius: 4px; border: 1px solid #475569; background: transparent; color: #94a3b8; font-size: 13px; cursor: pointer; font-family: inherit; font-weight: 500; }
+  .variation-btn.active { background: #0d9488; border-color: #0d9488; color: #fff; font-weight: 600; }
+  .variation-btn:hover:not(.active) { border-color: #64748b; color: #e2e8f0; }
+  .variation { display: none; }
+  .variation.active { display: block; }
+
+  /* Shared styles */
+  .step-header { margin-bottom: 24px; }
+  .step-title { font-size: 20px; font-weight: 700; color: #0f172a; }
+  .step-desc { font-size: 13px; color: #64748b; margin-top: 4px; }
+
+  .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 16px; }
+  .card-title { font-size: 14px; font-weight: 600; color: #0f172a; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .card-title .icon { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+
+  .label { font-size: 13px; font-weight: 600; color: #323130; margin-bottom: 4px; display: block; }
+  .desc { font-size: 11px; color: #94a3b8; margin-bottom: 8px; }
+
+  .input { width: 100%; border: 1px solid #e2e8f0; border-radius: 4px; padding: 8px 12px; font-size: 13px; font-family: inherit; outline: none; }
+  .input:focus { border-color: #0d9488; }
+  .input::placeholder { color: #cbd5e1; }
+
+  .select { width: 100%; border: 1px solid #e2e8f0; border-radius: 4px; padding: 8px 12px; font-size: 13px; font-family: inherit; background: #fff; outline: none; appearance: auto; }
+
+  .checkbox-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; font-size: 13px; cursor: pointer; }
+  .checkbox-row input[type="checkbox"] { accent-color: #0d9488; width: 16px; height: 16px; }
+
+  .chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; background: #f0fdfa; color: #0d9488; border: 1px solid #99f6e4; margin: 2px; }
+  .chip .remove { cursor: pointer; color: #94a3b8; font-size: 10px; margin-left: 2px; }
+  .chip .remove:hover { color: #dc2626; }
+
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: #f8fafc; border-radius: 6px; border: 1px solid #e2e8f0; margin-bottom: 8px; }
+  .toggle-row .toggle-label { font-size: 13px; font-weight: 600; color: #0f172a; }
+  .toggle-row .toggle-desc { font-size: 11px; color: #94a3b8; }
+  .toggle { width: 40px; height: 22px; border-radius: 11px; background: #cbd5e1; position: relative; cursor: pointer; transition: background 0.2s; flex-shrink: 0; }
+  .toggle.on { background: #0d9488; }
+  .toggle .knob { width: 18px; height: 18px; border-radius: 50%; background: #fff; position: absolute; top: 2px; left: 2px; transition: left 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
+  .toggle.on .knob { left: 20px; }
+
+  .people-picker { border: 1px solid #e2e8f0; border-radius: 4px; padding: 8px 12px; display: flex; align-items: center; gap: 8px; min-height: 36px; background: #fff; }
+  .people-picker .pp-icon { color: #94a3b8; font-size: 14px; }
+  .people-picker .pp-placeholder { color: #cbd5e1; font-size: 13px; }
+
+  .info-banner { display: flex; align-items: flex-start; gap: 10px; background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 4px; padding: 12px 16px; font-size: 12px; color: #0f766e; line-height: 1.5; margin-bottom: 16px; }
+
+  /* Scope selector */
+  .scope-options { display: flex; gap: 8px; margin-bottom: 20px; }
+  .scope-option { flex: 1; padding: 16px; border: 2px solid #e2e8f0; border-radius: 8px; cursor: pointer; text-align: center; transition: all 0.15s; }
+  .scope-option:hover { border-color: #0d9488; }
+  .scope-option.selected { border-color: #0d9488; background: #f0fdfa; }
+  .scope-option .so-icon { font-size: 24px; margin-bottom: 6px; }
+  .scope-option .so-label { font-size: 13px; font-weight: 600; color: #0f172a; }
+  .scope-option .so-desc { font-size: 10px; color: #94a3b8; margin-top: 2px; }
+
+  /* Grid layout */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+  /* Department chips grid */
+  .dept-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+  .dept-chip { padding: 8px 14px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.15s; background: #fff; color: #475569; }
+  .dept-chip:hover { border-color: #0d9488; color: #0d9488; }
+  .dept-chip.selected { background: #0d9488; color: #fff; border-color: #0d9488; }
+
+  /* Summary bar */
+  .summary-bar { display: flex; gap: 16px; padding: 12px 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; margin-top: 16px; }
+  .summary-item { font-size: 11px; color: #64748b; }
+  .summary-item strong { color: #0f172a; font-weight: 600; }
+
+  /* Section divider */
+  .section-divider { border: none; border-top: 1px solid #e2e8f0; margin: 20px 0; }
+
+  /* Preview panel */
+  .preview-panel { background: #fafafa; border: 1px dashed #e2e8f0; border-radius: 8px; padding: 16px; margin-top: 16px; }
+  .preview-title { font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+  .preview-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 12px; color: #475569; }
+  .preview-row .pr-icon { color: #0d9488; font-size: 12px; }
+  .preview-count { font-size: 20px; font-weight: 700; color: #0d9488; }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="step-header">
+    <div class="step-title">Target Audience — 3 Layout Variations</div>
+    <div class="step-desc">Click tabs to compare. "Targeted" scope is selected to show department/role options.</div>
+  </div>
+
+  <div class="variation-bar">
+    <button class="variation-btn active" onclick="showVar('a')">A: Scope Cards + Chip Grid</button>
+    <button class="variation-btn" onclick="showVar('b')">B: Toggle Sections</button>
+    <button class="variation-btn" onclick="showVar('c')">C: Two-Column Split</button>
+  </div>
+
+  <!-- ==================== VARIATION A: Scope Cards + Chip Grid ==================== -->
+  <div id="var-a" class="variation active">
+
+    <!-- Scope selector -->
+    <div class="scope-options">
+      <div class="scope-option" onclick="selectScope(this)">
+        <div class="so-icon">&#x1F310;</div>
+        <div class="so-label">All Employees</div>
+        <div class="so-desc">Everyone in the organisation</div>
+      </div>
+      <div class="scope-option selected" onclick="selectScope(this)">
+        <div class="so-icon">&#x1F3AF;</div>
+        <div class="so-label">Targeted</div>
+        <div class="so-desc">Specific departments, roles, or locations</div>
+      </div>
+      <div class="scope-option" onclick="selectScope(this)">
+        <div class="so-icon">&#x1F195;</div>
+        <div class="so-label">New Hires Only</div>
+        <div class="so-desc">Onboarding policies</div>
+      </div>
+    </div>
+
+    <!-- Departments as clickable chips -->
+    <div class="card">
+      <div class="card-title">
+        <span class="icon" style="background:#dbeafe;color:#2563eb">&#x1F3E2;</span>
+        Departments
+      </div>
+      <div class="desc">Click to select target departments. Hold Ctrl for multiple.</div>
+      <div class="dept-grid">
+        <div class="dept-chip selected" onclick="this.classList.toggle('selected')">Human Resources</div>
+        <div class="dept-chip selected" onclick="this.classList.toggle('selected')">IT</div>
+        <div class="dept-chip" onclick="this.classList.toggle('selected')">Finance</div>
+        <div class="dept-chip" onclick="this.classList.toggle('selected')">Operations</div>
+        <div class="dept-chip selected" onclick="this.classList.toggle('selected')">Legal</div>
+        <div class="dept-chip" onclick="this.classList.toggle('selected')">Sales</div>
+        <div class="dept-chip" onclick="this.classList.toggle('selected')">Marketing</div>
+        <div class="dept-chip" onclick="this.classList.toggle('selected')">Executive</div>
+        <div class="dept-chip" onclick="this.classList.toggle('selected')">Compliance</div>
+        <div class="dept-chip" onclick="this.classList.toggle('selected')">Customer Service</div>
+      </div>
+    </div>
+
+    <!-- Roles + Locations side by side -->
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">
+          <span class="icon" style="background:#fef3c7;color:#d97706">&#x1F464;</span>
+          Target Roles
+        </div>
+        <input class="input" placeholder="e.g., Manager, Director, Executive" value="Manager, Director" />
+        <div style="margin-top: 8px;">
+          <span class="chip">Manager <span class="remove">x</span></span>
+          <span class="chip">Director <span class="remove">x</span></span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">
+          <span class="icon" style="background:#ede9fe;color:#7c3aed">&#x1F4CD;</span>
+          Target Locations
+        </div>
+        <input class="input" placeholder="e.g., London, Cape Town, Sydney" value="Cape Town, Johannesburg" />
+        <div style="margin-top: 8px;">
+          <span class="chip">Cape Town <span class="remove">x</span></span>
+          <span class="chip">Johannesburg <span class="remove">x</span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Specific users + contractors -->
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">
+          <span class="icon" style="background:#fce7f3;color:#db2777">&#x1F465;</span>
+          Specific Users
+        </div>
+        <div class="people-picker">
+          <span class="pp-icon">&#x1F50E;</span>
+          <span class="pp-placeholder">Search for specific users to include...</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">
+          <span class="icon" style="background:#dcfce7;color:#059669">&#x1F91D;</span>
+          External Parties
+        </div>
+        <label class="checkbox-row">
+          <input type="checkbox" checked /> Include Contractors / Third Parties
+        </label>
+      </div>
+    </div>
+
+    <!-- Summary bar -->
+    <div class="summary-bar">
+      <div class="summary-item"><strong>3</strong> departments</div>
+      <div class="summary-item"><strong>2</strong> roles</div>
+      <div class="summary-item"><strong>2</strong> locations</div>
+      <div class="summary-item"><strong>0</strong> specific users</div>
+      <div class="summary-item">Contractors: <strong>Yes</strong></div>
+    </div>
+  </div>
+
+  <!-- ==================== VARIATION B: Toggle Sections ==================== -->
+  <div id="var-b" class="variation">
+
+    <!-- Top toggle: All vs Targeted -->
+    <div class="toggle-row" style="margin-bottom: 20px; padding: 16px 20px; background: #f0fdfa; border-color: #99f6e4;">
+      <div>
+        <div class="toggle-label">All Employees</div>
+        <div class="toggle-desc">Apply this policy to the entire organisation</div>
+      </div>
+      <div class="toggle" onclick="this.classList.toggle('on')"><div class="knob"></div></div>
+    </div>
+
+    <!-- Audience from pre-configured -->
+    <div class="card" style="border-left: 3px solid #0d9488;">
+      <div class="card-title">
+        <span class="icon" style="background:#f0fdfa;color:#0d9488">&#x2B50;</span>
+        Quick Select — Saved Audiences
+      </div>
+      <select class="select">
+        <option>(Build custom audience below)</option>
+        <option>All Department Heads</option>
+        <option>IT & Security Staff</option>
+        <option>New Hires — First 90 Days</option>
+        <option>Cape Town Office</option>
+        <option>Executive Leadership Team</option>
+      </select>
+    </div>
+
+    <!-- Expandable sections -->
+    <div class="toggle-row" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+      <div>
+        <div class="toggle-label">&#x1F3E2; Departments <span style="font-size:11px;color:#0d9488;font-weight:400">(3 selected)</span></div>
+      </div>
+      <span style="color:#94a3b8;font-size:12px">&#x25BC;</span>
+    </div>
+    <div style="padding: 0 16px 16px;">
+      <div class="dept-grid">
+        <div class="dept-chip selected">Human Resources</div>
+        <div class="dept-chip selected">IT</div>
+        <div class="dept-chip">Finance</div>
+        <div class="dept-chip">Operations</div>
+        <div class="dept-chip selected">Legal</div>
+        <div class="dept-chip">Sales</div>
+        <div class="dept-chip">Marketing</div>
+        <div class="dept-chip">Executive</div>
+        <div class="dept-chip">Compliance</div>
+        <div class="dept-chip">Customer Service</div>
+      </div>
+    </div>
+
+    <div class="toggle-row" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+      <div>
+        <div class="toggle-label">&#x1F464; Roles <span style="font-size:11px;color:#0d9488;font-weight:400">(2 selected)</span></div>
+      </div>
+      <span style="color:#94a3b8;font-size:12px">&#x25BC;</span>
+    </div>
+    <div style="padding: 0 16px 16px;">
+      <input class="input" value="Manager, Director" placeholder="Comma-separated roles..." />
+    </div>
+
+    <div class="toggle-row" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+      <div>
+        <div class="toggle-label">&#x1F4CD; Locations <span style="font-size:11px;color:#94a3b8;font-weight:400">(none)</span></div>
+      </div>
+      <span style="color:#94a3b8;font-size:12px">&#x25BC;</span>
+    </div>
+    <div style="padding: 0 16px 16px; display: none;">
+      <input class="input" placeholder="Comma-separated locations..." />
+    </div>
+
+    <div class="toggle-row" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+      <div>
+        <div class="toggle-label">&#x1F465; Specific Users <span style="font-size:11px;color:#94a3b8;font-weight:400">(0)</span></div>
+      </div>
+      <span style="color:#94a3b8;font-size:12px">&#x25BC;</span>
+    </div>
+    <div style="padding: 0 16px 16px; display: none;">
+      <div class="people-picker">
+        <span class="pp-icon">&#x1F50E;</span>
+        <span class="pp-placeholder">Search for specific users...</span>
+      </div>
+    </div>
+
+    <hr class="section-divider">
+    <label class="checkbox-row" style="padding: 4px 0;">
+      <input type="checkbox" checked /> Include Contractors / Third Parties
+    </label>
+  </div>
+
+  <!-- ==================== VARIATION C: Two-Column Split ==================== -->
+  <div id="var-c" class="variation">
+
+    <!-- Scope at top -->
+    <div class="info-banner">
+      <span>&#x2139;&#xFE0F;</span>
+      <div>Define who needs to read and acknowledge this policy. Choose "All Employees" for company-wide policies, or build a targeted audience below.</div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 280px 1fr; gap: 24px;">
+      <!-- Left: Scope + Summary -->
+      <div>
+        <!-- Scope radio buttons -->
+        <div class="card" style="padding: 16px;">
+          <span class="label" style="margin-bottom: 8px;">Distribution Scope</span>
+          <label class="checkbox-row"><input type="radio" name="scope-c" style="accent-color:#0d9488" /> All Employees</label>
+          <label class="checkbox-row"><input type="radio" name="scope-c" checked style="accent-color:#0d9488" /> Targeted Audience</label>
+          <label class="checkbox-row"><input type="radio" name="scope-c" style="accent-color:#0d9488" /> New Hires Only</label>
+        </div>
+
+        <!-- Live preview -->
+        <div class="preview-panel">
+          <div class="preview-title">Audience Preview</div>
+          <div style="text-align: center; margin-bottom: 12px;">
+            <div class="preview-count">~347</div>
+            <div style="font-size: 11px; color: #64748b;">estimated employees</div>
+          </div>
+          <div class="preview-row"><span class="pr-icon">&#x2713;</span> HR, IT, Legal</div>
+          <div class="preview-row"><span class="pr-icon">&#x2713;</span> Managers, Directors</div>
+          <div class="preview-row"><span class="pr-icon">&#x2713;</span> Cape Town, Johannesburg</div>
+          <div class="preview-row"><span class="pr-icon">&#x2713;</span> + Contractors</div>
+        </div>
+
+        <!-- Saved audiences -->
+        <div class="card" style="margin-top: 16px; padding: 12px;">
+          <span class="label">Saved Audiences</span>
+          <select class="select" style="font-size: 12px; margin-top: 4px;">
+            <option>Custom</option>
+            <option>All Department Heads</option>
+            <option>IT & Security Staff</option>
+            <option>Executive Leadership</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Right: Audience builder -->
+      <div>
+        <!-- Departments -->
+        <div class="card">
+          <div class="card-title">
+            <span class="icon" style="background:#dbeafe;color:#2563eb">&#x1F3E2;</span>
+            Departments
+          </div>
+          <div class="dept-grid">
+            <div class="dept-chip selected">Human Resources</div>
+            <div class="dept-chip selected">IT</div>
+            <div class="dept-chip">Finance</div>
+            <div class="dept-chip">Operations</div>
+            <div class="dept-chip selected">Legal</div>
+            <div class="dept-chip">Sales</div>
+            <div class="dept-chip">Marketing</div>
+            <div class="dept-chip">Executive</div>
+            <div class="dept-chip">Compliance</div>
+            <div class="dept-chip">Customer Service</div>
+          </div>
+        </div>
+
+        <!-- Roles + Locations -->
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">
+              <span class="icon" style="background:#fef3c7;color:#d97706">&#x1F464;</span>
+              Roles
+            </div>
+            <input class="input" value="Manager, Director" />
+            <div style="margin-top: 6px;">
+              <span class="chip">Manager <span class="remove">x</span></span>
+              <span class="chip">Director <span class="remove">x</span></span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">
+              <span class="icon" style="background:#ede9fe;color:#7c3aed">&#x1F4CD;</span>
+              Locations
+            </div>
+            <input class="input" value="Cape Town, Johannesburg" />
+            <div style="margin-top: 6px;">
+              <span class="chip">Cape Town <span class="remove">x</span></span>
+              <span class="chip">Johannesburg <span class="remove">x</span></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Specific users + contractors in a row -->
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">
+              <span class="icon" style="background:#fce7f3;color:#db2777">&#x1F465;</span>
+              Specific Users
+            </div>
+            <div class="people-picker">
+              <span class="pp-icon">&#x1F50E;</span>
+              <span class="pp-placeholder">Search users...</span>
+            </div>
+          </div>
+          <div class="card" style="display: flex; align-items: center;">
+            <label class="checkbox-row" style="margin: 0;">
+              <input type="checkbox" checked />
+              <div>
+                <div style="font-weight: 600; font-size: 13px;">Include Contractors</div>
+                <div style="font-size: 11px; color: #94a3b8;">Third-party / external staff</div>
+              </div>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showVar(id) {
+  document.querySelectorAll('.variation').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.variation-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('var-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+function selectScope(el) {
+  el.parentElement.querySelectorAll('.scope-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+}
+</script>
+
+</body>
+</html>

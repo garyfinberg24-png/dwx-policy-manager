@@ -666,7 +666,7 @@ export class TaskCompletionHandler {
       RecipientId: assigneeId,
       ProcessId: processId?.toString(),
       TaskId: taskId.toString(),
-      LinkUrl: `/sites/JML/SitePages/MyTasks.aspx?taskId=${taskId}`,
+      LinkUrl: `/sites/PolicyManager/SitePages/MyTasks.aspx?taskId=${taskId}`,
       Status: 'Pending',
       IsRead: false,
       SentDate: new Date()

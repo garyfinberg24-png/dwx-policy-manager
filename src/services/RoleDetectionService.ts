@@ -39,6 +39,11 @@ export const DEFAULT_ROLE_MAPPINGS: IRoleMapping[] = [
   { groupName: 'PM_PolicyManagers', role: UserRole.Manager },
   { groupName: 'PM_PolicyAdmins', role: UserRole.SiteAdmin },
 
+  // Standard SharePoint site groups (auto-created by SP)
+  { groupName: 'PolicyManager Owners', role: UserRole.SiteAdmin },
+  { groupName: 'PolicyManager Members', role: UserRole.Employee },
+  { groupName: 'PolicyManager Visitors', role: UserRole.Employee },
+
   // Employee role - default for all users
   { groupName: 'All Users', role: UserRole.Employee },
   { groupName: 'Company Members', role: UserRole.Employee },

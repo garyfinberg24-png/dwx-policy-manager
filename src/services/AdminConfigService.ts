@@ -572,7 +572,7 @@ export class AdminConfigService {
     try {
       const items = await this.sp.web.lists
         .getByTitle(this.TEMPLATES_LIST)
-        .items.select('Id', 'Title', 'TemplateName', 'TemplateType', 'TemplateCategory', 'TemplateDescription', 'HTMLTemplate', 'TemplateContent', 'DocumentTemplateURL', 'ComplianceRisk', 'SuggestedReadTimeframe', 'RequiresAcknowledgement', 'RequiresQuiz', 'KeyPointsTemplate', 'UsageCount', 'Tags', 'IsActive')
+        .items.select('Id', 'Title', 'TemplateName', 'TemplateType', 'TemplateCategory', 'TemplateDescription', 'HTMLTemplate', 'TemplateContent', 'DocumentTemplateURL', 'ComplianceRisk', 'SuggestedReadTimeframe', 'RequiresAcknowledgement', 'RequiresQuiz', 'KeyPointsTemplate', 'UsageCount', 'Tags', 'RegulatoryFramework', 'RegulatoryReferences', 'IsActive')
         .orderBy('Title')
         .top(200)();
 

@@ -35,7 +35,7 @@ param environment string = 'prod'
 param sharePointSiteUrl string = 'https://mf7m.sharepoint.com/sites/PolicyManager'
 
 @description('SharePoint list name for the email queue')
-param emailQueueListName string = 'PM_EmailQueue'
+param emailQueueListName string = 'PM_NotificationQueue'
 
 @description('How often (in minutes) the Logic App polls for queued emails')
 @minValue(1)
@@ -159,8 +159,8 @@ resource logicApp 'Microsoft.Logic/workflows@2019-05-01' = {
             method: 'get'
             path: '/datasets/@{encodeURIComponent(encodeURIComponent(\'${sharePointSiteUrl}\'))}/tables/@{encodeURIComponent(encodeURIComponent(\'${emailQueueListName}\'))}/items'
             queries: {
-              '$filter': 'Status eq \'Queued\''
-              '$orderby': 'Priority desc, QueuedAt asc'
+              '$filter': 'Status eq \'Pending\''
+              '$orderby': 'Priority desc, Created asc'
               '$top': batchSize
             }
           }
@@ -190,7 +190,6 @@ resource logicApp 'Microsoft.Logic/workflows@2019-05-01' = {
                 path: '/datasets/@{encodeURIComponent(encodeURIComponent(\'${sharePointSiteUrl}\'))}/tables/@{encodeURIComponent(encodeURIComponent(\'${emailQueueListName}\'))}/items/@{encodeURIComponent(items(\'For_Each_Queued_Email\')?[\'ID\'])}'
                 body: {
                   Status: 'Processing'
-                  LastAttemptAt: '@{utcNow()}'
                 }
               }
             }
@@ -210,10 +209,9 @@ resource logicApp 'Microsoft.Logic/workflows@2019-05-01' = {
                 method: 'post'
                 path: '/v2/Mail'
                 body: {
-                  To: '@{replace(items(\'For_Each_Queued_Email\')?[\'To\'], \';\', \',\')}'
-                  Cc: '@{if(empty(items(\'For_Each_Queued_Email\')?[\'CC\']), \'\', replace(items(\'For_Each_Queued_Email\')?[\'CC\'], \';\', \',\'))}'
-                  Subject: '@items(\'For_Each_Queued_Email\')?[\'Subject\']'
-                  Body: '@items(\'For_Each_Queued_Email\')?[\'Body\']'
+                  To: '@items(\'For_Each_Queued_Email\')?[\'RecipientEmail\']'
+                  Subject: '@items(\'For_Each_Queued_Email\')?[\'Title\']'
+                  Body: '@items(\'For_Each_Queued_Email\')?[\'Message\']'
                   Importance: '@{if(equals(items(\'For_Each_Queued_Email\')?[\'Priority\'], \'Urgent\'), \'High\', if(equals(items(\'For_Each_Queued_Email\')?[\'Priority\'], \'High\'), \'High\', if(equals(items(\'For_Each_Queued_Email\')?[\'Priority\'], \'Low\'), \'Low\', \'Normal\')))}'
                   IsHtml: true
                   From: '@{if(empty(parameters(\'senderEmailAddress\')), \'\', parameters(\'senderEmailAddress\'))}'

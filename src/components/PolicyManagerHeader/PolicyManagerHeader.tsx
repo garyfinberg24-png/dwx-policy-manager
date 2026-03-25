@@ -533,6 +533,7 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
     {
       key: 'author-group', text: 'Author', icon: NavIcons.authored, minRole: 'Author',
       children: [
+        { key: 'author', text: 'Drafts & Pipeline', icon: NavIcons.authored, href: '/sites/PolicyManager/SitePages/PolicyAuthor.aspx' },
         { key: 'create', text: 'Policy Builder', icon: NavIcons.create, href: '/sites/PolicyManager/SitePages/PolicyBuilder.aspx' },
         { key: 'packs', text: 'Policy Packs', icon: NavIcons.packs, href: '/sites/PolicyManager/SitePages/PolicyPacks.aspx' },
         { key: 'quiz', text: 'Quiz Builder', icon: NavIcons.quiz, href: '/sites/PolicyManager/SitePages/QuizBuilder.aspx' },
@@ -1192,7 +1193,7 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
                     {secureLibItems.map(lib => (
                       <a
                         key={lib.libraryUrl}
-                        href={`/sites/PolicyManager/SitePages/PolicyHub.aspx?library=${encodeURIComponent(lib.libraryUrl)}`}
+                        href={`/sites/PolicyManager/SitePages/PolicyHub.aspx?library=${encodeURIComponent(lib.libraryUrl)}&title=${encodeURIComponent(lib.title)}`}
                         onClick={() => setOpenNavGroup(null)}
                         style={{
                           display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px',

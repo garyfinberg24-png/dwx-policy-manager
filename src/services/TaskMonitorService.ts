@@ -986,7 +986,7 @@ export class TaskMonitorService {
             Priority: rule.EscalationLevel >= 2 ? 'High' : 'Medium',
             IsRead: false,
             RequiresAction: true,
-            ActionUrl: `/sites/JML/SitePages/MyTasks.aspx?taskId=${task.Id}`
+            ActionUrl: `/sites/PolicyManager/SitePages/MyTasks.aspx?taskId=${task.Id}`
           });
         } catch (notifyError) {
           logger.warn('TaskMonitorService', `Failed to create notification for user ${recipientId}`, notifyError);

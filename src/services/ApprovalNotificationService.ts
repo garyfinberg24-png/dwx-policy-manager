@@ -290,7 +290,7 @@ export class ApprovalNotificationService {
     return `
       <html>
         <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #323130;">
-          <h2 style="color: #0078d4;">New Approval Request</h2>
+          <h2 style="color: #0d9488;">New Approval Request</h2>
 
           <p>You have a new approval request that requires your attention.</p>
 
@@ -315,14 +315,14 @@ export class ApprovalNotificationService {
 
           <p style="margin-top: 20px;">
             <a href="${approvalUrl}"
-               style="background-color: #0078d4; color: white; padding: 12px 24px;
+               style="background-color: #0d9488; color: white; padding: 12px 24px;
                       text-decoration: none; border-radius: 4px; display: inline-block;">
               Review Approval
             </a>
           </p>
 
           <p style="color: #605e5c; font-size: 12px; margin-top: 30px;">
-            This is an automated notification from the JML Approval System.
+            This is an automated notification from the DWx Policy Manager.
           </p>
         </body>
       </html>
@@ -370,7 +370,7 @@ export class ApprovalNotificationService {
           </p>
 
           <p style="color: #605e5c; font-size: 12px; margin-top: 30px;">
-            This is an automated reminder from the JML Approval System.
+            This is an automated reminder from the DWx Policy Manager.
           </p>
         </body>
       </html>
@@ -418,7 +418,7 @@ export class ApprovalNotificationService {
           </p>
 
           <p style="color: #605e5c; font-size: 12px; margin-top: 30px;">
-            This is an automated escalation from the JML Approval System.
+            This is an automated escalation from the DWx Policy Manager.
           </p>
         </body>
       </html>
@@ -434,11 +434,11 @@ export class ApprovalNotificationService {
     return `
       <html>
         <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #323130;">
-          <h2 style="color: #0078d4;">Delegated Approval Request</h2>
+          <h2 style="color: #0d9488;">Delegated Approval Request</h2>
 
           <p>An approval has been delegated to you by ${escapeHtml(approval.DelegatedBy?.Title || approval.OriginalApprover?.Title || '')}.</p>
 
-          ${reason ? `<p style="background-color: #f3f2f1; padding: 12px; border-left: 4px solid #0078d4;">
+          ${reason ? `<p style="background-color: #f3f2f1; padding: 12px; border-left: 4px solid #0d9488;">
             <strong>Delegation Reason:</strong> ${escapeHtml(reason)}
           </p>` : ''}
 
@@ -459,14 +459,14 @@ export class ApprovalNotificationService {
 
           <p style="margin-top: 20px;">
             <a href="${approvalUrl}"
-               style="background-color: #0078d4; color: white; padding: 12px 24px;
+               style="background-color: #0d9488; color: white; padding: 12px 24px;
                       text-decoration: none; border-radius: 4px; display: inline-block;">
               Review Delegated Approval
             </a>
           </p>
 
           <p style="color: #605e5c; font-size: 12px; margin-top: 30px;">
-            This is an automated notification from the JML Approval System.
+            This is an automated notification from the DWx Policy Manager.
           </p>
         </body>
       </html>
@@ -511,7 +511,7 @@ export class ApprovalNotificationService {
           </p>` : ''}
 
           <p style="color: #605e5c; font-size: 12px; margin-top: 30px;">
-            This is an automated notification from the JML Approval System.
+            This is an automated notification from the DWx Policy Manager.
           </p>
         </body>
       </html>

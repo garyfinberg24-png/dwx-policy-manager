@@ -819,7 +819,7 @@ export class TaskActionHandler {
         RecipientId: task.AssignedToId,
         NotificationType: 'TaskUnblocked',
         Priority: PriorityEnum.Medium,
-        LinkUrl: `/sites/JML/SitePages/MyTasks.aspx?taskId=${taskId}`,
+        LinkUrl: `/sites/PolicyManager/SitePages/MyTasks.aspx?taskId=${taskId}`,
         ProcessId: task.ProcessId,
         IsRead: false,
         SentDate: new Date()

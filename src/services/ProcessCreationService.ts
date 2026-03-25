@@ -1039,7 +1039,7 @@ export class ProcessCreationService {
         message: `You have been assigned ${assigneeTasks.length} task(s) for ${input.employeeName}'s ${input.processType.toLowerCase()} process.`,
         type: 'TaskAssigned',
         priority: input.priority,
-        linkUrl: `/sites/JML/SitePages/MyTasks.aspx?processId=${process.Id}`,
+        linkUrl: `/sites/PolicyManager/SitePages/MyTasks.aspx?processId=${process.Id}`,
         processId: process.Id
       });
     }
@@ -1052,7 +1052,7 @@ export class ProcessCreationService {
         message: `A ${input.processType.toLowerCase()} process has been started for ${input.employeeName} in your team.`,
         type: 'ProcessStarted',
         priority: input.priority,
-        linkUrl: `/sites/JML/SitePages/ProcessDetails.aspx?processId=${process.Id}`,
+        linkUrl: `/sites/PolicyManager/SitePages/ProcessDetails.aspx?processId=${process.Id}`,
         processId: process.Id
       });
     }

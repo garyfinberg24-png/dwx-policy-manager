@@ -742,14 +742,10 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
             await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_ACKNOWLEDGEMENTS).items.add({
               Title: `${policy.PolicyNumber} - ${currentUser.Title}`,
               PolicyId: policy.Id,
-              PolicyName: policy.PolicyName,
-              PolicyNumber: policy.PolicyNumber,
-              UserId: currentUser.Id,
+              AckUserId: currentUser.Id,
               UserEmail: currentUser.Email,
               AckStatus: 'Acknowledged',
-              AcknowledgedDate: now.toISOString(),
-              ReadDuration: readDuration,
-              Notes: acknowledgeNotes
+              AcknowledgedDate: now.toISOString()
             });
           } catch (createErr) {
             console.warn('Could not create acknowledgement record:', createErr);

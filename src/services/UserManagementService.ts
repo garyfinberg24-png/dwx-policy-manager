@@ -159,8 +159,16 @@ export class UserManagementService {
     }
   }
 
+  /** Maps PM roles to their corresponding SP group names */
+  private static readonly ROLE_GROUP_MAP: Record<string, string> = {
+    Admin: 'PM_PolicyAdmins',
+    Manager: 'PM_PolicyManagers',
+    Author: 'PM_PolicyAuthors',
+  };
+
   /**
-   * Update PM role for a user, optionally with managed departments
+   * Update PM role for a user, optionally with managed departments.
+   * Also syncs SP group membership so RoleDetectionService picks up the role.
    */
   public async updateUserRole(employeeId: number, role: string, managedDepartments?: string[]): Promise<void> {
     const updates: Record<string, any> = { PMRole: role };
@@ -170,6 +178,56 @@ export class UserManagementService {
     await this.sp.web.lists.getByTitle(this.EMPLOYEES_LIST).items
       .getById(employeeId)
       .update(updates);
+  }
+
+  /**
+   * Sync a user's SP group membership to match their assigned PM role.
+   * Adds to the target role group and removes from other PM_ role groups.
+   * Best-effort — does not throw if groups don't exist yet.
+   *
+   * @param userEmail - The user's email address (used to resolve SP login name)
+   * @param newRole - The PM role being assigned (Admin, Manager, Author, User)
+   */
+  public async syncRoleGroupMembership(userEmail: string, newRole: string): Promise<void> {
+    if (!userEmail) return;
+
+    try {
+      // Resolve email to SP user login name
+      const spUser = await this.sp.web.ensureUser(userEmail);
+      const loginName = spUser.data.LoginName;
+      const spUserId = spUser.data.Id;
+
+      // Get all PM_ role groups that exist on the site
+      const allGroups = await this.getSiteGroups('PM_Policy');
+      const roleGroupNames = Object.values(UserManagementService.ROLE_GROUP_MAP);
+      const existingRoleGroups = allGroups.filter(g => roleGroupNames.includes(g.Title));
+
+      // Target group for the new role (undefined for 'User' — no group needed)
+      const targetGroupName = UserManagementService.ROLE_GROUP_MAP[newRole];
+
+      for (const group of existingRoleGroups) {
+        if (group.Title === targetGroupName) {
+          // Add to target group
+          try {
+            await this.addUserToGroup(group.Id, loginName);
+            logger.info('UserManagementService', `Added ${userEmail} to ${group.Title}`);
+          } catch {
+            // User may already be in group — ignore
+          }
+        } else {
+          // Remove from other role groups
+          try {
+            await this.removeUserFromGroup(group.Id, spUserId);
+            logger.info('UserManagementService', `Removed ${userEmail} from ${group.Title}`);
+          } catch {
+            // User may not be in group — ignore
+          }
+        }
+      }
+    } catch (err) {
+      // Best-effort: groups may not exist yet, or ensureUser may fail for external users
+      logger.warn('UserManagementService', `SP group sync failed for ${userEmail}:`, err);
+    }
   }
 
   /**

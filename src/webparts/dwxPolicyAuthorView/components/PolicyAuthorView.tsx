@@ -69,7 +69,24 @@ export interface IPolicyRequest {
 
 type RequestStatusFilter = 'All' | 'New' | 'Assigned' | 'InProgress' | 'Draft Ready' | 'Completed' | 'Rejected';
 
-type AuthorViewTab = 'requests' | 'approvals' | 'delegations';
+type AuthorViewTab = 'pipeline' | 'requests' | 'approvals' | 'delegations';
+
+type PipelineStatusFilter = 'All' | 'Draft' | 'In Review' | 'Pending Approval' | 'Approved' | 'Rejected';
+
+export interface IPipelinePolicy {
+  Id: number;
+  Title: string;
+  PolicyNumber: string;
+  PolicyCategory: string;
+  PolicyStatus: string;
+  ComplianceRisk: string;
+  AuthorId: number;
+  AuthorName: string;
+  Modified: string;
+  Created: string;
+  Version: string;
+  IsReviewer: boolean; // true if current user is a reviewer, not the author
+}
 
 export interface IPolicyApproval {
   Id: number;
@@ -115,10 +132,14 @@ interface IDelegationForm {
 
 interface IPolicyAuthorViewState {
   activeTab: AuthorViewTab;
+  pipelinePolicies: IPipelinePolicy[];
   policyRequests: IPolicyRequest[];
   approvals: IPolicyApproval[];
   delegations: IDelegation[];
   loading: boolean;
+  pipelineFilter: PipelineStatusFilter;
+  pipelineSearch: string;
+  selectedPipelineIds: Set<number>;
   statusFilter: RequestStatusFilter;
   searchQuery: string;
   selectedRequest: IPolicyRequest | null;
@@ -144,14 +165,19 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
     // Read ?tab= query param to set initial tab
     const urlParams = new URLSearchParams(window.location.search);
     const tabParam = urlParams.get('tab');
-    const initialTab: AuthorViewTab = tabParam === 'approvals' ? 'approvals' : tabParam === 'delegations' ? 'delegations' : 'requests';
+    const validTabs: AuthorViewTab[] = ['pipeline', 'requests', 'approvals', 'delegations'];
+    const initialTab: AuthorViewTab = validTabs.includes(tabParam as AuthorViewTab) ? tabParam as AuthorViewTab : 'pipeline';
 
     this.state = {
       activeTab: initialTab,
+      pipelinePolicies: [],
       policyRequests: [],
       approvals: [],
       delegations: [],
       loading: true,
+      pipelineFilter: 'All',
+      pipelineSearch: '',
+      selectedPipelineIds: new Set<number>(),
       statusFilter: 'All',
       searchQuery: '',
       selectedRequest: null,
@@ -214,11 +240,19 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
         currentUserId = currentUser.Id;
         currentUserName = currentUser.Title || '';
       } catch {
-        // Fall back to 0 — queries will return empty results
+        // Fallback: try legacyPageContext
+        try {
+          const legacyCtx = (this.props as any).context?.pageContext?.legacyPageContext;
+          if (legacyCtx) {
+            currentUserId = legacyCtx.userId || 0;
+            currentUserName = legacyCtx.userDisplayName || legacyCtx.userLoginName || '';
+          }
+        } catch { /* ignore */ }
       }
 
-      // Run all three queries in parallel
-      const [requests, approvals, delegations] = await Promise.all([
+      // Run all four queries in parallel
+      const [pipeline, requests, approvals, delegations] = await Promise.all([
+        this.loadPipelinePolicies(currentUserId, currentUserName),
         this.loadPolicyRequests(),
         this.loadApprovals(currentUserId),
         this.loadDelegations(currentUserId, currentUserName)
@@ -226,6 +260,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
 
       if (this._isMounted) {
         this.setState({
+          pipelinePolicies: pipeline,
           policyRequests: requests,
           approvals: approvals,
           delegations: delegations,
@@ -434,6 +469,73 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
     }
   }
 
+  /**
+   * Load non-published policies for the current user (authored + reviewing).
+   * Statuses: Draft, In Review, Pending Approval, Approved, Rejected
+   */
+  private async loadPipelinePolicies(currentUserId: number, currentUserName: string): Promise<IPipelinePolicy[]> {
+    try {
+      // Query all non-published policies — filter by author/reviewer client-side
+      // because OData can't do "contains" on multi-value reviewer fields
+      const excludedStatuses = ['Published', 'Archived', 'Retired', 'Expired'];
+      let items: any[];
+      try {
+        // Try with PolicyOwner field (may not exist on all sites)
+        items = await this.props.sp.web.lists
+          .getByTitle(PM_LISTS.POLICIES)
+          .items.select(
+            'Id', 'Title', 'PolicyNumber', 'PolicyCategory', 'PolicyStatus',
+            'ComplianceRisk', 'Author/Id', 'Author/Title', 'PolicyOwner/Id',
+            'Modified', 'Created', 'VersionNumber'
+          )
+          .expand('Author', 'PolicyOwner')
+          .orderBy('Modified', false)
+          .top(500)();
+      } catch {
+        // Fallback without PolicyOwner
+        console.warn('[PolicyAuthorView] PolicyOwner field not available, falling back');
+        items = await this.props.sp.web.lists
+          .getByTitle(PM_LISTS.POLICIES)
+          .items.select(
+            'Id', 'Title', 'PolicyNumber', 'PolicyCategory', 'PolicyStatus',
+            'ComplianceRisk', 'Author/Id', 'Author/Title',
+            'Modified', 'Created', 'VersionNumber'
+          )
+          .expand('Author')
+          .orderBy('Modified', false)
+          .top(500)();
+      }
+
+      return items
+        .filter((item: any) => {
+          const status = item.PolicyStatus || 'Draft';
+          if (excludedStatuses.includes(status)) return false;
+          const authorId = item.Author?.Id || item.AuthorId || 0;
+          const ownerId = item.PolicyOwner?.Id || item.PolicyOwnerId || 0;
+          const isAuthor = authorId === currentUserId || ownerId === currentUserId;
+          return isAuthor;
+        })
+        .map((item: any) => ({
+          Id: item.Id,
+          Title: item.Title || '',
+          PolicyNumber: item.PolicyNumber || '',
+          PolicyCategory: item.PolicyCategory || '',
+          PolicyStatus: item.PolicyStatus || 'Draft',
+          ComplianceRisk: item.ComplianceRisk || 'Medium',
+          AuthorId: item.Author?.Id || item.AuthorId || 0,
+          AuthorName: item.Author?.Title || '',
+          Modified: item.Modified || '',
+          Created: item.Created || '',
+          Version: item.VersionNumber || '0.1',
+          IsReviewer: false
+        }));
+    } catch (err) {
+      console.warn('[PolicyAuthorView] loadPipelinePolicies failed:', err);
+      // Return empty — but the error is now clearly logged
+      return [];
+    }
+  }
+
   public render(): JSX.Element {
     // Access denied guard — Author role required
     if (this.state.detectedRole !== null && !hasMinimumRole(this.state.detectedRole, PolicyManagerRole.Author)) {
@@ -489,8 +591,9 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
         </div>
 
         {/* Tab Bar */}
-        <div style={{ display: 'flex', gap: 0, borderBottom: '2px solid #e2e8f0', margin: '24px 40px 0', maxWidth: 1400 }}>
+        <div style={{ display: 'flex', gap: 0, borderBottom: '2px solid #e2e8f0', padding: '0 40px', marginTop: 24, maxWidth: 1400, width: '100%', margin: '24px auto 0', boxSizing: 'border-box' }}>
           {[
+            { key: 'pipeline' as AuthorViewTab, label: 'Drafts & Pipeline', count: this.state.pipelinePolicies.length },
             { key: 'requests' as AuthorViewTab, label: 'Policy Requests', count: this.state.policyRequests.filter(r => r.Status === 'New').length },
             { key: 'approvals' as AuthorViewTab, label: 'Approvals', count: this.state.approvals.filter(a => a.Status === 'Pending').length },
             { key: 'delegations' as AuthorViewTab, label: 'Delegations', count: this.state.delegations.filter(d => d.Status === 'Pending' || d.Status === 'Overdue').length }
@@ -517,6 +620,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
             </div>
           ))}
         </div>
+        {this.state.activeTab === 'pipeline' && this.renderPipelineTab()}
         {this.state.activeTab === 'requests' && this.renderContent()}
         {this.state.activeTab === 'approvals' && this.renderApprovalsTab()}
         {this.state.activeTab === 'delegations' && this.renderDelegationsTab()}
@@ -524,6 +628,580 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
       </JmlAppLayout>
       </ErrorBoundary>
     );
+  }
+
+  // ==========================================================================
+  // PIPELINE TAB — Drafts, In Review, Pending Approval, Rejected
+  // ==========================================================================
+
+  private getPipelineStatusColor(status: string): string {
+    switch (status) {
+      case 'Draft': return '#64748b';
+      case 'In Review': return '#2563eb';
+      case 'Pending Approval': return '#d97706';
+      case 'Approved': return '#059669';
+      case 'Rejected': return '#dc2626';
+      default: return '#94a3b8';
+    }
+  }
+
+  private renderPipelineTab(): JSX.Element {
+    const { pipelinePolicies, pipelineFilter, pipelineSearch, selectedPipelineIds, loading } = this.state;
+
+    if (loading) {
+      return <div style={{ padding: 40, textAlign: 'center' }}><Spinner size={SpinnerSize.large} label="Loading pipeline..." /></div>;
+    }
+
+    const statusFilters: PipelineStatusFilter[] = ['All', 'Draft', 'In Review', 'Pending Approval', 'Approved', 'Rejected'];
+
+    // Apply filters
+    let filtered = pipelineFilter === 'All' ? pipelinePolicies : pipelinePolicies.filter(p => p.PolicyStatus === pipelineFilter);
+    if (pipelineSearch.trim()) {
+      const q = pipelineSearch.toLowerCase();
+      filtered = filtered.filter(p =>
+        p.Title.toLowerCase().includes(q) ||
+        p.PolicyNumber.toLowerCase().includes(q) ||
+        p.PolicyCategory.toLowerCase().includes(q)
+      );
+    }
+
+    // KPI counts
+    const draftCount = pipelinePolicies.filter(p => p.PolicyStatus === 'Draft').length;
+    const inReviewCount = pipelinePolicies.filter(p => p.PolicyStatus === 'In Review').length;
+    const pendingApprovalCount = pipelinePolicies.filter(p => p.PolicyStatus === 'Pending Approval').length;
+    const rejectedCount = pipelinePolicies.filter(p => p.PolicyStatus === 'Rejected').length;
+    const reviewingCount = pipelinePolicies.filter(p => p.IsReviewer).length;
+
+    // Bulk selection helpers
+    const allSelected = filtered.length > 0 && filtered.every(p => selectedPipelineIds.has(p.Id));
+    const someSelected = selectedPipelineIds.size > 0;
+
+    const toggleSelectAll = (): void => {
+      if (allSelected) {
+        this.setState({ selectedPipelineIds: new Set<number>() });
+      } else {
+        this.setState({ selectedPipelineIds: new Set(filtered.map(p => p.Id)) });
+      }
+    };
+
+    const toggleSelect = (id: number): void => {
+      const next = new Set(selectedPipelineIds);
+      if (next.has(id)) { next.delete(id); } else { next.add(id); }
+      this.setState({ selectedPipelineIds: next });
+    };
+
+    // Bulk actions
+    const handleBulkDelete = async (): Promise<void> => {
+      if (selectedPipelineIds.size === 0) return;
+      const count = selectedPipelineIds.size;
+      const confirmed = window.confirm(`Delete ${count} draft polic${count === 1 ? 'y' : 'ies'}? This cannot be undone.`);
+      if (!confirmed) return;
+      try {
+        const batch = this.props.sp.web.createBatch();
+        for (const id of selectedPipelineIds) {
+          this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES).items.getById(id).inBatch(batch).delete();
+        }
+        await batch.execute();
+        this.setState({ selectedPipelineIds: new Set<number>() });
+        await this.reloadPipeline();
+      } catch (err) {
+        console.error('[PolicyAuthorView] Bulk delete failed:', err);
+      }
+    };
+
+    const handleBulkSubmitForReview = async (): Promise<void> => {
+      if (selectedPipelineIds.size === 0) return;
+      const drafts = pipelinePolicies.filter(p => selectedPipelineIds.has(p.Id) && p.PolicyStatus === 'Draft');
+      if (drafts.length === 0) { window.alert('Only Draft policies can be submitted for review.'); return; }
+      const confirmed = window.confirm(`Submit ${drafts.length} draft polic${drafts.length === 1 ? 'y' : 'ies'} for review?`);
+      if (!confirmed) return;
+      try {
+        for (const policy of drafts) {
+          await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES).items.getById(policy.Id).update({
+            PolicyStatus: 'In Review'
+          });
+        }
+        this.setState({ selectedPipelineIds: new Set<number>() });
+        await this.reloadPipeline();
+      } catch (err) {
+        console.error('[PolicyAuthorView] Bulk submit for review failed:', err);
+      }
+    };
+
+    const siteUrl = this.props.context?.pageContext?.web?.absoluteUrl || '/sites/PolicyManager';
+
+    return (
+      <>
+        <section style={{ padding: '24px 40px', maxWidth: 1400, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+          {/* KPI Cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16, marginBottom: 24 }}>
+            {this.renderKpiCard('Drafts', draftCount, 'Edit', '#64748b', '#f8fafc', () => this.setState({ pipelineFilter: 'Draft' }))}
+            {this.renderKpiCard('In Review', inReviewCount, 'RedEye', '#2563eb', '#eff6ff', () => this.setState({ pipelineFilter: 'In Review' }))}
+            {this.renderKpiCard('Pending Approval', pendingApprovalCount, 'Clock', '#d97706', '#fffbeb', () => this.setState({ pipelineFilter: 'Pending Approval' }))}
+            {this.renderKpiCard('Rejected', rejectedCount, 'ErrorBadge', '#dc2626', '#fef2f2', () => this.setState({ pipelineFilter: 'Rejected' }))}
+            {this.renderKpiCard('Reviewing', reviewingCount, 'People', '#7c3aed', '#f5f3ff', () => {
+              this.setState({
+                pipelineFilter: 'All',
+                pipelineSearch: '',
+                pipelinePolicies: this.state.pipelinePolicies // force re-render with reviewer filter applied below
+              });
+            })}
+          </div>
+
+          {/* Toolbar: Search + Filters + Bulk Actions */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+            <SearchBox
+              placeholder="Search policies..."
+              value={pipelineSearch}
+              onChange={(_, v) => this.setState({ pipelineSearch: v || '' })}
+              styles={{ root: { width: 260 } }}
+            />
+            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+              {statusFilters.map(f => (
+                <button
+                  key={f}
+                  onClick={() => this.setState({ pipelineFilter: f, selectedPipelineIds: new Set<number>() })}
+                  style={{
+                    padding: '5px 12px', fontSize: 12, fontWeight: pipelineFilter === f ? 700 : 500,
+                    border: `1px solid ${pipelineFilter === f ? '#0d9488' : '#e2e8f0'}`,
+                    borderRadius: 4, cursor: 'pointer',
+                    background: pipelineFilter === f ? '#0d9488' : '#fff',
+                    color: pipelineFilter === f ? '#fff' : '#475569'
+                  }}
+                >{f}</button>
+              ))}
+            </div>
+            {/* Spacer */}
+            <div style={{ flex: 1 }} />
+            {/* Bulk Actions */}
+            {someSelected && (
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <span style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>{selectedPipelineIds.size} selected</span>
+                <DefaultButton
+                  text="Submit for Review"
+                  iconProps={{ iconName: 'Send' }}
+                  onClick={handleBulkSubmitForReview}
+                  styles={{ root: { fontSize: 12, height: 30 } }}
+                />
+                <DefaultButton
+                  text="Delete"
+                  iconProps={{ iconName: 'Delete' }}
+                  onClick={handleBulkDelete}
+                  styles={{ root: { fontSize: 12, height: 30, color: '#dc2626', borderColor: '#fca5a5' } }}
+                />
+              </div>
+            )}
+            <PrimaryButton
+              text="New Policy"
+              iconProps={{ iconName: 'Add' }}
+              href={`${siteUrl}/SitePages/PolicyBuilder.aspx`}
+              styles={{ root: { fontSize: 12, height: 30 } }}
+            />
+          </div>
+
+          {/* Policy List Table */}
+          {filtered.length === 0 ? (
+            <MessageBar messageBarType={MessageBarType.info}>
+              {pipelinePolicies.length === 0
+                ? 'No policies in your pipeline. Create a new policy to get started.'
+                : 'No policies match the current filter.'}
+            </MessageBar>
+          ) : (
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
+              {/* Table Header */}
+              <div style={{
+                display: 'grid', gridTemplateColumns: '36px 1fr 140px 130px 100px 120px 150px',
+                padding: '10px 16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0',
+                fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, color: '#64748b'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={toggleSelectAll}
+                    style={{ cursor: 'pointer' }}
+                    aria-label="Select all policies"
+                  />
+                </div>
+                <div>Policy</div>
+                <div>Category</div>
+                <div>Status</div>
+                <div>Risk</div>
+                <div>Modified</div>
+                <div>Actions</div>
+              </div>
+
+              {/* Table Rows */}
+              {filtered.map(policy => {
+                const isSelected = selectedPipelineIds.has(policy.Id);
+                const statusColor = this.getPipelineStatusColor(policy.PolicyStatus);
+                const modifiedDate = policy.Modified ? new Date(policy.Modified) : null;
+                const modifiedStr = modifiedDate ? modifiedDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-';
+
+                return (
+                  <div
+                    key={policy.Id}
+                    style={{
+                      display: 'grid', gridTemplateColumns: '36px 1fr 140px 130px 100px 120px 150px',
+                      padding: '12px 16px', borderBottom: '1px solid #f1f5f9', alignItems: 'center',
+                      background: isSelected ? '#f0fdfa' : '#fff',
+                      transition: 'background 0.1s'
+                    }}
+                    onMouseEnter={(e) => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = '#fafafa'; }}
+                    onMouseLeave={(e) => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = '#fff'; }}
+                  >
+                    <div>
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleSelect(policy.Id)}
+                        style={{ cursor: 'pointer' }}
+                        aria-label={`Select ${policy.Title}`}
+                      />
+                    </div>
+                    <div>
+                      <a
+                        href={`${siteUrl}/SitePages/PolicyBuilder.aspx?editPolicyId=${policy.Id}`}
+                        style={{ color: '#0f172a', fontWeight: 600, fontSize: 13, textDecoration: 'none' }}
+                        onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.color = '#0d9488'}
+                        onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.color = '#0f172a'}
+                      >
+                        {policy.Title || 'Untitled'}
+                      </a>
+                      <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>
+                        {policy.PolicyNumber || 'No number'} • v{policy.Version}
+                        {policy.IsReviewer && (
+                          <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 4, background: '#f5f3ff', color: '#7c3aed' }}>Reviewer</span>
+                        )}
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 12, color: '#475569' }}>{policy.PolicyCategory || '-'}</div>
+                    <div>
+                      <span style={{
+                        fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 4,
+                        background: `${statusColor}15`, color: statusColor
+                      }}>
+                        {policy.PolicyStatus}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 12, color: '#475569' }}>{policy.ComplianceRisk || '-'}</div>
+                    <div style={{ fontSize: 12, color: '#94a3b8' }}>{modifiedStr}</div>
+                    <div style={{ display: 'flex', gap: 2 }}>
+                      {/* Edit — Draft, Rejected, Approved */}
+                      {['Draft', 'Rejected', 'Approved'].includes(policy.PolicyStatus) && (
+                        <IconButton
+                          iconProps={{ iconName: 'Edit' }}
+                          title="Edit in Policy Builder"
+                          href={`${siteUrl}/SitePages/PolicyBuilder.aspx?editPolicyId=${policy.Id}`}
+                          styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: '#0d9488' } }}
+                          ariaLabel={`Edit ${policy.Title}`}
+                        />
+                      )}
+                      {/* View — all statuses */}
+                      <IconButton
+                        iconProps={{ iconName: 'View' }}
+                        title="View Policy Details"
+                        href={`${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policy.Id}`}
+                        target="_blank"
+                        styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: '#2563eb' } }}
+                        ariaLabel={`View ${policy.Title}`}
+                      />
+                      {/* Submit for Review — Draft only */}
+                      {policy.PolicyStatus === 'Draft' && (
+                        <IconButton
+                          iconProps={{ iconName: 'Send' }}
+                          title="Submit for Review"
+                          onClick={() => this.handlePipelineSubmitForReview(policy.Id, policy.Title)}
+                          styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: '#d97706' } }}
+                          ariaLabel={`Submit ${policy.Title} for review`}
+                        />
+                      )}
+                      {/* Duplicate — Draft, Rejected */}
+                      {['Draft', 'Rejected'].includes(policy.PolicyStatus) && (
+                        <IconButton
+                          iconProps={{ iconName: 'Copy' }}
+                          title="Duplicate as new Draft"
+                          onClick={() => this.handlePipelineDuplicate(policy.Id, policy.Title)}
+                          styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: '#7c3aed' } }}
+                          ariaLabel={`Duplicate ${policy.Title}`}
+                        />
+                      )}
+                      {/* Withdraw — In Review, Pending Approval */}
+                      {['In Review', 'Pending Approval'].includes(policy.PolicyStatus) && (
+                        <IconButton
+                          iconProps={{ iconName: 'Undo' }}
+                          title="Withdraw to Draft"
+                          onClick={() => this.handlePipelineWithdraw(policy.Id, policy.Title)}
+                          styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: '#d97706' } }}
+                          ariaLabel={`Withdraw ${policy.Title}`}
+                        />
+                      )}
+                      {/* Delete — Draft only */}
+                      {policy.PolicyStatus === 'Draft' && (
+                        <IconButton
+                          iconProps={{ iconName: 'Delete' }}
+                          title="Delete Draft"
+                          onClick={() => this.handlePipelineDelete(policy.Id, policy.Title)}
+                          styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: '#dc2626' } }}
+                          ariaLabel={`Delete ${policy.Title}`}
+                        />
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      </>
+    );
+  }
+
+  private async reloadPipeline(): Promise<void> {
+    try {
+      const currentUser = await this.props.sp.web.currentUser();
+      const policies = await this.loadPipelinePolicies(currentUser.Id, currentUser.Title || '');
+      if (this._isMounted) {
+        this.setState({ pipelinePolicies: policies });
+      }
+    } catch (err) {
+      console.error('[PolicyAuthorView] reloadPipeline failed:', err);
+    }
+  }
+
+  // ==========================================================================
+  // PIPELINE INLINE ACTIONS
+  // ==========================================================================
+
+  private async handlePipelineSubmitForReview(policyId: number, title: string): Promise<void> {
+    const confirmed = window.confirm(`Submit "${title}" for review? Reviewers and approvers will be notified.`);
+    if (!confirmed) return;
+    const siteUrl = this.props.context?.pageContext?.web?.absoluteUrl || '/sites/PolicyManager';
+    try {
+      // Update status to In Review
+      await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES)
+        .items.getById(policyId).update({ PolicyStatus: 'In Review' });
+
+      // Log to audit
+      try {
+        await this.props.sp.web.lists.getByTitle('PM_PolicyAuditLog').items.add({
+          Title: `SubmittedForReview - Policy ${policyId}`,
+          PolicyId: policyId,
+          EntityType: 'Policy',
+          EntityId: policyId,
+          AuditAction: 'SubmittedForReview',
+          ActionDescription: `Policy "${title}" submitted for review`,
+          PerformedByEmail: this.props.context?.pageContext?.user?.email || '',
+          ActionDate: new Date().toISOString()
+        });
+      } catch { /* audit log may not exist */ }
+
+      // Send notifications to reviewers
+      try {
+        const reviewerItems = await this.props.sp.web.lists
+          .getByTitle(PM_LISTS.POLICY_REVIEWERS)
+          .items.filter(`PolicyId eq ${policyId}`)
+          .select('ReviewerId').top(50)();
+        const reviewerIds = reviewerItems.map((r: any) => r.ReviewerId).filter(Boolean);
+
+        if (reviewerIds.length > 0) {
+          // Queue in-app notifications
+          for (const reviewerId of reviewerIds) {
+            try {
+              await this.props.sp.web.lists.getByTitle('PM_Notifications').items.add({
+                Title: `Review Required: ${title}`,
+                RecipientId: reviewerId,
+                Type: 'Policy',
+                Message: `"${title}" has been submitted for your review.`,
+                RelatedItemId: policyId,
+                IsRead: false,
+                Priority: 'Normal',
+                ActionUrl: `${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policyId}`
+              });
+            } catch { /* notification list may not exist */ }
+          }
+
+          // Queue email notification
+          try {
+            const submitterName = this.props.context?.pageContext?.user?.displayName || 'An author';
+            for (const reviewerId of reviewerIds) {
+              try {
+                const user = await this.props.sp.web.siteUsers.getById(reviewerId).select('Email', 'Title')();
+                if (user?.Email) {
+                  await this.props.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
+                    Title: `Review Required: ${title}`,
+                    RecipientEmail: user.Email,
+                    RecipientName: user.Title || '',
+                    SenderName: submitterName,
+                    SenderEmail: this.props.context?.pageContext?.user?.email || '',
+                    PolicyId: policyId,
+                    PolicyTitle: title,
+                    NotificationType: 'ReviewRequired',
+                    Channel: 'Email',
+                    Message: `${submitterName} has submitted the policy "${title}" for your review. Please log in to Policy Manager to review and provide feedback.`,
+                    Status: 'Pending',
+                    Priority: 'Normal'
+                  });
+                }
+              } catch { /* per-recipient — continue on failure */ }
+            }
+          } catch { /* email queue may not exist */ }
+        }
+      } catch { /* reviewer list may not exist */ }
+
+      await this.reloadPipeline();
+    } catch (err) {
+      console.error('Submit for review failed:', err);
+      window.alert('Failed to submit for review. Please try again.');
+    }
+  }
+
+  private async handlePipelineDuplicate(policyId: number, title: string): Promise<void> {
+    const confirmed = window.confirm(`Create a copy of "${title}" as a new Draft?`);
+    if (!confirmed) return;
+    try {
+      // Load the source policy
+      const source = await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES)
+        .items.getById(policyId).select('*')();
+
+      // Create duplicate with new number
+      const prefix = (source.PolicyNumber || '').split('-').slice(0, 2).join('-') || 'POL-GEN';
+      const newNumber = `${prefix}-${Date.now().toString().slice(-6)}`;
+      const currentUserId = this.props.context?.pageContext?.legacyPageContext?.userId || 0;
+
+      await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES).items.add({
+        Title: `${source.Title || title} (Copy)`,
+        PolicyName: `${source.PolicyName || title} (Copy)`,
+        PolicyNumber: newNumber,
+        PolicyCategory: source.PolicyCategory || '',
+        PolicyDescription: source.PolicyDescription || '',
+        HTMLContent: source.HTMLContent || '',
+        ComplianceRisk: source.ComplianceRisk || 'Medium',
+        ReadTimeframe: source.ReadTimeframe || 'Week 1',
+        ReadTimeframeDays: source.ReadTimeframeDays || 7,
+        RequiresAcknowledgement: source.RequiresAcknowledgement || false,
+        RequiresQuiz: source.RequiresQuiz || false,
+        PolicyStatus: 'Draft',
+        PolicyOwnerId: currentUserId
+      });
+
+      // Audit log
+      try {
+        await this.props.sp.web.lists.getByTitle('PM_PolicyAuditLog').items.add({
+          Title: `Duplicated - Policy ${policyId}`,
+          PolicyId: policyId,
+          EntityType: 'Policy',
+          EntityId: policyId,
+          AuditAction: 'Duplicated',
+          ActionDescription: `Policy "${title}" duplicated as "${source.PolicyName || title} (Copy)"`,
+          PerformedByEmail: this.props.context?.pageContext?.user?.email || '',
+          ActionDate: new Date().toISOString()
+        });
+      } catch { /* audit may not exist */ }
+
+      await this.reloadPipeline();
+    } catch (err) {
+      console.error('Duplicate failed:', err);
+      window.alert('Failed to duplicate policy. Please try again.');
+    }
+  }
+
+  private async handlePipelineDelete(policyId: number, title: string): Promise<void> {
+    const confirmed = window.confirm(`Delete draft "${title}"? This cannot be undone.`);
+    if (!confirmed) return;
+    try {
+      await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES)
+        .items.getById(policyId).delete();
+
+      // Audit log
+      try {
+        await this.props.sp.web.lists.getByTitle('PM_PolicyAuditLog').items.add({
+          Title: `Deleted - Policy ${policyId}`,
+          PolicyId: policyId,
+          EntityType: 'Policy',
+          EntityId: policyId,
+          AuditAction: 'Deleted',
+          ActionDescription: `Draft policy "${title}" deleted by author`,
+          PerformedByEmail: this.props.context?.pageContext?.user?.email || '',
+          ActionDate: new Date().toISOString()
+        });
+      } catch { /* audit may not exist */ }
+
+      // Clean up reviewers
+      try {
+        const reviewerItems = await this.props.sp.web.lists
+          .getByTitle(PM_LISTS.POLICY_REVIEWERS)
+          .items.filter(`PolicyId eq ${policyId}`).select('Id').top(50)();
+        for (const item of reviewerItems) {
+          await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_REVIEWERS)
+            .items.getById(item.Id).delete();
+        }
+      } catch { /* reviewer list may not exist */ }
+
+      await this.reloadPipeline();
+    } catch (err) {
+      console.error('Delete failed:', err);
+      window.alert('Failed to delete draft. Please try again.');
+    }
+  }
+
+  private async handlePipelineWithdraw(policyId: number, title: string): Promise<void> {
+    const confirmed = window.confirm(`Withdraw "${title}" back to Draft? Reviewers will be notified.`);
+    if (!confirmed) return;
+    try {
+      // Update status back to Draft
+      await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES)
+        .items.getById(policyId).update({ PolicyStatus: 'Draft' });
+
+      // Audit log
+      try {
+        await this.props.sp.web.lists.getByTitle('PM_PolicyAuditLog').items.add({
+          Title: `Withdrawn - Policy ${policyId}`,
+          PolicyId: policyId,
+          EntityType: 'Policy',
+          EntityId: policyId,
+          AuditAction: 'Withdrawn',
+          ActionDescription: `Policy "${title}" withdrawn from review back to Draft`,
+          PerformedByEmail: this.props.context?.pageContext?.user?.email || '',
+          ActionDate: new Date().toISOString()
+        });
+      } catch { /* audit may not exist */ }
+
+      // Notify reviewers that review is cancelled
+      try {
+        const reviewerItems = await this.props.sp.web.lists
+          .getByTitle(PM_LISTS.POLICY_REVIEWERS)
+          .items.filter(`PolicyId eq ${policyId}`)
+          .select('ReviewerId').top(50)();
+
+        for (const r of reviewerItems) {
+          try {
+            await this.props.sp.web.lists.getByTitle('PM_Notifications').items.add({
+              Title: `Review Cancelled: ${title}`,
+              RecipientId: r.ReviewerId,
+              Type: 'Policy',
+              Message: `The review for "${title}" has been withdrawn by the author.`,
+              RelatedItemId: policyId,
+              IsRead: false,
+              Priority: 'Normal'
+            });
+          } catch { /* per-recipient — continue */ }
+        }
+
+        // Reset reviewer statuses to Pending
+        for (const r of reviewerItems) {
+          try {
+            await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_REVIEWERS)
+              .items.getById(r.Id).update({ ReviewStatus: 'Pending' });
+          } catch { /* non-blocking */ }
+        }
+      } catch { /* reviewer list may not exist */ }
+
+      await this.reloadPipeline();
+    } catch (err) {
+      console.error('Withdraw failed:', err);
+      window.alert('Failed to withdraw policy. Please try again.');
+    }
   }
 
   // ==========================================================================
@@ -568,15 +1246,9 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
     const criticalCount = policyRequests.filter(r => r.Priority === 'Critical' && r.Status !== 'Completed').length;
 
     return (
-      <>
-        <PageSubheader
-          iconName="AuthoringTool"
-          title="Policy Requests"
-          description="Review and manage policy creation requests submitted by managers"
-        />
-
-        {/* KPI Summary Cards — including Critical as a card */}
-        <div className={(styles as Record<string, string>).kpiGrid}>
+      <section style={{ padding: '24px 40px', maxWidth: 1400, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+        {/* KPI Summary Cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16, marginBottom: 24 }}>
           {this.renderKpiCard('New Requests', newCount, 'NewMail', '#0d9488', '#e8f4fd', () => this.setState({ statusFilter: 'New' }))}
           {this.renderKpiCard('Assigned', assignedCount, 'People', '#8764b8', '#f3eefc', () => this.setState({ statusFilter: 'Assigned' }))}
           {this.renderKpiCard('In Progress', inProgressCount, 'Edit', '#f59e0b', '#fff8e6', () => this.setState({ statusFilter: 'InProgress' }))}
@@ -650,7 +1322,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
 
         {/* Detail Panel */}
         {showDetailPanel && selectedRequest && this.renderDetailPanel()}
-      </>
+      </section>
     );
   }
 
@@ -966,15 +1638,9 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
     const urgentCount = approvals.filter(a => a.Status === 'Pending' && a.Priority === 'Urgent').length;
 
     return (
-      <>
-        <PageSubheader
-          iconName="CheckboxComposite"
-          title="Policy Approvals"
-          description="Review and approve policy drafts awaiting your sign-off"
-        />
-
+      <section style={{ padding: '24px 40px', maxWidth: 1400, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
         {/* KPI Row */}
-        <div className={(styles as Record<string, string>).kpiGrid}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
           {this.renderKpiCard('Pending', pendingCount, 'Clock', '#f59e0b', '#fff8e6', () => this.setState({ approvalFilter: 'Pending' }))}
           {this.renderKpiCard('Urgent', urgentCount, 'Warning', '#d13438', '#fef2f2', () => this.setState({ approvalFilter: 'Pending' }))}
           {this.renderKpiCard('Approved', approvals.filter(a => a.Status === 'Approved').length, 'CheckMark', '#107c10', '#dff6dd', () => this.setState({ approvalFilter: 'Approved' }))}
@@ -1071,7 +1737,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
             ))}
           </div>
         )}
-      </>
+      </section>
     );
   }
 
@@ -1104,13 +1770,8 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
     const overdueCount = delegations.filter(d => d.Status === 'Overdue').length;
 
     return (
-      <>
-        <Stack horizontal horizontalAlign="space-between" verticalAlign="center" style={{ marginBottom: 0 }}>
-          <PageSubheader
-            iconName="People"
-            title="Delegations"
-            description="Manage tasks delegated to team members for policy review, drafting, and distribution"
-          />
+      <section style={{ padding: '24px 40px', maxWidth: 1400, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+        <Stack horizontal horizontalAlign="end" style={{ marginBottom: 16 }}>
           <PrimaryButton
             text="Add Delegation"
             iconProps={{ iconName: 'AddFriend' }}
@@ -1124,7 +1785,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
         </Stack>
 
         {/* KPI Row */}
-        <div className={(styles as Record<string, string>).kpiGrid}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
           {this.renderKpiCard('Pending', pendingCount, 'Clock', '#0d9488', '#e8f4fd', () => this.setState({ delegationFilter: 'Pending' }))}
           {this.renderKpiCard('In Progress', delegations.filter(d => d.Status === 'InProgress').length, 'Edit', '#f59e0b', '#fff8e6', () => this.setState({ delegationFilter: 'InProgress' }))}
           {this.renderKpiCard('Overdue', overdueCount, 'Warning', '#d13438', '#fef2f2', () => this.setState({ delegationFilter: 'Overdue' }))}
@@ -1225,7 +1886,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
             ))}
           </div>
         )}
-      </>
+      </section>
     );
   }
 

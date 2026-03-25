@@ -190,7 +190,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       policyOwner: [],
 
       // Review step - first section expanded by default
-      expandedReviewSections: new Set<string>(['basic', 'content', 'compliance', 'audience', 'dates', 'workflow']),
+      expandedReviewSections: new Set<string>(),
 
       // Embedded Tab System - use URL ?tab= param if provided
       activeTab: tabParam && POLICY_BUILDER_TABS.some(t => t.key === tabParam) ? tabParam : 'create',
@@ -276,7 +276,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       selectedApprovalId: null
     };
 
-    this.policyService = new PolicyService(props.sp);
+    this.policyService = new PolicyService(props.sp, props.context?.pageContext?.web?.absoluteUrl || '');
     this.quizService = new QuizService(props.sp);
     this.comparisonService = new PolicyDocumentComparisonService(props.sp, props.context.pageContext.web.absoluteUrl);
 
@@ -387,7 +387,8 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     await Promise.all([
       this.policyService.initialize(),
       this.loadTemplates(),
-      this.loadMetadataProfiles()
+      this.loadMetadataProfiles(),
+      this.loadCategoriesFromAdmin()
     ]);
 
     if (this.state.policyId) {
@@ -417,89 +418,107 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
   };
 
   private static readonly SAMPLE_TEMPLATES: IPolicyTemplate[] = [
+    // ── Word Templates ──
     {
-      Id: 1001,
-      Title: 'Corporate Governance Policy',
-      TemplateType: 'Standard',
-      TemplateCategory: 'Corporate',
-      TemplateDescription: 'Comprehensive corporate governance template with board oversight, executive responsibilities, and regulatory compliance sections. Includes standard headers, approval workflows, and compliance checkpoints.',
-      TemplateContent: '<h2>1. Purpose</h2><p>This policy establishes the framework for corporate governance across the organisation, ensuring accountability, transparency, and compliance with regulatory requirements.</p><h2>2. Scope</h2><p>This policy applies to all directors, officers, and employees of the organisation and its subsidiaries.</p><h2>3. Governance Framework</h2><h3>3.1 Board Responsibilities</h3><p>The Board of Directors is responsible for setting the strategic direction of the organisation, overseeing management, and ensuring fiduciary duties are fulfilled.</p><h3>3.2 Executive Accountability</h3><p>Executive leadership is accountable for implementing board-approved strategies, maintaining internal controls, and reporting to the board on operational performance.</p><h2>4. Compliance Requirements</h2><p>All activities must comply with applicable laws, regulations, and industry standards. Non-compliance must be reported immediately through the established escalation channels.</p><h2>5. Review and Amendment</h2><p>This policy will be reviewed annually by the Governance Committee and amended as necessary to reflect changes in legislation or organisational structure.</p>',
-      ComplianceRisk: 'High',
-      SuggestedReadTimeframe: '1 week',
-      RequiresAcknowledgement: true,
-      RequiresQuiz: true,
-      KeyPointsTemplate: 'Board oversight and fiduciary duties;Executive accountability framework;Regulatory compliance requirements;Annual review cycle;Escalation procedures for non-compliance',
-      UsageCount: 34
+      Id: 1001, Title: 'Corporate Governance Policy', TemplateName: 'Corporate Governance Policy',
+      TemplateType: 'word' as any, TemplateCategory: 'Compliance' as any,
+      Description: 'Board oversight, executive responsibilities, and regulatory compliance. Formatted for Word with headers, table of contents, and signature blocks.',
+      TemplateContent: '<h2>1. Purpose</h2><p>This policy establishes the framework for corporate governance across the organisation.</p><h2>2. Scope</h2><p>Applies to all directors, officers, and employees.</p><h2>3. Governance Framework</h2><p>[Board responsibilities, executive accountability]</p><h2>4. Compliance Requirements</h2><p>[Regulatory obligations]</p><h2>5. Review</h2><p>Reviewed annually by the Governance Committee.</p>',
+      ComplianceRisk: 'High', SuggestedReadTimeframe: '1 week', RequiresAcknowledgement: true, RequiresQuiz: true,
+      KeyPointsTemplate: 'Board oversight;Executive accountability;Regulatory compliance;Annual review cycle', UsageCount: 34
     },
     {
-      Id: 1002,
-      Title: 'Information Security Policy',
-      TemplateType: 'Standard',
-      TemplateCategory: 'IT Security',
-      TemplateDescription: 'IT security policy template covering data classification, access controls, incident response, and acceptable use. Aligned with ISO 27001 and NIST frameworks.',
-      TemplateContent: '<h2>1. Purpose</h2><p>To protect the confidentiality, integrity, and availability of organisational information assets by defining security controls and responsibilities.</p><h2>2. Data Classification</h2><p>All information must be classified as: <strong>Public</strong>, <strong>Internal</strong>, <strong>Confidential</strong>, or <strong>Restricted</strong>. Handling procedures must correspond to the classification level.</p><h2>3. Access Control</h2><p>Access to information systems must follow the principle of least privilege. Multi-factor authentication is required for all privileged access and remote connections.</p><h2>4. Incident Response</h2><p>Security incidents must be reported within 1 hour of discovery to the IT Security team. The incident response plan must be followed for containment, eradication, and recovery.</p><h2>5. Acceptable Use</h2><p>Organisational IT resources must be used for legitimate business purposes. Personal use is permitted within reasonable limits as defined in the Acceptable Use Guidelines.</p>',
-      ComplianceRisk: 'Critical',
-      SuggestedReadTimeframe: '3-4 days',
-      RequiresAcknowledgement: true,
-      RequiresQuiz: true,
-      KeyPointsTemplate: 'Data classification (Public, Internal, Confidential, Restricted);Least privilege access control;MFA required for privileged access;1-hour incident reporting window;ISO 27001 and NIST alignment',
-      UsageCount: 52
+      Id: 1002, Title: 'Information Security Policy', TemplateName: 'Information Security Policy',
+      TemplateType: 'word' as any, TemplateCategory: 'IT & Security' as any,
+      Description: 'Data classification, access controls, incident response, and acceptable use. Aligned with ISO 27001 and NIST.',
+      TemplateContent: '<h2>1. Purpose</h2><p>Protect confidentiality, integrity, and availability of information assets.</p><h2>2. Data Classification</h2><p>Public, Internal, Confidential, Restricted.</p><h2>3. Access Control</h2><p>Least privilege, MFA for privileged access.</p><h2>4. Incident Response</h2><p>Report within 1 hour.</p><h2>5. Acceptable Use</h2><p>Business purposes only.</p>',
+      ComplianceRisk: 'Critical', SuggestedReadTimeframe: '3 days', RequiresAcknowledgement: true, RequiresQuiz: true,
+      KeyPointsTemplate: 'Data classification;Least privilege access;MFA required;1-hour incident reporting;ISO 27001 alignment', UsageCount: 52
     },
     {
-      Id: 1003,
-      Title: 'General Policy Template',
-      TemplateType: 'General',
-      TemplateCategory: 'General',
-      TemplateDescription: 'Flexible general-purpose policy template suitable for most department-level policies. Easy to customise with standard sections for purpose, scope, responsibilities, and compliance.',
-      TemplateContent: '<h2>1. Purpose</h2><p>[Describe the purpose and objectives of this policy]</p><h2>2. Scope</h2><p>[Define who this policy applies to and under what circumstances]</p><h2>3. Policy Statement</h2><p>[State the key policy provisions and requirements]</p><h2>4. Roles and Responsibilities</h2><h3>4.1 Management</h3><p>[Describe management responsibilities]</p><h3>4.2 Employees</h3><p>[Describe employee responsibilities]</p><h2>5. Procedures</h2><p>[Outline the procedures for implementing this policy]</p><h2>6. Non-Compliance</h2><p>[Describe consequences of non-compliance]</p><h2>7. Related Documents</h2><p>[List related policies, standards, and procedures]</p>',
-      ComplianceRisk: 'Medium',
-      SuggestedReadTimeframe: '3-4 days',
-      RequiresAcknowledgement: true,
-      RequiresQuiz: false,
-      KeyPointsTemplate: 'Customisable template sections;Standard policy structure;Department-agnostic format;Clear responsibilities matrix',
-      UsageCount: 128
+      Id: 1003, Title: 'HR Employee Handbook', TemplateName: 'HR Employee Handbook',
+      TemplateType: 'word' as any, TemplateCategory: 'HR Policies' as any,
+      Description: 'Employment terms, code of conduct, leave management, and performance reviews. Suitable for employee handbook chapters.',
+      TemplateContent: '<h2>1. Purpose</h2><p>Expectations and guidelines for employment.</p><h2>2. Employment Terms</h2><p>[Terms from agreements]</p><h2>3. Code of Conduct</h2><p>[Professional and ethical standards]</p><h2>4. Leave</h2><p>[Entitlements and procedures]</p><h2>5. Performance</h2><p>[Review process]</p>',
+      ComplianceRisk: 'Medium', SuggestedReadTimeframe: '1 week', RequiresAcknowledgement: true, RequiresQuiz: false,
+      KeyPointsTemplate: 'Employment terms;Code of conduct;Leave procedures;Performance reviews', UsageCount: 45
     },
     {
-      Id: 1004,
-      Title: 'HR Employee Handbook Policy',
-      TemplateType: 'Standard',
-      TemplateCategory: 'Human Resources',
-      TemplateDescription: 'Human resources policy template covering employment terms, benefits, conduct expectations, and workplace procedures. Suitable for employee handbook chapters.',
-      TemplateContent: '<h2>1. Purpose</h2><p>This policy establishes expectations and guidelines for employment at the organisation, ensuring fair and consistent treatment of all employees.</p><h2>2. Employment Terms</h2><p>All employment is subject to the terms outlined in individual employment agreements, this handbook, and applicable legislation.</p><h2>3. Code of Conduct</h2><p>Employees are expected to conduct themselves professionally and ethically at all times. This includes treating colleagues with respect, maintaining confidentiality, and avoiding conflicts of interest.</p><h2>4. Leave and Absences</h2><p>Leave entitlements are in accordance with employment agreements and statutory requirements. Requests must be submitted through the approved leave management system.</p><h2>5. Performance Management</h2><p>Regular performance reviews will be conducted to provide feedback, set objectives, and identify development opportunities.</p>',
-      ComplianceRisk: 'Medium',
-      SuggestedReadTimeframe: '1 week',
-      RequiresAcknowledgement: true,
-      RequiresQuiz: false,
-      KeyPointsTemplate: 'Employment terms and conditions;Code of conduct expectations;Leave management procedures;Performance review process;Workplace behaviour standards',
-      UsageCount: 45
+      Id: 1004, Title: 'Data Protection & Privacy', TemplateName: 'Data Protection & Privacy',
+      TemplateType: 'word' as any, TemplateCategory: 'Compliance' as any,
+      Description: 'POPIA/GDPR-aligned template for data protection obligations, data subject rights, and breach notification.',
+      TemplateContent: '<h2>1. Purpose</h2><p>Lawful, fair, and transparent processing of personal data.</p><h2>2. Processing Principles</h2><p>[Six principles]</p><h2>3. Data Subject Rights</h2><p>[Access, rectification, erasure, portability]</p><h2>4. Breach Notification</h2><p>Report within 24 hours.</p><h2>5. DPAs</h2><p>[Third-party agreements]</p>',
+      ComplianceRisk: 'Critical', SuggestedReadTimeframe: '3 days', RequiresAcknowledgement: true, RequiresQuiz: true,
+      KeyPointsTemplate: 'POPIA/GDPR compliance;Data processing principles;Data subject rights;24-hour breach reporting', UsageCount: 67
+    },
+    // ── Excel Templates ──
+    {
+      Id: 1010, Title: 'Risk Assessment Matrix', TemplateName: 'Risk Assessment Matrix',
+      TemplateType: 'excel' as any, TemplateCategory: 'Compliance' as any,
+      Description: 'Structured risk assessment with likelihood/impact scoring, risk registers, and control measures. Pre-formatted Excel with conditional formatting.',
+      TemplateContent: '', ComplianceRisk: 'High', SuggestedReadTimeframe: '3 days', RequiresAcknowledgement: true, RequiresQuiz: false,
+      KeyPointsTemplate: 'Risk scoring matrix;Control measures tracking;Heat map visualisation', UsageCount: 28
     },
     {
-      Id: 1005,
-      Title: 'Data Protection & Privacy Policy',
-      TemplateType: 'Standard',
-      TemplateCategory: 'Compliance',
-      TemplateDescription: 'GDPR and privacy-aligned policy template for data protection obligations, data subject rights, breach notification, and data processing agreements.',
-      TemplateContent: '<h2>1. Purpose</h2><p>To ensure the organisation processes personal data lawfully, fairly, and transparently in compliance with data protection regulations.</p><h2>2. Data Processing Principles</h2><p>Personal data must be: processed lawfully and fairly; collected for specified purposes; adequate and relevant; accurate and up to date; not kept longer than necessary; processed securely.</p><h2>3. Data Subject Rights</h2><p>The organisation respects individuals\' rights including: right of access, rectification, erasure, restriction, portability, and objection to processing.</p><h2>4. Breach Notification</h2><p>Data breaches must be reported to the Data Protection Officer within 24 hours. Where required, the supervisory authority must be notified within 72 hours.</p><h2>5. Data Processing Agreements</h2><p>All third-party processors must have an approved Data Processing Agreement in place before any personal data is shared.</p>',
-      ComplianceRisk: 'Critical',
-      SuggestedReadTimeframe: '3-4 days',
-      RequiresAcknowledgement: true,
-      RequiresQuiz: true,
-      KeyPointsTemplate: 'GDPR compliance requirements;Six data processing principles;Data subject rights;24-hour breach reporting;Third-party DPA requirements',
-      UsageCount: 67
+      Id: 1011, Title: 'Compliance Checklist', TemplateName: 'Compliance Checklist',
+      TemplateType: 'excel' as any, TemplateCategory: 'Compliance' as any,
+      Description: 'Regulatory compliance tracking spreadsheet with requirement mapping, status columns, and evidence links.',
+      TemplateContent: '', ComplianceRisk: 'High', SuggestedReadTimeframe: '1 week', RequiresAcknowledgement: true, RequiresQuiz: false,
+      KeyPointsTemplate: 'Requirement mapping;Status tracking;Evidence documentation;Gap analysis', UsageCount: 19
     },
     {
-      Id: 1006,
-      Title: 'Health & Safety Policy',
-      TemplateType: 'Standard',
-      TemplateCategory: 'Health & Safety',
-      TemplateDescription: 'Workplace health and safety policy covering risk assessments, incident reporting, emergency procedures, and duty of care obligations.',
-      TemplateContent: '<h2>1. Purpose</h2><p>To ensure the health, safety, and welfare of all employees, contractors, and visitors within the workplace.</p><h2>2. Employer Responsibilities</h2><p>The organisation will provide a safe working environment, conduct regular risk assessments, provide appropriate training, and maintain adequate welfare facilities.</p><h2>3. Employee Responsibilities</h2><p>Employees must take reasonable care for their own health and safety and that of others, report hazards, and use equipment as trained.</p><h2>4. Risk Assessment</h2><p>All workplace activities must be risk-assessed. Significant findings must be documented and control measures implemented.</p><h2>5. Incident Reporting</h2><p>All workplace incidents, near-misses, and hazards must be reported immediately using the incident reporting system.</p><h2>6. Emergency Procedures</h2><p>Emergency procedures including fire evacuation, first aid, and critical incident response are displayed at all workstations.</p>',
-      ComplianceRisk: 'High',
-      SuggestedReadTimeframe: '3-4 days',
-      RequiresAcknowledgement: true,
-      RequiresQuiz: true,
-      KeyPointsTemplate: 'Safe working environment;Risk assessment requirements;Incident reporting obligations;Emergency procedures;Duty of care',
-      UsageCount: 39
+      Id: 1012, Title: 'Asset Inventory Policy', TemplateName: 'Asset Inventory Policy',
+      TemplateType: 'excel' as any, TemplateCategory: 'IT & Security' as any,
+      Description: 'IT asset inventory and classification template. Tracks hardware, software, and data assets with owners and risk ratings.',
+      TemplateContent: '', ComplianceRisk: 'Medium', SuggestedReadTimeframe: '3 days', RequiresAcknowledgement: false, RequiresQuiz: false,
+      KeyPointsTemplate: 'Asset classification;Owner assignment;Risk ratings;Lifecycle tracking', UsageCount: 15
+    },
+    // ── PowerPoint Templates ──
+    {
+      Id: 1020, Title: 'Policy Awareness Briefing', TemplateName: 'Policy Awareness Briefing',
+      TemplateType: 'powerpoint' as any, TemplateCategory: 'HR Policies' as any,
+      Description: 'Presentation-style policy for team briefings and awareness sessions. Includes speaker notes, key points slides, and Q&A section.',
+      TemplateContent: '', ComplianceRisk: 'Low', SuggestedReadTimeframe: '1 day', RequiresAcknowledgement: true, RequiresQuiz: false,
+      KeyPointsTemplate: 'Visual awareness format;Speaker notes included;Q&A section;Team briefing ready', UsageCount: 22
+    },
+    {
+      Id: 1021, Title: 'Executive Policy Summary', TemplateName: 'Executive Policy Summary',
+      TemplateType: 'powerpoint' as any, TemplateCategory: 'Compliance' as any,
+      Description: 'Board-level executive summary format. Key decisions, strategic impact, and action items in a concise presentation.',
+      TemplateContent: '', ComplianceRisk: 'High', SuggestedReadTimeframe: '1 day', RequiresAcknowledgement: true, RequiresQuiz: false,
+      KeyPointsTemplate: 'Executive summary format;Strategic impact;Key decisions;Action items', UsageCount: 18
+    },
+    {
+      Id: 1022, Title: 'Safety Induction Presentation', TemplateName: 'Safety Induction Presentation',
+      TemplateType: 'powerpoint' as any, TemplateCategory: 'Health & Safety' as any,
+      Description: 'New employee safety induction slides covering hazards, emergency procedures, PPE, and reporting obligations.',
+      TemplateContent: '', ComplianceRisk: 'High', SuggestedReadTimeframe: '1 day', RequiresAcknowledgement: true, RequiresQuiz: true,
+      KeyPointsTemplate: 'Workplace hazards;Emergency procedures;PPE requirements;Incident reporting', UsageCount: 31
+    },
+    // ── HTML Templates ──
+    {
+      Id: 1030, Title: 'General Policy (HTML)', TemplateName: 'General Policy (HTML)',
+      TemplateType: 'html' as any, TemplateCategory: 'Operational' as any,
+      Description: 'Clean HTML template with semantic markup. Purpose, scope, responsibilities, and compliance sections with CSS styling.',
+      TemplateContent: '<h2>1. Purpose</h2><p>[Describe the purpose]</p><h2>2. Scope</h2><p>[Define who this applies to]</p><h2>3. Policy Statement</h2><p>[Key provisions]</p><h2>4. Responsibilities</h2><p>[Roles and duties]</p><h2>5. Procedures</h2><p>[Implementation steps]</p><h2>6. Non-Compliance</h2><p>[Consequences]</p>',
+      ComplianceRisk: 'Medium', SuggestedReadTimeframe: '3 days', RequiresAcknowledgement: true, RequiresQuiz: false,
+      KeyPointsTemplate: 'Clean semantic HTML;Standard policy structure;Easy to customise', UsageCount: 41
+    },
+    {
+      Id: 1031, Title: 'Acceptable Use Policy (HTML)', TemplateName: 'Acceptable Use Policy (HTML)',
+      TemplateType: 'html' as any, TemplateCategory: 'IT & Security' as any,
+      Description: 'IT acceptable use policy in HTML format with tables for permitted/prohibited activities and styled callout boxes.',
+      TemplateContent: '<h2>1. Purpose</h2><p>Define acceptable use of IT resources.</p><h2>2. Permitted Use</h2><table><tr><th>Activity</th><th>Permitted</th></tr><tr><td>Business email</td><td>Yes</td></tr><tr><td>Personal browsing (limited)</td><td>Yes</td></tr></table><h2>3. Prohibited Use</h2><p>[Prohibited activities]</p><h2>4. Monitoring</h2><p>All activity may be monitored.</p><h2>5. Consequences</h2><p>[Disciplinary actions]</p>',
+      ComplianceRisk: 'Medium', SuggestedReadTimeframe: '1 day', RequiresAcknowledgement: true, RequiresQuiz: true,
+      KeyPointsTemplate: 'Permitted vs prohibited use;Monitoring notice;Disciplinary consequences', UsageCount: 36
+    },
+    {
+      Id: 1032, Title: 'Health & Safety Policy (HTML)', TemplateName: 'Health & Safety Policy (HTML)',
+      TemplateType: 'html' as any, TemplateCategory: 'Health & Safety' as any,
+      Description: 'OHS policy with HTML formatting, emergency procedure callouts, and structured risk assessment sections.',
+      TemplateContent: '<h2>1. Purpose</h2><p>Ensure health, safety, and welfare of all employees and visitors.</p><h2>2. Employer Duties</h2><p>[Safe environment, risk assessments, training]</p><h2>3. Employee Duties</h2><p>[Personal responsibility, hazard reporting]</p><h2>4. Risk Assessment</h2><p>[Process and documentation]</p><h2>5. Incident Reporting</h2><p>[Immediate reporting obligations]</p><h2>6. Emergency Procedures</h2><p>[Evacuation, first aid, critical incidents]</p>',
+      ComplianceRisk: 'High', SuggestedReadTimeframe: '3 days', RequiresAcknowledgement: true, RequiresQuiz: true,
+      KeyPointsTemplate: 'Safe working environment;Risk assessments;Incident reporting;Emergency procedures', UsageCount: 25
     }
   ];
 
@@ -542,6 +561,27 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     }
   }
 
+  /**
+   * Load categories from PM_PolicyCategories (admin-configured).
+   * Falls back to the hardcoded PolicyCategory enum if the list doesn't exist.
+   */
+  private async loadCategoriesFromAdmin(): Promise<void> {
+    try {
+      const items = await this.props.sp.web.lists
+        .getByTitle(PM_LISTS.POLICY_CATEGORIES)
+        .items.select('Id', 'Title', 'CategoryName', 'IsActive', 'SortOrder')
+        .orderBy('SortOrder')
+        .top(100)();
+
+      const active = items.filter((c: any) => c.IsActive !== false);
+      if (active.length > 0 && this._isMounted) {
+        this.setState({ _adminCategories: active.map((c: any) => c.CategoryName || c.Title) } as any);
+      }
+    } catch {
+      // PM_PolicyCategories may not exist — fall back to enum (handled in renderStep1)
+    }
+  }
+
   private startAutoSave(): void {
     this.autoSaveTimer = setInterval(() => {
       this.handleAutoSave();
@@ -574,7 +614,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         policyNumber: policy.PolicyNumber,
         policyName: policy.PolicyName,
         policyCategory: policy.PolicyCategory,
-        policySummary: policy.PolicySummary || policy.Description || '',
+        policySummary: policy.PolicyDescription || policy.PolicySummary || policy.Description || '',
         policyContent: policy.PolicyContent || policy.HTMLContent || '',
         keyPoints: parsedKeyPoints,
         complianceRisk: policy.ComplianceRisk || 'Medium',
@@ -587,7 +627,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         expiryDate: policy.ExpiryDate ? (typeof policy.ExpiryDate === 'string' ? policy.ExpiryDate : policy.ExpiryDate.toISOString()).split('T')[0] : '',
         // Load audience fields (Fix 1 counterpart)
         targetAllEmployees: policy.DistributionScope === 'AllEmployees',
-        targetDepartments: policy.Departments ? (policy.Departments as string).split(';').filter(Boolean) : [],
+        targetDepartments: (policy.TargetDepartments || policy.Departments) ? ((policy.TargetDepartments || policy.Departments) as string).split(';').filter(Boolean) : [],
         targetRoles: policy.TargetRoles ? (policy.TargetRoles as string).split(';').filter(Boolean) : [],
         targetLocations: policy.TargetLocations ? (policy.TargetLocations as string).split(';').filter(Boolean) : [],
         includeContractors: !!(policy as any).IncludeContractors,
@@ -616,8 +656,75 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
           if (policy.DocumentURL) return 'upload';
           return 'blank';
         })(),
+        // Restore policy owner — mapPolicyItem converts to string (Title),
+        // but PeoplePicker needs email. Try _policyOwnerEmail first (if we add it),
+        // then fall back to the string value which PeoplePicker can resolve
+        policyOwner: (() => {
+          const ownerEmail = (policy as any)._policyOwnerEmail;
+          if (ownerEmail) return [ownerEmail];
+          // PolicyOwner is mapped to string (Title) by mapPolicyItem
+          const ownerStr = policy.PolicyOwner;
+          if (ownerStr && typeof ownerStr === 'string' && ownerStr.trim()) return [ownerStr];
+          return [];
+        })(),
+        // Restore metadata profile — try MetadataProfileId column first, then auto-detect
+        _selectedProfileId: (policy as any).MetadataProfileId || null,
+        // Restore source references
+        sourceRequestId: (policy as any).SourceRequestId || undefined,
+        // Open on Step 2 (Basic Info) when loading existing policy for editing
+        currentStep: 1,
         loading: false
       } as any); }
+
+      // Auto-detect metadata profile if MetadataProfileId not available
+      if (!(policy as any).MetadataProfileId && this.state.metadataProfiles?.length > 0) {
+        const match = this.state.metadataProfiles.find((p: any) =>
+          p.ComplianceRisk === policy.ComplianceRisk &&
+          p.PolicyCategory === policy.PolicyCategory
+        );
+        if (match && this._isMounted) {
+          this.setState({ _selectedProfileId: match.Id } as any);
+        }
+      }
+
+      // Load reviewers and approvers from PM_PolicyReviewers list
+      // PeoplePicker needs email strings, so we expand the Reviewer User field
+      if (policyId) {
+        try {
+          let reviewerItems: any[];
+          try {
+            // Try with Reviewer expand (User field)
+            reviewerItems = await this.props.sp.web.lists
+              .getByTitle(PM_LISTS.POLICY_REVIEWERS)
+              .items.filter(`PolicyId eq ${policyId}`)
+              .select('Id', 'ReviewerId', 'Reviewer/Id', 'Reviewer/EMail', 'Reviewer/Title', 'ReviewerType')
+              .expand('Reviewer')
+              .top(50)();
+          } catch {
+            // Fallback without expand
+            reviewerItems = await this.props.sp.web.lists
+              .getByTitle(PM_LISTS.POLICY_REVIEWERS)
+              .items.filter(`PolicyId eq ${policyId}`)
+              .select('Id', 'ReviewerId', 'ReviewerType')
+              .top(50)();
+          }
+
+          // Extract emails (for PeoplePicker defaultSelectedUsers)
+          const getEmail = (r: any): string => r.Reviewer?.EMail || r.Reviewer?.Title || '';
+          const reviewerEmails = reviewerItems
+            .filter((r: any) => r.ReviewerType === 'Technical Reviewer' || r.ReviewerType === 'Reviewer')
+            .map(getEmail).filter(Boolean);
+          const approverEmails = reviewerItems
+            .filter((r: any) => r.ReviewerType === 'Final Approver' || r.ReviewerType === 'Approver' || r.ReviewerType === 'Executive Approver')
+            .map(getEmail).filter(Boolean);
+
+          if (this._isMounted && (reviewerEmails.length > 0 || approverEmails.length > 0)) {
+            this.setState({ reviewers: reviewerEmails, approvers: approverEmails } as any);
+          }
+        } catch (err) {
+          console.warn('[PolicyBuilder] Failed to load reviewers (list may not exist):', err);
+        }
+      }
 
       // Fix 7: Load quiz title if LinkedQuizId is set
       if (policy.LinkedQuizId) {
@@ -872,7 +979,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             linkedDocumentType: 'Image',
             creationMethod: 'infographic',
             policyName: policyName,
-            currentStep: 1,
+            // Stay on current step — don't jump back
             policyContent: ''
           });
 
@@ -1013,59 +1120,60 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       const { selectedQuizId, policyOwner } = this.state;
       const sourceRequestId = (this.state as any).sourceRequestId;
       const selectedTemplate = (this.state as any).selectedTemplate;
-      if (selectedQuizId) { spData.LinkedQuizId = selectedQuizId; }
-      if (sourceRequestId) { spData.SourceRequestId = sourceRequestId; }
-      if (selectedTemplate?.Id) { try { spData.SourceTemplateId = selectedTemplate.Id; } catch { /* column may not exist */ } }
       if (effectiveDate) { spData.EffectiveDate = new Date(effectiveDate).toISOString(); }
       if (expiryDate) { spData.ExpiryDate = new Date(expiryDate).toISOString(); }
       if (keyPoints && keyPoints.length > 0) { spData.InternalNotes = JSON.stringify(keyPoints); }
 
-      // Fix 1: Save audience fields (Step 4)
-      try {
-        spData.DistributionScope = targetAllEmployees ? 'AllEmployees' : 'Targeted';
-        if (targetDepartments && targetDepartments.length > 0) { spData.Departments = targetDepartments.join(';'); }
-        if (targetRoles && targetRoles.length > 0) { spData.TargetRoles = targetRoles.join(';'); }
-        if (targetLocations && targetLocations.length > 0) { spData.TargetLocations = targetLocations.join(';'); }
-        if (includeContractors) { spData.IncludeContractors = true; }
-      } catch { /* columns may not exist yet */ }
-
-      // Fix 2: Save dates & review fields (Step 5)
-      try {
-        if (reviewFrequency) { spData.ReviewFrequency = reviewFrequency; }
-        if (nextReviewDate) { spData.NextReviewDate = new Date(nextReviewDate).toISOString(); }
-        if (supersedesPolicy) { spData.SupersedesPolicy = supersedesPolicy; }
-      } catch { /* columns may not exist yet */ }
-
-      // Fix 5: Save PolicyOwner from PeoplePicker (not hardcoded)
-      if (policyOwner && policyOwner.length > 0 && (policyOwner[0] as any)?.id) {
-        try { spData.PolicyOwnerId = (policyOwner[0] as any).id; } catch { /* fallback to current user */ }
-      }
-
       // Save linked Office document URL so PolicyDetails can render it
       const { linkedDocumentUrl: docUrl, linkedDocumentType: docType } = this.state;
       if (docUrl) {
-        // DocumentURL is a SharePoint URL field — requires { Url, Description }
         const absUrl = docUrl.startsWith('http')
           ? docUrl
           : `${this.props.context.pageContext.web.absoluteUrl.replace(/\/sites\/.*/, '')}${docUrl}`;
         spData.DocumentURL = { Url: absUrl, Description: docType || 'Policy Document' };
-        // Map wizard document type to DocumentFormat enum value
         const formatMap: Record<string, string> = {
-          'Word Document': 'Word',
-          'Excel Spreadsheet': 'Excel',
-          'PowerPoint Presentation': 'PowerPoint'
+          'Word Document': 'Word', 'Excel Spreadsheet': 'Excel', 'PowerPoint Presentation': 'PowerPoint'
         };
         spData.DocumentFormat = formatMap[docType || ''] || 'Word';
       }
 
+      // Optional fields — these columns may not exist on the list yet.
+      // They are saved in a SEPARATE update call so a missing column doesn't
+      // block the core save.
+      const optionalData: Record<string, unknown> = {};
+      if (selectedQuizId) { optionalData.LinkedQuizId = selectedQuizId; }
+      if (sourceRequestId) { optionalData.SourceRequestId = sourceRequestId; }
+      if (selectedTemplate?.Id) { optionalData.SourceTemplateId = selectedTemplate.Id; }
+      const profileId = (this.state as any)._selectedProfileId;
+      if (profileId) { optionalData.MetadataProfileId = profileId; }
+      optionalData.DistributionScope = targetAllEmployees ? 'AllEmployees' : 'Targeted';
+      if (targetDepartments && targetDepartments.length > 0) { optionalData.TargetDepartments = targetDepartments.join(';'); }
+      if (targetRoles && targetRoles.length > 0) { optionalData.TargetRoles = targetRoles.join(';'); }
+      if (targetLocations && targetLocations.length > 0) { optionalData.TargetLocations = targetLocations.join(';'); }
+      if (includeContractors) { optionalData.IncludeContractors = true; }
+      if (reviewFrequency) { optionalData.ReviewFrequency = reviewFrequency; }
+      if (nextReviewDate) { optionalData.NextReviewDate = new Date(nextReviewDate).toISOString(); }
+      if (supersedesPolicy) { optionalData.SupersedesPolicy = supersedesPolicy; }
+      if (policyOwner && policyOwner.length > 0 && (policyOwner[0] as any)?.id) {
+        optionalData.PolicyOwnerId = (policyOwner[0] as any).id;
+      }
+
       if (policyId) {
-        // Update existing policy
+        // Update existing policy — core fields
         await this.props.sp.web.lists
           .getByTitle(PM_LISTS.POLICIES)
           .items.getById(policyId)
           .update(spData);
 
-        // Fix 3: Save reviewers on update too (not just create)
+        // Update optional fields (columns may not exist — non-blocking)
+        if (Object.keys(optionalData).length > 0) {
+          try {
+            await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES)
+              .items.getById(policyId).update(optionalData);
+          } catch (optErr) { console.warn('Optional fields save skipped (columns may not exist):', optErr); }
+        }
+
+        // Save reviewers on update too
         try { await this.saveReviewers(policyId); } catch { /* non-blocking */ }
       } else {
         // Create new policy
@@ -1096,6 +1204,14 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
           .items.add(spData);
         const newId = result.data?.Id || result.data?.id || 0;
         this.setState({ policyId: newId, policyNumber: genNumber });
+
+        // Save optional fields (columns may not exist — non-blocking)
+        if (newId && Object.keys(optionalData).length > 0) {
+          try {
+            await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES)
+              .items.getById(newId).update(optionalData);
+          } catch (optErr) { console.warn('Optional fields save skipped (columns may not exist):', optErr); }
+        }
 
         // Save reviewers and approvers
         if (newId) {
@@ -1129,40 +1245,56 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     const { reviewers, approvers } = this.state;
 
     try {
-      // Save reviewers
-      for (let i = 0; i < reviewers.length; i++) {
-        const userId = parseInt(reviewers[i], 10);
-        await this.props.sp.web.lists
+      // Delete existing reviewer/approver assignments for this policy
+      try {
+        const existing = await this.props.sp.web.lists
           .getByTitle(PM_LISTS.POLICY_REVIEWERS)
-          .items.add({
-            Title: `Policy ${policyId} - Reviewer ${i + 1}`,
-            PolicyId: policyId,
-            ReviewerId: userId,
-            ReviewerType: 'Technical Reviewer',
-            ReviewStatus: 'Pending',
-            AssignedDate: new Date().toISOString(),
-            ReviewSequence: i + 1,
-            IsMandatory: true,
-            DueDays: 5
-          });
+          .items.filter(`PolicyId eq ${policyId}`)
+          .select('Id').top(100)();
+        for (const item of existing) {
+          await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_REVIEWERS)
+            .items.getById(item.Id).delete();
+        }
+      } catch { /* list may not exist or no existing items */ }
+
+      // Save reviewers — resolve email to SP user ID first
+      for (let i = 0; i < reviewers.length; i++) {
+        const emailOrName = reviewers[i];
+        if (!emailOrName) continue;
+        try {
+          const ensured = await this.props.sp.web.ensureUser(emailOrName);
+          await this.props.sp.web.lists
+            .getByTitle(PM_LISTS.POLICY_REVIEWERS)
+            .items.add({
+              Title: `Policy ${policyId} - Reviewer ${i + 1}`,
+              PolicyId: policyId,
+              ReviewerId: ensured.data.Id,
+              ReviewerType: 'Technical Reviewer',
+              ReviewStatus: 'Pending',
+              AssignedDate: new Date().toISOString(),
+              ReviewSequence: i + 1
+            });
+        } catch (err) { console.warn(`Failed to save reviewer ${emailOrName}:`, err); }
       }
 
       // Save approvers
       for (let i = 0; i < approvers.length; i++) {
-        const userId = parseInt(approvers[i], 10);
-        await this.props.sp.web.lists
-          .getByTitle(PM_LISTS.POLICY_REVIEWERS)
-          .items.add({
-            Title: `Policy ${policyId} - Approver ${i + 1}`,
-            PolicyId: policyId,
-            ReviewerId: userId,
-            ReviewerType: 'Final Approver',
-            ReviewStatus: 'Pending',
-            AssignedDate: new Date().toISOString(),
-            ReviewSequence: reviewers.length + i + 1,
-            IsMandatory: true,
-            DueDays: 3
-          });
+        const emailOrName = approvers[i];
+        if (!emailOrName) continue;
+        try {
+          const ensured = await this.props.sp.web.ensureUser(emailOrName);
+          await this.props.sp.web.lists
+            .getByTitle(PM_LISTS.POLICY_REVIEWERS)
+            .items.add({
+              Title: `Policy ${policyId} - Approver ${i + 1}`,
+              PolicyId: policyId,
+              ReviewerId: ensured.data.Id,
+              ReviewerType: 'Final Approver',
+              ReviewStatus: 'Pending',
+              AssignedDate: new Date().toISOString(),
+              ReviewSequence: reviewers.length + i + 1
+            });
+        } catch (err) { console.warn(`Failed to save approver ${emailOrName}:`, err); }
       }
     } catch (error) {
       console.error('Failed to save reviewers:', error);
@@ -1200,47 +1332,25 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     try {
       this.setState({ saving: true });
 
-      // Update policy status directly using correct SP column names
-      await this.props.sp.web.lists
-        .getByTitle(PM_LISTS.POLICIES)
-        .items.getById(policyId)
-        .update({
-          PolicyStatus: 'In Review',
-          SubmittedForReviewDate: new Date().toISOString()
-        });
+      // Resolve reviewer PeoplePicker objects to SP user IDs for notification service
+      const allReviewerPersonas = [...reviewers, ...approvers];
+      const reviewerIds: number[] = [];
+      for (const person of allReviewerPersonas) {
+        try {
+          const email = (person as any).secondaryText || (person as any).loginName || '';
+          if (email) {
+            const ensured = await this.props.sp.web.ensureUser(email);
+            reviewerIds.push(ensured.data.Id);
+          }
+        } catch { /* skip unresolvable users */ }
+      }
 
-      // Create notification for reviewers/approvers
-      try {
-        const policyName = this.state.policyName;
-        const currentUser = this.props.context.pageContext.user;
-        for (const reviewer of [...reviewers, ...approvers]) {
-          try {
-            await this.props.sp.web.lists.getByTitle('PM_Notifications').items.add({
-              Title: `Policy submitted for review: ${policyName}`,
-              NotificationType: 'ApprovalRequest',
-              Message: `${currentUser?.displayName || 'An author'} has submitted "${policyName}" for your review.`,
-              RecipientEmail: (reviewer as any).secondaryText || (reviewer as any).loginName || '',
-              PolicyId: policyId,
-              IsRead: false,
-              Priority: 'Normal',
-              CreatedDate: new Date().toISOString()
-            });
-          } catch { /* notification failure is non-blocking */ }
-        }
-      } catch { /* notifications are best-effort */ }
-
-      // Log to audit trail
-      try {
-        await this.props.sp.web.lists.getByTitle('PM_PolicyAuditLog').items.add({
-          Title: `Policy submitted for review: ${this.state.policyName}`,
-          ActionType: 'SubmittedForReview',
-          ActionCategory: 'Approval',
-          ResourceTitle: this.state.policyName,
-          PerformedBy: this.props.context.pageContext.user?.displayName || 'Unknown',
-          PerformedDate: new Date().toISOString(),
-          Department: ''
-        });
-      } catch { /* audit failure is non-blocking */ }
+      // Use PolicyService.submitForReview() which handles:
+      // 1. Status update to "In Review"
+      // 2. Audit log entry
+      // 3. Email notifications via PolicyNotificationService
+      // 4. Teams notifications via NotificationRouter (if configured)
+      await this.policyService.submitForReview(policyId, reviewerIds);
 
       this.setState({ saving: false });
       await this.dialogManager.showAlert('Policy submitted for review successfully! Reviewers have been notified.', { variant: 'success' });
@@ -1282,6 +1392,8 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       complianceRisk, effectiveDate, linkedDocumentUrl
     } = this.state;
 
+    // Step order: 0=Creation Method, 1=Basic Info, 2=Metadata, 3=Audience,
+    // 4=Dates, 5=Workflow, 6=Content, 7=Review & Submit
     switch (stepIndex) {
       case 0: // Creation Method
         if (!creationMethod) {
@@ -1298,26 +1410,13 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         }
         break;
 
-      case 2: // Content
-        if (!policyContent.trim() && !linkedDocumentUrl) {
-          errors.push('Policy content is required, or link a document');
-        }
-        // Validate required sections for corporate/regulatory templates
-        {
-          const missingSections = this._validateSections();
-          if (missingSections.length > 0) {
-            errors.push(`Required sections incomplete: ${missingSections.join(', ')}`);
-          }
-        }
-        break;
-
-      case 3: // Compliance & Risk
+      case 2: // Metadata Profile
         if (!complianceRisk) {
           errors.push('Compliance risk level is required');
         }
         break;
 
-      case 4: // Target Audience
+      case 3: // Target Audience
         {
           const { targetAllEmployees, targetDepartments } = this.state;
           if (!targetAllEmployees && (!targetDepartments || targetDepartments.length === 0)) {
@@ -1326,11 +1425,10 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         }
         break;
 
-      case 5: // Dates
+      case 4: // Effective Dates
         if (!effectiveDate) {
           errors.push('Effective date is required');
         }
-        // Fix 8: Validate expiry > effective
         {
           const { expiryDate } = this.state;
           if (effectiveDate && expiryDate && new Date(expiryDate) <= new Date(effectiveDate)) {
@@ -1339,11 +1437,23 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         }
         break;
 
-      case 6: // Workflow
+      case 5: // Review Workflow
         // Optional - no required fields for draft
         break;
 
-      case 7: // Review
+      case 6: // Policy Content
+        if (!policyContent.trim() && !linkedDocumentUrl) {
+          errors.push('Policy content is required, or link a document');
+        }
+        {
+          const missingSections = this._validateSections();
+          if (missingSections.length > 0) {
+            errors.push(`Required sections incomplete: ${missingSections.join(', ')}`);
+          }
+        }
+        break;
+
+      case 7: // Review & Submit
         // Final validation happens on submit
         break;
     }
@@ -1450,11 +1560,11 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
   private static readonly STEP_FIELDS: string[][] = [
     ['Creation method selection'],
     ['Policy Title', 'Policy Number', 'Policy Category', 'Policy Summary'],
-    ['Rich Text Editor', 'Key Points'],
     ['Risk Level', 'Acknowledgement', 'Quiz Requirement'],
     ['Departments', 'Roles', 'Locations', 'Contractors'],
     ['Effective Date', 'Expiry Date', 'Review Cycle'],
     ['Reviewers', 'Approvers'],
+    ['Rich Text Editor', 'Key Points'],
     ['Summary Review', 'Submit']
   ];
 
@@ -1462,46 +1572,50 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     const { currentStep, completedSteps } = this.state;
 
     return (
-      <aside className={styles.v3Sidebar}>
-        <div className={styles.v3SidebarHeader}>
+      <aside style={{
+        background: '#fff', borderRight: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column',
+        gridRow: '1 / 3', borderRadius: '10px 0 0 10px', overflowY: 'auto'
+      }}>
+        <div style={{ padding: '24px 20px 16px', borderBottom: '1px solid #e2e8f0' }}>
           <Text variant="mediumPlus" style={TextStyles.boldDarkBlock}>New Policy Wizard</Text>
           <Text variant="small" style={TextStyles.mutedSmallTop}>{WIZARD_STEPS.length} steps to complete</Text>
         </div>
-        <div className={styles.v3Accordion}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>
           {WIZARD_STEPS.map((step, index) => {
             const isCompleted = completedSteps.has(index);
             const isCurrent = index === currentStep;
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    // @ts-ignore
-            const _isFuture = !isCompleted && !isCurrent;
             const isClickable = index <= currentStep || completedSteps.has(index - 1) || index === 0;
-            const stateClass = isCompleted ? 'completed' : isCurrent ? 'active' : 'future';
 
             return (
-              <div key={step.key} className={`${styles.v3AccItem} ${(styles as Record<string, string>)[`v3AccItem_${stateClass}`] || ''}`}>
+              <div key={step.key}>
                 <div
-                  className={styles.v3AccHeader}
                   onClick={() => isClickable && this.handleGoToStep(index)}
-                  style={{ cursor: isClickable ? 'pointer' : 'default' }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 10, padding: '10px 20px',
+                    cursor: isClickable ? 'pointer' : 'default', transition: 'all 0.15s',
+                    borderLeft: isCurrent ? '3px solid #0d9488' : '3px solid transparent',
+                    background: isCurrent ? '#f0fdfa' : 'transparent'
+                  }}
+                  onMouseEnter={(e) => { if (!isCurrent) (e.currentTarget as HTMLElement).style.background = '#f8fafc'; }}
+                  onMouseLeave={(e) => { if (!isCurrent) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
                 >
-                  <div
-                    className={styles.v3AccNum}
-                    style={{
-                      background: isCompleted ? '#0d9488' : isCurrent ? '#0d9488' : '#e5e7eb',
-                      color: isCompleted || isCurrent ? '#ffffff' : '#6b7280'
-                    }}
-                  >
+                  <div style={{
+                    width: 26, height: 26, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 11, fontWeight: 700, minWidth: 26, transition: 'all 0.15s',
+                    background: isCompleted ? '#0d9488' : isCurrent ? '#f0fdfa' : '#fff',
+                    color: isCompleted ? '#fff' : isCurrent ? '#0d9488' : '#94a3b8',
+                    border: `2px solid ${isCompleted ? '#0d9488' : isCurrent ? '#0d9488' : '#e2e8f0'}`
+                  }}>
                     {isCompleted ? (
-                      <Icon iconName="CheckMark" style={IconStyles.xSmall} />
+                      <Icon iconName="CheckMark" style={{ fontSize: 11 }} />
                     ) : (
                       <span>{index + 1}</span>
                     )}
                   </div>
                   <span style={{
-                    fontWeight: isCurrent ? 600 : 500,
-                    color: isCompleted ? '#6b7280' : isCurrent ? '#0f766e' : '#374151',
-                    fontSize: 13,
-                    flex: 1
+                    fontWeight: isCurrent ? 600 : isCompleted ? 500 : 500,
+                    color: isCurrent ? '#0d9488' : isCompleted ? '#0f172a' : '#475569',
+                    fontSize: 13, flex: 1
                   }}>
                     {step.title}
                   </span>
@@ -1564,10 +1678,12 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     const _stepConfig = WIZARD_STEPS[currentStep];
 
     // Step-specific tips
+    // Tips match new step order: 0=Creation, 1=Basic Info, 2=Metadata, 3=Audience,
+    // 4=Dates, 5=Workflow, 6=Content, 7=Review
     const tipsMap: Record<number, { title: string; body: string }[]> = {
       0: [
-        { title: 'Choosing a Method', body: 'Start from a template for consistency, or choose blank for full creative control.' },
-        { title: 'Corporate Templates', body: 'Corporate templates include pre-approved branding, headers, and formatting.' }
+        { title: 'Choosing a Type', body: 'Select your document type first, then choose blank or a pre-approved template within that type.' },
+        { title: 'Templates', body: 'Templates include pre-approved structure, sections, and formatting. Start from a template for consistency.' }
       ],
       1: [
         { title: 'Policy Title Best Practices', body: 'Use descriptive, action-oriented titles. Avoid acronyms unless universally understood within your organization.' },
@@ -1575,24 +1691,24 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         { title: 'Writing a Good Summary', body: 'Include the policy\'s purpose, who it applies to, and the key actions or requirements. Aim for 2-3 sentences.' }
       ],
       2: [
-        { title: 'Content Structure', body: 'Use clear headings and bullet points. Start with the policy purpose, then outline scope, responsibilities, and procedures.' },
-        { title: 'Key Points', body: 'Add 3-5 key points that summarize the most important takeaways for readers.' }
-      ],
-      3: [
         { title: 'Risk Assessment', body: 'Consider the regulatory, legal, and operational risk if this policy is not followed. Higher risk = stricter compliance tracking.' },
         { title: 'Acknowledgement & Quiz', body: 'Critical policies should require both acknowledgement and quiz completion to ensure comprehension.' }
       ],
-      4: [
+      3: [
         { title: 'Target Audience', body: 'Select "All Employees" for company-wide policies. For department-specific policies, choose the relevant teams.' },
         { title: 'Contractors', body: 'If your policy applies to external contractors, make sure to include them in the audience.' }
       ],
-      5: [
+      4: [
         { title: 'Effective Dates', body: 'Allow at least 2 weeks between publication and effective date for employees to read and acknowledge.' },
         { title: 'Review Cycle', body: 'Most policies should be reviewed annually. Critical compliance policies may need quarterly review.' }
       ],
-      6: [
+      5: [
         { title: 'Review Workflow', body: 'Add subject matter experts as reviewers and department heads as approvers for best governance.' },
         { title: 'Multi-Level Approval', body: 'High-risk policies typically require both department and executive approval.' }
+      ],
+      6: [
+        { title: 'Content Structure', body: 'Use clear headings and bullet points. Start with the policy purpose, then outline scope, responsibilities, and procedures.' },
+        { title: 'Key Points', body: 'Add 3-5 key points that summarize the most important takeaways for readers.' }
       ],
       7: [
         { title: 'Final Check', body: 'Review all sections carefully. Once submitted, the policy enters the review workflow and cannot be directly edited.' },
@@ -1609,7 +1725,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     ];
 
     return (
-      <aside className={styles.v3RightPanel}>
+      <aside style={{ background: '#fff', borderLeft: '1px solid #e2e8f0', padding: '24px 20px', overflowY: 'auto', borderRadius: '0 10px 0 0' }}>
         {/* Tips & Guidance */}
         <div className={styles.v3PanelSection}>
           <Text variant="small" style={TextStyles.sectionHeading}>
@@ -1728,46 +1844,45 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
   // ============================================
 
   private renderStep0_CreationMethod(): JSX.Element {
-    const { creationMethod, creatingDocument } = this.state;
+    const { creationMethod, creatingDocument, templates } = this.state;
 
-    // Primary methods - Create New Policy
-    const primaryMethods = [
-      { key: 'blank', title: 'Blank Policy', description: 'Start with empty rich text editor', icon: 'Page', iconClass: 'iconBlank' },
-      { key: 'template', title: 'From Template', description: 'Use a pre-approved policy template', icon: 'DocumentSet', iconClass: 'iconTemplate' },
-      { key: 'upload', title: 'Upload Document', description: 'Import from Word, PDF, or other file', icon: 'Upload', iconClass: 'iconUpload' }
+    // 6 document types in horizontal strip
+    const docTypes = [
+      { key: 'word', label: 'Word', icon: 'WordDocument', bg: '#dbeafe', color: '#2b579a' },
+      { key: 'excel', label: 'Excel', icon: 'ExcelDocument', bg: '#dcfce7', color: '#217346' },
+      { key: 'powerpoint', label: 'PowerPoint', icon: 'PowerPointDocument', bg: '#fee2e2', color: '#b7472a' },
+      { key: 'html', label: 'HTML', icon: 'CodeEdit', bg: '#ede9fe', color: '#7c3aed' },
+      { key: 'infographic', label: 'Infographic', icon: 'PictureFill', bg: '#fce7f3', color: '#db2777' },
+      { key: 'upload', label: 'Upload', icon: 'Upload', bg: '#fef3c7', color: '#d97706' }
     ];
 
-    // Office methods - Create from Office
-    const officeMethods = [
-      { key: 'word', title: 'Word Document', description: 'Create new Word document', icon: 'WordDocument', iconClass: 'iconWord', color: '#2b579a' },
-      { key: 'excel', title: 'Excel Spreadsheet', description: 'Create Excel for data policies', icon: 'ExcelDocument', iconClass: 'iconExcel', color: '#217346' },
-      { key: 'powerpoint', title: 'PowerPoint', description: 'Create presentation-style policy', icon: 'PowerPointDocument', iconClass: 'iconPowerPoint', color: '#b7472a' }
-    ];
+    // Filter templates by selected type
+    const typeTemplateMap: Record<string, string[]> = {
+      word: ['word', 'corporate', 'regulatory', 'Standard', 'General'],
+      excel: ['excel'],
+      powerpoint: ['powerpoint'],
+      html: ['richtext', 'html', 'blank'],
+      infographic: []
+    };
+    const matchTypes = typeTemplateMap[creationMethod as string] || [];
+    const filteredTemplates = (templates || []).filter((t: any) => {
+      const tType = (t.TemplateType || '').toLowerCase();
+      return matchTypes.some(m => m.toLowerCase() === tType);
+    });
 
-    // Additional methods
-    const additionalMethods = [
-      { key: 'corporate', title: 'Corporate Template', description: 'Use branded company template', icon: 'FileTemplate', iconClass: 'iconCorporate' },
-      { key: 'infographic', title: 'Infographic/Image', description: 'Visual policy (floor plans, etc.)', icon: 'PictureFill', iconClass: 'iconImage' }
-    ];
+    // Blank card label per type
+    const blankLabels: Record<string, string> = {
+      word: 'Blank Word Document',
+      excel: 'Blank Excel Spreadsheet',
+      powerpoint: 'Blank Presentation',
+      html: 'Blank HTML Document',
+      infographic: 'Upload Image / Infographic',
+      upload: 'Browse & Upload'
+    };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const getStyle = (name: string): string => (styles as any)[name] || '';
-
-    const renderMethodCard = (method: { key: string; title: string; description: string; icon: string; iconClass: string; color?: string }) => (
-      <div
-        key={method.key}
-        className={`${styles.creationMethodCard} ${creationMethod === method.key ? styles.selected : ''}`}
-        onClick={() => this.handleSelectCreationMethod(method.key)}
-      >
-        <div className={getStyle('creationMethodCardHeader')}>
-          <div className={`${styles.creationMethodIcon} ${getStyle(method.iconClass)}`}>
-            <Icon iconName={method.icon} style={{ color: method.color || '#0078d4' }} />
-          </div>
-          <Text className={styles.creationMethodTitle}>{method.title}</Text>
-        </div>
-        <Text className={styles.creationMethodDescription}>{method.description}</Text>
-      </div>
-    );
+    const selectedType = docTypes.find(d => d.key === creationMethod) || docTypes[0];
+    const isUpload = creationMethod === 'upload';
+    const isInfographic = creationMethod === 'infographic';
 
     return (
       <div className={styles.wizardStepContent}>
@@ -1777,72 +1892,180 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
           </Stack>
         )}
 
-        {/* Section 1: Create New Policy */}
-        <div className={getStyle('methodSection')}>
-          <div className={getStyle('methodSectionHeader')}>
-            <h3>Create New Policy</h3>
-            <span>Choose how to start</span>
-          </div>
-          <div className={styles.creationMethodGrid}>
-            {primaryMethods.map(renderMethodCard)}
-          </div>
+        {/* Horizontal type strip */}
+        <div style={{
+          display: 'flex', gap: 0, background: '#fff', border: '1px solid #e2e8f0',
+          borderRadius: 8, overflow: 'hidden', marginBottom: 24
+        }}>
+          {docTypes.map(dt => {
+            const isSelected = creationMethod === dt.key;
+            return (
+              <div
+                key={dt.key}
+                role="button"
+                tabIndex={0}
+                onClick={() => this.handleSelectCreationMethod(dt.key)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.handleSelectCreationMethod(dt.key); } }}
+                style={{
+                  flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                  padding: '16px 12px', cursor: 'pointer', transition: 'all 0.15s',
+                  borderRight: dt.key !== 'upload' ? '1px solid #e2e8f0' : 'none',
+                  background: isSelected ? '#f0fdfa' : '#fff',
+                  borderBottom: isSelected ? '3px solid #0d9488' : '3px solid transparent'
+                }}
+                onMouseEnter={(e) => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = '#f8fafc'; }}
+                onMouseLeave={(e) => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = '#fff'; }}
+              >
+                <div style={{
+                  width: 40, height: 40, borderRadius: 10, display: 'flex', alignItems: 'center',
+                  justifyContent: 'center', background: dt.bg
+                }}>
+                  <Icon iconName={dt.icon} styles={{ root: { fontSize: 18, color: dt.color } }} />
+                </div>
+                <Text style={{
+                  fontSize: 11, fontWeight: isSelected ? 700 : 600,
+                  color: isSelected ? '#0d9488' : '#475569', textAlign: 'center', lineHeight: '1.3'
+                }}>{dt.label}</Text>
+              </div>
+            );
+          })}
         </div>
 
-        {/* Section 2: Create from Office */}
-        <div className={getStyle('methodSection')}>
-          <div className={getStyle('methodSectionHeader')}>
-            <h3>Create from Office</h3>
-            <span>For complex documents</span>
-          </div>
-          <div className={styles.creationMethodGrid}>
-            {officeMethods.map(renderMethodCard)}
-          </div>
+        {/* Content area — templates + blank for selected type */}
+        <div style={{
+          background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8,
+          padding: 24, minHeight: 200
+        }}>
+          {isUpload ? (
+            <>
+              <Text style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', display: 'block', marginBottom: 4 }}>Upload an Existing Document</Text>
+              <Text style={{ fontSize: 12, color: '#64748b', display: 'block', marginBottom: 16 }}>Import a Word, PDF, Excel, or PowerPoint file to use as your policy document.</Text>
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => this.setState({ showFileUploadPanel: true })}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.setState({ showFileUploadPanel: true }); } }}
+                style={{
+                  border: '2px dashed #cbd5e1', borderRadius: 8, padding: 40, textAlign: 'center',
+                  cursor: 'pointer', transition: 'all 0.15s'
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = '#0d9488'; (e.currentTarget as HTMLElement).style.background = '#f0fdfa'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = '#cbd5e1'; (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+              >
+                <Icon iconName="CloudUpload" styles={{ root: { fontSize: 40, color: '#94a3b8', display: 'block', marginBottom: 12 } }} />
+                <Text style={{ fontSize: 15, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>Click to browse or drag & drop</Text>
+                <Text style={{ fontSize: 12, color: '#94a3b8', display: 'block' }}>Supported: .docx, .pdf, .xlsx, .pptx (max 25MB)</Text>
+              </div>
+            </>
+          ) : (
+            <>
+              <Text style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', display: 'block', marginBottom: 4 }}>
+                {selectedType.label} — Choose a Starting Point
+              </Text>
+              <Text style={{ fontSize: 12, color: '#64748b', display: 'block', marginBottom: 16 }}>
+                Start from blank or select a template. {isInfographic ? 'Upload an image or visual document.' : `Your ${selectedType.label.toLowerCase()} content will be created on Step 7.`}
+              </Text>
+
+              {/* Template grid with Blank as first card */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+                {/* Blank card — always first */}
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => {
+                    this.setState({ creationMethod: creationMethod as any, selectedTemplate: null } as any);
+                    if (isInfographic) {
+                      this.setState({ showFileUploadPanel: true });
+                    }
+                  }}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.setState({ selectedTemplate: null } as any); } }}
+                  style={{
+                    border: !(this.state as any).selectedTemplate ? '2px solid #0d9488' : '1px solid #e2e8f0',
+                    borderRadius: 8, padding: 16, cursor: 'pointer', transition: 'all 0.15s',
+                    background: !(this.state as any).selectedTemplate ? '#f0fdfa' : '#fff'
+                  }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = '#0d9488'; (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 8px rgba(13,148,136,0.1)'; }}
+                  onMouseLeave={(e) => { if ((this.state as any).selectedTemplate) { (e.currentTarget as HTMLElement).style.borderColor = '#e2e8f0'; } (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                    <div style={{ width: 32, height: 32, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9' }}>
+                      <Icon iconName="Add" styles={{ root: { fontSize: 16, color: '#0d9488' } }} />
+                    </div>
+                    <Text style={{ fontWeight: 600, fontSize: 13, color: '#0f172a' }}>{blankLabels[creationMethod as string] || 'Blank'}</Text>
+                  </div>
+                  <Text style={{ fontSize: 11, color: '#64748b', lineHeight: '1.4' }}>
+                    {isInfographic ? 'Upload an image or visual policy document.' : 'Start with an empty document. Write content from scratch on Step 7.'}
+                  </Text>
+                </div>
+
+                {/* Template cards */}
+                {filteredTemplates.map((tmpl: any) => {
+                  const isSelected = (this.state as any).selectedTemplate?.Id === tmpl.Id;
+                  return (
+                    <div
+                      key={tmpl.Id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => this.setState({ selectedTemplate: tmpl } as any)}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.setState({ selectedTemplate: tmpl } as any); } }}
+                      style={{
+                        border: isSelected ? '2px solid #0d9488' : '1px solid #e2e8f0',
+                        borderRadius: 8, padding: 16, cursor: 'pointer', transition: 'all 0.15s',
+                        background: isSelected ? '#f0fdfa' : '#fff'
+                      }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = '#0d9488'; (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 8px rgba(13,148,136,0.1)'; }}
+                      onMouseLeave={(e) => { if (!isSelected) { (e.currentTarget as HTMLElement).style.borderColor = '#e2e8f0'; } (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', background: selectedType.bg }}>
+                          <Icon iconName="DocumentSet" styles={{ root: { fontSize: 14, color: selectedType.color } }} />
+                        </div>
+                        <Text style={{ fontWeight: 600, fontSize: 13, color: '#0f172a' }}>{tmpl.TemplateName || tmpl.Title}</Text>
+                      </div>
+                      <Text style={{ fontSize: 11, color: '#64748b', lineHeight: '1.4' }}>
+                        {tmpl.Description || tmpl.TemplateDescription || 'Pre-approved policy template'}
+                      </Text>
+                      {tmpl.TemplateCategory && (
+                        <div style={{ marginTop: 8 }}>
+                          <span style={{ fontSize: 9, fontWeight: 600, padding: '2px 6px', borderRadius: 4, background: '#f1f5f9', color: '#64748b', textTransform: 'uppercase' }}>
+                            {tmpl.TemplateCategory}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {/* Empty state if no templates for this type */}
+                {filteredTemplates.length === 0 && !isInfographic && (
+                  <div style={{ gridColumn: '2 / 4', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, color: '#94a3b8', fontSize: 12 }}>
+                    <Icon iconName="Info" styles={{ root: { marginRight: 8, fontSize: 14 } }} />
+                    No templates available for {selectedType.label} yet. Use "Blank" to start from scratch, or create templates in Admin Centre.
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </div>
 
-        {/* Section 3: Additional Options */}
-        <div className={getStyle('methodSection')}>
-          <div className={getStyle('methodSectionHeader')}>
-            <h3>Additional Options</h3>
-          </div>
-          <div className={styles.creationMethodGrid}>
-            {additionalMethods.map(renderMethodCard)}
-          </div>
-        </div>
-
-        {/* Tip box */}
-        <div className={getStyle('methodTip')}>
-          <Icon iconName="Info" />
-          <span><strong>Tip:</strong> For most policies, "Blank Policy" or "From Template" are recommended. Office documents are best for policies requiring complex formatting or collaboration.</span>
+        {/* Tip */}
+        <div style={{
+          display: 'flex', alignItems: 'flex-start', gap: 10, background: '#f0fdfa',
+          border: '1px solid #99f6e4', borderRadius: 4, padding: '12px 16px', marginTop: 20,
+          fontSize: 12, color: '#0f766e', lineHeight: '1.5'
+        }}>
+          <Icon iconName="Info" styles={{ root: { fontSize: 16, flexShrink: 0, marginTop: 1 } }} />
+          <span>Choose your document type and starting point. Complete all metadata in the following steps, then write your content on Step 7.</span>
         </div>
       </div>
     );
   }
 
   private handleSelectCreationMethod = async (method: string): Promise<void> => {
-    this.setState({ creationMethod: method as any });
+    this.setState({ creationMethod: method as any, selectedTemplate: null } as any);
 
-    switch (method) {
-      case 'template':
-        this.setState({ showTemplatePanel: true });
-        break;
-      case 'upload':
-        this.setState({ showFileUploadPanel: true });
-        break;
-      case 'word':
-      case 'excel':
-      case 'powerpoint':
-      case 'infographic':
-        // Just record the method — document creation is deferred until the content step
-        break;
-      case 'corporate':
-        await this.loadCorporateTemplates();
-        this.setState({ showCorporateTemplatePanel: true });
-        break;
-      case 'blank':
-      default:
-        // Just set the method, content will be entered in step 2
-        break;
-    }
+    // For upload and infographic with upload, the file panel opens from the content area
+    // For other types, just record the method — document creation happens on Step 7
   };
 
   private renderStep1_BasicInfo(): JSX.Element {
@@ -1870,7 +2093,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
           {/* Document template copied notification */}
           {templateDocCopied && linkedDocumentUrl && (
             <MessageBar messageBarType={MessageBarType.success} onDismiss={() => this.setState({ _templateDocCopied: false } as any)}>
-              Template document copied to your policy folder. <a href={linkedDocumentUrl} target="_blank" rel="noopener noreferrer">Open in Office Online</a>
+              Template document copied to your policy folder. <a href={`${this.props.context?.pageContext?.web?.absoluteUrl || ''}/_layouts/15/Doc.aspx?sourcedoc=${encodeURIComponent(linkedDocumentUrl)}&action=edit`} target="_blank" rel="noopener noreferrer">Open in Office Online</a>
             </MessageBar>
           )}
 
@@ -1998,6 +2221,45 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                 })}
               </Stack>
             </div>
+          ) : isOfficeMethod ? (
+            <>
+              {/* Document-based types: show linked document card, no rich text editor */}
+              {linkedDocumentUrl && (
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 14, padding: '16px 20px',
+                  background: '#f0fdfa', border: '1px solid #99f6e4', borderRadius: 8
+                }}>
+                  <Icon iconName={
+                    creationMethod === 'word' ? 'WordDocument' :
+                    creationMethod === 'excel' ? 'ExcelDocument' :
+                    creationMethod === 'powerpoint' ? 'PowerPointDocument' :
+                    'PictureFill'
+                  } styles={{ root: { fontSize: 28, color: '#0d9488' } }} />
+                  <div style={{ flex: 1 }}>
+                    <Text style={{ fontWeight: 600, fontSize: 14, color: '#0f172a', display: 'block' }}>
+                      Document linked successfully
+                    </Text>
+                    <Text style={{ fontSize: 12, color: '#64748b', display: 'block', marginTop: 2, wordBreak: 'break-all' }}>
+                      {linkedDocumentUrl.split('/').pop() || linkedDocumentUrl}
+                    </Text>
+                  </div>
+                  <PrimaryButton
+                    text="Open in Office"
+                    iconProps={{ iconName: 'OpenInNewTab' }}
+                    onClick={() => {
+                      const siteUrl = this.props.context?.pageContext?.web?.absoluteUrl || '';
+                      const editUrl = `${siteUrl}/_layouts/15/Doc.aspx?sourcedoc=${encodeURIComponent(linkedDocumentUrl)}&action=edit`;
+                      window.open(editUrl, '_blank');
+                    }}
+                    styles={{
+                      root: { background: '#0d9488', borderColor: '#0d9488', borderRadius: 4 },
+                      rootHovered: { background: '#0f766e', borderColor: '#0f766e' }
+                    }}
+                  />
+                </div>
+              )}
+              {this.renderEmbeddedEditor()}
+            </>
           ) : (
             <>
               {this.renderContentEditor()}
@@ -2107,7 +2369,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                     No metadata profiles found. Create one using the "Create New Profile" option, or configure profiles in Admin Centre &gt; Metadata Profiles.
                   </MessageBar>
                 ) : (
-                  <Stack tokens={{ childrenGap: 8 }}>
+                  <div style={availableProfiles.length > 5 ? { maxHeight: 300, overflowY: 'auto', paddingRight: 4, marginBottom: 8 } : { marginBottom: 8 }}>
                     {availableProfiles.map((profile: any) => {
                       const isSelected = st._selectedProfileId === profile.Id;
                       return (
@@ -2118,7 +2380,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); applyProfile(profile); } }}
                           style={{
                             display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px',
-                            borderRadius: 4, cursor: 'pointer',
+                            borderRadius: 4, cursor: 'pointer', marginBottom: 8,
                             border: `2px solid ${isSelected ? '#0d9488' : '#edebe9'}`,
                             background: isSelected ? '#f0fdfa' : '#fff',
                             transition: 'all 0.15s'
@@ -2138,14 +2400,14 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                         </div>
                       );
                     })}
-                  </Stack>
+                  </div>
                 )}
 
                 {/* Applied profile — show current settings below for override */}
                 {st._selectedProfileId && (
-                  <div style={{ marginTop: 16, padding: 16, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 4 }}>
-                    <Text style={{ fontWeight: 600, fontSize: 13, display: 'block', marginBottom: 12 }}>Applied Settings (override below if needed)</Text>
-                    <Stack tokens={{ childrenGap: 12 }}>
+                  <div style={{ marginTop: 12, padding: '12px 16px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 4 }}>
+                    <Text style={{ fontWeight: 600, fontSize: 13, display: 'block', marginBottom: 10 }}>Applied Settings (override below if needed)</Text>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, alignItems: 'end' }}>
                       <Dropdown
                         label="Read Timeframe"
                         selectedKey={readTimeframe}
@@ -2154,14 +2416,12 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                           const selected = option?.key as string;
                           this.setState({ readTimeframe: selected, readTimeframeDays: selected === ReadTimeframe.Custom ? readTimeframeDays : 7 });
                         }}
-                        styles={{ root: { maxWidth: 300 } }}
                       />
-                      {readTimeframe === ReadTimeframe.Custom && (
-                        <TextField label="Custom Days" type="number" value={readTimeframeDays.toString()} onChange={(_, value) => this.setState({ readTimeframeDays: parseInt(value || '7', 10) })} styles={{ root: { maxWidth: 150 } }} />
-                      )}
-                      <Checkbox label="Requires Acknowledgement" checked={requiresAcknowledgement} onChange={(_, checked) => this.setState({ requiresAcknowledgement: checked || false })} />
-                      <Text variant="small" style={{ color: '#64748b', fontStyle: 'italic' }}>Quizzes can be created and linked after publishing.</Text>
-                    </Stack>
+                      <Checkbox label="Requires Acknowledgement" checked={requiresAcknowledgement} onChange={(_, checked) => this.setState({ requiresAcknowledgement: checked || false })} styles={{ root: { paddingBottom: 8 } }} />
+                    </div>
+                    {readTimeframe === ReadTimeframe.Custom && (
+                      <TextField label="Custom Days" type="number" value={readTimeframeDays.toString()} onChange={(_, value) => this.setState({ readTimeframeDays: parseInt(value || '7', 10) })} styles={{ root: { maxWidth: 150, marginTop: 8 } }} />
+                    )}
                   </div>
                 )}
               </div>
@@ -2259,6 +2519,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     const { targetAllEmployees, targetDepartments, targetRoles, targetLocations, includeContractors } = this.state;
     const st = this.state as any;
     const savedAudiences: any[] = st._savedAudiences || [];
+    const scopeMode: string = targetAllEmployees ? 'all' : (st._scopeMode || 'targeted');
 
     // Lazy-load admin-configured audiences
     if (!st._audiencesLoaded) {
@@ -2271,112 +2532,233 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       }).catch(() => { /* graceful degradation */ });
     }
 
+    const departments = [
+      'Human Resources', 'IT', 'Finance', 'Operations', 'Sales',
+      'Marketing', 'Legal', 'Executive', 'Compliance', 'Customer Service'
+    ];
+
+    const toggleDept = (dept: string): void => {
+      const updated = targetDepartments.includes(dept)
+        ? targetDepartments.filter(d => d !== dept)
+        : [...targetDepartments, dept];
+      this.setState({ targetDepartments: updated });
+    };
+
+    const scopes = [
+      { key: 'all', icon: 'Globe', label: 'All Employees', desc: 'Everyone in the organisation', bg: '#dbeafe', color: '#2563eb' },
+      { key: 'targeted', icon: 'TargetSolid', label: 'Targeted', desc: 'Specific departments, roles, or locations', bg: '#f0fdfa', color: '#0d9488' },
+      { key: 'newhires', icon: 'AddFriend', label: 'New Hires Only', desc: 'Onboarding policies', bg: '#fef3c7', color: '#d97706' }
+    ];
+
     return (
       <div className={styles.wizardStepContent}>
-        <div className={styles.section}>
-          <Stack tokens={{ childrenGap: 20 }}>
-            <Checkbox
-              label="All Employees"
-              checked={targetAllEmployees}
-              onChange={(e, checked) => this.setState({ targetAllEmployees: checked || false })}
-            />
+        <Stack tokens={{ childrenGap: 16 }}>
+          {/* Scope selector cards */}
+          <div style={{ display: 'flex', gap: 12, marginBottom: 4 }}>
+            {scopes.map(s => {
+              const isSelected = scopeMode === s.key;
+              return (
+                <div
+                  key={s.key}
+                  role="button" tabIndex={0}
+                  onClick={() => {
+                    this.setState({
+                      targetAllEmployees: s.key === 'all',
+                      _scopeMode: s.key
+                    } as any);
+                  }}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.setState({ targetAllEmployees: s.key === 'all', _scopeMode: s.key } as any); } }}
+                  style={{
+                    flex: 1, padding: 16, border: `2px solid ${isSelected ? '#0d9488' : '#e2e8f0'}`,
+                    borderRadius: 8, cursor: 'pointer', textAlign: 'center', transition: 'all 0.15s',
+                    background: isSelected ? '#f0fdfa' : '#fff'
+                  }}
+                  onMouseEnter={(e) => { if (!isSelected) (e.currentTarget as HTMLElement).style.borderColor = '#0d9488'; }}
+                  onMouseLeave={(e) => { if (!isSelected) (e.currentTarget as HTMLElement).style.borderColor = '#e2e8f0'; }}
+                >
+                  <div style={{ width: 36, height: 36, borderRadius: 8, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px' }}>
+                    <Icon iconName={s.icon} styles={{ root: { fontSize: 18, color: s.color } }} />
+                  </div>
+                  <Text style={{ fontWeight: 600, fontSize: 13, color: '#0f172a', display: 'block' }}>{s.label}</Text>
+                  <Text style={{ fontSize: 10, color: '#94a3b8' }}>{s.desc}</Text>
+                </div>
+              );
+            })}
+          </div>
 
-            {!targetAllEmployees && (
-              <>
-                {savedAudiences.length > 0 && (
-                  <Dropdown
-                    label="Pre-configured Audiences"
-                    placeholder="Optionally select a pre-configured audience as a starting point..."
-                    options={[
-                      { key: '', text: '(Build custom audience below)' },
-                      ...savedAudiences.map((a: any) => ({ key: a.Id || a.Title, text: a.Title || a.Name || 'Unnamed' }))
-                    ]}
-                    onChange={(_, opt) => {
-                      if (opt && opt.key !== '') {
-                        const audience = savedAudiences.find((a: any) => (a.Id || a.Title) === opt.key);
-                        if (audience) {
-                          this.setState({
-                            targetDepartments: audience.Departments ? audience.Departments.split(',').map((d: string) => d.trim()) : targetDepartments,
-                            targetRoles: audience.Roles ? audience.Roles.split(',').map((r: string) => r.trim()) : targetRoles,
-                            targetLocations: audience.Locations ? audience.Locations.split(',').map((l: string) => l.trim()) : targetLocations,
-                          });
-                        }
-                      }
-                    }}
-                    styles={{ root: { maxWidth: 400 } }}
-                  />
-                )}
-
+          {/* Targeted audience builder */}
+          {scopeMode === 'targeted' && (
+            <>
+              {/* Saved audiences quick-select */}
+              {savedAudiences.length > 0 && (
                 <Dropdown
-                  label="Target Departments"
-                  multiSelect
-                  selectedKeys={targetDepartments}
+                  label="Quick Select — Saved Audiences"
+                  placeholder="Optionally select a pre-configured audience..."
                   options={[
-                    { key: 'Human Resources', text: 'Human Resources' },
-                    { key: 'IT', text: 'IT' },
-                    { key: 'Finance', text: 'Finance' },
-                    { key: 'Operations', text: 'Operations' },
-                    { key: 'Sales', text: 'Sales' },
-                    { key: 'Marketing', text: 'Marketing' },
-                    { key: 'Legal', text: 'Legal' },
-                    { key: 'Executive', text: 'Executive' },
-                    { key: 'Compliance', text: 'Compliance' },
-                    { key: 'Customer Service', text: 'Customer Service' }
+                    { key: '', text: '(Build custom audience below)' },
+                    ...savedAudiences.map((a: any) => ({ key: a.Id || a.Title, text: a.Title || a.Name || 'Unnamed' }))
                   ]}
-                  onChange={(_, option) => {
-                    if (option) {
-                      const updated = option.selected
-                        ? [...targetDepartments, option.key as string]
-                        : targetDepartments.filter(d => d !== option.key);
-                      this.setState({ targetDepartments: updated });
+                  onChange={(_, opt) => {
+                    if (opt && opt.key !== '') {
+                      const audience = savedAudiences.find((a: any) => (a.Id || a.Title) === opt.key);
+                      if (audience) {
+                        this.setState({
+                          targetDepartments: audience.Departments ? audience.Departments.split(',').map((d: string) => d.trim()) : targetDepartments,
+                          targetRoles: audience.Roles ? audience.Roles.split(',').map((r: string) => r.trim()) : targetRoles,
+                          targetLocations: audience.Locations ? audience.Locations.split(',').map((l: string) => l.trim()) : targetLocations,
+                        });
+                      }
                     }
                   }}
                 />
+              )}
 
-                <TextField
-                  label="Target Roles"
-                  placeholder="e.g., Manager, Director, Executive (comma-separated)"
-                  value={targetRoles.join(', ')}
-                  onChange={(e, value) => this.setState({
-                    targetRoles: value ? value.split(',').map(r => r.trim()) : []
+              {/* Departments — chip grid */}
+              <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, padding: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                  <div style={{ width: 28, height: 28, borderRadius: 6, background: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Icon iconName="Org" styles={{ root: { fontSize: 14, color: '#2563eb' } }} />
+                  </div>
+                  <Text style={{ fontWeight: 600, fontSize: 14, color: '#0f172a' }}>Departments</Text>
+                  {targetDepartments.length > 0 && (
+                    <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 10, background: '#ccfbf1', color: '#0d9488' }}>
+                      {targetDepartments.length} selected
+                    </span>
+                  )}
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {departments.map(dept => {
+                    const isSelected = targetDepartments.includes(dept);
+                    return (
+                      <div
+                        key={dept}
+                        role="button" tabIndex={0}
+                        onClick={() => toggleDept(dept)}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleDept(dept); } }}
+                        style={{
+                          padding: '8px 14px', borderRadius: 6, fontSize: 12, fontWeight: 500, cursor: 'pointer',
+                          transition: 'all 0.15s', border: `1px solid ${isSelected ? '#0d9488' : '#e2e8f0'}`,
+                          background: isSelected ? '#0d9488' : '#fff', color: isSelected ? '#fff' : '#475569'
+                        }}
+                        onMouseEnter={(e) => { if (!isSelected) { (e.currentTarget as HTMLElement).style.borderColor = '#0d9488'; (e.currentTarget as HTMLElement).style.color = '#0d9488'; } }}
+                        onMouseLeave={(e) => { if (!isSelected) { (e.currentTarget as HTMLElement).style.borderColor = '#e2e8f0'; (e.currentTarget as HTMLElement).style.color = '#475569'; } }}
+                      >
+                        {dept}
+                      </div>
+                    );
                   })}
-                />
+                </div>
+              </div>
 
-                <TextField
-                  label="Target Locations"
-                  placeholder="e.g., London, New York, Sydney (comma-separated)"
-                  value={targetLocations.join(', ')}
-                  onChange={(e, value) => this.setState({
-                    targetLocations: value ? value.split(',').map(l => l.trim()) : []
-                  })}
-                />
+              {/* Roles + Locations side by side */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, padding: 20 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                    <div style={{ width: 28, height: 28, borderRadius: 6, background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Icon iconName="Contact" styles={{ root: { fontSize: 14, color: '#d97706' } }} />
+                    </div>
+                    <Text style={{ fontWeight: 600, fontSize: 14, color: '#0f172a' }}>Target Roles</Text>
+                  </div>
+                  <TextField
+                    placeholder="e.g., Manager, Director (comma-separated)"
+                    value={targetRoles.join(', ')}
+                    onChange={(_, value) => this.setState({ targetRoles: value ? value.split(',').map(r => r.trim()).filter(Boolean) : [] })}
+                  />
+                  {targetRoles.length > 0 && (
+                    <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                      {targetRoles.map(role => (
+                        <span key={role} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 4, fontSize: 11, fontWeight: 600, background: '#f0fdfa', color: '#0d9488', border: '1px solid #99f6e4' }}>
+                          {role}
+                          <span
+                            role="button" tabIndex={0}
+                            onClick={() => this.setState({ targetRoles: targetRoles.filter(r => r !== role) })}
+                            onKeyDown={(e) => { if (e.key === 'Enter') this.setState({ targetRoles: targetRoles.filter(r => r !== role) }); }}
+                            style={{ cursor: 'pointer', color: '#94a3b8', fontSize: 10, marginLeft: 2 }}
+                          >x</span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
-                <PeoplePicker
-                  context={this.props.context as any}
-                  titleText="Additional Specific Users"
-                  personSelectionLimit={20}
-                  groupName=""
-                  showtooltip={true}
-                  showHiddenInUI={false}
-                  ensureUser={true}
-                  principalTypes={[PrincipalType.User]}
-                  resolveDelay={300}
-                  onChange={(items: any[]) => {
-                    this.setState({ targetSpecificUsers: items.map((i: any) => i.secondaryText || i.loginName || '') } as any);
-                  }}
-                  placeholder="Search for specific users to include..."
-                  webAbsoluteUrl={this.props.context.pageContext.web.absoluteUrl}
-                />
-              </>
-            )}
+                <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, padding: 20 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                    <div style={{ width: 28, height: 28, borderRadius: 6, background: '#ede9fe', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Icon iconName="MapPin" styles={{ root: { fontSize: 14, color: '#7c3aed' } }} />
+                    </div>
+                    <Text style={{ fontWeight: 600, fontSize: 14, color: '#0f172a' }}>Target Locations</Text>
+                  </div>
+                  <TextField
+                    placeholder="e.g., London, Cape Town (comma-separated)"
+                    value={targetLocations.join(', ')}
+                    onChange={(_, value) => this.setState({ targetLocations: value ? value.split(',').map(l => l.trim()).filter(Boolean) : [] })}
+                  />
+                  {targetLocations.length > 0 && (
+                    <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                      {targetLocations.map(loc => (
+                        <span key={loc} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 4, fontSize: 11, fontWeight: 600, background: '#f0fdfa', color: '#0d9488', border: '1px solid #99f6e4' }}>
+                          {loc}
+                          <span
+                            role="button" tabIndex={0}
+                            onClick={() => this.setState({ targetLocations: targetLocations.filter(l => l !== loc) })}
+                            onKeyDown={(e) => { if (e.key === 'Enter') this.setState({ targetLocations: targetLocations.filter(l => l !== loc) }); }}
+                            style={{ cursor: 'pointer', color: '#94a3b8', fontSize: 10, marginLeft: 2 }}
+                          >x</span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
 
-            <Checkbox
-              label="Include Contractors/Third Parties"
-              checked={includeContractors}
-              onChange={(e, checked) => this.setState({ includeContractors: checked || false })}
-            />
+              {/* Specific users + Contractors side by side */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, padding: 20 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                    <div style={{ width: 28, height: 28, borderRadius: 6, background: '#fce7f3', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Icon iconName="People" styles={{ root: { fontSize: 14, color: '#db2777' } }} />
+                    </div>
+                    <Text style={{ fontWeight: 600, fontSize: 14, color: '#0f172a' }}>Specific Users</Text>
+                  </div>
+                  <PeoplePicker
+                    context={this.props.context as any}
+                    titleText=""
+                    personSelectionLimit={20}
+                    groupName=""
+                    showtooltip={true}
+                    showHiddenInUI={false}
+                    ensureUser={true}
+                    principalTypes={[PrincipalType.User]}
+                    resolveDelay={300}
+                    defaultSelectedUsers={(st.targetSpecificUsers as string[]) || []}
+                    onChange={(items: any[]) => {
+                      this.setState({ targetSpecificUsers: items.map((i: any) => i.secondaryText || i.loginName || '') } as any);
+                    }}
+                    placeholder="Search for specific users..."
+                    webAbsoluteUrl={this.props.context.pageContext.web.absoluteUrl}
+                  />
+                </div>
 
-            {/* Storage & Security */}
+                <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, padding: 20, display: 'flex', alignItems: 'center' }}>
+                  <Checkbox
+                    label="Include Contractors / Third Parties"
+                    checked={includeContractors}
+                    onChange={(_, checked) => this.setState({ includeContractors: checked || false })}
+                    styles={{ root: { margin: 0 } }}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* New Hires info */}
+          {scopeMode === 'newhires' && (
+            <MessageBar messageBarType={MessageBarType.info}>
+              This policy will be automatically assigned to new employees during their onboarding process. It will not appear in the general Policy Hub.
+            </MessageBar>
+          )}
+
+          {/* Storage & Security */}
             {(() => {
               const secureLibs: any[] = st._wizardSecureLibs || [];
               const selectedLibrary: string = st._selectedLibrary || 'default';
@@ -2443,7 +2825,6 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             })()}
           </Stack>
         </div>
-      </div>
     );
   }
 
@@ -2480,63 +2861,56 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     ];
 
     return (
-      <div className={styles.wizardStepContent}>
-        <div className={styles.section}>
-          <Stack tokens={{ childrenGap: 20 }}>
-            <TextField
-              label="Effective Date"
-              type="date"
-              required
-              value={effectiveDate}
-              onChange={(e, value) => {
-                const newEffective = value || '';
-                const computed = this.calcNextReviewDate(newEffective, reviewFrequency);
-                this.setState({ effectiveDate: newEffective, nextReviewDate: computed || nextReviewDate });
-              }}
-              styles={{ root: { maxWidth: 200 } }}
-            />
-
-            <TextField
-              label="Expiry Date (Optional)"
-              type="date"
-              value={expiryDate}
-              onChange={(e, value) => this.setState({ expiryDate: value || '' })}
-              styles={{ root: { maxWidth: 200 } }}
-            />
-
-            <Dropdown
-              label="Review Frequency"
-              selectedKey={reviewFrequency}
-              options={frequencyOptions}
-              onChange={(e, option) => {
-                const freq = option?.key as string;
-                const computed = this.calcNextReviewDate(effectiveDate, freq);
-                this.setState({ reviewFrequency: freq, nextReviewDate: computed || nextReviewDate });
-              }}
-              styles={{ root: { maxWidth: 300 } }}
-            />
-
-            <TextField
-              label="Next Review Date"
-              type="date"
-              value={nextReviewDate}
-              readOnly
-              disabled={reviewFrequency !== 'None'}
-              description={effectiveDate && reviewFrequency && reviewFrequency !== 'None'
-                ? `Auto-calculated from effective date + ${reviewFrequency.toLowerCase()} frequency`
-                : 'No review scheduled'}
-              styles={{ root: { maxWidth: 200 } }}
-            />
-
-            <Dropdown
-              label="Supersedes Policy (Optional)"
-              placeholder="Select a policy this replaces..."
-              selectedKey={supersedesPolicy || ''}
-              options={supersedesOptions}
-              onChange={(e, option) => this.setState({ supersedesPolicy: (option?.key as string) || '' })}
-              styles={{ root: { maxWidth: 400 } }}
-            />
-          </Stack>
+      <div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <TextField
+            label="Effective Date"
+            type="date"
+            required
+            value={effectiveDate}
+            onChange={(_, value) => {
+              const newEffective = value || '';
+              const computed = this.calcNextReviewDate(newEffective, reviewFrequency);
+              this.setState({ effectiveDate: newEffective, nextReviewDate: computed || nextReviewDate });
+            }}
+          />
+          <TextField
+            label="Expiry Date (Optional)"
+            type="date"
+            value={expiryDate}
+            onChange={(_, value) => this.setState({ expiryDate: value || '' })}
+          />
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 16 }}>
+          <Dropdown
+            label="Review Frequency"
+            selectedKey={reviewFrequency}
+            options={frequencyOptions}
+            onChange={(_, option) => {
+              const freq = option?.key as string;
+              const computed = this.calcNextReviewDate(effectiveDate, freq);
+              this.setState({ reviewFrequency: freq, nextReviewDate: computed || nextReviewDate });
+            }}
+          />
+          <TextField
+            label="Next Review Date"
+            type="date"
+            value={nextReviewDate}
+            readOnly
+            disabled={reviewFrequency !== 'None'}
+            description={effectiveDate && reviewFrequency && reviewFrequency !== 'None'
+              ? `Auto-calculated from effective date + ${reviewFrequency.toLowerCase()} frequency`
+              : 'No review scheduled'}
+          />
+        </div>
+        <div style={{ marginTop: 16 }}>
+          <Dropdown
+            label="Supersedes Policy (Optional)"
+            placeholder="Select a policy this replaces..."
+            selectedKey={supersedesPolicy || ''}
+            options={supersedesOptions}
+            onChange={(_, option) => this.setState({ supersedesPolicy: (option?.key as string) || '' })}
+          />
         </div>
       </div>
     );
@@ -2544,7 +2918,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
   private renderStep6_Workflow(): JSX.Element {
     return (
-      <div className={styles.wizardStepContent}>
+      <div>
         {this.renderReviewers()}
       </div>
     );
@@ -2562,9 +2936,12 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     const { expandedReviewSections } = this.state;
 
     const toggleSection = (key: string): void => {
-      const next = new Set(expandedReviewSections);
-      if (next.has(key)) { next.delete(key); } else { next.add(key); }
-      this.setState({ expandedReviewSections: next });
+      // Accordion: only one section open at a time
+      if (expandedReviewSections.has(key)) {
+        this.setState({ expandedReviewSections: new Set<string>() });
+      } else {
+        this.setState({ expandedReviewSections: new Set<string>([key]) });
+      }
     };
 
     const selectedQuizTitle = (this.state as any).selectedQuizTitle || '';
@@ -2586,44 +2963,44 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       {
         key: 'basic', icon: 'Info', title: 'Basic Information', step: 1,
         content: (
-          <div className={styles.reviewGrid}>
-            <div className={styles.reviewItem}><Label>Policy Number</Label><Text>{policyNumber || '(Auto-generated on save)'}</Text></div>
-            <div className={styles.reviewItem}><Label>Policy Name</Label><Text>{policyName || '-'}</Text></div>
-            <div className={styles.reviewItem}><Label>Category</Label><Text>{policyCategory || '-'}</Text></div>
-            <div className={styles.reviewItem}><Label>Summary</Label><Text>{policySummary || '-'}</Text></div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Policy Number</Label><Text>{policyNumber || '(Auto-generated on save)'}</Text></div>
+            <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Policy Name</Label><Text>{policyName || '-'}</Text></div>
+            <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Category</Label><Text>{policyCategory || '-'}</Text></div>
+            <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Summary</Label><Text>{policySummary || '-'}</Text></div>
           </div>
         )
       },
       {
         key: 'content', icon: 'Edit', title: 'Content', step: 2,
         content: (
-          <div className={styles.reviewGrid}>
-            <div className={styles.reviewItem}><Label>Content</Label><Text>{policyContent ? `${policyContent.substring(0, 500).replace(/<[^>]*>/g, '').trim()}${policyContent.length > 500 ? '...' : ''}` : '-'}</Text></div>
-            {linkedDocumentUrl && <div className={styles.reviewItem}><Label>Linked Document</Label><Text>{linkedDocumentType}: {linkedDocumentUrl}</Text></div>}
-            <div className={styles.reviewItem}><Label>Key Points</Label><Text>{keyPoints.length > 0 ? keyPoints.join(' • ') : 'None specified'}</Text></div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Content</Label><Text>{policyContent ? `${policyContent.substring(0, 500).replace(/<[^>]*>/g, '').trim()}${policyContent.length > 500 ? '...' : ''}` : '-'}</Text></div>
+            {linkedDocumentUrl && <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Linked Document</Label><Text>{linkedDocumentType}: {linkedDocumentUrl}</Text></div>}
+            <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Key Points</Label><Text>{keyPoints.length > 0 ? keyPoints.join(' • ') : 'None specified'}</Text></div>
           </div>
         )
       },
       {
         key: 'compliance', icon: 'Tag', title: 'Compliance & Metadata', step: 3,
         content: (
-          <div className={styles.reviewGrid}>
-            <div className={styles.reviewItem}><Label>Risk Level</Label><Text>{complianceRisk}</Text></div>
-            <div className={styles.reviewItem}><Label>Read Timeframe</Label><Text>{readTimeframe}</Text></div>
-            <div className={styles.reviewItem}><Label>Acknowledgement Required</Label><Text>{requiresAcknowledgement ? 'Yes' : 'No'}</Text></div>
-            <div className={styles.reviewItem}><Label>Quiz Required</Label><Text>{requiresQuiz ? (selectedQuizTitle ? `Yes — ${selectedQuizTitle}` : 'Yes (no quiz linked)') : 'No'}</Text></div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Risk Level</Label><Text>{complianceRisk}</Text></div>
+            <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Read Timeframe</Label><Text>{readTimeframe}</Text></div>
+            <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Acknowledgement Required</Label><Text>{requiresAcknowledgement ? 'Yes' : 'No'}</Text></div>
+            <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Quiz Required</Label><Text>{requiresQuiz ? (selectedQuizTitle ? `Yes — ${selectedQuizTitle}` : 'Yes (no quiz linked)') : 'No'}</Text></div>
           </div>
         )
       },
       {
         key: 'audience', icon: 'People', title: 'Target Audience', step: 4,
         content: (
-          <div className={styles.reviewGrid}>
-            <div className={styles.reviewItem}><Label>Audience</Label><Text>{targetAllEmployees ? 'All Employees' : 'Specific groups'}</Text></div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Audience</Label><Text>{targetAllEmployees ? 'All Employees' : 'Specific groups'}</Text></div>
             {!targetAllEmployees && <>
-              <div className={styles.reviewItem}><Label>Departments</Label><Text>{targetDepartments.join(', ') || 'None specified'}</Text></div>
-              <div className={styles.reviewItem}><Label>Roles</Label><Text>{targetRoles.join(', ') || 'None specified'}</Text></div>
-              <div className={styles.reviewItem}><Label>Locations</Label><Text>{targetLocations.join(', ') || 'None specified'}</Text></div>
+              <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Departments</Label><Text>{targetDepartments.join(', ') || 'None specified'}</Text></div>
+              <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Roles</Label><Text>{targetRoles.join(', ') || 'None specified'}</Text></div>
+              <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Locations</Label><Text>{targetLocations.join(', ') || 'None specified'}</Text></div>
             </>}
           </div>
         )
@@ -2631,55 +3008,65 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       {
         key: 'dates', icon: 'Calendar', title: 'Dates & Review', step: 5,
         content: (
-          <div className={styles.reviewGrid}>
-            <div className={styles.reviewItem}><Label>Effective Date</Label><Text>{effectiveDate || '-'}</Text></div>
-            <div className={styles.reviewItem}><Label>Expiry Date</Label><Text>{expiryDate || 'No expiry'}</Text></div>
-            <div className={styles.reviewItem}><Label>Review Frequency</Label><Text>{reviewFrequency}</Text></div>
-            <div className={styles.reviewItem}><Label>Next Review</Label><Text>{nextReviewDate || 'Not set'}</Text></div>
-            {supersedesPolicy && <div className={styles.reviewItem}><Label>Supersedes</Label><Text>{supersedesPolicy}</Text></div>}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Effective Date</Label><Text>{effectiveDate || '-'}</Text></div>
+            <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Expiry Date</Label><Text>{expiryDate || 'No expiry'}</Text></div>
+            <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Review Frequency</Label><Text>{reviewFrequency}</Text></div>
+            <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Next Review</Label><Text>{nextReviewDate || 'Not set'}</Text></div>
+            {supersedesPolicy && <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Supersedes</Label><Text>{supersedesPolicy}</Text></div>}
           </div>
         )
       },
       {
         key: 'workflow', icon: 'Flow', title: 'Workflow', step: 6,
         content: (
-          <div className={styles.reviewGrid}>
-            <div className={styles.reviewItem}><Label>Reviewers</Label><Text>{reviewers.length > 0 ? reviewers.map((r: any) => r.text || r.loginName || r).join(', ') : 'None assigned'}</Text></div>
-            <div className={styles.reviewItem}><Label>Approvers</Label><Text>{approvers.length > 0 ? approvers.map((a: any) => a.text || a.loginName || a).join(', ') : 'None assigned'}</Text></div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Reviewers</Label><Text>{reviewers.length > 0 ? reviewers.map((r: any) => r.text || r.loginName || r).join(', ') : 'None assigned'}</Text></div>
+            <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Approvers</Label><Text>{approvers.length > 0 ? approvers.map((a: any) => a.text || a.loginName || a).join(', ') : 'None assigned'}</Text></div>
           </div>
         )
       }
     ];
 
+    const reviewRow = (label: string, value: string): JSX.Element => (
+      <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}>
+        <span style={{ width: 160, color: '#64748b', fontWeight: 500, flexShrink: 0 }}>{label}</span>
+        <span style={{ color: '#0f172a', flex: 1 }}>{value || '-'}</span>
+      </div>
+    );
+
     return (
-      <div className={styles.wizardStepContent}>
-        <div className={styles.reviewSummary}>
-          {sections.map(section => {
-            const isExpanded = expandedReviewSections.has(section.key);
-            return (
-              <div key={section.key} className={styles.reviewSectionCollapsible}>
-                <div
-                  className={styles.reviewSectionToggle}
-                  onClick={() => toggleSection(section.key)}
-                >
-                  <Text variant="mediumPlus" className={styles.reviewSectionTitle} style={{ flex: 1 }}>
-                    <Icon iconName={section.icon} style={{ marginRight: 8 }} />
-                    {section.title}
-                  </Text>
-                  {editBtn((section as any).step)}
-                  <Icon iconName={isExpanded ? 'ChevronUp' : 'ChevronDown'} style={IconStyles.small} />
-                </div>
-                <div className={isExpanded ? styles.reviewSectionBody : styles.reviewSectionBodyCollapsed}>
-                  {section.content}
-                </div>
-              </div>
-            );
-          })}
+      <div>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 4, padding: '12px 16px', fontSize: 12, color: '#92400e', lineHeight: '1.5', marginBottom: 16 }}>
+          <Icon iconName="Warning" styles={{ root: { fontSize: 14, flexShrink: 0, marginTop: 1 } }} />
+          <span>Please review all information carefully. Once submitted, the policy enters the review workflow.</span>
         </div>
 
-        <MessageBar messageBarType={MessageBarType.warning} styles={{ root: { marginTop: 16 } }}>
-          Please review all information carefully before submitting. Once submitted, the policy will go through the approval workflow.
-        </MessageBar>
+        {sections.map(section => {
+          const isExpanded = expandedReviewSections.has(section.key);
+          return (
+            <div key={section.key} style={{ border: '1px solid #e2e8f0', borderRadius: 8, overflow: 'hidden', marginBottom: 8 }}>
+              <div
+                onClick={() => toggleSection(section.key)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', cursor: 'pointer',
+                  background: isExpanded ? '#f0fdfa' : '#fff', borderBottom: isExpanded ? '1px solid #e2e8f0' : 'none'
+                }}
+              >
+                <span style={{ fontSize: 10, color: '#94a3b8', transition: 'transform 0.2s', transform: isExpanded ? 'rotate(90deg)' : 'rotate(0)' }}>&#x25B6;</span>
+                <Icon iconName={section.icon} styles={{ root: { fontSize: 14, color: '#0d9488' } }} />
+                <span style={{ fontWeight: 600, fontSize: 13, color: '#0f172a', flex: 1 }}>{section.title}</span>
+                {editBtn(section.step)}
+                <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 4, background: '#dcfce7', color: '#059669' }}>Complete</span>
+              </div>
+              {isExpanded && (
+                <div style={{ padding: 16 }}>
+                  {section.content}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     );
   }
@@ -2687,14 +3074,16 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
   private renderCurrentStep(): JSX.Element {
     const { currentStep } = this.state;
 
+    // Step order: 0=Creation Method, 1=Basic Info, 2=Metadata, 3=Audience,
+    // 4=Dates, 5=Workflow, 6=Content, 7=Review & Submit
     switch (currentStep) {
       case 0: return this.renderStep0_CreationMethod();
       case 1: return this.renderStep1_BasicInfo();
-      case 2: return this.renderStep2_Content();
-      case 3: return this.renderStep3_Compliance();
-      case 4: return this.renderStep4_Audience();
-      case 5: return this.renderStep5_Dates();
-      case 6: return this.renderStep6_Workflow();
+      case 2: return this.renderStep3_Compliance();
+      case 3: return this.renderStep4_Audience();
+      case 4: return this.renderStep5_Dates();
+      case 5: return this.renderStep6_Workflow();
+      case 6: return this.renderStep2_Content();
       case 7: return this.renderStep7_Review();
       default: return this.renderStep0_CreationMethod();
     }
@@ -3006,7 +3395,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
           linkedDocumentType: contentType,
           creationMethod: docType,
           policyName: policyName,
-          currentStep: 1,  // Move to Step 2 (Content)
+          // Stay on current step (6 = Content) — don't jump back
           policyContent: ''
         });
 
@@ -3446,7 +3835,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         creationMethod: 'corporate',
         showCorporateTemplatePanel: false,
         policyName: policyName,
-        currentStep: 1,  // Move to Step 2 (Content)
+        // Stay on current step — don't jump back
         policyContent: ''
       } as Partial<IPolicyAuthorEnhancedState> as IPolicyAuthorEnhancedState);
 
@@ -6205,39 +6594,40 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       policySummary,
     } = this.state;
 
-    const categoryOptions: IDropdownOption[] = Object.values(PolicyCategory)
+    // Use admin-configured categories if loaded, otherwise fall back to hardcoded enum
+    const adminCats: string[] = (this.state as any)._adminCategories || [];
+    const categorySource = adminCats.length > 0 ? adminCats : Object.values(PolicyCategory);
+    const categoryOptions: IDropdownOption[] = categorySource
       .sort((a, b) => a.localeCompare(b))
       .map(cat => ({ key: cat, text: cat }));
 
     return (
-      <div className={styles.section}>
-        <Stack tokens={{ childrenGap: 16 }}>
-          <TextField
-            label="Policy Number"
-            value={policyNumber || '(Auto-generated on save)'}
-            readOnly
-            disabled
-            description="Policy number is automatically generated based on naming rules"
-          />
-
-          <TextField
-            label="Policy Name"
-            required
-            value={policyName}
-            onChange={(e, value) => this.setState({ policyName: value || '' })}
-            placeholder="Enter policy name"
-            errorMessage={this.state.stepErrors.get(1)?.includes('Policy name is required') && !policyName.trim() ? 'Policy name is required' : undefined}
-          />
-
+      <div>
+        <TextField
+          label="Policy Number"
+          value={policyNumber || '(Auto-generated on save)'}
+          readOnly disabled
+          description="Policy number is automatically generated based on naming rules"
+          styles={{ root: { marginBottom: 16 } }}
+        />
+        <TextField
+          label="Policy Name"
+          required
+          value={policyName}
+          onChange={(_, value) => this.setState({ policyName: value || '' })}
+          placeholder="Enter policy name"
+          errorMessage={this.state.stepErrors.get(1)?.includes('Policy name is required') && !policyName.trim() ? 'Policy name is required' : undefined}
+          styles={{ root: { marginBottom: 16 } }}
+        />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
           <Dropdown
             label="Category"
             required
             selectedKey={policyCategory}
             options={categoryOptions}
-            onChange={(e, option) => this.setState({ policyCategory: option?.key as string })}
+            onChange={(_, option) => this.setState({ policyCategory: option?.key as string })}
             errorMessage={this.state.stepErrors.get(1)?.includes('Policy category is required') && !policyCategory ? 'Please select a category' : undefined}
           />
-
           <Dropdown
             label="Department"
             selectedKey={(this.state as any).targetDepartments?.[0] || ''}
@@ -6252,21 +6642,22 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
               { key: 'Legal', text: 'Legal' },
               { key: 'All Departments', text: 'All Departments' }
             ]}
-            onChange={(e, option) => option && this.setState({ targetDepartments: option.key ? [option.key as string] : [] } as any)}
+            onChange={(_, option) => option && this.setState({ targetDepartments: option.key ? [option.key as string] : [] } as any)}
           />
-
-          <TextField
-            label="Summary"
-            multiline
-            rows={3}
-            value={policySummary}
-            onChange={(e, value) => this.setState({ policySummary: value || '' })}
-            placeholder="Brief summary of the policy (2-3 sentences)"
-          />
-
+        </div>
+        <TextField
+          label="Summary"
+          multiline rows={3}
+          value={policySummary}
+          onChange={(_, value) => this.setState({ policySummary: value || '' })}
+          placeholder="Brief summary of the policy (2-3 sentences)"
+          styles={{ root: { marginBottom: 16 } }}
+        />
+        <div>
+          <Label>Policy Owner</Label>
           <PeoplePicker
             context={this.props.context as any}
-            titleText="Policy Owner"
+            titleText=""
             personSelectionLimit={1}
             groupName=""
             showtooltip={true}
@@ -6281,7 +6672,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             placeholder="Search for policy owner..."
             webAbsoluteUrl={this.props.context.pageContext.web.absoluteUrl}
           />
-        </Stack>
+        </div>
       </div>
     );
   }
@@ -6924,116 +7315,220 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
   }
 
   private renderCreatePolicyTab(): JSX.Element {
-    const { loading, saving, currentStep } = this.state;
+    const { loading, saving, currentStep, completedSteps } = this.state;
     const currentStepConfig = WIZARD_STEPS[currentStep];
     const progressPercent = Math.round(((currentStep + 1) / WIZARD_STEPS.length) * 100);
 
+    if (loading) {
+      return <Stack horizontalAlign="center" tokens={{ padding: 60 }}><Spinner size={SpinnerSize.large} label="Loading policy builder..." /></Stack>;
+    }
+
+    // ── Styles ──
+    const S = {
+      // Wizard wrapper — the main card
+      wrapper: { display: 'grid', gridTemplateColumns: '240px 1fr 260px', gridTemplateRows: '1fr auto', minHeight: 'calc(100vh - 180px)', background: '#fff', borderRadius: 10, overflow: 'hidden', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' } as React.CSSProperties,
+      // Sidebar
+      sidebar: { background: '#fff', borderRight: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gridRow: '1 / 3', borderRadius: '10px 0 0 10px', overflowY: 'auto' } as React.CSSProperties,
+      sidebarHeader: { padding: '24px 20px 16px', borderBottom: '1px solid #e2e8f0' } as React.CSSProperties,
+      stepItem: (active: boolean) => ({ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 20px', cursor: 'pointer', transition: 'all 0.15s', borderLeft: active ? '3px solid #0d9488' : '3px solid transparent', background: active ? '#f0fdfa' : 'transparent' }) as React.CSSProperties,
+      stepNum: (active: boolean, done: boolean) => ({ width: 26, height: 26, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, minWidth: 26, background: done ? '#0d9488' : active ? '#f0fdfa' : '#fff', color: done ? '#fff' : active ? '#0d9488' : '#94a3b8', border: `2px solid ${done ? '#0d9488' : active ? '#0d9488' : '#e2e8f0'}` }) as React.CSSProperties,
+      stepLabel: (active: boolean, done: boolean) => ({ fontWeight: active ? 600 : 500, color: active ? '#0d9488' : done ? '#0f172a' : '#475569', fontSize: 13, flex: 1 }) as React.CSSProperties,
+      bulletList: { padding: '4px 20px 10px 56px', margin: 0, listStyle: 'none' } as React.CSSProperties,
+      bullet: (first: boolean) => ({ padding: '3px 0', fontSize: 11, color: first ? '#0d9488' : '#94a3b8', fontWeight: first ? 600 : 400, display: 'flex', alignItems: 'center', gap: 6 }) as React.CSSProperties,
+      bulletDot: { width: 5, height: 5, borderRadius: '50%', background: '#0d9488', display: 'inline-block', flexShrink: 0 } as React.CSSProperties,
+      // Content area
+      content: { padding: '32px 40px 24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', background: '#f8fafc' } as React.CSSProperties,
+      contentHeader: { marginBottom: 24, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 24 } as React.CSSProperties,
+      progressWrap: { display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, paddingTop: 6 } as React.CSSProperties,
+      progressTrack: { width: 120, height: 6, background: '#e2e8f0', borderRadius: 3, overflow: 'hidden' } as React.CSSProperties,
+      progressFill: { height: '100%', background: '#0d9488', borderRadius: 3, transition: 'width 0.3s' } as React.CSSProperties,
+      // Right panel
+      rightPanel: { background: '#fff', borderLeft: '1px solid #e2e8f0', padding: '24px 20px', overflowY: 'auto', borderRadius: '0 10px 0 0' } as React.CSSProperties,
+      panelHeading: { fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 } as React.CSSProperties,
+      tipCard: { background: '#f0fdfa', borderRadius: 6, padding: 12, marginBottom: 8 } as React.CSSProperties,
+      tipTitle: { fontSize: 12, fontWeight: 600, color: '#0f172a', marginBottom: 4, display: 'block' } as React.CSSProperties,
+      tipBody: { fontSize: 11, color: '#115e59', lineHeight: '1.5' } as React.CSSProperties,
+      relatedItem: { display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0', borderBottom: '1px solid #f1f5f9', fontSize: 12 } as React.CSSProperties,
+      relatedDot: { width: 6, height: 6, borderRadius: '50%', background: '#0d9488', flexShrink: 0 } as React.CSSProperties,
+      // Footer
+      footer: { gridColumn: '2 / 3', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 40px', background: '#fff', borderTop: '1px solid #e2e8f0' } as React.CSSProperties,
+      footerCenter: { display: 'flex', alignItems: 'center', gap: 12 } as React.CSSProperties,
+      footerTrack: { width: 100, height: 4, background: '#e2e8f0', borderRadius: 2, overflow: 'hidden' } as React.CSSProperties,
+      footerFill: { height: '100%', background: '#0d9488', borderRadius: 2, transition: 'width 0.3s' } as React.CSSProperties,
+    };
+
+    // ── Tips data ──
+    const tipsMap: Record<number, { t: string; b: string }[]> = {
+      0: [{ t: 'Choosing a Type', b: 'Select your document type, then choose blank or a template within that type.' }, { t: 'Templates', b: 'Templates include pre-approved structure and formatting for consistency.' }],
+      1: [{ t: 'Policy Title Best Practices', b: 'Use descriptive, action-oriented titles. Avoid acronyms unless universally understood.' }, { t: 'Category Selection', b: 'Choose the primary category that best represents the policy scope.' }, { t: 'Writing a Good Summary', b: "Include the policy's purpose, who it applies to, and key requirements. 2-3 sentences." }],
+      2: [{ t: 'Risk Assessment', b: 'Consider regulatory, legal, and operational risk if this policy is not followed.' }, { t: 'Acknowledgement & Quiz', b: 'Critical policies should require both acknowledgement and quiz completion.' }],
+      3: [{ t: 'Target Audience', b: 'Select "All Employees" for company-wide policies, or build a targeted audience.' }, { t: 'Contractors', b: 'If your policy applies to external contractors, include them in the audience.' }],
+      4: [{ t: 'Effective Dates', b: 'Allow at least 2 weeks between publication and effective date for reading time.' }, { t: 'Review Cycle', b: 'Most policies should be reviewed annually. Critical compliance = quarterly.' }],
+      5: [{ t: 'Review Workflow', b: 'Add subject matter experts as reviewers and department heads as approvers.' }, { t: 'Multi-Level Approval', b: 'High-risk policies typically require both department and executive approval.' }],
+      6: [{ t: 'Content Structure', b: 'Use clear headings. Start with purpose, then scope, responsibilities, procedures.' }, { t: 'Key Points', b: 'Add 3-5 key points that summarize the most important takeaways.' }],
+      7: [{ t: 'Final Check', b: 'Review all sections. Once submitted, the policy enters the review workflow.' }, { t: 'Draft Option', b: 'Not ready? Save as draft to continue editing later.' }]
+    };
+    const tips = tipsMap[currentStep] || [];
+
+    const relatedPolicies = [
+      { title: 'Code of Conduct', cat: 'HR & People', status: 'Active' },
+      { title: 'Data Classification Policy', cat: 'IT Security', status: 'Active' },
+      { title: 'Acceptable Use Policy', cat: 'IT Security', status: 'Active' }
+    ];
+
     return (
-      <>
-        {/* Saving Indicator */}
-        {saving && (
-          <MessageBar messageBarType={MessageBarType.info}>
-            <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
-              <Spinner size={SpinnerSize.small} />
-              <span>Saving your progress...</span>
-            </Stack>
-          </MessageBar>
-        )}
-
-        {/* Loading State */}
-        {loading ? (
-          <Stack horizontalAlign="center" tokens={{ padding: 60 }}>
-            <Spinner size={SpinnerSize.large} label="Loading policy builder..." />
-          </Stack>
-        ) : (
-          <div className={styles.v3Layout}>
-            {/* Left: Accordion Sidebar */}
-            {this.renderV3AccordionSidebar()}
-
-            {/* Center: Main Form */}
-            <main className={styles.v3Center}>
-              <div className={styles.v3CenterHeader}>
-                <div className={styles.v3HeaderLeft}>
-                  <Text variant="xLarge" style={TextStyles.boldDarkBlock}>{currentStepConfig.title}</Text>
-                  <Text style={{ fontSize: 14, color: '#6b7280', marginTop: 4 }}>{currentStepConfig.description}</Text>
-                </div>
-                <div className={styles.v3HeaderProgress}>
-                  <span className={styles.v3HeaderProgressLabel}>Step {currentStep + 1} of {WIZARD_STEPS.length}</span>
-                  <div className={styles.v3HeaderProgressTrack}>
-                    <div className={styles.v3HeaderProgressFill} style={{ width: `${progressPercent}%` }} />
-                  </div>
-                  <span className={styles.v3HeaderProgressLabel}>{progressPercent}%</span>
-                </div>
-              </div>
-
-              <div className={styles.v3FormCard}>
-                {this.renderCurrentStep()}
-                {this.renderEmbeddedEditor()}
-              </div>
-
-              {/* Progress Footer */}
-              <div className={styles.v3ProgressFooter}>
-                <div className={styles.v3ProgressBarWrap}>
-                  <div className={styles.v3ProgressTrack}>
-                    <div className={styles.v3ProgressFill} style={{ width: `${progressPercent}%` }} />
-                  </div>
-                  <span className={styles.v3ProgressText}>{progressPercent}%</span>
-                </div>
-                <div className={styles.v3FooterActions}>
-                  {currentStep > 0 && (
-                    <DefaultButton
-                      text="Previous"
-                      iconProps={{ iconName: 'ChevronLeft' }}
-                      onClick={this.handlePreviousStep}
-                      disabled={saving}
-                    />
-                  )}
-                  <DefaultButton
-                    text="Save Draft"
-                    iconProps={{ iconName: 'Save' }}
-                    onClick={() => { this.handleSaveDraft(); }}
-                    disabled={saving}
-                  />
-                  {currentStep < WIZARD_STEPS.length - 1 ? (
-                    <PrimaryButton
-                      onClick={this.handleNextStep}
-                      disabled={saving}
-                      styles={{ root: { background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
-                    >
-                      Next <Icon iconName="ChevronRight" style={{ marginLeft: 6 }} />
-                    </PrimaryButton>
-                  ) : (
-                    <PrimaryButton
-                      text="Submit for Review"
-                      iconProps={{ iconName: 'Send' }}
-                      onClick={() => { this.handleSubmitForReview(); }}
-                      disabled={saving}
-                      styles={{ root: { background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
-                    />
-                  )}
-                </div>
-              </div>
-            </main>
-
-            {/* Right: Context Panel */}
-            {this.renderV3ContextPanel()}
+      <div style={S.wrapper}>
+        {/* ── LEFT SIDEBAR ── */}
+        <aside style={S.sidebar}>
+          <div style={S.sidebarHeader}>
+            <Text style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', display: 'block' }}>New Policy Wizard</Text>
+            <Text style={{ fontSize: 11, color: '#94a3b8', marginTop: 2, display: 'block' }}>{WIZARD_STEPS.length} steps to complete</Text>
           </div>
-        )}
-      </>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>
+            {WIZARD_STEPS.map((step, i) => {
+              const done = completedSteps.has(i);
+              const active = i === currentStep;
+              const clickable = i <= currentStep || completedSteps.has(i - 1) || i === 0;
+              return (
+                <div key={step.key}>
+                  <div
+                    style={S.stepItem(active)}
+                    onClick={() => clickable && this.handleGoToStep(i)}
+                    onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLElement).style.background = '#f8fafc'; }}
+                    onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+                  >
+                    <div style={S.stepNum(active, done)}>
+                      {done ? <Icon iconName="CheckMark" style={{ fontSize: 11 }} /> : <span>{i + 1}</span>}
+                    </div>
+                    <span style={S.stepLabel(active, done)}>{step.title}</span>
+                    {this.state.stepErrors.has(i) && (this.state.stepErrors.get(i) || []).length > 0 && !done && (
+                      <span style={{ width: 16, height: 16, borderRadius: '50%', background: '#dc2626', color: '#fff', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>!</span>
+                    )}
+                    <span style={{ fontSize: 10, color: '#94a3b8', transform: active ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s' }}>&#9660;</span>
+                  </div>
+                  {active && PolicyAuthorEnhanced.STEP_FIELDS[i] && (
+                    <ul style={S.bulletList}>
+                      {PolicyAuthorEnhanced.STEP_FIELDS[i].map((field, fi) => (
+                        <li key={fi} style={S.bullet(fi === 0)}>
+                          <span style={S.bulletDot} />
+                          {field}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </aside>
+
+        {/* ── CENTER CONTENT ── */}
+        <main style={S.content}>
+          {saving && (
+            <div style={{ marginBottom: 16 }}>
+              <MessageBar messageBarType={MessageBarType.info}>
+                <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}><Spinner size={SpinnerSize.small} /><span>Saving...</span></Stack>
+              </MessageBar>
+            </div>
+          )}
+          <div style={S.contentHeader}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <Text style={{ fontSize: 20, fontWeight: 700, color: '#0f172a', display: 'block' }}>{currentStepConfig.title}</Text>
+              <Text style={{ fontSize: 13, color: '#64748b', marginTop: 4, display: 'block' }}>{currentStepConfig.description}</Text>
+            </div>
+            <div style={S.progressWrap}>
+              <span style={{ fontSize: 11, color: '#64748b', whiteSpace: 'nowrap' }}>Step {currentStep + 1} of {WIZARD_STEPS.length}</span>
+              <div style={S.progressTrack}><div style={{ ...S.progressFill, width: `${progressPercent}%` }} /></div>
+              <span style={{ fontSize: 11, color: '#64748b' }}>{progressPercent}%</span>
+            </div>
+          </div>
+          <div style={{ flex: 1 }}>
+            {this.renderCurrentStep()}
+            {this.renderEmbeddedEditor()}
+          </div>
+        </main>
+
+        {/* ── RIGHT PANEL ── */}
+        <aside style={S.rightPanel}>
+          <div style={{ marginBottom: 24 }}>
+            <div style={S.panelHeading as React.CSSProperties}>
+              <Icon iconName="Lightbulb" style={{ fontSize: 12, color: '#0d9488' }} />
+              Tips & Guidance
+            </div>
+            {tips.map((tip, i) => (
+              <div key={i} style={S.tipCard}>
+                <span style={S.tipTitle}>{tip.t}</span>
+                <Text style={S.tipBody}>{tip.b}</Text>
+              </div>
+            ))}
+          </div>
+          <div>
+            <div style={S.panelHeading as React.CSSProperties}>
+              <Icon iconName="Documentation" style={{ fontSize: 12, color: '#0d9488' }} />
+              Related Policies
+            </div>
+            {relatedPolicies.map((p, i) => (
+              <div key={i} style={S.relatedItem}>
+                <span style={S.relatedDot} />
+                <div>
+                  <Text style={{ fontSize: 12, fontWeight: 500, color: '#0f172a', display: 'block' }}>{p.title}</Text>
+                  <Text style={{ fontSize: 10, color: '#94a3b8' }}>{p.cat} &bull; {p.status}</Text>
+                </div>
+              </div>
+            ))}
+          </div>
+        </aside>
+
+        {/* ── ANCHORED FOOTER ── */}
+        <div style={S.footer}>
+          <DefaultButton
+            text={currentStep > 0 ? '\u2190 Back' : ''}
+            onClick={this.handlePreviousStep}
+            disabled={saving || currentStep === 0}
+            styles={{ root: { borderRadius: 4, border: '1px solid #e2e8f0', visibility: currentStep === 0 ? 'hidden' : 'visible', minWidth: 80 }, rootHovered: { borderColor: '#0d9488', color: '#0d9488' } }}
+          />
+          <div style={S.footerCenter}>
+            <span style={{ fontSize: 12, color: '#64748b', whiteSpace: 'nowrap' }}>Step {currentStep + 1} of {WIZARD_STEPS.length}</span>
+            <div style={S.footerTrack}><div style={{ ...S.footerFill, width: `${progressPercent}%` }} /></div>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <DefaultButton
+              text="Save Draft"
+              onClick={() => { this.handleSaveDraft(); }}
+              disabled={saving}
+              styles={{ root: { borderRadius: 4, background: '#f0fdfa', color: '#0d9488', border: '1px solid #99f6e4', minWidth: 90 }, rootHovered: { background: '#ccfbf1' } }}
+            />
+            {currentStep < WIZARD_STEPS.length - 1 ? (
+              <PrimaryButton
+                onClick={this.handleNextStep}
+                disabled={saving}
+                styles={{ root: { background: '#0d9488', borderColor: '#0d9488', borderRadius: 4, minWidth: 80 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+              >
+                Next <Icon iconName="ChevronRight" style={{ marginLeft: 6 }} />
+              </PrimaryButton>
+            ) : (
+              <PrimaryButton
+                text="Submit for Review"
+                iconProps={{ iconName: 'Send' }}
+                onClick={() => { this.handleSubmitForReview(); }}
+                disabled={saving}
+                styles={{ root: { background: '#0d9488', borderColor: '#0d9488', borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+              />
+            )}
+          </div>
+        </div>
+      </div>
     );
   }
 
   private renderBrowseTab(): JSX.Element {
     const { browsePolicies, browseLoading, browseSearchQuery, browseCategoryFilter } = this.state;
 
+    const adminCats2: string[] = (this.state as any)._adminCategories || [];
+    const catSource = adminCats2.length > 0 ? adminCats2 : Object.values(PolicyCategory);
     const categoryOptions: IDropdownOption[] = [
       { key: '', text: 'All Categories' },
-      { key: 'HR', text: 'HR & Employment' },
-      { key: 'IT', text: 'IT & Security' },
-      { key: 'Compliance', text: 'Compliance & Legal' },
-      { key: 'Operations', text: 'Operations' },
-      { key: 'Health', text: 'Health & Safety' },
-      { key: 'Finance', text: 'Finance' }
+      ...catSource.sort((a, b) => a.localeCompare(b)).map(cat => ({ key: cat, text: cat }))
     ];
 
     return (
@@ -7637,24 +8132,22 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         dwxHub={this.props.dwxHub}
       >
         <ErrorBoundary fallbackMessage="An error occurred in the Policy Builder. Please try again.">
-        <section className={styles.policyAuthor}>
-          <Stack tokens={{ childrenGap: 16 }}>
-            {/* Module nav removed - now in global header */}
-
+        <section style={{ width: '100%', background: '#f1f5f9', minHeight: 'calc(100vh - 140px)' }}>
             {/* Error Messages */}
             {error && (
-              <MessageBar
-                messageBarType={MessageBarType.error}
-                isMultiline
-                onDismiss={() => this.setState({ error: null })}
-              >
-                {error}
-              </MessageBar>
+              <div style={{ maxWidth: 1400, margin: '0 auto', padding: '16px 24px 0' }}>
+                <MessageBar
+                  messageBarType={MessageBarType.error}
+                  isMultiline
+                  onDismiss={() => this.setState({ error: null })}
+                >
+                  {error}
+                </MessageBar>
+              </div>
             )}
 
             {/* Tab Content - Renders based on activeTab */}
             {this.renderTabContent()}
-          </Stack>
 
           {/* Panels and Dialogs */}
           {/* Existing Panels */}

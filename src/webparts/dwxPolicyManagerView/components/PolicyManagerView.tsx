@@ -1278,12 +1278,11 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
                 for (const member of overdueMembers) {
                   await this.props.sp.web.lists.getByTitle('PM_Notifications').items.add({
                     Title: `Overdue policy reminder for ${member.Name}`,
-                    NotificationType: 'Reminder',
+                    Type: 'PolicyAcknowledgment',
                     Message: `You have ${member.PoliciesOverdue} overdue policy acknowledgement(s). Please complete them as soon as possible.`,
-                    RecipientEmail: member.Email || '',
+                    RecipientId: member.Id || 0,
                     IsRead: false,
-                    Priority: 'High',
-                    CreatedDate: new Date().toISOString()
+                    Priority: 'High'
                   });
                 }
                 void this.dialogManager?.showAlert?.(`Reminders sent to ${overdueMembers.length} team member(s).`, { variant: 'success' });
@@ -1347,10 +1346,10 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
                         try {
                           await this.props.sp.web.lists.getByTitle('PM_Notifications').items.add({
                             Title: `Compliance nudge for ${member.Name}`,
-                            NotificationType: 'Nudge',
+                            Type: 'PolicyAcknowledgment',
                             Message: `Please complete your ${member.PoliciesOverdue} overdue and ${member.PoliciesPending} pending policy acknowledgement(s).`,
-                            RecipientEmail: member.Email || '',
-                            IsRead: false, Priority: 'Normal', CreatedDate: new Date().toISOString()
+                            RecipientId: member.Id || 0,
+                            IsRead: false, Priority: 'Normal'
                           });
                         } catch { /* non-blocking */ }
                       }}
@@ -2623,11 +2622,18 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
     const { delegationForm } = this.state;
     try {
       const currentUser = this.props.context.pageContext.user;
+      // Resolve delegate user to get SP user ID
+      let delegatedToId = 0;
+      try {
+        const ensured = await this.props.sp.web.ensureUser(delegationForm.delegateToEmail || delegationForm.delegateTo);
+        delegatedToId = ensured.data.Id;
+      } catch { /* fallback to 0 */ }
+      const delegatedById = this.props.context?.pageContext?.legacyPageContext?.userId || 0;
+
       await this.props.sp.web.lists.getByTitle('PM_ApprovalDelegations').items.add({
         Title: `${delegationForm.taskType} — ${delegationForm.policyTitle}`,
-        DelegateToName: delegationForm.delegateTo,
-        DelegateToEmail: delegationForm.delegateToEmail,
-        DelegateByName: currentUser?.displayName || 'Manager',
+        DelegatedById: delegatedById,
+        DelegatedToId: delegatedToId,
         Reason: delegationForm.notes || delegationForm.policyTitle,
         ProcessTypes: JSON.stringify([delegationForm.taskType]),
         StartDate: new Date().toISOString(),

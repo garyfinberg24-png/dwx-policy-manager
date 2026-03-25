@@ -28,6 +28,7 @@ import { ValidationUtils } from '../utils/ValidationUtils';
 import { logger } from './LoggingService';
 // INTEGRATION FIX: Add ApprovalNotificationService for email/Teams notifications
 import { ApprovalNotificationService } from './ApprovalNotificationService';
+import { NotificationRouter } from './NotificationRouter';
 import {
   retryWithDLQ,
   PROCESS_SYNC_RETRY_OPTIONS,
@@ -59,6 +60,8 @@ export class ApprovalService {
   private workflowInstanceService: WorkflowInstanceService;
   // INTEGRATION FIX: Add ApprovalNotificationService for email/Teams delivery
   private approvalNotificationService: ApprovalNotificationService | null = null;
+  // Multi-channel router for Teams Adaptive Cards + channel-based routing
+  private notificationRouter: NotificationRouter | null = null;
 
   constructor(sp: SPFI, siteUrl?: string) {
     this.sp = sp;
@@ -74,6 +77,13 @@ export class ApprovalService {
    */
   public initializeNotificationService(siteUrl: string): void {
     this.approvalNotificationService = new ApprovalNotificationService(this.sp, siteUrl);
+  }
+
+  /**
+   * Set the NotificationRouter for multi-channel delivery (Teams Adaptive Cards, etc.)
+   */
+  public setNotificationRouter(router: NotificationRouter): void {
+    this.notificationRouter = router;
   }
 
   /**
@@ -634,9 +644,9 @@ export class ApprovalService {
             Title: 'Approval Required',
             Message: `Your approval is required for ${process.ProcessType} process: ${process.EmployeeName}. This is level ${levelNumber} of the approval chain.`,
             RecipientId: actualApproverId,
-            NotificationType: 'ApprovalRequired',
+            Type: 'ApprovalRequired',
             Priority: Priority.High,
-            LinkUrl: `/sites/JML/SitePages/ApprovalCenter.aspx?processId=${processId}`,
+            ActionUrl: `/sites/PolicyManager/SitePages/PolicyAuthor.aspx?processId=${processId}`,
             ProcessId: processId.toString(),
             IsRead: false,
             SentDate: new Date(),
@@ -670,6 +680,33 @@ export class ApprovalService {
               // Don't fail if email notification fails - in-app notification was successful
               logger.warn('ApprovalService',
                 `Failed to send email notification to approver ${actualApproverId}`, emailError);
+            }
+          }
+
+          // Route through NotificationRouter for Teams Adaptive Cards
+          if (this.notificationRouter) {
+            try {
+              const approver = await this.sp.web.siteUsers.getById(actualApproverId).select('Email', 'Title')();
+              if (approver?.Email) {
+                await this.notificationRouter.send({
+                  event: 'approval-request',
+                  recipientEmail: approver.Email,
+                  recipientName: approver.Title || '',
+                  data: {
+                    policyTitle: process.Title || process.EmployeeName,
+                    policyId: processId,
+                    subject: `Approval Required: ${process.Title || process.EmployeeName}`,
+                    message: `Your approval is required for ${process.ProcessType}: ${process.EmployeeName}. Level ${levelNumber}.`,
+                    authorName: process.EmployeeName || '',
+                    approvalLevel: levelNumber,
+                    dueDate: this.calculateApprovalDueDate(3).toLocaleDateString(),
+                    category: process.ProcessType || '',
+                    riskLevel: 'Medium'
+                  }
+                });
+              }
+            } catch (routerError) {
+              logger.warn('ApprovalService', `NotificationRouter failed for approver ${actualApproverId}`, routerError);
             }
           }
 
@@ -732,9 +769,9 @@ export class ApprovalService {
             Title: `Approval ${isApproved ? 'Completed' : 'Rejected'}`,
             Message: `The approval chain for ${process.ProcessType} process (${process.EmployeeName}) has been ${statusText}.`,
             RecipientId: recipientId,
-            NotificationType: isApproved ? 'ApprovalComplete' : 'ApprovalRejected',
+            Type: isApproved ? 'ApprovalComplete' : 'ApprovalRejected',
             Priority: isApproved ? Priority.Medium : Priority.High,
-            LinkUrl: `/sites/JML/SitePages/ProcessDetails.aspx?processId=${processId}`,
+            ActionUrl: `/sites/PolicyManager/SitePages/PolicyDetails.aspx?processId=${processId}`,
             ProcessId: processId.toString(),
             IsRead: false,
             SentDate: new Date()
@@ -959,9 +996,9 @@ export class ApprovalService {
         Title: 'Approval Delegated to You',
         Message: `${originalApproverName} has delegated an approval for ${process.ProcessType} process (${process.EmployeeName}) to you.${reason ? ` Reason: ${reason}` : ''} Please review and respond.`,
         RecipientId: delegateToId,
-        NotificationType: 'ApprovalDelegated',
+        Type: 'ApprovalDelegated',
         Priority: Priority.High,
-        LinkUrl: `/sites/JML/SitePages/ApprovalCenter.aspx?processId=${approval.ProcessID}`,
+        ActionUrl: `/sites/PolicyManager/SitePages/PolicyAuthor.aspx?processId=${approval.ProcessID}`,
         ProcessId: approval.ProcessID.toString(),
         IsRead: false,
         SentDate: new Date(),
@@ -973,9 +1010,9 @@ export class ApprovalService {
         Title: 'Approval Successfully Delegated',
         Message: `Your approval for ${process.ProcessType} process (${process.EmployeeName}) has been delegated successfully.`,
         RecipientId: approval.ApproverId,
-        NotificationType: 'ApprovalDelegated',
+        Type: 'ApprovalDelegated',
         Priority: Priority.Medium,
-        LinkUrl: `/sites/JML/SitePages/ProcessDetails.aspx?processId=${approval.ProcessID}`,
+        ActionUrl: `/sites/PolicyManager/SitePages/PolicyDetails.aspx?processId=${approval.ProcessID}`,
         ProcessId: approval.ProcessID.toString(),
         IsRead: false,
         SentDate: new Date()
@@ -1131,7 +1168,7 @@ export class ApprovalService {
               Title: 'Approval Cancelled',
               Message: `The approval request "${approval.Title}" has been cancelled because the process was cancelled.${reason ? ` Reason: ${reason}` : ''}`,
               RecipientId: approval.ApproverId,
-              NotificationType: 'ApprovalCancelled',
+              Type: 'ApprovalCancelled',
               Priority: Priority.Medium,
               ProcessId: processId.toString(),
               IsRead: false,
@@ -1385,7 +1422,7 @@ export class ApprovalService {
         Title: 'Approval Expired',
         Message: `Your approval request "${approval.Title}" has expired because it was not completed within the allowed time period.`,
         RecipientId: approval.ApproverId,
-        NotificationType: 'ApprovalExpired',
+        Type: 'ApprovalExpired',
         Priority: Priority.High,
         ProcessId: approval.ProcessID.toString(),
         IsRead: false,
@@ -1714,9 +1751,9 @@ export class ApprovalService {
           ? `Your approval for ${process.ProcessType} process (${process.EmployeeName}) was auto-approved due to escalation policy.`
           : `Your approval for ${process.ProcessType} process (${process.EmployeeName}) has been escalated due to overdue status.`,
         RecipientId: approval.ApproverId,
-        NotificationType: 'ApprovalEscalated',
+        Type: 'ApprovalEscalated',
         Priority: Priority.High,
-        LinkUrl: `/sites/JML/SitePages/ApprovalCenter.aspx?processId=${approval.ProcessID}`,
+        ActionUrl: `/sites/PolicyManager/SitePages/PolicyAuthor.aspx?processId=${approval.ProcessID}`,
         ProcessId: approval.ProcessID.toString(),
         IsRead: false,
         SentDate: new Date()
@@ -1728,9 +1765,9 @@ export class ApprovalService {
           Title: 'Escalated Approval Requires Your Attention',
           Message: `An approval for ${process.ProcessType} process (${process.EmployeeName}) has been escalated to you. Please review urgently.`,
           RecipientId: newApproverId,
-          NotificationType: 'ApprovalRequired',
+          Type: 'ApprovalRequired',
           Priority: Priority.Critical,
-          LinkUrl: `/sites/JML/SitePages/ApprovalCenter.aspx?processId=${approval.ProcessID}`,
+          ActionUrl: `/sites/PolicyManager/SitePages/PolicyAuthor.aspx?processId=${approval.ProcessID}`,
           ProcessId: approval.ProcessID.toString(),
           IsRead: false,
           SentDate: new Date()

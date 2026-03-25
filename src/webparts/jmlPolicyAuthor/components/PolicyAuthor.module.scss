@@ -1457,53 +1457,60 @@
   // ============================================
 
   .v3Layout {
-    display: flex;
-    min-height: 600px;
-    background: #f9fafb;
-    border-radius: 8px;
+    display: grid;
+    grid-template-columns: 240px 1fr 260px;
+    grid-template-rows: 1fr auto;
+    min-height: calc(100vh - 200px);
+    background: #fff;
+    border-radius: 10px;
     overflow: hidden;
-    border: 1px solid #e5e7eb;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
-    margin-left: 28px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    max-width: 1400px;
+    margin: 16px auto;
+    width: 100%;
   }
 
   // --- Left: Accordion Sidebar ---
   .v3Sidebar {
-    width: 210px;
-    min-width: 210px;
     background: #ffffff;
-    border-right: 1px solid #e5e7eb;
+    border-right: 1px solid #e2e8f0;
     display: flex;
     flex-direction: column;
+    grid-row: 1 / 3; // Span both content + footer rows
+    border-radius: 10px 0 0 10px;
+    overflow-y: auto;
   }
 
   .v3SidebarHeader {
-    padding: 20px 18px;
-    border-bottom: 1px solid #e5e7eb;
+    padding: 24px 20px 16px;
+    border-bottom: 1px solid #e2e8f0;
   }
 
   .v3Accordion {
     flex: 1;
     overflow-y: auto;
+    padding: 8px 0;
   }
 
   .v3AccItem {
-    border-bottom: 1px solid #e5e7eb;
+    // No border between items — cleaner look
   }
 
   .v3AccHeader {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 12px 18px;
+    padding: 10px 20px;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.15s;
     font-size: 13px;
-    font-weight: 600;
-    color: #374151;
+    font-weight: 500;
+    color: #475569;
+    border-left: 3px solid transparent;
 
     &:hover {
-      background: #f9fafb;
+      background: #f8fafc;
     }
   }
 
@@ -1511,45 +1518,60 @@
   .v3AccItem_active {
     .v3AccHeader {
       background: #f0fdfa;
-      color: #0f766e;
-      border-left: 3px solid #0d9488;
+      color: #0d9488;
+      font-weight: 600;
+      border-left-color: #0d9488;
     }
   }
 
   // Completed accordion item
   .v3AccItem_completed {
     .v3AccHeader {
-      color: #6b7280;
+      color: #0f172a;
+    }
+    .v3AccNum {
+      background: #0d9488 !important;
+      color: #fff !important;
+      border-color: #0d9488 !important;
     }
   }
 
   .v3AccNum {
-    width: 24px;
-    height: 24px;
+    width: 26px;
+    height: 26px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 11px;
     font-weight: 700;
-    min-width: 24px;
+    min-width: 26px;
+    border: 2px solid #e2e8f0;
+    color: #94a3b8;
+    transition: all 0.15s;
+  }
+
+  .v3AccItem_active .v3AccNum {
+    border-color: #0d9488;
+    color: #0d9488;
+    background: #f0fdfa;
   }
 
   .v3AccBody {
-    padding: 0 18px 12px 52px;
+    padding: 4px 20px 10px 56px;
   }
 
   // --- Center: Main Form ---
   .v3Center {
-    flex: 1;
-    padding: 24px;
+    padding: 32px 40px 24px;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
+    background: #f8fafc;
   }
 
   .v3CenterHeader {
-    margin-bottom: 20px;
+    margin-bottom: 24px;
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
@@ -1571,33 +1593,29 @@
 
   .v3HeaderProgressTrack {
     width: 120px;
-    height: 10px;
-    background: #e5e7eb;
-    border-radius: 5px;
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 3px;
     overflow: hidden;
   }
 
   .v3HeaderProgressFill {
     height: 100%;
-    background: linear-gradient(90deg, #0d9488, #14b8a6);
-    border-radius: 5px;
-    transition: width 0.4s ease;
+    background: #0d9488;
+    border-radius: 3px;
+    transition: width 0.3s ease;
   }
 
   .v3HeaderProgressLabel {
-    font-size: 13px;
-    font-weight: 700;
-    color: #0f766e;
+    font-size: 11px;
+    font-weight: 500;
+    color: #64748b;
     white-space: nowrap;
   }
 
   .v3FormCard {
-    background: #ffffff;
-    border-radius: 10px;
-    padding: 20px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
     flex: 1;
-    animation: v3FadeIn 0.35s ease;
+    animation: v3FadeIn 0.25s ease;
   }
 
   @keyframes v3FadeIn {
@@ -1611,56 +1629,65 @@
     }
   }
 
-  // --- Progress Footer ---
-  .v3ProgressFooter {
-    margin-top: 24px;
+  // --- Anchored Footer Bar (spans all 3 columns) ---
+  .v3FooterBar {
+    grid-column: 2 / 4; // Spans center + right panel (sidebar spans both rows)
     display: flex;
     align-items: center;
-    gap: 20px;
+    justify-content: space-between;
+    padding: 14px 40px;
+    background: #fff;
+    border-top: 1px solid #e2e8f0;
+    border-radius: 0 0 10px 0;
+    z-index: 5;
   }
 
-  .v3ProgressBarWrap {
-    flex: 1;
+  .v3FooterCenter {
     display: flex;
     align-items: center;
     gap: 12px;
   }
 
-  .v3ProgressTrack {
-    flex: 1;
-    height: 10px;
-    background: #e5e7eb;
-    border-radius: 3px;
+  .v3FooterProgressTrack {
+    width: 100px;
+    height: 4px;
+    background: #e2e8f0;
+    border-radius: 2px;
     overflow: hidden;
   }
 
-  .v3ProgressFill {
+  .v3FooterProgressFill {
     height: 100%;
-    background: linear-gradient(90deg, #0d9488, #14b8a6);
-    border-radius: 3px;
-    transition: width 0.4s ease;
+    background: #0d9488;
+    border-radius: 2px;
+    transition: width 0.3s ease;
   }
 
-  .v3ProgressText {
+  .v3FooterProgressLabel {
     font-size: 12px;
-    font-weight: 700;
-    color: #0f766e;
-    min-width: 36px;
+    color: #64748b;
+    white-space: nowrap;
   }
 
   .v3FooterActions {
     display: flex;
-    gap: 10px;
+    gap: 8px;
   }
+
+  // Legacy classes kept for compat
+  .v3ProgressFooter { display: none; } // Hidden — replaced by v3FooterBar
+  .v3ProgressBarWrap { display: none; }
+  .v3ProgressTrack { display: none; }
+  .v3ProgressFill { display: none; }
+  .v3ProgressText { display: none; }
 
   // --- Right: Context Panel ---
   .v3RightPanel {
-    width: 260px;
-    min-width: 260px;
     background: #ffffff;
-    border-left: 1px solid #e5e7eb;
+    border-left: 1px solid #e2e8f0;
     padding: 24px 20px;
     overflow-y: auto;
+    border-radius: 0 10px 0 0;
   }
 
   .v3PanelSection {
@@ -1669,12 +1696,12 @@
 
   .v3Tip {
     background: #f0fdfa;
-    border-radius: 4px;
+    border-radius: 6px;
     padding: 12px;
     font-size: 12px;
     color: #115e59;
     line-height: 1.5;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     border-left: 3px solid #0d9488;
   }
 

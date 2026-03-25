@@ -230,6 +230,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
     // Secure Library filter — when ?library= is present, only show policies from that library
     const libraryParam = urlParams.get('library');
     (this as any)._secureLibraryFilter = libraryParam ? decodeURIComponent(libraryParam) : null;
+    (this as any)._secureLibraryTitle = urlParams.get('title') ? decodeURIComponent(urlParams.get('title')!) : null;
 
     this.state = {
       loading: true,
@@ -1703,8 +1704,8 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
         <div style={{ maxWidth: 1400, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', alignItems: 'flex-end', position: 'relative', zIndex: 1 }}>
           {/* Column 1: Title + subtitle */}
           <div>
-            <h1 style={{ fontSize: 22, fontWeight: 700, color: '#fff', marginBottom: 2 }}>Policy Hub</h1>
-            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)' }}>Browse and discover organisational policies</p>
+            <h1 style={{ fontSize: 22, fontWeight: 700, color: '#fff', marginBottom: 2 }}>{(this as any)._secureLibraryTitle || 'Policy Hub'}</h1>
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)' }}>{(this as any)._secureLibraryTitle ? 'Secure policy library' : 'Browse and discover organisational policies'}</p>
           </div>
 
           {/* Column 2: Search — centred in middle third, bottom-aligned with subtitle */}
@@ -3330,8 +3331,9 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
 
     // Determine page title based on current view
     // Policy Hub only has browse and myPolicies views (admin views moved to Policy Builder)
+    const secureTitle = (this as any)._secureLibraryTitle;
     const viewTitles: Record<PolicyViewType, string> = {
-      browse: 'Policy Hub',
+      browse: secureTitle || 'Policy Hub',
       myPolicies: 'My Policies',
       authored: 'My Policies', // Fallback - redirects to Policy Builder
       delegated: 'My Policies',
@@ -3358,7 +3360,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
         pageIcon={currentView === 'analytics' ? 'BarChartVertical' : 'Library'}
         breadcrumbs={[
           { text: 'Policy Manager', url: '/sites/PolicyManager' },
-          { text: 'Policy Hub', url: currentView !== 'browse' ? '/SitePages/PolicyHub.aspx' : undefined },
+          { text: secureTitle || 'Policy Hub', url: currentView !== 'browse' ? '/SitePages/PolicyHub.aspx' : undefined },
           ...(currentView !== 'browse' ? [{ text: viewTitles[currentView] }] : [])
         ]}
         activeNavKey="policy-builder"

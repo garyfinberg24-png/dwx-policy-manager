@@ -455,9 +455,12 @@ const PolicyWizard: React.FC<IPolicyWizardProps> = (props) => {
 
   const renderStep7 = (): JSX.Element => {
     const toggleSection = (key: string): void => {
-      const next = new Set(props.expandedReviewSections);
-      if (next.has(key)) next.delete(key); else next.add(key);
-      props.onSetState({ expandedReviewSections: next });
+      // Accordion: only one section open at a time
+      if (props.expandedReviewSections.has(key)) {
+        props.onSetState({ expandedReviewSections: new Set<string>() });
+      } else {
+        props.onSetState({ expandedReviewSections: new Set<string>([key]) });
+      }
     };
     const sections = [
       { key: 'basic', icon: 'Info', title: 'Basic Information', content: (

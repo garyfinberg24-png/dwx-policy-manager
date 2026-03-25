@@ -125,8 +125,7 @@ const NAV_SECTIONS: INavSection[] = [
   {
     category: 'POLICY STRUCTURE',
     items: [
-      { key: 'categories', label: 'Categories', icon: 'BulletedList2', description: 'Manage policy categories and sub-categories' },
-      { key: 'subCategories', label: 'Sub-Categories', icon: 'FolderOpen', description: 'Folder navigation within categories' },
+      { key: 'categories', label: 'Categories', icon: 'BulletedList2', description: 'Manage policy categories' },
       { key: 'templates', label: 'Templates', icon: 'DocumentSet', description: 'Reusable policy templates with defaults' },
       { key: 'metadata', label: 'Metadata Profiles', icon: 'Tag', description: 'Compliance presets for quick policy setup' },
       { key: 'naming', label: 'Naming Rules', icon: 'Rename', description: 'Auto-generated policy numbering conventions' }
@@ -147,8 +146,7 @@ const NAV_SECTIONS: INavSection[] = [
     items: [
       { key: 'usersRoles', label: 'Users & Roles', icon: 'PlayerSettings', description: 'User management and Entra ID sync' },
       { key: 'rolePermissions', label: 'Role Permissions', icon: 'Permissions', description: 'Feature access per role (explicit, no inheritance)' },
-      { key: 'securityGroups', label: 'Security Groups', icon: 'SecurityGroup', description: 'Create and manage SharePoint security groups' },
-      { key: 'reviewers', label: 'Reviewers & Approvers', icon: 'People', description: 'SharePoint groups for policy workflows' },
+      { key: 'groupsPermissions', label: 'Groups & Permissions', icon: 'SecurityGroup', description: 'Role groups, workflow groups, and secure library groups' },
       { key: 'audiences', label: 'Audience Targeting', icon: 'Group', description: 'Target audiences for policy distribution' }
     ]
   },
@@ -424,6 +422,56 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         _notifyNewPolicies: (notificationConfig as any)[AdminConfigKeys.NOTIFY_NEW_POLICIES] !== 'false',
         _notifyPolicyUpdates: (notificationConfig as any)[AdminConfigKeys.NOTIFY_POLICY_UPDATES] !== 'false',
         _notifyDailyDigest: (notificationConfig as any)[AdminConfigKeys.NOTIFY_DAILY_DIGEST] === 'true',
+        // Teams integration config (loaded from Notifications category)
+        _teamsEnabled: (notificationConfig as any)['Notifications.Teams.Enabled'] === 'true',
+        _teamsWebhookUrl: (notificationConfig as any)['Notifications.Teams.WebhookUrl'] || '',
+        _teamsQuietHours: (notificationConfig as any)['Notifications.Teams.QuietHours'] !== 'false',
+        _teamsQuietStart: Number((notificationConfig as any)['Notifications.Teams.QuietStart']) || 20,
+        _teamsQuietEnd: Number((notificationConfig as any)['Notifications.Teams.QuietEnd']) || 7,
+        // Per-event channel configs (JSON stored in Notifications.EventChannels)
+        ...(() => {
+          try {
+            const json = (notificationConfig as any)['Notifications.EventChannels'];
+            if (json) {
+              const saved = JSON.parse(json);
+              // Merge saved channel overrides with default event list (preserves labels/categories)
+              const defaults = [
+                { event: 'ack-required', category: 'Acknowledgement', label: 'Acknowledgement Required', channels: { email: true, inApp: true, teams: true }, priority: 'high' },
+                { event: 'ack-reminder-3day', category: 'Acknowledgement', label: 'Reminder (3 days)', channels: { email: true, inApp: true, teams: true }, priority: 'normal' },
+                { event: 'ack-reminder-1day', category: 'Acknowledgement', label: 'Reminder (1 day)', channels: { email: true, inApp: true, teams: true }, priority: 'high' },
+                { event: 'ack-overdue', category: 'Acknowledgement', label: 'Overdue Notice', channels: { email: true, inApp: true, teams: true }, priority: 'urgent' },
+                { event: 'ack-complete', category: 'Acknowledgement', label: 'Ack Confirmation', channels: { email: false, inApp: true, teams: false }, priority: 'low' },
+                { event: 'approval-request', category: 'Approval', label: 'Approval Request', channels: { email: true, inApp: true, teams: true }, priority: 'high' },
+                { event: 'approval-approved', category: 'Approval', label: 'Approved', channels: { email: true, inApp: true, teams: true }, priority: 'normal' },
+                { event: 'approval-rejected', category: 'Approval', label: 'Rejected', channels: { email: true, inApp: true, teams: true }, priority: 'high' },
+                { event: 'approval-escalated', category: 'Approval', label: 'Escalated', channels: { email: true, inApp: true, teams: true }, priority: 'urgent' },
+                { event: 'approval-delegated', category: 'Approval', label: 'Delegated', channels: { email: true, inApp: true, teams: false }, priority: 'normal' },
+                { event: 'quiz-assigned', category: 'Quiz', label: 'Quiz Assigned', channels: { email: true, inApp: true, teams: true }, priority: 'normal' },
+                { event: 'quiz-passed', category: 'Quiz', label: 'Quiz Passed', channels: { email: false, inApp: true, teams: false }, priority: 'low' },
+                { event: 'quiz-failed', category: 'Quiz', label: 'Quiz Failed', channels: { email: true, inApp: true, teams: false }, priority: 'normal' },
+                { event: 'review-due', category: 'Review', label: 'Review Due', channels: { email: true, inApp: true, teams: false }, priority: 'normal' },
+                { event: 'review-overdue', category: 'Review', label: 'Review Overdue', channels: { email: true, inApp: true, teams: true }, priority: 'high' },
+                { event: 'policy-published', category: 'Distribution', label: 'Policy Published', channels: { email: true, inApp: true, teams: true }, priority: 'normal' },
+                { event: 'policy-updated', category: 'Distribution', label: 'Policy Updated', channels: { email: true, inApp: true, teams: false }, priority: 'normal' },
+                { event: 'policy-assigned', category: 'Distribution', label: 'Policy Assigned', channels: { email: true, inApp: true, teams: true }, priority: 'normal' },
+                { event: 'campaign-launched', category: 'Distribution', label: 'Campaign Launched', channels: { email: true, inApp: true, teams: true }, priority: 'normal' },
+                { event: 'sla-breach', category: 'Compliance', label: 'SLA Breach', channels: { email: true, inApp: true, teams: true }, priority: 'urgent' },
+                { event: 'violation-found', category: 'Compliance', label: 'DLP Violation', channels: { email: true, inApp: true, teams: true }, priority: 'urgent' },
+                { event: 'policy-expiring', category: 'Compliance', label: 'Policy Expiring', channels: { email: true, inApp: true, teams: false }, priority: 'normal' },
+                { event: 'weekly-digest', category: 'System', label: 'Weekly Digest', channels: { email: true, inApp: false, teams: true }, priority: 'low' },
+                { event: 'welcome', category: 'System', label: 'Welcome Email', channels: { email: true, inApp: true, teams: true }, priority: 'normal' },
+                { event: 'role-changed', category: 'System', label: 'Role Changed', channels: { email: true, inApp: true, teams: false }, priority: 'normal' },
+                { event: 'delegation-expiring', category: 'System', label: 'Delegation Expiring', channels: { email: true, inApp: true, teams: false }, priority: 'normal' },
+                { event: 'policy-retired', category: 'System', label: 'Policy Retired', channels: { email: true, inApp: true, teams: false }, priority: 'low' },
+              ];
+              return { _notifEventConfigs: defaults.map(d => {
+                const s = saved.find((sv: any) => sv.event === d.event);
+                return s ? { ...d, channels: { ...d.channels, ...s.channels }, priority: s.priority || d.priority } : d;
+              })};
+            }
+          } catch { /* use defaults */ }
+          return {};
+        })(),
         // Extended general settings (branding, limits, quiz)
         _brandCompanyName: (generalExtConfig as any)['Admin.General.CompanyName'] || 'First Digital',
         _brandProductName: (generalExtConfig as any)['Admin.General.ProductName'] || 'DWx Policy Manager',
@@ -1142,13 +1190,97 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                 <TextField label="Template Content (HTML)" multiline rows={10} value={editingTemplate.TemplateContent || editingTemplate.HTMLTemplate || ''} onChange={(_, v) => this.setState({ _editingTemplate: { ...editingTemplate, TemplateContent: v || '', HTMLTemplate: v || '' } } as any)} description="HTML content that pre-populates the policy editor when this template is selected" />
               )}
 
-              {(editingTemplate.TemplateType === 'word' || editingTemplate.TemplateType === 'excel' || editingTemplate.TemplateType === 'powerpoint') && (
+              {(editingTemplate.TemplateType === 'word' || editingTemplate.TemplateType === 'excel' || editingTemplate.TemplateType === 'powerpoint' || editingTemplate.TemplateType === 'html') && (
                 <Stack tokens={{ childrenGap: 12 }}>
                   <Text variant="medium" style={TextStyles.semiBold}>Document Template File</Text>
-                  <TextField label="Document URL" value={editingTemplate.DocumentTemplateURL || ''} onChange={(_, v) => this.setState({ _editingTemplate: { ...editingTemplate, DocumentTemplateURL: v || '' } } as any)} placeholder="e.g., /sites/PolicyManager/PM_CorporateTemplates/Template.docx" description="Path to the template file in the PM_CorporateTemplates library" />
-                  <MessageBar messageBarType={MessageBarType.info}>
-                    Upload your template file to the PM_CorporateTemplates document library first, then paste the URL here. The file will be copied for each new policy created from this template.
-                  </MessageBar>
+
+                  {/* Show current file if URL exists */}
+                  {editingTemplate.DocumentTemplateURL && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: '#f0fdfa', border: `1px solid ${Colors.tealBorder}`, borderRadius: 4 }}>
+                      <Icon iconName="DocumentSet" styles={{ root: { fontSize: 20, color: Colors.tealPrimary } }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <Text style={{ fontWeight: 600, fontSize: 13, color: Colors.textDark, display: 'block' }}>
+                          {editingTemplate.DocumentTemplateURL.split('/').pop() || 'Template file'}
+                        </Text>
+                        <Text style={{ fontSize: 11, color: Colors.textTertiary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
+                          {editingTemplate.DocumentTemplateURL}
+                        </Text>
+                      </div>
+                      <IconButton
+                        iconProps={{ iconName: 'Delete' }}
+                        title="Remove file"
+                        ariaLabel="Remove template file"
+                        onClick={() => this.setState({ _editingTemplate: { ...editingTemplate, DocumentTemplateURL: '' } } as any)}
+                        styles={{ root: { height: 28, width: 28 }, icon: { fontSize: 14, color: '#dc2626' } }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Upload control */}
+                  {!editingTemplate.DocumentTemplateURL && (
+                    <div
+                      style={{
+                        border: '2px dashed #cbd5e1', borderRadius: 8, padding: '24px 16px', textAlign: 'center',
+                        cursor: 'pointer', transition: 'all 0.15s', position: 'relative'
+                      }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = Colors.tealPrimary; (e.currentTarget as HTMLElement).style.background = '#f0fdfa'; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = '#cbd5e1'; (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+                      onClick={() => {
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        const acceptMap: Record<string, string> = {
+                          word: '.docx,.doc',
+                          excel: '.xlsx,.xls',
+                          powerpoint: '.pptx,.ppt',
+                          html: '.html,.htm'
+                        };
+                        input.accept = acceptMap[editingTemplate.TemplateType] || '.docx,.xlsx,.pptx,.html';
+                        input.onchange = async () => {
+                          const file = input.files?.[0];
+                          if (!file) return;
+                          this.setState({ _templateUploading: true } as any);
+                          try {
+                            const libraryName = 'PM_CorporateTemplates';
+                            // Ensure library exists
+                            try { await this.props.sp.web.lists.getByTitle(libraryName)(); } catch {
+                              await this.props.sp.web.lists.add(libraryName, 'Policy template files', 101, true);
+                            }
+                            // Upload file
+                            const fileName = file.name.replace(/[#%&*:<>?\/\\|]/g, '_');
+                            const result = await this.props.sp.web.getFolderByServerRelativePath(
+                              `${this.props.context.pageContext.web.serverRelativeUrl}/${libraryName}`
+                            ).files.addUsingPath(fileName, file, { Overwrite: true });
+                            const fileUrl = (result as any).data?.ServerRelativeUrl || (result as any).ServerRelativeUrl || `${this.props.context.pageContext.web.serverRelativeUrl}/${libraryName}/${fileName}`;
+                            this.setState({
+                              _editingTemplate: { ...editingTemplate, DocumentTemplateURL: fileUrl },
+                              _templateUploading: false
+                            } as any);
+                          } catch (err: any) {
+                            console.error('Template file upload failed:', err);
+                            this.setState({ _templateUploading: false } as any);
+                            void this.dialogManager.showAlert(`Upload failed: ${err.message || 'Unknown error'}`, { variant: 'error' });
+                          }
+                        };
+                        input.click();
+                      }}
+                    >
+                      {(this.state as any)._templateUploading ? (
+                        <Spinner size={SpinnerSize.small} label="Uploading..." />
+                      ) : (
+                        <>
+                          <Icon iconName="CloudUpload" styles={{ root: { fontSize: 28, color: '#94a3b8', display: 'block', marginBottom: 8 } }} />
+                          <Text style={{ fontWeight: 600, fontSize: 13, color: '#475569', display: 'block', marginBottom: 2 }}>Click to upload template file</Text>
+                          <Text style={{ fontSize: 11, color: '#94a3b8' }}>
+                            {editingTemplate.TemplateType === 'word' ? '.docx, .doc' :
+                             editingTemplate.TemplateType === 'excel' ? '.xlsx, .xls' :
+                             editingTemplate.TemplateType === 'powerpoint' ? '.pptx, .ppt' :
+                             editingTemplate.TemplateType === 'html' ? '.html, .htm' : 'Document files'}
+                            {' '}(max 25MB)
+                          </Text>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </Stack>
               )}
 
@@ -1340,6 +1472,9 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                     <div><Text style={{ fontSize: 11, color: '#94a3b8' }}>Read Timeframe</Text><Text style={{ fontSize: 13, fontWeight: 600 }}>{preview.SuggestedReadTimeframe || 'Week 1'}</Text></div>
                     <div><Text style={{ fontSize: 11, color: '#94a3b8' }}>Acknowledgement</Text><Text style={{ fontSize: 13, fontWeight: 600, color: preview.RequiresAcknowledgement ? '#0d9488' : '#94a3b8' }}>{preview.RequiresAcknowledgement ? 'Required' : 'Not required'}</Text></div>
                     <div><Text style={{ fontSize: 11, color: '#94a3b8' }}>Quiz</Text><Text style={{ fontSize: 13, fontWeight: 600, color: preview.RequiresQuiz ? '#7c3aed' : '#94a3b8' }}>{preview.RequiresQuiz ? 'Required' : 'Not required'}</Text></div>
+                    {preview.RegulatoryFramework && <div><Text style={{ fontSize: 11, color: '#94a3b8' }}>Regulatory Framework</Text><Text style={{ fontSize: 13, fontWeight: 600 }}>{preview.RegulatoryFramework}</Text></div>}
+                    {preview.RegulatoryReferences && <div><Text style={{ fontSize: 11, color: '#94a3b8' }}>Regulatory References</Text><Text style={{ fontSize: 13, fontWeight: 600 }}>{preview.RegulatoryReferences}</Text></div>}
+                    {preview.DocumentTemplateURL && <div style={{ gridColumn: '1 / -1' }}><Text style={{ fontSize: 11, color: '#94a3b8' }}>Document URL</Text><Text style={{ fontSize: 12, color: '#2563eb', wordBreak: 'break-all' }}>{preview.DocumentTemplateURL}</Text></div>}
                   </div>
                 </div>
 
@@ -1470,13 +1605,17 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         RequiresAcknowledgement: editingTemplate.RequiresAcknowledgement ?? true,
         RequiresQuiz: editingTemplate.RequiresQuiz ?? false,
         KeyPointsTemplate: editingTemplate.KeyPointsTemplate || '',
+        RegulatoryReferences: editingTemplate.RegulatoryReferences || '',
         IsActive: editingTemplate.IsActive
       };
       // Store sections as JSON in TemplateContent for corporate/regulatory
       if (editingTemplate.TemplateType === 'corporate' || editingTemplate.TemplateType === 'regulatory') {
         data.TemplateContent = editingTemplate.Sections || '[]';
         data.HTMLTemplate = editingTemplate.Sections || '[]';
-        if (editingTemplate.RegulatoryFramework) data.Tags = editingTemplate.RegulatoryFramework;
+        if (editingTemplate.RegulatoryFramework) {
+          data.RegulatoryFramework = editingTemplate.RegulatoryFramework;
+          data.Tags = editingTemplate.RegulatoryFramework; // backwards compat
+        }
       }
       if (editingTemplate.Id) {
         await this.adminConfigService.updateTemplate(editingTemplate.Id, data);
@@ -1484,11 +1623,9 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         try {
           await this.props.sp.web.lists.getByTitle('PM_PolicyAuditLog').items.add({
             Title: `Template updated: ${editingTemplate.TemplateName}`,
-            EventType: 'Updated',
+            AuditAction: 'Updated',
             EntityType: 'Template',
-            EntityName: editingTemplate.TemplateName,
-            Description: `Template "${editingTemplate.TemplateName}" (${editingTemplate.TemplateType || 'richtext'}) was updated`,
-            PerformedByName: this.props.context?.pageContext?.user?.displayName || 'Admin',
+            ActionDescription: `Template "${editingTemplate.TemplateName}" (${editingTemplate.TemplateType || 'richtext'}) was updated`,
             PerformedByEmail: this.props.context?.pageContext?.user?.email || ''
           });
         } catch { /* audit log is best-effort */ }
@@ -1499,11 +1636,9 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         try {
           await this.props.sp.web.lists.getByTitle('PM_PolicyAuditLog').items.add({
             Title: `Template created: ${editingTemplate.TemplateName}`,
-            EventType: 'Created',
+            AuditAction: 'Created',
             EntityType: 'Template',
-            EntityName: editingTemplate.TemplateName,
-            Description: `New ${editingTemplate.TemplateType || 'richtext'} template "${editingTemplate.TemplateName}" created`,
-            PerformedByName: this.props.context?.pageContext?.user?.displayName || 'Admin',
+            ActionDescription: `New ${editingTemplate.TemplateType || 'richtext'} template "${editingTemplate.TemplateName}" created`,
             PerformedByEmail: this.props.context?.pageContext?.user?.email || ''
           });
         } catch { /* audit log is best-effort */ }
@@ -2252,16 +2387,42 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
 
                       {isExpanded && (
                         <div style={{ borderTop: `1px solid ${Colors.borderLight}`, padding: '12px 16px 16px 48px' }}>
-                          <Stack horizontal tokens={{ childrenGap: 8 }} verticalAlign="end" style={{ marginBottom: 12 }}>
-                            <Stack.Item grow>
-                              <TextField placeholder="Enter email address to add..." value={(st as any)._addUserEmail || ''}
-                                onChange={(_, v) => this.setState({ _addUserEmail: v || '' } as any)}
-                                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddUser(); } }} />
-                            </Stack.Item>
-                            <PrimaryButton text={addingUser ? 'Adding...' : 'Add User'} iconProps={{ iconName: 'AddFriend' }}
-                              onClick={handleAddUser} disabled={!((st as any)._addUserEmail || '').trim() || addingUser}
-                              styles={{ root: { background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }} />
-                          </Stack>
+                          <div style={{ marginBottom: 12 }}>
+                            <PeoplePicker
+                              context={this.props.context as any}
+                              titleText=""
+                              personSelectionLimit={1}
+                              showtooltip={false}
+                              principalTypes={[PrincipalType.User]}
+                              resolveDelay={300}
+                              placeholder="Search for a user to add..."
+                              onChange={(items: any[]) => {
+                                if (items && items.length > 0) {
+                                  const person = items[0];
+                                  const email = person.secondaryText || person.loginName || '';
+                                  if (email) {
+                                    this.setState({ _addingUserToGroup: true } as any);
+                                    this.props.sp.web.ensureUser(email).then((ensured: any) => {
+                                      return this.props.sp.web.siteGroups.getById(group.id).users.add(ensured.data.LoginName).then(() => {
+                                        return this.props.sp.web.siteGroups.getById(group.id).users();
+                                      });
+                                    }).then((users: any[]) => {
+                                      const updatedGroups = groups.map(g => g.id === group.id ? { ...g, userCount: users.length } : g);
+                                      this.setState({
+                                        [`_groupMembers_${group.id}`]: users.map((u: any) => ({ id: u.Id, title: u.Title, email: u.Email || '', loginName: u.LoginName })),
+                                        _addingUserToGroup: false,
+                                        _reviewerGroups: updatedGroups,
+                                        _reviewerGroupsMsg: `Added "${person.text}" to ${group.title}`
+                                      } as any);
+                                    }).catch((err: any) => {
+                                      this.setState({ _addingUserToGroup: false, _reviewerGroupsError: err.message || 'Failed to add user' } as any);
+                                    });
+                                  }
+                                }
+                              }}
+                            />
+                            {addingUser && <Spinner size={SpinnerSize.small} label="Adding user..." style={{ marginTop: 4 }} />}
+                          </div>
 
                           {membersLoading ? <Spinner size={SpinnerSize.small} label="Loading members..." /> :
                             groupMembers.length === 0 ? <Text style={{ color: Colors.textTertiary, fontSize: 12 }}>No members in this group</Text> : (
@@ -2825,7 +2986,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                         padding: '2px 10px', borderRadius: 4, fontSize: 12, fontWeight: 500,
                         backgroundColor: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd'
                       }}>
-                        {this.getAffectedPolicyCount(rule)} policies
+                        {this.getAffectedPolicyCount(rule)}
                       </div>
                       <DefaultButton
                         iconProps={{ iconName: 'Sync' }}
@@ -3464,24 +3625,16 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     }
   }
 
-  private getAffectedPolicyCount(rule: INamingRule): number {
-    // Mock: return a realistic count based on rule scope
-    const counts: Record<string, number> = {
-      'All Policies': 47,
-      'HR Policies': 12,
-      'Compliance Policies': 8,
-      'IT Policies': 15,
-      'Finance Policies': 6
-    };
-    return counts[rule.AppliesTo] || Math.floor(Math.random() * 20) + 3;
+  private getAffectedPolicyCount(_rule: INamingRule): string {
+    return _rule.AppliesTo || 'All Policies';
   }
 
   private async refreshNamingRule(rule: INamingRule): Promise<void> {
-    const affectedCount = this.getAffectedPolicyCount(rule);
+    const scope = this.getAffectedPolicyCount(rule);
 
     // First confirmation
     const firstConfirm = await this.dialogManager.showConfirm(
-      `This will refresh the naming rule "${rule.Title}" and re-apply it to ${affectedCount} ${rule.AppliesTo === 'All Policies' ? '' : rule.AppliesTo + ' '}polic${affectedCount === 1 ? 'y' : 'ies'}.\n\nExisting policy IDs that match this rule will be regenerated.`,
+      `This will refresh the naming rule "${rule.Title}" and re-apply it to ${scope} policies.\n\nExisting policy IDs that match this rule will be regenerated.`,
       { title: 'Refresh Naming Rule', confirmText: 'Continue', cancelText: 'Cancel' }
     );
 
@@ -3489,8 +3642,8 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
 
     // Second confirmation (double confirmation)
     const secondConfirm = await this.dialogManager.showConfirm(
-      `Are you absolutely sure?\n\n${affectedCount} polic${affectedCount === 1 ? 'y' : 'ies'} will have ${affectedCount === 1 ? 'its' : 'their'} ID${affectedCount === 1 ? '' : 's'} regenerated using the "${rule.Title}" naming pattern.\n\nThis action cannot be undone.`,
-      { title: 'Confirm Refresh', confirmText: `Yes, refresh ${affectedCount} policies`, cancelText: 'Cancel' }
+      `Are you absolutely sure?\n\nAll ${scope} policies will have their IDs regenerated using the "${rule.Title}" naming pattern.\n\nThis action cannot be undone.`,
+      { title: 'Confirm Refresh', confirmText: 'Yes, refresh policies', cancelText: 'Cancel' }
     );
 
     if (!secondConfirm) return;
@@ -3515,11 +3668,9 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       return;
     }
 
-    const totalAffected = activeRules.reduce((sum, r) => sum + this.getAffectedPolicyCount(r), 0);
-
     // First confirmation
     const firstConfirm = await this.dialogManager.showConfirm(
-      `This will refresh all ${activeRules.length} active naming rule${activeRules.length === 1 ? '' : 's'} and re-apply them to approximately ${totalAffected} policies.\n\nRules to refresh:\n${activeRules.map(r => `• ${r.Title} (${r.AppliesTo})`).join('\n')}`,
+      `This will refresh all ${activeRules.length} active naming rule${activeRules.length === 1 ? '' : 's'} and re-apply them to affected policies.\n\nRules to refresh:\n${activeRules.map(r => `• ${r.Title} (${r.AppliesTo})`).join('\n')}`,
       { title: 'Refresh All Naming Rules', confirmText: 'Continue', cancelText: 'Cancel' }
     );
 
@@ -3527,8 +3678,8 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
 
     // Second confirmation
     const secondConfirm = await this.dialogManager.showConfirm(
-      `Are you absolutely sure?\n\nApproximately ${totalAffected} policies across ${activeRules.length} rule${activeRules.length === 1 ? '' : 's'} will have their IDs regenerated.\n\nThis action cannot be undone.`,
-      { title: 'Confirm Refresh All', confirmText: `Yes, refresh all ${totalAffected} policies`, cancelText: 'Cancel' }
+      `Are you absolutely sure?\n\nAll affected policies across ${activeRules.length} rule${activeRules.length === 1 ? '' : 's'} will have their IDs regenerated.\n\nThis action cannot be undone.`,
+      { title: 'Confirm Refresh All', confirmText: 'Yes, refresh all policies', cancelText: 'Cancel' }
     );
 
     if (!secondConfirm) return;
@@ -5561,6 +5712,10 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         const allRoles: string[] = st._editingRoles || [st._editingRole || 'User'];
         // Save primary role + multi-role string
         await this.userManagementService.updateUserRole(editingEmployee.Id, st._editingRole, managedDepts);
+        // Sync SP group membership so RoleDetectionService picks up the role
+        if (editingEmployee.Email) {
+          await this.userManagementService.syncRoleGroupMembership(editingEmployee.Email, st._editingRole);
+        }
         // Save additional roles as semicolon-delimited in PMRoles column
         try {
           await this.props.sp.web.lists.getByTitle('PM_UserProfiles').items.getById(editingEmployee.Id).update({
@@ -7489,7 +7644,482 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
   }
 
   // ============================================================================
-  // RENDER: SECURITY GROUPS
+  // RENDER: GROUPS & PERMISSIONS (consolidated)
+  // ============================================================================
+
+  private renderGroupsPermissionsContent(): JSX.Element {
+    const st = this.state as any;
+    const groups: Array<{ id: number; title: string; description: string; ownerTitle: string; userCount: number }> = st._spGroups || [];
+    const groupsLoading: boolean = st._spGroupsLoading || false;
+    const groupsMsg: string = st._spGroupsMsg || '';
+    const groupsError: string = st._spGroupsError || '';
+    const showCreateForm: boolean = st._showCreateGroupForm || false;
+    const newGroupName: string = st._newGroupName || '';
+    const newGroupDesc: string = st._newGroupDesc || '';
+    const creatingGroup: boolean = st._creatingGroup || false;
+    const activeGroupTab: string = st._groupsActiveTab || 'all';
+    const groupFilter: string = st._groupFilterText || '';
+
+    // Load groups on first render
+    if (!st._spGroupsLoaded && !groupsLoading) {
+      this.setState({ _spGroupsLoading: true, _spGroupsLoaded: true } as any);
+      this.props.sp.web.siteGroups
+        .select('Id', 'Title', 'Description', 'OwnerTitle')()
+        .then(async (allGroups: any[]) => {
+          const mapped = await Promise.all(allGroups.map(async (g: any) => {
+            let userCount = 0;
+            try {
+              const users = await this.props.sp.web.siteGroups.getById(g.Id).users();
+              userCount = users.length;
+            } catch { /* ignore */ }
+            return {
+              id: g.Id,
+              title: g.Title,
+              description: g.Description || '',
+              ownerTitle: g.OwnerTitle || '',
+              userCount
+            };
+          }));
+          this.setState({ _spGroups: mapped, _spGroupsLoading: false } as any);
+        })
+        .catch((err: any) => {
+          console.error('Failed to load groups:', err);
+          this.setState({ _spGroupsLoading: false, _spGroupsError: 'Failed to load security groups' } as any);
+        });
+    }
+
+    // Classify groups
+    const roleGroupNames = ['PM_PolicyAdmins', 'PM_PolicyAuthors', 'PM_PolicyManagers'];
+    const roleGroups = groups.filter(g => roleGroupNames.includes(g.title));
+    const approverGroups = groups.filter(g =>
+      !roleGroupNames.includes(g.title) &&
+      !g.title.startsWith('PM_SecureLib_') &&
+      (g.title.toLowerCase().includes('approver') || g.title.toLowerCase().includes('approval'))
+    );
+    const reviewerGroups = groups.filter(g =>
+      !roleGroupNames.includes(g.title) &&
+      !g.title.startsWith('PM_SecureLib_') &&
+      !approverGroups.some(a => a.id === g.id) &&
+      (g.title.toLowerCase().includes('reviewer') || g.title.toLowerCase().includes('review'))
+    );
+
+    // Secure library groups from secure lib config
+    const secureLibs: Array<{ id: number; title: string; securityGroups: string[] }> = st._secureLibs || [];
+    const secureLibGroupNames = secureLibs.flatMap(lib => lib.securityGroups || []);
+    const libraryGroups = groups.filter(g => g.title.startsWith('PM_SecureLib_') || secureLibGroupNames.includes(g.title));
+
+    const pmGroupNames = [...roleGroupNames, ...approverGroups.map(g => g.title), ...reviewerGroups.map(g => g.title), ...libraryGroups.map(g => g.title)];
+    const systemGroups = groups.filter(g => !pmGroupNames.includes(g.title));
+
+    // Get groups for active tab
+    let tabGroups: typeof groups = [];
+    let tabInfo = '';
+    let tabBadgeStyle = {};
+    let tabBadgeLabel = '';
+    let createLabel = '+ Create Group';
+    switch (activeGroupTab) {
+      case 'role':
+        tabGroups = roleGroups;
+        tabInfo = 'Role Groups control which Policy Manager role a user gets. When a user is assigned a PM role via Users & Roles, they are automatically added to the corresponding group. These groups are also checked during login to determine navigation access.';
+        break;
+      case 'approvers':
+        tabGroups = approverGroups;
+        tabInfo = 'Approver Groups define who can give final approval to publish policies. When a policy reaches the approval stage, members of the assigned approver group are notified and can approve or reject.';
+        createLabel = '+ Create Approver Group';
+        break;
+      case 'reviewers':
+        tabGroups = reviewerGroups;
+        tabInfo = 'Reviewer Groups define who can review policy drafts before approval. When a policy is submitted for review, members of the assigned reviewer group are notified to provide feedback.';
+        createLabel = '+ Create Reviewer Group';
+        break;
+      case 'library':
+        tabGroups = libraryGroups;
+        tabInfo = 'Secure Library Groups control access to restricted document libraries. Each secure library has an associated SharePoint group — only members of that group can see policies stored in the library.';
+        createLabel = '+ Create Library Group';
+        break;
+      case 'all':
+        tabGroups = [...groups].sort((a, b) => {
+          const aIsPM = a.title.startsWith('PM_');
+          const bIsPM = b.title.startsWith('PM_');
+          if (aIsPM && !bIsPM) return -1;
+          if (!aIsPM && bIsPM) return 1;
+          return a.title.localeCompare(b.title);
+        });
+        tabInfo = 'All Site Groups shows every SharePoint group on this site, including system groups. Use the tabs above to manage Policy Manager-specific groups. Only modify system groups if you know what you are doing.';
+        break;
+    }
+
+    // Apply filter
+    if (groupFilter.trim()) {
+      const q = groupFilter.toLowerCase();
+      tabGroups = tabGroups.filter(g => g.title.toLowerCase().includes(q) || g.description.toLowerCase().includes(q));
+    }
+
+    const getGroupBadge = (group: typeof groups[0]): { label: string; bg: string; color: string } => {
+      if (roleGroupNames.includes(group.title)) {
+        const roleName = group.title === 'PM_PolicyAdmins' ? 'ADMIN' : group.title === 'PM_PolicyAuthors' ? 'AUTHOR' : 'MANAGER';
+        return { label: `ROLE: ${roleName}`, bg: '#dbeafe', color: '#2563eb' };
+      }
+      if (group.title.includes('Reviewer')) return { label: 'REVIEWERS', bg: '#fef3c7', color: '#d97706' };
+      if (group.title.includes('Approver')) return { label: 'APPROVERS', bg: '#fef3c7', color: '#d97706' };
+      if (group.title.startsWith('PM_SecureLib_') || secureLibGroupNames.includes(group.title)) return { label: 'LIBRARY', bg: '#ede9fe', color: '#7c3aed' };
+      if (group.title.startsWith('PM_')) return { label: 'WORKFLOW', bg: '#fef3c7', color: '#d97706' };
+      return { label: 'SYSTEM', bg: '#f1f5f9', color: '#94a3b8' };
+    };
+
+    const handleCreateGroup = async (): Promise<void> => {
+      if (!newGroupName.trim()) return;
+      this.setState({ _creatingGroup: true, _spGroupsError: '' } as any);
+      try {
+        await this.props.sp.web.siteGroups.add({
+          Title: newGroupName.trim(),
+          Description: newGroupDesc.trim() || `Custom group created via Policy Manager Admin`,
+          AllowMembersEditMembership: false,
+          OnlyAllowMembersViewMembership: false
+        });
+        const allGroups = await this.props.sp.web.siteGroups.select('Id', 'Title', 'Description', 'OwnerTitle')();
+        const mapped = await Promise.all(allGroups.map(async (g: any) => {
+          let userCount = 0;
+          try { const users = await this.props.sp.web.siteGroups.getById(g.Id).users(); userCount = users.length; } catch { /* ignore */ }
+          return { id: g.Id, title: g.Title, description: g.Description || '', ownerTitle: g.OwnerTitle || '', userCount };
+        }));
+        this.setState({
+          _spGroups: mapped, _creatingGroup: false, _showCreateGroupForm: false,
+          _newGroupName: '', _newGroupDesc: '',
+          _spGroupsMsg: `Group "${newGroupName.trim()}" created successfully`
+        } as any);
+      } catch (err: any) {
+        this.setState({ _creatingGroup: false, _spGroupsError: err.message || 'Failed to create group' } as any);
+      }
+    };
+
+    const renderGroupRow = (group: typeof groups[0]): JSX.Element => {
+      const expandedGroupId = (st as any)._expandedGroupId;
+      const isExpanded = expandedGroupId === group.id;
+      const groupMembers: Array<{ id: number; title: string; email: string; loginName: string }> = (st as any)[`_groupMembers_${group.id}`] || [];
+      const membersLoading = (st as any)[`_groupMembersLoading_${group.id}`] || false;
+      const addingUser = (st as any)._addingUserToGroup || false;
+      const badge = getGroupBadge(group);
+      const isSystem = badge.label === 'SYSTEM';
+
+      const handleExpand = async (): Promise<void> => {
+        if (isExpanded) { this.setState({ _expandedGroupId: null } as any); return; }
+        this.setState({ _expandedGroupId: group.id, [`_groupMembersLoading_${group.id}`]: true } as any);
+        try {
+          const users = await this.props.sp.web.siteGroups.getById(group.id).users();
+          this.setState({
+            [`_groupMembers_${group.id}`]: users.map((u: any) => ({ id: u.Id, title: u.Title, email: u.Email || '', loginName: u.LoginName })),
+            [`_groupMembersLoading_${group.id}`]: false
+          } as any);
+        } catch { this.setState({ [`_groupMembersLoading_${group.id}`]: false } as any); }
+      };
+
+      const handleRemoveUser = async (loginName: string, displayName: string): Promise<void> => {
+        try {
+          await this.props.sp.web.siteGroups.getById(group.id).users.removeByLoginName(loginName);
+          const users = await this.props.sp.web.siteGroups.getById(group.id).users();
+          const updatedGroups = groups.map(g => g.id === group.id ? { ...g, userCount: users.length } : g);
+          this.setState({
+            [`_groupMembers_${group.id}`]: users.map((u: any) => ({ id: u.Id, title: u.Title, email: u.Email || '', loginName: u.LoginName })),
+            _spGroups: updatedGroups,
+            _spGroupsMsg: `Removed "${displayName}" from ${group.title}`
+          } as any);
+        } catch (err: any) {
+          this.setState({ _spGroupsError: err.message || 'Failed to remove user' } as any);
+        }
+      };
+
+      return (
+        <div key={group.id} style={{ border: `1px solid ${isExpanded ? Colors.tealPrimary : Colors.borderLight}`, borderRadius: 4, background: '#fff', overflow: 'hidden', opacity: isSystem ? 0.7 : 1 }}>
+          <div
+            role="button" tabIndex={0} onClick={handleExpand}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleExpand(); } }}
+            style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', cursor: 'pointer', background: isExpanded ? Colors.tealLight : '#fff', transition: 'background 0.15s' }}
+          >
+            <Icon iconName={isExpanded ? 'ChevronDown' : 'ChevronRight'} styles={{ root: { fontSize: 12, color: Colors.slateLight, transition: 'transform 0.2s' } }} />
+            <Icon iconName={isSystem ? 'Settings' : group.title.startsWith('PM_SecureLib_') ? 'LockSolid' : 'Group'} styles={{ root: { fontSize: 18, color: isSystem ? Colors.slateLight : Colors.tealPrimary } }} />
+            <div style={{ flex: 1 }}>
+              <Text style={{ fontWeight: 600, color: isSystem ? '#64748b' : Colors.textDark, display: 'block' }}>{group.title}</Text>
+              {group.description && <Text style={{ fontSize: 11, color: Colors.textTertiary }}>{group.description}</Text>}
+            </div>
+            <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, padding: '2px 8px', borderRadius: 4, background: badge.bg, color: badge.color }}>{badge.label}</span>
+            <Text style={{ fontSize: 12, fontWeight: 600, color: isSystem ? Colors.slateLight : Colors.tealPrimary }}>{group.userCount}</Text>
+            <Text style={{ fontSize: 11, color: Colors.slateLight }}>members</Text>
+          </div>
+
+          {isExpanded && (
+            <div style={{ borderTop: `1px solid ${Colors.borderLight}`, padding: '12px 16px 16px 48px' }}>
+              <div style={{ marginBottom: 12 }}>
+                <PeoplePicker
+                  context={this.props.context as any}
+                  titleText=""
+                  personSelectionLimit={1}
+                  showtooltip={false}
+                  principalTypes={[PrincipalType.User]}
+                  resolveDelay={300}
+                  placeholder="Search for a user to add..."
+                  onChange={(items: any[]) => {
+                    if (items && items.length > 0) {
+                      const person = items[0];
+                      const email = person.secondaryText || person.loginName || '';
+                      if (email) {
+                        this.setState({ _addingUserToGroup: true } as any);
+                        this.props.sp.web.ensureUser(email).then((ensured: any) => {
+                          return this.props.sp.web.siteGroups.getById(group.id).users.add(ensured.data.LoginName).then(() => {
+                            return this.props.sp.web.siteGroups.getById(group.id).users();
+                          });
+                        }).then((users: any[]) => {
+                          const updatedGroups = groups.map(g => g.id === group.id ? { ...g, userCount: users.length } : g);
+                          this.setState({
+                            [`_groupMembers_${group.id}`]: users.map((u: any) => ({ id: u.Id, title: u.Title, email: u.Email || '', loginName: u.LoginName })),
+                            _addingUserToGroup: false,
+                            _spGroups: updatedGroups,
+                            _spGroupsMsg: `Added "${person.text}" to ${group.title}`
+                          } as any);
+                        }).catch((err: any) => {
+                          this.setState({ _addingUserToGroup: false, _spGroupsError: err.message || 'Failed to add user' } as any);
+                        });
+                      }
+                    }
+                  }}
+                />
+                {addingUser && <Spinner size={SpinnerSize.small} label="Adding user..." style={{ marginTop: 4 }} />}
+              </div>
+
+              {membersLoading ? (
+                <Spinner size={SpinnerSize.small} label="Loading members..." />
+              ) : groupMembers.length === 0 ? (
+                <Text style={{ fontSize: 12, color: Colors.slateLight, fontStyle: 'italic' }}>No members in this group</Text>
+              ) : (
+                <Stack tokens={{ childrenGap: 2 }}>
+                  {groupMembers.map(member => (
+                    <div key={member.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 8px', borderRadius: 4, fontSize: 13 }}>
+                      <Icon iconName="Contact" styles={{ root: { fontSize: 14, color: Colors.slateLight } }} />
+                      <Text style={{ flex: 1, fontWeight: 500, color: Colors.textDark }}>{member.title}</Text>
+                      <Text style={{ fontSize: 11, color: Colors.textTertiary, minWidth: 160 }}>{member.email}</Text>
+                      <IconButton
+                        iconProps={{ iconName: 'Cancel' }}
+                        title={`Remove ${member.title}`}
+                        ariaLabel={`Remove ${member.title} from group`}
+                        onClick={() => handleRemoveUser(member.loginName, member.title)}
+                        styles={{ root: { height: 24, width: 24 }, icon: { fontSize: 12, color: '#dc2626' } }}
+                      />
+                    </div>
+                  ))}
+                </Stack>
+              )}
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    // Sub-tab definitions
+    const tabs = [
+      { key: 'role', label: 'Role Groups', count: roleGroups.length },
+      { key: 'approvers', label: 'Approvers', count: approverGroups.length },
+      { key: 'reviewers', label: 'Reviewers', count: reviewerGroups.length },
+      { key: 'library', label: 'Secure Library Groups', count: libraryGroups.length }
+    ];
+
+    return (
+      <div>
+        {/* Header */}
+        <Stack horizontal horizontalAlign="space-between" verticalAlign="center" style={{ marginBottom: 4 }}>
+          <div>
+            <Text variant="xLarge" style={{ ...TextStyles.bold, color: Colors.textDark, display: 'block' }}>Groups & Permissions</Text>
+            <Text style={{ color: Colors.textTertiary, display: 'block', marginBottom: 16 }}>
+              Manage SharePoint groups that control app roles, workflow assignments, and library access.
+            </Text>
+          </div>
+        </Stack>
+
+        {/* Sub-tabs */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 24, borderBottom: `1px solid ${Colors.borderLight}`, paddingBottom: 16 }}>
+          {tabs.map(tab => (
+            <DefaultButton
+              key={tab.key}
+              text={`${tab.label}`}
+              onClick={() => this.setState({ _groupsActiveTab: tab.key, _groupFilterText: '' } as any)}
+              styles={{
+                root: {
+                  borderRadius: 4, minWidth: 'auto', padding: '6px 18px', height: 34,
+                  border: activeGroupTab === tab.key ? `1px solid ${Colors.tealPrimary}` : '1px solid #e2e8f0',
+                  background: activeGroupTab === tab.key ? Colors.tealPrimary : '#fff',
+                  color: activeGroupTab === tab.key ? '#fff' : '#605e5c',
+                  fontWeight: activeGroupTab === tab.key ? 600 : 400
+                },
+                rootHovered: { borderColor: Colors.tealPrimary, color: activeGroupTab === tab.key ? '#fff' : Colors.tealPrimary, background: activeGroupTab === tab.key ? '#0f766e' : '#f0fdfa' },
+                label: { display: 'flex', alignItems: 'center', gap: 6 }
+              }}
+            >
+              <span style={{
+                display: 'inline-block', background: activeGroupTab === tab.key ? 'rgba(255,255,255,0.25)' : '#f1f5f9',
+                borderRadius: 10, padding: '1px 8px', fontSize: 11, fontWeight: 600,
+                color: activeGroupTab === tab.key ? '#fff' : '#64748b', marginLeft: 6
+              }}>{tab.count}</span>
+            </DefaultButton>
+          ))}
+          <div style={{ flex: 1 }} />
+          <DefaultButton
+            text="All Site Groups"
+            onClick={() => this.setState({ _groupsActiveTab: 'all', _groupFilterText: '' } as any)}
+            styles={{
+              root: {
+                borderRadius: 4, minWidth: 'auto', padding: '6px 18px', height: 34,
+                border: activeGroupTab === 'all' ? `1px solid ${Colors.tealPrimary}` : '1px dashed #cbd5e1',
+                background: activeGroupTab === 'all' ? Colors.tealPrimary : '#fff',
+                color: activeGroupTab === 'all' ? '#fff' : '#94a3b8',
+                fontWeight: activeGroupTab === 'all' ? 600 : 400
+              },
+              rootHovered: { borderColor: Colors.tealPrimary, color: activeGroupTab === 'all' ? '#fff' : Colors.tealPrimary, background: activeGroupTab === 'all' ? '#0f766e' : '#f8fafc' }
+            }}
+          >
+            <span style={{
+              display: 'inline-block', background: activeGroupTab === 'all' ? 'rgba(255,255,255,0.25)' : '#f1f5f9',
+              borderRadius: 10, padding: '1px 8px', fontSize: 11, fontWeight: 600,
+              color: activeGroupTab === 'all' ? '#fff' : '#94a3b8', marginLeft: 6
+            }}>{groups.length}</span>
+          </DefaultButton>
+        </div>
+
+        {/* Info banner */}
+        <MessageBar
+          messageBarType={activeGroupTab === 'all' ? MessageBarType.warning : MessageBarType.info}
+          isMultiline
+          styles={{ root: { marginBottom: 16, borderRadius: 4 } }}
+        >
+          {tabInfo}
+        </MessageBar>
+
+        {groupsMsg && (
+          <MessageBar messageBarType={MessageBarType.success} onDismiss={() => this.setState({ _spGroupsMsg: '' } as any)} style={{ marginBottom: 12 }}>{groupsMsg}</MessageBar>
+        )}
+        {groupsError && (
+          <MessageBar messageBarType={MessageBarType.error} onDismiss={() => this.setState({ _spGroupsError: '' } as any)} style={{ marginBottom: 12 }}>{groupsError}</MessageBar>
+        )}
+
+        {/* Toolbar: search + create button */}
+        <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 12 }} style={{ marginBottom: 16 }}>
+          <SearchBox
+            placeholder="Filter groups..."
+            value={groupFilter}
+            onChange={(_, val) => this.setState({ _groupFilterText: val || '' } as any)}
+            styles={{ root: { width: 260 } }}
+          />
+          <div style={{ flex: 1 }} />
+          {activeGroupTab !== 'library' && (
+            <PrimaryButton
+              text={createLabel}
+              iconProps={{ iconName: 'AddGroup' }}
+              onClick={() => this.setState({ _showCreateGroupForm: true } as any)}
+              disabled={showCreateForm}
+              styles={{ root: { background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+            />
+          )}
+          {activeGroupTab === 'library' && (
+            <DefaultButton
+              text="+ Create Library Group"
+              disabled
+              title="Create secure library groups via Settings > Secure Libraries"
+              styles={{ root: { borderRadius: 4, opacity: 0.5 } }}
+            />
+          )}
+        </Stack>
+
+        {/* Create Group Form */}
+        {showCreateForm && (
+          <div style={{
+            background: Colors.tealLight, border: `1px solid ${Colors.tealBorder}`, borderRadius: 4,
+            padding: 20, marginBottom: 16
+          }}>
+            <Text style={{ fontWeight: 700, fontSize: 15, display: 'block', marginBottom: 12, color: Colors.textDark }}>
+              Create New {activeGroupTab === 'approvers' ? 'Approver ' : activeGroupTab === 'reviewers' ? 'Reviewer ' : activeGroupTab === 'role' ? 'Role ' : ''}Group
+            </Text>
+            <Stack tokens={{ childrenGap: 12 }}>
+              <TextField
+                label="Group Name" required
+                placeholder={activeGroupTab === 'approvers' ? 'e.g., PM_FinanceApprovers' : activeGroupTab === 'reviewers' ? 'e.g., PM_PolicyReviewers' : activeGroupTab === 'role' ? 'e.g., PM_PolicyAdmins' : 'e.g., PM_CustomGroup'}
+                value={newGroupName}
+                onChange={(_, v) => this.setState({ _newGroupName: v || '' } as any)}
+              />
+              <TextField
+                label="Description"
+                placeholder="What is this group used for?"
+                value={newGroupDesc}
+                onChange={(_, v) => this.setState({ _newGroupDesc: v || '' } as any)}
+                multiline rows={2}
+              />
+              <Stack horizontal tokens={{ childrenGap: 8 }}>
+                <PrimaryButton
+                  text={creatingGroup ? 'Creating...' : 'Create Group'}
+                  onClick={handleCreateGroup}
+                  disabled={!newGroupName.trim() || creatingGroup}
+                  styles={{ root: { background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+                />
+                <DefaultButton
+                  text="Cancel"
+                  onClick={() => this.setState({ _showCreateGroupForm: false, _newGroupName: '', _newGroupDesc: '' } as any)}
+                />
+              </Stack>
+            </Stack>
+          </div>
+        )}
+
+        {/* Groups list */}
+        {groupsLoading ? (
+          <Spinner label="Loading groups..." />
+        ) : tabGroups.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '40px 20px', color: Colors.slateLight }}>
+            <Icon iconName="Group" styles={{ root: { fontSize: 40, color: Colors.borderLight, display: 'block', marginBottom: 12 } }} />
+            <Text style={{ fontWeight: 600, fontSize: 15, color: '#64748b', display: 'block', marginBottom: 4 }}>
+              {groupFilter ? 'No groups match your filter' : activeGroupTab === 'library' ? 'No secure library groups yet' : 'No groups in this category'}
+            </Text>
+            <Text style={{ fontSize: 12, color: Colors.slateLight }}>
+              {activeGroupTab === 'library' ? 'Create a secure library in Settings → Secure Libraries to get started.' : 'Click "Create Group" to add one.'}
+            </Text>
+          </div>
+        ) : (
+          <div>
+            <Text style={{ fontSize: 12, color: Colors.slateLight, marginBottom: 8, display: 'block' }}>
+              {tabGroups.length} group{tabGroups.length !== 1 ? 's' : ''}
+              {activeGroupTab === 'all' ? ' on this site' : ''}
+            </Text>
+            <Stack tokens={{ childrenGap: 4 }}>
+              {activeGroupTab === 'all' ? (
+                <>
+                  {tabGroups.filter(g => g.title.startsWith('PM_')).map(g => renderGroupRow(g))}
+                  {tabGroups.some(g => !g.title.startsWith('PM_')) && (
+                    <div style={{ margin: '16px 0 8px', paddingTop: 4, borderTop: '1px dashed #e2e8f0' }}>
+                      <Text style={{ fontSize: 10, color: Colors.slateLight, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600 }}>SharePoint System Groups</Text>
+                    </div>
+                  )}
+                  {tabGroups.filter(g => !g.title.startsWith('PM_')).map(g => renderGroupRow(g))}
+                </>
+              ) : (
+                tabGroups.map(g => renderGroupRow(g))
+              )}
+            </Stack>
+          </div>
+        )}
+
+        {/* Contextual tips */}
+        {(activeGroupTab === 'approvers' || activeGroupTab === 'reviewers') && tabGroups.length > 0 && (
+          <div style={{ marginTop: 20, padding: 16, background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 4, fontSize: 12, color: '#92400e', lineHeight: 1.6 }}>
+            <strong>Tip:</strong> You can create custom workflow groups for department-specific reviews. For example, <code>PM_FinanceReviewers</code> for finance policies, <code>PM_HRApprovers</code> for HR policies. Reference these groups in your Approval Workflow templates.
+          </div>
+        )}
+        {activeGroupTab === 'library' && (
+          <div style={{ marginTop: 20, padding: 16, background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: 4, fontSize: 12, color: '#64748b', lineHeight: 1.6 }}>
+            <strong>Note:</strong> Secure library groups are automatically created when you set up a new secure library in <strong>Settings → Secure Libraries</strong>. You can manage group members here.
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ============================================================================
+  // RENDER: SECURITY GROUPS (LEGACY — kept for reference, route removed)
   // ============================================================================
 
   private renderSecurityGroupsContent(): JSX.Element {
@@ -7731,24 +8361,45 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                     {isExpanded && (
                       <div style={{ borderTop: `1px solid ${Colors.borderLight}`, padding: '12px 16px 16px 48px' }}>
                         {/* Add user row */}
-                        <Stack horizontal tokens={{ childrenGap: 8 }} verticalAlign="end" style={{ marginBottom: 12 }}>
-                          <Stack.Item grow>
-                            <TextField
-                              placeholder="Enter email address to add..."
-                              value={(st as any)._addUserEmail || ''}
-                              onChange={(_, v) => this.setState({ _addUserEmail: v || '' } as any)}
-                              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddUser(); } }}
-                              styles={{ root: { flex: 1 } }}
-                            />
-                          </Stack.Item>
-                          <PrimaryButton
-                            text={addingUser ? 'Adding...' : 'Add User'}
-                            iconProps={{ iconName: 'AddFriend' }}
-                            onClick={handleAddUser}
-                            disabled={!((st as any)._addUserEmail || '').trim() || addingUser}
-                            styles={{ root: { background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+                        <div style={{ marginBottom: 12 }}>
+                          <PeoplePicker
+                            context={this.props.context as any}
+                            titleText=""
+                            personSelectionLimit={1}
+                            showtooltip={false}
+                            principalTypes={[PrincipalType.User]}
+                            resolveDelay={300}
+                            placeholder="Search for a user to add..."
+                            onChange={(items: any[]) => {
+                              if (items && items.length > 0) {
+                                const person = items[0];
+                                const email = person.secondaryText || person.loginName || '';
+                                this.setState({ _addUserEmail: email } as any);
+                                // Auto-add when user is selected
+                                if (email) {
+                                  this.setState({ _addingUserToGroup: true } as any);
+                                  this.props.sp.web.ensureUser(email).then((ensured: any) => {
+                                    return this.props.sp.web.siteGroups.getById(group.id).users.add(ensured.data.LoginName).then(() => {
+                                      return this.props.sp.web.siteGroups.getById(group.id).users();
+                                    });
+                                  }).then((users: any[]) => {
+                                    const updatedGroups = groups.map(g => g.id === group.id ? { ...g, userCount: users.length } : g);
+                                    this.setState({
+                                      [`_groupMembers_${group.id}`]: users.map((u: any) => ({ id: u.Id, title: u.Title, email: u.Email || '', loginName: u.LoginName })),
+                                      _addingUserToGroup: false,
+                                      _addUserEmail: '',
+                                      _spGroups: updatedGroups,
+                                      _spGroupsMsg: `Added "${person.text}" to ${group.title}`
+                                    } as any);
+                                  }).catch((err: any) => {
+                                    this.setState({ _addingUserToGroup: false, _spGroupsError: err.message || 'Failed to add user' } as any);
+                                  });
+                                }
+                              }
+                            }}
                           />
-                        </Stack>
+                          {addingUser && <Spinner size={SpinnerSize.small} label="Adding user..." style={{ marginTop: 4 }} />}
+                        </div>
 
                         {/* Members */}
                         {membersLoading ? (
@@ -9155,7 +9806,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       case 'compliance': return this.renderComplianceContent();
       case 'emailTemplates': return this.renderEmailTemplatesContent();
       case 'notifications': return this.renderNotificationsContent();
-      case 'reviewers': return this.renderReviewersContent();
+      case 'groupsPermissions': return this.renderGroupsPermissionsContent();
       case 'usersRoles': return this.renderUsersRolesContent();
       case 'audiences': return this.renderAudiencesContent();
       case 'audit': return this.renderAuditContent();
@@ -9172,7 +9823,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       case 'provisioning': return this.renderProvisioningContent();
       case 'documentStorage': return this.renderDocumentStorageContent();
       case 'secureLibraries': return this.renderSecureLibrariesContent();
-      case 'securityGroups': return this.renderSecurityGroupsContent();
+      // securityGroups consolidated into groupsPermissions
       case 'dlpRules': return this.renderDLPRulesContent();
       case 'dataRetention': return this.renderDataRetentionContent();
       case 'systemInfo': return this.renderSystemInfoContent();

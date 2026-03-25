@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Policy Builder — Creation Method Redesign</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f8fafc; color: #0f172a; }
+
+  /* Page layout */
+  .page { max-width: 1100px; margin: 0 auto; padding: 32px 40px; }
+
+  /* Variation selector */
+  .variation-bar { display: flex; gap: 8px; margin-bottom: 32px; padding: 12px 16px; background: #1e293b; border-radius: 8px; }
+  .variation-btn { padding: 8px 18px; border-radius: 4px; border: 1px solid #475569; background: transparent; color: #94a3b8; font-size: 13px; cursor: pointer; font-family: inherit; font-weight: 500; }
+  .variation-btn.active { background: #0d9488; border-color: #0d9488; color: #fff; font-weight: 600; }
+  .variation-btn:hover:not(.active) { border-color: #64748b; color: #e2e8f0; }
+
+  .variation { display: none; }
+  .variation.active { display: block; }
+
+  /* Step order comparison */
+  .step-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-bottom: 40px; }
+  .step-col { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; }
+  .step-col h3 { font-size: 14px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; }
+  .step-col.old h3 { color: #dc2626; }
+  .step-col.new h3 { color: #059669; }
+  .step-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 4px; font-size: 13px; margin-bottom: 4px; }
+  .step-item .num { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0; }
+  .step-item.old .num { background: #94a3b8; }
+  .step-item.new .num { background: #0d9488; }
+  .step-item.highlight { background: #fef3c7; border: 1px solid #fbbf24; }
+  .step-item.highlight .num { background: #d97706; }
+  .step-item .label { font-weight: 500; }
+  .step-item .arrow { color: #d97706; font-weight: 700; margin-left: auto; font-size: 11px; }
+
+  /* Section title */
+  .section-title { font-size: 20px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
+  .section-desc { font-size: 13px; color: #64748b; margin-bottom: 24px; }
+
+  /* ======================== VARIATION A: Horizontal Strip ======================== */
+  .type-strip { display: flex; gap: 0; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; margin-bottom: 24px; }
+  .type-chip { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 16px 12px; cursor: pointer; transition: all 0.15s; border-right: 1px solid #e2e8f0; position: relative; }
+  .type-chip:last-child { border-right: none; }
+  .type-chip:hover { background: #f0fdfa; }
+  .type-chip.selected { background: #f0fdfa; }
+  .type-chip.selected::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: #0d9488; }
+  .type-chip .chip-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .type-chip .chip-icon.blank { background: #f1f5f9; color: #64748b; }
+  .type-chip .chip-icon.template { background: #dbeafe; color: #2563eb; }
+  .type-chip .chip-icon.upload { background: #fef3c7; color: #d97706; }
+  .type-chip .chip-icon.word { background: #dbeafe; color: #2b579a; }
+  .type-chip .chip-icon.excel { background: #dcfce7; color: #217346; }
+  .type-chip .chip-icon.ppt { background: #fee2e2; color: #b7472a; }
+  .type-chip .chip-icon.html { background: #ede9fe; color: #7c3aed; }
+  .type-chip .chip-icon.image { background: #fce7f3; color: #db2777; }
+  .type-chip .chip-label { font-size: 11px; font-weight: 600; color: #475569; text-align: center; line-height: 1.3; }
+  .type-chip.selected .chip-label { color: #0d9488; }
+
+  /* Content area below strip */
+  .content-area { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 24px; min-height: 200px; }
+  .content-area h4 { font-size: 15px; font-weight: 600; color: #0f172a; margin-bottom: 4px; }
+  .content-area .desc { font-size: 12px; color: #64748b; margin-bottom: 16px; }
+
+  /* Template grid */
+  .template-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .template-card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; cursor: pointer; transition: all 0.15s; }
+  .template-card:hover { border-color: #0d9488; box-shadow: 0 2px 8px rgba(13,148,136,0.1); }
+  .template-card.selected { border-color: #0d9488; background: #f0fdfa; }
+  .template-card .tc-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .template-card .tc-icon { width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+  .template-card .tc-title { font-weight: 600; font-size: 13px; }
+  .template-card .tc-desc { font-size: 11px; color: #64748b; line-height: 1.4; }
+  .template-card .tc-meta { display: flex; gap: 8px; margin-top: 8px; }
+  .template-card .tc-badge { font-size: 9px; font-weight: 600; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
+
+  /* Upload zone */
+  .upload-zone { border: 2px dashed #cbd5e1; border-radius: 8px; padding: 40px; text-align: center; cursor: pointer; transition: all 0.15s; }
+  .upload-zone:hover { border-color: #0d9488; background: #f0fdfa; }
+  .upload-zone .uz-icon { font-size: 40px; color: #94a3b8; margin-bottom: 12px; }
+  .upload-zone .uz-title { font-size: 15px; font-weight: 600; color: #475569; margin-bottom: 4px; }
+  .upload-zone .uz-desc { font-size: 12px; color: #94a3b8; }
+  .upload-zone .uz-formats { margin-top: 12px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .upload-zone .uz-format { font-size: 10px; padding: 3px 8px; border-radius: 4px; background: #f1f5f9; color: #64748b; font-weight: 600; }
+
+  /* Blank editor preview */
+  .editor-preview { border: 1px solid #e2e8f0; border-radius: 4px; padding: 16px; min-height: 120px; background: #fafafa; }
+  .editor-toolbar { display: flex; gap: 4px; padding: 8px; border-bottom: 1px solid #e2e8f0; margin-bottom: 12px; background: #fff; border-radius: 4px 4px 0 0; }
+  .editor-toolbar .btn { width: 28px; height: 28px; border: 1px solid #e2e8f0; border-radius: 4px; background: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #64748b; cursor: pointer; }
+  .editor-placeholder { color: #94a3b8; font-size: 14px; font-style: italic; }
+
+  /* HTML code editor preview */
+  .html-preview { background: #1e293b; border-radius: 4px; padding: 16px; font-family: 'Consolas', 'Fira Code', monospace; font-size: 12px; color: #e2e8f0; line-height: 1.6; }
+  .html-preview .tag { color: #f472b6; }
+  .html-preview .attr { color: #7dd3fc; }
+  .html-preview .val { color: #86efac; }
+  .html-preview .comment { color: #64748b; }
+
+  /* ======================== VARIATION B: Two-Row Strip ======================== */
+  .type-strip-b { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
+  .type-pill { display: flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; cursor: pointer; transition: all 0.15s; }
+  .type-pill:hover { border-color: #0d9488; }
+  .type-pill.selected { border-color: #0d9488; background: #f0fdfa; box-shadow: 0 0 0 1px #0d9488; }
+  .type-pill .pill-icon { width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+  .type-pill .pill-text { }
+  .type-pill .pill-label { font-size: 13px; font-weight: 600; color: #0f172a; }
+  .type-pill .pill-desc { font-size: 10px; color: #94a3b8; }
+
+  /* ======================== VARIATION C: Card Grid ======================== */
+  .type-grid-c { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+  .type-card-c { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 12px; border: 1px solid #e2e8f0; border-radius: 10px; background: #fff; cursor: pointer; transition: all 0.15s; text-align: center; }
+  .type-card-c:hover { border-color: #0d9488; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(13,148,136,0.08); }
+  .type-card-c.selected { border-color: #0d9488; background: #f0fdfa; border-width: 2px; }
+  .type-card-c .card-icon-c { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+  .type-card-c .card-label-c { font-size: 13px; font-weight: 600; color: #0f172a; }
+  .type-card-c .card-desc-c { font-size: 10px; color: #94a3b8; line-height: 1.3; }
+
+  /* Info tip */
+  .info-tip { display: flex; align-items: flex-start; gap: 10px; background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 4px; padding: 12px 16px; margin-top: 20px; font-size: 12px; color: #0f766e; line-height: 1.5; }
+
+  /* Divider */
+  .divider { border: none; border-top: 1px solid #e2e8f0; margin: 40px 0 32px; }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- ==================== STEP ORDER COMPARISON ==================== -->
+  <div class="section-title">Step Order Change</div>
+  <div class="section-desc">Content creation moves from Step 3 to Step 7 — complete all metadata before writing content.</div>
+
+  <div class="step-comparison">
+    <div class="step-col old">
+      <h3>Current Order</h3>
+      <div class="step-item old"><span class="num">1</span><span class="label">Creation Method</span></div>
+      <div class="step-item old"><span class="num">2</span><span class="label">Basic Information</span></div>
+      <div class="step-item old highlight"><span class="num">3</span><span class="label">Policy Content</span><span class="arrow">← MOVING</span></div>
+      <div class="step-item old"><span class="num">4</span><span class="label">Metadata Profile</span></div>
+      <div class="step-item old"><span class="num">5</span><span class="label">Target Audience</span></div>
+      <div class="step-item old"><span class="num">6</span><span class="label">Effective Dates</span></div>
+      <div class="step-item old"><span class="num">7</span><span class="label">Review Workflow</span></div>
+      <div class="step-item old"><span class="num">8</span><span class="label">Review & Submit</span></div>
+    </div>
+    <div class="step-col new">
+      <h3>New Order</h3>
+      <div class="step-item new"><span class="num">1</span><span class="label">Creation Method</span></div>
+      <div class="step-item new"><span class="num">2</span><span class="label">Basic Information</span></div>
+      <div class="step-item new"><span class="num">3</span><span class="label">Metadata Profile</span></div>
+      <div class="step-item new"><span class="num">4</span><span class="label">Target Audience</span></div>
+      <div class="step-item new"><span class="num">5</span><span class="label">Effective Dates</span></div>
+      <div class="step-item new"><span class="num">6</span><span class="label">Review Workflow</span></div>
+      <div class="step-item new highlight"><span class="num">7</span><span class="label">Policy Content</span><span class="arrow">← NOW HERE</span></div>
+      <div class="step-item new"><span class="num">8</span><span class="label">Review & Submit</span></div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- ==================== CREATION METHOD VARIATIONS ==================== -->
+  <div class="section-title">Creation Method — Step 1 Redesign</div>
+  <div class="section-desc">Three layout variations for the type selector. Click tabs to compare. "From Template" is selected to show template listing.</div>
+
+  <div class="variation-bar">
+    <button class="variation-btn active" onclick="showVariation('a')">A: Horizontal Strip</button>
+    <button class="variation-btn" onclick="showVariation('b')">B: Pill Buttons</button>
+    <button class="variation-btn" onclick="showVariation('c')">C: Card Grid</button>
+  </div>
+
+  <!-- ==================== VARIATION A: Horizontal Strip ==================== -->
+  <div id="var-a" class="variation active">
+
+    <div class="type-strip">
+      <div class="type-chip" onclick="selectType(this, 'blank-a')">
+        <div class="chip-icon blank">📄</div>
+        <span class="chip-label">Blank<br>Policy</span>
+      </div>
+      <div class="type-chip selected" onclick="selectType(this, 'template-a')">
+        <div class="chip-icon template">📋</div>
+        <span class="chip-label">From<br>Template</span>
+      </div>
+      <div class="type-chip" onclick="selectType(this, 'upload-a')">
+        <div class="chip-icon upload">📤</div>
+        <span class="chip-label">Upload<br>Document</span>
+      </div>
+      <div class="type-chip" onclick="selectType(this, 'word-a')">
+        <div class="chip-icon word">W</div>
+        <span class="chip-label">Word</span>
+      </div>
+      <div class="type-chip" onclick="selectType(this, 'excel-a')">
+        <div class="chip-icon excel">X</div>
+        <span class="chip-label">Excel</span>
+      </div>
+      <div class="type-chip" onclick="selectType(this, 'ppt-a')">
+        <div class="chip-icon ppt">P</div>
+        <span class="chip-label">PowerPoint</span>
+      </div>
+      <div class="type-chip" onclick="selectType(this, 'html-a')">
+        <div class="chip-icon html">&lt;/&gt;</div>
+        <span class="chip-label">HTML</span>
+      </div>
+      <div class="type-chip" onclick="selectType(this, 'image-a')">
+        <div class="chip-icon image">🖼</div>
+        <span class="chip-label">Infographic</span>
+      </div>
+    </div>
+
+    <!-- Template content area (shown when "From Template" selected) -->
+    <div class="content-area">
+      <h4>Choose a Template</h4>
+      <div class="desc">Select a pre-approved template to start with. All fields and structure will be pre-populated.</div>
+
+      <div class="template-grid">
+        <div class="template-card selected">
+          <div class="tc-header">
+            <div class="tc-icon" style="background:#dbeafe;color:#2563eb">📋</div>
+            <span class="tc-title">Standard Policy</span>
+          </div>
+          <div class="tc-desc">General-purpose template with purpose, scope, procedure, and enforcement sections.</div>
+          <div class="tc-meta">
+            <span class="tc-badge" style="background:#dcfce7;color:#059669">POPULAR</span>
+            <span class="tc-badge" style="background:#f1f5f9;color:#64748b">6 SECTIONS</span>
+          </div>
+        </div>
+
+        <div class="template-card">
+          <div class="tc-header">
+            <div class="tc-icon" style="background:#fef3c7;color:#d97706">⚖️</div>
+            <span class="tc-title">Regulatory Compliance</span>
+          </div>
+          <div class="tc-desc">For policies driven by legal/regulatory requirements. Includes compliance mapping.</div>
+          <div class="tc-meta">
+            <span class="tc-badge" style="background:#fef3c7;color:#d97706">COMPLIANCE</span>
+            <span class="tc-badge" style="background:#f1f5f9;color:#64748b">8 SECTIONS</span>
+          </div>
+        </div>
+
+        <div class="template-card">
+          <div class="tc-header">
+            <div class="tc-icon" style="background:#ede9fe;color:#7c3aed">🏢</div>
+            <span class="tc-title">Corporate Standard</span>
+          </div>
+          <div class="tc-desc">Company-branded template with executive summary, governance, and sign-off sections.</div>
+          <div class="tc-meta">
+            <span class="tc-badge" style="background:#ede9fe;color:#7c3aed">CORPORATE</span>
+            <span class="tc-badge" style="background:#f1f5f9;color:#64748b">7 SECTIONS</span>
+          </div>
+        </div>
+
+        <div class="template-card">
+          <div class="tc-header">
+            <div class="tc-icon" style="background:#fce7f3;color:#db2777">🔒</div>
+            <span class="tc-title">IT Security</span>
+          </div>
+          <div class="tc-desc">Security-focused with risk assessment, controls, incident response, and exceptions.</div>
+          <div class="tc-meta">
+            <span class="tc-badge" style="background:#fee2e2;color:#dc2626">SECURITY</span>
+            <span class="tc-badge" style="background:#f1f5f9;color:#64748b">9 SECTIONS</span>
+          </div>
+        </div>
+
+        <div class="template-card">
+          <div class="tc-header">
+            <div class="tc-icon" style="background:#dcfce7;color:#059669">👥</div>
+            <span class="tc-title">HR Policy</span>
+          </div>
+          <div class="tc-desc">HR-focused template with employee responsibilities, process, and FAQs.</div>
+          <div class="tc-meta">
+            <span class="tc-badge" style="background:#dcfce7;color:#059669">HR</span>
+            <span class="tc-badge" style="background:#f1f5f9;color:#64748b">5 SECTIONS</span>
+          </div>
+        </div>
+
+        <div class="template-card">
+          <div class="tc-header">
+            <div class="tc-icon" style="background:#e0f2fe;color:#0284c7">📝</div>
+            <span class="tc-title">Quick Policy</span>
+          </div>
+          <div class="tc-desc">Minimal template for simple policies. Purpose, key points, and acknowledgement only.</div>
+          <div class="tc-meta">
+            <span class="tc-badge" style="background:#e0f2fe;color:#0284c7">SIMPLE</span>
+            <span class="tc-badge" style="background:#f1f5f9;color:#64748b">3 SECTIONS</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-tip">
+      <span>ℹ️</span>
+      <div><strong>New: HTML type</strong> — for authors who prefer writing policy content directly in HTML. Opens a code editor with syntax highlighting on Step 7, alongside a live preview panel.</div>
+    </div>
+  </div>
+
+  <!-- ==================== VARIATION B: Pill Buttons ==================== -->
+  <div id="var-b" class="variation">
+
+    <div class="type-strip-b">
+      <div class="type-pill" onclick="selectPill(this)">
+        <div class="pill-icon" style="background:#f1f5f9;color:#64748b">📄</div>
+        <div class="pill-text">
+          <div class="pill-label">Blank Policy</div>
+          <div class="pill-desc">Empty rich text editor</div>
+        </div>
+      </div>
+      <div class="type-pill selected" onclick="selectPill(this)">
+        <div class="pill-icon" style="background:#dbeafe;color:#2563eb">📋</div>
+        <div class="pill-text">
+          <div class="pill-label">From Template</div>
+          <div class="pill-desc">Pre-approved template</div>
+        </div>
+      </div>
+      <div class="type-pill" onclick="selectPill(this)">
+        <div class="pill-icon" style="background:#fef3c7;color:#d97706">📤</div>
+        <div class="pill-text">
+          <div class="pill-label">Upload Document</div>
+          <div class="pill-desc">Import Word, PDF, etc.</div>
+        </div>
+      </div>
+      <div class="type-pill" onclick="selectPill(this)">
+        <div class="pill-icon" style="background:#dbeafe;color:#2b579a">W</div>
+        <div class="pill-text">
+          <div class="pill-label">Word Document</div>
+          <div class="pill-desc">Create new .docx</div>
+        </div>
+      </div>
+      <div class="type-pill" onclick="selectPill(this)">
+        <div class="pill-icon" style="background:#dcfce7;color:#217346">X</div>
+        <div class="pill-text">
+          <div class="pill-label">Excel</div>
+          <div class="pill-desc">Data-driven policy</div>
+        </div>
+      </div>
+      <div class="type-pill" onclick="selectPill(this)">
+        <div class="pill-icon" style="background:#fee2e2;color:#b7472a">P</div>
+        <div class="pill-text">
+          <div class="pill-label">PowerPoint</div>
+          <div class="pill-desc">Presentation format</div>
+        </div>
+      </div>
+      <div class="type-pill" onclick="selectPill(this)">
+        <div class="pill-icon" style="background:#ede9fe;color:#7c3aed">&lt;/&gt;</div>
+        <div class="pill-text">
+          <div class="pill-label">HTML</div>
+          <div class="pill-desc">Code editor + preview</div>
+        </div>
+      </div>
+      <div class="type-pill" onclick="selectPill(this)">
+        <div class="pill-icon" style="background:#fce7f3;color:#db2777">🖼</div>
+        <div class="pill-text">
+          <div class="pill-label">Infographic</div>
+          <div class="pill-desc">Visual / image policy</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Same template grid -->
+    <div class="content-area">
+      <h4>Choose a Template</h4>
+      <div class="desc">Select a pre-approved template. Content and structure will be pre-populated on Step 7.</div>
+      <div class="template-grid">
+        <div class="template-card selected">
+          <div class="tc-header">
+            <div class="tc-icon" style="background:#dbeafe;color:#2563eb">📋</div>
+            <span class="tc-title">Standard Policy</span>
+          </div>
+          <div class="tc-desc">General-purpose template with purpose, scope, procedure, and enforcement.</div>
+          <div class="tc-meta">
+            <span class="tc-badge" style="background:#dcfce7;color:#059669">POPULAR</span>
+          </div>
+        </div>
+        <div class="template-card">
+          <div class="tc-header">
+            <div class="tc-icon" style="background:#fef3c7;color:#d97706">⚖️</div>
+            <span class="tc-title">Regulatory Compliance</span>
+          </div>
+          <div class="tc-desc">Legal/regulatory requirements with compliance mapping.</div>
+          <div class="tc-meta">
+            <span class="tc-badge" style="background:#fef3c7;color:#d97706">COMPLIANCE</span>
+          </div>
+        </div>
+        <div class="template-card">
+          <div class="tc-header">
+            <div class="tc-icon" style="background:#ede9fe;color:#7c3aed">🏢</div>
+            <span class="tc-title">Corporate Standard</span>
+          </div>
+          <div class="tc-desc">Branded template with executive summary and governance.</div>
+          <div class="tc-meta">
+            <span class="tc-badge" style="background:#ede9fe;color:#7c3aed">CORPORATE</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== VARIATION C: Card Grid ==================== -->
+  <div id="var-c" class="variation">
+
+    <div class="type-grid-c">
+      <div class="type-card-c" onclick="selectCardC(this)">
+        <div class="card-icon-c" style="background:#f1f5f9;color:#64748b">📄</div>
+        <div class="card-label-c">Blank Policy</div>
+        <div class="card-desc-c">Empty rich text editor</div>
+      </div>
+      <div class="type-card-c selected" onclick="selectCardC(this)">
+        <div class="card-icon-c" style="background:#dbeafe;color:#2563eb">📋</div>
+        <div class="card-label-c">From Template</div>
+        <div class="card-desc-c">Pre-approved template</div>
+      </div>
+      <div class="type-card-c" onclick="selectCardC(this)">
+        <div class="card-icon-c" style="background:#fef3c7;color:#d97706">📤</div>
+        <div class="card-label-c">Upload Document</div>
+        <div class="card-desc-c">Import Word, PDF</div>
+      </div>
+      <div class="type-card-c" onclick="selectCardC(this)">
+        <div class="card-icon-c" style="background:#dbeafe;color:#2b579a;font-weight:700;font-size:18px">W</div>
+        <div class="card-label-c">Word</div>
+        <div class="card-desc-c">Create new .docx</div>
+      </div>
+      <div class="type-card-c" onclick="selectCardC(this)">
+        <div class="card-icon-c" style="background:#dcfce7;color:#217346;font-weight:700;font-size:18px">X</div>
+        <div class="card-label-c">Excel</div>
+        <div class="card-desc-c">Data-driven policy</div>
+      </div>
+      <div class="type-card-c" onclick="selectCardC(this)">
+        <div class="card-icon-c" style="background:#fee2e2;color:#b7472a;font-weight:700;font-size:18px">P</div>
+        <div class="card-label-c">PowerPoint</div>
+        <div class="card-desc-c">Presentation format</div>
+      </div>
+      <div class="type-card-c" onclick="selectCardC(this)">
+        <div class="card-icon-c" style="background:#ede9fe;color:#7c3aed;font-weight:700;font-size:16px">&lt;/&gt;</div>
+        <div class="card-label-c">HTML</div>
+        <div class="card-desc-c">Code editor + preview</div>
+      </div>
+      <div class="type-card-c" onclick="selectCardC(this)">
+        <div class="card-icon-c" style="background:#fce7f3;color:#db2777">🖼</div>
+        <div class="card-label-c">Infographic</div>
+        <div class="card-desc-c">Visual / image policy</div>
+      </div>
+    </div>
+
+    <!-- Same template grid -->
+    <div class="content-area">
+      <h4>Choose a Template</h4>
+      <div class="desc">Select a pre-approved template. Content and structure will be pre-populated on Step 7.</div>
+      <div class="template-grid">
+        <div class="template-card selected">
+          <div class="tc-header">
+            <div class="tc-icon" style="background:#dbeafe;color:#2563eb">📋</div>
+            <span class="tc-title">Standard Policy</span>
+          </div>
+          <div class="tc-desc">General-purpose template with purpose, scope, procedure, and enforcement.</div>
+        </div>
+        <div class="template-card">
+          <div class="tc-header">
+            <div class="tc-icon" style="background:#fef3c7;color:#d97706">⚖️</div>
+            <span class="tc-title">Regulatory Compliance</span>
+          </div>
+          <div class="tc-desc">Legal/regulatory with compliance mapping.</div>
+        </div>
+        <div class="template-card">
+          <div class="tc-header">
+            <div class="tc-icon" style="background:#ede9fe;color:#7c3aed">🏢</div>
+            <span class="tc-title">Corporate Standard</span>
+          </div>
+          <div class="tc-desc">Branded template with governance sections.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function showVariation(id) {
+  document.querySelectorAll('.variation').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.variation-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('var-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+function selectType(el, id) {
+  el.closest('.type-strip').querySelectorAll('.type-chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function selectPill(el) {
+  el.closest('.type-strip-b').querySelectorAll('.type-pill').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function selectCardC(el) {
+  el.closest('.type-grid-c').querySelectorAll('.type-card-c').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+</script>
+
+</body>
+</html>

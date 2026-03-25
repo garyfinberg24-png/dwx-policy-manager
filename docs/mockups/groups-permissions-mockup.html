@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Groups & Permissions — Admin Centre Mockup</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f8fafc; color: #0f172a; }
+
+  .page { display: flex; min-height: 100vh; }
+
+  /* Sidebar stub */
+  .sidebar { width: 280px; background: #f1f5f9; border-right: 1px solid #e2e8f0; padding: 20px 0; flex-shrink: 0; }
+  .sidebar-category { padding: 8px 20px; font-size: 10px; font-weight: 700; letter-spacing: 1.2px; color: #94a3b8; text-transform: uppercase; margin-top: 12px; }
+  .sidebar-item { display: flex; align-items: center; gap: 10px; padding: 9px 20px; font-size: 13px; color: #475569; cursor: pointer; border-left: 3px solid transparent; }
+  .sidebar-item:hover { background: #e2e8f0; }
+  .sidebar-item.active { background: #ccfbf1; color: #0d9488; font-weight: 600; border-left-color: #0d9488; }
+  .sidebar-item .icon { width: 18px; text-align: center; font-size: 14px; }
+  .sidebar-item.removed { text-decoration: line-through; color: #cbd5e1; background: #fef2f2; }
+  .sidebar-item.removed::after { content: '← REMOVED'; font-size: 9px; color: #dc2626; margin-left: auto; font-weight: 700; }
+
+  /* Content area */
+  .content { flex: 1; padding: 32px 40px; max-width: 1120px; }
+
+  /* Header */
+  .section-header { margin-bottom: 24px; }
+  .section-title { font-size: 22px; font-weight: 700; color: #0f172a; }
+  .section-desc { font-size: 13px; color: #64748b; margin-top: 4px; }
+
+  /* Sub-tabs (pill buttons) */
+  .sub-tabs { display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px; }
+  .sub-tab { padding: 7px 18px; border-radius: 4px; font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid #e2e8f0; background: #fff; color: #605e5c; transition: all 0.15s; }
+  .sub-tab:hover { border-color: #0d9488; color: #0d9488; }
+  .sub-tab.active { background: #0d9488; color: #fff; border-color: #0d9488; font-weight: 600; }
+  .sub-tab .count { display: inline-block; background: rgba(255,255,255,0.25); border-radius: 10px; padding: 1px 8px; font-size: 11px; margin-left: 6px; font-weight: 600; }
+  .sub-tab:not(.active) .count { background: #f1f5f9; color: #64748b; }
+
+  /* Toolbar */
+  .toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .search-box { display: flex; align-items: center; gap: 8px; border: 1px solid #e2e8f0; border-radius: 4px; padding: 6px 12px; background: #fff; width: 260px; }
+  .search-box input { border: none; outline: none; font-size: 13px; flex: 1; font-family: inherit; }
+  .search-box .search-icon { color: #94a3b8; font-size: 14px; }
+  .btn-primary { background: #0d9488; color: #fff; border: none; padding: 7px 16px; border-radius: 4px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 6px; }
+  .btn-primary:hover { background: #0f766e; }
+  .spacer { flex: 1; }
+
+  /* Info banner */
+  .info-banner { display: flex; align-items: flex-start; gap: 10px; background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 4px; padding: 12px 16px; margin-bottom: 20px; font-size: 12px; color: #0f766e; line-height: 1.5; }
+  .info-banner .info-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+  /* Group card */
+  .group-card { border: 1px solid #e2e8f0; border-radius: 4px; background: #fff; overflow: hidden; margin-bottom: 4px; }
+  .group-header { display: flex; align-items: center; gap: 12px; padding: 12px 16px; cursor: pointer; transition: background 0.15s; }
+  .group-header:hover { background: #f8fafc; }
+  .group-header.expanded { background: #f0fdfa; }
+  .chevron { font-size: 11px; color: #94a3b8; width: 12px; transition: transform 0.2s; }
+  .chevron.open { transform: rotate(90deg); }
+  .group-icon { font-size: 18px; color: #0d9488; }
+  .group-info { flex: 1; }
+  .group-name { font-weight: 600; font-size: 14px; color: #0f172a; }
+  .group-desc { font-size: 11px; color: #94a3b8; margin-top: 1px; }
+  .member-count { font-size: 12px; font-weight: 600; color: #0d9488; }
+  .member-label { font-size: 11px; color: #94a3b8; margin-left: 2px; }
+  .group-badge { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 8px; border-radius: 4px; }
+  .badge-role { background: #dbeafe; color: #2563eb; }
+  .badge-workflow { background: #fef3c7; color: #d97706; }
+  .badge-library { background: #ede9fe; color: #7c3aed; }
+  .badge-system { background: #f1f5f9; color: #94a3b8; }
+
+  /* Expanded member area */
+  .group-body { border-top: 1px solid #e2e8f0; padding: 12px 16px 16px 48px; }
+  .people-picker { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; border: 1px solid #e2e8f0; border-radius: 4px; padding: 6px 12px; background: #fff; }
+  .people-picker input { border: none; outline: none; font-size: 13px; flex: 1; font-family: inherit; color: #94a3b8; }
+  .member-row { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 4px; font-size: 13px; }
+  .member-row:hover { background: #f8fafc; }
+  .member-icon { font-size: 14px; color: #94a3b8; }
+  .member-name { flex: 1; font-weight: 500; color: #0f172a; }
+  .member-email { font-size: 11px; color: #94a3b8; min-width: 180px; }
+  .member-role-badge { font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: 600; }
+  .remove-btn { width: 24px; height: 24px; border: none; background: none; cursor: pointer; color: #dc2626; font-size: 12px; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
+  .remove-btn:hover { background: #fef2f2; }
+
+  /* Empty state */
+  .empty-state { text-align: center; padding: 40px 20px; color: #94a3b8; }
+  .empty-state .empty-icon { font-size: 40px; margin-bottom: 12px; opacity: 0.5; }
+  .empty-state .empty-title { font-size: 15px; font-weight: 600; color: #64748b; margin-bottom: 4px; }
+  .empty-state .empty-desc { font-size: 12px; }
+
+  /* Tab content switcher */
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* Annotation */
+  .annotation { position: relative; }
+  .callout { position: absolute; background: #fffbeb; border: 2px solid #f59e0b; border-radius: 6px; padding: 8px 12px; font-size: 11px; color: #92400e; line-height: 1.4; max-width: 220px; z-index: 10; }
+  .callout::before { content: ''; position: absolute; width: 0; height: 0; }
+
+  /* Legend */
+  .legend { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #64748b; }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-category">Users & Access</div>
+    <div class="sidebar-item">
+      <span class="icon">👤</span> Users & Roles
+    </div>
+    <div class="sidebar-item">
+      <span class="icon">🔑</span> Role Permissions
+    </div>
+    <div class="sidebar-item active">
+      <span class="icon">🛡️</span> Groups & Permissions
+    </div>
+    <div class="sidebar-item removed">
+      <span class="icon">👥</span> Reviewers & Approvers
+    </div>
+    <div class="sidebar-item">
+      <span class="icon">🎯</span> Audience Targeting
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+    <!-- Header -->
+    <div class="section-header">
+      <div class="section-title">Groups & Permissions</div>
+      <div class="section-desc">Manage SharePoint groups that control app roles, workflow assignments, and library access.</div>
+    </div>
+
+    <!-- Sub-tabs -->
+    <div class="sub-tabs">
+      <div class="sub-tab active" onclick="switchTab('role')">Role Groups <span class="count">3</span></div>
+      <div class="sub-tab" onclick="switchTab('workflow')">Workflow Groups <span class="count">2</span></div>
+      <div class="sub-tab" onclick="switchTab('library')">Secure Library Groups <span class="count">1</span></div>
+      <div class="sub-tab" onclick="switchTab('all')" style="margin-left: auto; border-style: dashed;">All Site Groups <span class="count">18</span></div>
+    </div>
+
+    <!-- ==================== ROLE GROUPS TAB ==================== -->
+    <div id="tab-role" class="tab-content active">
+      <div class="info-banner">
+        <span class="info-icon">ℹ️</span>
+        <div>
+          <strong>Role Groups</strong> control which Policy Manager role a user gets. When a user is synced from Entra ID and assigned a PM role, they are automatically added to the corresponding group below. These groups are also checked during login to determine navigation access.
+        </div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Filter groups..." />
+        </div>
+        <span class="spacer"></span>
+        <button class="btn-primary">+ Create Role Group</button>
+      </div>
+
+      <!-- PM_PolicyAdmins — expanded -->
+      <div class="group-card">
+        <div class="group-header expanded">
+          <span class="chevron open">▶</span>
+          <span class="group-icon">🛡️</span>
+          <div class="group-info">
+            <div class="group-name">PM_PolicyAdmins</div>
+            <div class="group-desc">Full admin access to Policy Manager — settings, provisioning, all features</div>
+          </div>
+          <span class="group-badge badge-role">ROLE: ADMIN</span>
+          <span class="member-count">2</span>
+          <span class="member-label">members</span>
+        </div>
+        <div class="group-body">
+          <div class="people-picker">
+            <span class="search-icon" style="color:#94a3b8">🔍</span>
+            <input type="text" placeholder="Search for a user to add..." />
+          </div>
+          <div class="member-row">
+            <span class="member-icon">👤</span>
+            <span class="member-name">Gary Finberg</span>
+            <span class="member-email">gary@firsttech.digital</span>
+            <span class="member-role-badge" style="background:#dbeafe;color:#2563eb">Admin</span>
+            <button class="remove-btn" title="Remove">✕</button>
+          </div>
+          <div class="member-row">
+            <span class="member-icon">👤</span>
+            <span class="member-name">Gulzar</span>
+            <span class="member-email">gulzar@mf7m.onmicrosoft.com</span>
+            <span class="member-role-badge" style="background:#dbeafe;color:#2563eb">Admin</span>
+            <button class="remove-btn" title="Remove">✕</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PM_PolicyAuthors — collapsed -->
+      <div class="group-card">
+        <div class="group-header">
+          <span class="chevron">▶</span>
+          <span class="group-icon">🛡️</span>
+          <div class="group-info">
+            <div class="group-name">PM_PolicyAuthors</div>
+            <div class="group-desc">Can create, edit, and manage policy documents</div>
+          </div>
+          <span class="group-badge badge-role">ROLE: AUTHOR</span>
+          <span class="member-count">4</span>
+          <span class="member-label">members</span>
+        </div>
+      </div>
+
+      <!-- PM_PolicyManagers — collapsed -->
+      <div class="group-card">
+        <div class="group-header">
+          <span class="chevron">▶</span>
+          <span class="group-icon">🛡️</span>
+          <div class="group-info">
+            <div class="group-name">PM_PolicyManagers</div>
+            <div class="group-desc">Department managers with approval, delegation, and team compliance access</div>
+          </div>
+          <span class="group-badge badge-role">ROLE: MANAGER</span>
+          <span class="member-count">3</span>
+          <span class="member-label">members</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== WORKFLOW GROUPS TAB ==================== -->
+    <div id="tab-workflow" class="tab-content">
+      <div class="info-banner">
+        <span class="info-icon">ℹ️</span>
+        <div>
+          <strong>Workflow Groups</strong> define who can review and approve policies. These groups are referenced by approval workflow templates — when a policy is submitted for review, members of the assigned reviewer/approver group are notified.
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Filter groups..." />
+        </div>
+        <span class="spacer"></span>
+        <button class="btn-primary">+ Create Workflow Group</button>
+      </div>
+
+      <div class="group-card">
+        <div class="group-header">
+          <span class="chevron">▶</span>
+          <span class="group-icon">👥</span>
+          <div class="group-info">
+            <div class="group-name">PM_PolicyReviewers</div>
+            <div class="group-desc">Users who review policy drafts before approval</div>
+          </div>
+          <span class="group-badge badge-workflow">REVIEWERS</span>
+          <span class="member-count">5</span>
+          <span class="member-label">members</span>
+        </div>
+      </div>
+
+      <div class="group-card">
+        <div class="group-header">
+          <span class="chevron">▶</span>
+          <span class="group-icon">👥</span>
+          <div class="group-info">
+            <div class="group-name">PM_PolicyApprovers</div>
+            <div class="group-desc">Users who give final approval to publish policies</div>
+          </div>
+          <span class="group-badge badge-workflow">APPROVERS</span>
+          <span class="member-count">3</span>
+          <span class="member-label">members</span>
+        </div>
+      </div>
+
+      <div style="margin-top: 20px; padding: 16px; background: #fffbeb; border: 1px solid #fcd34d; border-radius: 4px; font-size: 12px; color: #92400e; line-height: 1.6;">
+        <strong>💡 Tip:</strong> You can create custom workflow groups for department-specific reviews. For example, <code>PM_FinanceReviewers</code> for finance policies, <code>PM_HRApprovers</code> for HR policies. Reference these groups in your Approval Workflow templates.
+      </div>
+    </div>
+
+    <!-- ==================== SECURE LIBRARY GROUPS TAB ==================== -->
+    <div id="tab-library" class="tab-content">
+      <div class="info-banner">
+        <span class="info-icon">ℹ️</span>
+        <div>
+          <strong>Secure Library Groups</strong> control access to restricted document libraries. Each secure library has an associated SharePoint group — only members of that group can see policies stored in the library.
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Filter groups..." />
+        </div>
+        <span class="spacer"></span>
+        <button class="btn-primary" style="opacity:0.5;cursor:not-allowed" title="Create secure library groups via Settings → Secure Libraries">+ Create Library Group</button>
+      </div>
+
+      <div class="group-card">
+        <div class="group-header expanded">
+          <span class="chevron open">▶</span>
+          <span class="group-icon">🔒</span>
+          <div class="group-info">
+            <div class="group-name">PM_SecureLib_CxO_Secure_Docs</div>
+            <div class="group-desc">Access group for "CxO Secure Docs" restricted library</div>
+          </div>
+          <span class="group-badge badge-library">LIBRARY</span>
+          <span class="member-count">2</span>
+          <span class="member-label">members</span>
+        </div>
+        <div class="group-body">
+          <div style="margin-bottom: 12px; padding: 8px 12px; background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 4px; font-size: 11px; color: #7c3aed;">
+            📚 Library: <strong>CxO Secure Docs</strong> &nbsp;|&nbsp; Policies: <strong>3</strong> &nbsp;|&nbsp; Created: 20 Mar 2026
+          </div>
+          <div class="people-picker">
+            <span class="search-icon" style="color:#94a3b8">🔍</span>
+            <input type="text" placeholder="Search for a user to add..." />
+          </div>
+          <div class="member-row">
+            <span class="member-icon">👤</span>
+            <span class="member-name">Gary Finberg</span>
+            <span class="member-email">gary@firsttech.digital</span>
+            <button class="remove-btn" title="Remove">✕</button>
+          </div>
+          <div class="member-row">
+            <span class="member-icon">👤</span>
+            <span class="member-name">Gulzar</span>
+            <span class="member-email">gulzar@mf7m.onmicrosoft.com</span>
+            <button class="remove-btn" title="Remove">✕</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top: 20px; padding: 16px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 4px; font-size: 12px; color: #64748b; line-height: 1.6;">
+        <strong>Note:</strong> Secure library groups are automatically created when you set up a new secure library in <strong>Settings → Secure Libraries</strong>. You can manage the group members here.
+      </div>
+    </div>
+
+    <!-- ==================== ALL SITE GROUPS TAB ==================== -->
+    <div id="tab-all" class="tab-content">
+      <div class="info-banner" style="background:#fffbeb;border-color:#fcd34d;color:#92400e;">
+        <span class="info-icon">⚠️</span>
+        <div>
+          <strong>All Site Groups</strong> shows every SharePoint group on this site, including system groups. Use the tabs above to manage Policy Manager-specific groups. Only modify system groups if you know what you're doing.
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Filter groups..." />
+        </div>
+        <span class="spacer"></span>
+        <button class="btn-primary">+ Create Group</button>
+      </div>
+
+      <!-- PM groups first -->
+      <div class="group-card">
+        <div class="group-header">
+          <span class="chevron">▶</span>
+          <span class="group-icon">🛡️</span>
+          <div class="group-info">
+            <div class="group-name">PM_PolicyAdmins</div>
+            <div class="group-desc">Full admin access to Policy Manager</div>
+          </div>
+          <span class="group-badge badge-role">ROLE: ADMIN</span>
+          <span class="member-count">2</span>
+          <span class="member-label">members</span>
+        </div>
+      </div>
+      <div class="group-card">
+        <div class="group-header">
+          <span class="chevron">▶</span>
+          <span class="group-icon">🛡️</span>
+          <div class="group-info">
+            <div class="group-name">PM_PolicyAuthors</div>
+            <div class="group-desc">Can create and edit policies</div>
+          </div>
+          <span class="group-badge badge-role">ROLE: AUTHOR</span>
+          <span class="member-count">4</span>
+          <span class="member-label">members</span>
+        </div>
+      </div>
+      <div class="group-card">
+        <div class="group-header">
+          <span class="chevron">▶</span>
+          <span class="group-icon">🛡️</span>
+          <div class="group-info">
+            <div class="group-name">PM_PolicyManagers</div>
+            <div class="group-desc">Department managers</div>
+          </div>
+          <span class="group-badge badge-role">ROLE: MANAGER</span>
+          <span class="member-count">3</span>
+          <span class="member-label">members</span>
+        </div>
+      </div>
+      <div class="group-card">
+        <div class="group-header">
+          <span class="chevron">▶</span>
+          <span class="group-icon">👥</span>
+          <div class="group-info">
+            <div class="group-name">PM_PolicyReviewers</div>
+            <div class="group-desc">Policy draft reviewers</div>
+          </div>
+          <span class="group-badge badge-workflow">REVIEWERS</span>
+          <span class="member-count">5</span>
+          <span class="member-label">members</span>
+        </div>
+      </div>
+
+      <!-- Divider for non-PM groups -->
+      <div style="margin: 16px 0 8px; padding: 4px 0; border-top: 1px dashed #e2e8f0;">
+        <span style="font-size:10px; color:#94a3b8; text-transform:uppercase; letter-spacing:1px; font-weight:600;">SharePoint System Groups</span>
+      </div>
+
+      <div class="group-card" style="opacity: 0.7;">
+        <div class="group-header">
+          <span class="chevron">▶</span>
+          <span class="group-icon" style="color:#94a3b8">⚙️</span>
+          <div class="group-info">
+            <div class="group-name" style="color:#64748b">PolicyManager Members</div>
+            <div class="group-desc">SharePoint default members group</div>
+          </div>
+          <span class="group-badge badge-system">SYSTEM</span>
+          <span class="member-count" style="color:#94a3b8">12</span>
+          <span class="member-label">members</span>
+        </div>
+      </div>
+      <div class="group-card" style="opacity: 0.7;">
+        <div class="group-header">
+          <span class="chevron">▶</span>
+          <span class="group-icon" style="color:#94a3b8">⚙️</span>
+          <div class="group-info">
+            <div class="group-name" style="color:#64748b">PolicyManager Owners</div>
+            <div class="group-desc">SharePoint default owners group</div>
+          </div>
+          <span class="group-badge badge-system">SYSTEM</span>
+          <span class="member-count" style="color:#94a3b8">3</span>
+          <span class="member-label">members</span>
+        </div>
+      </div>
+      <div class="group-card" style="opacity: 0.7;">
+        <div class="group-header">
+          <span class="chevron">▶</span>
+          <span class="group-icon" style="color:#94a3b8">⚙️</span>
+          <div class="group-info">
+            <div class="group-name" style="color:#64748b">PolicyManager Visitors</div>
+            <div class="group-desc">SharePoint default visitors group</div>
+          </div>
+          <span class="group-badge badge-system">SYSTEM</span>
+          <span class="member-count" style="color:#94a3b8">0</span>
+          <span class="member-label">members</span>
+        </div>
+      </div>
+      <div class="group-card" style="opacity: 0.7;">
+        <div class="group-header">
+          <span class="chevron">▶</span>
+          <span class="group-icon" style="color:#94a3b8">⚙️</span>
+          <div class="group-info">
+            <div class="group-name" style="color:#64748b">Style Resource Readers</div>
+            <div class="group-desc">SharePoint system group</div>
+          </div>
+          <span class="group-badge badge-system">SYSTEM</span>
+          <span class="member-count" style="color:#94a3b8">0</span>
+          <span class="member-label">members</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function switchTab(tab) {
+  // Remove active from all tabs
+  document.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+  // Activate clicked tab
+  event.target.closest('.sub-tab').classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+}
+</script>
+
+</body>
+</html>

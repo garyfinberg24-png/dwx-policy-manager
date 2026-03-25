@@ -69,7 +69,7 @@ export interface IUseEmbeddedNavigationResult {
  * const { isEmbedded, navigate, exitToSharePoint } = useEmbeddedNavigation();
  *
  * // Navigate to another JML page (preserves embedded mode)
- * navigate('/sites/JML/SitePages/Dashboard.aspx');
+ * navigate('/sites/PolicyManager/SitePages/Dashboard.aspx');
  *
  * // Exit to full SharePoint view
  * exitToSharePoint();

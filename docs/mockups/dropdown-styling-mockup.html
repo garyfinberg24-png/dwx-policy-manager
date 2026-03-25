@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dropdown Styling — Premium Variations</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f8fafc; color: #0f172a; padding: 32px 40px; }
+
+  .page { max-width: 800px; margin: 0 auto; }
+  .section-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+  .section-desc { font-size: 13px; color: #64748b; margin-bottom: 24px; }
+
+  .variation-bar { display: flex; gap: 8px; margin-bottom: 32px; padding: 12px 16px; background: #1e293b; border-radius: 8px; }
+  .variation-btn { padding: 8px 18px; border-radius: 4px; border: 1px solid #475569; background: transparent; color: #94a3b8; font-size: 13px; cursor: pointer; font-family: inherit; font-weight: 500; }
+  .variation-btn.active { background: #0d9488; border-color: #0d9488; color: #fff; font-weight: 600; }
+  .variation-btn:hover:not(.active) { border-color: #64748b; color: #e2e8f0; }
+  .variation { display: none; }
+  .variation.active { display: block; }
+
+  /* Shared form row */
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .form-group { margin-bottom: 16px; }
+  .form-label { font-size: 13px; font-weight: 600; color: #323130; margin-bottom: 4px; display: block; }
+  .form-label .req { color: #dc2626; }
+
+  /* ── VARIATION A: Icon + Category Chips ── */
+  .chip-selector { display: flex; flex-wrap: wrap; gap: 8px; }
+  .cat-chip { display: flex; align-items: center; gap: 6px; padding: 8px 14px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.15s; background: #fff; color: #475569; }
+  .cat-chip:hover { border-color: #0d9488; color: #0d9488; }
+  .cat-chip.selected { background: #0d9488; color: #fff; border-color: #0d9488; }
+  .cat-chip .chip-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── VARIATION B: Compact Grid with Icons ── */
+  .cat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .cat-card { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 8px; border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer; transition: all 0.15s; text-align: center; background: #fff; }
+  .cat-card:hover { border-color: #0d9488; transform: translateY(-1px); box-shadow: 0 2px 8px rgba(13,148,136,0.08); }
+  .cat-card.selected { border-color: #0d9488; background: #f0fdfa; border-width: 2px; }
+  .cat-card .cc-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+  .cat-card .cc-label { font-size: 11px; font-weight: 600; color: #475569; }
+  .cat-card.selected .cc-label { color: #0d9488; }
+
+  /* ── VARIATION C: Styled Dropdown (custom) ── */
+  .custom-select { position: relative; }
+  .custom-select-trigger { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 6px; background: #fff; cursor: pointer; font-size: 13px; color: #0f172a; transition: border 0.15s; }
+  .custom-select-trigger:hover { border-color: #0d9488; }
+  .custom-select-trigger.open { border-color: #0d9488; border-radius: 6px 6px 0 0; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+  .custom-select-trigger .selected-value { display: flex; align-items: center; gap: 8px; }
+  .custom-select-trigger .chevron { font-size: 10px; color: #94a3b8; transition: transform 0.2s; }
+  .custom-select-trigger.open .chevron { transform: rotate(180deg); }
+
+  .custom-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid #0d9488; border-top: none; border-radius: 0 0 6px 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); z-index: 100; max-height: 280px; overflow-y: auto; display: none; }
+  .custom-dropdown.open { display: block; }
+  .custom-dropdown .search-box { padding: 8px 12px; border-bottom: 1px solid #e2e8f0; }
+  .custom-dropdown .search-box input { width: 100%; border: 1px solid #e2e8f0; border-radius: 4px; padding: 6px 10px; font-size: 12px; outline: none; font-family: inherit; }
+  .custom-dropdown .search-box input:focus { border-color: #0d9488; }
+
+  .custom-option { display: flex; align-items: center; gap: 10px; padding: 10px 14px; cursor: pointer; transition: all 0.1s; font-size: 13px; }
+  .custom-option:hover { background: #f0fdfa; }
+  .custom-option.selected { background: #f0fdfa; color: #0d9488; font-weight: 600; }
+  .custom-option .opt-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .custom-option .opt-icon { width: 24px; height: 24px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; }
+  .custom-option .opt-desc { font-size: 10px; color: #94a3b8; margin-top: 1px; }
+  .custom-option .opt-check { margin-left: auto; color: #0d9488; font-size: 14px; display: none; }
+  .custom-option.selected .opt-check { display: block; }
+
+  /* Department same treatment */
+  .dept-select-trigger { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 6px; background: #fff; cursor: pointer; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="section-title">Category & Department — Premium Dropdown Styling</div>
+  <div class="section-desc">Three variations replacing the bland Fluent UI dropdown. Click tabs to compare.</div>
+
+  <div class="variation-bar">
+    <button class="variation-btn active" onclick="showVar('a')">A: Chip Selector</button>
+    <button class="variation-btn" onclick="showVar('b')">B: Icon Card Grid</button>
+    <button class="variation-btn" onclick="showVar('c')">C: Enhanced Dropdown</button>
+  </div>
+
+  <!-- ==================== VARIATION A: Chip Selector ==================== -->
+  <div id="var-a" class="variation active">
+    <div class="form-group">
+      <label class="form-label">Category <span class="req">*</span></label>
+      <div class="chip-selector">
+        <div class="cat-chip" onclick="selectChip(this)"><span class="chip-dot" style="background:#dc2626"></span> Compliance</div>
+        <div class="cat-chip" onclick="selectChip(this)"><span class="chip-dot" style="background:#7c3aed"></span> Data Privacy</div>
+        <div class="cat-chip" onclick="selectChip(this)"><span class="chip-dot" style="background:#059669"></span> Environmental</div>
+        <div class="cat-chip" onclick="selectChip(this)"><span class="chip-dot" style="background:#2563eb"></span> Financial</div>
+        <div class="cat-chip" onclick="selectChip(this)"><span class="chip-dot" style="background:#d97706"></span> Health & Safety</div>
+        <div class="cat-chip" onclick="selectChip(this)"><span class="chip-dot" style="background:#db2777"></span> HR Policies</div>
+        <div class="cat-chip selected" onclick="selectChip(this)"><span class="chip-dot" style="background:#fff"></span> IT & Security</div>
+        <div class="cat-chip" onclick="selectChip(this)"><span class="chip-dot" style="background:#64748b"></span> Legal</div>
+        <div class="cat-chip" onclick="selectChip(this)"><span class="chip-dot" style="background:#0d9488"></span> Operational</div>
+        <div class="cat-chip" onclick="selectChip(this)"><span class="chip-dot" style="background:#94a3b8"></span> Other</div>
+        <div class="cat-chip" onclick="selectChip(this)"><span class="chip-dot" style="background:#475569"></span> Quality Assurance</div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Department</label>
+      <div class="chip-selector">
+        <div class="cat-chip" onclick="selectChip(this)">Human Resources</div>
+        <div class="cat-chip selected" onclick="selectChip(this)">IT</div>
+        <div class="cat-chip" onclick="selectChip(this)">Finance</div>
+        <div class="cat-chip" onclick="selectChip(this)">Operations</div>
+        <div class="cat-chip" onclick="selectChip(this)">Sales</div>
+        <div class="cat-chip" onclick="selectChip(this)">Marketing</div>
+        <div class="cat-chip" onclick="selectChip(this)">Legal</div>
+        <div class="cat-chip" onclick="selectChip(this)">Executive</div>
+        <div class="cat-chip" onclick="selectChip(this)">All Departments</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== VARIATION B: Icon Card Grid ==================== -->
+  <div id="var-b" class="variation">
+    <div class="form-group">
+      <label class="form-label">Category <span class="req">*</span></label>
+      <div class="cat-grid">
+        <div class="cat-card" onclick="selectCard(this)"><div class="cc-icon" style="background:#fee2e2;color:#dc2626">&#x2696;</div><span class="cc-label">Compliance</span></div>
+        <div class="cat-card" onclick="selectCard(this)"><div class="cc-icon" style="background:#ede9fe;color:#7c3aed">&#x1F512;</div><span class="cc-label">Data Privacy</span></div>
+        <div class="cat-card" onclick="selectCard(this)"><div class="cc-icon" style="background:#dcfce7;color:#059669">&#x1F33F;</div><span class="cc-label">Environmental</span></div>
+        <div class="cat-card" onclick="selectCard(this)"><div class="cc-icon" style="background:#dbeafe;color:#2563eb">&#x1F4B0;</div><span class="cc-label">Financial</span></div>
+        <div class="cat-card" onclick="selectCard(this)"><div class="cc-icon" style="background:#fef3c7;color:#d97706">&#x26A0;</div><span class="cc-label">Health & Safety</span></div>
+        <div class="cat-card" onclick="selectCard(this)"><div class="cc-icon" style="background:#fce7f3;color:#db2777">&#x1F465;</div><span class="cc-label">HR Policies</span></div>
+        <div class="cat-card selected" onclick="selectCard(this)"><div class="cc-icon" style="background:#ccfbf1;color:#0d9488">&#x1F5A5;</div><span class="cc-label">IT & Security</span></div>
+        <div class="cat-card" onclick="selectCard(this)"><div class="cc-icon" style="background:#f1f5f9;color:#64748b">&#x2696;</div><span class="cc-label">Legal</span></div>
+        <div class="cat-card" onclick="selectCard(this)"><div class="cc-icon" style="background:#f0fdfa;color:#0d9488">&#x2699;</div><span class="cc-label">Operational</span></div>
+        <div class="cat-card" onclick="selectCard(this)"><div class="cc-icon" style="background:#f1f5f9;color:#94a3b8">&#x2B50;</div><span class="cc-label">Quality</span></div>
+        <div class="cat-card" onclick="selectCard(this)"><div class="cc-icon" style="background:#f8fafc;color:#475569">&#x2022;</div><span class="cc-label">Other</span></div>
+      </div>
+    </div>
+    <div class="form-group" style="margin-top: 20px;">
+      <label class="form-label">Department</label>
+      <div class="cat-grid" style="grid-template-columns: repeat(3, 1fr);">
+        <div class="cat-card" onclick="selectCard(this)"><span class="cc-label">Human Resources</span></div>
+        <div class="cat-card selected" onclick="selectCard(this)"><span class="cc-label">IT</span></div>
+        <div class="cat-card" onclick="selectCard(this)"><span class="cc-label">Finance</span></div>
+        <div class="cat-card" onclick="selectCard(this)"><span class="cc-label">Operations</span></div>
+        <div class="cat-card" onclick="selectCard(this)"><span class="cc-label">Sales</span></div>
+        <div class="cat-card" onclick="selectCard(this)"><span class="cc-label">Marketing</span></div>
+        <div class="cat-card" onclick="selectCard(this)"><span class="cc-label">Legal</span></div>
+        <div class="cat-card" onclick="selectCard(this)"><span class="cc-label">Executive</span></div>
+        <div class="cat-card" onclick="selectCard(this)"><span class="cc-label">All Departments</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== VARIATION C: Enhanced Dropdown ==================== -->
+  <div id="var-c" class="variation">
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Category <span class="req">*</span></label>
+        <div class="custom-select">
+          <div class="custom-select-trigger open" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+            <div class="selected-value">
+              <span class="opt-dot" style="background:#0d9488;width:8px;height:8px;border-radius:50%;display:inline-block"></span>
+              <span>IT & Security</span>
+            </div>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="custom-dropdown open">
+            <div class="search-box"><input placeholder="Search categories..." /></div>
+            <div class="custom-option" onclick="selectOption(this)"><span class="opt-dot" style="background:#dc2626"></span><div><span>Compliance</span><div class="opt-desc">Regulatory & legal compliance</div></div><span class="opt-check">&#x2714;</span></div>
+            <div class="custom-option" onclick="selectOption(this)"><span class="opt-dot" style="background:#7c3aed"></span><div><span>Data Privacy</span><div class="opt-desc">POPIA, GDPR, data protection</div></div><span class="opt-check">&#x2714;</span></div>
+            <div class="custom-option" onclick="selectOption(this)"><span class="opt-dot" style="background:#2563eb"></span><div><span>Financial</span><div class="opt-desc">Finance & accounting policies</div></div><span class="opt-check">&#x2714;</span></div>
+            <div class="custom-option" onclick="selectOption(this)"><span class="opt-dot" style="background:#d97706"></span><div><span>Health & Safety</span><div class="opt-desc">OHS, workplace safety</div></div><span class="opt-check">&#x2714;</span></div>
+            <div class="custom-option" onclick="selectOption(this)"><span class="opt-dot" style="background:#db2777"></span><div><span>HR Policies</span><div class="opt-desc">Human resources & people</div></div><span class="opt-check">&#x2714;</span></div>
+            <div class="custom-option selected" onclick="selectOption(this)"><span class="opt-dot" style="background:#0d9488"></span><div><span>IT & Security</span><div class="opt-desc">Information technology & cybersecurity</div></div><span class="opt-check">&#x2714;</span></div>
+            <div class="custom-option" onclick="selectOption(this)"><span class="opt-dot" style="background:#64748b"></span><div><span>Legal</span><div class="opt-desc">Legal & governance</div></div><span class="opt-check">&#x2714;</span></div>
+            <div class="custom-option" onclick="selectOption(this)"><span class="opt-dot" style="background:#0d9488"></span><div><span>Operational</span><div class="opt-desc">Operations & processes</div></div><span class="opt-check">&#x2714;</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Department</label>
+        <div class="custom-select">
+          <div class="custom-select-trigger" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+            <div class="selected-value">
+              <span class="opt-icon" style="background:#ccfbf1;color:#0d9488;width:20px;height:20px;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;font-size:10px">IT</span>
+              <span>IT</span>
+            </div>
+            <span class="chevron">&#9660;</span>
+          </div>
+          <div class="custom-dropdown">
+            <div class="custom-option" onclick="selectOption(this)"><div>Human Resources</div><span class="opt-check">&#x2714;</span></div>
+            <div class="custom-option selected" onclick="selectOption(this)"><div>IT</div><span class="opt-check">&#x2714;</span></div>
+            <div class="custom-option" onclick="selectOption(this)"><div>Finance</div><span class="opt-check">&#x2714;</span></div>
+            <div class="custom-option" onclick="selectOption(this)"><div>Operations</div><span class="opt-check">&#x2714;</span></div>
+            <div class="custom-option" onclick="selectOption(this)"><div>Sales</div><span class="opt-check">&#x2714;</span></div>
+            <div class="custom-option" onclick="selectOption(this)"><div>Marketing</div><span class="opt-check">&#x2714;</span></div>
+            <div class="custom-option" onclick="selectOption(this)"><div>Legal</div><span class="opt-check">&#x2714;</span></div>
+            <div class="custom-option" onclick="selectOption(this)"><div>Executive</div><span class="opt-check">&#x2714;</span></div>
+            <div class="custom-option" onclick="selectOption(this)"><div>All Departments</div><span class="opt-check">&#x2714;</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showVar(id) {
+  document.querySelectorAll('.variation').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.variation-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('var-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+function selectChip(el) {
+  el.closest('.chip-selector').querySelectorAll('.cat-chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+function selectCard(el) {
+  el.closest('.cat-grid').querySelectorAll('.cat-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+function selectOption(el) {
+  el.closest('.custom-dropdown').querySelectorAll('.custom-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+}
+</script>
+
+</body>
+</html>

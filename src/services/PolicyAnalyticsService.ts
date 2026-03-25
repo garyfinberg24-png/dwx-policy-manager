@@ -2003,7 +2003,7 @@ export class PolicyAnalyticsService {
     // In production, this would generate actual PDF/Excel/CSV files
     // For now, return a placeholder URL
     const timestamp = Date.now();
-    return `/sites/JML/Reports/${report.Title.replace(/\s+/g, '_')}_${timestamp}.${report.Format}`;
+    return `/sites/PolicyManager/Reports/${report.Title.replace(/\s+/g, '_')}_${timestamp}.${report.Format}`;
   }
 
   // ============================================================================
@@ -2926,12 +2926,12 @@ export class PolicyAnalyticsService {
     switch (format) {
       case 'json':
         // In production, would upload to document library
-        return `/sites/JML/AuditReports/${filename}.json`;
+        return `/sites/PolicyManager/AuditReports/${filename}.json`;
       case 'html':
-        return `/sites/JML/AuditReports/${filename}.html`;
+        return `/sites/PolicyManager/AuditReports/${filename}.html`;
       case 'pdf':
       default:
-        return `/sites/JML/AuditReports/${filename}.pdf`;
+        return `/sites/PolicyManager/AuditReports/${filename}.pdf`;
     }
   }
 }

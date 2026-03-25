@@ -184,15 +184,17 @@ export class NotificationRouter {
     // Email — queue to PM_EmailQueue
     if (channels.email) {
       try {
-        await this.sp.web.lists.getByTitle('PM_EmailQueue').items.add({
+        await this.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
           Title: `${notification.event}: ${notification.data.policyTitle || 'Notification'}`,
           RecipientEmail: notification.recipientEmail,
           RecipientName: notification.recipientName || '',
-          Subject: notification.data.subject || notification.data.policyTitle || '',
-          Body: notification.data.body || '',
+          PolicyTitle: notification.data.policyTitle || '',
+          PolicyId: notification.data.policyId || 0,
+          Message: notification.data.body || notification.data.subject || '',
           Priority: eventConfig.priority === 'urgent' ? 'High' : 'Normal',
-          Status: 'Queued',
-          NotificationType: notification.event
+          Status: 'Pending',
+          NotificationType: notification.event,
+          Channel: 'Email'
         });
         result.email = true;
       } catch (err) {
@@ -205,9 +207,8 @@ export class NotificationRouter {
       try {
         await this.sp.web.lists.getByTitle('PM_Notifications').items.add({
           Title: notification.data.policyTitle || notification.event,
-          Body: notification.data.message || notification.data.summary || '',
-          RecipientEmail: notification.recipientEmail,
-          Type: notification.event,
+          Message: notification.data.message || notification.data.summary || '',
+          Type: 'Policy',
           Priority: eventConfig.priority === 'urgent' ? 'High' : eventConfig.priority === 'high' ? 'High' : 'Normal',
           IsRead: false,
           RelatedItemType: 'Policy',

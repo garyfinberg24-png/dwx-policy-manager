@@ -542,7 +542,7 @@ export interface IPolicyDistribution extends IBaseListItem {
 // POLICY TEMPLATES
 // ============================================================================
 
-export type PolicyTemplateType = 'blank' | 'richtext' | 'word' | 'excel' | 'powerpoint' | 'corporate' | 'regulatory';
+export type PolicyTemplateType = 'blank' | 'richtext' | 'word' | 'excel' | 'powerpoint' | 'html' | 'corporate' | 'regulatory';
 
 export interface ITemplateSectionDef {
   id: string;

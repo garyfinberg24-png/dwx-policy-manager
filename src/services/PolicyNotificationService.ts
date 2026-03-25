@@ -14,6 +14,7 @@ import { NotificationLists } from '../constants/SharePointListNames';
 import { DwxNotificationService, DwxNotificationType, DwxNotificationPriority, DwxNotificationCategory } from '@dwx/core';
 import { escapeHtml } from '../utils/sanitizeHtml';
 import { ValidationUtils } from '../utils/ValidationUtils';
+import { NotificationRouter } from './NotificationRouter';
 
 /**
  * Policy notification types
@@ -66,13 +67,21 @@ export class PolicyNotificationService {
   private sp: SPFI;
   private siteUrl: string;
   private dwxNotifications: DwxNotificationService | null;
-  private readonly NOTIFICATION_LIST = NotificationLists.POLICY_NOTIFICATIONS;
+  private notificationRouter: NotificationRouter | null = null;
+  // private readonly NOTIFICATION_LIST = NotificationLists.POLICY_NOTIFICATIONS; // Now using 'PM_Notifications' directly
   private readonly REMINDER_SCHEDULE_LIST = NotificationLists.REMINDER_SCHEDULE;
 
   constructor(sp: SPFI, siteUrl: string, dwxNotificationService?: DwxNotificationService) {
     this.sp = sp;
     this.siteUrl = siteUrl;
     this.dwxNotifications = dwxNotificationService || null;
+  }
+
+  /**
+   * Set the NotificationRouter for multi-channel delivery (Teams Adaptive Cards, etc.)
+   */
+  public setNotificationRouter(router: NotificationRouter): void {
+    this.notificationRouter = router;
   }
 
   // ============================================================================
@@ -380,6 +389,33 @@ export class PolicyNotificationService {
     if (failCount > 0) {
       logger.error('PolicyNotificationService',
         `Failed to send review notification to ${failCount}/${reviewerIds.length} recipients`);
+    }
+
+    // Route through NotificationRouter for Teams Adaptive Cards
+    if (this.notificationRouter) {
+      for (const reviewerId of reviewerIds) {
+        try {
+          const reviewer = await this.sp.web.siteUsers.getById(reviewerId).select('Email', 'Title')();
+          if (reviewer?.Email) {
+            await this.notificationRouter.send({
+              event: 'review-due',
+              recipientEmail: reviewer.Email,
+              recipientName: reviewer.Title || '',
+              data: {
+                policyTitle: policy.PolicyName,
+                policyId: policy.Id,
+                subject: `Review Required: ${policy.PolicyName}`,
+                message: `${submitterName} has submitted "${policy.PolicyName}" for your review.`,
+                authorName: submitterName,
+                category: policy.PolicyCategory || '',
+                riskLevel: policy.ComplianceRisk || 'Medium'
+              }
+            });
+          }
+        } catch (routerErr) {
+          logger.warn('PolicyNotificationService', `NotificationRouter failed for reviewer ${reviewerId}`, routerErr);
+        }
+      }
     }
   }
 
@@ -975,16 +1011,15 @@ export class PolicyNotificationService {
   private async logNotification(notification: IPolicyNotification): Promise<void> {
     try {
       await this.sp.web.lists
-        .getByTitle(this.NOTIFICATION_LIST)
+        .getByTitle('PM_Notifications')
         .items.add({
           Title: notification.subject,
           RecipientId: notification.recipientId,
-          RecipientEmail: notification.recipientEmail,
-          NotificationType: notification.notificationType,
-          PolicyId: notification.policyId,
-          SentDate: new Date().toISOString(),
-          EmailSent: notification.sendEmail,
-          InAppSent: notification.sendInApp
+          Message: notification.subject,
+          Type: 'Policy',
+          RelatedItemId: notification.policyId,
+          Priority: 'Normal',
+          IsRead: false
         });
     } catch (error) {
       // Log error but don't throw - notification logging is not critical

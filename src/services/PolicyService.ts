@@ -222,7 +222,7 @@ export class PolicyService {
         PolicyName: policy.PolicyName,
         PolicyCategory: policy.PolicyCategory,
         PolicyType: policy.PolicyType,
-        Description: policy.Description || '',
+        PolicyDescription: policy.Description || '',
         VersionNumber: '0.1',
         VersionType: VersionType.Draft,
         MajorVersion: 0,
@@ -274,7 +274,7 @@ export class PolicyService {
         EntityType: 'Policy',
         EntityId: result.data.Id,
         PolicyId: result.data.Id,
-        Action: 'Created',
+        AuditAction: 'Created',
         ActionDescription: `Policy created: ${policy.PolicyName}`,
         PerformedById: this.currentUserId,
         PerformedByEmail: this.currentUserEmail,
@@ -373,7 +373,7 @@ export class PolicyService {
         EntityType: 'Policy',
         EntityId: policyId,
         PolicyId: policyId,
-        Action: 'Updated',
+        AuditAction: 'Updated',
         ActionDescription: `Policy updated: ${updates.PolicyName || 'Unknown'}`,
         PerformedById: this.currentUserId,
         PerformedByEmail: this.currentUserEmail,
@@ -423,7 +423,7 @@ export class PolicyService {
         EntityType: 'Policy',
         EntityId: policyId,
         PolicyId: policyId,
-        Action: 'Deleted',
+        AuditAction: 'Deleted',
         ActionDescription: 'Policy archived',
         PerformedById: this.currentUserId,
         PerformedByEmail: this.currentUserEmail,
@@ -601,17 +601,16 @@ export class PolicyService {
    */
   public async submitForReview(policyId: number, reviewerIds: number[]): Promise<IPolicy> {
     try {
-      await this.updatePolicy(policyId, {
-        PolicyStatus: PolicyStatus.InReview,
-        ReviewerIds: reviewerIds,
-        SubmittedForReviewDate: new Date()
-      });
+      await this.sp.web.lists.getByTitle(this.POLICIES_LIST)
+        .items.getById(policyId).update({
+          PolicyStatus: PolicyStatus.InReview
+        });
 
       await this.logAudit({
         EntityType: 'Policy',
         EntityId: policyId,
         PolicyId: policyId,
-        Action: 'SubmittedForReview',
+        AuditAction: 'SubmittedForReview',
         ActionDescription: 'Policy submitted for review',
         PerformedById: this.currentUserId,
         PerformedByEmail: this.currentUserEmail,
@@ -682,11 +681,10 @@ export class PolicyService {
       // Get current policy for audit
       const currentPolicy = await this.getPolicyById(policyId);
 
-      await this.updatePolicy(policyId, {
-        PolicyStatus: PolicyStatus.Draft, // Return to draft for revision
-        RejectionReason: rejectionReason,
-        RejectedDate: new Date()
-      });
+      await this.sp.web.lists.getByTitle(this.POLICIES_LIST)
+        .items.getById(policyId).update({
+          PolicyStatus: PolicyStatus.Draft
+        });
 
       // Enhanced audit logging - Policy Rejection
       await this.auditService.logPolicyRejection(currentPolicy, rejectionReason);
@@ -696,7 +694,7 @@ export class PolicyService {
         EntityType: 'Policy',
         EntityId: policyId,
         PolicyId: policyId,
-        Action: 'Rejected',
+        AuditAction: 'Rejected',
         ActionDescription: rejectionReason,
         PerformedById: this.currentUserId,
         PerformedByEmail: this.currentUserEmail,
@@ -740,7 +738,7 @@ export class PolicyService {
         EntityType: 'Policy',
         EntityId: policyId,
         PolicyId: policyId,
-        Action: 'Archived',
+        AuditAction: 'Archived',
         ActionDescription: archiveReason || 'Policy archived',
         PerformedById: this.currentUserId,
         PerformedByEmail: this.currentUserEmail,
@@ -801,7 +799,7 @@ export class PolicyService {
         EntityType: 'Policy',
         EntityId: policyId,
         PolicyId: policyId,
-        Action: 'Approved',
+        AuditAction: 'Approved',
         ActionDescription: approverComments || 'Policy approved',
         PerformedById: this.currentUserId,
         PerformedByEmail: this.currentUserEmail,
@@ -953,7 +951,7 @@ export class PolicyService {
         EntityType: 'Policy',
         EntityId: request.policyId,
         PolicyId: request.policyId,
-        Action: 'Published',
+        AuditAction: 'Published',
         ActionDescription: `Policy distribution queued for ${targetUsers.length} users`,
         PerformedById: this.currentUserId,
         PerformedByEmail: this.currentUserEmail,
@@ -1133,7 +1131,7 @@ export class PolicyService {
         EntityType: 'Policy',
         EntityId: policyId,
         PolicyId: policyId,
-        Action: 'VersionCreated',
+        AuditAction: 'VersionCreated',
         ActionDescription: `New draft version ${newVersionNumber} created from published policy`,
         PerformedById: this.currentUserId,
         PerformedByEmail: this.currentUserEmail,
@@ -1350,7 +1348,7 @@ export class PolicyService {
         EntityType: 'Acknowledgement',
         EntityId: request.acknowledgementId,
         PolicyId: ack.PolicyId,
-        Action: 'Acknowledged',
+        AuditAction: 'Acknowledged',
         ActionDescription: `Policy acknowledged by user. Retention: ${policy.RetentionCategory}, Classification: ${policy.DataClassification}`,
         PerformedById: this.currentUserId,
         PerformedByEmail: this.currentUserEmail,
@@ -1406,10 +1404,10 @@ export class PolicyService {
       const exemptionData = {
         Title: `Exemption - Policy ${exemption.PolicyId} - User ${exemption.UserId}`,
         PolicyId: exemption.PolicyId,
-        UserId: exemption.UserId,
+        ExemptUserId: exemption.UserId,
         ExemptionReason: exemption.ExemptionReason,
         ExemptionType: exemption.ExemptionType,
-        Status: ExemptionStatus.Pending,
+        ExemptionStatus: ExemptionStatus.Pending,
         RequestDate: new Date().toISOString(),
         RequestedById: this.currentUserId
       };
@@ -1422,7 +1420,7 @@ export class PolicyService {
         EntityType: 'Exemption',
         EntityId: result.data.Id,
         PolicyId: exemption.PolicyId,
-        Action: 'ExemptionRequested',
+        AuditAction: 'ExemptionRequested',
         ActionDescription: `Exemption requested: ${exemption.ExemptionReason}`,
         PerformedById: this.currentUserId,
         PerformedByEmail: this.currentUserEmail,
@@ -1443,7 +1441,7 @@ export class PolicyService {
   public async approveExemption(exemptionId: number, comments?: string): Promise<IPolicyExemption> {
     try {
       const updateData = {
-        Status: ExemptionStatus.Approved,
+        ExemptionStatus: ExemptionStatus.Approved,
         ApprovedById: this.currentUserId,
         ApprovedDate: new Date().toISOString(),
         ReviewComments: comments
@@ -1475,7 +1473,7 @@ export class PolicyService {
         EntityType: 'Exemption',
         EntityId: exemptionId,
         PolicyId: exemption.PolicyId,
-        Action: 'ExemptionApproved',
+        AuditAction: 'ExemptionApproved',
         ActionDescription: comments || 'Exemption approved',
         PerformedById: this.currentUserId,
         PerformedByEmail: this.currentUserEmail,
@@ -1800,11 +1798,11 @@ export class PolicyService {
       await this.sp.web.lists
         .getByTitle(this.POLICY_AUDIT_LOG_LIST)
         .items.add({
-          Title: `${audit.Action} - ${audit.EntityType} ${audit.EntityId}`,
+          Title: `${audit.AuditAction || audit.Action || ''} - ${audit.EntityType} ${audit.EntityId || ''}`,
           EntityType: audit.EntityType,
           EntityId: audit.EntityId,
           PolicyId: audit.PolicyId,
-          Action: audit.Action,
+          AuditAction: audit.AuditAction || audit.Action || '',
           ActionDescription: audit.ActionDescription,
           PerformedById: audit.PerformedById,
           PerformedByEmail: audit.PerformedByEmail,
@@ -1835,6 +1833,7 @@ export class PolicyService {
     return {
       ...item,
       PolicyOwner: ownerName,
+      _policyOwnerEmail: (policyOwner && typeof policyOwner === 'object') ? (policyOwner.EMail || '') : '',
       DocumentURL: documentUrl,
       Tags: item.Tags ? JSON.parse(item.Tags) : [],
       RelatedPolicyIds: item.RelatedPolicyIds ? JSON.parse(item.RelatedPolicyIds) : [],

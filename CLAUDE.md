@@ -812,11 +812,12 @@ The QuizBuilder's "AI Generate" panel calls the Azure Function with:
 
 ---
 
-## Session State (Last Updated: 25 Mar 2026 — Session 18 Complete)
+## Session State (Last Updated: 26 Mar 2026 — Session 18 Complete)
 
 ### Production Readiness Rules (MANDATORY)
 
-- **Border Radius**: All controls (dropdowns, search, inputs, buttons) = 4px. KPI cards = 8px.
+- **Border Radius**: All controls (dropdowns, search, inputs, buttons) = 6px. KPI cards = 10px.
+- **Form Controls**: Global Forest Teal styling via `global-dropdown-fix.scss` + `injectPortalStyles.ts`. All Fluent UI v8 controls themed automatically.
 - **No Stubs**: If a stub or incomplete feature is found, implement it FULLY. No "for later".
 - **Fluent Panels**: DO NOT modify any Fluent Panel. Log issues for manual review only.
 - **Rollback checkpoint**: Git tag `pre-production-hardening` on commit `4693afc`

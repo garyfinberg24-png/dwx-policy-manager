@@ -180,11 +180,21 @@ export class AudienceRuleService {
 
     try {
       // Load all active user profiles
-      const users = await this.sp.web.lists
-        .getByTitle(this.USER_PROFILES_LIST)
-        .items.filter('IsActive eq 1')
-        .select('Id', 'Title', 'Email', 'Department', 'JobTitle', 'Office', 'Location', 'PMRole', 'PMRoles', 'EmployeeType', 'Company', 'ManagerEmail', 'StartDate', 'IsActive')
-        .top(5000)();
+      let users: any[];
+      try {
+        users = await this.sp.web.lists
+          .getByTitle(this.USER_PROFILES_LIST)
+          .items.filter('IsActive eq 1')
+          .select('Id', 'Title', 'Email', 'Department', 'JobTitle', 'Office', 'Location', 'PMRole', 'PMRoles', 'EmployeeType', 'Company', 'ManagerEmail', 'StartDate', 'IsActive')
+          .top(5000)();
+      } catch {
+        // Fallback without optional columns
+        users = await this.sp.web.lists
+          .getByTitle(this.USER_PROFILES_LIST)
+          .items.filter('IsActive eq 1')
+          .select('Id', 'Title', 'Department', 'JobTitle', 'PMRole', 'IsActive')
+          .top(5000)();
+      }
 
       // Evaluate each user against the rules
       const matched = users.filter((user: any) => {

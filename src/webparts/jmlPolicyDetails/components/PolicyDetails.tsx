@@ -2586,8 +2586,25 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
             }
           } catch { /* best-effort */ }
         } else if (allApproved) {
-          await this.props.sp.web.lists.getByTitle('PM_Policies')
-            .items.getById(policy!.Id).update({ PolicyStatus: 'Approved' });
+          // Check if there are final approvers still pending
+          const hasApprovers = updatedReviewers.some((r: any) => r.ReviewerType === 'Final Approver' || r.ReviewerType === 'Executive Approver');
+          const allApproversApproved = updatedReviewers
+            .filter((r: any) => r.ReviewerType === 'Final Approver' || r.ReviewerType === 'Executive Approver')
+            .every((r: any) => r.ReviewStatus === 'Approved');
+
+          if (hasApprovers && allApproversApproved) {
+            // All reviewers AND approvers approved → Approved
+            await this.props.sp.web.lists.getByTitle('PM_Policies')
+              .items.getById(policy!.Id).update({ PolicyStatus: 'Approved' });
+          } else if (hasApprovers && !allApproversApproved) {
+            // Reviewers approved but approvers still pending → Pending Approval
+            await this.props.sp.web.lists.getByTitle('PM_Policies')
+              .items.getById(policy!.Id).update({ PolicyStatus: 'Pending Approval' });
+          } else {
+            // No separate approvers — all reviewers approved → Approved
+            await this.props.sp.web.lists.getByTitle('PM_Policies')
+              .items.getById(policy!.Id).update({ PolicyStatus: 'Approved' });
+          }
         }
 
         // Audit log
@@ -2622,7 +2639,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                     <p style="margin:0;font-weight:600;font-size:15px;color:#0f172a">${escapeHtml(policy!.PolicyName || policy!.Title || '')}</p>
                   </div>
                   ${reviewComments ? `<div style="margin:16px 0;padding:12px;background:#f8fafc;border-radius:4px"><p style="margin:0 0 4px;font-size:11px;color:#94a3b8;font-weight:600">REVIEWER COMMENTS</p><p style="margin:0;font-size:13px;color:#475569">${escapeHtml(reviewComments)}</p></div>` : ''}
-                  <p style="margin:24px 0 16px"><a href="${reviewDecision === 'approve' ? `${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policy!.Id}` : policyUrl}" style="background:${reviewDecision === 'approve' ? '#059669' : '#0d9488'};color:#fff;padding:10px 24px;border-radius:4px;text-decoration:none;font-weight:600;font-size:14px;display:inline-block">${reviewDecision === 'approve' ? 'View Approved Policy' : 'Edit Policy'}</a></p>
+                  <p style="margin:24px 0 16px"><a href="${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policy!.Id}&mode=review" style="background:${reviewDecision === 'approve' ? '#059669' : '#0d9488'};color:#fff;padding:10px 24px;border-radius:4px;text-decoration:none;font-weight:600;font-size:14px;display:inline-block">${reviewDecision === 'approve' ? 'Review & Approve Policy' : 'Edit Policy'}</a></p>
                 </div>
                 <div style="background:#f8fafc;padding:16px 32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;text-align:center">
                   <p style="margin:0;font-size:11px;color:#94a3b8">First Digital — DWx Policy Manager</p>
@@ -2637,7 +2654,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
               NotificationType: reviewDecision === 'approve' ? 'ApprovalApproved' : 'ApprovalRejected',
               Channel: 'Email',
               Message: emailHtml,
-              Status: 'Pending',
+              QueueStatus: 'Pending',
               Priority: 'High'
             });
           }
@@ -2645,7 +2662,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
 
         // Show success and redirect
         const msg = reviewDecision === 'approve'
-          ? (allApproved ? 'All reviewers have approved. The policy has been marked as Approved.' : 'Your approval has been recorded. Waiting for other reviewers.')
+          ? (allApproved ? 'All reviews complete. The policy is now pending final approval.' : 'Your approval has been recorded. Waiting for other reviewers.')
           : reviewDecision === 'changes' ? 'Your change request has been sent to the author.'
           : 'The policy has been rejected and the author has been notified.';
         await this.dialogManager.showAlert(msg, { variant: reviewDecision === 'approve' ? 'success' : 'warning', title: reviewDecision === 'approve' ? 'Review Approved' : reviewDecision === 'changes' ? 'Changes Requested' : 'Policy Rejected' });

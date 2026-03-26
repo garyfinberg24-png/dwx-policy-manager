@@ -805,7 +805,7 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
             NotificationType: 'PolicyAcknowledgmentRequired',
             Channel: 'Email',
             Message: `<div style="font-family:'Segoe UI',sans-serif;max-width:600px;margin:0 auto"><div style="background:linear-gradient(135deg,#d97706,#b45309);padding:24px 32px;border-radius:8px 8px 0 0"><h1 style="color:#fff;margin:0;font-size:20px">Policy Reminder</h1><p style="color:rgba(255,255,255,0.8);margin:4px 0 0;font-size:13px">Policy Manager</p></div><div style="background:#fff;padding:24px 32px;border:1px solid #e2e8f0;border-top:none"><p style="font-size:14px;color:#475569">Hi <strong>${recipient.name}</strong>,</p><p style="font-size:14px;color:#475569">This is a reminder to acknowledge the policy: <strong>${selectedCampaign.campaignName}</strong>.</p><p style="font-size:14px;color:#475569">Please complete this at your earliest convenience.</p></div><div style="background:#f8fafc;padding:16px 32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;text-align:center"><p style="margin:0;font-size:11px;color:#94a3b8">First Digital — DWx Policy Manager</p></div></div>`,
-            Status: 'Pending',
+            QueueStatus: 'Pending',
             Priority: 'High'
           });
           sentCount++;

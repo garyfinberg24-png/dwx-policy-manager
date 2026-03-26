@@ -1195,7 +1195,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                     NotificationType: 'ReviewRequired',
                     Channel: 'Email',
                     Message: emailHtml,
-                    Status: 'Pending',
+                    QueueStatus: 'Pending',
                     Priority: 'High'
                   });
                 }
@@ -1367,7 +1367,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                 NotificationType: 'ReviewCancelled',
                 Channel: 'Email',
                 Message: `<div style="font-family:'Segoe UI',sans-serif;max-width:600px;margin:0 auto"><div style="background:linear-gradient(135deg,#64748b,#475569);padding:24px 32px;border-radius:8px 8px 0 0"><h1 style="color:#fff;margin:0;font-size:20px">Review Withdrawn</h1><p style="color:rgba(255,255,255,0.8);margin:4px 0 0;font-size:13px">Policy Manager</p></div><div style="background:#fff;padding:24px 32px;border:1px solid #e2e8f0;border-top:none"><p style="font-size:14px;color:#475569">Hi <strong>${escapeHtml(user.Title || 'Reviewer')}</strong>,</p><p style="font-size:14px;color:#475569">${escapeHtml(authorName)} has withdrawn <strong>${escapeHtml(title)}</strong> from review. No action is required.</p></div><div style="background:#f8fafc;padding:16px 32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;text-align:center"><p style="margin:0;font-size:11px;color:#94a3b8">First Digital — DWx Policy Manager</p></div></div>`,
-                Status: 'Pending',
+                QueueStatus: 'Pending',
                 Priority: 'Normal'
               });
             }
@@ -1431,7 +1431,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
           NotificationType: 'PolicyPublished',
           Channel: 'Email',
           Message: emailHtml,
-          Status: 'Pending',
+          QueueStatus: 'Pending',
           Priority: 'Normal'
         });
       } catch { /* notification best-effort */ }
@@ -2080,8 +2080,18 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
               .items.filter(`PolicyId eq ${policyId}`).select('ReviewStatus').top(50)();
             const allApproved = allReviewers.every((r: any) => r.ReviewStatus === 'Approved');
             if (allApproved) {
+              // Check if there are final approvers — if so, move to Pending Approval
+              const approverItems = await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_REVIEWERS)
+                .items.filter(`PolicyId eq ${policyId}`)
+                .select('ReviewerType', 'ReviewStatus').top(50)();
+              const hasApprovers = approverItems.some((r: any) => r.ReviewerType === 'Final Approver' || r.ReviewerType === 'Executive Approver');
+              const allApproversApproved = approverItems
+                .filter((r: any) => r.ReviewerType === 'Final Approver' || r.ReviewerType === 'Executive Approver')
+                .every((r: any) => r.ReviewStatus === 'Approved');
+
+              const newStatus = (hasApprovers && !allApproversApproved) ? 'Pending Approval' : 'Approved';
               await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES)
-                .items.getById(policyId).update({ PolicyStatus: 'Approved' });
+                .items.getById(policyId).update({ PolicyStatus: newStatus });
             }
           } catch { /* best-effort */ }
         }
@@ -2122,7 +2132,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
             NotificationType: status === 'Approved' ? 'ApprovalApproved' : 'ApprovalRejected',
             Channel: 'Email',
             Message: `<div style="font-family:'Segoe UI',sans-serif;max-width:600px;margin:0 auto"><div style="background:linear-gradient(135deg,${status === 'Approved' ? '#059669,#047857' : '#d97706,#b45309'});padding:24px 32px;border-radius:8px 8px 0 0"><h1 style="color:#fff;margin:0;font-size:20px">Review ${decisionLabel}</h1><p style="color:rgba(255,255,255,0.8);margin:4px 0 0;font-size:13px">Policy Manager</p></div><div style="background:#fff;padding:24px 32px;border:1px solid #e2e8f0;border-top:none"><p style="font-size:14px;color:#475569"><strong>${reviewerName}</strong> has ${status.toLowerCase()} your policy: <strong>${approval.PolicyTitle}</strong></p><p style="margin:24px 0 16px"><a href="${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policyId}${status !== 'Approved' ? '&mode=review' : ''}" style="background:#0d9488;color:#fff;padding:10px 24px;border-radius:4px;text-decoration:none;font-weight:600;display:inline-block">${status === 'Approved' ? 'View Policy' : 'Edit Policy'}</a></p></div><div style="background:#f8fafc;padding:16px 32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;text-align:center"><p style="margin:0;font-size:11px;color:#94a3b8">First Digital — DWx Policy Manager</p></div></div>`,
-            Status: 'Pending',
+            QueueStatus: 'Pending',
             Priority: 'High'
           });
         }

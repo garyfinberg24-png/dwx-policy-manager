@@ -183,7 +183,7 @@ export class PolicyNotificationService {
         NotificationType: opts.eventName,
         Channel: 'Email',
         Message: htmlBody,
-        Status: 'Pending',
+        QueueStatus: 'Pending',
         Priority: opts.priority || 'Normal'
       });
     } catch (err) {

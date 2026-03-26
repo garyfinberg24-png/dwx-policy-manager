@@ -189,7 +189,7 @@ resource logicApp 'Microsoft.Logic/workflows@2019-05-01' = {
                 method: 'patch'
                 path: '/datasets/@{encodeURIComponent(encodeURIComponent(\'${sharePointSiteUrl}\'))}/tables/@{encodeURIComponent(encodeURIComponent(\'${emailQueueListName}\'))}/items/@{encodeURIComponent(items(\'For_Each_Queued_Email\')?[\'ID\'])}'
                 body: {
-                  Status: 'Processing'
+                  QueueStatus: 'Processing'
                 }
               }
             }
@@ -234,7 +234,7 @@ resource logicApp 'Microsoft.Logic/workflows@2019-05-01' = {
                 method: 'patch'
                 path: '/datasets/@{encodeURIComponent(encodeURIComponent(\'${sharePointSiteUrl}\'))}/tables/@{encodeURIComponent(encodeURIComponent(\'${emailQueueListName}\'))}/items/@{encodeURIComponent(items(\'For_Each_Queued_Email\')?[\'ID\'])}'
                 body: {
-                  Status: 'Sent'
+                  QueueStatus: 'Sent'
                   SentAt: '@{utcNow()}'
                   AttemptCount: '@{add(int(coalesce(items(\'For_Each_Queued_Email\')?[\'AttemptCount\'], \'0\')), 1)}'
                 }
@@ -256,7 +256,7 @@ resource logicApp 'Microsoft.Logic/workflows@2019-05-01' = {
                 method: 'patch'
                 path: '/datasets/@{encodeURIComponent(encodeURIComponent(\'${sharePointSiteUrl}\'))}/tables/@{encodeURIComponent(encodeURIComponent(\'${emailQueueListName}\'))}/items/@{encodeURIComponent(items(\'For_Each_Queued_Email\')?[\'ID\'])}'
                 body: {
-                  Status: '@{if(greaterOrEquals(add(int(coalesce(items(\'For_Each_Queued_Email\')?[\'AttemptCount\'], \'0\')), 1), parameters(\'maxRetryAttempts\')), \'Failed\', \'Queued\')}'
+                  QueueStatus: '@{if(greaterOrEquals(add(int(coalesce(items(\'For_Each_Queued_Email\')?[\'AttemptCount\'], \'0\')), 1), parameters(\'maxRetryAttempts\')), \'Failed\', \'Queued\')}'
                   AttemptCount: '@{add(int(coalesce(items(\'For_Each_Queued_Email\')?[\'AttemptCount\'], \'0\')), 1)}'
                   LastAttemptAt: '@{utcNow()}'
                   ErrorMessage: '@{coalesce(body(\'Send_Email\')?[\'error\']?[\'message\'], actions(\'Send_Email\')?[\'error\']?[\'message\'], \'Send failed — see Logic App run history for details\')}'

@@ -1260,10 +1260,12 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       } catch { /* list may not exist or no existing items */ }
 
       // Save reviewers — resolve email to SP user ID first
+      console.log('[PolicyBuilder] saveReviewers called. Reviewers:', reviewers, 'Approvers:', approvers);
       for (let i = 0; i < reviewers.length; i++) {
         const emailOrName = reviewers[i];
         if (!emailOrName) continue;
         try {
+          console.log(`[PolicyBuilder] Resolving reviewer: "${emailOrName}"`);
           const ensured = await this.props.sp.web.ensureUser(emailOrName);
           await this.props.sp.web.lists
             .getByTitle(PM_LISTS.POLICY_REVIEWERS)
@@ -7134,7 +7136,8 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
               ensureUser={true}
               defaultSelectedUsers={reviewers}
               onChange={(items: any[]) => {
-                const users = items.map(item => item.secondaryText || item.text || '').filter(Boolean);
+                const users = items.map(item => item.secondaryText || item.loginName || item.text || '').filter(Boolean);
+                console.log('[PolicyBuilder] Reviewers selected:', users);
                 this.setState({ reviewers: users });
               }}
               principalTypes={[PrincipalType.User]}
@@ -7155,7 +7158,8 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
               ensureUser={true}
               defaultSelectedUsers={approvers}
               onChange={(items: any[]) => {
-                const users = items.map(item => item.secondaryText || item.text || '').filter(Boolean);
+                const users = items.map(item => item.secondaryText || item.loginName || item.text || '').filter(Boolean);
+                console.log('[PolicyBuilder] Approvers selected:', users);
                 this.setState({ approvers: users });
               }}
               principalTypes={[PrincipalType.User]}

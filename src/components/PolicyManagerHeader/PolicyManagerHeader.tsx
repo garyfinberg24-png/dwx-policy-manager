@@ -543,13 +543,14 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
       key: 'manager-group', text: 'Manager', icon: NavIcons.manager, minRole: 'Manager',
       children: [
         { key: 'manager-dashboard', text: 'Dashboard', icon: NavIcons.dashboard, href: '/sites/PolicyManager/SitePages/PolicyManagerView.aspx' },
-        { key: 'team-compliance', text: 'Team Compliance', icon: NavIcons.teamCompliance, href: '/sites/PolicyManager/SitePages/PolicyManagerView.aspx?tab=team-compliance' },
         { key: 'approvals', text: 'Approvals', icon: NavIcons.approvals, href: '/sites/PolicyManager/SitePages/PolicyManagerView.aspx?tab=approvals' },
+        { key: 'distribution', text: 'Distribution', icon: NavIcons.distribution, href: '/sites/PolicyManager/SitePages/PolicyDistribution.aspx' },
+        { key: 'team-compliance', text: 'Team Compliance', icon: NavIcons.teamCompliance, href: '/sites/PolicyManager/SitePages/PolicyManagerView.aspx?tab=team-compliance' },
         { key: 'delegations', text: 'Delegations', icon: NavIcons.delegations, href: '/sites/PolicyManager/SitePages/PolicyManagerView.aspx?tab=delegations' },
         { key: 'reviews', text: 'Reviews', icon: NavIcons.reviews, href: '/sites/PolicyManager/SitePages/PolicyManagerView.aspx?tab=reviews' },
         { key: 'reports', text: 'Reports', icon: NavIcons.analytics, href: '/sites/PolicyManager/SitePages/PolicyManagerView.aspx?tab=reports' },
-        { key: 'distribution', text: 'Distribution', icon: NavIcons.distribution, href: '/sites/PolicyManager/SitePages/PolicyDistribution.aspx' },
         { key: 'analytics', text: 'Analytics', icon: NavIcons.analytics, href: '/sites/PolicyManager/SitePages/PolicyAnalytics.aspx' },
+        { key: 'request-policy', text: 'Request Policy', icon: NavIcons.create, href: '/sites/PolicyManager/SitePages/PolicyAuthor.aspx?tab=requests' },
       ]
     }
   ];
@@ -1129,30 +1130,7 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
                         {child.text}
                       </a>
                     ))}
-                    {/* Request Policy in Manager group */}
-                    {group.key === 'manager-group' && (
-                      <>
-                        <div style={{ height: 1, background: '#f1f5f9', margin: '4px 0' }} />
-                        <button
-                          type="button"
-                          onClick={() => { setOpenNavGroup(null); setShowRequestWizard(true); }}
-                          style={{
-                            display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px',
-                            fontSize: 13, color: '#334155', background: 'transparent', border: 'none',
-                            cursor: 'pointer', width: '100%', textAlign: 'left', fontFamily: 'inherit'
-                          }}
-                          onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.background = '#f0fdfa'}
-                          onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.background = 'transparent'}
-                        >
-                          <span style={{ width: 20, display: 'flex', justifyContent: 'center' }}>
-                            <svg viewBox="0 0 24 24" fill="none" style={{ width: 16, height: 16 }}>
-                              <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                          </span>
-                          Request Policy
-                        </button>
-                      </>
-                    )}
+                    {/* Request Policy now included in manager-group children */}
                   </div>
                 )}
               </div>

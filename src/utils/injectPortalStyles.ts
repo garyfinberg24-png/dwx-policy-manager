@@ -15,31 +15,31 @@ let isInitialized = false;
 // Fluent UI font stack
 const FLUENT_FONT_FAMILY = "'Segoe UI', 'Segoe UI Web (West European)', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif";
 
-// Style configurations for different portal elements - Modern Fluent Design
+// Style configurations for different portal elements — Forest Teal Theme
 const portalStyles: Record<string, Record<string, string>> = {
   // Listbox (Dropdown options container)
   '[role="listbox"]': {
     backgroundColor: '#ffffff',
-    border: '1px solid #e1dfdd',
-    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.14), 0 2px 6px rgba(0, 0, 0, 0.08)',
-    borderRadius: '8px',
-    padding: '4px',
+    border: '1px solid #d1d5db',
+    boxShadow: '0 4px 16px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04)',
+    borderRadius: '6px',
+    padding: '4px 0',
     overflow: 'hidden',
     fontFamily: FLUENT_FONT_FAMILY
   },
   // Option items
   '[role="option"]': {
     backgroundColor: '#ffffff',
-    color: '#323130',
-    padding: '8px 12px',
+    color: '#334155',
+    padding: '9px 14px',
     cursor: 'pointer',
-    minHeight: '36px',
+    minHeight: '34px',
     display: 'flex',
     alignItems: 'center',
-    borderRadius: '4px',
-    margin: '2px 4px',
+    borderRadius: '0',
+    margin: '0',
     fontFamily: FLUENT_FONT_FAMILY,
-    fontSize: '14px'
+    fontSize: '13px',
   },
   // Dialog surface
   '[role="dialog"]': {
@@ -298,45 +298,111 @@ function injectFallbackCSS(): void {
       font-family: 'Segoe UI', 'Segoe UI Web (West European)', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif !important;
     }
 
-    /* ----- Dropdown/Listbox ----- */
+    /* ----- Dropdown/Listbox — Forest Teal ----- */
     [role="listbox"],
-    .fui-Listbox {
+    .fui-Listbox,
+    .ms-Dropdown-callout .ms-Callout-main {
       background-color: #ffffff !important;
-      border: 1px solid #e1dfdd !important;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14), 0 2px 6px rgba(0, 0, 0, 0.08) !important;
-      border-radius: 8px !important;
-      padding: 4px !important;
+      border: 1px solid #d1d5db !important;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04) !important;
+      border-radius: 6px !important;
+      padding: 4px 0 !important;
       overflow: hidden !important;
       font-family: 'Segoe UI', 'Segoe UI Web (West European)', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif !important;
     }
 
+    /* Fluent UI v8 Dropdown title/trigger */
+    .ms-Dropdown-title {
+      border: 1px solid #d1d5db !important;
+      border-radius: 6px !important;
+      font-size: 13px !important;
+      color: #0f172a !important;
+      background: #fff !important;
+      min-height: 36px !important;
+      padding: 7px 12px !important;
+    }
+
+    .ms-Dropdown.is-open .ms-Dropdown-title {
+      border-color: #0d9488 !important;
+    }
+
+    /* Fluent UI v8 Dropdown items */
+    .ms-Dropdown-item {
+      background-color: #ffffff !important;
+      color: #334155 !important;
+      font-size: 13px !important;
+    }
+
+    .ms-Dropdown-item:hover,
+    .ms-Dropdown-item.is-highlighted {
+      background-color: #f0fdfa !important;
+      color: #0f172a !important;
+    }
+
+    .ms-Dropdown-item.is-selected {
+      background-color: #f0fdfa !important;
+      color: #0d9488 !important;
+      font-weight: 600 !important;
+    }
+
+    /* Fluent UI v8 TextField */
+    .ms-TextField-fieldGroup {
+      border: 1px solid #d1d5db !important;
+      border-radius: 6px !important;
+    }
+
+    .ms-TextField-fieldGroup::after {
+      display: none !important;
+    }
+
+    .ms-TextField-fieldGroup:focus-within {
+      border-color: #0d9488 !important;
+    }
+
+    /* Fluent UI v8 SearchBox */
+    .ms-SearchBox {
+      border: 1px solid #d1d5db !important;
+      border-radius: 6px !important;
+    }
+
+    .ms-SearchBox::after {
+      display: none !important;
+    }
+
+    .ms-SearchBox.is-active {
+      border-color: #0d9488 !important;
+    }
+
+    /* Fluent UI v9 options */
     [role="option"],
     .fui-Option {
       background-color: #ffffff !important;
-      color: #323130 !important;
-      border-radius: 4px !important;
-      margin: 2px 4px !important;
-      padding: 8px 12px !important;
-      min-height: 36px !important;
+      color: #334155 !important;
+      border-radius: 0 !important;
+      margin: 0 !important;
+      padding: 9px 14px !important;
+      min-height: 34px !important;
       font-family: 'Segoe UI', 'Segoe UI Web (West European)', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif !important;
-      font-size: 14px !important;
+      font-size: 13px !important;
     }
 
     [role="option"]:hover,
     .fui-Option:hover {
-      background-color: #f5f5f5 !important;
+      background-color: #f0fdfa !important;
+      color: #0f172a !important;
     }
 
     [role="option"][aria-selected="true"],
     .fui-Option[aria-selected="true"] {
-      background-color: #e5f1fb !important;
-      color: #0078d4 !important;
+      background-color: #f0fdfa !important;
+      color: #0d9488 !important;
+      font-weight: 600 !important;
     }
 
     [role="option"]:focus,
     .fui-Option:focus {
-      background-color: #f5f5f5 !important;
-      outline: 2px solid #0078d4 !important;
+      background-color: #f0fdfa !important;
+      outline: none !important;
       outline-offset: -2px !important;
     }
 

@@ -756,6 +756,69 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
     }
   };
 
+  private handlePause = async (): Promise<void> => {
+    const { selectedCampaign } = this.state;
+    if (!selectedCampaign) return;
+
+    const isPaused = selectedCampaign.status === 'Paused';
+    const newStatus = isPaused ? 'Active' : 'Paused';
+
+    try {
+      // Update campaign status in SP
+      await this.props.sp.web.lists.getByTitle('PM_PolicyDistributions')
+        .items.getById(selectedCampaign.id).update({ Status: newStatus });
+
+      const updated = { ...selectedCampaign, status: newStatus as any };
+      const campaigns = this.state.campaigns.map(c => c.id === updated.id ? updated : c) as any;
+      this.setState({
+        selectedCampaign: updated, campaigns,
+        successMessage: isPaused ? 'Campaign resumed.' : 'Campaign paused.'
+      });
+      setTimeout(() => this.setState({ successMessage: '' }), 3000);
+    } catch (err) {
+      this.setState({ errorMessage: `Failed to ${isPaused ? 'resume' : 'pause'} campaign.` });
+      setTimeout(() => this.setState({ errorMessage: '' }), 3000);
+    }
+  };
+
+  private handleSendReminder = async (): Promise<void> => {
+    const { selectedCampaign, recipients } = this.state;
+    if (!selectedCampaign) return;
+
+    // Find recipients who haven't acknowledged yet
+    const pendingRecipients = recipients.filter(r => r.status !== 'Acknowledged' && r.status !== 'Exempted');
+    if (pendingRecipients.length === 0) {
+      this.setState({ successMessage: 'All recipients have already acknowledged. No reminders needed.' });
+      setTimeout(() => this.setState({ successMessage: '' }), 3000);
+      return;
+    }
+
+    try {
+      let sentCount = 0;
+      for (const recipient of pendingRecipients) {
+        try {
+          await this.props.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
+            Title: `Reminder: ${selectedCampaign.campaignName}`,
+            RecipientEmail: recipient.email,
+            RecipientName: recipient.name,
+            PolicyTitle: selectedCampaign.campaignName,
+            NotificationType: 'PolicyAcknowledgmentRequired',
+            Channel: 'Email',
+            Message: `<div style="font-family:'Segoe UI',sans-serif;max-width:600px;margin:0 auto"><div style="background:linear-gradient(135deg,#d97706,#b45309);padding:24px 32px;border-radius:8px 8px 0 0"><h1 style="color:#fff;margin:0;font-size:20px">Policy Reminder</h1><p style="color:rgba(255,255,255,0.8);margin:4px 0 0;font-size:13px">Policy Manager</p></div><div style="background:#fff;padding:24px 32px;border:1px solid #e2e8f0;border-top:none"><p style="font-size:14px;color:#475569">Hi <strong>${recipient.name}</strong>,</p><p style="font-size:14px;color:#475569">This is a reminder to acknowledge the policy: <strong>${selectedCampaign.campaignName}</strong>.</p><p style="font-size:14px;color:#475569">Please complete this at your earliest convenience.</p></div><div style="background:#f8fafc;padding:16px 32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;text-align:center"><p style="margin:0;font-size:11px;color:#94a3b8">First Digital — DWx Policy Manager</p></div></div>`,
+            Status: 'Pending',
+            Priority: 'High'
+          });
+          sentCount++;
+        } catch { /* per-recipient — continue */ }
+      }
+      this.setState({ successMessage: `Reminders sent to ${sentCount} recipient${sentCount !== 1 ? 's' : ''}.` });
+      setTimeout(() => this.setState({ successMessage: '' }), 4000);
+    } catch (err) {
+      this.setState({ errorMessage: 'Failed to send reminders.' });
+      setTimeout(() => this.setState({ errorMessage: '' }), 3000);
+    }
+  };
+
   private handleEscalation = async (): Promise<void> => {
     const { selectedCampaign, recipients } = this.state;
     if (!selectedCampaign || !this._liveDataLoaded) return;
@@ -1067,41 +1130,51 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
           ))}
         </div>
 
-        {/* Action Buttons — between stats and progress */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
-          {c.status === 'Draft' && (
-            <PrimaryButton text="Send Now" iconProps={{ iconName: 'Send' }} styles={{ root: { borderRadius: 4, background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }} />
-          )}
-          {c.status === 'Active' && (
-            <DefaultButton text="Pause" iconProps={{ iconName: 'Pause' }} styles={{ root: { borderRadius: 4 } }} />
-          )}
-          <DefaultButton text="Send Reminder" iconProps={{ iconName: 'Ringer' }} styles={{ root: { borderRadius: 4 } }} />
-          <DefaultButton
-            text={this.state.metricsLoading ? 'Refreshing...' : 'Refresh Metrics'}
-            iconProps={{ iconName: 'Refresh' }}
-            disabled={this.state.metricsLoading}
-            onClick={this.refreshMetrics}
-            styles={{ root: { borderRadius: 4 } }}
-          />
-          {c.escalationEnabled && c.totalOverdue > 0 && (
-            <DefaultButton
-              text={`Escalate Overdue (${c.totalOverdue})`}
-              iconProps={{ iconName: 'Warning' }}
-              onClick={this.handleEscalation}
-              styles={{ root: { borderRadius: 4, borderColor: '#d97706', color: '#d97706' }, rootHovered: { background: '#fffbeb', borderColor: '#b45309', color: '#b45309' } }}
-            />
-          )}
-          <IconButton iconProps={{ iconName: 'Edit' }} title="Edit Campaign" onClick={() => this.openEditPanel(c)} styles={{ root: { borderRadius: 4 } }} />
-        </div>
-
-        {/* Overall Progress */}
-        <div style={{ marginBottom: 24 }}>
-          <div className={styles.sectionTitle}><Icon iconName="ProgressRingDots" /> Overall Acknowledgement Progress</div>
-          <div className={styles.progressBarContainer} style={{ maxWidth: 400 }}>
-            <div className={styles.progressTrack} style={{ height: 12 }}>
-              <div className={styles.progressFill} style={{ width: `${pct}%`, height: 12 }} />
+        {/* Overall Progress + Action Buttons — single row */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div className={styles.sectionTitle} style={{ margin: 0 }}><Icon iconName="ProgressRingDots" /> Overall Acknowledgement Progress</div>
+            <div className={styles.progressBarContainer} style={{ maxWidth: 300, margin: 0 }}>
+              <div className={styles.progressTrack} style={{ height: 12 }}>
+                <div className={styles.progressFill} style={{ width: `${pct}%`, height: 12 }} />
+              </div>
+              <span className={styles.progressLabel} style={{ fontSize: 16 }}>{pct}%</span>
             </div>
-            <span className={styles.progressLabel} style={{ fontSize: 16 }}>{pct}%</span>
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {c.status === 'Draft' && (
+              <PrimaryButton text="Send Now" iconProps={{ iconName: 'Send' }} styles={{ root: { borderRadius: 4, background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }} />
+            )}
+            {(c.status === 'Active' || c.status === 'Paused') && (
+              <DefaultButton
+                text={c.status === 'Paused' ? 'Resume' : 'Pause'}
+                iconProps={{ iconName: c.status === 'Paused' ? 'Play' : 'Pause' }}
+                onClick={this.handlePause}
+                styles={{ root: { borderRadius: 4 } }}
+              />
+            )}
+            <DefaultButton
+              text="Send Reminder"
+              iconProps={{ iconName: 'Ringer' }}
+              onClick={this.handleSendReminder}
+              styles={{ root: { borderRadius: 4 } }}
+            />
+            <DefaultButton
+              text={this.state.metricsLoading ? 'Refreshing...' : 'Refresh Metrics'}
+              iconProps={{ iconName: 'Refresh' }}
+              disabled={this.state.metricsLoading}
+              onClick={this.refreshMetrics}
+              styles={{ root: { borderRadius: 4 } }}
+            />
+            {c.escalationEnabled && c.totalOverdue > 0 && (
+              <DefaultButton
+                text={`Escalate Overdue (${c.totalOverdue})`}
+                iconProps={{ iconName: 'Warning' }}
+                onClick={this.handleEscalation}
+                styles={{ root: { borderRadius: 4, borderColor: '#d97706', color: '#d97706' }, rootHovered: { background: '#fffbeb', borderColor: '#b45309', color: '#b45309' } }}
+              />
+            )}
+            <IconButton iconProps={{ iconName: 'Edit' }} title="Edit Campaign" onClick={() => this.openEditPanel(c)} styles={{ root: { borderRadius: 4 } }} />
           </div>
         </div>
 

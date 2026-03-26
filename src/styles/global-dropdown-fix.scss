@@ -13,44 +13,98 @@
    FLUENT UI V8 DROPDOWN FIXES (@fluentui/react)
    ============================================ */
 
-/* Dropdown menu container (callout) */
+/* ============================================
+   MODERN DROPDOWN STYLING — Forest Teal Theme
+   Clean, minimal borders, teal accents on focus/select
+   ============================================ */
+
+/* Dropdown trigger (the button/title area) */
 :global {
+  .ms-Dropdown-title {
+    border: 1px solid #d1d5db !important;
+    border-radius: 6px !important;
+    padding: 7px 12px !important;
+    font-size: 13px !important;
+    color: #0f172a !important;
+    background: #fff !important;
+    height: auto !important;
+    min-height: 36px !important;
+    line-height: 20px !important;
+    transition: border-color 0.15s !important;
+  }
+
+  .ms-Dropdown-title:hover {
+    border-color: #94a3b8 !important;
+  }
+
+  .ms-Dropdown.is-open .ms-Dropdown-title,
+  .ms-Dropdown-title:focus {
+    border-color: #0d9488 !important;
+    box-shadow: 0 0 0 1px #0d9488 !important;
+  }
+
+  /* Dropdown caret */
+  .ms-Dropdown-caretDownWrapper {
+    right: 10px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+  }
+
+  .ms-Dropdown-caretDown {
+    color: #94a3b8 !important;
+    font-size: 12px !important;
+  }
+
+  /* Dropdown label */
+  .ms-Dropdown-label,
+  .ms-Label {
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: #323130 !important;
+    padding-bottom: 4px !important;
+  }
+
+  /* Dropdown callout (the popup panel) */
   .ms-Dropdown-callout,
   .ms-Callout-main,
   [role="listbox"] {
     background-color: #ffffff !important;
-    border: 1px solid #d1d1d1 !important;
-    box-shadow: 0 6.4px 14.4px 0 rgba(0, 0, 0, 0.132), 0 1.2px 3.6px 0 rgba(0, 0, 0, 0.108) !important;
-    border-radius: 2px !important;
+    border: 1px solid #d1d5db !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04) !important;
+    border-radius: 6px !important;
+    margin-top: 2px !important;
+    overflow: hidden !important;
   }
 
   /* Dropdown options */
-  .ms-Dropdown-item,
-  .ms-Dropdown-optionText,
-  [role="option"] {
+  .ms-Dropdown-item {
     background-color: #ffffff !important;
-    color: #323130 !important;
-    font-family: "Segoe UI", "Segoe UI Web (West European)", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif !important;
-    font-size: 14px !important;
-    padding: 8px 12px !important;
+    color: #334155 !important;
+    font-size: 13px !important;
     cursor: pointer !important;
     transition: background-color 0.1s ease !important;
   }
 
-  /* Hover state for dropdown options */
-  .ms-Dropdown-item:hover,
-  [role="option"]:hover,
-  .ms-Dropdown-item.is-highlighted,
-  [role="option"][aria-selected="true"] {
-    background-color: #f3f2f1 !important;
-    color: #323130 !important;
+  .ms-Dropdown-optionText {
+    color: #334155 !important;
+    font-size: 13px !important;
   }
 
-  /* Selected/Active dropdown option */
+  /* Hover state */
+  .ms-Dropdown-item:hover,
+  [role="option"]:hover,
+  .ms-Dropdown-item.is-highlighted {
+    background-color: #f0fdfa !important;
+    color: #0f172a !important;
+  }
+
+  /* Selected option */
   .ms-Dropdown-item.is-selected,
-  [role="option"][aria-checked="true"] {
-    background-color: #e3f2fd !important;
-    color: #0078d4 !important;
+  [role="option"][aria-checked="true"],
+  [role="option"][aria-selected="true"] {
+    background-color: #f0fdfa !important;
+    color: #0d9488 !important;
+    font-weight: 600 !important;
     font-weight: 600 !important;
   }
 
@@ -572,5 +626,128 @@
   /* Date picker focus */
   .ms-DatePicker-wrap:focus-within .ms-TextField-fieldGroup {
     border-color: #0d9488 !important;
+  }
+}
+
+/* ============================================
+   MODERN TEXT FIELD STYLING
+   ============================================ */
+:global {
+  /* TextField input border */
+  .ms-TextField-fieldGroup {
+    border: 1px solid #d1d5db !important;
+    border-radius: 6px !important;
+    min-height: 36px !important;
+    transition: border-color 0.15s !important;
+  }
+
+  .ms-TextField-fieldGroup:hover {
+    border-color: #94a3b8 !important;
+  }
+
+  .ms-TextField-fieldGroup:focus-within {
+    border-color: #0d9488 !important;
+    box-shadow: 0 0 0 1px #0d9488 !important;
+  }
+
+  /* Remove the Fluent underline animation */
+  .ms-TextField-fieldGroup::after {
+    display: none !important;
+  }
+
+  /* TextField input text */
+  .ms-TextField-field {
+    font-size: 13px !important;
+    color: #0f172a !important;
+    padding: 7px 12px !important;
+  }
+
+  .ms-TextField-field::placeholder {
+    color: #94a3b8 !important;
+  }
+
+  /* Multiline textarea */
+  .ms-TextField-field[rows] {
+    padding: 10px 12px !important;
+  }
+
+  /* SearchBox styling */
+  .ms-SearchBox {
+    border: 1px solid #d1d5db !important;
+    border-radius: 6px !important;
+    height: 36px !important;
+    transition: border-color 0.15s !important;
+  }
+
+  .ms-SearchBox:hover {
+    border-color: #94a3b8 !important;
+  }
+
+  .ms-SearchBox.is-active,
+  .ms-SearchBox:focus-within {
+    border-color: #0d9488 !important;
+    box-shadow: 0 0 0 1px #0d9488 !important;
+  }
+
+  .ms-SearchBox::after {
+    display: none !important;
+  }
+
+  .ms-SearchBox-field {
+    font-size: 13px !important;
+  }
+
+  /* Checkbox styling */
+  .ms-Checkbox-checkbox {
+    border-radius: 4px !important;
+    border-color: #d1d5db !important;
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  .ms-Checkbox.is-checked .ms-Checkbox-checkbox {
+    background-color: #0d9488 !important;
+    border-color: #0d9488 !important;
+  }
+
+  /* DatePicker styling */
+  .ms-DatePicker .ms-TextField-fieldGroup {
+    border: 1px solid #d1d5db !important;
+    border-radius: 6px !important;
+  }
+
+  /* Toggle styling */
+  .ms-Toggle-background {
+    border-radius: 12px !important;
+  }
+
+  .ms-Toggle.is-checked .ms-Toggle-background {
+    background-color: #0d9488 !important;
+    border-color: #0d9488 !important;
+  }
+
+  /* PeoplePicker styling */
+  .ms-BasePicker-text {
+    border: 1px solid #d1d5db !important;
+    border-radius: 6px !important;
+    min-height: 36px !important;
+  }
+
+  .ms-BasePicker-text:focus-within {
+    border-color: #0d9488 !important;
+    box-shadow: 0 0 0 1px #0d9488 !important;
+  }
+
+  .ms-BasePicker-text::after {
+    display: none !important;
+  }
+
+  /* Error state — red border */
+  .ms-TextField.is-invalid .ms-TextField-fieldGroup {
+    border-color: #dc2626 !important;
+  }
+
+  .ms-Dropdown.is-invalid .ms-Dropdown-title {
+    border-color: #dc2626 !important;
   }
 }

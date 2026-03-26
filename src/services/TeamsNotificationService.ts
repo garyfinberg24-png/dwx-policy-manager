@@ -382,9 +382,9 @@ export class TeamsNotificationService {
         ...(data.summary ? [{ type: 'TextBlock', text: data.summary, wrap: true, size: 'Small', isSubtle: true }] : [])
       ],
       actions: [
-        { type: 'Action.OpenUrl', title: 'Approve', url: `${this.siteUrl}/SitePages/PolicyDetails.aspx?policyId=${data.policyId || ''}&action=approve`, style: 'positive' },
-        { type: 'Action.OpenUrl', title: 'Reject', url: `${this.siteUrl}/SitePages/PolicyDetails.aspx?policyId=${data.policyId || ''}&action=reject`, style: 'destructive' },
-        { type: 'Action.OpenUrl', title: 'Review Details', url: `${this.siteUrl}/SitePages/PolicyDetails.aspx?policyId=${data.policyId || ''}` }
+        { type: 'Action.OpenUrl', title: 'Review & Approve', url: `${this.siteUrl}/SitePages/PolicyDetails.aspx?policyId=${data.policyId || ''}&mode=review`, style: 'positive' },
+        { type: 'Action.OpenUrl', title: 'Review & Reject', url: `${this.siteUrl}/SitePages/PolicyDetails.aspx?policyId=${data.policyId || ''}&mode=review`, style: 'destructive' },
+        { type: 'Action.OpenUrl', title: 'Review Details', url: `${this.siteUrl}/SitePages/PolicyDetails.aspx?policyId=${data.policyId || ''}&mode=review` }
       ]
     };
   }

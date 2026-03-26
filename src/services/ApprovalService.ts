@@ -771,7 +771,7 @@ export class ApprovalService {
             RecipientId: recipientId,
             Type: isApproved ? 'ApprovalComplete' : 'ApprovalRejected',
             Priority: isApproved ? Priority.Medium : Priority.High,
-            ActionUrl: `/sites/PolicyManager/SitePages/PolicyDetails.aspx?processId=${processId}`,
+            ActionUrl: `/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${processId}&mode=review`,
             ProcessId: processId.toString(),
             IsRead: false,
             SentDate: new Date()
@@ -1012,7 +1012,7 @@ export class ApprovalService {
         RecipientId: approval.ApproverId,
         Type: 'ApprovalDelegated',
         Priority: Priority.Medium,
-        ActionUrl: `/sites/PolicyManager/SitePages/PolicyDetails.aspx?processId=${approval.ProcessID}`,
+        ActionUrl: `/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${approval.ProcessID}&mode=review`,
         ProcessId: approval.ProcessID.toString(),
         IsRead: false,
         SentDate: new Date()

@@ -3,6 +3,7 @@ import { Icon } from '@fluentui/react/lib/Icon';
 /* eslint-disable */
 import * as React from 'react';
 import { IPolicyAuthorViewProps } from './IPolicyAuthorViewProps';
+import { createDialogManager } from '../../../hooks/useDialog';
 import {
   Stack,
   Text,
@@ -159,6 +160,7 @@ interface IPolicyAuthorViewState {
 export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewProps, IPolicyAuthorViewState> {
 
   private _isMounted = false;
+  private dialogManager = createDialogManager();
 
   constructor(props: IPolicyAuthorViewProps) {
     super(props);
@@ -625,6 +627,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
         {this.state.activeTab === 'approvals' && this.renderApprovalsTab()}
         {this.state.activeTab === 'delegations' && this.renderDelegationsTab()}
         {this.renderDelegationPanel()}
+        <this.dialogManager.DialogComponent />
       </JmlAppLayout>
       </ErrorBoundary>
     );
@@ -694,7 +697,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
     const handleBulkDelete = async (): Promise<void> => {
       if (selectedPipelineIds.size === 0) return;
       const count = selectedPipelineIds.size;
-      const confirmed = window.confirm(`Delete ${count} draft polic${count === 1 ? 'y' : 'ies'}? This cannot be undone.`);
+      const confirmed = await this.dialogManager.showConfirm(`Delete ${count} draft polic${count === 1 ? 'y' : 'ies'}? This cannot be undone.`, { title: 'Bulk Delete', confirmText: 'Delete', cancelText: 'Cancel' });
       if (!confirmed) return;
       try {
         const batch = this.props.sp.web.createBatch();
@@ -712,8 +715,8 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
     const handleBulkSubmitForReview = async (): Promise<void> => {
       if (selectedPipelineIds.size === 0) return;
       const drafts = pipelinePolicies.filter(p => selectedPipelineIds.has(p.Id) && p.PolicyStatus === 'Draft');
-      if (drafts.length === 0) { window.alert('Only Draft policies can be submitted for review.'); return; }
-      const confirmed = window.confirm(`Submit ${drafts.length} draft polic${drafts.length === 1 ? 'y' : 'ies'} for review?`);
+      if (drafts.length === 0) { void this.dialogManager.showAlert('Only Draft policies can be submitted for review.', { variant: 'warning' }); return; }
+      const confirmed = await this.dialogManager.showConfirm(`Submit ${drafts.length} draft polic${drafts.length === 1 ? 'y' : 'ies'} for review?`, { title: 'Bulk Submit', confirmText: 'Submit', cancelText: 'Cancel' });
       if (!confirmed) return;
       try {
         for (const policy of drafts) {
@@ -974,7 +977,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
   // ==========================================================================
 
   private async handlePipelineSubmitForReview(policyId: number, title: string): Promise<void> {
-    const confirmed = window.confirm(`Submit "${title}" for review? Reviewers and approvers will be notified.`);
+    const confirmed = await this.dialogManager.showConfirm(`Submit "${title}" for review? Reviewers and approvers will be notified.`, { title: 'Submit for Review', confirmText: 'Submit', cancelText: 'Cancel' });
     if (!confirmed) return;
     const siteUrl = this.props.context?.pageContext?.web?.absoluteUrl || '/sites/PolicyManager';
     try {
@@ -1016,7 +1019,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                 RelatedItemId: policyId,
                 IsRead: false,
                 Priority: 'Normal',
-                ActionUrl: `${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policyId}`
+                ActionUrl: `${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policyId}&mode=review`
               });
             } catch { /* notification list may not exist */ }
           }
@@ -1028,6 +1031,25 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
               try {
                 const user = await this.props.sp.web.siteUsers.getById(reviewerId).select('Email', 'Title')();
                 if (user?.Email) {
+                  const policyUrl = `${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policyId}&mode=review`;
+                  const emailHtml = `
+                    <div style="font-family:'Segoe UI',sans-serif;max-width:600px;margin:0 auto">
+                      <div style="background:linear-gradient(135deg,#0d9488,#0f766e);padding:24px 32px;border-radius:8px 8px 0 0">
+                        <h1 style="color:#fff;margin:0;font-size:20px">Review Required</h1>
+                        <p style="color:rgba(255,255,255,0.8);margin:4px 0 0;font-size:13px">Policy Manager — DWx Digital Workplace</p>
+                      </div>
+                      <div style="background:#fff;padding:24px 32px;border:1px solid #e2e8f0;border-top:none">
+                        <p style="font-size:14px;color:#0f172a">Hi <strong>${user.Title || 'Reviewer'}</strong>,</p>
+                        <p style="font-size:14px;color:#475569">${submitterName} has submitted a policy for your review:</p>
+                        <div style="background:#f0fdfa;border-left:4px solid #0d9488;padding:16px;border-radius:0 4px 4px 0;margin:16px 0">
+                          <p style="margin:0;font-weight:600;font-size:15px;color:#0f172a">${title}</p>
+                        </div>
+                        <p style="margin:24px 0 16px"><a href="${policyUrl}" style="background:#0d9488;color:#fff;padding:10px 24px;border-radius:4px;text-decoration:none;font-weight:600;font-size:14px;display:inline-block">Review Policy</a></p>
+                      </div>
+                      <div style="background:#f8fafc;padding:16px 32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;text-align:center">
+                        <p style="margin:0;font-size:11px;color:#94a3b8">First Digital — DWx Policy Manager</p>
+                      </div>
+                    </div>`;
                   await this.props.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
                     Title: `Review Required: ${title}`,
                     RecipientEmail: user.Email,
@@ -1038,9 +1060,9 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                     PolicyTitle: title,
                     NotificationType: 'ReviewRequired',
                     Channel: 'Email',
-                    Message: `${submitterName} has submitted the policy "${title}" for your review. Please log in to Policy Manager to review and provide feedback.`,
+                    Message: emailHtml,
                     Status: 'Pending',
-                    Priority: 'Normal'
+                    Priority: 'High'
                   });
                 }
               } catch { /* per-recipient — continue on failure */ }
@@ -1052,12 +1074,12 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
       await this.reloadPipeline();
     } catch (err) {
       console.error('Submit for review failed:', err);
-      window.alert('Failed to submit for review. Please try again.');
+      void this.dialogManager.showAlert('Failed to submit for review. Please try again.', { variant: 'error' });
     }
   }
 
   private async handlePipelineDuplicate(policyId: number, title: string): Promise<void> {
-    const confirmed = window.confirm(`Create a copy of "${title}" as a new Draft?`);
+    const confirmed = await this.dialogManager.showConfirm(`Create a copy of "${title}" as a new Draft?`, { title: 'Duplicate Policy', confirmText: 'Duplicate', cancelText: 'Cancel' });
     if (!confirmed) return;
     try {
       // Load the source policy
@@ -1102,12 +1124,12 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
       await this.reloadPipeline();
     } catch (err) {
       console.error('Duplicate failed:', err);
-      window.alert('Failed to duplicate policy. Please try again.');
+      void this.dialogManager.showAlert('Failed to duplicate policy. Please try again.', { variant: 'error' });
     }
   }
 
   private async handlePipelineDelete(policyId: number, title: string): Promise<void> {
-    const confirmed = window.confirm(`Delete draft "${title}"? This cannot be undone.`);
+    const confirmed = await this.dialogManager.showConfirm(`Delete draft "${title}"? This cannot be undone.`, { title: 'Delete Draft', confirmText: 'Delete', cancelText: 'Cancel' });
     if (!confirmed) return;
     try {
       await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES)
@@ -1141,12 +1163,12 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
       await this.reloadPipeline();
     } catch (err) {
       console.error('Delete failed:', err);
-      window.alert('Failed to delete draft. Please try again.');
+      void this.dialogManager.showAlert('Failed to delete draft. Please try again.', { variant: 'error' });
     }
   }
 
   private async handlePipelineWithdraw(policyId: number, title: string): Promise<void> {
-    const confirmed = window.confirm(`Withdraw "${title}" back to Draft? Reviewers will be notified.`);
+    const confirmed = await this.dialogManager.showConfirm(`Withdraw "${title}" back to Draft? Reviewers will be notified.`, { title: 'Withdraw Policy', confirmText: 'Withdraw', cancelText: 'Cancel' });
     if (!confirmed) return;
     try {
       // Update status back to Draft
@@ -1200,7 +1222,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
       await this.reloadPipeline();
     } catch (err) {
       console.error('Withdraw failed:', err);
-      window.alert('Failed to withdraw policy. Please try again.');
+      void this.dialogManager.showAlert('Failed to withdraw policy. Please try again.', { variant: 'error' });
     }
   }
 

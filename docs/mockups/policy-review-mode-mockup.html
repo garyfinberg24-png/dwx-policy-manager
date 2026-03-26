@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Policy Review Mode — Reviewer Experience</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f1f5f9; color: #0f172a; }
+
+  /* App Header */
+  .app-header { background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%); padding: 10px 24px; display: flex; align-items: center; color: #fff; }
+  .app-header-left { display: flex; align-items: center; gap: 12px; }
+  .app-logo { width: 32px; height: 32px; background: rgba(255,255,255,0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+  .app-logo svg { width: 18px; height: 18px; }
+  .app-title { font-size: 15px; font-weight: 700; }
+  .app-subtitle { font-size: 9px; opacity: 0.8; text-transform: uppercase; letter-spacing: 1px; }
+  .app-header-center { flex: 1; }
+  .app-header-right { display: flex; align-items: center; gap: 6px; }
+  .header-avatar { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.25); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+
+  /* Nav */
+  .nav-bar { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 0 24px; display: flex; align-items: center; height: 42px; gap: 4px; }
+  .nav-item { padding: 8px 14px; font-size: 13px; color: #475569; font-weight: 500; cursor: pointer; text-decoration: none; border-radius: 4px; }
+  .nav-item:hover { background: #f0fdfa; color: #0d9488; }
+
+  /* Review banner */
+  .review-banner { background: linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%); border-bottom: 2px solid #0d9488; padding: 16px 0; }
+  .review-banner-inner { max-width: 1400px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; }
+  .review-banner-left { display: flex; align-items: center; gap: 16px; }
+  .review-badge { display: flex; align-items: center; gap: 8px; background: #0d9488; color: #fff; padding: 6px 16px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+  .review-badge svg { width: 16px; height: 16px; }
+  .review-meta { display: flex; align-items: center; gap: 12px; }
+  .review-meta-item { font-size: 12px; color: #64748b; }
+  .review-meta-item strong { color: #0f172a; }
+  .review-banner-right { display: flex; align-items: center; gap: 8px; }
+  .status-pill { padding: 4px 12px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .status-in-review { background: #dbeafe; color: #2563eb; }
+  .risk-pill { padding: 4px 12px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .risk-high { background: #fee2e2; color: #dc2626; }
+
+  /* Main layout */
+  .review-layout { max-width: 1400px; margin: 24px auto; padding: 0 24px; display: grid; grid-template-columns: 1fr 380px; gap: 24px; }
+
+  /* Content panel */
+  .content-panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; }
+  .content-header { padding: 24px 32px; border-bottom: 1px solid #e2e8f0; }
+  .content-title { font-size: 22px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
+  .content-subtitle { font-size: 13px; color: #64748b; }
+  .content-tabs { display: flex; gap: 0; border-bottom: 1px solid #e2e8f0; }
+  .content-tab { padding: 12px 24px; font-size: 13px; font-weight: 500; color: #64748b; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; }
+  .content-tab:hover { color: #0d9488; }
+  .content-tab.active { color: #0d9488; font-weight: 600; border-bottom-color: #0d9488; }
+  .content-body { padding: 32px; min-height: 400px; line-height: 1.7; font-size: 14px; color: #334155; }
+  .content-body h2 { font-size: 18px; font-weight: 700; color: #0f172a; margin: 24px 0 12px; }
+  .content-body h2:first-child { margin-top: 0; }
+  .content-body p { margin-bottom: 12px; }
+  .content-body ul { margin: 8px 0 16px 24px; }
+  .content-body li { margin-bottom: 6px; }
+  .content-body strong { color: #0f172a; }
+
+  /* Key points */
+  .key-points { padding: 20px 32px; background: #f8fafc; border-top: 1px solid #e2e8f0; }
+  .key-points-title { font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+  .key-point { display: flex; align-items: flex-start; gap: 8px; padding: 6px 0; font-size: 13px; color: #475569; }
+  .key-point-dot { width: 6px; height: 6px; border-radius: 50%; background: #0d9488; margin-top: 6px; flex-shrink: 0; }
+
+  /* Document card */
+  .doc-card { display: flex; align-items: center; gap: 14px; padding: 16px 32px; background: #f0fdfa; border-top: 1px solid #e2e8f0; }
+  .doc-icon { font-size: 24px; color: #0d9488; }
+  .doc-info { flex: 1; }
+  .doc-name { font-weight: 600; font-size: 13px; color: #0f172a; }
+  .doc-url { font-size: 11px; color: #64748b; }
+  .btn-office { background: #0d9488; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .btn-office:hover { background: #0f766e; }
+
+  /* Review panel (right) */
+  .review-panel { display: flex; flex-direction: column; gap: 16px; }
+
+  .panel-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; }
+  .panel-card-header { padding: 16px 20px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; gap: 8px; }
+  .panel-card-icon { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+  .panel-card-title { font-size: 14px; font-weight: 600; color: #0f172a; }
+  .panel-card-body { padding: 20px; }
+
+  /* Decision buttons */
+  .decision-buttons { display: flex; flex-direction: column; gap: 8px; }
+  .decision-btn { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-radius: 8px; border: 2px solid #e2e8f0; cursor: pointer; transition: all 0.15s; background: #fff; }
+  .decision-btn:hover { border-color: #0d9488; }
+  .decision-btn.selected { border-color: #0d9488; background: #f0fdfa; }
+  .decision-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .decision-label { font-weight: 600; font-size: 13px; color: #0f172a; }
+  .decision-desc { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+
+  /* Comments */
+  .comments-area { width: 100%; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 14px; font-size: 13px; font-family: inherit; resize: vertical; min-height: 100px; outline: none; }
+  .comments-area:focus { border-color: #0d9488; }
+  .comments-area::placeholder { color: #cbd5e1; }
+
+  /* Checklist */
+  .checklist-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+  .checklist-item:last-child { border-bottom: none; }
+  .checklist-item input[type="checkbox"] { accent-color: #0d9488; width: 16px; height: 16px; }
+  .checklist-label { flex: 1; color: #475569; }
+  .checklist-label.checked { color: #0f172a; text-decoration: line-through; opacity: 0.6; }
+
+  /* Submit button */
+  .submit-btn { width: 100%; padding: 12px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+  .submit-btn.approve { background: #0d9488; color: #fff; }
+  .submit-btn.approve:hover { background: #0f766e; }
+  .submit-btn.changes { background: #d97706; color: #fff; }
+  .submit-btn.changes:hover { background: #b45309; }
+  .submit-btn.reject { background: #dc2626; color: #fff; }
+  .submit-btn.reject:hover { background: #b91c1c; }
+  .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Reviewer info */
+  .reviewer-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f1f5f9; }
+  .reviewer-row:last-child { border-bottom: none; }
+  .reviewer-avatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+  .reviewer-name { font-size: 13px; font-weight: 500; color: #0f172a; flex: 1; }
+  .reviewer-status { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 4px; }
+  .reviewer-status.pending { background: #fef3c7; color: #d97706; }
+  .reviewer-status.approved { background: #dcfce7; color: #059669; }
+  .reviewer-status.you { background: #dbeafe; color: #2563eb; }
+
+  /* Policy metadata */
+  .meta-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 12px; border-bottom: 1px solid #f8fafc; }
+  .meta-label { color: #64748b; }
+  .meta-value { color: #0f172a; font-weight: 500; }
+
+  /* Previous comments */
+  .prev-comment { padding: 12px; background: #f8fafc; border-radius: 6px; margin-bottom: 8px; }
+  .prev-comment-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .prev-comment-author { font-size: 12px; font-weight: 600; color: #0f172a; }
+  .prev-comment-date { font-size: 10px; color: #94a3b8; }
+  .prev-comment-body { font-size: 12px; color: #475569; line-height: 1.5; }
+  .prev-comment-badge { font-size: 9px; font-weight: 600; padding: 2px 6px; border-radius: 3px; }
+
+  /* Footer */
+  .page-footer { max-width: 1400px; margin: 24px auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; }
+  .footer-left { display: flex; align-items: center; gap: 8px; }
+  .footer-badge { background: linear-gradient(135deg,#0d9488,#0f766e); color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<!-- App Header -->
+<div class="app-header">
+  <div class="app-header-left">
+    <div class="app-logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg></div>
+    <div><div class="app-title">Policy Manager</div><div class="app-subtitle">Policy Governance & Compliance</div></div>
+  </div>
+  <div class="app-header-center"></div>
+  <div class="app-header-right"><div class="header-avatar">GF</div></div>
+</div>
+
+<!-- Nav -->
+<nav class="nav-bar">
+  <a class="nav-item" href="#">My Policies</a>
+  <a class="nav-item" href="#">Policy Hub</a>
+  <a class="nav-item" href="#">Author</a>
+  <a class="nav-item" href="#">Manager</a>
+</nav>
+
+<!-- Review Banner -->
+<div class="review-banner">
+  <div class="review-banner-inner">
+    <div class="review-banner-left">
+      <div class="review-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+        Review Mode
+      </div>
+      <div class="review-meta">
+        <div class="review-meta-item">Submitted by <strong>Gary Finberg</strong></div>
+        <div class="review-meta-item">25 Mar 2026</div>
+        <div class="review-meta-item">POL-IT-006</div>
+      </div>
+    </div>
+    <div class="review-banner-right">
+      <span class="status-pill status-in-review">In Review</span>
+      <span class="risk-pill risk-high">High Risk</span>
+    </div>
+  </div>
+</div>
+
+<!-- Main Layout -->
+<div class="review-layout">
+
+  <!-- Left: Policy Content -->
+  <div class="content-panel">
+    <div class="content-header">
+      <div class="content-title">Information Security Policy</div>
+      <div class="content-subtitle">IT & Security &bull; Version 1.0 &bull; Effective: 1 April 2026</div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="content-tabs">
+      <div class="content-tab active" onclick="switchTab(this, 'content')">Policy Content</div>
+      <div class="content-tab" onclick="switchTab(this, 'document')">Linked Document</div>
+      <div class="content-tab" onclick="switchTab(this, 'history')">Version History</div>
+      <div class="content-tab" onclick="switchTab(this, 'metadata')">Metadata</div>
+    </div>
+
+    <!-- Content -->
+    <div class="content-body" id="tab-content">
+      <h2>1. Purpose</h2>
+      <p>To protect the confidentiality, integrity, and availability of organisational information assets by defining security controls and responsibilities.</p>
+
+      <h2>2. Scope</h2>
+      <p>This policy applies to all employees, contractors, and third-party service providers who access the organisation's information systems and data.</p>
+
+      <h2>3. Data Classification</h2>
+      <p>All information must be classified according to the following levels:</p>
+      <ul>
+        <li><strong>Public</strong> — Information intended for public access</li>
+        <li><strong>Internal</strong> — General business information for internal use</li>
+        <li><strong>Confidential</strong> — Sensitive business information with restricted access</li>
+        <li><strong>Restricted</strong> — Highly sensitive information requiring maximum protection</li>
+      </ul>
+
+      <h2>4. Access Control</h2>
+      <p>Access to information systems must follow the <strong>principle of least privilege</strong>. Multi-factor authentication is required for all privileged access and remote connections.</p>
+
+      <h2>5. Incident Response</h2>
+      <p>Security incidents must be reported within <strong>1 hour</strong> of discovery to the IT Security team. The incident response plan must be followed for containment, eradication, and recovery.</p>
+
+      <h2>6. Acceptable Use</h2>
+      <p>Organisational IT resources must be used for legitimate business purposes. Personal use is permitted within reasonable limits as defined in the Acceptable Use Guidelines.</p>
+    </div>
+
+    <!-- Document tab (hidden) -->
+    <div class="doc-card" style="display:none" id="tab-document">
+      <span class="doc-icon">&#x1F4C4;</span>
+      <div class="doc-info">
+        <div class="doc-name">Information_Security_Policy_v1.0.docx</div>
+        <div class="doc-url">/sites/PolicyManager/PM_PolicySourceDocuments/POL-IT-006/</div>
+      </div>
+      <button class="btn-office">Open in Word Online</button>
+    </div>
+
+    <!-- Key Points -->
+    <div class="key-points">
+      <div class="key-points-title">Key Points</div>
+      <div class="key-point"><span class="key-point-dot"></span> Data classification requirements (Public, Internal, Confidential, Restricted)</div>
+      <div class="key-point"><span class="key-point-dot"></span> MFA required for all privileged access</div>
+      <div class="key-point"><span class="key-point-dot"></span> Security incidents must be reported within 1 hour</div>
+      <div class="key-point"><span class="key-point-dot"></span> ISO 27001 and NIST framework alignment</div>
+    </div>
+  </div>
+
+  <!-- Right: Review Panel -->
+  <div class="review-panel">
+
+    <!-- Your Decision -->
+    <div class="panel-card">
+      <div class="panel-card-header">
+        <div class="panel-card-icon" style="background:#f0fdfa;color:#0d9488">&#x2714;</div>
+        <div class="panel-card-title">Your Review Decision</div>
+      </div>
+      <div class="panel-card-body">
+        <div class="decision-buttons">
+          <div class="decision-btn selected" onclick="selectDecision(this, 'approve')">
+            <div class="decision-icon" style="background:#dcfce7;color:#059669">&#x2714;</div>
+            <div>
+              <div class="decision-label">Approve</div>
+              <div class="decision-desc">Policy meets all requirements</div>
+            </div>
+          </div>
+          <div class="decision-btn" onclick="selectDecision(this, 'changes')">
+            <div class="decision-icon" style="background:#fef3c7;color:#d97706">&#x270F;</div>
+            <div>
+              <div class="decision-label">Request Changes</div>
+              <div class="decision-desc">Needs revisions before approval</div>
+            </div>
+          </div>
+          <div class="decision-btn" onclick="selectDecision(this, 'reject')">
+            <div class="decision-icon" style="background:#fee2e2;color:#dc2626">&#x2716;</div>
+            <div>
+              <div class="decision-label">Reject</div>
+              <div class="decision-desc">Fundamentally does not meet standards</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 16px;">
+          <label style="font-size:13px;font-weight:600;color:#323130;display:block;margin-bottom:4px">Comments</label>
+          <textarea class="comments-area" placeholder="Add your review comments... (required for Request Changes and Reject)"></textarea>
+        </div>
+
+        <button class="submit-btn approve" id="submit-btn" style="margin-top: 16px;" onclick="submitReview()">
+          Submit Approval
+        </button>
+      </div>
+    </div>
+
+    <!-- Review Checklist -->
+    <div class="panel-card">
+      <div class="panel-card-header">
+        <div class="panel-card-icon" style="background:#dbeafe;color:#2563eb">&#x2611;</div>
+        <div class="panel-card-title">Review Checklist</div>
+      </div>
+      <div class="panel-card-body" style="padding: 12px 20px;">
+        <div class="checklist-item"><input type="checkbox" checked onchange="toggleCheck(this)"><span class="checklist-label checked">Content accuracy and completeness</span></div>
+        <div class="checklist-item"><input type="checkbox" checked onchange="toggleCheck(this)"><span class="checklist-label checked">Compliance alignment (regulatory requirements)</span></div>
+        <div class="checklist-item"><input type="checkbox" onchange="toggleCheck(this)"><span class="checklist-label">Formatting and readability</span></div>
+        <div class="checklist-item"><input type="checkbox" onchange="toggleCheck(this)"><span class="checklist-label">Key points accurately summarise policy</span></div>
+        <div class="checklist-item"><input type="checkbox" checked onchange="toggleCheck(this)"><span class="checklist-label checked">Appropriate risk classification</span></div>
+        <div class="checklist-item"><input type="checkbox" onchange="toggleCheck(this)"><span class="checklist-label">Target audience correctly defined</span></div>
+      </div>
+    </div>
+
+    <!-- Reviewers & Status -->
+    <div class="panel-card">
+      <div class="panel-card-header">
+        <div class="panel-card-icon" style="background:#ede9fe;color:#7c3aed">&#x1F465;</div>
+        <div class="panel-card-title">Review Chain</div>
+      </div>
+      <div class="panel-card-body" style="padding: 12px 20px;">
+        <div class="reviewer-row">
+          <div class="reviewer-avatar" style="background:#dbeafe;color:#2563eb">GF</div>
+          <span class="reviewer-name">Gary Finberg</span>
+          <span class="reviewer-status you">You</span>
+        </div>
+        <div class="reviewer-row">
+          <div class="reviewer-avatar" style="background:#dcfce7;color:#059669">GS</div>
+          <span class="reviewer-name">Gulzar</span>
+          <span class="reviewer-status approved">Approved</span>
+        </div>
+        <div class="reviewer-row">
+          <div class="reviewer-avatar" style="background:#fef3c7;color:#d97706">JD</div>
+          <span class="reviewer-name">Jane Doe (Approver)</span>
+          <span class="reviewer-status pending">Pending</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Previous Comments -->
+    <div class="panel-card">
+      <div class="panel-card-header">
+        <div class="panel-card-icon" style="background:#fce7f3;color:#db2777">&#x1F4AC;</div>
+        <div class="panel-card-title">Review Comments</div>
+      </div>
+      <div class="panel-card-body">
+        <div class="prev-comment">
+          <div class="prev-comment-header">
+            <div>
+              <span class="prev-comment-author">Gulzar</span>
+              <span class="prev-comment-badge" style="background:#dcfce7;color:#059669;margin-left:6px">Approved</span>
+            </div>
+            <span class="prev-comment-date">25 Mar 2026, 14:32</span>
+          </div>
+          <div class="prev-comment-body">Content looks good. The data classification section is clear and aligns with our ISO 27001 requirements. Recommend adding a reference to the incident response SLA in section 5.</div>
+        </div>
+        <div style="text-align:center;padding:8px 0;font-size:11px;color:#94a3b8">Awaiting 1 more review</div>
+      </div>
+    </div>
+
+    <!-- Policy Info -->
+    <div class="panel-card">
+      <div class="panel-card-header">
+        <div class="panel-card-icon" style="background:#f1f5f9;color:#64748b">&#x2139;</div>
+        <div class="panel-card-title">Policy Details</div>
+      </div>
+      <div class="panel-card-body" style="padding: 12px 20px;">
+        <div class="meta-row"><span class="meta-label">Policy Number</span><span class="meta-value">POL-IT-006</span></div>
+        <div class="meta-row"><span class="meta-label">Category</span><span class="meta-value">IT & Security</span></div>
+        <div class="meta-row"><span class="meta-label">Risk Level</span><span class="meta-value" style="color:#dc2626;font-weight:600">High</span></div>
+        <div class="meta-row"><span class="meta-label">Effective Date</span><span class="meta-value">1 April 2026</span></div>
+        <div class="meta-row"><span class="meta-label">Review Frequency</span><span class="meta-value">Annual</span></div>
+        <div class="meta-row"><span class="meta-label">Acknowledgement</span><span class="meta-value">Required</span></div>
+        <div class="meta-row"><span class="meta-label">Quiz Required</span><span class="meta-value">Yes</span></div>
+        <div class="meta-row"><span class="meta-label">Target Audience</span><span class="meta-value">IT, HR, Legal</span></div>
+        <div class="meta-row"><span class="meta-label">Policy Owner</span><span class="meta-value">Gary Finberg</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Footer -->
+<div class="page-footer">
+  <div class="footer-left">
+    <span class="footer-badge">PM</span>
+    <span style="font-size:12px;font-weight:600;color:#475569">Policy Manager</span>
+    <span style="font-size:10px;color:#94a3b8;background:#f1f5f9;padding:2px 6px;border-radius:4px">v1.2.5</span>
+    <span style="font-size:11px;color:#94a3b8">&copy; 2026 DWx Digital Workplace</span>
+  </div>
+  <div style="font-size:11px;color:#94a3b8">Powered by DWx</div>
+</div>
+
+<script>
+function selectDecision(el, type) {
+  document.querySelectorAll('.decision-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  const btn = document.getElementById('submit-btn');
+  btn.className = 'submit-btn ' + type;
+  btn.textContent = type === 'approve' ? 'Submit Approval' : type === 'changes' ? 'Submit Change Request' : 'Submit Rejection';
+}
+
+function toggleCheck(cb) {
+  const label = cb.nextElementSibling;
+  if (cb.checked) { label.classList.add('checked'); }
+  else { label.classList.remove('checked'); }
+}
+
+function switchTab(el, tab) {
+  document.querySelectorAll('.content-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function submitReview() {
+  alert('Review submitted! (This is a mockup)');
+}
+</script>
+
+</body>
+</html>

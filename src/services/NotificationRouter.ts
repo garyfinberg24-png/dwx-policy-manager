@@ -237,7 +237,7 @@ export class NotificationRouter {
             notification.data.policyTitle || 'Policy Manager',
             notification.data.message || notification.event,
             notification.data.policyId
-              ? `${this.siteUrl}/SitePages/PolicyDetails.aspx?policyId=${notification.data.policyId}`
+              ? `${this.siteUrl}/SitePages/PolicyDetails.aspx?policyId=${notification.data.policyId}${['review-due', 'approval-request'].includes(notification.event) ? '&mode=review' : ''}`
               : undefined
           );
         }

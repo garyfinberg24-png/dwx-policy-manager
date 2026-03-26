@@ -1142,7 +1142,7 @@ export class PolicyApprovalWorkflowService {
     policy: IPolicy
   ): ITeamsAdaptiveCardPayload {
     const approvalUrl = `${this.siteUrl}/SitePages/PolicyApproval.aspx?decisionId=${approval.id}`;
-    const policyUrl = `${this.siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policy.Id}`;
+    const policyUrl = `${this.siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policy.Id}&mode=review`;
 
     return {
       type: 'AdaptiveCard',

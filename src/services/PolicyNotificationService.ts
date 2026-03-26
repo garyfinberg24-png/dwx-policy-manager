@@ -67,7 +67,7 @@ export class PolicyNotificationService {
   private sp: SPFI;
   private siteUrl: string;
   private dwxNotifications: DwxNotificationService | null;
-  private notificationRouter: NotificationRouter | null = null;
+  public notificationRouter: NotificationRouter | null = null;
   // private readonly NOTIFICATION_LIST = NotificationLists.POLICY_NOTIFICATIONS; // Now using 'PM_Notifications' directly
   private readonly REMINDER_SCHEDULE_LIST = NotificationLists.REMINDER_SCHEDULE;
 
@@ -82,6 +82,113 @@ export class PolicyNotificationService {
    */
   public setNotificationRouter(router: NotificationRouter): void {
     this.notificationRouter = router;
+  }
+
+  // ============================================================================
+  // TEMPLATE ENGINE — loads admin-configured email templates from PM_EmailTemplates
+  // ============================================================================
+
+  private templateCache: Map<string, { subject: string; body: string; isActive: boolean }> = new Map();
+  private templateCacheTime = 0;
+
+  /**
+   * Load email template by event name from PM_EmailTemplates.
+   * Caches for 5 minutes to avoid repeated SP queries.
+   */
+  private async loadEmailTemplate(eventName: string): Promise<{ subject: string; body: string } | null> {
+    // Check cache (5 min TTL)
+    const now = Date.now();
+    if (now - this.templateCacheTime > 300000) {
+      this.templateCache.clear();
+      this.templateCacheTime = now;
+      try {
+        const items = await this.sp.web.lists.getByTitle('PM_EmailTemplates')
+          .items.filter("IsActive eq 1")
+          .select('Event', 'Subject', 'Body', 'IsActive')
+          .top(50)();
+        for (const item of items) {
+          this.templateCache.set(item.Event, { subject: item.Subject, body: item.Body, isActive: item.IsActive });
+        }
+      } catch {
+        // PM_EmailTemplates may not exist — fall back to hardcoded
+        return null;
+      }
+    }
+    const template = this.templateCache.get(eventName);
+    if (template && template.isActive) {
+      return { subject: template.subject, body: template.body };
+    }
+    return null;
+  }
+
+  /**
+   * Replace merge tags in template string.
+   * Tags use {{TagName}} format.
+   */
+  private replaceMergeTags(template: string, data: Record<string, string>): string {
+    let result = template;
+    for (const [key, value] of Object.entries(data)) {
+      result = result.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value || '');
+    }
+    return result;
+  }
+
+  /**
+   * Queue a templated email to PM_NotificationQueue.
+   * Loads admin template first; falls back to provided fallback subject/body.
+   */
+  public async queueTemplatedEmail(opts: {
+    eventName: string;
+    recipientEmail: string;
+    recipientName: string;
+    mergeData: Record<string, string>;
+    fallbackSubject: string;
+    fallbackBody: string;
+    policyId?: number;
+    priority?: string;
+  }): Promise<void> {
+    try {
+      // Try admin template first
+      const template = await this.loadEmailTemplate(opts.eventName);
+      let subject = opts.fallbackSubject;
+      let body = opts.fallbackBody;
+
+      if (template) {
+        subject = this.replaceMergeTags(template.subject, opts.mergeData);
+        body = this.replaceMergeTags(template.body, opts.mergeData);
+      }
+
+      // Wrap body in email shell
+      const siteUrl = this.sp.web.toUrl().replace('/_api/web', '');
+      const isReviewEvent = ['review-required', 'approval-request', 'review-withdrawn'].includes(opts.eventName);
+      const policyUrl = opts.mergeData.PolicyUrl || `${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${opts.policyId || 0}${isReviewEvent ? '&mode=review' : ''}`;
+      const htmlBody = this.buildEmailShell({
+        headerGradient: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
+        headerIcon: '&#x1F4CB;',
+        headerTitle: subject,
+        content: body,
+        footerText: 'First Digital — DWx Policy Manager',
+        ctaUrl: policyUrl,
+        ctaLabel: 'View in Policy Manager',
+        ctaColor: '#0d9488'
+      });
+
+      // Queue to PM_NotificationQueue
+      await this.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
+        Title: subject,
+        RecipientEmail: opts.recipientEmail,
+        RecipientName: opts.recipientName,
+        PolicyId: opts.policyId || 0,
+        PolicyTitle: opts.mergeData.PolicyTitle || '',
+        NotificationType: opts.eventName,
+        Channel: 'Email',
+        Message: htmlBody,
+        Status: 'Pending',
+        Priority: opts.priority || 'Normal'
+      });
+    } catch (err) {
+      logger.warn('PolicyNotificationService', `Failed to queue templated email for ${opts.eventName}:`, err);
+    }
   }
 
   // ============================================================================
@@ -368,19 +475,50 @@ export class PolicyNotificationService {
     reviewerIds: number[],
     submitterName: string
   ): Promise<void> {
-    const emailBody = this.buildSubmittedForReviewEmail(policy, submitterName);
+    const siteUrl = this.sp.web.toUrl().replace('/_api/web', '');
+    const policyUrl = `${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policy.Id}&mode=review`;
+
+    // Send email + in-app notification to each reviewer
     let failCount = 0;
     for (const reviewerId of reviewerIds) {
       try {
-        await this.sendNotification({
-          recipientId: reviewerId,
-          notificationType: 'ApprovalRequired',
-          subject: `Review Required: ${policy.PolicyName}`,
-          body: emailBody,
+        // Resolve reviewer email/name
+        const reviewer = await this.sp.web.siteUsers.getById(reviewerId).select('Email', 'Title')();
+        if (!reviewer?.Email) continue;
+
+        // Queue templated email via PM_NotificationQueue
+        await this.queueTemplatedEmail({
+          eventName: 'review-required',
+          recipientEmail: reviewer.Email,
+          recipientName: reviewer.Title || '',
           policyId: policy.Id,
-          sendEmail: true,
-          sendInApp: true
+          priority: 'High',
+          mergeData: {
+            PolicyTitle: policy.PolicyName,
+            PolicyNumber: policy.PolicyNumber || '',
+            AuthorName: submitterName,
+            RecipientName: reviewer.Title || '',
+            Category: policy.PolicyCategory || '',
+            RiskLevel: policy.ComplianceRisk || 'Medium',
+            PolicyUrl: policyUrl
+          },
+          fallbackSubject: `Review Required: ${policy.PolicyName}`,
+          fallbackBody: `<p>${submitterName} has submitted <strong>${policy.PolicyName}</strong> for your review.</p><p><a href="${policyUrl}">Review Policy</a></p>`
         });
+
+        // In-app notification
+        try {
+          await this.sp.web.lists.getByTitle('PM_Notifications').items.add({
+            Title: `Review Required: ${policy.PolicyName}`,
+            RecipientId: reviewerId,
+            Message: `${submitterName} has submitted "${policy.PolicyName}" for your review.`,
+            Type: 'Policy',
+            RelatedItemId: policy.Id,
+            ActionUrl: policyUrl,
+            Priority: 'High',
+            IsRead: false
+          });
+        } catch { /* in-app notification is best-effort */ }
       } catch (err) {
         failCount++;
         logger.warn('PolicyNotificationService', `Failed to notify reviewer ${reviewerId}:`, err);
@@ -389,33 +527,6 @@ export class PolicyNotificationService {
     if (failCount > 0) {
       logger.error('PolicyNotificationService',
         `Failed to send review notification to ${failCount}/${reviewerIds.length} recipients`);
-    }
-
-    // Route through NotificationRouter for Teams Adaptive Cards
-    if (this.notificationRouter) {
-      for (const reviewerId of reviewerIds) {
-        try {
-          const reviewer = await this.sp.web.siteUsers.getById(reviewerId).select('Email', 'Title')();
-          if (reviewer?.Email) {
-            await this.notificationRouter.send({
-              event: 'review-due',
-              recipientEmail: reviewer.Email,
-              recipientName: reviewer.Title || '',
-              data: {
-                policyTitle: policy.PolicyName,
-                policyId: policy.Id,
-                subject: `Review Required: ${policy.PolicyName}`,
-                message: `${submitterName} has submitted "${policy.PolicyName}" for your review.`,
-                authorName: submitterName,
-                category: policy.PolicyCategory || '',
-                riskLevel: policy.ComplianceRisk || 'Medium'
-              }
-            });
-          }
-        } catch (routerErr) {
-          logger.warn('PolicyNotificationService', `NotificationRouter failed for reviewer ${reviewerId}`, routerErr);
-        }
-      }
     }
   }
 
@@ -827,7 +938,7 @@ export class PolicyNotificationService {
   }
 
   private buildPolicyApprovalEmail(policy: IPolicy, approverName: string): string {
-    const policyUrl = `${this.siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policy.Id}`;
+    const policyUrl = `${this.siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policy.Id}&mode=review`;
     const rows = this.emailRow('Policy', `${policy.PolicyNumber} &mdash; ${policy.PolicyName}`)
       + this.emailRow('Approved By', approverName)
       + this.emailRow('Published Date', new Date().toLocaleDateString());
@@ -887,25 +998,6 @@ export class PolicyNotificationService {
         </body>
       </html>
     `;
-  }
-
-  private buildSubmittedForReviewEmail(policy: IPolicy, submitterName: string): string {
-    const policyUrl = `${this.siteUrl}/SitePages/PolicyManagerView.aspx?tab=approvals`;
-    const rows = ''
-      + this.emailRow('Policy', `${policy.PolicyNumber || ''} — ${policy.PolicyName}`)
-      + this.emailRow('Category', policy.PolicyCategory || 'General')
-      + this.emailRow('Submitted By', submitterName)
-      + this.emailRow('Risk Level', policy.ComplianceRisk || 'Medium')
-      + this.emailRow('Submitted', new Date().toLocaleDateString());
-    return this.buildEmailShell({
-      headerGradient: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
-      headerIcon: '📋', headerTitle: 'Policy Review Required',
-      bodyBg: '#f0fdfa',
-      content: `<p style="margin:0 0 16px;color:#334155;font-size:15px;line-height:1.6;">A policy has been submitted for your review and approval. Please review it at your earliest convenience.</p>
-        ${this.emailTable(rows)}`,
-      footerText: 'This is an automated notification from the DWx Policy Management System.',
-      ctaUrl: policyUrl, ctaLabel: 'Review Policy', ctaColor: '#0d9488',
-    });
   }
 
   // ============================================================================

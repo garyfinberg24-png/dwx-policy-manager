@@ -1416,11 +1416,11 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         }
         break;
 
-      case 3: // Target Audience
+      case 3: // Audience
         {
-          const { targetAllEmployees, targetDepartments } = this.state;
-          if (!targetAllEmployees && (!targetDepartments || targetDepartments.length === 0)) {
-            errors.push('Select at least one department or choose "All Employees"');
+          const selectedAud = (this.state as any)._selectedAudienceId;
+          if (!selectedAud) {
+            errors.push('Please select an audience');
           }
         }
         break;
@@ -1561,7 +1561,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     ['Creation method selection'],
     ['Policy Title', 'Policy Number', 'Policy Category', 'Policy Summary'],
     ['Risk Level', 'Acknowledgement', 'Quiz Requirement'],
-    ['Departments', 'Roles', 'Locations', 'Contractors'],
+    ['Select Audience', 'Preview Users'],
     ['Effective Date', 'Expiry Date', 'Review Cycle'],
     ['Reviewers', 'Approvers'],
     ['Rich Text Editor', 'Key Points'],
@@ -2516,246 +2516,142 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
   }
 
   private renderStep4_Audience(): JSX.Element {
-    const { targetAllEmployees, targetDepartments, targetRoles, targetLocations, includeContractors } = this.state;
+    const { targetAllEmployees } = this.state;
     const st = this.state as any;
-    const savedAudiences: any[] = st._savedAudiences || [];
+    const audiences: any[] = st._audiencesList || [];
+    const selectedAudienceId: number | null = st._selectedAudienceId || null;
+    const audiencePreviewCount: number = st._audiencePreviewCount || 0;
+    const audienceSearchQuery: string = st._audienceSearchQuery || '';
     const scopeMode: string = targetAllEmployees ? 'all' : (st._scopeMode || 'targeted');
 
-    // Lazy-load admin-configured audiences
+    // Lazy-load audiences from PM_Audiences
     if (!st._audiencesLoaded) {
       this.setState({ _audiencesLoaded: true } as any);
-      import('../../../services/AudienceService').then(({ AudienceService }) => {
-        const svc = new AudienceService(this.props.sp);
-        svc.getAudiences().then((audiences: any[]) => {
-          this.setState({ _savedAudiences: audiences } as any);
-        }).catch(() => { /* graceful degradation */ });
+      import('../../../services/AudienceRuleService').then(({ AudienceRuleService }) => {
+        const svc = new AudienceRuleService(this.props.sp);
+        svc.getAudiences().then((loaded: any[]) => {
+          if (this._isMounted) this.setState({ _audiencesList: loaded } as any);
+        }).catch(() => { /* PM_Audiences may not exist */ });
       }).catch(() => { /* graceful degradation */ });
     }
 
-    const departments = [
-      'Human Resources', 'IT', 'Finance', 'Operations', 'Sales',
-      'Marketing', 'Legal', 'Executive', 'Compliance', 'Customer Service'
-    ];
-
-    const toggleDept = (dept: string): void => {
-      const updated = targetDepartments.includes(dept)
-        ? targetDepartments.filter(d => d !== dept)
-        : [...targetDepartments, dept];
-      this.setState({ targetDepartments: updated });
+    // Category colours for audience cards
+    const catColors: Record<string, { bg: string; color: string }> = {
+      Department: { bg: '#dbeafe', color: '#2563eb' },
+      Role: { bg: '#ede9fe', color: '#7c3aed' },
+      Location: { bg: '#fef3c7', color: '#d97706' },
+      Custom: { bg: '#f0fdfa', color: '#0d9488' },
+      Compliance: { bg: '#fee2e2', color: '#dc2626' },
+      Onboarding: { bg: '#dcfce7', color: '#059669' }
     };
 
-    const scopes = [
-      { key: 'all', icon: 'Globe', label: 'All Employees', desc: 'Everyone in the organisation', bg: '#dbeafe', color: '#2563eb' },
-      { key: 'targeted', icon: 'TargetSolid', label: 'Targeted', desc: 'Specific departments, roles, or locations', bg: '#f0fdfa', color: '#0d9488' },
-      { key: 'newhires', icon: 'AddFriend', label: 'New Hires Only', desc: 'Onboarding policies', bg: '#fef3c7', color: '#d97706' }
-    ];
+    const catIcons: Record<string, string> = {
+      Department: 'Org', Role: 'Contact', Location: 'MapPin',
+      Custom: 'TargetSolid', Compliance: 'Shield', Onboarding: 'AddFriend'
+    };
+
+    // Filter audiences by search
+    const filteredAudiences = audienceSearchQuery.trim()
+      ? audiences.filter((a: any) => a.Title.toLowerCase().includes(audienceSearchQuery.toLowerCase()) || (a.Description || '').toLowerCase().includes(audienceSearchQuery.toLowerCase()))
+      : audiences;
+
+    const selectAudience = async (audience: any): Promise<void> => {
+      this.setState({
+        _selectedAudienceId: audience.Id,
+        targetAllEmployees: audience.Title === 'All Employees',
+        _scopeMode: audience.Title === 'All Employees' ? 'all' : 'targeted'
+      } as any);
+      // Get preview count
+      try {
+        const { AudienceRuleService } = await import('../../../services/AudienceRuleService');
+        const svc = new AudienceRuleService(this.props.sp);
+        const users = await svc.resolveAudience(audience);
+        if (this._isMounted) this.setState({ _audiencePreviewCount: users.length } as any);
+      } catch { /* preview is best-effort */ }
+    };
 
     return (
-      <div className={styles.wizardStepContent}>
+      <div>
         <Stack tokens={{ childrenGap: 16 }}>
-          {/* Scope selector cards */}
-          <div style={{ display: 'flex', gap: 12, marginBottom: 4 }}>
-            {scopes.map(s => {
-              const isSelected = scopeMode === s.key;
-              return (
-                <div
-                  key={s.key}
-                  role="button" tabIndex={0}
-                  onClick={() => {
-                    this.setState({
-                      targetAllEmployees: s.key === 'all',
-                      _scopeMode: s.key
-                    } as any);
-                  }}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.setState({ targetAllEmployees: s.key === 'all', _scopeMode: s.key } as any); } }}
-                  style={{
-                    flex: 1, padding: 16, border: `2px solid ${isSelected ? '#0d9488' : '#e2e8f0'}`,
-                    borderRadius: 8, cursor: 'pointer', textAlign: 'center', transition: 'all 0.15s',
-                    background: isSelected ? '#f0fdfa' : '#fff'
-                  }}
-                  onMouseEnter={(e) => { if (!isSelected) (e.currentTarget as HTMLElement).style.borderColor = '#0d9488'; }}
-                  onMouseLeave={(e) => { if (!isSelected) (e.currentTarget as HTMLElement).style.borderColor = '#e2e8f0'; }}
-                >
-                  <div style={{ width: 36, height: 36, borderRadius: 8, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px' }}>
-                    <Icon iconName={s.icon} styles={{ root: { fontSize: 18, color: s.color } }} />
-                  </div>
-                  <Text style={{ fontWeight: 600, fontSize: 13, color: '#0f172a', display: 'block' }}>{s.label}</Text>
-                  <Text style={{ fontSize: 10, color: '#94a3b8' }}>{s.desc}</Text>
-                </div>
-              );
-            })}
+          {/* Audience search + info */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+            <SearchBox
+              placeholder="Search audiences..."
+              value={audienceSearchQuery}
+              onChange={(_, v) => this.setState({ _audienceSearchQuery: v || '' } as any)}
+              styles={{ root: { width: 280 } }}
+            />
+            {selectedAudienceId && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 14px', background: '#f0fdfa', border: '1px solid #99f6e4', borderRadius: 6 }}>
+                <Icon iconName="People" styles={{ root: { fontSize: 14, color: '#0d9488' } }} />
+                <Text style={{ fontSize: 13, fontWeight: 600, color: '#0d9488' }}>~{audiencePreviewCount} users</Text>
+              </div>
+            )}
           </div>
 
-          {/* Targeted audience builder */}
-          {scopeMode === 'targeted' && (
-            <>
-              {/* Saved audiences quick-select */}
-              {savedAudiences.length > 0 && (
-                <Dropdown
-                  label="Quick Select — Saved Audiences"
-                  placeholder="Optionally select a pre-configured audience..."
-                  options={[
-                    { key: '', text: '(Build custom audience below)' },
-                    ...savedAudiences.map((a: any) => ({ key: a.Id || a.Title, text: a.Title || a.Name || 'Unnamed' }))
-                  ]}
-                  onChange={(_, opt) => {
-                    if (opt && opt.key !== '') {
-                      const audience = savedAudiences.find((a: any) => (a.Id || a.Title) === opt.key);
-                      if (audience) {
-                        this.setState({
-                          targetDepartments: audience.Departments ? audience.Departments.split(',').map((d: string) => d.trim()) : targetDepartments,
-                          targetRoles: audience.Roles ? audience.Roles.split(',').map((r: string) => r.trim()) : targetRoles,
-                          targetLocations: audience.Locations ? audience.Locations.split(',').map((l: string) => l.trim()) : targetLocations,
-                        });
-                      }
-                    }
-                  }}
-                />
-              )}
-
-              {/* Departments — chip grid */}
-              <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, padding: 20 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                  <div style={{ width: 28, height: 28, borderRadius: 6, background: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Icon iconName="Org" styles={{ root: { fontSize: 14, color: '#2563eb' } }} />
-                  </div>
-                  <Text style={{ fontWeight: 600, fontSize: 14, color: '#0f172a' }}>Departments</Text>
-                  {targetDepartments.length > 0 && (
-                    <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 10, background: '#ccfbf1', color: '#0d9488' }}>
-                      {targetDepartments.length} selected
-                    </span>
-                  )}
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                  {departments.map(dept => {
-                    const isSelected = targetDepartments.includes(dept);
-                    return (
-                      <div
-                        key={dept}
-                        role="button" tabIndex={0}
-                        onClick={() => toggleDept(dept)}
-                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleDept(dept); } }}
-                        style={{
-                          padding: '8px 14px', borderRadius: 6, fontSize: 12, fontWeight: 500, cursor: 'pointer',
-                          transition: 'all 0.15s', border: `1px solid ${isSelected ? '#0d9488' : '#e2e8f0'}`,
-                          background: isSelected ? '#0d9488' : '#fff', color: isSelected ? '#fff' : '#475569'
-                        }}
-                        onMouseEnter={(e) => { if (!isSelected) { (e.currentTarget as HTMLElement).style.borderColor = '#0d9488'; (e.currentTarget as HTMLElement).style.color = '#0d9488'; } }}
-                        onMouseLeave={(e) => { if (!isSelected) { (e.currentTarget as HTMLElement).style.borderColor = '#e2e8f0'; (e.currentTarget as HTMLElement).style.color = '#475569'; } }}
-                      >
-                        {dept}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Roles + Locations side by side */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, padding: 20 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 6, background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Icon iconName="Contact" styles={{ root: { fontSize: 14, color: '#d97706' } }} />
-                    </div>
-                    <Text style={{ fontWeight: 600, fontSize: 14, color: '#0f172a' }}>Target Roles</Text>
-                  </div>
-                  <TextField
-                    placeholder="e.g., Manager, Director (comma-separated)"
-                    value={targetRoles.join(', ')}
-                    onChange={(_, value) => this.setState({ targetRoles: value ? value.split(',').map(r => r.trim()).filter(Boolean) : [] })}
-                  />
-                  {targetRoles.length > 0 && (
-                    <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                      {targetRoles.map(role => (
-                        <span key={role} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 4, fontSize: 11, fontWeight: 600, background: '#f0fdfa', color: '#0d9488', border: '1px solid #99f6e4' }}>
-                          {role}
-                          <span
-                            role="button" tabIndex={0}
-                            onClick={() => this.setState({ targetRoles: targetRoles.filter(r => r !== role) })}
-                            onKeyDown={(e) => { if (e.key === 'Enter') this.setState({ targetRoles: targetRoles.filter(r => r !== role) }); }}
-                            style={{ cursor: 'pointer', color: '#94a3b8', fontSize: 10, marginLeft: 2 }}
-                          >x</span>
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, padding: 20 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 6, background: '#ede9fe', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Icon iconName="MapPin" styles={{ root: { fontSize: 14, color: '#7c3aed' } }} />
-                    </div>
-                    <Text style={{ fontWeight: 600, fontSize: 14, color: '#0f172a' }}>Target Locations</Text>
-                  </div>
-                  <TextField
-                    placeholder="e.g., London, Cape Town (comma-separated)"
-                    value={targetLocations.join(', ')}
-                    onChange={(_, value) => this.setState({ targetLocations: value ? value.split(',').map(l => l.trim()).filter(Boolean) : [] })}
-                  />
-                  {targetLocations.length > 0 && (
-                    <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                      {targetLocations.map(loc => (
-                        <span key={loc} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 4, fontSize: 11, fontWeight: 600, background: '#f0fdfa', color: '#0d9488', border: '1px solid #99f6e4' }}>
-                          {loc}
-                          <span
-                            role="button" tabIndex={0}
-                            onClick={() => this.setState({ targetLocations: targetLocations.filter(l => l !== loc) })}
-                            onKeyDown={(e) => { if (e.key === 'Enter') this.setState({ targetLocations: targetLocations.filter(l => l !== loc) }); }}
-                            style={{ cursor: 'pointer', color: '#94a3b8', fontSize: 10, marginLeft: 2 }}
-                          >x</span>
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Specific users + Contractors side by side */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, padding: 20 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 6, background: '#fce7f3', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Icon iconName="People" styles={{ root: { fontSize: 14, color: '#db2777' } }} />
-                    </div>
-                    <Text style={{ fontWeight: 600, fontSize: 14, color: '#0f172a' }}>Specific Users</Text>
-                  </div>
-                  <PeoplePicker
-                    context={this.props.context as any}
-                    titleText=""
-                    personSelectionLimit={20}
-                    groupName=""
-                    showtooltip={true}
-                    showHiddenInUI={false}
-                    ensureUser={true}
-                    principalTypes={[PrincipalType.User]}
-                    resolveDelay={300}
-                    defaultSelectedUsers={(st.targetSpecificUsers as string[]) || []}
-                    onChange={(items: any[]) => {
-                      this.setState({ targetSpecificUsers: items.map((i: any) => i.secondaryText || i.loginName || '') } as any);
+          {/* Audience cards grid */}
+          {audiences.length === 0 ? (
+            <MessageBar messageBarType={MessageBarType.info}>
+              No audiences configured yet. Go to Admin Centre &gt; Audience Targeting to create audiences, or run the provisioning script <code>22-Audiences-List.ps1</code>.
+            </MessageBar>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, maxHeight: 420, overflowY: 'auto', paddingRight: 4 }}>
+              {filteredAudiences.map((audience: any) => {
+                const isSelected = selectedAudienceId === audience.Id;
+                const colors = catColors[audience.Category] || catColors.Custom;
+                const iconName = catIcons[audience.Category] || 'TargetSolid';
+                return (
+                  <div
+                    key={audience.Id}
+                    role="button" tabIndex={0}
+                    onClick={() => selectAudience(audience)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectAudience(audience); } }}
+                    style={{
+                      padding: 16, border: `2px solid ${isSelected ? '#0d9488' : '#e2e8f0'}`,
+                      borderRadius: 8, cursor: 'pointer', transition: 'all 0.15s',
+                      background: isSelected ? '#f0fdfa' : '#fff'
                     }}
-                    placeholder="Search for specific users..."
-                    webAbsoluteUrl={this.props.context.pageContext.web.absoluteUrl}
-                  />
-                </div>
-
-                <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, padding: 20, display: 'flex', alignItems: 'center' }}>
-                  <Checkbox
-                    label="Include Contractors / Third Parties"
-                    checked={includeContractors}
-                    onChange={(_, checked) => this.setState({ includeContractors: checked || false })}
-                    styles={{ root: { margin: 0 } }}
-                  />
-                </div>
-              </div>
-            </>
+                    onMouseEnter={(e) => { if (!isSelected) (e.currentTarget as HTMLElement).style.borderColor = '#0d9488'; }}
+                    onMouseLeave={(e) => { if (!isSelected) (e.currentTarget as HTMLElement).style.borderColor = '#e2e8f0'; }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: 8, background: colors.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Icon iconName={iconName} styles={{ root: { fontSize: 16, color: colors.color } }} />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <Text style={{ fontWeight: 600, fontSize: 13, color: '#0f172a', display: 'block' }}>{audience.Title}</Text>
+                        <span style={{ fontSize: 9, fontWeight: 600, padding: '1px 6px', borderRadius: 4, background: colors.bg, color: colors.color, textTransform: 'uppercase' }}>{audience.Category}</span>
+                      </div>
+                      {isSelected && <Icon iconName="CheckMark" styles={{ root: { fontSize: 16, color: '#0d9488' } }} />}
+                      {audience.IsSystem && <Icon iconName="Lock" styles={{ root: { fontSize: 10, color: '#94a3b8' } }} title="System audience" />}
+                    </div>
+                    <Text style={{ fontSize: 11, color: '#64748b', lineHeight: '1.4' }}>{audience.Description || 'No description'}</Text>
+                    {audience.Rules && audience.Rules.length > 0 && (
+                      <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                        {audience.Rules.map((r: any, ri: number) => (
+                          <span key={ri} style={{ fontSize: 9, padding: '2px 6px', borderRadius: 3, background: '#f1f5f9', color: '#64748b' }}>
+                            {r.field} {r.operator} "{r.value}"
+                          </span>
+                        ))}
+                        {audience.Rules.length > 1 && (
+                          <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 3, background: '#fef3c7', color: '#d97706', fontWeight: 600 }}>{audience.Combinator}</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           )}
 
-          {/* New Hires info */}
-          {scopeMode === 'newhires' && (
-            <MessageBar messageBarType={MessageBarType.info}>
-              This policy will be automatically assigned to new employees during their onboarding process. It will not appear in the general Policy Hub.
-            </MessageBar>
+          {/* Selected audience info */}
+          {selectedAudienceId && audiencePreviewCount > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: '#f0fdfa', border: '1px solid #99f6e4', borderRadius: 6 }}>
+              <Icon iconName="People" styles={{ root: { fontSize: 16, color: '#0d9488' } }} />
+              <Text style={{ fontSize: 13, color: '#0f766e' }}>
+                <strong>{audiencePreviewCount}</strong> users match this audience. They will receive this policy when distributed.
+              </Text>
+            </div>
           )}
 
           {/* Storage & Security */}

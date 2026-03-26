@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Policy Builder — Fast Track Mode</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f1f5f9; color: #0f172a; }
+
+  /* App Header */
+  .app-header { background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%); padding: 10px 24px; display: flex; align-items: center; color: #fff; }
+  .app-header-left { display: flex; align-items: center; gap: 12px; }
+  .app-logo { width: 32px; height: 32px; background: rgba(255,255,255,0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+  .app-title { font-size: 15px; font-weight: 700; }
+  .app-subtitle { font-size: 9px; opacity: 0.8; text-transform: uppercase; letter-spacing: 1px; }
+  .app-header-right { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+  .header-avatar { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.25); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+
+  /* Nav */
+  .nav-bar { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 0 24px; display: flex; align-items: center; height: 42px; gap: 4px; }
+  .nav-item { padding: 8px 14px; font-size: 13px; color: #475569; font-weight: 500; text-decoration: none; border-radius: 4px; }
+  .nav-item.active { color: #0d9488; font-weight: 600; }
+
+  /* Wizard container */
+  .wizard-container { max-width: 1400px; margin: 16px auto; padding: 0 24px; }
+  .wizard-wrapper { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  .wizard { display: grid; grid-template-columns: 240px 1fr 260px; grid-template-rows: 1fr auto; min-height: calc(100vh - 200px); }
+
+  /* Sidebar */
+  .sidebar { background: #fff; border-right: 1px solid #e2e8f0; grid-row: 1/3; border-radius: 10px 0 0 10px; padding: 24px 0; overflow-y: auto; }
+  .sidebar-header { padding: 0 20px 16px; border-bottom: 1px solid #e2e8f0; margin-bottom: 8px; }
+  .sidebar-title { font-size: 16px; font-weight: 700; color: #0f172a; }
+  .sidebar-sub { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+  .sidebar-mode { margin: 12px 20px; padding: 8px 12px; background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 6px; display: flex; align-items: center; gap: 8px; }
+  .sidebar-mode .mode-icon { font-size: 16px; }
+  .sidebar-mode .mode-label { font-size: 11px; font-weight: 600; color: #0d9488; }
+  .step-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; cursor: pointer; border-left: 3px solid transparent; transition: all 0.15s; }
+  .step-item:hover { background: #f8fafc; }
+  .step-item.active { background: #f0fdfa; border-left-color: #0d9488; }
+  .step-item.completed .step-num { background: #0d9488; color: #fff; border-color: #0d9488; }
+  .step-num { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #e2e8f0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #94a3b8; flex-shrink: 0; }
+  .step-item.active .step-num { border-color: #0d9488; color: #0d9488; background: #f0fdfa; }
+  .step-label { font-size: 13px; font-weight: 500; color: #475569; }
+  .step-item.active .step-label { font-weight: 600; color: #0d9488; }
+
+  /* Content area */
+  .content { padding: 32px 40px 24px; overflow-y: auto; display: flex; flex-direction: column; background: #f8fafc; }
+  .content-header { margin-bottom: 24px; display: flex; align-items: flex-start; justify-content: space-between; }
+  .content-title { font-size: 20px; font-weight: 700; color: #0f172a; }
+  .content-desc { font-size: 13px; color: #64748b; margin-top: 4px; }
+  .progress-wrap { display: flex; align-items: center; gap: 8px; }
+  .progress-track { width: 120px; height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; background: #0d9488; border-radius: 3px; }
+  .progress-label { font-size: 11px; color: #64748b; }
+
+  /* Step content */
+  .step-content { display: none; flex: 1; }
+  .step-content.active { display: block; }
+
+  /* Right panel */
+  .right-panel { background: #fff; border-left: 1px solid #e2e8f0; padding: 24px 20px; overflow-y: auto; border-radius: 0 10px 0 0; }
+  .panel-heading { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+  .tip-card { background: #f0fdfa; border-radius: 6px; padding: 12px; margin-bottom: 8px; }
+  .tip-title { font-size: 12px; font-weight: 600; color: #0f172a; margin-bottom: 4px; }
+  .tip-body { font-size: 11px; color: #115e59; line-height: 1.5; }
+
+  /* Footer */
+  .footer-bar { grid-column: 2/3; display: flex; align-items: center; justify-content: space-between; padding: 14px 40px; background: #fff; border-top: 1px solid #e2e8f0; }
+  .btn { padding: 8px 20px; border-radius: 4px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; font-family: inherit; }
+  .btn-outline { background: #fff; color: #475569; border: 1px solid #e2e8f0; }
+  .btn-save { background: #f0fdfa; color: #0d9488; border: 1px solid #99f6e4; }
+  .btn-primary { background: #0d9488; color: #fff; }
+  .btn-primary:hover { background: #0f766e; }
+
+  /* ─── MODE SELECTION ─── */
+  .mode-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 800px; margin: 40px auto; }
+  .mode-card { border: 2px solid #e2e8f0; border-radius: 12px; padding: 32px; cursor: pointer; transition: all 0.2s; text-align: center; position: relative; overflow: hidden; }
+  .mode-card:hover { border-color: #0d9488; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(13,148,136,0.1); }
+  .mode-card.selected { border-color: #0d9488; background: #f0fdfa; }
+  .mode-card .mode-badge { position: absolute; top: 12px; right: 12px; font-size: 9px; font-weight: 700; padding: 3px 10px; border-radius: 4px; text-transform: uppercase; }
+  .mode-icon-large { width: 64px; height: 64px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 28px; margin: 0 auto 16px; }
+  .mode-title { font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
+  .mode-desc { font-size: 13px; color: #64748b; line-height: 1.5; margin-bottom: 16px; }
+  .mode-steps { font-size: 12px; font-weight: 600; color: #0d9488; }
+  .mode-features { text-align: left; margin-top: 16px; padding-top: 16px; border-top: 1px solid #e2e8f0; }
+  .mode-feature { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 12px; color: #475569; }
+  .mode-feature .check { color: #0d9488; font-weight: 700; }
+
+  /* ─── FAST TRACK TEMPLATE GRID ─── */
+  .ft-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .ft-card { border: 2px solid #e2e8f0; border-radius: 10px; padding: 20px; cursor: pointer; transition: all 0.15s; }
+  .ft-card:hover { border-color: #0d9488; box-shadow: 0 2px 12px rgba(13,148,136,0.08); }
+  .ft-card.selected { border-color: #0d9488; background: #f0fdfa; }
+  .ft-header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .ft-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .ft-title { font-size: 14px; font-weight: 600; color: #0f172a; }
+  .ft-desc { font-size: 12px; color: #64748b; line-height: 1.4; margin-bottom: 12px; }
+  .ft-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .ft-tag { font-size: 9px; font-weight: 600; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; }
+  .ft-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px solid #f1f5f9; }
+  .ft-meta-item { font-size: 10px; color: #94a3b8; }
+  .ft-meta-item strong { color: #475569; }
+
+  /* ─── POLICY DETAILS (Fast Track Step 2) ─── */
+  .form-group { margin-bottom: 16px; }
+  .form-label { font-size: 13px; font-weight: 600; color: #323130; margin-bottom: 4px; display: block; }
+  .form-label .req { color: #dc2626; }
+  .form-input { width: 100%; border: 1px solid #e2e8f0; border-radius: 4px; padding: 8px 12px; font-size: 13px; font-family: inherit; outline: none; }
+  .form-input:focus { border-color: #0d9488; }
+  .form-textarea { width: 100%; border: 1px solid #e2e8f0; border-radius: 4px; padding: 8px 12px; font-size: 13px; font-family: inherit; resize: vertical; min-height: 80px; outline: none; }
+
+  /* Pre-filled summary */
+  .prefilled-section { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px 20px; margin-top: 20px; }
+  .prefilled-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .prefilled-title { font-size: 13px; font-weight: 600; color: #64748b; display: flex; align-items: center; gap: 6px; }
+  .prefilled-title .lock-icon { font-size: 12px; color: #94a3b8; }
+  .override-toggle { font-size: 11px; color: #0d9488; cursor: pointer; font-weight: 600; padding: 4px 10px; border-radius: 4px; border: 1px solid #99f6e4; background: #f0fdfa; }
+  .override-toggle:hover { background: #ccfbf1; }
+  .prefilled-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .prefilled-item { padding: 8px 12px; background: #fff; border-radius: 4px; border: 1px solid #e2e8f0; }
+  .prefilled-label { font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+  .prefilled-value { font-size: 13px; font-weight: 500; color: #0f172a; margin-top: 2px; }
+
+  /* ─── DOCUMENT CARD ─── */
+  .doc-card { display: flex; align-items: center; gap: 14px; padding: 16px 20px; background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 8px; margin-bottom: 16px; }
+  .doc-icon { font-size: 28px; color: #0d9488; }
+  .doc-info { flex: 1; }
+  .doc-name { font-weight: 600; font-size: 14px; color: #0f172a; }
+  .doc-url { font-size: 12px; color: #64748b; }
+
+  /* ─── REVIEW SECTION ─── */
+  .review-section { border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; margin-bottom: 8px; }
+  .review-header { display: flex; align-items: center; gap: 10px; padding: 12px 16px; cursor: pointer; background: #fff; }
+  .review-header.open { background: #f0fdfa; border-bottom: 1px solid #e2e8f0; }
+  .review-title { font-weight: 600; font-size: 13px; color: #0f172a; flex: 1; }
+  .review-badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 4px; background: #dcfce7; color: #059669; }
+  .review-body { padding: 16px; }
+  .review-row { display: flex; padding: 6px 0; font-size: 12px; border-bottom: 1px solid #f8fafc; }
+  .review-label { width: 160px; color: #64748b; font-weight: 500; flex-shrink: 0; }
+  .review-value { color: #0f172a; }
+
+  /* Save as Fast Track */
+  .save-ft-banner { display: flex; align-items: center; gap: 12px; background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 14px 20px; margin-top: 16px; }
+  .save-ft-text { flex: 1; font-size: 12px; color: #92400e; line-height: 1.5; }
+  .save-ft-btn { padding: 8px 16px; border-radius: 4px; border: 1px solid #d97706; background: #fff; color: #d97706; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+
+  /* App footer */
+  .app-footer { max-width: 1400px; margin: 12px auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; }
+  .footer-badge { background: linear-gradient(135deg,#0d9488,#0f766e); color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<!-- App Header -->
+<div class="app-header">
+  <div class="app-header-left">
+    <div class="app-logo"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg></div>
+    <div><div class="app-title">Policy Manager</div><div class="app-subtitle">Policy Governance & Compliance</div></div>
+  </div>
+  <div class="app-header-right"><div class="header-avatar">GF</div></div>
+</div>
+<nav class="nav-bar">
+  <a class="nav-item" href="#">My Policies</a>
+  <a class="nav-item" href="#">Policy Hub</a>
+  <a class="nav-item active" href="#">Author</a>
+  <a class="nav-item" href="#">Manager</a>
+</nav>
+
+<!-- Wizard Container -->
+<div class="wizard-container">
+<div class="wizard-wrapper">
+<div class="wizard">
+
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar"></div>
+
+  <!-- Content -->
+  <div class="content" id="main-content">
+
+    <!-- ═══ STEP 0: MODE SELECTION ═══ -->
+    <div class="step-content active" data-step="0">
+      <div style="text-align:center;margin-bottom:32px">
+        <div class="content-title" style="font-size:24px">How would you like to create this policy?</div>
+        <div class="content-desc" style="font-size:14px;margin-top:8px">Choose your workflow. You can always switch later.</div>
+      </div>
+
+      <div class="mode-cards">
+        <!-- Fast Track -->
+        <div class="mode-card" onclick="selectMode('fast'); this.classList.add('selected'); this.parentElement.querySelector('.mode-card:last-child').classList.remove('selected');">
+          <div class="mode-badge" style="background:#fef3c7;color:#d97706">Recommended</div>
+          <div class="mode-icon-large" style="background:#fef3c7;color:#d97706">&#x26A1;</div>
+          <div class="mode-title">Fast Track</div>
+          <div class="mode-desc">Pick a pre-configured template with all settings ready. Just name it, write content, and submit.</div>
+          <div class="mode-steps">4 steps &bull; ~5 minutes</div>
+          <div class="mode-features">
+            <div class="mode-feature"><span class="check">&#x2714;</span> Pre-filled metadata, audience, reviewers</div>
+            <div class="mode-feature"><span class="check">&#x2714;</span> Skip 4 configuration steps</div>
+            <div class="mode-feature"><span class="check">&#x2714;</span> Best for recurring policy types</div>
+            <div class="mode-feature"><span class="check">&#x2714;</span> Override any setting if needed</div>
+          </div>
+        </div>
+
+        <!-- Standard -->
+        <div class="mode-card" onclick="selectMode('standard'); this.classList.add('selected'); this.parentElement.querySelector('.mode-card:first-child').classList.remove('selected');">
+          <div class="mode-icon-large" style="background:#dbeafe;color:#2563eb">&#x1F4CB;</div>
+          <div class="mode-title">Standard Wizard</div>
+          <div class="mode-desc">Full control over every setting. Configure metadata, audience, dates, reviewers, and content step by step.</div>
+          <div class="mode-steps">8 steps &bull; ~15 minutes</div>
+          <div class="mode-features">
+            <div class="mode-feature"><span class="check">&#x2714;</span> Complete customisation</div>
+            <div class="mode-feature"><span class="check">&#x2714;</span> Custom audience rules</div>
+            <div class="mode-feature"><span class="check">&#x2714;</span> Best for new policy types</div>
+            <div class="mode-feature"><span class="check">&#x2714;</span> Save as Fast Track template when done</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ FAST TRACK STEP 1: TEMPLATE SELECTION ═══ -->
+    <div class="step-content" data-step="1">
+      <div class="content-header">
+        <div><div class="content-title">Choose a Fast Track Template</div><div class="content-desc">Select a pre-configured template. All settings will be pre-filled.</div></div>
+        <div class="progress-wrap"><span class="progress-label">Step 1 of 4</span><div class="progress-track"><div class="progress-fill" style="width:25%"></div></div></div>
+      </div>
+
+      <div style="margin-bottom:16px">
+        <input class="form-input" placeholder="Search templates..." style="max-width:300px" />
+      </div>
+
+      <div class="ft-grid">
+        <!-- IT Security -->
+        <div class="ft-card selected" onclick="selectFT(this)">
+          <div class="ft-header">
+            <div class="ft-icon" style="background:#fee2e2;color:#dc2626">&#x1F512;</div>
+            <div>
+              <div class="ft-title">IT Security Policy</div>
+              <div style="font-size:10px;color:#94a3b8">Used 34 times</div>
+            </div>
+          </div>
+          <div class="ft-desc">Standard IT security template with data classification, access controls, and incident response. High risk, requires acknowledgement and quiz.</div>
+          <div class="ft-tags">
+            <span class="ft-tag" style="background:#fee2e2;color:#dc2626">High Risk</span>
+            <span class="ft-tag" style="background:#dbeafe;color:#2563eb">IT & Security</span>
+            <span class="ft-tag" style="background:#dcfce7;color:#059669">Word</span>
+            <span class="ft-tag" style="background:#fef3c7;color:#d97706">Ack Required</span>
+          </div>
+          <div class="ft-meta">
+            <div class="ft-meta-item"><strong>Audience:</strong> IT Department</div>
+            <div class="ft-meta-item"><strong>Timeframe:</strong> 3 days</div>
+            <div class="ft-meta-item"><strong>Review:</strong> Annual</div>
+            <div class="ft-meta-item"><strong>Reviewers:</strong> IT Security Team</div>
+          </div>
+        </div>
+
+        <!-- HR Standard -->
+        <div class="ft-card" onclick="selectFT(this)">
+          <div class="ft-header">
+            <div class="ft-icon" style="background:#fce7f3;color:#db2777">&#x1F465;</div>
+            <div>
+              <div class="ft-title">HR Employee Policy</div>
+              <div style="font-size:10px;color:#94a3b8">Used 28 times</div>
+            </div>
+          </div>
+          <div class="ft-desc">Standard HR policy for employee handbook chapters. Medium risk, requires acknowledgement, annual review.</div>
+          <div class="ft-tags">
+            <span class="ft-tag" style="background:#fef3c7;color:#d97706">Medium Risk</span>
+            <span class="ft-tag" style="background:#fce7f3;color:#db2777">HR Policies</span>
+            <span class="ft-tag" style="background:#dcfce7;color:#059669">Word</span>
+          </div>
+          <div class="ft-meta">
+            <div class="ft-meta-item"><strong>Audience:</strong> All Employees</div>
+            <div class="ft-meta-item"><strong>Timeframe:</strong> 1 week</div>
+            <div class="ft-meta-item"><strong>Review:</strong> Annual</div>
+            <div class="ft-meta-item"><strong>Reviewers:</strong> HR Team</div>
+          </div>
+        </div>
+
+        <!-- Compliance -->
+        <div class="ft-card" onclick="selectFT(this)">
+          <div class="ft-header">
+            <div class="ft-icon" style="background:#fee2e2;color:#dc2626">&#x2696;</div>
+            <div>
+              <div class="ft-title">Regulatory Compliance</div>
+              <div style="font-size:10px;color:#94a3b8">Used 19 times</div>
+            </div>
+          </div>
+          <div class="ft-desc">Critical compliance policy with regulatory framework references. Requires acknowledgement, quiz, and quarterly review.</div>
+          <div class="ft-tags">
+            <span class="ft-tag" style="background:#fee2e2;color:#dc2626">Critical Risk</span>
+            <span class="ft-tag" style="background:#fee2e2;color:#dc2626">Compliance</span>
+            <span class="ft-tag" style="background:#dcfce7;color:#059669">Word</span>
+            <span class="ft-tag" style="background:#ede9fe;color:#7c3aed">Quiz Required</span>
+          </div>
+          <div class="ft-meta">
+            <div class="ft-meta-item"><strong>Audience:</strong> Compliance Team</div>
+            <div class="ft-meta-item"><strong>Timeframe:</strong> 3 days</div>
+            <div class="ft-meta-item"><strong>Review:</strong> Quarterly</div>
+            <div class="ft-meta-item"><strong>Reviewers:</strong> Legal + Compliance</div>
+          </div>
+        </div>
+
+        <!-- OHS -->
+        <div class="ft-card" onclick="selectFT(this)">
+          <div class="ft-header">
+            <div class="ft-icon" style="background:#fef3c7;color:#d97706">&#x26A0;</div>
+            <div>
+              <div class="ft-title">Health & Safety</div>
+              <div style="font-size:10px;color:#94a3b8">Used 15 times</div>
+            </div>
+          </div>
+          <div class="ft-desc">Workplace health and safety policy. High risk, requires acknowledgement and quiz. Biannual review cycle.</div>
+          <div class="ft-tags">
+            <span class="ft-tag" style="background:#fee2e2;color:#dc2626">High Risk</span>
+            <span class="ft-tag" style="background:#fef3c7;color:#d97706">Health & Safety</span>
+            <span class="ft-tag" style="background:#ede9fe;color:#7c3aed">PowerPoint</span>
+          </div>
+          <div class="ft-meta">
+            <div class="ft-meta-item"><strong>Audience:</strong> All Employees</div>
+            <div class="ft-meta-item"><strong>Timeframe:</strong> 1 week</div>
+            <div class="ft-meta-item"><strong>Review:</strong> Biannual</div>
+            <div class="ft-meta-item"><strong>Reviewers:</strong> OHS Committee</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ FAST TRACK STEP 2: POLICY DETAILS ═══ -->
+    <div class="step-content" data-step="2">
+      <div class="content-header">
+        <div><div class="content-title">Policy Details</div><div class="content-desc">Name your policy and review the pre-filled settings.</div></div>
+        <div class="progress-wrap"><span class="progress-label">Step 2 of 4</span><div class="progress-track"><div class="progress-fill" style="width:50%"></div></div></div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Policy Name <span class="req">*</span></label>
+        <input class="form-input" placeholder="e.g., Remote Access Security Policy" value="Data Classification Policy 2026" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Summary</label>
+        <textarea class="form-textarea" placeholder="Brief description (2-3 sentences)...">This policy establishes the data classification framework for the organisation, defining how information assets are categorised, handled, and protected based on their sensitivity level.</textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Policy Owner</label>
+        <input class="form-input" value="gary@firsttech.digital" style="color:#0d9488" />
+      </div>
+
+      <!-- Pre-filled settings from Fast Track template -->
+      <div class="prefilled-section">
+        <div class="prefilled-header">
+          <div class="prefilled-title">
+            <span class="lock-icon">&#x1F512;</span>
+            Pre-filled from: IT Security Policy template
+          </div>
+          <button class="override-toggle" onclick="this.textContent = this.textContent === 'Override' ? 'Lock' : 'Override'">Override</button>
+        </div>
+        <div class="prefilled-grid">
+          <div class="prefilled-item">
+            <div class="prefilled-label">Category</div>
+            <div class="prefilled-value">IT & Security</div>
+          </div>
+          <div class="prefilled-item">
+            <div class="prefilled-label">Risk Level</div>
+            <div class="prefilled-value" style="color:#dc2626;font-weight:600">High</div>
+          </div>
+          <div class="prefilled-item">
+            <div class="prefilled-label">Read Timeframe</div>
+            <div class="prefilled-value">3 days</div>
+          </div>
+          <div class="prefilled-item">
+            <div class="prefilled-label">Audience</div>
+            <div class="prefilled-value">IT Department</div>
+          </div>
+          <div class="prefilled-item">
+            <div class="prefilled-label">Review Frequency</div>
+            <div class="prefilled-value">Annual</div>
+          </div>
+          <div class="prefilled-item">
+            <div class="prefilled-label">Effective Date</div>
+            <div class="prefilled-value">30 days from publish</div>
+          </div>
+          <div class="prefilled-item">
+            <div class="prefilled-label">Acknowledgement</div>
+            <div class="prefilled-value" style="color:#059669">Required</div>
+          </div>
+          <div class="prefilled-item">
+            <div class="prefilled-label">Quiz</div>
+            <div class="prefilled-value" style="color:#059669">Required</div>
+          </div>
+          <div class="prefilled-item">
+            <div class="prefilled-label">Document Type</div>
+            <div class="prefilled-value">Word</div>
+          </div>
+          <div class="prefilled-item">
+            <div class="prefilled-label">Reviewers</div>
+            <div class="prefilled-value">IT Security Team</div>
+          </div>
+          <div class="prefilled-item">
+            <div class="prefilled-label">Approvers</div>
+            <div class="prefilled-value">CISO, CTO</div>
+          </div>
+          <div class="prefilled-item">
+            <div class="prefilled-label">Supersedes</div>
+            <div class="prefilled-value" style="color:#94a3b8">None</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ FAST TRACK STEP 3: CONTENT ═══ -->
+    <div class="step-content" data-step="3">
+      <div class="content-header">
+        <div><div class="content-title">Policy Content</div><div class="content-desc">Write or edit your policy content.</div></div>
+        <div class="progress-wrap"><span class="progress-label">Step 3 of 4</span><div class="progress-track"><div class="progress-fill" style="width:75%"></div></div></div>
+      </div>
+
+      <div class="doc-card">
+        <div class="doc-icon">&#x1F4C4;</div>
+        <div class="doc-info">
+          <div class="doc-name">Document linked successfully</div>
+          <div class="doc-url">Data_Classification_Policy_2026.docx</div>
+        </div>
+        <button class="btn btn-primary" style="border:none;padding:8px 16px;border-radius:4px;cursor:pointer">Open in Office</button>
+      </div>
+
+      <!-- Key Points -->
+      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:20px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          <span style="font-size:16px">&#x2B50;</span>
+          <span style="font-weight:600;font-size:14px">Key Points</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;align-items:center;gap:8px"><span style="color:#0d9488">&#x2022;</span><input class="form-input" value="Data classification levels: Public, Internal, Confidential, Restricted" /></div>
+          <div style="display:flex;align-items:center;gap:8px"><span style="color:#0d9488">&#x2022;</span><input class="form-input" value="All employees must classify data before sharing" /></div>
+          <div style="display:flex;align-items:center;gap:8px"><span style="color:#0d9488">&#x2022;</span><input class="form-input" value="Violations reported to IT Security within 24 hours" /></div>
+          <button class="btn btn-outline" style="align-self:flex-start;font-size:11px;padding:4px 12px;margin-top:4px">+ Add Key Point</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ FAST TRACK STEP 4: REVIEW & SUBMIT ═══ -->
+    <div class="step-content" data-step="4">
+      <div class="content-header">
+        <div><div class="content-title">Review & Submit</div><div class="content-desc">Review your policy before submitting for review.</div></div>
+        <div class="progress-wrap"><span class="progress-label">Step 4 of 4</span><div class="progress-track"><div class="progress-fill" style="width:100%"></div></div></div>
+      </div>
+
+      <div style="display:flex;align-items:flex-start;gap:10px;background:#fffbeb;border:1px solid #fcd34d;border-radius:4px;padding:12px 16px;font-size:12px;color:#92400e;margin-bottom:16px">
+        <span>&#x26A0;</span>
+        <span>Review all information. Once submitted, the policy enters the review workflow and reviewers will be notified.</span>
+      </div>
+
+      <div class="review-section">
+        <div class="review-header open" onclick="toggleReview(this)">
+          <span style="font-size:10px;color:#94a3b8">&#x25B6;</span>
+          <span class="review-title">Policy Details</span>
+          <span class="review-badge">Complete</span>
+        </div>
+        <div class="review-body">
+          <div class="review-row"><span class="review-label">Policy Name</span><span class="review-value">Data Classification Policy 2026</span></div>
+          <div class="review-row"><span class="review-label">Category</span><span class="review-value">IT & Security</span></div>
+          <div class="review-row"><span class="review-label">Risk Level</span><span class="review-value" style="color:#dc2626;font-weight:600">High</span></div>
+          <div class="review-row"><span class="review-label">Audience</span><span class="review-value">IT Department (~47 users)</span></div>
+          <div class="review-row"><span class="review-label">Effective Date</span><span class="review-value">25 April 2026 (30 days from publish)</span></div>
+          <div class="review-row"><span class="review-label">Review Frequency</span><span class="review-value">Annual</span></div>
+        </div>
+      </div>
+
+      <div class="review-section">
+        <div class="review-header" onclick="toggleReview(this)">
+          <span style="font-size:10px;color:#94a3b8">&#x25B6;</span>
+          <span class="review-title">Content & Key Points</span>
+          <span class="review-badge">Complete</span>
+        </div>
+        <div class="review-body" style="display:none">
+          <div class="review-row"><span class="review-label">Document</span><span class="review-value">Data_Classification_Policy_2026.docx</span></div>
+          <div class="review-row"><span class="review-label">Key Points</span><span class="review-value">3 key points defined</span></div>
+        </div>
+      </div>
+
+      <div class="review-section">
+        <div class="review-header" onclick="toggleReview(this)">
+          <span style="font-size:10px;color:#94a3b8">&#x25B6;</span>
+          <span class="review-title">Workflow</span>
+          <span class="review-badge">Complete</span>
+        </div>
+        <div class="review-body" style="display:none">
+          <div class="review-row"><span class="review-label">Reviewers</span><span class="review-value">IT Security Team</span></div>
+          <div class="review-row"><span class="review-label">Approvers</span><span class="review-value">CISO, CTO</span></div>
+          <div class="review-row"><span class="review-label">Acknowledgement</span><span class="review-value">Required</span></div>
+          <div class="review-row"><span class="review-label">Quiz</span><span class="review-value">Required</span></div>
+        </div>
+      </div>
+
+      <!-- Save as Fast Track prompt (for Standard wizard, shown here as example) -->
+      <div class="save-ft-banner">
+        <span style="font-size:20px">&#x26A1;</span>
+        <div class="save-ft-text">
+          <strong>Save as Fast Track Template?</strong><br>
+          Save these settings as a reusable template so you (or others) can skip the configuration steps next time.
+        </div>
+        <button class="save-ft-btn">Save as Template</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Right Panel -->
+  <div class="right-panel" id="right-panel"></div>
+
+  <!-- Footer -->
+  <div class="footer-bar">
+    <button class="btn btn-outline" onclick="prevStep()">&#x2190; Back</button>
+    <div style="display:flex;align-items:center;gap:12px">
+      <span class="progress-label" id="footer-step">Step 1 of 4</span>
+      <div class="progress-track" style="width:100px;height:4px"><div class="progress-fill" id="footer-progress" style="width:25%"></div></div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-save">Save Draft</button>
+      <button class="btn btn-primary" onclick="nextStep()" id="next-btn">Next &#x2192;</button>
+    </div>
+  </div>
+
+</div>
+</div>
+</div>
+
+<!-- App Footer -->
+<div class="app-footer">
+  <div style="display:flex;align-items:center;gap:8px">
+    <span class="footer-badge">PM</span>
+    <span style="font-size:12px;font-weight:600;color:#475569">Policy Manager</span>
+    <span style="font-size:10px;color:#94a3b8;background:#f1f5f9;padding:2px 6px;border-radius:4px">v1.2.5</span>
+    <span style="font-size:11px;color:#94a3b8">&copy; 2026 DWx Digital Workplace</span>
+  </div>
+</div>
+
+<script>
+let currentStep = 0;
+let mode = '';
+
+const fastTrackSteps = [
+  { title: 'Choose Mode', bullets: [] },
+  { title: 'Fast Track Template', bullets: ['Select template', 'Preview settings'] },
+  { title: 'Policy Details', bullets: ['Policy Name', 'Summary', 'Review pre-filled settings'] },
+  { title: 'Policy Content', bullets: ['Create document', 'Key Points'] },
+  { title: 'Review & Submit', bullets: ['Final review', 'Submit'] }
+];
+
+const tips = {
+  0: [{ t: 'Fast Track', b: 'Pre-configured templates skip 4 steps. Best for recurring policy types like IT Security or HR policies.' }, { t: 'Standard Wizard', b: 'Full control over every setting. Use for new policy types or unique requirements.' }],
+  1: [{ t: 'Choosing a Template', b: 'Templates are created by Admins and Managers. Each template includes pre-set metadata, audience, reviewers, and document type.' }, { t: 'Usage Count', b: 'Higher usage count means the template is well-tested and reliable.' }],
+  2: [{ t: 'Override Settings', b: 'Click "Override" to edit any pre-filled value. Most settings work as-is from the template.' }, { t: 'Policy Name', b: 'Use a descriptive, action-oriented name. The template defines the category and type.' }],
+  3: [{ t: 'Document Type', b: 'The document type was set by the Fast Track template. Click "Open in Office" to start editing.' }, { t: 'Key Points', b: 'Add 3-5 takeaways that summarise the policy for readers.' }],
+  4: [{ t: 'Final Check', b: 'All settings from the Fast Track template are shown. Verify everything before submitting.' }, { t: 'Save as Template', b: 'If you modified settings, save them as a new Fast Track template for future use.' }]
+};
+
+function selectMode(m) {
+  mode = m;
+  if (m === 'fast') {
+    document.getElementById('next-btn').textContent = 'Next \u2192';
+  }
+}
+
+function selectFT(el) {
+  el.closest('.ft-grid').querySelectorAll('.ft-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function renderSidebar() {
+  const sb = document.getElementById('sidebar');
+  let html = `<div class="sidebar-header"><div class="sidebar-title">New Policy Wizard</div><div class="sidebar-sub">${mode === 'fast' ? '4' : '8'} steps to complete</div></div>`;
+  if (mode) {
+    html += `<div class="sidebar-mode"><span class="mode-icon">${mode === 'fast' ? '&#x26A1;' : '&#x1F4CB;'}</span><span class="mode-label">${mode === 'fast' ? 'Fast Track Mode' : 'Standard Mode'}</span></div>`;
+  }
+  const steps = mode === 'fast' ? fastTrackSteps : fastTrackSteps;
+  steps.forEach((s, i) => {
+    if (i === 0 && currentStep > 0) return; // Hide mode selection after chosen
+    const active = i === currentStep;
+    const done = i < currentStep;
+    html += `<div class="step-item ${active ? 'active' : ''} ${done ? 'completed' : ''}" onclick="goToStep(${i})">
+      <div class="step-num">${done ? '&#x2714;' : i === 0 ? '&#x2699;' : i}</div>
+      <div class="step-label">${s.title}</div>
+    </div>`;
+    if (active && s.bullets.length > 0) {
+      html += `<div style="padding:4px 20px 10px 56px">${s.bullets.map(b => `<div style="font-size:11px;color:#94a3b8;padding:2px 0;display:flex;align-items:center;gap:6px"><span style="width:5px;height:5px;border-radius:50%;background:#0d9488;display:inline-block"></span>${b}</div>`).join('')}</div>`;
+    }
+  });
+  sb.innerHTML = html;
+}
+
+function renderTips() {
+  const rp = document.getElementById('right-panel');
+  const t = tips[currentStep] || [];
+  rp.innerHTML = `<div class="panel-heading">&#x1F4A1; Tips & Guidance</div>${t.map(tip => `<div class="tip-card"><div class="tip-title">${tip.t}</div><div class="tip-body">${tip.b}</div></div>`).join('')}`;
+}
+
+function goToStep(n) {
+  currentStep = n;
+  document.querySelectorAll('.step-content').forEach(el => el.classList.remove('active'));
+  document.querySelector(`.step-content[data-step="${n}"]`).classList.add('active');
+  const total = mode === 'fast' ? 4 : 8;
+  const pct = Math.round((n / total) * 100);
+  document.getElementById('footer-step').textContent = n === 0 ? '' : `Step ${n} of ${total}`;
+  document.getElementById('footer-progress').style.width = pct + '%';
+  document.getElementById('next-btn').textContent = n === total ? 'Submit for Review' : 'Next \u2192';
+  renderSidebar();
+  renderTips();
+}
+
+function nextStep() {
+  if (currentStep === 0 && !mode) { alert('Please select a mode'); return; }
+  const max = mode === 'fast' ? 4 : 8;
+  if (currentStep < max) goToStep(currentStep + 1);
+}
+function prevStep() { if (currentStep > 0) goToStep(currentStep - 1); }
+
+function toggleReview(el) {
+  const wasOpen = el.classList.contains('open');
+  document.querySelectorAll('.review-header').forEach(h => h.classList.remove('open'));
+  document.querySelectorAll('.review-body').forEach(b => b.style.display = 'none');
+  if (!wasOpen) {
+    el.classList.add('open');
+    el.nextElementSibling.style.display = 'block';
+  }
+}
+
+renderSidebar();
+renderTips();
+</script>
+
+</body>
+</html>

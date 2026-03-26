@@ -252,6 +252,13 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
       quizSubmitted: false,
       // Browse mode detection — from Policy Hub browsing
       browseMode: this.getBrowseModeFromUrl(),
+      // Review mode — from reviewer email link
+      reviewMode: new URLSearchParams(window.location.search).get('mode') === 'review',
+      reviewDecision: '' as string,
+      reviewComments: '' as string,
+      reviewChecklist: [false, false, false, false, false, false],
+      reviewSubmitting: false,
+      reviewerItems: [] as any[],
       // Live quiz integration
       liveQuizId: null,
       currentUserId: 0,
@@ -2499,6 +2506,341 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
   }
 
   // ============================================
+  // REVIEW MODE — Reviewer decision UI
+  // ============================================
+
+  private renderReviewMode(): JSX.Element {
+    const { policy } = this.state;
+    const st = this.state as any;
+    const reviewDecision = st.reviewDecision || '';
+    const reviewComments = st.reviewComments || '';
+    const reviewChecklist: boolean[] = st.reviewChecklist || [false, false, false, false, false, false];
+    const reviewSubmitting = st.reviewSubmitting || false;
+    const reviewerItems: any[] = st.reviewerItems || [];
+    const siteUrl = this.props.context?.pageContext?.web?.absoluteUrl || '/sites/PolicyManager';
+    const currentUserEmail = this.props.context?.pageContext?.user?.email || '';
+
+    // Load reviewers on first render
+    if (!st._reviewersLoaded && policy) {
+      this.setState({ _reviewersLoaded: true } as any);
+      this.props.sp.web.lists.getByTitle('PM_PolicyReviewers')
+        .items.filter(`PolicyId eq ${policy.Id}`)
+        .select('Id', 'ReviewerId', 'ReviewerType', 'ReviewStatus', 'ReviewComments', 'ReviewedDate', 'Reviewer/Id', 'Reviewer/Title', 'Reviewer/EMail')
+        .expand('Reviewer')
+        .top(20)()
+        .then((items: any[]) => { if (this._isMounted) this.setState({ reviewerItems: items } as any); })
+        .catch(() => { /* list may not exist */ });
+    }
+
+    const checklistLabels = [
+      'Content accuracy and completeness',
+      'Compliance alignment (regulatory requirements)',
+      'Formatting and readability',
+      'Key points accurately summarise policy',
+      'Appropriate risk classification',
+      'Target audience correctly defined'
+    ];
+
+    const handleSubmitReview = async (): Promise<void> => {
+      if (!reviewDecision) return;
+      if ((reviewDecision === 'changes' || reviewDecision === 'reject') && !reviewComments.trim()) {
+        void this.dialogManager.showAlert('Comments are required for Request Changes and Reject decisions.', { variant: 'warning' });
+        return;
+      }
+      this.setState({ reviewSubmitting: true } as any);
+      try {
+        const currentUserId = this.props.context?.pageContext?.legacyPageContext?.userId || 0;
+        const currentUserName = this.props.context?.pageContext?.user?.displayName || '';
+
+        // Find this reviewer's record
+        const myReview = reviewerItems.find((r: any) => r.Reviewer?.EMail === currentUserEmail || r.ReviewerId === currentUserId);
+
+        // Update reviewer status in PM_PolicyReviewers
+        if (myReview) {
+          const newStatus = reviewDecision === 'approve' ? 'Approved' : reviewDecision === 'changes' ? 'Revision Requested' : 'Rejected';
+          await this.props.sp.web.lists.getByTitle('PM_PolicyReviewers')
+            .items.getById(myReview.Id).update({
+              ReviewStatus: newStatus,
+              ReviewComments: reviewComments,
+              ReviewedDate: new Date().toISOString()
+            });
+        }
+
+        // Determine next action based on all reviewer statuses
+        const updatedReviewers = reviewerItems.map((r: any) => {
+          if (r.Id === myReview?.Id) return { ...r, ReviewStatus: reviewDecision === 'approve' ? 'Approved' : reviewDecision === 'changes' ? 'Revision Requested' : 'Rejected' };
+          return r;
+        });
+        const allApproved = updatedReviewers.every((r: any) => r.ReviewStatus === 'Approved');
+        const anyRejected = updatedReviewers.some((r: any) => r.ReviewStatus === 'Rejected' || r.ReviewStatus === 'Revision Requested');
+
+        // Update policy status
+        if (reviewDecision === 'reject' || reviewDecision === 'changes') {
+          await this.props.sp.web.lists.getByTitle('PM_Policies')
+            .items.getById(policy!.Id).update({ PolicyStatus: 'Draft' });
+        } else if (allApproved) {
+          await this.props.sp.web.lists.getByTitle('PM_Policies')
+            .items.getById(policy!.Id).update({ PolicyStatus: 'Approved' });
+        }
+
+        // Audit log
+        try {
+          await this.props.sp.web.lists.getByTitle('PM_PolicyAuditLog').items.add({
+            Title: `${reviewDecision === 'approve' ? 'Approved' : reviewDecision === 'changes' ? 'ChangesRequested' : 'Rejected'} - Policy ${policy!.Id}`,
+            PolicyId: policy!.Id,
+            EntityType: 'Policy',
+            EntityId: policy!.Id,
+            AuditAction: reviewDecision === 'approve' ? 'ReviewApproved' : reviewDecision === 'changes' ? 'ChangesRequested' : 'ReviewRejected',
+            ActionDescription: reviewComments || `Policy ${reviewDecision === 'approve' ? 'approved' : reviewDecision === 'changes' ? 'changes requested' : 'rejected'} by ${currentUserName}`,
+            PerformedByEmail: currentUserEmail,
+            ActionDate: new Date().toISOString()
+          });
+        } catch { /* best-effort */ }
+
+        // Notify policy author
+        try {
+          const authorEmail = (policy as any)._policyOwnerEmail || (policy as any).PolicyOwner || '';
+          if (authorEmail) {
+            const decisionLabel = reviewDecision === 'approve' ? 'Approved' : reviewDecision === 'changes' ? 'Changes Requested' : 'Rejected';
+            const policyUrl = `${siteUrl}/SitePages/PolicyBuilder.aspx?editPolicyId=${policy!.Id}`;
+            const emailHtml = `
+              <div style="font-family:'Segoe UI',sans-serif;max-width:600px;margin:0 auto">
+                <div style="background:linear-gradient(135deg,${reviewDecision === 'approve' ? '#059669,#047857' : reviewDecision === 'changes' ? '#d97706,#b45309' : '#dc2626,#b91c1c'});padding:24px 32px;border-radius:8px 8px 0 0">
+                  <h1 style="color:#fff;margin:0;font-size:20px">Review ${decisionLabel}</h1>
+                  <p style="color:rgba(255,255,255,0.8);margin:4px 0 0;font-size:13px">Policy Manager — DWx Digital Workplace</p>
+                </div>
+                <div style="background:#fff;padding:24px 32px;border:1px solid #e2e8f0;border-top:none">
+                  <p style="font-size:14px;color:#475569"><strong>${currentUserName}</strong> has ${reviewDecision === 'approve' ? 'approved' : reviewDecision === 'changes' ? 'requested changes to' : 'rejected'} your policy:</p>
+                  <div style="background:#f8fafc;border-left:4px solid ${reviewDecision === 'approve' ? '#059669' : reviewDecision === 'changes' ? '#d97706' : '#dc2626'};padding:16px;border-radius:0 4px 4px 0;margin:16px 0">
+                    <p style="margin:0;font-weight:600;font-size:15px;color:#0f172a">${policy!.PolicyName || policy!.Title}</p>
+                  </div>
+                  ${reviewComments ? `<div style="margin:16px 0;padding:12px;background:#f8fafc;border-radius:4px"><p style="margin:0 0 4px;font-size:11px;color:#94a3b8;font-weight:600">REVIEWER COMMENTS</p><p style="margin:0;font-size:13px;color:#475569">${reviewComments}</p></div>` : ''}
+                  <p style="margin:24px 0 16px"><a href="${reviewDecision === 'approve' ? `${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policy!.Id}` : policyUrl}" style="background:${reviewDecision === 'approve' ? '#059669' : '#0d9488'};color:#fff;padding:10px 24px;border-radius:4px;text-decoration:none;font-weight:600;font-size:14px;display:inline-block">${reviewDecision === 'approve' ? 'View Approved Policy' : 'Edit Policy'}</a></p>
+                </div>
+                <div style="background:#f8fafc;padding:16px 32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;text-align:center">
+                  <p style="margin:0;font-size:11px;color:#94a3b8">First Digital — DWx Policy Manager</p>
+                </div>
+              </div>`;
+            await this.props.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
+              Title: `Review ${decisionLabel}: ${policy!.PolicyName || policy!.Title}`,
+              RecipientEmail: authorEmail,
+              RecipientName: '',
+              PolicyId: policy!.Id,
+              PolicyTitle: policy!.PolicyName || policy!.Title || '',
+              NotificationType: reviewDecision === 'approve' ? 'ApprovalApproved' : 'ApprovalRejected',
+              Channel: 'Email',
+              Message: emailHtml,
+              Status: 'Pending',
+              Priority: 'High'
+            });
+          }
+        } catch { /* notification best-effort */ }
+
+        // Show success and redirect
+        const msg = reviewDecision === 'approve'
+          ? (allApproved ? 'All reviewers have approved. The policy has been marked as Approved.' : 'Your approval has been recorded. Waiting for other reviewers.')
+          : reviewDecision === 'changes' ? 'Your change request has been sent to the author.'
+          : 'The policy has been rejected and the author has been notified.';
+        await this.dialogManager.showAlert(msg, { variant: reviewDecision === 'approve' ? 'success' : 'warning', title: reviewDecision === 'approve' ? 'Review Approved' : reviewDecision === 'changes' ? 'Changes Requested' : 'Policy Rejected' });
+        window.location.href = `${siteUrl}/SitePages/PolicyAuthor.aspx`;
+      } catch (err) {
+        console.error('Review submission failed:', err);
+        void this.dialogManager.showAlert('Failed to submit review. Please try again.', { variant: 'error' });
+      } finally {
+        this.setState({ reviewSubmitting: false } as any);
+      }
+    };
+
+    return (
+      <ErrorBoundary fallbackMessage="An error occurred in Policy Review. Please try again.">
+      <JmlAppLayout
+        context={this.props.context} sp={this.props.sp}
+        pageTitle="Review Policy" pageDescription="" pageIcon="RedEye"
+        breadcrumbs={[{ text: 'Policy Manager', url: siteUrl }, { text: 'Review Policy' }]}
+        activeNavKey="author"
+      >
+        {/* Review Banner */}
+        <div style={{ background: 'linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%)', borderBottom: '2px solid #0d9488', padding: '14px 0' }}>
+          <div style={{ maxWidth: 1400, margin: '0 auto', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#0d9488', color: '#fff', padding: '6px 16px', borderRadius: 4, fontSize: 12, fontWeight: 600 }}>
+                <Icon iconName="RedEye" styles={{ root: { fontSize: 14 } }} /> Review Mode
+              </span>
+              <span style={{ fontSize: 12, color: '#64748b' }}>Submitted by <strong style={{ color: '#0f172a' }}>{(policy as any).PolicyOwner || 'Author'}</strong></span>
+              <span style={{ fontSize: 12, color: '#64748b' }}>{policy!.PolicyNumber}</span>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <span style={{ padding: '4px 12px', borderRadius: 4, fontSize: 11, fontWeight: 600, background: '#dbeafe', color: '#2563eb' }}>In Review</span>
+              <span style={{ padding: '4px 12px', borderRadius: 4, fontSize: 11, fontWeight: 600, background: '#fee2e2', color: '#dc2626' }}>{policy!.ComplianceRisk || 'Medium'} Risk</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Layout: Content + Review Panel */}
+        <div style={{ maxWidth: 1400, margin: '24px auto', padding: '0 24px', display: 'grid', gridTemplateColumns: '1fr 380px', gap: 24 }}>
+
+          {/* Left: Policy Content */}
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
+            <div style={{ padding: '24px 32px', borderBottom: '1px solid #e2e8f0' }}>
+              <Text style={{ fontSize: 22, fontWeight: 700, color: '#0f172a', display: 'block' }}>{policy!.PolicyName || policy!.Title}</Text>
+              <Text style={{ fontSize: 13, color: '#64748b', marginTop: 4, display: 'block' }}>{policy!.PolicyCategory} &bull; v{(policy as any).VersionNumber || '1.0'} &bull; Effective: {policy!.EffectiveDate ? new Date(policy!.EffectiveDate).toLocaleDateString() : 'TBD'}</Text>
+            </div>
+            <div style={{ padding: 32, minHeight: 400, lineHeight: 1.7, fontSize: 14, color: '#334155' }}
+              dangerouslySetInnerHTML={{ __html: policy!.HTMLContent || policy!.PolicyContent || policy!.Description || '<p>No content available.</p>' }}
+            />
+            {/* Key Points */}
+            {(policy as any).InternalNotes && (
+              <div style={{ padding: '20px 32px', background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+                <Text style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10, display: 'block' }}>Key Points</Text>
+                {(() => { try { return JSON.parse((policy as any).InternalNotes).map((kp: string, i: number) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '6px 0', fontSize: 13, color: '#475569' }}>
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#0d9488', marginTop: 6, flexShrink: 0 }} />
+                    {kp}
+                  </div>
+                )); } catch { return null; } })()}
+              </div>
+            )}
+          </div>
+
+          {/* Right: Review Panel (scrolls with content) */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, alignSelf: 'start', position: 'sticky', top: 16 }}>
+
+            {/* Decision */}
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
+              <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ width: 28, height: 28, borderRadius: 6, background: '#f0fdfa', color: '#0d9488', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>&#x2714;</div>
+                <Text style={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>Your Review Decision</Text>
+              </div>
+              <div style={{ padding: 20 }}>
+                <Stack tokens={{ childrenGap: 8 }}>
+                  {[
+                    { key: 'approve', label: 'Approve', desc: 'Policy meets all requirements', icon: '&#x2714;', bg: '#dcfce7', color: '#059669' },
+                    { key: 'changes', label: 'Request Changes', desc: 'Needs revisions before approval', icon: '&#x270F;', bg: '#fef3c7', color: '#d97706' },
+                    { key: 'reject', label: 'Reject', desc: 'Does not meet standards', icon: '&#x2716;', bg: '#fee2e2', color: '#dc2626' }
+                  ].map(d => (
+                    <div key={d.key}
+                      role="button" tabIndex={0}
+                      onClick={() => this.setState({ reviewDecision: d.key } as any)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') this.setState({ reviewDecision: d.key } as any); }}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', borderRadius: 8,
+                        border: `2px solid ${reviewDecision === d.key ? '#0d9488' : '#e2e8f0'}`,
+                        background: reviewDecision === d.key ? '#f0fdfa' : '#fff', cursor: 'pointer', transition: 'all 0.15s'
+                      }}
+                    >
+                      <div style={{ width: 36, height: 36, borderRadius: 8, background: d.bg, color: d.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }} dangerouslySetInnerHTML={{ __html: d.icon }} />
+                      <div>
+                        <Text style={{ fontWeight: 600, fontSize: 13, color: '#0f172a', display: 'block' }}>{d.label}</Text>
+                        <Text style={{ fontSize: 11, color: '#94a3b8' }}>{d.desc}</Text>
+                      </div>
+                    </div>
+                  ))}
+                </Stack>
+                <TextField
+                  label="Comments"
+                  multiline rows={4}
+                  value={reviewComments}
+                  onChange={(_, v) => this.setState({ reviewComments: v || '' } as any)}
+                  placeholder="Add your review comments... (required for Request Changes and Reject)"
+                  styles={{ root: { marginTop: 16 } }}
+                />
+                <PrimaryButton
+                  text={reviewSubmitting ? 'Submitting...' : reviewDecision === 'approve' ? 'Submit Approval' : reviewDecision === 'changes' ? 'Submit Change Request' : reviewDecision === 'reject' ? 'Submit Rejection' : 'Select a Decision'}
+                  disabled={!reviewDecision || reviewSubmitting}
+                  onClick={handleSubmitReview}
+                  styles={{
+                    root: {
+                      width: '100%', marginTop: 16, borderRadius: 6, height: 40,
+                      background: reviewDecision === 'approve' ? '#0d9488' : reviewDecision === 'changes' ? '#d97706' : reviewDecision === 'reject' ? '#dc2626' : '#94a3b8',
+                      borderColor: reviewDecision === 'approve' ? '#0d9488' : reviewDecision === 'changes' ? '#d97706' : reviewDecision === 'reject' ? '#dc2626' : '#94a3b8'
+                    },
+                    rootHovered: {
+                      background: reviewDecision === 'approve' ? '#0f766e' : reviewDecision === 'changes' ? '#b45309' : reviewDecision === 'reject' ? '#b91c1c' : '#64748b',
+                      borderColor: reviewDecision === 'approve' ? '#0f766e' : reviewDecision === 'changes' ? '#b45309' : reviewDecision === 'reject' ? '#b91c1c' : '#64748b'
+                    }
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Checklist */}
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
+              <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ width: 28, height: 28, borderRadius: 6, background: '#dbeafe', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>&#x2611;</div>
+                <Text style={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>Review Checklist</Text>
+              </div>
+              <div style={{ padding: '12px 20px' }}>
+                {checklistLabels.map((label, i) => (
+                  <label key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < 5 ? '1px solid #f1f5f9' : 'none', fontSize: 13, cursor: 'pointer' }}>
+                    <input type="checkbox" checked={reviewChecklist[i]} onChange={() => {
+                      const updated = [...reviewChecklist];
+                      updated[i] = !updated[i];
+                      this.setState({ reviewChecklist: updated } as any);
+                    }} style={{ accentColor: '#0d9488', width: 16, height: 16 }} />
+                    <span style={{ color: reviewChecklist[i] ? '#94a3b8' : '#475569', textDecoration: reviewChecklist[i] ? 'line-through' : 'none' }}>{label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Review Chain */}
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
+              <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ width: 28, height: 28, borderRadius: 6, background: '#ede9fe', color: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>&#x1F465;</div>
+                <Text style={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>Review Chain</Text>
+              </div>
+              <div style={{ padding: '12px 20px' }}>
+                {reviewerItems.length === 0 ? (
+                  <Text style={{ fontSize: 12, color: '#94a3b8', fontStyle: 'italic' }}>No reviewers assigned</Text>
+                ) : reviewerItems.map((r: any, i: number) => {
+                  const isMe = r.Reviewer?.EMail === currentUserEmail;
+                  const initials = (r.Reviewer?.Title || '??').split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase();
+                  const statusColor = r.ReviewStatus === 'Approved' ? { bg: '#dcfce7', color: '#059669' } :
+                    r.ReviewStatus === 'Rejected' || r.ReviewStatus === 'Revision Requested' ? { bg: '#fee2e2', color: '#dc2626' } :
+                    isMe ? { bg: '#dbeafe', color: '#2563eb' } : { bg: '#fef3c7', color: '#d97706' };
+                  return (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < reviewerItems.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
+                      <div style={{ width: 28, height: 28, borderRadius: '50%', background: statusColor.bg, color: statusColor.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700 }}>{initials}</div>
+                      <span style={{ fontSize: 13, fontWeight: 500, color: '#0f172a', flex: 1 }}>{r.Reviewer?.Title || 'Unknown'}</span>
+                      <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 4, background: statusColor.bg, color: statusColor.color }}>
+                        {isMe ? 'You' : r.ReviewStatus || 'Pending'}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Previous Comments */}
+            {reviewerItems.some((r: any) => r.ReviewComments) && (
+              <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
+                <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ width: 28, height: 28, borderRadius: 6, background: '#fce7f3', color: '#db2777', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>&#x1F4AC;</div>
+                  <Text style={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>Review Comments</Text>
+                </div>
+                <div style={{ padding: 20 }}>
+                  {reviewerItems.filter((r: any) => r.ReviewComments).map((r: any, i: number) => (
+                    <div key={i} style={{ padding: 12, background: '#f8fafc', borderRadius: 6, marginBottom: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: '#0f172a' }}>{r.Reviewer?.Title || 'Reviewer'}</span>
+                        <span style={{ fontSize: 10, color: '#94a3b8' }}>{r.ReviewedDate ? new Date(r.ReviewedDate).toLocaleDateString() : ''}</span>
+                      </div>
+                      <Text style={{ fontSize: 12, color: '#475569', lineHeight: '1.5' }}>{r.ReviewComments}</Text>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+          </div>
+        </div>
+        <this.dialogManager.DialogComponent />
+      </JmlAppLayout>
+      </ErrorBoundary>
+    );
+  }
+
+  // ============================================
   // SIMPLE READER — Browse mode (from Policy Hub)
   // No wizard steps, no quiz, no acknowledgement.
   // Just a clean document viewer with back button.
@@ -2734,9 +3076,13 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
     } = this.state;
 
     // ─── Browse mode: Simple Reader (from Policy Hub) ─────────────
-    // No wizard, no quiz, no acknowledgement. Just read and go back.
     if (browseMode) {
       return this.renderSimpleReader();
+    }
+
+    // ─── Review mode: Reviewer decision UI ─────────────
+    if ((this.state as any).reviewMode && policy && !loading) {
+      return this.renderReviewMode();
     }
 
     // Determine if this is an active read flow

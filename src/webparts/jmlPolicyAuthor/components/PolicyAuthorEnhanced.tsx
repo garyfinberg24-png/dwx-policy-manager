@@ -16,6 +16,7 @@ import {
   IDropdownOption,
   Checkbox,
   Label,
+  SearchBox,
   CommandBar,
   ICommandBarItemProps,
   Dialog,
@@ -71,6 +72,7 @@ import {
   PolicyBuilderTab,
   POLICY_BUILDER_TABS,
   WIZARD_STEPS,
+  FAST_TRACK_STEPS,
   IPolicyDelegationRequest,
   IPolicyAuthorRequest as IPolicyRequest,
   IAuthorPolicyAnalytics as IPolicyAnalytics,
@@ -1113,7 +1115,6 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         ReadTimeframeDays: readTimeframeDays || 7,
         RequiresAcknowledgement: requiresAcknowledgement,
         RequiresQuiz: requiresQuiz,
-        PolicyStatus: 'Draft',
         PolicyOwnerId: currentUserId
       };
       // Persist linked quiz, source request, and source template
@@ -1199,6 +1200,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
           }
         }
         spData.PolicyNumber = genNumber;
+        spData.PolicyStatus = 'Draft'; // Only set status on new policies
         const result = await this.props.sp.web.lists
           .getByTitle(PM_LISTS.POLICIES)
           .items.add(spData);
@@ -1386,6 +1388,13 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
   // ============================================
 
   private validateStep(stepIndex: number): string[] {
+    const isFastTrack = (this.state as any)._wizardMode === 'fast-track';
+
+    // Fast Track validation (4 steps)
+    if (isFastTrack) {
+      return this.validateFastTrackStep(stepIndex);
+    }
+
     const errors: string[] = [];
     const {
       creationMethod, policyName, policyCategory, policyContent,
@@ -1419,7 +1428,9 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       case 3: // Audience
         {
           const selectedAud = (this.state as any)._selectedAudienceId;
-          if (!selectedAud) {
+          const { targetAllEmployees } = this.state;
+          // Allow if audience selected OR "All Employees" is effectively chosen
+          if (!selectedAud && !targetAllEmployees) {
             errors.push('Please select an audience');
           }
         }
@@ -1458,6 +1469,31 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         break;
     }
 
+    return errors;
+  }
+
+  private validateFastTrackStep(stepIndex: number): string[] {
+    const errors: string[] = [];
+    const { policyName, policyContent, linkedDocumentUrl } = this.state;
+    switch (stepIndex) {
+      case 0: // Template selection
+        if (!(this.state as any)._selectedFTTemplateId) {
+          errors.push('Please select a Fast Track template');
+        }
+        break;
+      case 1: // Policy details
+        if (!policyName.trim()) {
+          errors.push('Policy name is required');
+        }
+        break;
+      case 2: // Content
+        if (!policyContent.trim() && !linkedDocumentUrl) {
+          errors.push('Policy content is required, or link a document');
+        }
+        break;
+      case 3: // Review & Submit
+        break;
+    }
     return errors;
   }
 
@@ -1567,6 +1603,19 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     ['Rich Text Editor', 'Key Points'],
     ['Summary Review', 'Submit']
   ];
+
+  private static readonly FAST_TRACK_FIELDS: string[][] = [
+    ['Select Template', 'Preview Settings'],
+    ['Policy Name', 'Summary', 'Override Settings'],
+    ['Create Document', 'Key Points'],
+    ['Final Review', 'Submit']
+  ];
+
+  private getStepFields(): string[][] {
+    return (this.state as any)._wizardMode === 'fast-track'
+      ? PolicyAuthorEnhanced.FAST_TRACK_FIELDS
+      : PolicyAuthorEnhanced.STEP_FIELDS;
+  }
 
   private renderV3AccordionSidebar(): JSX.Element {
     const { currentStep, completedSteps } = this.state;
@@ -1841,6 +1890,262 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
   // ============================================
   // WIZARD STEP RENDERERS
+  // ============================================
+
+  // ============================================
+  // MODE SELECTION — First screen before wizard
+  // ============================================
+
+  private renderModeSelection(): JSX.Element {
+    return (
+      <div style={{ maxWidth: 900, margin: '40px auto', padding: '0 24px' }}>
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <Text style={{ fontSize: 24, fontWeight: 700, color: '#0f172a', display: 'block' }}>How would you like to create this policy?</Text>
+          <Text style={{ fontSize: 14, color: '#64748b', marginTop: 8, display: 'block' }}>Choose your workflow. You can always switch later.</Text>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+          {/* Fast Track */}
+          <div
+            role="button" tabIndex={0}
+            onClick={() => this.setState({ _wizardMode: 'fast-track', currentStep: 0 } as any)}
+            onKeyDown={(e) => { if (e.key === 'Enter') this.setState({ _wizardMode: 'fast-track', currentStep: 0 } as any); }}
+            style={{
+              border: '2px solid #e2e8f0', borderRadius: 12, padding: 32, cursor: 'pointer',
+              transition: 'all 0.2s', textAlign: 'center', position: 'relative', background: '#fff'
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = '#0d9488'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 24px rgba(13,148,136,0.1)'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = '#e2e8f0'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
+          >
+            <span style={{ position: 'absolute', top: 12, right: 12, fontSize: 9, fontWeight: 700, padding: '3px 10px', borderRadius: 4, background: '#fef3c7', color: '#d97706', textTransform: 'uppercase' }}>Recommended</span>
+            <div style={{ width: 64, height: 64, borderRadius: 16, background: '#fef3c7', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, margin: '0 auto 16px' }}>&#x26A1;</div>
+            <Text style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', display: 'block', marginBottom: 8 }}>Fast Track</Text>
+            <Text style={{ fontSize: 13, color: '#64748b', lineHeight: '1.5', display: 'block', marginBottom: 16 }}>Pick a pre-configured template with all settings ready. Just name it, write content, and submit.</Text>
+            <Text style={{ fontSize: 12, fontWeight: 600, color: '#0d9488' }}>4 steps &bull; ~5 minutes</Text>
+            <div style={{ textAlign: 'left', marginTop: 16, paddingTop: 16, borderTop: '1px solid #e2e8f0' }}>
+              {['Pre-filled metadata, audience, reviewers', 'Skip 4 configuration steps', 'Best for recurring policy types', 'Override any setting if needed'].map((f, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', fontSize: 12, color: '#475569' }}>
+                  <span style={{ color: '#0d9488', fontWeight: 700 }}>&#x2714;</span> {f}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Standard */}
+          <div
+            role="button" tabIndex={0}
+            onClick={() => this.setState({ _wizardMode: 'standard', currentStep: 0 } as any)}
+            onKeyDown={(e) => { if (e.key === 'Enter') this.setState({ _wizardMode: 'standard', currentStep: 0 } as any); }}
+            style={{
+              border: '2px solid #e2e8f0', borderRadius: 12, padding: 32, cursor: 'pointer',
+              transition: 'all 0.2s', textAlign: 'center', background: '#fff'
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = '#2563eb'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 24px rgba(37,99,235,0.1)'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = '#e2e8f0'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
+          >
+            <div style={{ width: 64, height: 64, borderRadius: 16, background: '#dbeafe', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, margin: '0 auto 16px' }}>&#x1F4CB;</div>
+            <Text style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', display: 'block', marginBottom: 8 }}>Standard Wizard</Text>
+            <Text style={{ fontSize: 13, color: '#64748b', lineHeight: '1.5', display: 'block', marginBottom: 16 }}>Full control over every setting. Configure metadata, audience, dates, reviewers, and content step by step.</Text>
+            <Text style={{ fontSize: 12, fontWeight: 600, color: '#2563eb' }}>8 steps &bull; ~15 minutes</Text>
+            <div style={{ textAlign: 'left', marginTop: 16, paddingTop: 16, borderTop: '1px solid #e2e8f0' }}>
+              {['Complete customisation', 'Custom audience rules', 'Best for new policy types', 'Save as Fast Track template when done'].map((f, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', fontSize: 12, color: '#475569' }}>
+                  <span style={{ color: '#2563eb', fontWeight: 700 }}>&#x2714;</span> {f}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================
+  // FAST TRACK STEPS
+  // ============================================
+
+  private renderFastTrackTemplateStep(): JSX.Element {
+    const st = this.state as any;
+    const templates = st.metadataProfiles || [];
+    const selectedFTId = st._selectedFTTemplateId || null;
+    const searchQuery = st._ftSearchQuery || '';
+
+    // Load profiles if not loaded
+    if (!st._ftProfilesLoaded) {
+      this.setState({ _ftProfilesLoaded: true } as any);
+      this.loadMetadataProfiles();
+    }
+
+    const filtered = searchQuery.trim()
+      ? templates.filter((t: any) => (t.ProfileName || t.Title || '').toLowerCase().includes(searchQuery.toLowerCase()))
+      : templates;
+
+    const catColors: Record<string, { bg: string; color: string }> = {
+      'IT & Security': { bg: '#fee2e2', color: '#dc2626' },
+      'HR Policies': { bg: '#fce7f3', color: '#db2777' },
+      'Compliance': { bg: '#fee2e2', color: '#dc2626' },
+      'Health & Safety': { bg: '#fef3c7', color: '#d97706' },
+      'Financial': { bg: '#dbeafe', color: '#2563eb' },
+      'Legal': { bg: '#f1f5f9', color: '#64748b' },
+      'Operational': { bg: '#f0fdfa', color: '#0d9488' }
+    };
+
+    return (
+      <div>
+        <SearchBox
+          placeholder="Search Fast Track templates..."
+          value={searchQuery}
+          onChange={(_, v) => this.setState({ _ftSearchQuery: v || '' } as any)}
+          styles={{ root: { maxWidth: 300, marginBottom: 16 } }}
+        />
+
+        {filtered.length === 0 ? (
+          <MessageBar messageBarType={MessageBarType.info}>
+            No Fast Track templates available. Ask your admin to create templates in Admin Centre, or use the Standard Wizard.
+            <DefaultButton text="Switch to Standard" onClick={() => this.setState({ _wizardMode: 'standard', currentStep: 0 } as any)} styles={{ root: { marginLeft: 12 } }} />
+          </MessageBar>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+            {filtered.map((tmpl: any) => {
+              const isSelected = selectedFTId === tmpl.Id;
+              const colors = catColors[tmpl.PolicyCategory] || { bg: '#f0fdfa', color: '#0d9488' };
+              return (
+                <div
+                  key={tmpl.Id}
+                  role="button" tabIndex={0}
+                  onClick={() => {
+                    this.setState({ _selectedFTTemplateId: tmpl.Id, _selectedFTTemplate: tmpl } as any);
+                    this.handleApplyMetadataProfile(tmpl);
+                  }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { this.setState({ _selectedFTTemplateId: tmpl.Id, _selectedFTTemplate: tmpl } as any); this.handleApplyMetadataProfile(tmpl); } }}
+                  style={{
+                    padding: 14, border: `1px solid ${isSelected ? '#0d9488' : '#e2e8f0'}`,
+                    borderLeft: `3px solid ${isSelected ? '#0d9488' : colors.color}`,
+                    borderRadius: 6, cursor: 'pointer', transition: 'all 0.15s',
+                    background: isSelected ? '#f0fdfa' : '#fff'
+                  }}
+                  onMouseEnter={(e) => { if (!isSelected) (e.currentTarget as HTMLElement).style.borderColor = '#0d9488'; }}
+                  onMouseLeave={(e) => { if (!isSelected) { (e.currentTarget as HTMLElement).style.borderColor = '#e2e8f0'; (e.currentTarget as HTMLElement).style.borderLeftColor = colors.color; } }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                    <Text style={{ fontWeight: 600, fontSize: 13, color: '#0f172a', flex: 1 }}>{tmpl.ProfileName || tmpl.Title}</Text>
+                    {isSelected && <Icon iconName="CheckMark" styles={{ root: { fontSize: 14, color: '#0d9488' } }} />}
+                  </div>
+                  <Text style={{ fontSize: 11, color: '#64748b', lineHeight: '1.3', display: 'block', marginBottom: 8 }}>{(tmpl.Description || 'Pre-configured template').substring(0, 60)}{(tmpl.Description || '').length > 60 ? '...' : ''}</Text>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                    {tmpl.ComplianceRisk && <span style={{ fontSize: 8, fontWeight: 600, padding: '2px 6px', borderRadius: 3, background: colors.bg, color: colors.color, textTransform: 'uppercase' }}>{tmpl.ComplianceRisk}</span>}
+                    {tmpl.PolicyCategory && <span style={{ fontSize: 8, fontWeight: 600, padding: '2px 6px', borderRadius: 3, background: '#f1f5f9', color: '#64748b', textTransform: 'uppercase' }}>{tmpl.PolicyCategory}</span>}
+                    {tmpl.RequiresAcknowledgement && <span style={{ fontSize: 8, fontWeight: 600, padding: '2px 6px', borderRadius: 3, background: '#dcfce7', color: '#059669', textTransform: 'uppercase' }}>Ack</span>}
+                    {tmpl.RequiresQuiz && <span style={{ fontSize: 8, fontWeight: 600, padding: '2px 6px', borderRadius: 3, background: '#ede9fe', color: '#7c3aed', textTransform: 'uppercase' }}>Quiz</span>}
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 10, paddingTop: 10, borderTop: '1px solid #f1f5f9' }}>
+                    <Text style={{ fontSize: 10, color: '#94a3b8' }}>Timeframe: <strong style={{ color: '#475569' }}>{tmpl.ReadTimeframe || '-'}</strong></Text>
+                    <Text style={{ fontSize: 10, color: '#94a3b8' }}>Review: <strong style={{ color: '#475569' }}>{tmpl.ReviewFrequency || 'Annual'}</strong></Text>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  private renderFastTrackDetailsStep(): JSX.Element {
+    const { policyName, policySummary, complianceRisk, readTimeframe, requiresAcknowledgement, requiresQuiz, policyCategory, reviewFrequency } = this.state;
+    const st = this.state as any;
+    const ftTemplate = st._selectedFTTemplate || {};
+    const showOverride = st._ftShowOverride || false;
+
+    return (
+      <div>
+        {/* Editable fields */}
+        <TextField
+          label="Policy Name"
+          required
+          value={policyName}
+          onChange={(_, v) => this.setState({ policyName: v || '' })}
+          placeholder="e.g., Data Classification Policy 2026"
+          styles={{ root: { marginBottom: 16 } }}
+        />
+        <TextField
+          label="Summary"
+          multiline rows={3}
+          value={policySummary}
+          onChange={(_, v) => this.setState({ policySummary: v || '' })}
+          placeholder="Brief description (2-3 sentences)"
+          styles={{ root: { marginBottom: 16 } }}
+        />
+        <div style={{ marginBottom: 16 }}>
+          <Label>Policy Owner</Label>
+          <PeoplePicker
+            context={this.props.context as any}
+            titleText=""
+            personSelectionLimit={1}
+            groupName=""
+            showtooltip={true}
+            showHiddenInUI={false}
+            ensureUser={true}
+            principalTypes={[PrincipalType.User]}
+            resolveDelay={300}
+            defaultSelectedUsers={this.state.policyOwner || []}
+            onChange={(items: any[]) => { this.setState({ policyOwner: items.map((i: any) => i.secondaryText || i.loginName || '') }); }}
+            placeholder="Search for policy owner..."
+            webAbsoluteUrl={this.props.context.pageContext.web.absoluteUrl}
+          />
+        </div>
+
+        {/* Pre-filled section */}
+        <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '16px 20px', marginTop: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <Text style={{ fontSize: 13, fontWeight: 600, color: '#64748b', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Icon iconName="Lock" styles={{ root: { fontSize: 12, color: '#94a3b8' } }} />
+              Pre-filled from: {ftTemplate.ProfileName || ftTemplate.Title || 'Fast Track Template'}
+            </Text>
+            <DefaultButton
+              text={showOverride ? 'Lock' : 'Override'}
+              onClick={() => this.setState({ _ftShowOverride: !showOverride } as any)}
+              styles={{ root: { fontSize: 11, padding: '4px 10px', minWidth: 'auto', height: 28, borderRadius: 4, border: '1px solid #99f6e4', background: '#f0fdfa', color: '#0d9488' } }}
+            />
+          </div>
+
+          {showOverride ? (
+            <Stack tokens={{ childrenGap: 12 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <Dropdown label="Category" selectedKey={policyCategory} options={Object.values(PolicyCategory).map(c => ({ key: c, text: c }))} onChange={(_, o) => o && this.setState({ policyCategory: o.key as string })} />
+                <Dropdown label="Risk Level" selectedKey={complianceRisk} options={[{ key: 'Critical', text: 'Critical' }, { key: 'High', text: 'High' }, { key: 'Medium', text: 'Medium' }, { key: 'Low', text: 'Low' }]} onChange={(_, o) => o && this.setState({ complianceRisk: o.key as string })} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <Dropdown label="Read Timeframe" selectedKey={readTimeframe} options={[{ key: 'Day 1', text: 'Day 1' }, { key: 'Day 3', text: '3 Days' }, { key: 'Week 1', text: '1 Week' }, { key: 'Week 2', text: '2 Weeks' }, { key: 'Month 1', text: '1 Month' }]} onChange={(_, o) => o && this.setState({ readTimeframe: o.key as string })} />
+                <Dropdown label="Review Frequency" selectedKey={(this.state as any).reviewFrequency || 'Annual'} options={[{ key: 'Annual', text: 'Annual' }, { key: 'Biannual', text: 'Biannual' }, { key: 'Quarterly', text: 'Quarterly' }]} onChange={(_, o) => o && this.setState({ reviewFrequency: o.key as string } as any)} />
+              </div>
+              <Checkbox label="Requires Acknowledgement" checked={requiresAcknowledgement} onChange={(_, c) => this.setState({ requiresAcknowledgement: c || false })} />
+              <Checkbox label="Requires Quiz" checked={requiresQuiz} onChange={(_, c) => this.setState({ requiresQuiz: c || false })} />
+            </Stack>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+              {[
+                { label: 'Category', value: policyCategory },
+                { label: 'Risk Level', value: complianceRisk, color: complianceRisk === 'Critical' || complianceRisk === 'High' ? '#dc2626' : undefined },
+                { label: 'Read Timeframe', value: readTimeframe },
+                { label: 'Acknowledgement', value: requiresAcknowledgement ? 'Required' : 'No', color: requiresAcknowledgement ? '#059669' : undefined },
+                { label: 'Quiz', value: requiresQuiz ? 'Required' : 'No', color: requiresQuiz ? '#059669' : undefined },
+                { label: 'Review', value: (this.state as any).reviewFrequency || 'Annual' },
+              ].map((item, i) => (
+                <div key={i} style={{ padding: '8px 12px', background: '#fff', borderRadius: 4, border: '1px solid #e2e8f0' }}>
+                  <Text style={{ fontSize: 10, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block' }}>{item.label}</Text>
+                  <Text style={{ fontSize: 13, fontWeight: 500, color: item.color || '#0f172a', marginTop: 2, display: 'block' }}>{item.value || '-'}</Text>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================
+  // STANDARD WIZARD STEPS
   // ============================================
 
   private renderStep0_CreationMethod(): JSX.Element {
@@ -2749,11 +3054,26 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       { key: 'None', text: 'No scheduled review' }
     ];
 
+    // Lazy-load published policies for supersedes dropdown
+    const st5 = this.state as any;
+    if (!st5._supersedesPoliciesLoaded) {
+      this.setState({ _supersedesPoliciesLoaded: true } as any);
+      this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES)
+        .items.filter("PolicyStatus eq 'Published' or PolicyStatus eq 'Approved'")
+        .select('Id', 'Title', 'PolicyName', 'PolicyNumber', 'PolicyStatus')
+        .orderBy('PolicyName')
+        .top(200)()
+        .then((items: any[]) => {
+          if (this._isMounted) this.setState({ _supersedesPolicies: items } as any);
+        })
+        .catch(() => { /* graceful */ });
+    }
+    const supersedesPolicies: any[] = st5._supersedesPolicies || browsePolicies || [];
     const supersedesOptions: IDropdownOption[] = [
       { key: '', text: '(None)' },
-      ...browsePolicies
-        .filter(p => p.PolicyStatus === PolicyStatus.Published || p.PolicyStatus === PolicyStatus.Approved)
-        .map(p => ({ key: p.PolicyNumber || p.Title, text: `${p.PolicyNumber || 'N/A'} — ${p.Title}` }))
+      ...supersedesPolicies
+        .filter((p: any) => p.PolicyStatus === PolicyStatus.Published || p.PolicyStatus === PolicyStatus.Approved || p.PolicyStatus === 'Published' || p.PolicyStatus === 'Approved')
+        .map((p: any) => ({ key: p.PolicyNumber || p.Title, text: `${p.PolicyNumber || 'N/A'} — ${p.PolicyName || p.Title}` }))
     ];
 
     return (
@@ -2860,10 +3180,10 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         key: 'basic', icon: 'Info', title: 'Basic Information', step: 1,
         content: (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-            <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Policy Number</Label><Text>{policyNumber || '(Auto-generated on save)'}</Text></div>
-            <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Policy Name</Label><Text>{policyName || '-'}</Text></div>
-            <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Category</Label><Text>{policyCategory || '-'}</Text></div>
-            <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Summary</Label><Text>{policySummary || '-'}</Text></div>
+            <div style={{ display: 'flex', padding: '8px 0', fontSize: 13, borderBottom: '1px solid #f1f5f9', gap: 16 }}><span style={{ width: 180, minWidth: 180, color: '#64748b', fontWeight: 500, flexShrink: 0 }}>Policy Number</span><span style={{ color: '#0f172a', flex: 1 }}>{policyNumber || '(Auto-generated on save)'}</span></div>
+            <div style={{ display: 'flex', padding: '8px 0', fontSize: 13, borderBottom: '1px solid #f1f5f9', gap: 16 }}><span style={{ width: 180, minWidth: 180, color: '#64748b', fontWeight: 500, flexShrink: 0 }}>Policy Name</span><span style={{ color: '#0f172a', flex: 1 }}>{policyName || '-'}</span></div>
+            <div style={{ display: 'flex', padding: '8px 0', fontSize: 13, borderBottom: '1px solid #f1f5f9', gap: 16 }}><span style={{ width: 180, minWidth: 180, color: '#64748b', fontWeight: 500, flexShrink: 0 }}>Category</span><span style={{ color: '#0f172a', flex: 1 }}>{policyCategory || '-'}</span></div>
+            <div style={{ display: 'flex', padding: '8px 0', fontSize: 13, borderBottom: '1px solid #f1f5f9', gap: 16 }}><span style={{ width: 180, minWidth: 180, color: '#64748b', fontWeight: 500, flexShrink: 0 }}>Summary</span><span style={{ color: '#0f172a', flex: 1 }}>{policySummary || '-'}</span></div>
           </div>
         )
       },
@@ -2871,9 +3191,9 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         key: 'content', icon: 'Edit', title: 'Content', step: 2,
         content: (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-            <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Content</Label><Text>{policyContent ? `${policyContent.substring(0, 500).replace(/<[^>]*>/g, '').trim()}${policyContent.length > 500 ? '...' : ''}` : '-'}</Text></div>
-            {linkedDocumentUrl && <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Linked Document</Label><Text>{linkedDocumentType}: {linkedDocumentUrl}</Text></div>}
-            <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Key Points</Label><Text>{keyPoints.length > 0 ? keyPoints.join(' • ') : 'None specified'}</Text></div>
+            <div style={{ display: 'flex', padding: '8px 0', fontSize: 13, borderBottom: '1px solid #f1f5f9', gap: 16 }}><span style={{ width: 180, minWidth: 180, color: '#64748b', fontWeight: 500, flexShrink: 0 }}>Content</span><span style={{ color: '#0f172a', flex: 1 }}>{policyContent ? `${policyContent.substring(0, 500).replace(/<[^>]*>/g, '').trim()}${policyContent.length > 500 ? '...' : ''}` : '-'}</span></div>
+            {linkedDocumentUrl && <div style={{ display: 'flex', padding: '8px 0', fontSize: 13, borderBottom: '1px solid #f1f5f9', gap: 16 }}><span style={{ width: 180, minWidth: 180, color: '#64748b', fontWeight: 500, flexShrink: 0 }}>Linked Document</span><span style={{ color: '#0f172a', flex: 1 }}>{linkedDocumentType}: {linkedDocumentUrl}</span></div>}
+            <div style={{ display: 'flex', padding: '8px 0', fontSize: 13, borderBottom: '1px solid #f1f5f9', gap: 16 }}><span style={{ width: 180, minWidth: 180, color: '#64748b', fontWeight: 500, flexShrink: 0 }}>Key Points</span><span style={{ color: '#0f172a', flex: 1 }}>{keyPoints.length > 0 ? keyPoints.join(' • ') : 'None specified'}</span></div>
           </div>
         )
       },
@@ -2881,10 +3201,10 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         key: 'compliance', icon: 'Tag', title: 'Compliance & Metadata', step: 3,
         content: (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-            <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Risk Level</Label><Text>{complianceRisk}</Text></div>
-            <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Read Timeframe</Label><Text>{readTimeframe}</Text></div>
-            <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Acknowledgement Required</Label><Text>{requiresAcknowledgement ? 'Yes' : 'No'}</Text></div>
-            <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Quiz Required</Label><Text>{requiresQuiz ? (selectedQuizTitle ? `Yes — ${selectedQuizTitle}` : 'Yes (no quiz linked)') : 'No'}</Text></div>
+            <div style={{ display: 'flex', padding: '8px 0', fontSize: 13, borderBottom: '1px solid #f1f5f9', gap: 16 }}><span style={{ width: 180, minWidth: 180, color: '#64748b', fontWeight: 500, flexShrink: 0 }}>Risk Level</span><span style={{ color: '#0f172a', flex: 1 }}>{complianceRisk}</span></div>
+            <div style={{ display: 'flex', padding: '8px 0', fontSize: 13, borderBottom: '1px solid #f1f5f9', gap: 16 }}><span style={{ width: 180, minWidth: 180, color: '#64748b', fontWeight: 500, flexShrink: 0 }}>Read Timeframe</span><span style={{ color: '#0f172a', flex: 1 }}>{readTimeframe}</span></div>
+            <div style={{ display: 'flex', padding: '8px 0', fontSize: 13, borderBottom: '1px solid #f1f5f9', gap: 16 }}><span style={{ width: 180, minWidth: 180, color: '#64748b', fontWeight: 500, flexShrink: 0 }}>Acknowledgement Required</span><span style={{ color: '#0f172a', flex: 1 }}>{requiresAcknowledgement ? 'Yes' : 'No'}</span></div>
+            <div style={{ display: 'flex', padding: '8px 0', fontSize: 13, borderBottom: '1px solid #f1f5f9', gap: 16 }}><span style={{ width: 180, minWidth: 180, color: '#64748b', fontWeight: 500, flexShrink: 0 }}>Quiz Required</span><span style={{ color: '#0f172a', flex: 1 }}>{requiresQuiz ? (selectedQuizTitle ? `Yes — ${selectedQuizTitle}` : 'Yes (no quiz linked)') : 'No'}</span></div>
           </div>
         )
       },
@@ -2892,11 +3212,11 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         key: 'audience', icon: 'People', title: 'Target Audience', step: 4,
         content: (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-            <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Audience</Label><Text>{targetAllEmployees ? 'All Employees' : 'Specific groups'}</Text></div>
+            <div style={{ display: 'flex', padding: '8px 0', fontSize: 13, borderBottom: '1px solid #f1f5f9', gap: 16 }}><span style={{ width: 180, minWidth: 180, color: '#64748b', fontWeight: 500, flexShrink: 0 }}>Audience</span><span style={{ color: '#0f172a', flex: 1 }}>{targetAllEmployees ? 'All Employees' : 'Specific groups'}</span></div>
             {!targetAllEmployees && <>
-              <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Departments</Label><Text>{targetDepartments.join(', ') || 'None specified'}</Text></div>
-              <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Roles</Label><Text>{targetRoles.join(', ') || 'None specified'}</Text></div>
-              <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Locations</Label><Text>{targetLocations.join(', ') || 'None specified'}</Text></div>
+              <div style={{ display: 'flex', padding: '8px 0', fontSize: 13, borderBottom: '1px solid #f1f5f9', gap: 16 }}><span style={{ width: 180, minWidth: 180, color: '#64748b', fontWeight: 500, flexShrink: 0 }}>Departments</span><span style={{ color: '#0f172a', flex: 1 }}>{targetDepartments.join(', ') || 'None specified'}</span></div>
+              <div style={{ display: 'flex', padding: '8px 0', fontSize: 13, borderBottom: '1px solid #f1f5f9', gap: 16 }}><span style={{ width: 180, minWidth: 180, color: '#64748b', fontWeight: 500, flexShrink: 0 }}>Roles</span><span style={{ color: '#0f172a', flex: 1 }}>{targetRoles.join(', ') || 'None specified'}</span></div>
+              <div style={{ display: 'flex', padding: '8px 0', fontSize: 13, borderBottom: '1px solid #f1f5f9', gap: 16 }}><span style={{ width: 180, minWidth: 180, color: '#64748b', fontWeight: 500, flexShrink: 0 }}>Locations</span><span style={{ color: '#0f172a', flex: 1 }}>{targetLocations.join(', ') || 'None specified'}</span></div>
             </>}
           </div>
         )
@@ -2905,11 +3225,11 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         key: 'dates', icon: 'Calendar', title: 'Dates & Review', step: 5,
         content: (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-            <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Effective Date</Label><Text>{effectiveDate || '-'}</Text></div>
-            <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Expiry Date</Label><Text>{expiryDate || 'No expiry'}</Text></div>
-            <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Review Frequency</Label><Text>{reviewFrequency}</Text></div>
-            <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Next Review</Label><Text>{nextReviewDate || 'Not set'}</Text></div>
-            {supersedesPolicy && <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Supersedes</Label><Text>{supersedesPolicy}</Text></div>}
+            <div style={{ display: 'flex', padding: '8px 0', fontSize: 13, borderBottom: '1px solid #f1f5f9', gap: 16 }}><span style={{ width: 180, minWidth: 180, color: '#64748b', fontWeight: 500, flexShrink: 0 }}>Effective Date</span><span style={{ color: '#0f172a', flex: 1 }}>{effectiveDate || '-'}</span></div>
+            <div style={{ display: 'flex', padding: '8px 0', fontSize: 13, borderBottom: '1px solid #f1f5f9', gap: 16 }}><span style={{ width: 180, minWidth: 180, color: '#64748b', fontWeight: 500, flexShrink: 0 }}>Expiry Date</span><span style={{ color: '#0f172a', flex: 1 }}>{expiryDate || 'No expiry'}</span></div>
+            <div style={{ display: 'flex', padding: '8px 0', fontSize: 13, borderBottom: '1px solid #f1f5f9', gap: 16 }}><span style={{ width: 180, minWidth: 180, color: '#64748b', fontWeight: 500, flexShrink: 0 }}>Review Frequency</span><span style={{ color: '#0f172a', flex: 1 }}>{reviewFrequency}</span></div>
+            <div style={{ display: 'flex', padding: '8px 0', fontSize: 13, borderBottom: '1px solid #f1f5f9', gap: 16 }}><span style={{ width: 180, minWidth: 180, color: '#64748b', fontWeight: 500, flexShrink: 0 }}>Next Review</span><span style={{ color: '#0f172a', flex: 1 }}>{nextReviewDate || 'Not set'}</span></div>
+            {supersedesPolicy && <div style={{ display: 'flex', padding: '8px 0', fontSize: 13, borderBottom: '1px solid #f1f5f9', gap: 16 }}><span style={{ width: 180, minWidth: 180, color: '#64748b', fontWeight: 500, flexShrink: 0 }}>Supersedes</span><span style={{ color: '#0f172a', flex: 1 }}>{supersedesPolicy}</span></div>}
           </div>
         )
       },
@@ -2917,8 +3237,8 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         key: 'workflow', icon: 'Flow', title: 'Workflow', step: 6,
         content: (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-            <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Reviewers</Label><Text>{reviewers.length > 0 ? reviewers.map((r: any) => r.text || r.loginName || r).join(', ') : 'None assigned'}</Text></div>
-            <div style={{ display: 'flex', padding: '6px 0', fontSize: 12, borderBottom: '1px solid #f8fafc' }}><Label>Approvers</Label><Text>{approvers.length > 0 ? approvers.map((a: any) => a.text || a.loginName || a).join(', ') : 'None assigned'}</Text></div>
+            <div style={{ display: 'flex', padding: '8px 0', fontSize: 13, borderBottom: '1px solid #f1f5f9', gap: 16 }}><span style={{ width: 180, minWidth: 180, color: '#64748b', fontWeight: 500, flexShrink: 0 }}>Reviewers</span><span style={{ color: '#0f172a', flex: 1 }}>{reviewers.length > 0 ? reviewers.map((r: any) => r.text || r.loginName || r).join(', ') : 'None assigned'}</span></div>
+            <div style={{ display: 'flex', padding: '8px 0', fontSize: 13, borderBottom: '1px solid #f1f5f9', gap: 16 }}><span style={{ width: 180, minWidth: 180, color: '#64748b', fontWeight: 500, flexShrink: 0 }}>Approvers</span><span style={{ color: '#0f172a', flex: 1 }}>{approvers.length > 0 ? approvers.map((a: any) => a.text || a.loginName || a).join(', ') : 'None assigned'}</span></div>
           </div>
         )
       }
@@ -2969,8 +3289,20 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
   private renderCurrentStep(): JSX.Element {
     const { currentStep } = this.state;
+    const isFastTrack = (this.state as any)._wizardMode === 'fast-track';
 
-    // Step order: 0=Creation Method, 1=Basic Info, 2=Metadata, 3=Audience,
+    if (isFastTrack) {
+      // Fast Track: 0=Template, 1=Details, 2=Content, 3=Review
+      switch (currentStep) {
+        case 0: return this.renderFastTrackTemplateStep();
+        case 1: return this.renderFastTrackDetailsStep();
+        case 2: return this.renderStep2_Content();
+        case 3: return this.renderStep7_Review();
+        default: return this.renderFastTrackTemplateStep();
+      }
+    }
+
+    // Standard: 0=Creation Method, 1=Basic Info, 2=Metadata, 3=Audience,
     // 4=Dates, 5=Workflow, 6=Content, 7=Review & Submit
     switch (currentStep) {
       case 0: return this.renderStep0_CreationMethod();
@@ -4377,15 +4709,15 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
     try {
       this.setState({ saving: true });
-      await this.policyService.updatePolicy(policyId, {
-        Status: PolicyStatus.PendingApproval
-      } as Partial<IPolicy>);
+      // Update status to In Review (not PendingApproval)
+      await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES)
+        .items.getById(policyId).update({ PolicyStatus: PolicyStatus.InReview });
 
       // Send approval notification to approvers
       try {
         const { ApprovalNotificationService } = await import('../../../services/ApprovalNotificationService');
         const notifService = new ApprovalNotificationService(this.props.sp);
-        const policy = await this.policyService.getPolicy(policyId);
+        const policy = await this.policyService.getPolicyById(policyId);
         if (policy) {
           await notifService.sendNewApprovalNotification({
             Title: policy.PolicyName || policy.Title,
@@ -5232,19 +5564,32 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
               placeholder="e.g., Create Remote Work Policy"
             />
 
-            <TextField
-              label="Assign To (Name)"
-              name="assignedTo"
-              required
-              placeholder="Enter assignee name"
-            />
-
-            <TextField
-              label="Assignee Email"
-              name="assignedToEmail"
-              required
-              placeholder="assignee@company.com"
-            />
+            <div>
+              <Label required>Assign To</Label>
+              <PeoplePicker
+                context={this.props.context as any}
+                titleText=""
+                personSelectionLimit={1}
+                groupName=""
+                showtooltip={true}
+                showHiddenInUI={false}
+                ensureUser={true}
+                principalTypes={[PrincipalType.User]}
+                resolveDelay={300}
+                onChange={(items: any[]) => {
+                  // Store selected person details in form state
+                  if (items && items.length > 0) {
+                    const person = items[0];
+                    this.setState({
+                      _delegationAssignedTo: person.text || '',
+                      _delegationAssignedToEmail: person.secondaryText || person.loginName || ''
+                    } as any);
+                  }
+                }}
+                placeholder="Search for a person..."
+                webAbsoluteUrl={this.props.context.pageContext.web.absoluteUrl}
+              />
+            </div>
 
             <Dropdown
               label="Policy Type"
@@ -7212,8 +7557,18 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
   private renderCreatePolicyTab(): JSX.Element {
     const { loading, saving, currentStep, completedSteps } = this.state;
-    const currentStepConfig = WIZARD_STEPS[currentStep];
-    const progressPercent = Math.round(((currentStep + 1) / WIZARD_STEPS.length) * 100);
+    const st = this.state as any;
+    const wizardMode: string = st._wizardMode || ''; // '' | 'standard' | 'fast-track'
+
+    // Mode not yet chosen — show mode selection
+    if (!wizardMode && currentStep === 0) {
+      return this.renderModeSelection();
+    }
+
+    const isFastTrack = wizardMode === 'fast-track';
+    const activeSteps = isFastTrack ? FAST_TRACK_STEPS : WIZARD_STEPS;
+    const currentStepConfig = activeSteps[currentStep] || activeSteps[0];
+    const progressPercent = Math.round(((currentStep + 1) / activeSteps.length) * 100);
 
     if (loading) {
       return <Stack horizontalAlign="center" tokens={{ padding: 60 }}><Spinner size={SpinnerSize.large} label="Loading policy builder..." /></Stack>;
@@ -7278,10 +7633,16 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         <aside style={S.sidebar}>
           <div style={S.sidebarHeader}>
             <Text style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', display: 'block' }}>New Policy Wizard</Text>
-            <Text style={{ fontSize: 11, color: '#94a3b8', marginTop: 2, display: 'block' }}>{WIZARD_STEPS.length} steps to complete</Text>
+            <Text style={{ fontSize: 11, color: '#94a3b8', marginTop: 2, display: 'block' }}>{activeSteps.length} steps to complete</Text>
           </div>
+          {isFastTrack && (
+            <div style={{ margin: '8px 20px', padding: '8px 12px', background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 16 }}>&#x26A1;</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: '#d97706' }}>Fast Track Mode</span>
+            </div>
+          )}
           <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>
-            {WIZARD_STEPS.map((step, i) => {
+            {activeSteps.map((step, i) => {
               const done = completedSteps.has(i);
               const active = i === currentStep;
               const clickable = i <= currentStep || completedSteps.has(i - 1) || i === 0;
@@ -7302,9 +7663,9 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                     )}
                     <span style={{ fontSize: 10, color: '#94a3b8', transform: active ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s' }}>&#9660;</span>
                   </div>
-                  {active && PolicyAuthorEnhanced.STEP_FIELDS[i] && (
+                  {active && this.getStepFields()[i] && (
                     <ul style={S.bulletList}>
-                      {PolicyAuthorEnhanced.STEP_FIELDS[i].map((field, fi) => (
+                      {(this.getStepFields()[i] || []).map((field, fi) => (
                         <li key={fi} style={S.bullet(fi === 0)}>
                           <span style={S.bulletDot} />
                           {field}
@@ -7333,7 +7694,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
               <Text style={{ fontSize: 13, color: '#64748b', marginTop: 4, display: 'block' }}>{currentStepConfig.description}</Text>
             </div>
             <div style={S.progressWrap}>
-              <span style={{ fontSize: 11, color: '#64748b', whiteSpace: 'nowrap' }}>Step {currentStep + 1} of {WIZARD_STEPS.length}</span>
+              <span style={{ fontSize: 11, color: '#64748b', whiteSpace: 'nowrap' }}>Step {currentStep + 1} of {activeSteps.length}</span>
               <div style={S.progressTrack}><div style={{ ...S.progressFill, width: `${progressPercent}%` }} /></div>
               <span style={{ fontSize: 11, color: '#64748b' }}>{progressPercent}%</span>
             </div>
@@ -7384,7 +7745,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             styles={{ root: { borderRadius: 4, border: '1px solid #e2e8f0', visibility: currentStep === 0 ? 'hidden' : 'visible', minWidth: 80 }, rootHovered: { borderColor: '#0d9488', color: '#0d9488' } }}
           />
           <div style={S.footerCenter}>
-            <span style={{ fontSize: 12, color: '#64748b', whiteSpace: 'nowrap' }}>Step {currentStep + 1} of {WIZARD_STEPS.length}</span>
+            <span style={{ fontSize: 12, color: '#64748b', whiteSpace: 'nowrap' }}>Step {currentStep + 1} of {activeSteps.length}</span>
             <div style={S.footerTrack}><div style={{ ...S.footerFill, width: `${progressPercent}%` }} /></div>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
@@ -7394,7 +7755,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
               disabled={saving}
               styles={{ root: { borderRadius: 4, background: '#f0fdfa', color: '#0d9488', border: '1px solid #99f6e4', minWidth: 90 }, rootHovered: { background: '#ccfbf1' } }}
             />
-            {currentStep < WIZARD_STEPS.length - 1 ? (
+            {currentStep < activeSteps.length - 1 ? (
               <PrimaryButton
                 onClick={this.handleNextStep}
                 disabled={saving}

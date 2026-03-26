@@ -3,6 +3,7 @@ import { Icon } from '@fluentui/react/lib/Icon';
 /* eslint-disable */
 import * as React from 'react';
 import { IPolicyManagerViewProps } from './IPolicyManagerViewProps';
+import { PeoplePicker, PrincipalType } from '@pnp/spfx-controls-react/lib/PeoplePicker';
 import {
   Stack,
   Text,
@@ -951,12 +952,24 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
 
           {/* Recipients */}
           <div style={{ marginBottom: 16 }}>
-            <Label required>Recipients (email addresses, comma-separated)</Label>
-            <TextField
-              multiline rows={3}
-              value={scheduleRecipients}
-              onChange={(_, val) => this.setState({ scheduleRecipients: val || '' })}
-              placeholder="user@company.com, team@company.com"
+            <Label required>Recipients</Label>
+            <PeoplePicker
+              context={this.props.context as any}
+              titleText=""
+              personSelectionLimit={20}
+              groupName=""
+              showtooltip={true}
+              showHiddenInUI={false}
+              ensureUser={true}
+              principalTypes={[PrincipalType.User]}
+              resolveDelay={300}
+              defaultSelectedUsers={scheduleRecipients ? scheduleRecipients.split(',').map((e: string) => e.trim()).filter(Boolean) : []}
+              onChange={(items: any[]) => {
+                const emails = items.map((i: any) => i.secondaryText || i.loginName || '').filter(Boolean);
+                this.setState({ scheduleRecipients: emails.join(', ') });
+              }}
+              placeholder="Search for recipients..."
+              webAbsoluteUrl={this.props.context.pageContext.web.absoluteUrl}
             />
           </div>
 
@@ -2500,15 +2513,35 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
 
           <Separator>Assignee</Separator>
 
-          <TextField label="Delegate To" placeholder="Enter person's name" required
-            value={delegationForm.delegateTo} onChange={(_, val) => this.updateDelegationForm({ delegateTo: val || '' })}
-            iconProps={{ iconName: 'Contact' }} />
-          <TextField label="Email" placeholder="email@company.com"
-            value={delegationForm.delegateToEmail} onChange={(_, val) => this.updateDelegationForm({ delegateToEmail: val || '' })}
-            iconProps={{ iconName: 'Mail' }} />
-          <TextField label="Department" placeholder="e.g. IT Security, HR, Legal"
-            value={delegationForm.department} onChange={(_, val) => this.updateDelegationForm({ department: val || '' })}
-            iconProps={{ iconName: 'Org' }} />
+          <div>
+            <Label required>Delegate To</Label>
+            <PeoplePicker
+              context={this.props.context as any}
+              titleText=""
+              personSelectionLimit={1}
+              groupName=""
+              showtooltip={true}
+              showHiddenInUI={false}
+              ensureUser={true}
+              principalTypes={[PrincipalType.User]}
+              resolveDelay={300}
+              defaultSelectedUsers={delegationForm.delegateToEmail ? [delegationForm.delegateToEmail] : []}
+              onChange={(items: any[]) => {
+                if (items && items.length > 0) {
+                  const person = items[0];
+                  this.updateDelegationForm({
+                    delegateTo: person.text || '',
+                    delegateToEmail: person.secondaryText || person.loginName || '',
+                    department: ''
+                  });
+                } else {
+                  this.updateDelegationForm({ delegateTo: '', delegateToEmail: '', department: '' });
+                }
+              }}
+              placeholder="Search for a person..."
+              webAbsoluteUrl={this.props.context.pageContext.web.absoluteUrl}
+            />
+          </div>
 
           <Separator>Task Details</Separator>
 

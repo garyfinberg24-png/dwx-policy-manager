@@ -1,0 +1,1558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DWx Policy Manager — Enterprise Policy Governance & Compliance</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+  /* ─── RESET & BASE ─── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; font-size: 16px; }
+  body {
+    font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: #1e293b;
+    background: #ffffff;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  img { max-width: 100%; display: block; }
+  a { text-decoration: none; color: inherit; }
+
+  /* ─── UTILITIES ─── */
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 40px; }
+  .text-center { text-align: center; }
+  .text-teal { color: #0d9488; }
+  .text-muted { color: #64748b; }
+  .text-white { color: #ffffff; }
+  .mt-8 { margin-top: 8px; }
+  .mt-16 { margin-top: 16px; }
+  .mt-24 { margin-top: 24px; }
+  .mt-32 { margin-top: 32px; }
+  .mt-48 { margin-top: 48px; }
+  .mb-64 { margin-bottom: 64px; }
+
+  /* ─── ANIMATIONS ─── */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(40px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes slideInLeft {
+    from { opacity: 0; transform: translateX(-60px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes slideInRight {
+    from { opacity: 0; transform: translateX(60px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  @keyframes countUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  @keyframes drawLine {
+    from { width: 0; }
+    to { width: 60px; }
+  }
+  .animate-in { animation: fadeInUp 0.8s ease-out both; }
+  .animate-delay-1 { animation-delay: 0.15s; }
+  .animate-delay-2 { animation-delay: 0.3s; }
+  .animate-delay-3 { animation-delay: 0.45s; }
+  .animate-delay-4 { animation-delay: 0.6s; }
+  .animate-delay-5 { animation-delay: 0.75s; }
+  .animate-delay-6 { animation-delay: 0.9s; }
+
+  /* ─── STICKY NAV ─── */
+  .top-nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(226,232,240,0.6);
+    transition: all 0.3s ease;
+  }
+  .top-nav-inner {
+    max-width: 1200px; margin: 0 auto; padding: 0 40px;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 64px;
+  }
+  .nav-logo { display: flex; align-items: center; gap: 12px; }
+  .nav-logo-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: linear-gradient(135deg, #0d9488, #0f766e);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .nav-logo-icon svg { width: 20px; height: 20px; }
+  .nav-logo-text { font-weight: 700; font-size: 15px; color: #0f172a; }
+  .nav-logo-text span { color: #0d9488; }
+  .nav-links { display: flex; gap: 32px; }
+  .nav-links a { font-size: 13px; font-weight: 500; color: #64748b; transition: color 0.2s; }
+  .nav-links a:hover { color: #0d9488; }
+  .nav-cta {
+    padding: 10px 24px; border-radius: 8px;
+    background: linear-gradient(135deg, #0d9488, #0f766e);
+    color: #fff; font-size: 13px; font-weight: 600;
+    border: none; cursor: pointer; transition: all 0.3s;
+    box-shadow: 0 2px 8px rgba(13,148,136,0.25);
+  }
+  .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(13,148,136,0.35); }
+
+  /* ─── HERO SECTION ─── */
+  .hero {
+    position: relative; min-height: 100vh;
+    display: flex; align-items: center;
+    padding-top: 64px;
+    overflow: hidden;
+    background: #0f172a;
+  }
+  .hero::before {
+    content: ''; position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 80%, rgba(13,148,136,0.15), transparent),
+      radial-gradient(ellipse 60% 50% at 80% 20%, rgba(13,148,136,0.1), transparent),
+      radial-gradient(ellipse 40% 40% at 50% 50%, rgba(15,118,110,0.05), transparent);
+  }
+  .hero-grid-bg {
+    position: absolute; inset: 0; opacity: 0.03;
+    background-image:
+      linear-gradient(rgba(255,255,255,1) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+  .hero-content { position: relative; z-index: 2; }
+  .hero-inner {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 80px;
+    align-items: center; min-height: calc(100vh - 64px);
+    padding: 60px 0;
+  }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 16px; border-radius: 20px;
+    background: rgba(13,148,136,0.15);
+    border: 1px solid rgba(13,148,136,0.3);
+    font-size: 12px; font-weight: 600; color: #5eead4;
+    margin-bottom: 24px;
+    animation: fadeInUp 0.6s ease-out both;
+  }
+  .hero-badge-dot { width: 6px; height: 6px; border-radius: 50%; background: #0d9488; animation: pulse 2s infinite; }
+  .hero h1 {
+    font-size: 56px; font-weight: 800; line-height: 1.08;
+    color: #f1f5f9; letter-spacing: -1.5px;
+    animation: fadeInUp 0.8s ease-out 0.1s both;
+  }
+  .hero h1 .gradient-text {
+    background: linear-gradient(135deg, #0d9488, #2dd4bf, #0d9488);
+    background-size: 200% auto;
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradientShift 4s ease infinite;
+  }
+  .hero-subtitle {
+    font-size: 19px; line-height: 1.7; color: #94a3b8;
+    margin-top: 24px; max-width: 520px;
+    animation: fadeInUp 0.8s ease-out 0.25s both;
+  }
+  .hero-actions {
+    display: flex; gap: 16px; margin-top: 40px;
+    animation: fadeInUp 0.8s ease-out 0.4s both;
+  }
+  .btn-primary {
+    padding: 16px 36px; border-radius: 12px;
+    background: linear-gradient(135deg, #0d9488, #0f766e);
+    color: #fff; font-size: 15px; font-weight: 600;
+    border: none; cursor: pointer; transition: all 0.3s;
+    box-shadow: 0 4px 20px rgba(13,148,136,0.3);
+    display: inline-flex; align-items: center; gap: 10px;
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(13,148,136,0.4); }
+  .btn-secondary {
+    padding: 16px 36px; border-radius: 12px;
+    background: transparent;
+    color: #94a3b8; font-size: 15px; font-weight: 600;
+    border: 1px solid #334155; cursor: pointer; transition: all 0.3s;
+    display: inline-flex; align-items: center; gap: 10px;
+  }
+  .btn-secondary:hover { border-color: #0d9488; color: #5eead4; }
+  .hero-stats {
+    display: flex; gap: 40px; margin-top: 48px;
+    padding-top: 32px; border-top: 1px solid rgba(255,255,255,0.06);
+    animation: fadeInUp 0.8s ease-out 0.55s both;
+  }
+  .hero-stat-value { font-size: 36px; font-weight: 800; color: #f1f5f9; }
+  .hero-stat-label { font-size: 12px; color: #64748b; margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; font-weight: 500; }
+
+  /* Hero Right — Dashboard Preview */
+  .hero-visual {
+    position: relative;
+    animation: slideInRight 1s ease-out 0.3s both;
+  }
+  .hero-dashboard {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.4);
+  }
+  .hero-dash-bar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 12px 16px; background: #0f172a;
+    border-bottom: 1px solid #1e293b;
+  }
+  .hero-dash-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .hero-dash-body { padding: 20px; }
+  .hero-dash-kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+  .hero-dash-kpi {
+    background: rgba(255,255,255,0.03); border: 1px solid #334155; border-radius: 10px;
+    padding: 14px; border-top: 3px solid;
+  }
+  .hero-dash-kpi-val { font-size: 22px; font-weight: 800; color: #f1f5f9; }
+  .hero-dash-kpi-lbl { font-size: 9px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+  .hero-dash-chart {
+    background: rgba(255,255,255,0.02); border: 1px solid #334155;
+    border-radius: 10px; padding: 16px; height: 140px;
+    position: relative; overflow: hidden;
+  }
+  .hero-dash-chart-title { font-size: 11px; color: #64748b; font-weight: 600; margin-bottom: 12px; }
+  .hero-chart-bars { display: flex; align-items: flex-end; gap: 8px; height: 100px; padding-top: 10px; }
+  .hero-chart-bar {
+    flex: 1; border-radius: 4px 4px 0 0;
+    background: linear-gradient(to top, #0d9488, #2dd4bf);
+    opacity: 0.7; min-height: 12px;
+    transition: opacity 0.2s;
+  }
+  .hero-chart-bar:hover { opacity: 1; }
+  .hero-glow {
+    position: absolute; width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(13,148,136,0.2), transparent 70%);
+    border-radius: 50%; top: -80px; right: -80px;
+    animation: float 6s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  /* ─── SOCIAL PROOF BAR ─── */
+  .trust-bar {
+    background: #f8fafc; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;
+    padding: 40px 0;
+  }
+  .trust-bar-inner {
+    display: flex; align-items: center; justify-content: center; gap: 60px;
+    flex-wrap: wrap;
+  }
+  .trust-label { font-size: 12px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 2px; }
+  .trust-logos { display: flex; align-items: center; gap: 48px; }
+  .trust-logo {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 14px; font-weight: 700; color: #cbd5e1;
+    opacity: 0.6; transition: opacity 0.3s;
+  }
+  .trust-logo:hover { opacity: 1; }
+  .trust-logo-icon { width: 32px; height: 32px; border-radius: 8px; background: #e2e8f0; display: flex; align-items: center; justify-content: center; }
+
+  /* ─── PROBLEM/SOLUTION ─── */
+  .problem-section { padding: 120px 0; background: #fff; }
+  .section-eyebrow {
+    font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 3px;
+    color: #0d9488; margin-bottom: 16px;
+  }
+  .section-eyebrow::after {
+    content: ''; display: block; width: 0; height: 2px; background: #0d9488;
+    margin-top: 8px; animation: drawLine 0.8s ease-out 0.5s forwards;
+  }
+  .section-title {
+    font-size: 42px; font-weight: 800; line-height: 1.15;
+    color: #0f172a; letter-spacing: -0.5px;
+  }
+  .section-subtitle { font-size: 18px; color: #64748b; line-height: 1.7; margin-top: 16px; max-width: 640px; }
+
+  .problem-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; margin-top: 64px; align-items: start; }
+
+  .pain-points { display: flex; flex-direction: column; gap: 20px; }
+  .pain-point {
+    display: flex; gap: 16px; padding: 20px; border-radius: 12px;
+    border: 1px solid #fecaca; background: #fef2f2;
+    transition: all 0.3s;
+  }
+  .pain-point:hover { transform: translateX(4px); }
+  .pain-icon {
+    width: 44px; height: 44px; border-radius: 10px;
+    background: #fee2e2; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .pain-icon svg { width: 22px; height: 22px; stroke: #dc2626; fill: none; stroke-width: 2; }
+  .pain-title { font-size: 15px; font-weight: 700; color: #991b1b; }
+  .pain-desc { font-size: 13px; color: #b91c1c; line-height: 1.6; margin-top: 4px; }
+
+  .solution-points { display: flex; flex-direction: column; gap: 20px; }
+  .solution-point {
+    display: flex; gap: 16px; padding: 20px; border-radius: 12px;
+    border: 1px solid #a7f3d0; background: #ecfdf5;
+    transition: all 0.3s;
+  }
+  .solution-point:hover { transform: translateX(4px); }
+  .solution-icon {
+    width: 44px; height: 44px; border-radius: 10px;
+    background: #d1fae5; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .solution-icon svg { width: 22px; height: 22px; stroke: #059669; fill: none; stroke-width: 2; }
+  .solution-title { font-size: 15px; font-weight: 700; color: #065f46; }
+  .solution-desc { font-size: 13px; color: #047857; line-height: 1.6; margin-top: 4px; }
+
+  /* ─── FEATURES ─── */
+  .features-section { padding: 120px 0; background: #f8fafc; }
+  .feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 64px; }
+  .feature-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 16px;
+    padding: 32px; transition: all 0.3s; position: relative; overflow: hidden;
+  }
+  .feature-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+    background: linear-gradient(135deg, var(--card-color, #0d9488), var(--card-color-end, #0f766e));
+    transform: scaleX(0); transform-origin: left; transition: transform 0.4s ease;
+  }
+  .feature-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.08); border-color: transparent; }
+  .feature-card:hover::before { transform: scaleX(1); }
+  .feature-icon-wrap {
+    width: 52px; height: 52px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 20px;
+  }
+  .feature-icon-wrap svg { width: 26px; height: 26px; stroke-width: 1.8; fill: none; }
+  .feature-card h3 { font-size: 17px; font-weight: 700; color: #0f172a; }
+  .feature-card p { font-size: 14px; color: #64748b; line-height: 1.7; margin-top: 10px; }
+  .feature-tag {
+    display: inline-block; padding: 3px 10px; border-radius: 6px;
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+    margin-top: 16px;
+  }
+
+  /* ─── AI SECTION ─── */
+  .ai-section {
+    padding: 120px 0;
+    background: #0f172a;
+    position: relative; overflow: hidden;
+  }
+  .ai-section::before {
+    content: ''; position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 50% 50% at 30% 50%, rgba(13,148,136,0.12), transparent),
+      radial-gradient(ellipse 50% 50% at 70% 30%, rgba(45,212,191,0.08), transparent);
+  }
+  .ai-content { position: relative; z-index: 2; }
+  .ai-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; margin-top: 64px; }
+  .ai-chat-mockup {
+    background: #1e293b; border: 1px solid #334155; border-radius: 16px;
+    overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .ai-chat-header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px 20px; background: linear-gradient(135deg, #0d9488, #0f766e);
+  }
+  .ai-chat-header-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.4); }
+  .ai-chat-header-title { font-size: 14px; font-weight: 600; color: #fff; }
+  .ai-chat-tabs {
+    display: flex; border-bottom: 1px solid #334155;
+  }
+  .ai-chat-tab {
+    flex: 1; padding: 10px; text-align: center;
+    font-size: 11px; font-weight: 600; color: #64748b;
+    border-bottom: 2px solid transparent;
+  }
+  .ai-chat-tab.active { color: #5eead4; border-bottom-color: #0d9488; }
+  .ai-chat-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+  .ai-msg {
+    max-width: 80%; padding: 12px 16px; border-radius: 12px;
+    font-size: 13px; line-height: 1.6;
+  }
+  .ai-msg-user {
+    align-self: flex-end;
+    background: linear-gradient(135deg, #0d9488, #0f766e);
+    color: #fff; border-bottom-right-radius: 4px;
+  }
+  .ai-msg-bot {
+    align-self: flex-start;
+    background: #334155; color: #e2e8f0;
+    border-bottom-left-radius: 4px;
+  }
+  .ai-msg-citation {
+    display: inline-block; padding: 2px 8px; border-radius: 4px;
+    background: rgba(13,148,136,0.2); color: #5eead4;
+    font-size: 11px; font-weight: 600; margin-top: 6px;
+  }
+  .ai-features-list { display: flex; flex-direction: column; gap: 28px; }
+  .ai-feature-item { display: flex; gap: 16px; }
+  .ai-feature-num {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: rgba(13,148,136,0.15); border: 1px solid rgba(13,148,136,0.3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 800; color: #5eead4;
+    flex-shrink: 0;
+  }
+  .ai-feature-title { font-size: 16px; font-weight: 700; color: #f1f5f9; }
+  .ai-feature-desc { font-size: 14px; color: #94a3b8; line-height: 1.6; margin-top: 4px; }
+
+  /* ─── LIFECYCLE SECTION ─── */
+  .lifecycle-section { padding: 120px 0; background: #fff; }
+  .lifecycle-flow {
+    display: flex; align-items: center; justify-content: center;
+    gap: 0; margin-top: 64px; flex-wrap: wrap;
+  }
+  .lifecycle-step {
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    padding: 20px 16px; position: relative;
+  }
+  .lifecycle-icon {
+    width: 56px; height: 56px; border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.3s;
+  }
+  .lifecycle-icon svg { width: 26px; height: 26px; fill: none; stroke-width: 1.8; }
+  .lifecycle-step:hover .lifecycle-icon { transform: scale(1.1); }
+  .lifecycle-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+  .lifecycle-desc { font-size: 11px; color: #94a3b8; text-align: center; max-width: 100px; }
+  .lifecycle-arrow {
+    width: 40px; display: flex; align-items: center; justify-content: center;
+    color: #cbd5e1; margin-top: -20px;
+  }
+  .lifecycle-arrow svg { width: 24px; height: 24px; }
+
+  /* ─── ROLE SECTION ─── */
+  .roles-section { padding: 120px 0; background: #f8fafc; }
+  .roles-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-top: 64px; }
+  .role-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 16px;
+    padding: 32px 24px; text-align: center; transition: all 0.3s;
+    position: relative; overflow: hidden;
+  }
+  .role-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.08); }
+  .role-avatar {
+    width: 64px; height: 64px; border-radius: 20px; margin: 0 auto 16px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .role-avatar svg { width: 32px; height: 32px; fill: none; stroke-width: 1.5; }
+  .role-card h3 { font-size: 18px; font-weight: 700; }
+  .role-card p { font-size: 13px; color: #64748b; line-height: 1.6; margin-top: 8px; }
+  .role-perms { margin-top: 16px; display: flex; flex-direction: column; gap: 6px; }
+  .role-perm {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; color: #475569; text-align: left;
+  }
+  .role-perm-check { width: 16px; height: 16px; border-radius: 4px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .role-perm-check svg { width: 10px; height: 10px; }
+
+  /* ─── ROI / METRICS ─── */
+  .roi-section { padding: 120px 0; background: #fff; }
+  .roi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; margin-top: 64px; }
+  .roi-card {
+    text-align: center; padding: 40px 24px;
+    border-radius: 16px; background: #f0fdfa;
+    border: 1px solid #ccfbf1;
+    transition: all 0.3s;
+  }
+  .roi-card:hover { transform: scale(1.03); box-shadow: 0 8px 30px rgba(13,148,136,0.1); }
+  .roi-number { font-size: 52px; font-weight: 900; color: #0d9488; line-height: 1; }
+  .roi-unit { font-size: 24px; font-weight: 600; }
+  .roi-label { font-size: 14px; font-weight: 600; color: #0f172a; margin-top: 12px; }
+  .roi-desc { font-size: 12px; color: #64748b; margin-top: 6px; line-height: 1.5; }
+
+  /* ─── ARCHITECTURE ─── */
+  .arch-section { padding: 120px 0; background: #0f172a; position: relative; overflow: hidden; }
+  .arch-section::before {
+    content: ''; position: absolute; inset: 0; opacity: 0.03;
+    background-image:
+      linear-gradient(rgba(255,255,255,1) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  .arch-content { position: relative; z-index: 2; }
+  .arch-layers { display: flex; flex-direction: column; gap: 16px; margin-top: 64px; }
+  .arch-layer {
+    display: flex; align-items: center; gap: 20px; padding: 20px 24px;
+    background: rgba(255,255,255,0.03); border: 1px solid #334155;
+    border-radius: 12px; transition: all 0.3s;
+  }
+  .arch-layer:hover { background: rgba(255,255,255,0.06); border-color: #0d9488; }
+  .arch-layer-label {
+    width: 140px; font-size: 11px; font-weight: 700; color: #64748b;
+    text-transform: uppercase; letter-spacing: 1.5px; flex-shrink: 0;
+  }
+  .arch-layer-items { display: flex; flex-wrap: wrap; gap: 8px; flex: 1; }
+  .arch-chip {
+    padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 600;
+    background: rgba(255,255,255,0.06); color: #e2e8f0; border: 1px solid #475569;
+    transition: all 0.2s;
+  }
+  .arch-chip:hover { background: rgba(13,148,136,0.15); border-color: #0d9488; color: #5eead4; }
+  .arch-chip.highlight { background: rgba(13,148,136,0.15); border-color: rgba(13,148,136,0.4); color: #5eead4; }
+
+  /* ─── COMPLIANCE ─── */
+  .compliance-section { padding: 120px 0; background: #f8fafc; }
+  .compliance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; margin-top: 64px; }
+  .compliance-list { display: flex; flex-direction: column; gap: 16px; }
+  .compliance-item {
+    display: flex; gap: 14px; padding: 18px; border-radius: 12px;
+    background: #fff; border: 1px solid #e2e8f0;
+    transition: all 0.3s;
+  }
+  .compliance-item:hover { border-color: #0d9488; box-shadow: 0 4px 16px rgba(13,148,136,0.08); }
+  .compliance-check {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: #ecfdf5; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .compliance-check svg { width: 18px; height: 18px; stroke: #059669; fill: none; stroke-width: 2.5; }
+  .compliance-item-title { font-size: 14px; font-weight: 700; color: #0f172a; }
+  .compliance-item-desc { font-size: 13px; color: #64748b; margin-top: 2px; }
+
+  .compliance-visual {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 16px;
+    padding: 32px; box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+  }
+  .compliance-visual-title { font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 24px; }
+  .compliance-meter { margin-bottom: 20px; }
+  .compliance-meter-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; }
+  .compliance-meter-name { font-weight: 600; color: #334155; }
+  .compliance-meter-val { font-weight: 700; color: #0d9488; }
+  .compliance-meter-bar { height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; }
+  .compliance-meter-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, #0d9488, #2dd4bf); transition: width 1s ease; }
+
+  /* ─── INTEGRATION ─── */
+  .integration-section { padding: 120px 0; background: #fff; }
+  .integration-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 64px; }
+  .integration-card {
+    background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px;
+    padding: 28px; text-align: center; transition: all 0.3s;
+  }
+  .integration-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.06); border-color: #0d9488; }
+  .integration-icon {
+    width: 56px; height: 56px; border-radius: 14px; margin: 0 auto 16px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .integration-icon svg { width: 28px; height: 28px; fill: none; stroke-width: 1.5; }
+  .integration-card h3 { font-size: 15px; font-weight: 700; color: #0f172a; }
+  .integration-card p { font-size: 13px; color: #64748b; line-height: 1.5; margin-top: 6px; }
+
+  /* ─── TESTIMONIAL / QUOTE ─── */
+  .quote-section {
+    padding: 100px 0;
+    background: linear-gradient(135deg, #0d9488, #0f766e);
+    position: relative;
+  }
+  .quote-section::before {
+    content: '"'; position: absolute; top: 30px; left: 50%; transform: translateX(-50%);
+    font-size: 200px; font-weight: 900; color: rgba(255,255,255,0.06);
+    line-height: 1; font-family: Georgia, serif;
+  }
+  .quote-content { position: relative; z-index: 2; text-align: center; max-width: 800px; margin: 0 auto; }
+  .quote-text { font-size: 24px; font-weight: 500; color: #fff; line-height: 1.6; font-style: italic; }
+  .quote-author { margin-top: 32px; }
+  .quote-author-name { font-size: 16px; font-weight: 700; color: #fff; }
+  .quote-author-role { font-size: 14px; color: rgba(255,255,255,0.7); margin-top: 4px; }
+
+  /* ─── PRICING / CTA ─── */
+  .cta-section { padding: 120px 0; background: #0f172a; text-align: center; position: relative; overflow: hidden; }
+  .cta-section::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse 60% 60% at 50% 100%, rgba(13,148,136,0.15), transparent);
+  }
+  .cta-content { position: relative; z-index: 2; }
+  .cta-title { font-size: 48px; font-weight: 800; color: #f1f5f9; letter-spacing: -1px; }
+  .cta-subtitle { font-size: 18px; color: #94a3b8; margin-top: 16px; max-width: 600px; margin-left: auto; margin-right: auto; line-height: 1.7; }
+  .cta-buttons { display: flex; justify-content: center; gap: 16px; margin-top: 40px; }
+  .cta-btn-primary {
+    padding: 18px 44px; border-radius: 14px;
+    background: linear-gradient(135deg, #0d9488, #0f766e);
+    color: #fff; font-size: 16px; font-weight: 700;
+    border: none; cursor: pointer; transition: all 0.3s;
+    box-shadow: 0 4px 24px rgba(13,148,136,0.35);
+  }
+  .cta-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 40px rgba(13,148,136,0.5); }
+  .cta-btn-secondary {
+    padding: 18px 44px; border-radius: 14px;
+    background: transparent; color: #94a3b8; font-size: 16px; font-weight: 700;
+    border: 1px solid #334155; cursor: pointer; transition: all 0.3s;
+  }
+  .cta-btn-secondary:hover { border-color: #0d9488; color: #5eead4; }
+  .cta-note { font-size: 13px; color: #475569; margin-top: 20px; }
+
+  /* ─── FOOTER ─── */
+  .footer {
+    padding: 48px 0 32px;
+    background: #0a0f1c;
+    border-top: 1px solid #1e293b;
+  }
+  .footer-inner { display: flex; align-items: center; justify-content: space-between; }
+  .footer-brand { display: flex; align-items: center; gap: 12px; }
+  .footer-brand-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: linear-gradient(135deg, #0d9488, #0f766e);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .footer-brand-icon svg { width: 18px; height: 18px; }
+  .footer-brand-text { font-size: 13px; color: #64748b; }
+  .footer-brand-text strong { color: #94a3b8; }
+  .footer-links { display: flex; gap: 24px; }
+  .footer-links a { font-size: 13px; color: #475569; transition: color 0.2s; }
+  .footer-links a:hover { color: #0d9488; }
+
+  /* ─── DWX SUITE ─── */
+  .suite-section { padding: 100px 0; background: #f8fafc; }
+  .suite-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 48px; }
+  .suite-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 14px;
+    padding: 28px; transition: all 0.3s; position: relative;
+  }
+  .suite-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.06); }
+  .suite-card-badge {
+    position: absolute; top: 16px; right: 16px;
+    padding: 3px 10px; border-radius: 6px;
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+  }
+  .suite-icon {
+    width: 48px; height: 48px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 16px;
+  }
+  .suite-icon svg { width: 24px; height: 24px; fill: none; stroke-width: 1.8; }
+  .suite-card h3 { font-size: 16px; font-weight: 700; color: #0f172a; }
+  .suite-card p { font-size: 13px; color: #64748b; line-height: 1.6; margin-top: 6px; }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 1024px) {
+    .hero-inner { grid-template-columns: 1fr; gap: 40px; }
+    .hero h1 { font-size: 42px; }
+    .hero-visual { max-width: 500px; }
+    .problem-grid, .ai-grid, .compliance-grid { grid-template-columns: 1fr; gap: 40px; }
+    .feature-grid { grid-template-columns: repeat(2, 1fr); }
+    .roles-grid { grid-template-columns: repeat(2, 1fr); }
+    .roi-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 640px) {
+    .container { padding: 0 20px; }
+    .hero h1 { font-size: 32px; }
+    .section-title { font-size: 32px; }
+    .feature-grid, .roles-grid, .roi-grid, .integration-grid, .suite-grid { grid-template-columns: 1fr; }
+    .hero-stats { flex-direction: column; gap: 16px; }
+    .nav-links { display: none; }
+    .lifecycle-flow { flex-direction: column; }
+    .lifecycle-arrow { transform: rotate(90deg); }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════ STICKY NAV ═══════════════════ -->
+<nav class="top-nav">
+  <div class="top-nav-inner">
+    <a href="#" class="nav-logo">
+      <div class="nav-logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15l2 2 4-4"/></svg>
+      </div>
+      <div class="nav-logo-text"><span>DWx</span> Policy Manager</div>
+    </a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#ai">AI-Powered</a>
+      <a href="#compliance">Compliance</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#roi">ROI</a>
+    </div>
+    <button class="nav-cta" onclick="document.getElementById('cta').scrollIntoView({behavior:'smooth'})">Request Demo</button>
+  </div>
+</nav>
+
+<!-- ═══════════════════ HERO ═══════════════════ -->
+<section class="hero">
+  <div class="hero-grid-bg"></div>
+  <div class="container hero-content">
+    <div class="hero-inner">
+      <div>
+        <div class="hero-badge">
+          <span class="hero-badge-dot"></span>
+          Part of the DWx Suite by First Digital
+        </div>
+        <h1>
+          Policy governance<br>
+          <span class="gradient-text">made intelligent.</span>
+        </h1>
+        <p class="hero-subtitle">
+          The enterprise policy lifecycle platform that automates creation, approval, distribution, acknowledgement, and compliance tracking — all inside SharePoint. Powered by AI.
+        </p>
+        <div class="hero-actions">
+          <button class="btn-primary" onclick="document.getElementById('cta').scrollIntoView({behavior:'smooth'})">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Schedule a Demo
+          </button>
+          <button class="btn-secondary" onclick="document.getElementById('features').scrollIntoView({behavior:'smooth'})">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Explore Features
+          </button>
+        </div>
+        <div class="hero-stats">
+          <div>
+            <div class="hero-stat-value">14</div>
+            <div class="hero-stat-label">Webparts</div>
+          </div>
+          <div>
+            <div class="hero-stat-value">150+</div>
+            <div class="hero-stat-label">Services</div>
+          </div>
+          <div>
+            <div class="hero-stat-value">99%</div>
+            <div class="hero-stat-label">Audit Pass</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dashboard Preview -->
+      <div class="hero-visual">
+        <div class="hero-glow"></div>
+        <div class="hero-dashboard">
+          <div class="hero-dash-bar">
+            <div class="hero-dash-dot" style="background:#ef4444"></div>
+            <div class="hero-dash-dot" style="background:#f59e0b"></div>
+            <div class="hero-dash-dot" style="background:#22c55e"></div>
+            <span style="font-size:11px; color:#64748b; margin-left:8px; font-weight:500">PolicyAnalytics.aspx</span>
+          </div>
+          <div class="hero-dash-body">
+            <div class="hero-dash-kpi-row">
+              <div class="hero-dash-kpi" style="border-top-color:#0d9488">
+                <div class="hero-dash-kpi-val">247</div>
+                <div class="hero-dash-kpi-lbl">Policies</div>
+              </div>
+              <div class="hero-dash-kpi" style="border-top-color:#2563eb">
+                <div class="hero-dash-kpi-val">94%</div>
+                <div class="hero-dash-kpi-lbl">Compliance</div>
+              </div>
+              <div class="hero-dash-kpi" style="border-top-color:#059669">
+                <div class="hero-dash-kpi-val">1.2K</div>
+                <div class="hero-dash-kpi-lbl">Acknowledged</div>
+              </div>
+              <div class="hero-dash-kpi" style="border-top-color:#d97706">
+                <div class="hero-dash-kpi-val">18</div>
+                <div class="hero-dash-kpi-lbl">Pending</div>
+              </div>
+            </div>
+            <div class="hero-dash-chart">
+              <div class="hero-dash-chart-title">Acknowledgement Trend (12 months)</div>
+              <div class="hero-chart-bars">
+                <div class="hero-chart-bar" style="height:40%"></div>
+                <div class="hero-chart-bar" style="height:55%"></div>
+                <div class="hero-chart-bar" style="height:45%"></div>
+                <div class="hero-chart-bar" style="height:70%"></div>
+                <div class="hero-chart-bar" style="height:65%"></div>
+                <div class="hero-chart-bar" style="height:80%"></div>
+                <div class="hero-chart-bar" style="height:75%"></div>
+                <div class="hero-chart-bar" style="height:85%"></div>
+                <div class="hero-chart-bar" style="height:78%"></div>
+                <div class="hero-chart-bar" style="height:92%"></div>
+                <div class="hero-chart-bar" style="height:88%"></div>
+                <div class="hero-chart-bar" style="height:95%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ TRUST BAR ═══════════════════ -->
+<section class="trust-bar">
+  <div class="trust-bar-inner">
+    <span class="trust-label">Built on trusted technology</span>
+    <div class="trust-logos">
+      <div class="trust-logo">
+        <div class="trust-logo-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="#94a3b8"><path d="M0 0h11.5v11.5H0zM12.5 0H24v11.5H12.5zM0 12.5h11.5V24H0zM12.5 12.5H24V24H12.5z"/></svg></div>
+        Microsoft 365
+      </div>
+      <div class="trust-logo">
+        <div class="trust-logo-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+        SharePoint Online
+      </div>
+      <div class="trust-logo">
+        <div class="trust-logo-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+        Azure AI (GPT-4o)
+      </div>
+      <div class="trust-logo">
+        <div class="trust-logo-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        Enterprise Security
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ PROBLEM / SOLUTION ═══════════════════ -->
+<section class="problem-section">
+  <div class="container">
+    <div class="section-eyebrow">The Challenge</div>
+    <h2 class="section-title">Policy management shouldn't<br>be this painful.</h2>
+    <p class="section-subtitle">Most organisations manage policies in scattered documents, email chains, and spreadsheets. The result? Compliance gaps, audit failures, and zero visibility.</p>
+
+    <div class="problem-grid">
+      <div class="pain-points">
+        <h3 style="font-size:14px; font-weight:700; color:#991b1b; margin-bottom:4px; text-transform:uppercase; letter-spacing:2px;">Without Policy Manager</h3>
+        <div class="pain-point">
+          <div class="pain-icon"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+          <div>
+            <div class="pain-title">No Audit Trail</div>
+            <div class="pain-desc">Regulators ask "who read it and when?" — you scramble through emails for weeks.</div>
+          </div>
+        </div>
+        <div class="pain-point">
+          <div class="pain-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div>
+          <div>
+            <div class="pain-title">Version Chaos</div>
+            <div class="pain-desc">Five copies of "Final_v3_APPROVED_REVISED.docx" on shared drives. Which one is current?</div>
+          </div>
+        </div>
+        <div class="pain-point">
+          <div class="pain-icon"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div>
+          <div>
+            <div class="pain-title">Zero Visibility</div>
+            <div class="pain-desc">No idea who has read which policy. Compliance is a guess, not a metric.</div>
+          </div>
+        </div>
+        <div class="pain-point">
+          <div class="pain-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+          <div>
+            <div class="pain-title">Manual Distribution</div>
+            <div class="pain-desc">Sending policy updates via mass email? Half don't open it. The other half delete it.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="solution-points">
+        <h3 style="font-size:14px; font-weight:700; color:#065f46; margin-bottom:4px; text-transform:uppercase; letter-spacing:2px;">With Policy Manager</h3>
+        <div class="solution-point">
+          <div class="solution-icon"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+          <div>
+            <div class="solution-title">100% Audit Trail</div>
+            <div class="solution-desc">Every read, acknowledgement, quiz result, and approval timestamped and traceable.</div>
+          </div>
+        </div>
+        <div class="solution-point">
+          <div class="solution-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="M9 15l3-3 3 3"/></svg></div>
+          <div>
+            <div class="solution-title">Controlled Versioning</div>
+            <div class="solution-desc">Major/minor versions with side-by-side diff. Everyone always sees the latest.</div>
+          </div>
+        </div>
+        <div class="solution-point">
+          <div class="solution-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+          <div>
+            <div class="solution-title">Real-Time Dashboards</div>
+            <div class="solution-desc">Live compliance rates, acknowledgement trends, SLA tracking — by department, role, or individual.</div>
+          </div>
+        </div>
+        <div class="solution-point">
+          <div class="solution-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+          <div>
+            <div class="solution-title">Automated Distribution</div>
+            <div class="solution-desc">Target by department, role, or security group. Auto-reminders, escalation, and SLA tracking built in.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ FEATURES ═══════════════════ -->
+<section class="features-section" id="features">
+  <div class="container">
+    <div class="text-center">
+      <div class="section-eyebrow" style="display:inline-block">Features</div>
+      <h2 class="section-title">Everything you need.<br>Nothing you don't.</h2>
+      <p class="section-subtitle" style="margin-left:auto; margin-right:auto;">14 purpose-built webparts covering every aspect of the policy lifecycle — from authoring to analytics.</p>
+    </div>
+
+    <div class="feature-grid">
+      <!-- Card 1 -->
+      <div class="feature-card" style="--card-color:#0d9488; --card-color-end:#0f766e">
+        <div class="feature-icon-wrap" style="background:#f0fdfa">
+          <svg viewBox="0 0 24 24" stroke="#0d9488"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+        <h3>Policy Hub</h3>
+        <p>Central discovery portal with category tree navigation, faceted search, card/list views, and featured policies. Your employees' single source of truth.</p>
+        <span class="feature-tag" style="background:#f0fdfa; color:#0d9488">Core</span>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="feature-card" style="--card-color:#2563eb; --card-color-end:#1d4ed8">
+        <div class="feature-icon-wrap" style="background:#eff6ff">
+          <svg viewBox="0 0 24 24" stroke="#2563eb"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </div>
+        <h3>Policy Builder</h3>
+        <p>3-step guided wizard with rich text editor, template system (6 types), metadata profiles, compliance settings, and document management.</p>
+        <span class="feature-tag" style="background:#eff6ff; color:#2563eb">Authoring</span>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="feature-card" style="--card-color:#7c3aed; --card-color-end:#6d28d9">
+        <div class="feature-icon-wrap" style="background:#f5f3ff">
+          <svg viewBox="0 0 24 24" stroke="#7c3aed"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6"/><path d="M23 11h-6"/></svg>
+        </div>
+        <h3>Approval Workflows</h3>
+        <p>Multi-level approval chains with delegation, escalation, templates, and full audit history. Configurable per policy type.</p>
+        <span class="feature-tag" style="background:#f5f3ff; color:#7c3aed">Workflow</span>
+      </div>
+
+      <!-- Card 4 -->
+      <div class="feature-card" style="--card-color:#059669; --card-color-end:#047857">
+        <div class="feature-icon-wrap" style="background:#ecfdf5">
+          <svg viewBox="0 0 24 24" stroke="#059669"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <h3>Acknowledgement Tracking</h3>
+        <p>Employees read, confirm understanding, and optionally pass a quiz. Real-time compliance rates with auto-reminders for overdue items.</p>
+        <span class="feature-tag" style="background:#ecfdf5; color:#059669">Compliance</span>
+      </div>
+
+      <!-- Card 5 -->
+      <div class="feature-card" style="--card-color:#d97706; --card-color-end:#b45309">
+        <div class="feature-icon-wrap" style="background:#fffbeb">
+          <svg viewBox="0 0 24 24" stroke="#d97706"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+        </div>
+        <h3>Executive Analytics</h3>
+        <p>6-tab dashboard: Executive overview, Policy Metrics, Acknowledgements, SLA Tracking, Compliance Risk, and Audit Reports. All from live data.</p>
+        <span class="feature-tag" style="background:#fffbeb; color:#d97706">Analytics</span>
+      </div>
+
+      <!-- Card 6 -->
+      <div class="feature-card" style="--card-color:#dc2626; --card-color-end:#b91c1c">
+        <div class="feature-icon-wrap" style="background:#fef2f2">
+          <svg viewBox="0 0 24 24" stroke="#dc2626"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <h3>Security & Visibility</h3>
+        <p>5 visibility modes (All, Department, Role, Security Group, Custom). Per-policy access control. PII-redacted telemetry. XSS prevention.</p>
+        <span class="feature-tag" style="background:#fef2f2; color:#dc2626">Security</span>
+      </div>
+
+      <!-- Card 7 -->
+      <div class="feature-card" style="--card-color:#0d9488; --card-color-end:#0f766e">
+        <div class="feature-icon-wrap" style="background:#f0fdfa">
+          <svg viewBox="0 0 24 24" stroke="#0d9488"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </div>
+        <h3>Quiz System</h3>
+        <p>11 question types including matching, ordering, hotspot, and essay. AI-powered question generation from policy text via Azure OpenAI GPT-4o.</p>
+        <span class="feature-tag" style="background:#f0fdfa; color:#0d9488">AI-Powered</span>
+      </div>
+
+      <!-- Card 8 -->
+      <div class="feature-card" style="--card-color:#2563eb; --card-color-end:#1d4ed8">
+        <div class="feature-icon-wrap" style="background:#eff6ff">
+          <svg viewBox="0 0 24 24" stroke="#2563eb"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        </div>
+        <h3>Distribution Campaigns</h3>
+        <p>Target policies to specific audiences. Email + in-app + Teams notifications. Escalation paths. Campaign analytics with live completion tracking.</p>
+        <span class="feature-tag" style="background:#eff6ff; color:#2563eb">Distribution</span>
+      </div>
+
+      <!-- Card 9 -->
+      <div class="feature-card" style="--card-color:#7c3aed; --card-color-end:#6d28d9">
+        <div class="feature-icon-wrap" style="background:#f5f3ff">
+          <svg viewBox="0 0 24 24" stroke="#7c3aed"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        </div>
+        <h3>Policy Packs</h3>
+        <p>Bundle related policies for onboarding, role changes, or compliance campaigns. Assign to users or groups. Track pack-level completion.</p>
+        <span class="feature-tag" style="background:#f5f3ff; color:#7c3aed">Bundling</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ AI SECTION ═══════════════════ -->
+<section class="ai-section" id="ai">
+  <div class="container ai-content">
+    <div class="text-center">
+      <div class="section-eyebrow" style="color:#5eead4; display:inline-block">AI-Powered</div>
+      <h2 class="section-title" style="color:#f1f5f9">Intelligence built in,<br>not bolted on.</h2>
+      <p class="section-subtitle" style="color:#94a3b8; margin-left:auto; margin-right:auto;">Two Azure OpenAI integrations that transform how your team creates, understands, and interacts with policies.</p>
+    </div>
+
+    <div class="ai-grid">
+      <!-- Chat Mockup -->
+      <div class="ai-chat-mockup">
+        <div class="ai-chat-header">
+          <div class="ai-chat-header-dot"></div>
+          <div class="ai-chat-header-dot"></div>
+          <div class="ai-chat-header-dot"></div>
+          <span class="ai-chat-header-title" style="margin-left:8px">Policy AI Assistant</span>
+        </div>
+        <div class="ai-chat-tabs">
+          <div class="ai-chat-tab active">Policy Q&A</div>
+          <div class="ai-chat-tab">Author Assist</div>
+          <div class="ai-chat-tab">App Guide</div>
+        </div>
+        <div class="ai-chat-body">
+          <div class="ai-msg ai-msg-user">What's our data retention policy for customer records?</div>
+          <div class="ai-msg ai-msg-bot">
+            According to the <strong>Data Retention & Privacy Policy</strong>, customer records must be retained for a minimum of <strong>7 years</strong> after the last transaction date. After this period, records must be securely disposed of using approved methods.
+            <br><br>
+            Key requirements:
+            <br>
+            &bull; Active records reviewed annually<br>
+            &bull; Archived records encrypted at rest<br>
+            &bull; Disposal requires manager approval
+            <div class="ai-msg-citation">Data Retention & Privacy Policy v3.2</div>
+          </div>
+          <div class="ai-msg ai-msg-user">Who needs to approve disposal?</div>
+        </div>
+      </div>
+
+      <!-- AI Features -->
+      <div class="ai-features-list">
+        <div class="ai-feature-item">
+          <div class="ai-feature-num">1</div>
+          <div>
+            <div class="ai-feature-title">AI Chat Assistant</div>
+            <div class="ai-feature-desc">Three conversation modes — Policy Q&A answers from your actual policies with citations, Author Assist helps draft and improve content, and App Guide navigates the platform. Client-side RAG searches published policies and builds context before every response.</div>
+          </div>
+        </div>
+        <div class="ai-feature-item">
+          <div class="ai-feature-num">2</div>
+          <div>
+            <div class="ai-feature-title">AI Quiz Generation</div>
+            <div class="ai-feature-desc">Paste your policy text, choose difficulty and question count — GPT-4o generates quiz questions across 11 types (multiple choice, matching, ordering, hotspot, and more). Review, edit, and publish in minutes instead of hours.</div>
+          </div>
+        </div>
+        <div class="ai-feature-item">
+          <div class="ai-feature-num">3</div>
+          <div>
+            <div class="ai-feature-title">Your Data, Your Tenant</div>
+            <div class="ai-feature-desc">All AI runs through your own Azure OpenAI deployment. No data leaves your tenant boundary. Keys stored in Azure Key Vault with managed identity access. Fully configurable from the Admin Centre.</div>
+          </div>
+        </div>
+        <div class="ai-feature-item">
+          <div class="ai-feature-num">4</div>
+          <div>
+            <div class="ai-feature-title">Infrastructure as Code</div>
+            <div class="ai-feature-desc">Every Azure resource deploys via Bicep templates with one-command scripts. Reproducible, auditable, and version-controlled. Dev, staging, and prod environments with environment-specific CORS and security.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ LIFECYCLE ═══════════════════ -->
+<section class="lifecycle-section" id="lifecycle">
+  <div class="container">
+    <div class="text-center">
+      <div class="section-eyebrow" style="display:inline-block">Policy Lifecycle</div>
+      <h2 class="section-title">From draft to retirement.<br>Fully automated.</h2>
+      <p class="section-subtitle" style="margin-left:auto; margin-right:auto;">Every policy follows a structured, auditable lifecycle with built-in gates, approvals, and compliance checkpoints.</p>
+    </div>
+
+    <div class="lifecycle-flow">
+      <div class="lifecycle-step">
+        <div class="lifecycle-icon" style="background:#eff6ff">
+          <svg viewBox="0 0 24 24" stroke="#2563eb"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </div>
+        <div class="lifecycle-label" style="color:#2563eb">Draft</div>
+        <div class="lifecycle-desc">Create with wizard, templates, AI assist</div>
+      </div>
+
+      <div class="lifecycle-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+
+      <div class="lifecycle-step">
+        <div class="lifecycle-icon" style="background:#f5f3ff">
+          <svg viewBox="0 0 24 24" stroke="#7c3aed"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </div>
+        <div class="lifecycle-label" style="color:#7c3aed">In Review</div>
+        <div class="lifecycle-desc">Stakeholder review and feedback</div>
+      </div>
+
+      <div class="lifecycle-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+
+      <div class="lifecycle-step">
+        <div class="lifecycle-icon" style="background:#fffbeb">
+          <svg viewBox="0 0 24 24" stroke="#d97706"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <div class="lifecycle-label" style="color:#d97706">Approval</div>
+        <div class="lifecycle-desc">Multi-level chain with delegation</div>
+      </div>
+
+      <div class="lifecycle-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+
+      <div class="lifecycle-step">
+        <div class="lifecycle-icon" style="background:#ecfdf5">
+          <svg viewBox="0 0 24 24" stroke="#059669"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <div class="lifecycle-label" style="color:#059669">Published</div>
+        <div class="lifecycle-desc">Auto-distribution, notifications</div>
+      </div>
+
+      <div class="lifecycle-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+
+      <div class="lifecycle-step">
+        <div class="lifecycle-icon" style="background:#f0fdfa">
+          <svg viewBox="0 0 24 24" stroke="#0d9488"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+        </div>
+        <div class="lifecycle-label" style="color:#0d9488">Acknowledge</div>
+        <div class="lifecycle-desc">Read, quiz, sign-off tracked</div>
+      </div>
+
+      <div class="lifecycle-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+
+      <div class="lifecycle-step">
+        <div class="lifecycle-icon" style="background:#f1f5f9">
+          <svg viewBox="0 0 24 24" stroke="#64748b"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </div>
+        <div class="lifecycle-label" style="color:#64748b">Archive</div>
+        <div class="lifecycle-desc">Retention rules, auto-delete</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ ROLES ═══════════════════ -->
+<section class="roles-section" id="roles">
+  <div class="container">
+    <div class="text-center">
+      <div class="section-eyebrow" style="display:inline-block">Role-Based Access</div>
+      <h2 class="section-title">The right tools for<br>the right people.</h2>
+      <p class="section-subtitle" style="margin-left:auto; margin-right:auto;">Four permission tiers ensure everyone sees exactly what they need — nothing more, nothing less.</p>
+    </div>
+
+    <div class="roles-grid">
+      <div class="role-card">
+        <div class="role-avatar" style="background:#f0fdfa">
+          <svg viewBox="0 0 24 24" stroke="#0d9488"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <h3 style="color:#0d9488">Employee</h3>
+        <p>Read, acknowledge, and take quizzes on assigned policies</p>
+        <div class="role-perms">
+          <div class="role-perm"><div class="role-perm-check" style="background:#ecfdf5"><svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>Policy Hub</div>
+          <div class="role-perm"><div class="role-perm-check" style="background:#ecfdf5"><svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>My Policies</div>
+          <div class="role-perm"><div class="role-perm-check" style="background:#ecfdf5"><svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>Policy Details</div>
+          <div class="role-perm"><div class="role-perm-check" style="background:#ecfdf5"><svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>Search & Help</div>
+        </div>
+      </div>
+
+      <div class="role-card">
+        <div class="role-avatar" style="background:#eff6ff">
+          <svg viewBox="0 0 24 24" stroke="#2563eb"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </div>
+        <h3 style="color:#2563eb">Author</h3>
+        <p>Create, edit, and manage policy content and packs</p>
+        <div class="role-perms">
+          <div class="role-perm"><div class="role-perm-check" style="background:#ecfdf5"><svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>Policy Builder</div>
+          <div class="role-perm"><div class="role-perm-check" style="background:#ecfdf5"><svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>Author Dashboard</div>
+          <div class="role-perm"><div class="role-perm-check" style="background:#ecfdf5"><svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>Policy Packs</div>
+          <div class="role-perm"><div class="role-perm-check" style="background:#ecfdf5"><svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>AI Author Assist</div>
+        </div>
+      </div>
+
+      <div class="role-card">
+        <div class="role-avatar" style="background:#f5f3ff">
+          <svg viewBox="0 0 24 24" stroke="#7c3aed"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <h3 style="color:#7c3aed">Manager</h3>
+        <p>Approve, distribute, and track team compliance</p>
+        <div class="role-perms">
+          <div class="role-perm"><div class="role-perm-check" style="background:#ecfdf5"><svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>Approvals</div>
+          <div class="role-perm"><div class="role-perm-check" style="background:#ecfdf5"><svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>Distribution</div>
+          <div class="role-perm"><div class="role-perm-check" style="background:#ecfdf5"><svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>Analytics</div>
+          <div class="role-perm"><div class="role-perm-check" style="background:#ecfdf5"><svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>Manager Dashboard</div>
+        </div>
+      </div>
+
+      <div class="role-card">
+        <div class="role-avatar" style="background:#fef2f2">
+          <svg viewBox="0 0 24 24" stroke="#dc2626"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <h3 style="color:#dc2626">Admin</h3>
+        <p>Full system configuration, user management, and audit</p>
+        <div class="role-perms">
+          <div class="role-perm"><div class="role-perm-check" style="background:#ecfdf5"><svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>Admin Centre (22+ sections)</div>
+          <div class="role-perm"><div class="role-perm-check" style="background:#ecfdf5"><svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>Quiz Builder</div>
+          <div class="role-perm"><div class="role-perm-check" style="background:#ecfdf5"><svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>User & Role Management</div>
+          <div class="role-perm"><div class="role-perm-check" style="background:#ecfdf5"><svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>Full Audit Trail</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ ROI ═══════════════════ -->
+<section class="roi-section" id="roi">
+  <div class="container">
+    <div class="text-center">
+      <div class="section-eyebrow" style="display:inline-block">Return on Investment</div>
+      <h2 class="section-title">Numbers that speak<br>for themselves.</h2>
+    </div>
+    <div class="roi-grid">
+      <div class="roi-card">
+        <div class="roi-number">60<span class="roi-unit">%</span></div>
+        <div class="roi-label">Time Reduction</div>
+        <div class="roi-desc">Policy creation, approval, and distribution automated end-to-end</div>
+      </div>
+      <div class="roi-card">
+        <div class="roi-number">80<span class="roi-unit">%</span></div>
+        <div class="roi-label">Faster Tracking</div>
+        <div class="roi-desc">Real-time dashboards replace manual compliance spreadsheets</div>
+      </div>
+      <div class="roi-card">
+        <div class="roi-number">100<span class="roi-unit">%</span></div>
+        <div class="roi-label">Audit Coverage</div>
+        <div class="roi-desc">Every action timestamped, traceable, and reportable for regulators</div>
+      </div>
+      <div class="roi-card">
+        <div class="roi-number">0</div>
+        <div class="roi-label">New Licences Needed</div>
+        <div class="roi-desc">Runs entirely on your existing Microsoft 365 + SharePoint investment</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ COMPLIANCE ═══════════════════ -->
+<section class="compliance-section" id="compliance">
+  <div class="container">
+    <div class="section-eyebrow">Compliance Ready</div>
+    <h2 class="section-title">Built for auditors.<br>Loved by compliance teams.</h2>
+
+    <div class="compliance-grid">
+      <div class="compliance-list">
+        <div class="compliance-item">
+          <div class="compliance-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div>
+            <div class="compliance-item-title">Complete Audit Trail</div>
+            <div class="compliance-item-desc">Every create, edit, approve, publish, read, and acknowledge action logged with user, timestamp, and context.</div>
+          </div>
+        </div>
+        <div class="compliance-item">
+          <div class="compliance-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div>
+            <div class="compliance-item-title">Version Control with Diff</div>
+            <div class="compliance-item-desc">Major/minor versioning with side-by-side comparison. Prove exactly what changed between any two versions.</div>
+          </div>
+        </div>
+        <div class="compliance-item">
+          <div class="compliance-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div>
+            <div class="compliance-item-title">SLA Monitoring & Alerts</div>
+            <div class="compliance-item-desc">Configurable targets for acknowledgement, approval, and review timelines. Auto-escalation on breach.</div>
+          </div>
+        </div>
+        <div class="compliance-item">
+          <div class="compliance-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div>
+            <div class="compliance-item-title">Data Lifecycle Management</div>
+            <div class="compliance-item-desc">Retention policies per entity type with auto-archive and auto-delete. GDPR-aligned data handling.</div>
+          </div>
+        </div>
+        <div class="compliance-item">
+          <div class="compliance-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div>
+            <div class="compliance-item-title">Comprehension Verification</div>
+            <div class="compliance-item-desc">Not just "I read it" — quiz-based verification with 11 question types proves employees actually understood the policy.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="compliance-visual">
+        <div class="compliance-visual-title">Live Compliance Dashboard</div>
+        <div class="compliance-meter">
+          <div class="compliance-meter-label"><span class="compliance-meter-name">Overall Compliance</span><span class="compliance-meter-val">94%</span></div>
+          <div class="compliance-meter-bar"><div class="compliance-meter-fill" style="width:94%"></div></div>
+        </div>
+        <div class="compliance-meter">
+          <div class="compliance-meter-label"><span class="compliance-meter-name">IT Security Policies</span><span class="compliance-meter-val">98%</span></div>
+          <div class="compliance-meter-bar"><div class="compliance-meter-fill" style="width:98%"></div></div>
+        </div>
+        <div class="compliance-meter">
+          <div class="compliance-meter-label"><span class="compliance-meter-name">HR Policies</span><span class="compliance-meter-val">91%</span></div>
+          <div class="compliance-meter-bar"><div class="compliance-meter-fill" style="width:91%"></div></div>
+        </div>
+        <div class="compliance-meter">
+          <div class="compliance-meter-label"><span class="compliance-meter-name">Financial Policies</span><span class="compliance-meter-val">96%</span></div>
+          <div class="compliance-meter-bar"><div class="compliance-meter-fill" style="width:96%"></div></div>
+        </div>
+        <div class="compliance-meter">
+          <div class="compliance-meter-label"><span class="compliance-meter-name">Safety & Operations</span><span class="compliance-meter-val">87%</span></div>
+          <div class="compliance-meter-bar"><div class="compliance-meter-fill" style="width:87%"></div></div>
+        </div>
+        <div style="margin-top:24px; padding:16px; background:#f0fdfa; border-radius:10px; border:1px solid #ccfbf1;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <span style="font-size:13px; font-weight:700; color:#065f46">Audit-ready export</span>
+          </div>
+          <span style="font-size:12px; color:#047857; margin-top:4px; display:block">One-click CSV/PDF export for any compliance metric, any date range</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ ARCHITECTURE ═══════════════════ -->
+<section class="arch-section" id="architecture">
+  <div class="container arch-content">
+    <div class="text-center">
+      <div class="section-eyebrow" style="color:#5eead4; display:inline-block">Architecture</div>
+      <h2 class="section-title" style="color:#f1f5f9">Enterprise-grade.<br>Zero new infrastructure.</h2>
+      <p class="section-subtitle" style="color:#94a3b8; margin-left:auto; margin-right:auto;">Runs on your existing Microsoft 365 tenant. No new servers, no new databases, no new licences. SharePoint is the backend.</p>
+    </div>
+
+    <div class="arch-layers">
+      <div class="arch-layer">
+        <div class="arch-layer-label">Frontend</div>
+        <div class="arch-layer-items">
+          <span class="arch-chip highlight">SPFx 1.20</span>
+          <span class="arch-chip">React 17</span>
+          <span class="arch-chip">TypeScript 4.7</span>
+          <span class="arch-chip">Fluent UI v8</span>
+          <span class="arch-chip">14 Webparts</span>
+        </div>
+      </div>
+      <div class="arch-layer">
+        <div class="arch-layer-label">Services</div>
+        <div class="arch-layer-items">
+          <span class="arch-chip">150+ Business Services</span>
+          <span class="arch-chip">PnP/SP v3</span>
+          <span class="arch-chip">PnP/Graph</span>
+          <span class="arch-chip highlight">Client-side RAG</span>
+          <span class="arch-chip">Role Detection</span>
+        </div>
+      </div>
+      <div class="arch-layer">
+        <div class="arch-layer-label">Data</div>
+        <div class="arch-layer-items">
+          <span class="arch-chip">25+ SharePoint Lists</span>
+          <span class="arch-chip">Document Libraries</span>
+          <span class="arch-chip">Per-Policy Folders</span>
+          <span class="arch-chip">Configuration Store</span>
+        </div>
+      </div>
+      <div class="arch-layer">
+        <div class="arch-layer-label">Azure Services</div>
+        <div class="arch-layer-items">
+          <span class="arch-chip highlight">Azure OpenAI (GPT-4o)</span>
+          <span class="arch-chip">Azure Functions (Node 18)</span>
+          <span class="arch-chip">Logic Apps (Email)</span>
+          <span class="arch-chip">Key Vault</span>
+          <span class="arch-chip">App Insights</span>
+        </div>
+      </div>
+      <div class="arch-layer">
+        <div class="arch-layer-label">Security</div>
+        <div class="arch-layer-items">
+          <span class="arch-chip">XSS Prevention</span>
+          <span class="arch-chip">OData Injection Guards</span>
+          <span class="arch-chip">MIME Validation</span>
+          <span class="arch-chip highlight">PII Redaction</span>
+          <span class="arch-chip">ErrorBoundary + App Insights</span>
+        </div>
+      </div>
+      <div class="arch-layer">
+        <div class="arch-layer-label">DevOps</div>
+        <div class="arch-layer-items">
+          <span class="arch-chip">Bicep IaC</span>
+          <span class="arch-chip">PnP PowerShell Provisioning</span>
+          <span class="arch-chip">Idempotent Scripts</span>
+          <span class="arch-chip">Jest Unit Tests</span>
+          <span class="arch-chip highlight">One-command Deploy</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ INTEGRATIONS ═══════════════════ -->
+<section class="integration-section">
+  <div class="container">
+    <div class="text-center">
+      <div class="section-eyebrow" style="display:inline-block">Integrations</div>
+      <h2 class="section-title">Plays well with your<br>existing stack.</h2>
+    </div>
+
+    <div class="integration-grid">
+      <div class="integration-card">
+        <div class="integration-icon" style="background:#eff6ff">
+          <svg viewBox="0 0 24 24" stroke="#2563eb"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </div>
+        <h3>SharePoint Online</h3>
+        <p>Native SPFx integration. All data in SharePoint lists. No external databases.</p>
+      </div>
+      <div class="integration-card">
+        <div class="integration-icon" style="background:#f5f3ff">
+          <svg viewBox="0 0 24 24" stroke="#7c3aed"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <h3>Microsoft Teams</h3>
+        <p>Adaptive Card notifications, 1:1 chat alerts, and channel webhooks for policy events.</p>
+      </div>
+      <div class="integration-card">
+        <div class="integration-icon" style="background:#fef2f2">
+          <svg viewBox="0 0 24 24" stroke="#dc2626"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        </div>
+        <h3>Outlook Email</h3>
+        <p>12 branded email templates via Azure Logic App. Queue-based delivery with retry and SLA tracking.</p>
+      </div>
+      <div class="integration-card">
+        <div class="integration-icon" style="background:#f0fdfa">
+          <svg viewBox="0 0 24 24" stroke="#0d9488"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <h3>Azure OpenAI</h3>
+        <p>GPT-4o for chat assistant and quiz generation. Deployed in your tenant. Data never leaves.</p>
+      </div>
+      <div class="integration-card">
+        <div class="integration-icon" style="background:#fffbeb">
+          <svg viewBox="0 0 24 24" stroke="#d97706"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        </div>
+        <h3>Application Insights</h3>
+        <p>Full telemetry pipeline with PII redaction. Track usage, errors, and performance across all webparts.</p>
+      </div>
+      <div class="integration-card">
+        <div class="integration-icon" style="background:#ecfdf5">
+          <svg viewBox="0 0 24 24" stroke="#059669"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        </div>
+        <h3>DWx Suite</h3>
+        <p>Optional cross-app integration with Asset Manager, Contract Manager, and future DWx apps via shared Hub.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ QUOTE ═══════════════════ -->
+<section class="quote-section">
+  <div class="container quote-content">
+    <p class="quote-text">Policy Manager transformed how we handle compliance. We went from chasing people via email to having real-time visibility across every department. Our last audit took 2 days instead of 2 weeks.</p>
+    <div class="quote-author">
+      <div class="quote-author-name">Your Client's Name Here</div>
+      <div class="quote-author-role">Head of Compliance, Enterprise Organisation</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ DWX SUITE ═══════════════════ -->
+<section class="suite-section">
+  <div class="container">
+    <div class="text-center">
+      <div class="section-eyebrow" style="display:inline-block">The DWx Suite</div>
+      <h2 class="section-title">Part of something bigger.</h2>
+      <p class="section-subtitle" style="margin-left:auto; margin-right:auto;">Policy Manager is one module in the DWx (Digital Workplace Excellence) suite. Each app works standalone or integrates via the DWx Hub for cross-app workflows.</p>
+    </div>
+
+    <div class="suite-grid">
+      <div class="suite-card" style="border-top:4px solid #0d9488">
+        <div class="suite-card-badge" style="background:#f0fdfa; color:#0d9488">Current</div>
+        <div class="suite-icon" style="background:#f0fdfa">
+          <svg viewBox="0 0 24 24" stroke="#0d9488"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15l2 2 4-4"/></svg>
+        </div>
+        <h3>Policy Manager</h3>
+        <p>Policy governance, compliance tracking, acknowledgements, quizzes, approvals, and AI-powered assistance.</p>
+      </div>
+      <div class="suite-card" style="border-top:4px solid #475569">
+        <div class="suite-card-badge" style="background:#f1f5f9; color:#475569">Available</div>
+        <div class="suite-icon" style="background:#f1f5f9">
+          <svg viewBox="0 0 24 24" stroke="#475569"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        </div>
+        <h3>Asset Manager</h3>
+        <p>IT asset lifecycle, vendor management, contracts, and procurement workflows built on SharePoint.</p>
+      </div>
+      <div class="suite-card" style="border-top:4px solid #475569">
+        <div class="suite-card-badge" style="background:#f1f5f9; color:#475569">Planned</div>
+        <div class="suite-icon" style="background:#f1f5f9">
+          <svg viewBox="0 0 24 24" stroke="#475569"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </div>
+        <h3>Contract Manager</h3>
+        <p>Contract lifecycle management with renewal tracking, obligation monitoring, and approval workflows.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ CTA ═══════════════════ -->
+<section class="cta-section" id="cta">
+  <div class="container cta-content">
+    <h2 class="cta-title">Ready to take control<br>of your policies?</h2>
+    <p class="cta-subtitle">Join organisations that have eliminated compliance gaps, automated policy workflows, and given their teams real-time visibility — all on Microsoft 365.</p>
+    <div class="cta-buttons">
+      <button class="cta-btn-primary">Schedule a Demo</button>
+      <button class="cta-btn-secondary">Download Datasheet</button>
+    </div>
+    <p class="cta-note">No new infrastructure required. Deploys to your existing SharePoint tenant.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════ FOOTER ═══════════════════ -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <div class="footer-brand-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" width="18" height="18"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15l2 2 4-4"/></svg>
+        </div>
+        <div class="footer-brand-text"><strong>First Digital</strong> &middot; DWx Policy Manager &middot; v1.2.5</div>
+      </div>
+      <div class="footer-links">
+        <a href="#">Privacy</a>
+        <a href="#">Terms</a>
+        <a href="#">Contact</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- ═══════════════════ SCROLL ANIMATIONS ═══════════════════ -->
+<script>
+  // Intersection Observer for scroll-triggered animations
+  const observerOptions = { threshold: 0.1, rootMargin: '0px 0px -50px 0px' };
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.style.opacity = '1';
+        entry.target.style.transform = 'translateY(0)';
+        observer.unobserve(entry.target);
+      }
+    });
+  }, observerOptions);
+
+  // Animate feature cards, role cards, roi cards, compliance items, arch layers, integration cards, suite cards
+  document.querySelectorAll('.feature-card, .role-card, .roi-card, .compliance-item, .arch-layer, .integration-card, .suite-card, .pain-point, .solution-point, .ai-feature-item, .lifecycle-step').forEach((el, i) => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(30px)';
+    el.style.transition = `opacity 0.6s ease ${i % 6 * 0.1}s, transform 0.6s ease ${i % 6 * 0.1}s`;
+    observer.observe(el);
+  });
+
+  // Smooth scroll for nav links
+  document.querySelectorAll('.nav-links a').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const target = document.querySelector(link.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+
+  // Nav background on scroll
+  window.addEventListener('scroll', () => {
+    const nav = document.querySelector('.top-nav');
+    if (window.scrollY > 100) {
+      nav.style.boxShadow = '0 2px 20px rgba(0,0,0,0.08)';
+    } else {
+      nav.style.boxShadow = 'none';
+    }
+  });
+</script>
+
+</body>
+</html>

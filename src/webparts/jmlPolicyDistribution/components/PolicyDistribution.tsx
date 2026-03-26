@@ -1046,50 +1046,52 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
               <span className={`${styles.statusBadge} ${this.getStatusStyle(c.status)}`}>{c.status}</span>
             </div>
           </div>
-          <div className={styles.detailActions}>
-            {c.status === 'Draft' && (
-              <PrimaryButton text="Send Now" iconProps={{ iconName: 'Send' }} styles={{ root: { borderRadius: 4, background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }} />
-            )}
-            {c.status === 'Active' && (
-              <DefaultButton text="Pause" iconProps={{ iconName: 'Pause' }} styles={{ root: { borderRadius: 4 } }} />
-            )}
-            <DefaultButton text="Send Reminder" iconProps={{ iconName: 'Ringer' }} styles={{ root: { borderRadius: 4 } }} />
-            <DefaultButton
-              text={this.state.metricsLoading ? 'Refreshing...' : 'Refresh Metrics'}
-              iconProps={{ iconName: 'Refresh' }}
-              disabled={this.state.metricsLoading}
-              onClick={this.refreshMetrics}
-              styles={{ root: { borderRadius: 4 } }}
-            />
-            {c.escalationEnabled && c.totalOverdue > 0 && (
-              <DefaultButton
-                text={`Escalate Overdue (${c.totalOverdue})`}
-                iconProps={{ iconName: 'Warning' }}
-                onClick={this.handleEscalation}
-                styles={{ root: { borderRadius: 4, borderColor: '#d97706', color: '#d97706' }, rootHovered: { background: '#fffbeb', borderColor: '#b45309', color: '#b45309' } }}
-              />
-            )}
-            <IconButton iconProps={{ iconName: 'Edit' }} title="Edit Campaign" onClick={() => this.openEditPanel(c)} />
-          </div>
         </div>
 
         {/* Stats Grid */}
         <div className={styles.detailStatsGrid}>
           {[
-            { label: 'Target', value: c.targetCount },
-            { label: 'Sent', value: c.totalSent },
-            { label: 'Delivered', value: c.totalDelivered },
-            { label: 'Opened', value: c.totalOpened },
-            { label: 'Acknowledged', value: c.totalAcknowledged },
-            { label: 'Overdue', value: c.totalOverdue },
-            { label: 'Exempted', value: c.totalExempted },
-            { label: 'Failed', value: c.totalFailed },
+            { label: 'Target', value: c.targetCount, accent: '#64748b' },
+            { label: 'Sent', value: c.totalSent, accent: '#2563eb' },
+            { label: 'Delivered', value: c.totalDelivered, accent: '#0d9488' },
+            { label: 'Opened', value: c.totalOpened, accent: '#7c3aed' },
+            { label: 'Acknowledged', value: c.totalAcknowledged, accent: '#059669' },
+            { label: 'Overdue', value: c.totalOverdue, accent: '#dc2626' },
+            { label: 'Exempted', value: c.totalExempted, accent: '#d97706' },
+            { label: 'Failed', value: c.totalFailed, accent: '#94a3b8' },
           ].map((stat, idx) => (
-            <div key={idx} className={styles.detailStatCard}>
-              <div className={styles.detailStatValue}>{stat.value}</div>
+            <div key={idx} className={styles.detailStatCard} style={{ borderLeft: `3px solid ${stat.accent}`, border: '1px solid #d1d5db', borderLeftWidth: 3, borderLeftColor: stat.accent }}>
+              <div className={styles.detailStatValue} style={{ color: stat.accent }}>{stat.value}</div>
               <div className={styles.detailStatLabel}>{stat.label}</div>
             </div>
           ))}
+        </div>
+
+        {/* Action Buttons — between stats and progress */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+          {c.status === 'Draft' && (
+            <PrimaryButton text="Send Now" iconProps={{ iconName: 'Send' }} styles={{ root: { borderRadius: 4, background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }} />
+          )}
+          {c.status === 'Active' && (
+            <DefaultButton text="Pause" iconProps={{ iconName: 'Pause' }} styles={{ root: { borderRadius: 4 } }} />
+          )}
+          <DefaultButton text="Send Reminder" iconProps={{ iconName: 'Ringer' }} styles={{ root: { borderRadius: 4 } }} />
+          <DefaultButton
+            text={this.state.metricsLoading ? 'Refreshing...' : 'Refresh Metrics'}
+            iconProps={{ iconName: 'Refresh' }}
+            disabled={this.state.metricsLoading}
+            onClick={this.refreshMetrics}
+            styles={{ root: { borderRadius: 4 } }}
+          />
+          {c.escalationEnabled && c.totalOverdue > 0 && (
+            <DefaultButton
+              text={`Escalate Overdue (${c.totalOverdue})`}
+              iconProps={{ iconName: 'Warning' }}
+              onClick={this.handleEscalation}
+              styles={{ root: { borderRadius: 4, borderColor: '#d97706', color: '#d97706' }, rootHovered: { background: '#fffbeb', borderColor: '#b45309', color: '#b45309' } }}
+            />
+          )}
+          <IconButton iconProps={{ iconName: 'Edit' }} title="Edit Campaign" onClick={() => this.openEditPanel(c)} styles={{ root: { borderRadius: 4 } }} />
         </div>
 
         {/* Overall Progress */}

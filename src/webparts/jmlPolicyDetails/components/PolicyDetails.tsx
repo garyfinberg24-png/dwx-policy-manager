@@ -28,7 +28,7 @@ import {
 } from '@fluentui/react';
 import { injectPortalStyles } from '../../../utils/injectPortalStyles';
 import { signalAppReady } from '../../../utils/SharePointOverrides';
-import { sanitizeHtml } from '../../../utils/sanitizeHtml';
+import { sanitizeHtml, escapeHtml } from '../../../utils/sanitizeHtml';
 import { JmlAppLayout } from '../../../components/JmlAppLayout';
 import { ErrorBoundary } from '../../../components/ErrorBoundary/ErrorBoundary';
 import { PageSubheader } from '../../../components/PageSubheader';
@@ -2578,6 +2578,13 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
         if (reviewDecision === 'reject' || reviewDecision === 'changes') {
           await this.props.sp.web.lists.getByTitle('PM_Policies')
             .items.getById(policy!.Id).update({ PolicyStatus: 'Draft' });
+          // Reset ALL reviewer statuses to Pending for resubmission
+          try {
+            for (const r of reviewerItems) {
+              await this.props.sp.web.lists.getByTitle('PM_PolicyReviewers')
+                .items.getById(r.Id).update({ ReviewStatus: 'Pending', ReviewComments: '', ReviewedDate: null });
+            }
+          } catch { /* best-effort */ }
         } else if (allApproved) {
           await this.props.sp.web.lists.getByTitle('PM_Policies')
             .items.getById(policy!.Id).update({ PolicyStatus: 'Approved' });
@@ -2610,11 +2617,11 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                   <p style="color:rgba(255,255,255,0.8);margin:4px 0 0;font-size:13px">Policy Manager — DWx Digital Workplace</p>
                 </div>
                 <div style="background:#fff;padding:24px 32px;border:1px solid #e2e8f0;border-top:none">
-                  <p style="font-size:14px;color:#475569"><strong>${currentUserName}</strong> has ${reviewDecision === 'approve' ? 'approved' : reviewDecision === 'changes' ? 'requested changes to' : 'rejected'} your policy:</p>
+                  <p style="font-size:14px;color:#475569"><strong>${escapeHtml(currentUserName)}</strong> has ${reviewDecision === 'approve' ? 'approved' : reviewDecision === 'changes' ? 'requested changes to' : 'rejected'} your policy:</p>
                   <div style="background:#f8fafc;border-left:4px solid ${reviewDecision === 'approve' ? '#059669' : reviewDecision === 'changes' ? '#d97706' : '#dc2626'};padding:16px;border-radius:0 4px 4px 0;margin:16px 0">
-                    <p style="margin:0;font-weight:600;font-size:15px;color:#0f172a">${policy!.PolicyName || policy!.Title}</p>
+                    <p style="margin:0;font-weight:600;font-size:15px;color:#0f172a">${escapeHtml(policy!.PolicyName || policy!.Title || '')}</p>
                   </div>
-                  ${reviewComments ? `<div style="margin:16px 0;padding:12px;background:#f8fafc;border-radius:4px"><p style="margin:0 0 4px;font-size:11px;color:#94a3b8;font-weight:600">REVIEWER COMMENTS</p><p style="margin:0;font-size:13px;color:#475569">${reviewComments}</p></div>` : ''}
+                  ${reviewComments ? `<div style="margin:16px 0;padding:12px;background:#f8fafc;border-radius:4px"><p style="margin:0 0 4px;font-size:11px;color:#94a3b8;font-weight:600">REVIEWER COMMENTS</p><p style="margin:0;font-size:13px;color:#475569">${escapeHtml(reviewComments)}</p></div>` : ''}
                   <p style="margin:24px 0 16px"><a href="${reviewDecision === 'approve' ? `${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policy!.Id}` : policyUrl}" style="background:${reviewDecision === 'approve' ? '#059669' : '#0d9488'};color:#fff;padding:10px 24px;border-radius:4px;text-decoration:none;font-weight:600;font-size:14px;display:inline-block">${reviewDecision === 'approve' ? 'View Approved Policy' : 'Edit Policy'}</a></p>
                 </div>
                 <div style="background:#f8fafc;padding:16px 32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;text-align:center">

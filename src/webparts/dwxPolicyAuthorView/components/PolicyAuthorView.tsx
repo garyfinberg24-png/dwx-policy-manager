@@ -4,6 +4,8 @@ import { Icon } from '@fluentui/react/lib/Icon';
 import * as React from 'react';
 import { IPolicyAuthorViewProps } from './IPolicyAuthorViewProps';
 import { createDialogManager } from '../../../hooks/useDialog';
+import { PeoplePicker, PrincipalType } from '@pnp/spfx-controls-react/lib/PeoplePicker';
+import { escapeHtml } from '../../../utils/sanitizeHtml';
 import {
   Stack,
   Text,
@@ -28,7 +30,8 @@ import {
   ChoiceGroup,
   IChoiceGroupOption,
   Label,
-  Separator
+  Separator,
+  Checkbox
 } from '@fluentui/react';
 import { JmlAppLayout } from '../../../components/JmlAppLayout/JmlAppLayout';
 import { ErrorBoundary } from '../../../components/ErrorBoundary/ErrorBoundary';
@@ -177,7 +180,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
       approvals: [],
       delegations: [],
       loading: true,
-      pipelineFilter: 'All',
+      pipelineFilter: 'Draft',
       pipelineSearch: '',
       selectedPipelineIds: new Set<number>(),
       statusFilter: 'All',
@@ -367,10 +370,11 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
         }
       }
 
-      return approvalItems.map((item: any) => {
+      const fromApprovals = approvalItems.map((item: any) => {
         const policy = policyMap[item.ProcessID] || {};
         return {
           Id: item.Id,
+          PolicyId: item.ProcessID || 0,
           PolicyTitle: policy.PolicyName || policy.Title || item.Title || `Policy #${item.ProcessID || '?'}`,
           Version: policy.PolicyVersion || '1.0',
           SubmittedBy: policy.Author ? policy.Author.Title : '',
@@ -385,6 +389,66 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
           ChangeSummary: item.Notes || ''
         };
       });
+
+      // Also load from PM_PolicyReviewers (Review Mode approvals)
+      let fromReviewers: IPolicyApproval[] = [];
+      try {
+        const reviewerItems = await this.props.sp.web.lists
+          .getByTitle(PM_LISTS.POLICY_REVIEWERS)
+          .items.filter(currentUserId > 0 ? `ReviewerId eq ${currentUserId}` : '')
+          .select('Id', 'PolicyId', 'ReviewerType', 'ReviewStatus', 'ReviewComments', 'ReviewedDate', 'AssignedDate')
+          .top(100)();
+
+        // Fetch policy details for reviewer items
+        const reviewPolicyIds = [...new Set(reviewerItems.map((r: any) => r.PolicyId).filter(Boolean))];
+        let reviewPolicyMap: Record<number, any> = {};
+        if (reviewPolicyIds.length > 0) {
+          try {
+            for (let i = 0; i < reviewPolicyIds.length; i += 20) {
+              const batch = reviewPolicyIds.slice(i, i + 20);
+              const pf = batch.map((id: number) => `Id eq ${id}`).join(' or ');
+              const policies = await this.props.sp.web.lists
+                .getByTitle(PM_LISTS.POLICIES)
+                .items.filter(pf)
+                .select('Id', 'Title', 'PolicyName', 'PolicyCategory', 'PolicyStatus')
+                .top(20)();
+              for (const p of policies) { reviewPolicyMap[p.Id] = p; }
+            }
+          } catch { /* best-effort */ }
+        }
+
+        fromReviewers = reviewerItems.map((r: any) => {
+          const pol = reviewPolicyMap[r.PolicyId] || {};
+          return {
+            Id: r.Id + 10000, // Offset to avoid ID collision with PM_Approvals
+            PolicyId: r.PolicyId || 0,
+            PolicyTitle: pol.PolicyName || pol.Title || `Policy #${r.PolicyId}`,
+            Version: '1.0',
+            SubmittedBy: '',
+            SubmittedByEmail: '',
+            Department: '',
+            Category: pol.PolicyCategory || '',
+            SubmittedDate: r.AssignedDate || '',
+            DueDate: '',
+            Status: this.mapApprovalStatus(r.ReviewStatus),
+            Priority: 'Normal',
+            Comments: r.ReviewComments || '',
+            ChangeSummary: r.ReviewerType || ''
+          };
+        });
+      } catch { /* PM_PolicyReviewers may not exist */ }
+
+      // Merge and deduplicate by PolicyId
+      const seen = new Set<number>();
+      const merged: IPolicyApproval[] = [];
+      for (const a of [...fromReviewers, ...fromApprovals]) {
+        const pid = (a as any).PolicyId || a.Id;
+        if (!seen.has(pid)) {
+          seen.add(pid);
+          merged.push(a);
+        }
+      }
+      return merged;
     } catch (err) {
       console.warn('[PolicyAuthorView] loadApprovals failed (list may not exist):', err);
       return [];
@@ -655,7 +719,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
       return <div style={{ padding: 40, textAlign: 'center' }}><Spinner size={SpinnerSize.large} label="Loading pipeline..." /></div>;
     }
 
-    const statusFilters: PipelineStatusFilter[] = ['All', 'Draft', 'In Review', 'Pending Approval', 'Approved', 'Rejected'];
+    const statusFilters: PipelineStatusFilter[] = ['Draft', 'In Review', 'Pending Approval', 'Approved', 'Rejected', 'All'];
 
     // Apply filters
     let filtered = pipelineFilter === 'All' ? pipelinePolicies : pipelinePolicies.filter(p => p.PolicyStatus === pipelineFilter);
@@ -736,19 +800,38 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
     return (
       <>
         <section style={{ padding: '24px 40px', maxWidth: 1400, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
-          {/* KPI Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16, marginBottom: 24 }}>
-            {this.renderKpiCard('Drafts', draftCount, 'Edit', '#64748b', '#f8fafc', () => this.setState({ pipelineFilter: 'Draft' }))}
-            {this.renderKpiCard('In Review', inReviewCount, 'RedEye', '#2563eb', '#eff6ff', () => this.setState({ pipelineFilter: 'In Review' }))}
-            {this.renderKpiCard('Pending Approval', pendingApprovalCount, 'Clock', '#d97706', '#fffbeb', () => this.setState({ pipelineFilter: 'Pending Approval' }))}
-            {this.renderKpiCard('Rejected', rejectedCount, 'ErrorBadge', '#dc2626', '#fef2f2', () => this.setState({ pipelineFilter: 'Rejected' }))}
-            {this.renderKpiCard('Reviewing', reviewingCount, 'People', '#7c3aed', '#f5f3ff', () => {
-              this.setState({
-                pipelineFilter: 'All',
-                pipelineSearch: '',
-                pipelinePolicies: this.state.pipelinePolicies // force re-render with reviewer filter applied below
-              });
-            })}
+          {/* KPI Cards with workflow arrows */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 24 }}>
+            {[
+              { label: 'Drafts', count: draftCount, color: '#64748b', filter: 'Draft' as PipelineStatusFilter },
+              { label: 'In Review', count: inReviewCount, color: '#2563eb', filter: 'In Review' as PipelineStatusFilter },
+              { label: 'Pending Approval', count: pendingApprovalCount, color: '#d97706', filter: 'Pending Approval' as PipelineStatusFilter },
+              { label: 'Approved', count: pipelinePolicies.filter(p => p.PolicyStatus === 'Approved').length, color: '#059669', filter: 'Approved' as PipelineStatusFilter },
+              { label: 'Rejected', count: rejectedCount, color: '#dc2626', filter: 'Rejected' as PipelineStatusFilter }
+            ].map((kpi, i) => (
+              <React.Fragment key={kpi.label}>
+                <div
+                  onClick={() => this.setState({ pipelineFilter: kpi.filter })}
+                  style={{
+                    flex: 1, background: pipelineFilter === kpi.filter ? '#f0fdfa' : '#fff',
+                    borderLeft: `1px solid ${pipelineFilter === kpi.filter ? '#0d9488' : '#e2e8f0'}`,
+                    borderRight: `1px solid ${pipelineFilter === kpi.filter ? '#0d9488' : '#e2e8f0'}`,
+                    borderBottom: `1px solid ${pipelineFilter === kpi.filter ? '#0d9488' : '#e2e8f0'}`,
+                    borderTop: `3px solid ${kpi.color}`,
+                    borderRadius: 10,
+                    padding: '14px 16px', cursor: 'pointer', transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 16px rgba(13,148,136,0.1)'; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
+                >
+                  <div style={{ fontSize: 24, fontWeight: 700, lineHeight: 1.1, color: kpi.color }}>{kpi.count}</div>
+                  <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#94a3b8', fontWeight: 600, marginTop: 4 }}>{kpi.label}</div>
+                </div>
+                {i < 4 && (
+                  <div style={{ padding: '0 6px', color: '#cbd5e1', fontSize: 16, flexShrink: 0 }}>&#x25B6;</div>
+                )}
+              </React.Fragment>
+            ))}
           </div>
 
           {/* Toolbar: Search + Filters + Bulk Actions */}
@@ -813,7 +896,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
             <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
               {/* Table Header */}
               <div style={{
-                display: 'grid', gridTemplateColumns: '36px 1fr 140px 130px 100px 120px 150px',
+                display: 'grid', gridTemplateColumns: '36px 1fr 140px 130px 160px 100px 120px 150px',
                 padding: '10px 16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0',
                 fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, color: '#64748b'
               }}>
@@ -829,6 +912,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                 <div>Policy</div>
                 <div>Category</div>
                 <div>Status</div>
+                <div>Workflow</div>
                 <div>Risk</div>
                 <div>Modified</div>
                 <div>Actions</div>
@@ -845,7 +929,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                   <div
                     key={policy.Id}
                     style={{
-                      display: 'grid', gridTemplateColumns: '36px 1fr 140px 130px 100px 120px 150px',
+                      display: 'grid', gridTemplateColumns: '36px 1fr 140px 130px 160px 100px 120px 150px',
                       padding: '12px 16px', borderBottom: '1px solid #f1f5f9', alignItems: 'center',
                       background: isSelected ? '#f0fdfa' : '#fff',
                       transition: 'background 0.1s'
@@ -887,6 +971,26 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                         {policy.PolicyStatus}
                       </span>
                     </div>
+                    {/* Workflow status indicator */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                      {['Draft', 'In Review', 'Pending Approval', 'Approved', 'Published'].map((step, si) => {
+                        const stepOrder = ['Draft', 'In Review', 'Pending Approval', 'Approved', 'Published'];
+                        const currentIdx = stepOrder.indexOf(policy.PolicyStatus);
+                        const isDone = si < currentIdx;
+                        const isCurrent = si === currentIdx;
+                        const dotColor = isDone ? '#0d9488' : isCurrent ? statusColor : '#e2e8f0';
+                        return (
+                          <React.Fragment key={step}>
+                            <div title={step} style={{
+                              width: isCurrent ? 10 : 8, height: isCurrent ? 10 : 8, borderRadius: '50%',
+                              background: dotColor, border: isCurrent ? `2px solid ${statusColor}` : 'none',
+                              flexShrink: 0
+                            }} />
+                            {si < 4 && <div style={{ width: 10, height: 2, background: isDone ? '#0d9488' : '#e2e8f0', borderRadius: 1 }} />}
+                          </React.Fragment>
+                        );
+                      })}
+                    </div>
                     <div style={{ fontSize: 12, color: '#475569' }}>{policy.ComplianceRisk || '-'}</div>
                     <div style={{ fontSize: 12, color: '#94a3b8' }}>{modifiedStr}</div>
                     <div style={{ display: 'flex', gap: 2 }}>
@@ -898,6 +1002,16 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                           href={`${siteUrl}/SitePages/PolicyBuilder.aspx?editPolicyId=${policy.Id}`}
                           styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: '#0d9488' } }}
                           ariaLabel={`Edit ${policy.Title}`}
+                        />
+                      )}
+                      {/* Publish — Approved only */}
+                      {policy.PolicyStatus === 'Approved' && (
+                        <IconButton
+                          iconProps={{ iconName: 'PublishContent' }}
+                          title="Publish Policy"
+                          onClick={() => this.handlePipelinePublish(policy.Id, policy.Title)}
+                          styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: '#059669' } }}
+                          ariaLabel={`Publish ${policy.Title}`}
                         />
                       )}
                       {/* View — all statuses */}
@@ -947,6 +1061,26 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                           onClick={() => this.handlePipelineDelete(policy.Id, policy.Title)}
                           styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: '#dc2626' } }}
                           ariaLabel={`Delete ${policy.Title}`}
+                        />
+                      )}
+                      {/* Revision — Approved, Published */}
+                      {['Approved', 'Published'].includes(policy.PolicyStatus) && (
+                        <IconButton
+                          iconProps={{ iconName: 'PageEdit' }}
+                          title="Create Revision"
+                          href={`${siteUrl}/SitePages/PolicyBuilder.aspx?editPolicyId=${policy.Id}&revision=true`}
+                          styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: '#2563eb' } }}
+                          ariaLabel={`Revise ${policy.Title}`}
+                        />
+                      )}
+                      {/* Retire — Approved, Published */}
+                      {['Approved', 'Published'].includes(policy.PolicyStatus) && (
+                        <IconButton
+                          iconProps={{ iconName: 'Archive' }}
+                          title="Retire Policy"
+                          onClick={() => this.handlePipelineRetire(policy.Id, policy.Title)}
+                          styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: '#94a3b8' } }}
+                          ariaLabel={`Retire ${policy.Title}`}
                         />
                       )}
                     </div>
@@ -1039,10 +1173,10 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                         <p style="color:rgba(255,255,255,0.8);margin:4px 0 0;font-size:13px">Policy Manager — DWx Digital Workplace</p>
                       </div>
                       <div style="background:#fff;padding:24px 32px;border:1px solid #e2e8f0;border-top:none">
-                        <p style="font-size:14px;color:#0f172a">Hi <strong>${user.Title || 'Reviewer'}</strong>,</p>
-                        <p style="font-size:14px;color:#475569">${submitterName} has submitted a policy for your review:</p>
+                        <p style="font-size:14px;color:#0f172a">Hi <strong>${escapeHtml(user.Title || 'Reviewer')}</strong>,</p>
+                        <p style="font-size:14px;color:#475569">${escapeHtml(submitterName)} has submitted a policy for your review:</p>
                         <div style="background:#f0fdfa;border-left:4px solid #0d9488;padding:16px;border-radius:0 4px 4px 0;margin:16px 0">
-                          <p style="margin:0;font-weight:600;font-size:15px;color:#0f172a">${title}</p>
+                          <p style="margin:0;font-weight:600;font-size:15px;color:#0f172a">${escapeHtml(title)}</p>
                         </div>
                         <p style="margin:24px 0 16px"><a href="${policyUrl}" style="background:#0d9488;color:#fff;padding:10px 24px;border-radius:4px;text-decoration:none;font-weight:600;font-size:14px;display:inline-block">Review Policy</a></p>
                       </div>
@@ -1217,12 +1351,125 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
               .items.getById(r.Id).update({ ReviewStatus: 'Pending' });
           } catch { /* non-blocking */ }
         }
+        // Queue email notification to reviewers
+        const siteUrl = this.props.context?.pageContext?.web?.absoluteUrl || '/sites/PolicyManager';
+        const authorName = this.props.context?.pageContext?.user?.displayName || 'The author';
+        for (const r of reviewerItems) {
+          try {
+            const user = await this.props.sp.web.siteUsers.getById(r.ReviewerId).select('Email', 'Title')();
+            if (user?.Email) {
+              await this.props.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
+                Title: `Review Withdrawn: ${escapeHtml(title)}`,
+                RecipientEmail: user.Email,
+                RecipientName: user.Title || '',
+                PolicyId: policyId,
+                PolicyTitle: title,
+                NotificationType: 'ReviewCancelled',
+                Channel: 'Email',
+                Message: `<div style="font-family:'Segoe UI',sans-serif;max-width:600px;margin:0 auto"><div style="background:linear-gradient(135deg,#64748b,#475569);padding:24px 32px;border-radius:8px 8px 0 0"><h1 style="color:#fff;margin:0;font-size:20px">Review Withdrawn</h1><p style="color:rgba(255,255,255,0.8);margin:4px 0 0;font-size:13px">Policy Manager</p></div><div style="background:#fff;padding:24px 32px;border:1px solid #e2e8f0;border-top:none"><p style="font-size:14px;color:#475569">Hi <strong>${escapeHtml(user.Title || 'Reviewer')}</strong>,</p><p style="font-size:14px;color:#475569">${escapeHtml(authorName)} has withdrawn <strong>${escapeHtml(title)}</strong> from review. No action is required.</p></div><div style="background:#f8fafc;padding:16px 32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;text-align:center"><p style="margin:0;font-size:11px;color:#94a3b8">First Digital — DWx Policy Manager</p></div></div>`,
+                Status: 'Pending',
+                Priority: 'Normal'
+              });
+            }
+          } catch { /* per-recipient — continue */ }
+        }
       } catch { /* reviewer list may not exist */ }
 
       await this.reloadPipeline();
     } catch (err) {
       console.error('Withdraw failed:', err);
       void this.dialogManager.showAlert('Failed to withdraw policy. Please try again.', { variant: 'error' });
+    }
+  }
+
+  private async handlePipelinePublish(policyId: number, title: string): Promise<void> {
+    const confirmed = await this.dialogManager.showConfirm(`Publish "${title}"? This will make it available to the target audience and notify relevant users.`, { title: 'Publish Policy', confirmText: 'Publish', cancelText: 'Cancel' });
+    if (!confirmed) return;
+    try {
+      await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES)
+        .items.getById(policyId).update({ PolicyStatus: 'Published', IsActive: true });
+
+      // Audit log
+      try {
+        await this.props.sp.web.lists.getByTitle('PM_PolicyAuditLog').items.add({
+          Title: `Published - Policy ${policyId}`,
+          PolicyId: policyId,
+          EntityType: 'Policy',
+          EntityId: policyId,
+          AuditAction: 'Published',
+          ActionDescription: `Policy "${title}" published`,
+          PerformedByEmail: this.props.context?.pageContext?.user?.email || '',
+          ActionDate: new Date().toISOString()
+        });
+      } catch { /* best-effort */ }
+
+      // Queue email notification
+      try {
+        const siteUrl = this.props.context?.pageContext?.web?.absoluteUrl || '/sites/PolicyManager';
+        const policyUrl = `${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policyId}`;
+        const publisherName = this.props.context?.pageContext?.user?.displayName || 'An author';
+        const emailHtml = `
+          <div style="font-family:'Segoe UI',sans-serif;max-width:600px;margin:0 auto">
+            <div style="background:linear-gradient(135deg,#059669,#047857);padding:24px 32px;border-radius:8px 8px 0 0">
+              <h1 style="color:#fff;margin:0;font-size:20px">Policy Published</h1>
+              <p style="color:rgba(255,255,255,0.8);margin:4px 0 0;font-size:13px">Policy Manager — DWx Digital Workplace</p>
+            </div>
+            <div style="background:#fff;padding:24px 32px;border:1px solid #e2e8f0;border-top:none">
+              <p style="font-size:14px;color:#475569"><strong>${title}</strong> has been published and is now available.</p>
+              <p style="margin:24px 0 16px"><a href="${policyUrl}" style="background:#059669;color:#fff;padding:10px 24px;border-radius:4px;text-decoration:none;font-weight:600;font-size:14px;display:inline-block">View Published Policy</a></p>
+            </div>
+            <div style="background:#f8fafc;padding:16px 32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;text-align:center">
+              <p style="margin:0;font-size:11px;color:#94a3b8">First Digital — DWx Policy Manager</p>
+            </div>
+          </div>`;
+        await this.props.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
+          Title: `Policy Published: ${title}`,
+          RecipientEmail: this.props.context?.pageContext?.user?.email || '',
+          RecipientName: publisherName,
+          PolicyId: policyId,
+          PolicyTitle: title,
+          NotificationType: 'PolicyPublished',
+          Channel: 'Email',
+          Message: emailHtml,
+          Status: 'Pending',
+          Priority: 'Normal'
+        });
+      } catch { /* notification best-effort */ }
+
+      await this.reloadPipeline();
+      void this.dialogManager.showAlert(`"${title}" has been published successfully!`, { variant: 'success', title: 'Policy Published' });
+    } catch (err) {
+      console.error('Publish failed:', err);
+      void this.dialogManager.showAlert('Failed to publish policy. Please try again.', { variant: 'error' });
+    }
+  }
+
+  private async handlePipelineRetire(policyId: number, title: string): Promise<void> {
+    const confirmed = await this.dialogManager.showConfirm(`Retire "${title}"? This will archive the policy and it will no longer be active.`, { title: 'Retire Policy', confirmText: 'Retire', cancelText: 'Cancel' });
+    if (!confirmed) return;
+    try {
+      await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES)
+        .items.getById(policyId).update({ PolicyStatus: 'Retired', IsActive: false });
+
+      // Audit log
+      try {
+        await this.props.sp.web.lists.getByTitle('PM_PolicyAuditLog').items.add({
+          Title: `Retired - Policy ${policyId}`,
+          PolicyId: policyId,
+          EntityType: 'Policy',
+          EntityId: policyId,
+          AuditAction: 'Retired',
+          ActionDescription: `Policy "${title}" retired by author`,
+          PerformedByEmail: this.props.context?.pageContext?.user?.email || '',
+          ActionDate: new Date().toISOString()
+        });
+      } catch { /* best-effort */ }
+
+      await this.reloadPipeline();
+      void this.dialogManager.showAlert(`"${title}" has been retired.`, { variant: 'success' });
+    } catch (err) {
+      console.error('Retire failed:', err);
+      void this.dialogManager.showAlert('Failed to retire policy. Please try again.', { variant: 'error' });
     }
   }
 
@@ -1269,17 +1516,40 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
 
     return (
       <section style={{ padding: '24px 40px', maxWidth: 1400, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
-        {/* KPI Summary Cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16, marginBottom: 24 }}>
-          {this.renderKpiCard('New Requests', newCount, 'NewMail', '#0d9488', '#e8f4fd', () => this.setState({ statusFilter: 'New' }))}
-          {this.renderKpiCard('Assigned', assignedCount, 'People', '#8764b8', '#f3eefc', () => this.setState({ statusFilter: 'Assigned' }))}
-          {this.renderKpiCard('In Progress', inProgressCount, 'Edit', '#f59e0b', '#fff8e6', () => this.setState({ statusFilter: 'InProgress' }))}
-          {this.renderKpiCard('Completed', completedCount, 'CheckMark', '#107c10', '#dff6dd', () => this.setState({ statusFilter: 'All' }))}
-          {this.renderKpiCard('Critical', criticalCount, 'ShieldAlert', '#d13438', '#fef2f2', () => this.setState({ statusFilter: 'All' }))}
+        {/* KPI Summary Cards with arrows */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 24 }}>
+          {[
+            { label: 'New Requests', count: newCount, color: '#0d9488', onClick: () => this.setState({ statusFilter: 'New' }) },
+            { label: 'Assigned', count: assignedCount, color: '#8764b8', onClick: () => this.setState({ statusFilter: 'Assigned' }) },
+            { label: 'In Progress', count: inProgressCount, color: '#f59e0b', onClick: () => this.setState({ statusFilter: 'InProgress' }) },
+            { label: 'Completed', count: completedCount, color: '#107c10', onClick: () => this.setState({ statusFilter: 'All' }) },
+            { label: 'Critical', count: criticalCount, color: '#d13438', onClick: () => this.setState({ statusFilter: 'All' }) }
+          ].map((kpi, i) => (
+            <React.Fragment key={kpi.label}>
+              <div
+                onClick={kpi.onClick}
+                style={{
+                  flex: 1, background: '#fff',
+                  borderLeft: '1px solid #e2e8f0', borderRight: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0',
+                  borderTop: `3px solid ${kpi.color}`,
+                  borderRadius: 10, padding: '14px 16px', cursor: 'pointer', transition: 'all 0.2s',
+                  position: 'relative', overflow: 'hidden'
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 16px rgba(13,148,136,0.1)'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
+              >
+                <div style={{ fontSize: 24, fontWeight: 700, lineHeight: 1.1, color: kpi.color }}>{kpi.count}</div>
+                <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#94a3b8', fontWeight: 600, marginTop: 4 }}>{kpi.label}</div>
+              </div>
+              {i < 4 && (
+                <div style={{ padding: '0 6px', color: '#cbd5e1', fontSize: 16, flexShrink: 0 }}>&#x25B6;</div>
+              )}
+            </React.Fragment>
+          ))}
         </div>
 
-        {/* Search + Filter Chips + Sort/Refresh — all in one toolbar row */}
-        <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 12 }} style={{ marginBottom: 16, flexWrap: 'wrap' }}>
+        {/* Search + Filter Chips + Sort/Refresh */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap', padding: '12px 0' }}>
           <SearchBox
             placeholder="Search requests..."
             value={searchQuery}
@@ -1321,7 +1591,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
             />
             <DefaultButton text="Refresh" iconProps={{ iconName: 'Refresh' }} onClick={() => { this.setState({ loading: true }); this.loadData(); }} />
           </div>
-        </Stack>
+        </div>
 
         {/* Request Cards */}
         <div className={(styles as Record<string, string>).requestsContainer}>
@@ -1773,10 +2043,100 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
     }
   }
 
-  private updateApprovalStatus(id: number, status: 'Approved' | 'Rejected' | 'Returned'): void {
+  private async updateApprovalStatus(id: number, status: 'Approved' | 'Rejected' | 'Returned'): Promise<void> {
+    const approval = this.state.approvals.find(a => a.Id === id);
+    if (!approval) return;
+
+    // Optimistic UI update
     this.setState({
       approvals: this.state.approvals.map(a => a.Id === id ? { ...a, Status: status } : a)
     });
+
+    try {
+      const siteUrl = this.props.context?.pageContext?.web?.absoluteUrl || '/sites/PolicyManager';
+      const policyId = (approval as any).PolicyId || 0;
+
+      // Determine which SP list this came from (PM_PolicyReviewers uses offset IDs 10000+)
+      if (id >= 10000) {
+        // From PM_PolicyReviewers — use real ID (offset removed)
+        const realId = id - 10000;
+        const reviewStatus = status === 'Approved' ? 'Approved' : status === 'Returned' ? 'Revision Requested' : 'Rejected';
+        await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_REVIEWERS)
+          .items.getById(realId).update({
+            ReviewStatus: reviewStatus,
+            ReviewedDate: new Date().toISOString()
+          });
+
+        // If rejected/returned, reset policy to Draft
+        if (status !== 'Approved' && policyId > 0) {
+          await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES)
+            .items.getById(policyId).update({ PolicyStatus: 'Draft' });
+        }
+
+        // If approved, check if all reviewers approved
+        if (status === 'Approved' && policyId > 0) {
+          try {
+            const allReviewers = await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_REVIEWERS)
+              .items.filter(`PolicyId eq ${policyId}`).select('ReviewStatus').top(50)();
+            const allApproved = allReviewers.every((r: any) => r.ReviewStatus === 'Approved');
+            if (allApproved) {
+              await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES)
+                .items.getById(policyId).update({ PolicyStatus: 'Approved' });
+            }
+          } catch { /* best-effort */ }
+        }
+      } else {
+        // From PM_Approvals
+        try {
+          await this.props.sp.web.lists.getByTitle('PM_Approvals')
+            .items.getById(id).update({ Status: status });
+        } catch { /* PM_Approvals may not exist */ }
+      }
+
+      // Audit log
+      try {
+        await this.props.sp.web.lists.getByTitle('PM_PolicyAuditLog').items.add({
+          Title: `${status} - Policy ${policyId}`,
+          PolicyId: policyId,
+          EntityType: 'Policy',
+          EntityId: policyId,
+          AuditAction: status === 'Approved' ? 'ReviewApproved' : status === 'Returned' ? 'ChangesRequested' : 'ReviewRejected',
+          ActionDescription: `Policy ${status.toLowerCase()} from Approvals tab`,
+          PerformedByEmail: this.props.context?.pageContext?.user?.email || '',
+          ActionDate: new Date().toISOString()
+        });
+      } catch { /* best-effort */ }
+
+      // Notify author
+      try {
+        const authorEmail = approval.SubmittedByEmail || '';
+        if (authorEmail && policyId > 0) {
+          const decisionLabel = status === 'Approved' ? 'Approved' : status === 'Returned' ? 'Changes Requested' : 'Rejected';
+          const reviewerName = this.props.context?.pageContext?.user?.displayName || 'A reviewer';
+          await this.props.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
+            Title: `Review ${decisionLabel}: ${approval.PolicyTitle}`,
+            RecipientEmail: authorEmail,
+            RecipientName: approval.SubmittedBy || '',
+            PolicyId: policyId,
+            PolicyTitle: approval.PolicyTitle,
+            NotificationType: status === 'Approved' ? 'ApprovalApproved' : 'ApprovalRejected',
+            Channel: 'Email',
+            Message: `<div style="font-family:'Segoe UI',sans-serif;max-width:600px;margin:0 auto"><div style="background:linear-gradient(135deg,${status === 'Approved' ? '#059669,#047857' : '#d97706,#b45309'});padding:24px 32px;border-radius:8px 8px 0 0"><h1 style="color:#fff;margin:0;font-size:20px">Review ${decisionLabel}</h1><p style="color:rgba(255,255,255,0.8);margin:4px 0 0;font-size:13px">Policy Manager</p></div><div style="background:#fff;padding:24px 32px;border:1px solid #e2e8f0;border-top:none"><p style="font-size:14px;color:#475569"><strong>${reviewerName}</strong> has ${status.toLowerCase()} your policy: <strong>${approval.PolicyTitle}</strong></p><p style="margin:24px 0 16px"><a href="${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policyId}${status !== 'Approved' ? '&mode=review' : ''}" style="background:#0d9488;color:#fff;padding:10px 24px;border-radius:4px;text-decoration:none;font-weight:600;display:inline-block">${status === 'Approved' ? 'View Policy' : 'Edit Policy'}</a></p></div><div style="background:#f8fafc;padding:16px 32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;text-align:center"><p style="margin:0;font-size:11px;color:#94a3b8">First Digital — DWx Policy Manager</p></div></div>`,
+            Status: 'Pending',
+            Priority: 'High'
+          });
+        }
+      } catch { /* notification best-effort */ }
+
+      void this.dialogManager.showAlert(`Decision recorded: ${status}`, { variant: status === 'Approved' ? 'success' : 'warning' });
+    } catch (err) {
+      console.error('Failed to update approval status:', err);
+      void this.dialogManager.showAlert('Failed to update approval. Please try again.', { variant: 'error' });
+      // Revert optimistic update
+      this.setState({
+        approvals: this.state.approvals.map(a => a.Id === id ? { ...a, Status: 'Pending' } : a)
+      });
+    }
   }
 
   // ==========================================================================
@@ -1976,30 +2336,35 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
 
           <Separator>Assignee</Separator>
 
-          <TextField
-            label="Delegate To"
-            placeholder="Enter person's name"
-            required
-            value={delegationForm.delegateTo}
-            onChange={(_, val) => this.updateDelegationForm({ delegateTo: val || '' })}
-            iconProps={{ iconName: 'Contact' }}
-          />
-
-          <TextField
-            label="Email"
-            placeholder="email@company.com"
-            value={delegationForm.delegateToEmail}
-            onChange={(_, val) => this.updateDelegationForm({ delegateToEmail: val || '' })}
-            iconProps={{ iconName: 'Mail' }}
-          />
-
-          <TextField
-            label="Department"
-            placeholder="e.g. IT Security, HR, Legal"
-            value={delegationForm.department}
-            onChange={(_, val) => this.updateDelegationForm({ department: val || '' })}
-            iconProps={{ iconName: 'Org' }}
-          />
+          <div>
+            <Label required>Delegate To</Label>
+            <PeoplePicker
+              context={this.props.context as any}
+              titleText=""
+              personSelectionLimit={1}
+              groupName=""
+              showtooltip={true}
+              showHiddenInUI={false}
+              ensureUser={true}
+              principalTypes={[PrincipalType.User]}
+              resolveDelay={300}
+              defaultSelectedUsers={delegationForm.delegateToEmail ? [delegationForm.delegateToEmail] : []}
+              onChange={(items: any[]) => {
+                if (items && items.length > 0) {
+                  const person = items[0];
+                  this.updateDelegationForm({
+                    delegateTo: person.text || '',
+                    delegateToEmail: person.secondaryText || person.loginName || '',
+                    department: ''
+                  });
+                } else {
+                  this.updateDelegationForm({ delegateTo: '', delegateToEmail: '', department: '' });
+                }
+              }}
+              placeholder="Search for a person..."
+              webAbsoluteUrl={this.props.context.pageContext.web.absoluteUrl}
+            />
+          </div>
 
           <Separator>Task Details</Separator>
 
@@ -2032,22 +2397,68 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
             styles={{ flexContainer: { display: 'flex', gap: 12 } }}
           />
 
-          <DatePicker
-            label="Due Date"
-            isRequired
-            placeholder="Select a due date"
-            value={delegationForm.dueDate ? new Date(delegationForm.dueDate) : undefined}
-            onSelectDate={(date) => {
-              if (date) this.updateDelegationForm({ dueDate: date.toISOString() });
-            }}
-            minDate={new Date()}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <DatePicker
+              label="Start Date"
+              isRequired
+              placeholder="Delegation starts"
+              value={(delegationForm as any).startDate ? new Date((delegationForm as any).startDate) : new Date()}
+              onSelectDate={(date) => {
+                if (date) this.updateDelegationForm({ startDate: date.toISOString() } as any);
+              }}
+              minDate={new Date()}
+            />
+            <DatePicker
+              label="End Date"
+              isRequired
+              placeholder="Delegation ends"
+              value={delegationForm.dueDate ? new Date(delegationForm.dueDate) : undefined}
+              onSelectDate={(date) => {
+                if (date) this.updateDelegationForm({ dueDate: date.toISOString() });
+              }}
+              minDate={new Date()}
+            />
+          </div>
+
+          <Separator>Scope & Options</Separator>
+
+          <Dropdown
+            label="Reason for Delegation"
+            placeholder="Select a reason..."
+            selectedKey={(delegationForm as any).reason || ''}
+            options={[
+              { key: '', text: '— Select reason —' },
+              { key: 'On leave', text: 'On Leave / Vacation' },
+              { key: 'Subject matter expert', text: 'Subject Matter Expert' },
+              { key: 'Workload balance', text: 'Workload Balance' },
+              { key: 'Training', text: 'Training / Mentoring' },
+              { key: 'Temporary cover', text: 'Temporary Cover' },
+              { key: 'Other', text: 'Other' }
+            ]}
+            onChange={(_, opt) => opt && this.updateDelegationForm({ reason: opt.key as string } as any)}
           />
+
+          <Checkbox
+            label="Delegate ALL tasks of this type (not just the selected policy)"
+            checked={(delegationForm as any).delegateAll || false}
+            onChange={(_, checked) => this.updateDelegationForm({ delegateAll: checked || false } as any)}
+            styles={{ root: { marginTop: 4 } }}
+          />
+
+          <Checkbox
+            label="Auto-notify when delegation is about to expire"
+            checked={(delegationForm as any).autoNotifyExpiry !== false}
+            onChange={(_, checked) => this.updateDelegationForm({ autoNotifyExpiry: checked || false } as any)}
+            styles={{ root: { marginTop: 4 } }}
+          />
+
+          <Separator>Additional Notes</Separator>
 
           <TextField
             label="Notes / Instructions"
             placeholder="Provide context or specific instructions for the delegate..."
             multiline
-            rows={4}
+            rows={3}
             value={delegationForm.notes}
             onChange={(_, val) => this.updateDelegationForm({ notes: val || '' })}
           />

@@ -533,8 +533,8 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
     {
       key: 'author-group', text: 'Author', icon: NavIcons.authored, minRole: 'Author',
       children: [
+        { key: 'newpolicy', text: '+ New Policy', icon: NavIcons.create, href: '/sites/PolicyManager/SitePages/PolicyBuilder.aspx' },
         { key: 'author', text: 'Drafts & Pipeline', icon: NavIcons.authored, href: '/sites/PolicyManager/SitePages/PolicyAuthor.aspx' },
-        { key: 'create', text: 'Policy Builder', icon: NavIcons.create, href: '/sites/PolicyManager/SitePages/PolicyBuilder.aspx' },
         { key: 'packs', text: 'Policy Packs', icon: NavIcons.packs, href: '/sites/PolicyManager/SitePages/PolicyPacks.aspx' },
         { key: 'quiz', text: 'Quiz Builder', icon: NavIcons.quiz, href: '/sites/PolicyManager/SitePages/QuizBuilder.aspx' },
       ]

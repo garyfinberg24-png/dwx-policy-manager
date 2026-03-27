@@ -1403,25 +1403,21 @@ Respond ONLY with a JSON object with keys: title, category, risk, departments, s
         headerText={`Batch Assign (${selectedIds.size} selected)`}
         type={PanelType.smallFixedFar}
         onRenderFooterContent={() => (
-          <Stack tokens={{ childrenGap: 8 }} style={{ padding: '16px 0' }}>
-            {hasTemplateSelected && (
-              <PrimaryButton
-                text="Apply Template to Selected"
-                iconProps={{ iconName: 'Tag' }}
-                onClick={async () => {
+          <Stack horizontal tokens={{ childrenGap: 8 }} style={{ padding: '16px 0' }}>
+            <PrimaryButton
+              text="Apply"
+              iconProps={{ iconName: hasTemplateSelected ? 'Tag' : 'Accept' }}
+              disabled={!hasTemplateSelected && !hasMetadata}
+              onClick={async () => {
+                if (hasTemplateSelected) {
                   await this.applyTemplateToSelected(parseInt(batchTemplateId));
-                  this.setState({ showBatchPanel: false, batchTemplateId: '' });
-                }}
-                styles={{ root: { background: '#0d9488', borderColor: '#0d9488', borderRadius: 4 } }}
-              />
-            )}
-            {hasMetadata && (
-              <DefaultButton
-                text="Apply Metadata Only"
-                onClick={() => { this.applyBatchMetadata(); }}
-                styles={{ root: { borderRadius: 4 } }}
-              />
-            )}
+                } else if (hasMetadata) {
+                  this.applyBatchMetadata();
+                }
+                this.setState({ showBatchPanel: false, batchTemplateId: '', batchCategory: '', batchRisk: '' });
+              }}
+              styles={{ root: { background: '#0d9488', borderColor: '#0d9488', borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+            />
             <DefaultButton text="Cancel" onClick={() => this.setState({ showBatchPanel: false })} styles={{ root: { borderRadius: 4 } }} />
           </Stack>
         )}

@@ -381,47 +381,37 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
     const siteUrl = this.props.context?.pageContext?.web?.absoluteUrl || '';
     const siteServerRelativeUrl = this.props.context?.pageContext?.web?.serverRelativeUrl || '/sites/PolicyManager';
 
-    // Ensure BulkImports folder exists (once for entire batch)
+    // Get a fresh request digest once for the entire batch
+    let requestDigest = '';
     try {
-      const folderRelativeUrl = `${siteServerRelativeUrl}/${PM_LISTS.POLICY_SOURCE_DOCUMENTS}/BulkImports`;
-      try {
-        await this.props.sp.web.getFolderByServerRelativePath(folderRelativeUrl)();
-      } catch {
-        // Create folder via REST API to avoid PnP serialization issues
-        try {
-          const ctx = await this.props.sp.web.select('Url')();
-          await fetch(`${siteUrl}/_api/web/folders`, {
-            method: 'POST',
-            headers: { 'Accept': 'application/json;odata=nometadata', 'Content-Type': 'application/json;odata=nometadata', 'X-RequestDigest': (document.getElementById('__REQUESTDIGEST') as HTMLInputElement)?.value || '' },
-            body: JSON.stringify({ ServerRelativeUrl: folderRelativeUrl })
-          });
-        } catch { /* folder may already exist */ }
-      }
-    } catch { /* non-blocking */ }
+      const { SPHttpClient } = await import('@microsoft/sp-http');
+      const digestResp = await this.props.context.spHttpClient.post(
+        `${siteUrl}/_api/contextinfo`, SPHttpClient.configurations.v1, {}
+      );
+      const digestJson = await digestResp.json();
+      requestDigest = digestJson?.FormDigestValue || digestJson?.d?.GetContextWebInformation?.FormDigestValue || '';
+    } catch { /* fallback */ }
+    if (!requestDigest) {
+      requestDigest = (document.getElementById('__REQUESTDIGEST') as HTMLInputElement)?.value || '';
+    }
+
+    // Ensure BulkImports folder exists via XHR (no PnP)
+    const folderRelativeUrl = `${siteServerRelativeUrl}/${PM_LISTS.POLICY_SOURCE_DOCUMENTS}/BulkImports`;
+    try {
+      const folderXhr = new XMLHttpRequest();
+      folderXhr.open('POST', `${siteUrl}/_api/web/folders`, false); // synchronous
+      folderXhr.setRequestHeader('Accept', 'application/json; odata=verbose');
+      folderXhr.setRequestHeader('Content-Type', 'application/json; odata=verbose');
+      folderXhr.setRequestHeader('X-RequestDigest', requestDigest);
+      folderXhr.send(JSON.stringify({ '__metadata': { 'type': 'SP.Folder' }, 'ServerRelativeUrl': folderRelativeUrl }));
+    } catch { /* folder may already exist */ }
 
     for (const item of toUpload) {
       try {
-        // Upload file using SPFx HttpClient (proper auth context)
         const fileBuffer = await item.file.arrayBuffer();
-        const folderRelativeUrl = `${siteServerRelativeUrl}/${PM_LISTS.POLICY_SOURCE_DOCUMENTS}/BulkImports`;
         const safeFileName = item.fileName.replace(/[#%&*:<>?\/\\{|}~]/g, '_');
 
-        // Get a fresh request digest via REST API
-        let requestDigest = '';
-        try {
-          const digestResp = await this.props.context.spHttpClient.post(
-            `${siteUrl}/_api/contextinfo`,
-            (await import('@microsoft/sp-http')).SPHttpClient.configurations.v1,
-            {}
-          );
-          const digestJson = await digestResp.json();
-          requestDigest = digestJson?.FormDigestValue || digestJson?.d?.GetContextWebInformation?.FormDigestValue || '';
-        } catch { /* fallback below */ }
-        if (!requestDigest) {
-          requestDigest = (document.getElementById('__REQUESTDIGEST') as HTMLInputElement)?.value || '';
-        }
-
-        // Upload file via XMLHttpRequest with fresh digest
+        // Upload file via XHR (no PnP — avoids PrimitiveValue serialization bug)
         let docUrl = '';
         const uploadEndpoint = `${siteUrl}/_api/web/GetFolderByServerRelativePath(decodedurl='${folderRelativeUrl}')/Files/AddUsingPath(decodedurl='${encodeURIComponent(safeFileName)}',overwrite=true)`;
 
@@ -444,22 +434,23 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
           xhr.send(new Uint8Array(fileBuffer));
         });
 
-        // Create Draft policy stub in PM_Policies
+        // Create Draft policy stub in PM_Policies (minimal fields only)
         const policyTitle = item.policyTitle || item.fileName.replace(/\.[^.]+$/, '');
-        const policyData: Record<string, unknown> = {
+        const policyResult = await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES).items.add({
           Title: policyTitle,
-          PolicyName: policyTitle,
-          PolicyStatus: 'Draft',
-          DocumentURL: docUrl,
-          PolicyCategory: '',
-          ComplianceRisk: 'Medium'
-        };
-        // Optional columns — only include if they exist (avoids 400 on missing columns)
-        try {
-          policyData.DocumentFormat = item.fileType.replace('.', '').toUpperCase();
-        } catch { /* */ }
-        const policyResult = await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES).items.add(policyData);
-        const spId = policyResult?.data?.Id || policyResult?.data?.id;
+          PolicyStatus: 'Draft'
+        });
+        // Update optional fields in a separate call (non-blocking)
+        const newPolicyId = policyResult?.data?.Id || policyResult?.data?.id;
+        if (newPolicyId && docUrl) {
+          try {
+            await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES).items.getById(newPolicyId).update({
+              PolicyName: policyTitle,
+              DocumentURL: docUrl
+            });
+          } catch { /* optional fields — continue */ }
+        }
+        const spId = newPolicyId;
 
         // Update local state
         const updated = this.state.imports.map(i =>

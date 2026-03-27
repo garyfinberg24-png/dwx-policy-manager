@@ -100,15 +100,18 @@ export default class PolicyAuthorReports extends React.Component<IPolicyAuthorRe
 
   private async detectRoleAndLoad(): Promise<void> {
     try {
-      const roleService = new RoleDetectionService(this.props.sp, this.props.context);
+      const roleService = new RoleDetectionService(this.props.sp);
       const roles = await roleService.detectAllRoles();
       const role = getHighestPolicyRole(roles);
       if (this._isMounted) this.setState({ detectedRole: role });
       if (hasMinimumRole(role, PolicyManagerRole.Author)) {
         await this.loadReportData();
+      } else {
+        if (this._isMounted) this.setState({ loading: false });
       }
     } catch (err) {
-      if (this._isMounted) this.setState({ loading: false, error: 'Failed to load reports' });
+      console.error('[PolicyAuthorReports] detectRoleAndLoad failed:', err);
+      if (this._isMounted) this.setState({ loading: false, error: `Failed to load reports: ${(err as Error)?.message || 'Unknown error'}` });
     }
   }
 

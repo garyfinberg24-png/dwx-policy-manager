@@ -406,31 +406,27 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
         const folderRelativeUrl = `${siteServerRelativeUrl}/${PM_LISTS.POLICY_SOURCE_DOCUMENTS}/BulkImports`;
         const safeFileName = item.fileName.replace(/[#%&*:<>?\/\\{|}~]/g, '_');
 
-        // Use SPFx context's spHttpClient for proper auth
-        const { SPHttpClient, SPHttpClientResponse } = await import('@microsoft/sp-http');
+        // Upload file via XMLHttpRequest (full control over headers + binary body)
+        let docUrl = '';
         const uploadEndpoint = `${siteUrl}/_api/web/GetFolderByServerRelativePath(decodedurl='${folderRelativeUrl}')/Files/AddUsingPath(decodedurl='${encodeURIComponent(safeFileName)}',overwrite=true)`;
 
-        const uploadResponse = await this.props.context.spHttpClient.post(
-          uploadEndpoint,
-          SPHttpClient.configurations.v1,
-          {
-            body: fileBuffer,
-            headers: {
-              'Accept': 'application/json;odata=verbose',
-              'Content-Type': 'application/octet-stream'
+        docUrl = await new Promise<string>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open('POST', uploadEndpoint, true);
+          xhr.setRequestHeader('Accept', 'application/json; odata=verbose');
+          xhr.setRequestHeader('X-RequestDigest', (document.getElementById('__REQUESTDIGEST') as HTMLInputElement)?.value || '');
+          xhr.responseType = 'json';
+          xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              const data = xhr.response;
+              resolve(data?.d?.ServerRelativeUrl || data?.ServerRelativeUrl || '');
+            } else {
+              reject(new Error(`Upload failed: ${xhr.status} ${xhr.statusText}`));
             }
-          }
-        );
-
-        let docUrl = '';
-        if (uploadResponse.ok) {
-          const uploadData = await uploadResponse.json();
-          // Handle both odata=verbose (d.ServerRelativeUrl) and nometadata (ServerRelativeUrl) formats
-          docUrl = uploadData?.d?.ServerRelativeUrl || uploadData?.ServerRelativeUrl || '';
-        } else {
-          const errText = await uploadResponse.text();
-          throw new Error(`Upload failed: ${uploadResponse.status} — ${errText.substring(0, 200)}`);
-        }
+          };
+          xhr.onerror = () => reject(new Error('Network error during upload'));
+          xhr.send(new Uint8Array(fileBuffer));
+        });
 
         // Create Draft policy stub in PM_Policies
         const policyTitle = item.policyTitle || item.fileName.replace(/\.[^.]+$/, '');

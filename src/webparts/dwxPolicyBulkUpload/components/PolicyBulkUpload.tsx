@@ -407,7 +407,7 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
         const safeFileName = item.fileName.replace(/[#%&*:<>?\/\\{|}~]/g, '_');
 
         // Use SPFx context's spHttpClient for proper auth
-        const { SPHttpClient } = await import('@microsoft/sp-http');
+        const { SPHttpClient, SPHttpClientResponse } = await import('@microsoft/sp-http');
         const uploadEndpoint = `${siteUrl}/_api/web/GetFolderByServerRelativePath(decodedurl='${folderRelativeUrl}')/Files/AddUsingPath(decodedurl='${encodeURIComponent(safeFileName)}',overwrite=true)`;
 
         const uploadResponse = await this.props.context.spHttpClient.post(
@@ -415,14 +415,18 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
           SPHttpClient.configurations.v1,
           {
             body: fileBuffer,
-            headers: { 'Accept': 'application/json;odata=nometadata' }
+            headers: {
+              'Accept': 'application/json;odata=verbose',
+              'Content-Type': 'application/octet-stream'
+            }
           }
         );
 
         let docUrl = '';
         if (uploadResponse.ok) {
           const uploadData = await uploadResponse.json();
-          docUrl = uploadData.ServerRelativeUrl || '';
+          // Handle both odata=verbose (d.ServerRelativeUrl) and nometadata (ServerRelativeUrl) formats
+          docUrl = uploadData?.d?.ServerRelativeUrl || uploadData?.ServerRelativeUrl || '';
         } else {
           const errText = await uploadResponse.text();
           throw new Error(`Upload failed: ${uploadResponse.status} — ${errText.substring(0, 200)}`);

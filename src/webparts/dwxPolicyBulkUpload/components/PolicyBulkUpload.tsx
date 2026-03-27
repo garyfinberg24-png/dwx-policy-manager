@@ -322,53 +322,102 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
     const ext = file.name.split('.').pop()?.toLowerCase() || '';
 
     try {
-      // Plain text files
-      if (['txt', 'rtf', 'csv'].includes(ext)) {
+      // Plain text files — direct read
+      if (['txt', 'rtf', 'csv', 'md'].includes(ext)) {
         const text = await file.text();
-        return text.substring(0, 4000);
+        return text.substring(0, 5000);
       }
 
-      // DOCX — extract text from word/document.xml inside the zip
-      if (['docx'].includes(ext)) {
+      // DOCX — read as ArrayBuffer and decode the XML content
+      if (['docx', 'doc'].includes(ext)) {
         try {
           const arrayBuffer = await file.arrayBuffer();
-          const uint8 = new Uint8Array(arrayBuffer);
+          // Convert ArrayBuffer to binary string for regex matching
+          const bytes = new Uint8Array(arrayBuffer);
+          let binaryStr = '';
+          // Only scan first 500KB to avoid memory issues
+          const scanLimit = Math.min(bytes.length, 512000);
+          for (let i = 0; i < scanLimit; i++) {
+            binaryStr += String.fromCharCode(bytes[i]);
+          }
 
-          // Find the PK zip signature and locate word/document.xml
-          // Simple approach: convert to string and find XML content between <w:t> tags
-          const blob = new Blob([uint8]);
-          const text = await blob.text();
-
-          // Extract text between <w:t> and </w:t> tags (Word paragraph text nodes)
+          // Extract text from Word XML <w:t> tags
           const textParts: string[] = [];
           const regex = /<w:t[^>]*>([^<]+)<\/w:t>/g;
           let match: RegExpExecArray | null;
-          while ((match = regex.exec(text)) !== null && textParts.length < 500) {
-            textParts.push(match[1]);
+          while ((match = regex.exec(binaryStr)) !== null && textParts.length < 800) {
+            const decoded = match[1].replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
+            if (decoded.trim()) textParts.push(decoded);
           }
-          if (textParts.length > 0) {
-            return textParts.join(' ').substring(0, 4000);
+          if (textParts.length > 5) {
+            const extracted = textParts.join(' ');
+            console.log(`[BulkUpload] DOCX extracted ${textParts.length} text nodes (${extracted.length} chars)`);
+            return extracted.substring(0, 5000);
           }
-        } catch { /* docx extraction failed — fall through */ }
+        } catch (e) { console.warn('[BulkUpload] DOCX extraction failed:', e); }
       }
 
-      // PDF — extract visible text (basic approach: find text between stream markers)
+      // PDF — extract readable text sequences
       if (['pdf'].includes(ext)) {
         try {
-          const text = await file.text();
-          // Extract readable ASCII text sequences from PDF
-          const readable = text.replace(/[^\x20-\x7E\n\r]/g, ' ').replace(/\s{3,}/g, ' ').trim();
-          if (readable.length > 100) {
-            return readable.substring(0, 4000);
+          const arrayBuffer = await file.arrayBuffer();
+          const bytes = new Uint8Array(arrayBuffer);
+          const scanLimit = Math.min(bytes.length, 512000);
+          let text = '';
+          for (let i = 0; i < scanLimit; i++) {
+            const c = bytes[i];
+            // Keep printable ASCII + whitespace
+            if ((c >= 32 && c <= 126) || c === 10 || c === 13 || c === 9) {
+              text += String.fromCharCode(c);
+            } else {
+              text += ' ';
+            }
           }
-        } catch { /* pdf extraction failed */ }
+          // Clean up: collapse whitespace, remove PDF operators
+          const cleaned = text
+            .replace(/\b(BT|ET|Tf|Td|Tm|TJ|Tj|cm|re|f|W|n|q|Q|rg|RG|gs|Do|endobj|endstream|stream|obj)\b/g, ' ')
+            .replace(/\s{3,}/g, ' ')
+            .replace(/[^\x20-\x7E]+/g, ' ')
+            .trim();
+          // Find the longest readable sequences
+          const sentences = cleaned.split(/\s{2,}/).filter(s => s.length > 20);
+          if (sentences.length > 3) {
+            const result = sentences.join(' ');
+            console.log(`[BulkUpload] PDF extracted ${sentences.length} text fragments (${result.length} chars)`);
+            return result.substring(0, 5000);
+          }
+        } catch (e) { console.warn('[BulkUpload] PDF extraction failed:', e); }
+      }
+
+      // PPTX/XLSX — try to extract XML text like DOCX
+      if (['pptx', 'xlsx'].includes(ext)) {
+        try {
+          const arrayBuffer = await file.arrayBuffer();
+          const bytes = new Uint8Array(arrayBuffer);
+          let binaryStr = '';
+          const scanLimit = Math.min(bytes.length, 256000);
+          for (let i = 0; i < scanLimit; i++) {
+            binaryStr += String.fromCharCode(bytes[i]);
+          }
+          // Extract text from <a:t> tags (PowerPoint) or <t> tags (Excel)
+          const textParts: string[] = [];
+          const regex = /<(?:a:)?t[^>]*>([^<]+)<\/(?:a:)?t>/g;
+          let match: RegExpExecArray | null;
+          while ((match = regex.exec(binaryStr)) !== null && textParts.length < 500) {
+            if (match[1].trim()) textParts.push(match[1].trim());
+          }
+          if (textParts.length > 3) {
+            return textParts.join(' ').substring(0, 5000);
+          }
+        } catch { /* extraction failed */ }
       }
     } catch (err) {
       console.warn(`[BulkUpload] Text extraction failed for ${file.name}:`, err);
     }
 
-    // Fallback: just the filename
-    return `Filename: ${file.name}`;
+    // Fallback: filename with cleaned title
+    const cleanTitle = file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
+    return `Document title: ${cleanTitle}. Filename: ${file.name}`;
   }
 
   // ============================================================================
@@ -907,9 +956,10 @@ Respond ONLY with a JSON object with keys: title, category, risk, departments, s
         )}
 
         {/* Phase Content */}
-        {phase === 'upload' && this.renderUploadPhase()}
-        {phase === 'classify' && this.renderClassifyPhase()}
-        {phase === 'review' && this.renderReviewPhase(siteUrl)}
+        {/* All phases rendered but hidden — preserves state when switching tabs */}
+        <div style={{ display: phase === 'upload' ? 'block' : 'none' }}>{this.renderUploadPhase()}</div>
+        <div style={{ display: phase === 'classify' ? 'block' : 'none' }}>{this.renderClassifyPhase()}</div>
+        <div style={{ display: phase === 'review' ? 'block' : 'none' }}>{this.renderReviewPhase(siteUrl)}</div>
 
         {/* Batch Metadata Panel */}
         {this.renderBatchPanel()}

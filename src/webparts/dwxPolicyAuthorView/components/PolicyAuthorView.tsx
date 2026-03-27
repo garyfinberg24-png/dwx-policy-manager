@@ -6,6 +6,7 @@ import { IPolicyAuthorViewProps } from './IPolicyAuthorViewProps';
 import { createDialogManager } from '../../../hooks/useDialog';
 import { PeoplePicker, PrincipalType } from '@pnp/spfx-controls-react/lib/PeoplePicker';
 import { escapeHtml } from '../../../utils/sanitizeHtml';
+import { EmailTemplateBuilder } from '../../../utils/EmailTemplateBuilder';
 import {
   Stack,
   Text,
@@ -1191,24 +1192,16 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                 const user = await this.props.sp.web.siteUsers.getById(reviewerId).select('Email', 'Title')();
                 if (user?.Email) {
                   const policyUrl = `${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policyId}&mode=review`;
-                  const emailHtml = `
-                    <div style="font-family:'Segoe UI',sans-serif;max-width:600px;margin:0 auto">
-                      <div style="background:linear-gradient(135deg,#0d9488,#0f766e);padding:24px 32px;border-radius:8px 8px 0 0">
-                        <h1 style="color:#fff;margin:0;font-size:20px">Review Required</h1>
-                        <p style="color:rgba(255,255,255,0.8);margin:4px 0 0;font-size:13px">Policy Manager — DWx Digital Workplace</p>
-                      </div>
-                      <div style="background:#fff;padding:24px 32px;border:1px solid #e2e8f0;border-top:none">
-                        <p style="font-size:14px;color:#0f172a">Hi <strong>${escapeHtml(user.Title || 'Reviewer')}</strong>,</p>
-                        <p style="font-size:14px;color:#475569">${escapeHtml(submitterName)} has submitted a policy for your review:</p>
-                        <div style="background:#f0fdfa;border-left:4px solid #0d9488;padding:16px;border-radius:0 4px 4px 0;margin:16px 0">
-                          <p style="margin:0;font-weight:600;font-size:15px;color:#0f172a">${escapeHtml(title)}</p>
-                        </div>
-                        <p style="margin:24px 0 16px"><a href="${policyUrl}" style="background:#0d9488;color:#fff;padding:10px 24px;border-radius:4px;text-decoration:none;font-weight:600;font-size:14px;display:inline-block">Review Policy</a></p>
-                      </div>
-                      <div style="background:#f8fafc;padding:16px 32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;text-align:center">
-                        <p style="margin:0;font-size:11px;color:#94a3b8">First Digital — DWx Policy Manager</p>
-                      </div>
-                    </div>`;
+                  const emailHtml = EmailTemplateBuilder.reviewRequired({
+                    recipientName: user.Title || 'Reviewer',
+                    policyTitle: title,
+                    policyNumber: '', // not available in this context
+                    submittedBy: submitterName,
+                    category: '',
+                    version: '',
+                    reviewDeadline: '',
+                    ctaUrl: policyUrl
+                  });
                   await this.queueEmail({
                     Title: `Review Required: ${title}`,
                     RecipientEmail: user.Email,
@@ -1488,22 +1481,21 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
 
         // Queue publish notification emails (first 50 users to avoid overloading)
         const emailRecipients = targetUsers.slice(0, 50);
-        const emailHtml = `
-          <div style="font-family:'Segoe UI',sans-serif;max-width:600px;margin:0 auto">
-            <div style="background:linear-gradient(135deg,#059669,#047857);padding:24px 32px;border-radius:8px 8px 0 0">
-              <h1 style="color:#fff;margin:0;font-size:20px">New Policy Published</h1>
-              <p style="color:rgba(255,255,255,0.8);margin:4px 0 0;font-size:13px">Policy Manager — DWx Digital Workplace</p>
-            </div>
-            <div style="background:#fff;padding:24px 32px;border:1px solid #e2e8f0;border-top:none">
-              <p style="font-size:14px;color:#475569"><strong>${escapeHtml(title)}</strong> has been published${requiresAck ? ' and requires your acknowledgement' : ''}.</p>
-              <p style="margin:24px 0 16px"><a href="${policyUrl}" style="background:#059669;color:#fff;padding:10px 24px;border-radius:4px;text-decoration:none;font-weight:600;font-size:14px;display:inline-block">${requiresAck ? 'Read & Acknowledge' : 'View Policy'}</a></p>
-            </div>
-            <div style="background:#f8fafc;padding:16px 32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;text-align:center">
-              <p style="margin:0;font-size:11px;color:#94a3b8">First Digital — DWx Policy Manager</p>
-            </div>
-          </div>`;
+        const policyCategory = policyItem.PolicyCategory || '';
+        const riskLevel = policyItem.ComplianceRisk || 'Medium';
         for (const user of emailRecipients) {
           try {
+            const userEmailHtml = EmailTemplateBuilder.policyPublished({
+              recipientName: user.Title || 'Colleague',
+              policyTitle: title,
+              policyNumber: '',
+              publishedBy: publisherName,
+              category: policyCategory,
+              department: departments.join(', ') || 'All Departments',
+              riskLevel: riskLevel,
+              effectiveDate: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }),
+              ctaUrl: policyUrl
+            });
             await this.queueEmail({
               Title: `New Policy: ${title}`,
               RecipientEmail: user.Email,
@@ -1514,7 +1506,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
               PolicyTitle: title,
               NotificationType: 'policy-published',
               Channel: 'Email',
-              Message: emailHtml,
+              Message: userEmailHtml,
               QueueStatus: 'Pending',
               Priority: requiresAck ? 'High' : 'Normal'
             });
@@ -1708,22 +1700,16 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
           try {
             const user = await this.props.sp.web.siteUsers.getById(userId).select('Email', 'Title')();
             if (user?.Email) {
-              const emailHtml = `
-                <div style="font-family:'Segoe UI',sans-serif;max-width:600px;margin:0 auto">
-                  <div style="background:linear-gradient(135deg,#94a3b8,#64748b);padding:24px 32px;border-radius:8px 8px 0 0">
-                    <h1 style="color:#fff;margin:0;font-size:20px">Policy Retired</h1>
-                    <p style="color:rgba(255,255,255,0.8);margin:4px 0 0;font-size:13px">Policy Manager — DWx Digital Workplace</p>
-                  </div>
-                  <div style="background:#fff;padding:24px 32px;border:1px solid #e2e8f0;border-top:none">
-                    <p style="font-size:14px;color:#475569">Hi <strong>${escapeHtml(user.Title || 'there')}</strong>,</p>
-                    <p style="font-size:14px;color:#475569">The policy <strong>${escapeHtml(title)}</strong> has been retired and is no longer in effect.</p>
-                    ${reason ? `<p style="font-size:13px;color:#64748b;background:#f8fafc;padding:12px;border-radius:4px"><em>Reason: ${escapeHtml(reason)}</em></p>` : ''}
-                    <p style="font-size:14px;color:#475569">Your outstanding acknowledgement for this policy has been cancelled. No further action is required.</p>
-                  </div>
-                  <div style="background:#f8fafc;padding:16px 32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;text-align:center">
-                    <p style="margin:0;font-size:11px;color:#94a3b8">First Digital — DWx Policy Manager</p>
-                  </div>
-                </div>`;
+              const retireEmailHtml = EmailTemplateBuilder.policyRetired({
+                recipientName: user.Title || 'Colleague',
+                policyTitle: title,
+                policyNumber: '',
+                retiredBy: this.props.context?.pageContext?.user?.displayName || 'An administrator',
+                retirementDate: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }),
+                reason: reason || 'No reason provided',
+                userStatus: 'Outstanding acknowledgement cancelled',
+                ctaUrl: `${siteUrl}/SitePages/PolicyHub.aspx`
+              });
               await this.queueEmail({
                 Title: `Policy Retired: ${title}`,
                 RecipientEmail: user.Email,
@@ -1732,7 +1718,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                 PolicyTitle: title,
                 NotificationType: 'policy-retired',
                 Channel: 'Email',
-                Message: emailHtml,
+                Message: retireEmailHtml,
                 QueueStatus: 'Pending',
                 Priority: 'Normal'
               });

@@ -29,6 +29,7 @@ import {
 import { injectPortalStyles } from '../../../utils/injectPortalStyles';
 import { signalAppReady } from '../../../utils/SharePointOverrides';
 import { sanitizeHtml, escapeHtml } from '../../../utils/sanitizeHtml';
+import { EmailTemplateBuilder } from '../../../utils/EmailTemplateBuilder';
 import { JmlAppLayout } from '../../../components/JmlAppLayout';
 import { ErrorBoundary } from '../../../components/ErrorBoundary/ErrorBoundary';
 import { PageSubheader } from '../../../components/PageSubheader';
@@ -2627,25 +2628,29 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
           const authorEmail = (policy as any)._policyOwnerEmail || (policy as any).PolicyOwner || '';
           if (authorEmail) {
             const decisionLabel = reviewDecision === 'approve' ? 'Approved' : reviewDecision === 'changes' ? 'Changes Requested' : 'Rejected';
-            const policyUrl = `${siteUrl}/SitePages/PolicyBuilder.aspx?editPolicyId=${policy!.Id}`;
-            const emailHtml = `
-              <div style="font-family:'Segoe UI',sans-serif;max-width:600px;margin:0 auto">
-                <div style="background:linear-gradient(135deg,${reviewDecision === 'approve' ? '#059669,#047857' : reviewDecision === 'changes' ? '#d97706,#b45309' : '#dc2626,#b91c1c'});padding:24px 32px;border-radius:8px 8px 0 0">
-                  <h1 style="color:#fff;margin:0;font-size:20px">Review ${decisionLabel}</h1>
-                  <p style="color:rgba(255,255,255,0.8);margin:4px 0 0;font-size:13px">Policy Manager — DWx Digital Workplace</p>
-                </div>
-                <div style="background:#fff;padding:24px 32px;border:1px solid #e2e8f0;border-top:none">
-                  <p style="font-size:14px;color:#475569"><strong>${escapeHtml(currentUserName)}</strong> has ${reviewDecision === 'approve' ? 'approved' : reviewDecision === 'changes' ? 'requested changes to' : 'rejected'} your policy:</p>
-                  <div style="background:#f8fafc;border-left:4px solid ${reviewDecision === 'approve' ? '#059669' : reviewDecision === 'changes' ? '#d97706' : '#dc2626'};padding:16px;border-radius:0 4px 4px 0;margin:16px 0">
-                    <p style="margin:0;font-weight:600;font-size:15px;color:#0f172a">${escapeHtml(policy!.PolicyName || policy!.Title || '')}</p>
-                  </div>
-                  ${reviewComments ? `<div style="margin:16px 0;padding:12px;background:#f8fafc;border-radius:4px"><p style="margin:0 0 4px;font-size:11px;color:#94a3b8;font-weight:600">REVIEWER COMMENTS</p><p style="margin:0;font-size:13px;color:#475569">${escapeHtml(reviewComments)}</p></div>` : ''}
-                  <p style="margin:24px 0 16px"><a href="${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policy!.Id}&mode=${reviewDecision === 'approve' ? 'approve' : 'review'}" style="background:${reviewDecision === 'approve' ? '#059669' : '#0d9488'};color:#fff;padding:10px 24px;border-radius:4px;text-decoration:none;font-weight:600;font-size:14px;display:inline-block">${reviewDecision === 'approve' ? 'Review & Approve Policy' : 'Edit Policy'}</a></p>
-                </div>
-                <div style="background:#f8fafc;padding:16px 32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;text-align:center">
-                  <p style="margin:0;font-size:11px;color:#94a3b8">First Digital — DWx Policy Manager</p>
-                </div>
-              </div>`;
+            const policyTitle = policy!.PolicyName || policy!.Title || '';
+            const policyNumber = policy!.PolicyNumber || '';
+            const decisionDate = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+            const ctaUrl = reviewDecision === 'approve'
+              ? `${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policy!.Id}&mode=approve`
+              : `${siteUrl}/SitePages/PolicyBuilder.aspx?editPolicyId=${policy!.Id}`;
+            const emailHtml = reviewDecision === 'approve'
+              ? EmailTemplateBuilder.approvalApproved({
+                  recipientName: 'Author',
+                  policyTitle, policyNumber,
+                  approvedBy: currentUserName,
+                  decisionDate,
+                  comments: reviewComments || 'No comments',
+                  ctaUrl
+                })
+              : EmailTemplateBuilder.approvalRejected({
+                  recipientName: 'Author',
+                  policyTitle, policyNumber,
+                  rejectedBy: currentUserName,
+                  decisionDate,
+                  reason: reviewComments || 'No reason provided',
+                  ctaUrl
+                });
             const qResult = await this.props.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
               Title: `Review ${decisionLabel}: ${policy!.PolicyName || policy!.Title}`,
               RecipientEmail: authorEmail,

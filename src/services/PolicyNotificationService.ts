@@ -733,66 +733,113 @@ export class PolicyNotificationService {
     bodyBg?: string; content: string; footerText: string;
     ctaUrl: string; ctaLabel: string; ctaColor: string;
   }): string {
-    const { headerGradient, headerIcon, headerTitle, bodyBg, content, footerText, ctaUrl, ctaLabel, ctaColor } = opts;
-    return `<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background:#f0fdfa;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;-webkit-font-smoothing:antialiased;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f0fdfa;">
-    <tr><td align="center" style="padding:32px 16px;">
-      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(13,148,136,0.12);">
-        <!-- Header -->
-        <tr><td style="background:${headerGradient};padding:28px 32px;">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-            <tr>
-              <td style="font-size:28px;line-height:1;padding-right:14px;vertical-align:middle;" width="42">${headerIcon}</td>
-              <td style="color:#ffffff;font-size:20px;font-weight:700;letter-spacing:-0.3px;vertical-align:middle;">${headerTitle}</td>
-            </tr>
-          </table>
-          <div style="margin-top:10px;height:2px;background:rgba(255,255,255,0.25);border-radius:1px;"></div>
-          <p style="margin:8px 0 0;color:rgba(255,255,255,0.85);font-size:12px;font-weight:500;letter-spacing:0.5px;text-transform:uppercase;">DWx Policy Manager</p>
-        </td></tr>
-        <!-- Body -->
-        <tr><td style="background:${bodyBg || '#ffffff'};padding:32px;">
-          ${content}
-          <!-- CTA Button -->
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:28px 0 0;">
-            <tr><td align="center">
-              <a href="${ctaUrl}" target="_blank" style="display:inline-block;background:${ctaColor};color:#ffffff;padding:14px 36px;border-radius:8px;font-size:15px;font-weight:600;text-decoration:none;letter-spacing:0.2px;box-shadow:0 2px 8px rgba(0,0,0,0.15);">${ctaLabel}</a>
-            </td></tr>
-          </table>
-        </td></tr>
-        <!-- Footer -->
-        <tr><td style="background:#f8fafc;padding:20px 32px;border-top:1px solid #e2e8f0;">
-          <p style="margin:0;color:#64748b;font-size:12px;line-height:1.6;text-align:center;">${footerText}</p>
-          <p style="margin:10px 0 0;color:#94a3b8;font-size:11px;text-align:center;">First Digital &mdash; DWx Policy Manager &bull; Policy Governance &amp; Compliance</p>
-        </td></tr>
+    const { headerGradient, headerTitle, content, ctaUrl, ctaLabel, ctaColor } = opts;
+    // Extract gradient colours from "linear-gradient(135deg, #xxx, #yyy)" format
+    const gradientMatch = headerGradient.match(/#[0-9a-fA-F]{6}/g) || ['#0d9488', '#0f766e'];
+    const gradStart = gradientMatch[0] || '#0d9488';
+    const gradEnd = gradientMatch[1] || gradientMatch[0] || '#0f766e';
+    const F = "'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif";
+
+    return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f1f5f9;">
+  <tr>
+    <td align="center" style="padding:32px 16px;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px; width:100%; border-radius:12px; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+        <tr>
+          <td style="background:linear-gradient(135deg, ${gradStart} 0%, ${gradEnd} 100%); padding:0;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                <td style="padding:20px 40px 18px 40px;">
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                    <tr>
+                      <td valign="middle" style="font-family:${F};">
+                        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="padding-bottom:10px;">
+                          <tr>
+                            <td style="font-size:11px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:rgba(255,255,255,0.6);">First Digital &bull; DWx Policy Manager</td>
+                          </tr>
+                        </table>
+                        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                          <tr>
+                            <td style="font-size:20px; font-weight:700; color:#ffffff; line-height:1.3; letter-spacing:-0.3px;">${headerTitle}</td>
+                            <td width="44" valign="middle" align="right">
+                              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                                <tr><td style="width:44px; height:44px; border-radius:50%; background-color:rgba(255,255,255,0.1); font-size:1px; line-height:1px;">&nbsp;</td></tr>
+                              </table>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="background-color:#ffffff; padding:28px 40px 24px 40px;">
+            ${content}
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr><td style="height:28px; font-size:1px; line-height:1px;">&nbsp;</td></tr>
+            </table>
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+              <tr>
+                <td style="background-color:${ctaColor}; border-radius:8px;">
+                  <a href="${ctaUrl}" target="_blank" style="display:inline-block; padding:14px 48px; font-family:${F}; font-size:14px; font-weight:600; color:#ffffff; text-decoration:none; letter-spacing:0.3px;">${ctaLabel}</a>
+                </td>
+              </tr>
+            </table>
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                <td align="center" style="padding-top:12px; font-family:${F}; font-size:11px; color:#94a3b8;">
+                  Or copy this link: <a href="${ctaUrl}" style="color:#64748b; text-decoration:underline; word-break:break-all;">${ctaUrl}</a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="background-color:#f8fafc; border-top:1px solid #e2e8f0; padding:20px 40px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                <td style="font-family:${F}; font-size:11px; color:#94a3b8; line-height:1.6;">First Digital &mdash; DWx Policy Manager<br><span style="color:#cbd5e1;">Policy Governance &amp; Compliance</span></td>
+                <td align="right" style="font-family:${F}; font-size:11px;"><a href="#unsubscribe" style="color:#94a3b8; text-decoration:underline;">Unsubscribe</a></td>
+              </tr>
+            </table>
+          </td>
+        </tr>
       </table>
-    </td></tr>
-  </table>
-</body>
-</html>`;
+    </td>
+  </tr>
+</table>`;
   }
+
+  /** Row counter for alternating backgrounds */
+  private _rowIndex = 0;
 
   /** Builds a detail row for email tables (auto-escapes label and value) */
   private emailRow(label: string, value: string, valueStyle?: string): string {
+    const bg = this._rowIndex % 2 === 0 ? '#f8fafc' : '#ffffff';
+    this._rowIndex++;
+    const F = "'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif";
     return `<tr>
-      <td style="padding:10px 14px;background:#f8fafc;font-weight:600;color:#334155;font-size:13px;width:140px;border-bottom:1px solid #f1f5f9;">${escapeHtml(label)}</td>
-      <td style="padding:10px 14px;color:#0f172a;font-size:14px;border-bottom:1px solid #f1f5f9;${valueStyle || ''}">${escapeHtml(value)}</td>
+      <td width="38%" style="background-color:${bg}; padding:12px 20px; font-family:${F}; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.8px; color:#64748b; border-bottom:1px solid #f1f5f9;">${escapeHtml(label)}</td>
+      <td width="62%" style="background-color:${bg}; padding:12px 20px; font-family:${F}; font-size:13px; font-weight:500; color:#334155; border-bottom:1px solid #f1f5f9;${valueStyle || ''}">${escapeHtml(value)}</td>
     </tr>`;
   }
 
   /** Builds a detail table for email templates */
   private emailTable(rows: string): string {
-    return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin:20px 0;background:#ffffff;border-radius:8px;border:1px solid #e2e8f0;overflow:hidden;">${rows}</table>`;
+    this._rowIndex = 0; // reset alternating rows
+    return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid #e2e8f0; border-radius:8px; overflow:hidden;">${rows}</table>`;
   }
 
   /** Builds a policy highlight card (auto-escapes text content) */
   private policyCard(policyNumber: string, policyName: string, accent: string, detail: string): string {
-    return `<div style="background:#ffffff;padding:20px;border-radius:8px;border-left:4px solid ${accent};margin:20px 0;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
-      <p style="margin:0 0 4px;font-size:13px;color:#64748b;font-weight:600;letter-spacing:0.3px;text-transform:uppercase;">${escapeHtml(policyNumber)}</p>
-      <p style="margin:0;font-size:17px;font-weight:600;color:#0f172a;">${escapeHtml(policyName)}</p>
-      <p style="margin:10px 0 0;color:${accent};font-weight:600;font-size:14px;">${escapeHtml(detail)}</p>
+    const F = "'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif";
+    return `<div style="background:#f8fafc;padding:16px 20px;border-radius:8px;border-left:4px solid ${accent};margin:20px 0;font-family:${F};">
+      <p style="margin:0 0 4px;font-size:11px;color:#64748b;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;">${escapeHtml(policyNumber)}</p>
+      <p style="margin:0;font-size:15px;font-weight:600;color:#0f172a;">${escapeHtml(policyName)}</p>
+      <p style="margin:8px 0 0;color:${accent};font-weight:600;font-size:13px;">${escapeHtml(detail)}</p>
     </div>`;
   }
 

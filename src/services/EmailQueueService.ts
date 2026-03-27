@@ -474,31 +474,82 @@ export class EmailQueueService {
     bodyBg?: string; content: string; footerText: string;
     ctaUrl: string; ctaLabel: string; ctaColor: string;
   }): string {
-    const bg = opts.bodyBg || '#ffffff';
-    return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>${opts.headerTitle}</title></head>
-<body style="margin:0;padding:0;background:#f0fdfa;font-family:'Segoe UI',Tahoma,Arial,sans-serif;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f0fdfa;padding:24px 0;">
-<tr><td align="center">
-<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:${bg};border-radius:12px;box-shadow:0 4px 24px rgba(13,148,136,0.10);overflow:hidden;">
-  <tr><td style="background:${opts.headerGradient};padding:28px 32px;text-align:center;">
-    <div style="font-size:32px;margin-bottom:8px;">${opts.headerIcon}</div>
-    <div style="font-size:22px;font-weight:700;color:#ffffff;letter-spacing:0.3px;">${opts.headerTitle}</div>
-    <div style="width:40px;height:2px;background:rgba(255,255,255,0.5);margin:12px auto 4px;border-radius:1px;"></div>
-    <div style="font-size:12px;color:rgba(255,255,255,0.85);letter-spacing:0.5px;">DWx Policy Manager</div>
-  </td></tr>
-  <tr><td style="padding:28px 32px;">
-    ${opts.content}
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:24px;">
-    <tr><td align="center">
-      <a href="${opts.ctaUrl}" style="display:inline-block;background:${opts.ctaColor};color:#ffffff;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;letter-spacing:0.3px;">${opts.ctaLabel}</a>
-    </td></tr></table>
-  </td></tr>
-  <tr><td style="background:#f8fafc;padding:16px 32px;text-align:center;border-top:1px solid #e2e8f0;">
-    <div style="font-size:12px;color:#64748b;">${opts.footerText}</div>
-    <div style="font-size:11px;color:#94a3b8;margin-top:4px;">First Digital &mdash; DWx Policy Manager</div>
-  </td></tr>
-</table>
-</td></tr></table></body></html>`;
+    const gradientMatch = opts.headerGradient.match(/#[0-9a-fA-F]{6}/g) || ['#0d9488', '#0f766e'];
+    const gradStart = gradientMatch[0] || '#0d9488';
+    const gradEnd = gradientMatch[1] || gradientMatch[0] || '#0f766e';
+    const F = "'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif";
+
+    return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f1f5f9;">
+  <tr>
+    <td align="center" style="padding:32px 16px;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px; width:100%; border-radius:12px; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+        <tr>
+          <td style="background:linear-gradient(135deg, ${gradStart} 0%, ${gradEnd} 100%); padding:0;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                <td style="padding:20px 40px 18px 40px;">
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                    <tr>
+                      <td valign="middle" style="font-family:${F};">
+                        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="padding-bottom:10px;">
+                          <tr>
+                            <td style="font-size:11px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:rgba(255,255,255,0.6);">First Digital &bull; DWx Policy Manager</td>
+                          </tr>
+                        </table>
+                        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                          <tr>
+                            <td style="font-size:20px; font-weight:700; color:#ffffff; line-height:1.3; letter-spacing:-0.3px;">${opts.headerTitle}</td>
+                            <td width="44" valign="middle" align="right">
+                              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                                <tr><td style="width:44px; height:44px; border-radius:50%; background-color:rgba(255,255,255,0.1); font-size:1px; line-height:1px;">&nbsp;</td></tr>
+                              </table>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="background-color:#ffffff; padding:28px 40px 24px 40px;">
+            ${opts.content}
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr><td style="height:28px; font-size:1px; line-height:1px;">&nbsp;</td></tr>
+            </table>
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+              <tr>
+                <td style="background-color:${opts.ctaColor}; border-radius:8px;">
+                  <a href="${opts.ctaUrl}" target="_blank" style="display:inline-block; padding:14px 48px; font-family:${F}; font-size:14px; font-weight:600; color:#ffffff; text-decoration:none; letter-spacing:0.3px;">${opts.ctaLabel}</a>
+                </td>
+              </tr>
+            </table>
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                <td align="center" style="padding-top:12px; font-family:${F}; font-size:11px; color:#94a3b8;">
+                  Or copy this link: <a href="${opts.ctaUrl}" style="color:#64748b; text-decoration:underline; word-break:break-all;">${opts.ctaUrl}</a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="background-color:#f8fafc; border-top:1px solid #e2e8f0; padding:20px 40px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                <td style="font-family:${F}; font-size:11px; color:#94a3b8; line-height:1.6;">First Digital &mdash; DWx Policy Manager<br><span style="color:#cbd5e1;">Policy Governance &amp; Compliance</span></td>
+                <td align="right" style="font-family:${F}; font-size:11px;"><a href="#unsubscribe" style="color:#94a3b8; text-decoration:underline;">Unsubscribe</a></td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>`;
   }
 
   private buildTaskAssignmentEmail(

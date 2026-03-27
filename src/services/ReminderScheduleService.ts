@@ -12,6 +12,7 @@ import '@pnp/sp/lists';
 import '@pnp/sp/items';
 import { PM_LISTS } from '../constants/SharePointListNames';
 import { escapeHtml } from '../utils/sanitizeHtml';
+import { EmailTemplateBuilder } from '../utils/EmailTemplateBuilder';
 
 // ============================================================================
 // TYPES
@@ -133,21 +134,16 @@ export class ReminderScheduleService {
           // Queue notification email
           if (item.RecipientEmail) {
             const policyUrl = `${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${item.PolicyId}`;
-            const typeLabel = this.getReminderTypeLabel(item.ReminderType);
-            const emailHtml = `
-              <div style="font-family:'Segoe UI',sans-serif;max-width:600px;margin:0 auto">
-                <div style="background:linear-gradient(135deg,#d97706,#b45309);padding:24px 32px;border-radius:8px 8px 0 0">
-                  <h1 style="color:#fff;margin:0;font-size:20px">${escapeHtml(typeLabel)}</h1>
-                  <p style="color:rgba(255,255,255,0.8);margin:4px 0 0;font-size:13px">Policy Manager — DWx Digital Workplace</p>
-                </div>
-                <div style="background:#fff;padding:24px 32px;border:1px solid #e2e8f0;border-top:none">
-                  <p style="font-size:14px;color:#475569">This is a reminder regarding <strong>${escapeHtml(item.PolicyTitle)}</strong>.</p>
-                  <p style="margin:24px 0 16px"><a href="${policyUrl}" style="background:#d97706;color:#fff;padding:10px 24px;border-radius:4px;text-decoration:none;font-weight:600;font-size:14px;display:inline-block">View Policy</a></p>
-                </div>
-                <div style="background:#f8fafc;padding:16px 32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;text-align:center">
-                  <p style="margin:0;font-size:11px;color:#94a3b8">First Digital — DWx Policy Manager</p>
-                </div>
-              </div>`;
+            const emailHtml = EmailTemplateBuilder.policyExpiring({
+              recipientName: item.RecipientEmail.split('@')[0] || 'Author',
+              policyTitle: item.PolicyTitle,
+              policyNumber: '',
+              category: '',
+              currentVersion: '',
+              expiryDate: item.ReminderType === 'ExpiryWarning' ? 'Approaching' : 'Review due',
+              daysUntilExpiry: 30,
+              ctaUrl: policyUrl
+            });
 
             // Write to notification queue (two-step QueueStatus pattern)
             const result = await this.sp.web.lists.getByTitle(PM_LISTS.NOTIFICATION_QUEUE).items.add({

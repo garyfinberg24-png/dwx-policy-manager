@@ -381,46 +381,51 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
     const siteUrl = this.props.context?.pageContext?.web?.absoluteUrl || '';
     const siteServerRelativeUrl = this.props.context?.pageContext?.web?.serverRelativeUrl || '/sites/PolicyManager';
 
+    // Ensure BulkImports folder exists (once for entire batch)
+    try {
+      const folderRelativeUrl = `${siteServerRelativeUrl}/${PM_LISTS.POLICY_SOURCE_DOCUMENTS}/BulkImports`;
+      try {
+        await this.props.sp.web.getFolderByServerRelativePath(folderRelativeUrl)();
+      } catch {
+        // Create folder via REST API to avoid PnP serialization issues
+        try {
+          const ctx = await this.props.sp.web.select('Url')();
+          await fetch(`${siteUrl}/_api/web/folders`, {
+            method: 'POST',
+            headers: { 'Accept': 'application/json;odata=nometadata', 'Content-Type': 'application/json;odata=nometadata', 'X-RequestDigest': (document.getElementById('__REQUESTDIGEST') as HTMLInputElement)?.value || '' },
+            body: JSON.stringify({ ServerRelativeUrl: folderRelativeUrl })
+          });
+        } catch { /* folder may already exist */ }
+      }
+    } catch { /* non-blocking */ }
+
     for (const item of toUpload) {
       try {
-        // Ensure BulkImports folder exists via REST API
-        const folderRelativeUrl = `${siteServerRelativeUrl}/${PM_LISTS.POLICY_SOURCE_DOCUMENTS}/BulkImports`;
-        try {
-          await this.props.sp.web.getFolderByServerRelativePath(folderRelativeUrl)();
-        } catch {
-          try {
-            await this.props.sp.web.folders.addUsingPath(folderRelativeUrl);
-          } catch { /* folder may already exist */ }
-        }
-
-        // Upload file via SharePoint REST API (bypasses PnP serialization issue)
+        // Upload file using SPFx HttpClient (proper auth context)
         const fileBuffer = await item.file.arrayBuffer();
-        const encodedFileName = encodeURIComponent(item.fileName).replace(/%20/g, '%20');
-        const uploadUrl = `${siteUrl}/_api/web/GetFolderByServerRelativePath(decodedurl='${folderRelativeUrl}')/Files/AddUsingPath(decodedurl='${encodedFileName}',overwrite=true)`;
+        const folderRelativeUrl = `${siteServerRelativeUrl}/${PM_LISTS.POLICY_SOURCE_DOCUMENTS}/BulkImports`;
+        const safeFileName = item.fileName.replace(/[#%&*:<>?\/\\{|}~]/g, '_');
 
-        const digestResponse = await fetch(`${siteUrl}/_api/contextinfo`, {
-          method: 'POST',
-          headers: { 'Accept': 'application/json;odata=nometadata' }
-        });
-        const digestData = await digestResponse.json();
-        const requestDigest = digestData.FormDigestValue;
+        // Use SPFx context's spHttpClient for proper auth
+        const { SPHttpClient } = await import('@microsoft/sp-http');
+        const uploadEndpoint = `${siteUrl}/_api/web/GetFolderByServerRelativePath(decodedurl='${folderRelativeUrl}')/Files/AddUsingPath(decodedurl='${encodeURIComponent(safeFileName)}',overwrite=true)`;
 
-        const uploadResponse = await fetch(uploadUrl, {
-          method: 'POST',
-          headers: {
-            'Accept': 'application/json;odata=nometadata',
-            'X-RequestDigest': requestDigest,
-            'Content-Length': String(fileBuffer.byteLength)
-          },
-          body: fileBuffer
-        });
+        const uploadResponse = await this.props.context.spHttpClient.post(
+          uploadEndpoint,
+          SPHttpClient.configurations.v1,
+          {
+            body: fileBuffer,
+            headers: { 'Accept': 'application/json;odata=nometadata' }
+          }
+        );
 
         let docUrl = '';
         if (uploadResponse.ok) {
           const uploadData = await uploadResponse.json();
           docUrl = uploadData.ServerRelativeUrl || '';
         } else {
-          throw new Error(`Upload failed: ${uploadResponse.status} ${uploadResponse.statusText}`);
+          const errText = await uploadResponse.text();
+          throw new Error(`Upload failed: ${uploadResponse.status} — ${errText.substring(0, 200)}`);
         }
 
         // Create Draft policy stub in PM_Policies

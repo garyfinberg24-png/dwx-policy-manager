@@ -109,11 +109,21 @@ export const PolicyWorkflowLists = {
   /** Approval decision records */
   APPROVAL_DECISIONS: 'PM_ApprovalDecisions',
   /** Approval delegations */
-  DELEGATIONS: 'PM_Delegations',
+  DELEGATIONS: 'PM_ApprovalDelegations',
   /** Escalation rule definitions */
   ESCALATION_RULES: 'PM_EscalationRules',
   /** Workflow execution history */
   WORKFLOW_HISTORY: 'PM_WorkflowHistory',
+  /** Individual approval records */
+  APPROVALS: 'PM_Approvals',
+  /** Approval chain instances */
+  APPROVAL_CHAINS: 'PM_ApprovalChains',
+  /** Approval action audit trail */
+  APPROVAL_HISTORY: 'PM_ApprovalHistory',
+  /** Approval delegation assignments */
+  APPROVAL_DELEGATIONS: 'PM_ApprovalDelegations',
+  /** Reusable approval workflow templates */
+  APPROVAL_TEMPLATES: 'PM_ApprovalTemplates',
 } as const;
 
 /**
@@ -204,6 +214,10 @@ export const AdminConfigLists = {
   DATA_LIFECYCLE_POLICIES: 'PM_DataLifecyclePolicies',
   /** Email notification templates */
   EMAIL_TEMPLATES: 'PM_EmailTemplates',
+  /** Key-value configuration store */
+  CONFIGURATION: 'PM_Configuration',
+  /** Policy categories */
+  POLICY_CATEGORIES: 'PM_PolicyCategories',
 } as const;
 
 /**

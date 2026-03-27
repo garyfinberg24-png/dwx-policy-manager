@@ -190,20 +190,34 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
   private async loadFastTrackTemplates(): Promise<void> {
     if (this.state.templatesLoaded) return;
     try {
-      const items = await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_METADATA_PROFILES)
-        .items.filter('IsActive ne 0')
-        .select('Id', 'Title', 'ProfileName', 'PolicyCategory', 'ComplianceRisk', 'ReadTimeframe', 'RequiresAcknowledgement', 'RequiresQuiz', 'TargetDepartments')
-        .orderBy('Title').top(100)();
-      const templates: IFastTrackTemplate[] = items.map((t: any) => ({
-        Id: t.Id, Title: t.Title || t.ProfileName, ProfileName: t.ProfileName || t.Title,
-        PolicyCategory: t.PolicyCategory || '', ComplianceRisk: t.ComplianceRisk || 'Medium',
-        ReadTimeframe: t.ReadTimeframe || 'Week 1',
-        RequiresAcknowledgement: t.RequiresAcknowledgement !== false,
-        RequiresQuiz: t.RequiresQuiz || false,
-        TargetDepartments: t.TargetDepartments || ''
-      }));
+      // Try with IsActive filter first, fallback to all items
+      let items: any[] = [];
+      try {
+        items = await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_METADATA_PROFILES)
+          .items.select('Id', 'Title', 'ProfileName', 'PolicyCategory', 'ComplianceRisk', 'ReadTimeframe', 'RequiresAcknowledgement', 'RequiresQuiz', 'TargetDepartments', 'IsActive')
+          .orderBy('Title').top(100)();
+      } catch {
+        // IsActive column may not exist — try without filter
+        try {
+          items = await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_METADATA_PROFILES)
+            .items.select('Id', 'Title', 'ProfileName', 'PolicyCategory', 'ComplianceRisk')
+            .orderBy('Title').top(100)();
+        } catch { /* list may not exist */ }
+      }
+      const templates: IFastTrackTemplate[] = items
+        .filter((t: any) => t.IsActive !== false) // filter client-side
+        .map((t: any) => ({
+          Id: t.Id, Title: t.Title || t.ProfileName || `Template ${t.Id}`, ProfileName: t.ProfileName || t.Title || '',
+          PolicyCategory: t.PolicyCategory || '', ComplianceRisk: t.ComplianceRisk || 'Medium',
+          ReadTimeframe: t.ReadTimeframe || 'Week 1',
+          RequiresAcknowledgement: t.RequiresAcknowledgement !== false,
+          RequiresQuiz: t.RequiresQuiz || false,
+          TargetDepartments: t.TargetDepartments || ''
+        }));
+      console.log(`[BulkUpload] Loaded ${templates.length} Fast Track Templates`);
       if (this._isMounted) this.setState({ fastTrackTemplates: templates, templatesLoaded: true });
-    } catch {
+    } catch (err) {
+      console.warn('[BulkUpload] Failed to load Fast Track Templates:', err);
       if (this._isMounted) this.setState({ templatesLoaded: true });
     }
   }
@@ -298,6 +312,63 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
       successMessage: `Accepted AI suggestions for ${classifiedItems.length} polic${classifiedItems.length !== 1 ? 'ies' : 'y'}.`
     });
     setTimeout(() => this.setState({ successMessage: '' }), 4000);
+  }
+
+  // ============================================================================
+  // DOCUMENT TEXT EXTRACTION (for AI classification accuracy)
+  // ============================================================================
+
+  private async extractTextFromFile(file: File): Promise<string> {
+    const ext = file.name.split('.').pop()?.toLowerCase() || '';
+
+    try {
+      // Plain text files
+      if (['txt', 'rtf', 'csv'].includes(ext)) {
+        const text = await file.text();
+        return text.substring(0, 4000);
+      }
+
+      // DOCX — extract text from word/document.xml inside the zip
+      if (['docx'].includes(ext)) {
+        try {
+          const arrayBuffer = await file.arrayBuffer();
+          const uint8 = new Uint8Array(arrayBuffer);
+
+          // Find the PK zip signature and locate word/document.xml
+          // Simple approach: convert to string and find XML content between <w:t> tags
+          const blob = new Blob([uint8]);
+          const text = await blob.text();
+
+          // Extract text between <w:t> and </w:t> tags (Word paragraph text nodes)
+          const textParts: string[] = [];
+          const regex = /<w:t[^>]*>([^<]+)<\/w:t>/g;
+          let match: RegExpExecArray | null;
+          while ((match = regex.exec(text)) !== null && textParts.length < 500) {
+            textParts.push(match[1]);
+          }
+          if (textParts.length > 0) {
+            return textParts.join(' ').substring(0, 4000);
+          }
+        } catch { /* docx extraction failed — fall through */ }
+      }
+
+      // PDF — extract visible text (basic approach: find text between stream markers)
+      if (['pdf'].includes(ext)) {
+        try {
+          const text = await file.text();
+          // Extract readable ASCII text sequences from PDF
+          const readable = text.replace(/[^\x20-\x7E\n\r]/g, ' ').replace(/\s{3,}/g, ' ').trim();
+          if (readable.length > 100) {
+            return readable.substring(0, 4000);
+          }
+        } catch { /* pdf extraction failed */ }
+      }
+    } catch (err) {
+      console.warn(`[BulkUpload] Text extraction failed for ${file.name}:`, err);
+    }
+
+    // Fallback: just the filename
+    return `Filename: ${file.name}`;
   }
 
   // ============================================================================
@@ -454,7 +525,7 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
 
         // Update local state
         const updated = this.state.imports.map(i =>
-          i.id === item.id ? { ...i, spId, documentUrl: docUrl, file: undefined } : i
+          i.id === item.id ? { ...i, spId, documentUrl: docUrl } : i
         );
         processed++;
         if (this._isMounted) {
@@ -520,12 +591,28 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
         );
         if (this._isMounted) this.setState({ imports: updated });
 
+        // Extract text content from the file for better AI classification
+        let documentContent = '';
+        if (item.file) {
+          try {
+            documentContent = await this.extractTextFromFile(item.file);
+            console.log(`[BulkUpload] Extracted ${documentContent.length} chars from ${item.fileName}`);
+          } catch { /* extraction failed — will classify from filename only */ }
+        }
+        // Clear the file reference now to free memory
+        const updatedClear = this.state.imports.map(i => i.id === item.id ? { ...i, file: undefined } : i);
+        if (this._isMounted) this.setState({ imports: updatedClear });
+
         let suggestions: any = {};
 
         if (functionUrl) {
-          // Call AI to classify the document
+          // Call AI to classify the document with extracted content
           const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 30000);
+          const timeout = setTimeout(() => controller.abort(), 45000);
+
+          const contentContext = documentContent.length > 100
+            ? `\n\nDocument content (first ${documentContent.length} characters):\n"""${documentContent.substring(0, 3000)}"""`
+            : '';
 
           try {
             const response = await fetch(functionUrl, {
@@ -533,7 +620,7 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 mode: 'author-assist',
-                message: `Classify this policy document. Based on the filename "${item.fileName}" and any title hints, extract and suggest:
+                message: `Classify this policy document. Filename: "${item.fileName}"${contentContext}\n\nBased on the filename and document content, extract and suggest:
 1. Title — a clean, professional policy title (e.g., "Information Security Policy" not the filename)
 2. PolicyCategory (one of: IT Security, HR, Compliance, Data Protection, Health & Safety, Finance, Legal, Operations, Governance, Other)
 3. ComplianceRisk (one of: Critical, High, Medium, Low, Informational)

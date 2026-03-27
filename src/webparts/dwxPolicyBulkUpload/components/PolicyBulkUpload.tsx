@@ -1412,16 +1412,17 @@ Respond ONLY with a JSON object with keys: title, category, risk, departments, s
                   await this.applyTemplateToSelected(parseInt(batchTemplateId));
                   this.setState({ showBatchPanel: false, batchTemplateId: '' });
                 }}
-                styles={{ root: { background: '#0d9488', borderColor: '#0d9488' } }}
+                styles={{ root: { background: '#0d9488', borderColor: '#0d9488', borderRadius: 4 } }}
               />
             )}
             {hasMetadata && (
               <DefaultButton
                 text="Apply Metadata Only"
                 onClick={() => { this.applyBatchMetadata(); }}
+                styles={{ root: { borderRadius: 4 } }}
               />
             )}
-            <DefaultButton text="Cancel" onClick={() => this.setState({ showBatchPanel: false })} />
+            <DefaultButton text="Cancel" onClick={() => this.setState({ showBatchPanel: false })} styles={{ root: { borderRadius: 4 } }} />
           </Stack>
         )}
         isFooterAtBottom={true}
@@ -1432,13 +1433,14 @@ Respond ONLY with a JSON object with keys: title, category, risk, departments, s
           </Text>
 
           {/* Fast Track Template selector */}
-          <div style={{ background: '#f0fdfa', border: '1px solid #99f6e4', borderRadius: 8, padding: 16 }}>
+          <div style={{ background: '#f0fdfa', border: '1px solid #99f6e4', borderRadius: 4, padding: 16 }}>
             <Text style={{ fontWeight: 600, color: '#0f172a', fontSize: 13, display: 'block', marginBottom: 8 }}>Fast Track Template</Text>
             <Dropdown
               selectedKey={batchTemplateId}
               options={templateOptions}
               onChange={(_, opt) => this.setState({ batchTemplateId: String(opt?.key || '') })}
               placeholder="Select a template..."
+              styles={{ root: { borderRadius: 4 }, title: { borderRadius: 4, border: '1px solid #e2e8f0' }, dropdown: { borderRadius: 4 } }}
             />
             <Text style={{ fontSize: 11, color: '#64748b', marginTop: 6, display: 'block' }}>
               Applies category, risk, read timeframe, acknowledgement, and quiz settings from the template.
@@ -1448,9 +1450,11 @@ Respond ONLY with a JSON object with keys: title, category, risk, departments, s
           <Text style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center' }}>— or set individual fields —</Text>
 
           <Dropdown label="Category" selectedKey={batchCategory} options={CATEGORY_OPTIONS}
-            onChange={(_, opt) => this.setState({ batchCategory: String(opt?.key || '') })} />
+            onChange={(_, opt) => this.setState({ batchCategory: String(opt?.key || '') })}
+            styles={{ title: { borderRadius: 4 }, dropdown: { borderRadius: 4 } }} />
           <Dropdown label="Compliance Risk" selectedKey={batchRisk} options={RISK_OPTIONS}
-            onChange={(_, opt) => this.setState({ batchRisk: String(opt?.key || '') })} />
+            onChange={(_, opt) => this.setState({ batchRisk: String(opt?.key || '') })}
+            styles={{ title: { borderRadius: 4 }, dropdown: { borderRadius: 4 } }} />
         </Stack>
       </StyledPanel>
     );

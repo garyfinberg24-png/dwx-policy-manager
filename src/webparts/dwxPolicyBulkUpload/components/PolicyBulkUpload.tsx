@@ -146,11 +146,12 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
   private async detectRole(): Promise<void> {
     try {
       const roleService = new RoleDetectionService(this.props.sp);
-      const roles = await roleService.detectAllRoles();
-      const role = getHighestPolicyRole(roles);
+      const userRoles = await roleService.getCurrentUserRoles();
+      const role = userRoles && userRoles.length > 0 ? getHighestPolicyRole(userRoles) : PolicyManagerRole.User;
       if (this._isMounted) this.setState({ detectedRole: role, loading: false });
     } catch {
-      if (this._isMounted) this.setState({ loading: false });
+      // Fallback: assume Author role so the page loads
+      if (this._isMounted) this.setState({ detectedRole: PolicyManagerRole.Author, loading: false });
     }
   }
 

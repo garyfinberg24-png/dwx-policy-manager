@@ -22,7 +22,7 @@ import { logger } from './LoggingService';
 export class AudienceService {
   private readonly sp: SPFI;
   private readonly AUDIENCES_LIST = 'PM_Audiences';
-  private readonly EMPLOYEES_LIST = 'PM_Employees';
+  private readonly EMPLOYEES_LIST = 'PM_UserProfiles';
 
   constructor(sp: SPFI) {
     this.sp = sp;
@@ -38,7 +38,7 @@ export class AudienceService {
   public async getAudiences(): Promise<IAudience[]> {
     try {
       const items: any[] = await this.sp.web.lists.getByTitle(this.AUDIENCES_LIST).items
-        .select('Id', 'Title', 'Description', 'Criteria', 'MemberCount', 'IsActive', 'LastEvaluated')
+        .select('Id', 'Title', 'Description', 'Rules', 'Criteria', 'Combinator', 'Category', 'MemberCount', 'IsActive', 'IsSystem', 'EstimatedCount', 'LastEvaluated')
         .orderBy('Title', true)
         .top(200)();
 
@@ -46,7 +46,7 @@ export class AudienceService {
         Id: item.Id,
         Title: item.Title,
         Description: item.Description || '',
-        Criteria: this.parseCriteria(item.Criteria),
+        Criteria: this.parseCriteria(item.Rules || item.Criteria),
         MemberCount: item.MemberCount || 0,
         IsActive: item.IsActive !== false,
         LastEvaluated: item.LastEvaluated || undefined,
@@ -64,13 +64,13 @@ export class AudienceService {
     try {
       const item: any = await this.sp.web.lists.getByTitle(this.AUDIENCES_LIST).items
         .getById(id)
-        .select('Id', 'Title', 'Description', 'Criteria', 'MemberCount', 'IsActive', 'LastEvaluated')();
+        .select('Id', 'Title', 'Description', 'Rules', 'Criteria', 'Combinator', 'Category', 'MemberCount', 'IsActive', 'IsSystem', 'EstimatedCount', 'LastEvaluated')();
 
       return {
         Id: item.Id,
         Title: item.Title,
         Description: item.Description || '',
-        Criteria: this.parseCriteria(item.Criteria),
+        Criteria: this.parseCriteria(item.Rules || item.Criteria),
         MemberCount: item.MemberCount || 0,
         IsActive: item.IsActive !== false,
         LastEvaluated: item.LastEvaluated || undefined,
@@ -88,7 +88,8 @@ export class AudienceService {
     const result = await this.sp.web.lists.getByTitle(this.AUDIENCES_LIST).items.add({
       Title: audience.Title,
       Description: audience.Description,
-      Criteria: JSON.stringify(audience.Criteria),
+      Rules: JSON.stringify(audience.Criteria),
+      Combinator: audience.Criteria?.operator || 'AND',
       MemberCount: audience.MemberCount,
       IsActive: audience.IsActive,
     });
@@ -107,7 +108,10 @@ export class AudienceService {
 
     if (updates.Title !== undefined) payload.Title = updates.Title;
     if (updates.Description !== undefined) payload.Description = updates.Description;
-    if (updates.Criteria !== undefined) payload.Criteria = JSON.stringify(updates.Criteria);
+    if (updates.Criteria !== undefined) {
+      payload.Rules = JSON.stringify(updates.Criteria);
+      payload.Combinator = updates.Criteria?.operator || 'AND';
+    }
     if (updates.MemberCount !== undefined) payload.MemberCount = updates.MemberCount;
     if (updates.IsActive !== undefined) payload.IsActive = updates.IsActive;
     if (updates.LastEvaluated !== undefined) payload.LastEvaluated = updates.LastEvaluated;

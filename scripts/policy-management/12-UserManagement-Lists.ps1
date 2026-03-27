@@ -80,9 +80,16 @@ if ($null -eq $list) {
 }
 
 Add-PnPField -List $listName -DisplayName "Description" -InternalName "Description" -Type Note -ErrorAction SilentlyContinue | Out-Null
-Add-PnPField -List $listName -DisplayName "Criteria" -InternalName "Criteria" -Type Note -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "Rules" -InternalName "Rules" -Type Note -ErrorAction SilentlyContinue | Out-Null
+# Rules JSON: [{"field":"Department","operator":"equals","value":"Sales"}]
+Add-PnPField -List $listName -DisplayName "Combinator" -InternalName "Combinator" -Type Choice -Choices "AND","OR" -ErrorAction SilentlyContinue | Out-Null
+Set-PnPField -List $listName -Identity "Combinator" -Values @{DefaultValue="AND"} -ErrorAction SilentlyContinue
+Add-PnPField -List $listName -DisplayName "Category" -InternalName "Category" -Type Choice -Choices "Department","Role","Location","Custom","Compliance","Onboarding" -ErrorAction SilentlyContinue | Out-Null
 Add-PnPField -List $listName -DisplayName "MemberCount" -InternalName "MemberCount" -Type Number -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List $listName -DisplayName "EstimatedCount" -InternalName "EstimatedCount" -Type Number -ErrorAction SilentlyContinue | Out-Null
 Add-PnPField -List $listName -DisplayName "IsActive" -InternalName "IsActive" -Type Boolean -ErrorAction SilentlyContinue | Out-Null
+Set-PnPField -List $listName -Identity "IsActive" -Values @{DefaultValue="1"} -ErrorAction SilentlyContinue
+Add-PnPField -List $listName -DisplayName "IsSystem" -InternalName "IsSystem" -Type Boolean -ErrorAction SilentlyContinue | Out-Null
 Add-PnPField -List $listName -DisplayName "LastEvaluated" -InternalName "LastEvaluated" -Type DateTime -ErrorAction SilentlyContinue | Out-Null
 Write-Host "    Fields added to $listName" -ForegroundColor Gray
 

@@ -56,7 +56,7 @@ export interface ISPGroupMember {
 
 export class UserManagementService {
   private readonly sp: SPFI;
-  private readonly EMPLOYEES_LIST = 'PM_Employees';
+  private readonly EMPLOYEES_LIST = 'PM_UserProfiles';
 
   private readonly EMPLOYEE_FIELDS = [
     'Id', 'Title', 'FirstName', 'LastName', 'Email', 'EmployeeNumber',

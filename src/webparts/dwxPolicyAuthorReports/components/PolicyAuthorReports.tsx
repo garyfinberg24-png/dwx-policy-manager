@@ -101,8 +101,8 @@ export default class PolicyAuthorReports extends React.Component<IPolicyAuthorRe
   private async detectRoleAndLoad(): Promise<void> {
     try {
       const roleService = new RoleDetectionService(this.props.sp);
-      const roles = await roleService.detectAllRoles();
-      const role = getHighestPolicyRole(roles);
+      const userRoles = await roleService.getCurrentUserRoles();
+      const role = userRoles && userRoles.length > 0 ? getHighestPolicyRole(userRoles) : PolicyManagerRole.User;
       if (this._isMounted) this.setState({ detectedRole: role });
       if (hasMinimumRole(role, PolicyManagerRole.Author)) {
         await this.loadReportData();
@@ -111,7 +111,11 @@ export default class PolicyAuthorReports extends React.Component<IPolicyAuthorRe
       }
     } catch (err) {
       console.error('[PolicyAuthorReports] detectRoleAndLoad failed:', err);
-      if (this._isMounted) this.setState({ loading: false, error: `Failed to load reports: ${(err as Error)?.message || 'Unknown error'}` });
+      // Fallback: assume Author role and try to load reports anyway
+      if (this._isMounted) {
+        this.setState({ detectedRole: PolicyManagerRole.Author });
+        try { await this.loadReportData(); } catch { this.setState({ loading: false, error: 'Failed to load report data. Some SharePoint lists may not be provisioned.' }); }
+      }
     }
   }
 

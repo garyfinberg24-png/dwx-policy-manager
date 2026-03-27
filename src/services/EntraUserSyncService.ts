@@ -49,8 +49,8 @@ interface IDeltaUser extends IEntraUser {
   '@removed'?: { reason: string };
 }
 
-/** List name for employee data */
-const EMPLOYEES_LIST = 'PM_Employees';
+/** List name for employee data — unified on PM_UserProfiles */
+const EMPLOYEES_LIST = 'PM_UserProfiles';
 
 /** List name for sync logs */
 const SYNC_LOG_LIST = 'PM_Sync_Log';
@@ -995,9 +995,14 @@ export class EntraUserSyncService {
    */
   private mapEntraUserToEmployee(entraUser: IEntraUser): Partial<IJMLEmployee> {
     const employee: Partial<IJMLEmployee> = {
-      Status: 'Active',
+      Status: entraUser.accountEnabled !== false ? 'Active' : 'Inactive',
       LastSyncedAt: new Date()
     };
+
+    // Set IsActive and SyncSource for PM_UserProfiles compatibility
+    (employee as Record<string, unknown>)['IsActive'] = entraUser.accountEnabled !== false;
+    (employee as Record<string, unknown>)['SyncSource'] = 'EntraID';
+    (employee as Record<string, unknown>)['EmployeeStatus'] = entraUser.accountEnabled !== false ? 'Active' : 'Inactive';
 
     for (const mapping of this.fieldMappings) {
       if (mapping.enabled) {
@@ -1011,6 +1016,11 @@ export class EntraUserSyncService {
           }
         }
       }
+    }
+
+    // Map Office from officeLocation (not in default mappings but needed for audience targeting)
+    if (entraUser.officeLocation) {
+      (employee as Record<string, unknown>)['Office'] = entraUser.officeLocation;
     }
 
     return employee;

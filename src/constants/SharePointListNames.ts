@@ -211,8 +211,12 @@ export const AdminConfigLists = {
  * Lists for user directory, sync, and audience targeting
  */
 export const UserManagementLists = {
-  /** Employee directory (synced from Entra ID) */
-  EMPLOYEES: 'PM_Employees',
+  /** Unified user directory — single source of truth for all user data.
+   *  Synced from Entra ID, read by AudienceRuleService, Distribution, Publish.
+   *  Replaces PM_Employees as the canonical user list. */
+  USER_PROFILES: 'PM_UserProfiles',
+  /** @deprecated Use USER_PROFILES instead — kept as alias for migration */
+  EMPLOYEES: 'PM_UserProfiles',
   /** Entra ID sync operation logs */
   SYNC_LOG: 'PM_Sync_Log',
   /** Custom audience definitions for targeting */

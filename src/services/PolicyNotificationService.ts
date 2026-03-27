@@ -173,8 +173,8 @@ export class PolicyNotificationService {
         ctaColor: '#0d9488'
       });
 
-      // Queue to PM_NotificationQueue
-      await this.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
+      // Queue to PM_NotificationQueue (two-step write to guarantee QueueStatus)
+      const qResult = await this.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
         Title: subject,
         RecipientEmail: opts.recipientEmail,
         RecipientName: opts.recipientName,
@@ -186,6 +186,7 @@ export class PolicyNotificationService {
         QueueStatus: 'Pending',
         Priority: opts.priority || 'Normal'
       });
+      try { const qId = qResult?.data?.Id; if (qId) await this.sp.web.lists.getByTitle('PM_NotificationQueue').items.getById(qId).update({ QueueStatus: 'Pending' }); } catch { /* */ }
     } catch (err) {
       logger.warn('PolicyNotificationService', `Failed to queue templated email for ${opts.eventName}:`, err);
     }

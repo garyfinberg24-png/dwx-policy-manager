@@ -165,6 +165,19 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
   private _isMounted = false;
   private dialogManager = createDialogManager();
 
+  /** Queue an email notification with guaranteed QueueStatus write (two-step) */
+  private async queueEmail(data: Record<string, any>): Promise<void> {
+    const result = await this.props.sp.web.lists.getByTitle('PM_NotificationQueue').items.add(data);
+    const newId = result?.data?.Id || result?.data?.id;
+    if (newId) {
+      // Second write to guarantee QueueStatus is set
+      try {
+        await this.props.sp.web.lists.getByTitle('PM_NotificationQueue')
+          .items.getById(newId).update({ QueueStatus: 'Pending' });
+      } catch { /* best-effort — the add may have set it via default value */ }
+    }
+  }
+
   constructor(props: IPolicyAuthorViewProps) {
     super(props);
     // Read ?tab= query param to set initial tab
@@ -1184,7 +1197,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                         <p style="margin:0;font-size:11px;color:#94a3b8">First Digital — DWx Policy Manager</p>
                       </div>
                     </div>`;
-                  await this.props.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
+                  await this.queueEmail({
                     Title: `Review Required: ${title}`,
                     RecipientEmail: user.Email,
                     RecipientName: user.Title || '',
@@ -1358,7 +1371,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
           try {
             const user = await this.props.sp.web.siteUsers.getById(r.ReviewerId).select('Email', 'Title')();
             if (user?.Email) {
-              await this.props.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
+              await this.queueEmail({
                 Title: `Review Withdrawn: ${escapeHtml(title)}`,
                 RecipientEmail: user.Email,
                 RecipientName: user.Title || '',
@@ -1422,7 +1435,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
               <p style="margin:0;font-size:11px;color:#94a3b8">First Digital — DWx Policy Manager</p>
             </div>
           </div>`;
-        await this.props.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
+        await this.queueEmail({
           Title: `Policy Published: ${title}`,
           RecipientEmail: this.props.context?.pageContext?.user?.email || '',
           RecipientName: publisherName,
@@ -2123,7 +2136,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
         if (authorEmail && policyId > 0) {
           const decisionLabel = status === 'Approved' ? 'Approved' : status === 'Returned' ? 'Changes Requested' : 'Rejected';
           const reviewerName = this.props.context?.pageContext?.user?.displayName || 'A reviewer';
-          await this.props.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
+          await this.queueEmail({
             Title: `Review ${decisionLabel}: ${approval.PolicyTitle}`,
             RecipientEmail: authorEmail,
             RecipientName: approval.SubmittedBy || '',

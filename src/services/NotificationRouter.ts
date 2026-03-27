@@ -184,7 +184,7 @@ export class NotificationRouter {
     // Email — queue to PM_EmailQueue
     if (channels.email) {
       try {
-        await this.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
+        const nrResult = await this.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
           Title: `${notification.event}: ${notification.data.policyTitle || 'Notification'}`,
           RecipientEmail: notification.recipientEmail,
           RecipientName: notification.recipientName || '',
@@ -192,10 +192,11 @@ export class NotificationRouter {
           PolicyId: notification.data.policyId || 0,
           Message: notification.data.body || notification.data.subject || '',
           Priority: eventConfig.priority === 'urgent' ? 'High' : 'Normal',
-          Status: 'Pending',
+          QueueStatus: 'Pending',
           NotificationType: notification.event,
           Channel: 'Email'
         });
+        try { const nrId = nrResult?.data?.Id; if (nrId) await this.sp.web.lists.getByTitle('PM_NotificationQueue').items.getById(nrId).update({ QueueStatus: 'Pending' }); } catch { /* */ }
         result.email = true;
       } catch (err) {
         console.error('[NotificationRouter] email queue failed:', err);

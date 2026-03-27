@@ -797,7 +797,7 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
       let sentCount = 0;
       for (const recipient of pendingRecipients) {
         try {
-          await this.props.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
+          const dResult = await this.props.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
             Title: `Reminder: ${selectedCampaign.campaignName}`,
             RecipientEmail: recipient.email,
             RecipientName: recipient.name,
@@ -808,6 +808,7 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
             QueueStatus: 'Pending',
             Priority: 'High'
           });
+          try { const dId = dResult?.data?.Id; if (dId) await this.props.sp.web.lists.getByTitle('PM_NotificationQueue').items.getById(dId).update({ QueueStatus: 'Pending' }); } catch { /* */ }
           sentCount++;
         } catch { /* per-recipient — continue */ }
       }

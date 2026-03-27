@@ -2646,7 +2646,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                   <p style="margin:0;font-size:11px;color:#94a3b8">First Digital — DWx Policy Manager</p>
                 </div>
               </div>`;
-            await this.props.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
+            const qResult = await this.props.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
               Title: `Review ${decisionLabel}: ${policy!.PolicyName || policy!.Title}`,
               RecipientEmail: authorEmail,
               RecipientName: '',
@@ -2658,6 +2658,8 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
               QueueStatus: 'Pending',
               Priority: 'High'
             });
+            // Two-step write to guarantee QueueStatus is set
+            try { const qId = qResult?.data?.Id; if (qId) await this.props.sp.web.lists.getByTitle('PM_NotificationQueue').items.getById(qId).update({ QueueStatus: 'Pending' }); } catch { /* */ }
           }
         } catch { /* notification best-effort */ }
 
@@ -2958,7 +2960,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
           if (authorEmail) {
             const decisionLabel = reviewDecision === 'approve' ? 'Approved' : reviewDecision === 'return' ? 'Returned for Changes' : 'Rejected';
             const headerColor = reviewDecision === 'approve' ? '#059669,#047857' : reviewDecision === 'return' ? '#d97706,#b45309' : '#dc2626,#b91c1c';
-            await this.props.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
+            const aResult = await this.props.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
               Title: `Approval ${decisionLabel}: ${escapeHtml(policy!.PolicyName || policy!.Title || '')}`,
               RecipientEmail: authorEmail, RecipientName: '',
               PolicyId: policy!.Id, PolicyTitle: policy!.PolicyName || policy!.Title || '',
@@ -2967,6 +2969,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
               Message: `<div style="font-family:'Segoe UI',sans-serif;max-width:600px;margin:0 auto"><div style="background:linear-gradient(135deg,${headerColor});padding:24px 32px;border-radius:8px 8px 0 0"><h1 style="color:#fff;margin:0;font-size:20px">Approval ${decisionLabel}</h1><p style="color:rgba(255,255,255,0.8);margin:4px 0 0;font-size:13px">Policy Manager — Final Approval</p></div><div style="background:#fff;padding:24px 32px;border:1px solid #e2e8f0;border-top:none"><p style="font-size:14px;color:#475569"><strong>${escapeHtml(currentUserName)}</strong> has ${reviewDecision === 'approve' ? 'approved' : reviewDecision === 'return' ? 'returned' : 'rejected'} your policy:</p><div style="background:#f8fafc;border-left:4px solid ${reviewDecision === 'approve' ? '#059669' : '#d97706'};padding:16px;border-radius:0 4px 4px 0;margin:16px 0"><p style="margin:0;font-weight:600;font-size:15px;color:#0f172a">${escapeHtml(policy!.PolicyName || policy!.Title || '')}</p></div>${reviewComments ? `<div style="margin:16px 0;padding:12px;background:#f8fafc;border-radius:4px"><p style="margin:0 0 4px;font-size:11px;color:#94a3b8;font-weight:600">APPROVER COMMENTS</p><p style="margin:0;font-size:13px;color:#475569">${escapeHtml(reviewComments)}</p></div>` : ''}<p style="margin:24px 0 16px"><a href="${siteUrl}/SitePages/${reviewDecision === 'approve' ? 'PolicyDetails' : 'PolicyBuilder'}.aspx?${reviewDecision === 'approve' ? 'policyId' : 'editPolicyId'}=${policy!.Id}" style="background:${reviewDecision === 'approve' ? '#059669' : '#0d9488'};color:#fff;padding:10px 24px;border-radius:4px;text-decoration:none;font-weight:600;font-size:14px;display:inline-block">${reviewDecision === 'approve' ? 'View Approved Policy' : 'Edit Policy'}</a></p></div><div style="background:#f8fafc;padding:16px 32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;text-align:center"><p style="margin:0;font-size:11px;color:#94a3b8">First Digital — DWx Policy Manager</p></div></div>`,
               QueueStatus: 'Pending', Priority: 'High'
             });
+            try { const aId = aResult?.data?.Id; if (aId) await this.props.sp.web.lists.getByTitle('PM_NotificationQueue').items.getById(aId).update({ QueueStatus: 'Pending' }); } catch { /* */ }
           }
         } catch { /* notification best-effort */ }
 

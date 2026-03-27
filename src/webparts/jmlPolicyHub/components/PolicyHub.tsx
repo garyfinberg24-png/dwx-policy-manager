@@ -1617,7 +1617,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
           </div>
         </div>
         {showFeaturedSection && (
-          <div style={{ display: 'flex', gap: 16 }}>
+          <div style={{ display: 'flex', gap: 12 }}>
             {featuredPolicies.map(policy => (
               <div
                 key={policy.id}
@@ -1639,30 +1639,28 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
                   el.style.boxShadow = 'none';
                 }}
               >
-                <div style={{ width: 8, background: 'linear-gradient(180deg, #0d9488, #2563eb)', flexShrink: 0 }} />
-                <div style={{ padding: '24px 28px', flex: 1 }}>
-                  <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#0d9488', marginBottom: 8 }}>&#9733; Featured Policy</div>
-                  <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 6 }}>{policy.title}</div>
+                <div style={{ width: 5, background: 'linear-gradient(180deg, #0d9488, #2563eb)', flexShrink: 0 }} />
+                <div style={{ padding: '14px 18px', flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#0d9488', marginBottom: 4 }}>&#9733; Featured Policy</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{policy.title}</div>
                   {policy.description && (
-                    <div style={{ fontSize: 13, color: '#64748b', lineHeight: 1.6, marginBottom: 16 }}>
-                      {policy.description.length > 200 ? `${policy.description.substring(0, 200)}...` : policy.description}
+                    <div style={{ fontSize: 12, color: '#64748b', lineHeight: 1.5, marginBottom: 10, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' } as React.CSSProperties}>
+                      {policy.description.length > 100 ? `${policy.description.substring(0, 100)}...` : policy.description}
                     </div>
                   )}
-                  <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                    <span style={{ fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, textTransform: 'uppercase', background: '#f0f9ff', color: '#0369a1' }}>{policy.category || 'Policy'}</span>
-                    {policy.isMandatory && <span style={{ fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, textTransform: 'uppercase', background: '#fee2e2', color: '#dc2626' }}>Mandatory</span>}
-                    <span style={{ fontSize: 11, color: '#94a3b8' }}>{policy.readTime} min read</span>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4, textTransform: 'uppercase', background: '#f0f9ff', color: '#0369a1' }}>{policy.category || 'Policy'}</span>
+                    {policy.isMandatory && <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4, textTransform: 'uppercase', background: '#fee2e2', color: '#dc2626' }}>Mandatory</span>}
+                    <span style={{ fontSize: 10, color: '#94a3b8' }}>{policy.readTime} min read</span>
                   </div>
                 </div>
-                <div style={{ width: 220, background: 'linear-gradient(135deg, #f0fdfa, #ecfdf5)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, flexShrink: 0 }}>
-                  <div style={{ textAlign: 'center', marginBottom: 12 }}>
-                    <div style={{ fontSize: 32, fontWeight: 700, color: '#0d9488' }}>{policy.acknowledgedPercent || 0}%</div>
-                    <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#64748b' }}>Acknowledged</div>
-                  </div>
+                <div style={{ width: 100, background: 'linear-gradient(135deg, #f0fdfa, #ecfdf5)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '12px 10px', flexShrink: 0 }}>
+                  <div style={{ fontSize: 22, fontWeight: 700, color: '#0d9488', lineHeight: 1 }}>{policy.acknowledgedPercent || 0}%</div>
+                  <div style={{ fontSize: 8, textTransform: 'uppercase', letterSpacing: 0.5, color: '#64748b', marginTop: 2, marginBottom: 8 }}>Acknowledged</div>
                   <button
                     style={{
-                      padding: '8px 16px', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                      background: '#0d9488', color: '#fff', border: 'none', fontFamily: 'inherit'
+                      padding: '5px 12px', borderRadius: 4, fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                      background: '#0d9488', color: '#fff', border: 'none', fontFamily: 'inherit', whiteSpace: 'nowrap'
                     }}
                     onClick={(e) => { e.stopPropagation(); window.location.href = `/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${policy.id}&mode=browse`; }}
                   >

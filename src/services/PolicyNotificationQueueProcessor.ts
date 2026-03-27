@@ -318,7 +318,7 @@ export class PolicyNotificationQueueProcessor {
       const items = await this.sp.web.lists
         .getByTitle(this.QUEUE_LIST_NAME)
         .items
-        .filter(`(Status eq 'Pending' or Status eq 'Retry') and (ScheduledSendTime eq null or ScheduledSendTime le datetime'${now}')`)
+        .filter(`(QueueStatus eq 'Pending' or QueueStatus eq 'Retry') and (ScheduledSendTime eq null or ScheduledSendTime le datetime'${now}')`)
         .select('*')
         .orderBy('Priority', false) // High priority first
         .orderBy('Created', true)
@@ -351,7 +351,7 @@ export class PolicyNotificationQueueProcessor {
       Message: item.Message as string | undefined,
       Channel: item.Channel as PolicyNotificationChannel,
       Priority: item.Priority as PolicyNotificationPriority,
-      Status: item.Status as NotificationQueueStatus,
+      Status: (item.QueueStatus || item.Status) as NotificationQueueStatus,
       RetryCount: (item.RetryCount as number) || 0,
       MaxRetries: (item.MaxRetries as number) || this.config.defaultMaxRetries,
       LastError: item.LastError as string | undefined,
@@ -731,7 +731,7 @@ export class PolicyNotificationQueueProcessor {
     await this.sp.web.lists
       .getByTitle(this.QUEUE_LIST_NAME)
       .items.getById(notificationId)
-      .update({ Status: status });
+      .update({ QueueStatus: status });
   }
 
   /**
@@ -742,7 +742,7 @@ export class PolicyNotificationQueueProcessor {
       .getByTitle(this.QUEUE_LIST_NAME)
       .items.getById(notificationId)
       .update({
-        Status: NotificationQueueStatus.Sent,
+        QueueStatus: NotificationQueueStatus.Sent,
         SentTime: new Date().toISOString()
       });
   }
@@ -755,7 +755,7 @@ export class PolicyNotificationQueueProcessor {
       .getByTitle(this.QUEUE_LIST_NAME)
       .items.getById(notificationId)
       .update({
-        Status: NotificationQueueStatus.Failed,
+        QueueStatus: NotificationQueueStatus.Failed,
         LastError: error.substring(0, 255)
       });
   }
@@ -765,7 +765,7 @@ export class PolicyNotificationQueueProcessor {
    */
   private async markForRetry(notificationId: number, retryCount: number, error?: string): Promise<void> {
     const updateData: Record<string, unknown> = {
-      Status: NotificationQueueStatus.Retry,
+      QueueStatus: NotificationQueueStatus.Retry,
       RetryCount: retryCount
     };
 
@@ -850,7 +850,7 @@ export class PolicyNotificationQueueProcessor {
       const failedItems = await this.sp.web.lists
         .getByTitle(this.QUEUE_LIST_NAME)
         .items
-        .filter(`Status eq 'Failed'`)
+        .filter(`QueueStatus eq 'Failed'`)
         .select('Id')
         .top(50)();
 
@@ -859,7 +859,7 @@ export class PolicyNotificationQueueProcessor {
           .getByTitle(this.QUEUE_LIST_NAME)
           .items.getById(item.Id)
           .update({
-            Status: NotificationQueueStatus.Pending,
+            QueueStatus: NotificationQueueStatus.Pending,
             RetryCount: 0,
             LastError: null
           });
@@ -884,7 +884,7 @@ export class PolicyNotificationQueueProcessor {
       const oldItems = await this.sp.web.lists
         .getByTitle(this.QUEUE_LIST_NAME)
         .items
-        .filter(`Status eq 'Sent' and SentTime lt datetime'${cutoffDate.toISOString()}'`)
+        .filter(`QueueStatus eq 'Sent' and SentTime lt datetime'${cutoffDate.toISOString()}'`)
         .select('Id')
         .top(100)();
 

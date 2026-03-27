@@ -847,9 +847,10 @@ export class PolicyHubService {
    */
   public async getDelegationRequests(managerId: number): Promise<any[]> {
     try {
+      const validId = ValidationUtils.validateInteger(managerId, 'managerId', 1);
       const requests = await this.sp.web.lists
-        .getByTitle(PolicyWorkflowLists.DELEGATIONS)
-        .items.filter(`RequestedById eq ${ValidationUtils.validateInteger(managerId, 'managerId', 1)}`)
+        .getByTitle('PM_ApprovalDelegations')
+        .items.filter(`DelegatedToId eq ${validId} or DelegatedById eq ${validId}`)
         .orderBy('Created', false)
         .top(100)();
 

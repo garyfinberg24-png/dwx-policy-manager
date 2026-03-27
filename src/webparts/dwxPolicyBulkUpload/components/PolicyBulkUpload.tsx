@@ -406,7 +406,22 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
         const folderRelativeUrl = `${siteServerRelativeUrl}/${PM_LISTS.POLICY_SOURCE_DOCUMENTS}/BulkImports`;
         const safeFileName = item.fileName.replace(/[#%&*:<>?\/\\{|}~]/g, '_');
 
-        // Upload file via XMLHttpRequest (full control over headers + binary body)
+        // Get a fresh request digest via REST API
+        let requestDigest = '';
+        try {
+          const digestResp = await this.props.context.spHttpClient.post(
+            `${siteUrl}/_api/contextinfo`,
+            (await import('@microsoft/sp-http')).SPHttpClient.configurations.v1,
+            {}
+          );
+          const digestJson = await digestResp.json();
+          requestDigest = digestJson?.FormDigestValue || digestJson?.d?.GetContextWebInformation?.FormDigestValue || '';
+        } catch { /* fallback below */ }
+        if (!requestDigest) {
+          requestDigest = (document.getElementById('__REQUESTDIGEST') as HTMLInputElement)?.value || '';
+        }
+
+        // Upload file via XMLHttpRequest with fresh digest
         let docUrl = '';
         const uploadEndpoint = `${siteUrl}/_api/web/GetFolderByServerRelativePath(decodedurl='${folderRelativeUrl}')/Files/AddUsingPath(decodedurl='${encodeURIComponent(safeFileName)}',overwrite=true)`;
 
@@ -414,7 +429,8 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
           const xhr = new XMLHttpRequest();
           xhr.open('POST', uploadEndpoint, true);
           xhr.setRequestHeader('Accept', 'application/json; odata=verbose');
-          xhr.setRequestHeader('X-RequestDigest', (document.getElementById('__REQUESTDIGEST') as HTMLInputElement)?.value || '');
+          xhr.setRequestHeader('Content-Type', 'application/octet-stream');
+          xhr.setRequestHeader('X-RequestDigest', requestDigest);
           xhr.responseType = 'json';
           xhr.onload = () => {
             if (xhr.status >= 200 && xhr.status < 300) {

@@ -232,26 +232,51 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
     const currentUser = await this.props.sp.web.currentUser();
     let processed = 0;
 
+    // Get site URL for REST API calls
+    const siteUrl = this.props.context?.pageContext?.web?.absoluteUrl || '';
+    const siteServerRelativeUrl = this.props.context?.pageContext?.web?.serverRelativeUrl || '/sites/PolicyManager';
+
     for (const item of toUpload) {
       try {
-        // Upload file to PM_PolicySourceDocuments / BulkImports folder
-        const folderPath = 'BulkImports';
+        // Ensure BulkImports folder exists via REST API
+        const folderRelativeUrl = `${siteServerRelativeUrl}/${PM_LISTS.POLICY_SOURCE_DOCUMENTS}/BulkImports`;
         try {
-          await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_SOURCE_DOCUMENTS)
-            .rootFolder.folders.getByUrl(folderPath)();
+          await this.props.sp.web.getFolderByServerRelativePath(folderRelativeUrl)();
         } catch {
           try {
-            await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_SOURCE_DOCUMENTS)
-              .rootFolder.folders.addUsingPath(folderPath);
+            await this.props.sp.web.folders.addUsingPath(folderRelativeUrl);
           } catch { /* folder may already exist */ }
         }
 
-        // Convert File to ArrayBuffer for PnP upload
+        // Upload file via SharePoint REST API (bypasses PnP serialization issue)
         const fileBuffer = await item.file.arrayBuffer();
-        const uploadResult = await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_SOURCE_DOCUMENTS)
-          .rootFolder.folders.getByUrl(folderPath)
-          .files.addUsingPath(item.fileName, fileBuffer, { Overwrite: true });
-        const docUrl = uploadResult.data?.ServerRelativeUrl || '';
+        const encodedFileName = encodeURIComponent(item.fileName).replace(/%20/g, '%20');
+        const uploadUrl = `${siteUrl}/_api/web/GetFolderByServerRelativePath(decodedurl='${folderRelativeUrl}')/Files/AddUsingPath(decodedurl='${encodedFileName}',overwrite=true)`;
+
+        const digestResponse = await fetch(`${siteUrl}/_api/contextinfo`, {
+          method: 'POST',
+          headers: { 'Accept': 'application/json;odata=nometadata' }
+        });
+        const digestData = await digestResponse.json();
+        const requestDigest = digestData.FormDigestValue;
+
+        const uploadResponse = await fetch(uploadUrl, {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json;odata=nometadata',
+            'X-RequestDigest': requestDigest,
+            'Content-Length': String(fileBuffer.byteLength)
+          },
+          body: fileBuffer
+        });
+
+        let docUrl = '';
+        if (uploadResponse.ok) {
+          const uploadData = await uploadResponse.json();
+          docUrl = uploadData.ServerRelativeUrl || '';
+        } else {
+          throw new Error(`Upload failed: ${uploadResponse.status} ${uploadResponse.statusText}`);
+        }
 
         // Create Draft policy stub in PM_Policies
         const policyTitle = item.policyTitle || item.fileName.replace(/\.[^.]+$/, '');

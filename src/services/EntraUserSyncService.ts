@@ -857,7 +857,7 @@ export class EntraUserSyncService {
         'Title',
         'Email',
         'EntraObjectId',
-        'Status',
+        'EmployeeStatus',
         'FirstName',
         'LastName',
         'Department',
@@ -871,7 +871,7 @@ export class EntraUserSyncService {
         Title: item.Title,
         Email: item.Email,
         EntraObjectId: item.EntraObjectId,
-        Status: item.Status,
+        Status: item.EmployeeStatus || item.Status || 'Active',
         FirstName: item.FirstName,
         LastName: item.LastName,
         Department: item.Department,
@@ -1063,7 +1063,12 @@ export class EntraUserSyncService {
       if (value instanceof Date) {
         listData[key] = value.toISOString();
       } else if (value !== undefined && value !== null) {
-        listData[key] = value;
+        // Map 'Status' to 'EmployeeStatus' — 'Status' is reserved in SharePoint
+        if (key === 'Status') {
+          listData['EmployeeStatus'] = value;
+        } else {
+          listData[key] = value;
+        }
       }
     }
 

@@ -469,9 +469,15 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
   // ============================================================================
 
   private async classifyWithAI(): Promise<void> {
-    const { imports } = this.state;
+    // Re-read state to get fresh data after upload
+    const imports = this.state.imports;
     const toClassify = imports.filter(i => i.status === 'uploaded' && i.spId);
-    if (toClassify.length === 0) return;
+    console.log(`[BulkUpload] classifyWithAI: ${imports.length} total imports, ${toClassify.length} ready to classify`);
+    if (toClassify.length === 0) {
+      console.warn('[BulkUpload] No items to classify — all items:', imports.map(i => ({ id: i.id, status: i.status, spId: i.spId })));
+      this.setState({ errorMessage: 'No uploaded items found to classify. Try uploading first.' });
+      return;
+    }
 
     this.setState({ classifying: true, classifyProgress: 0 });
 
@@ -490,10 +496,12 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
       functionUrl = localStorage.getItem('PM_AI_ChatFunctionUrl') || '';
     }
 
+    console.log(`[BulkUpload] AI function URL: ${functionUrl ? 'configured' : 'NOT configured — using heuristic fallback'}`);
     let processed = 0;
 
     for (const item of toClassify) {
       try {
+        console.log(`[BulkUpload] Classifying: ${item.fileName} (spId: ${item.spId})`);
         // Mark as classifying
         let updated = this.state.imports.map(i =>
           i.id === item.id ? { ...i, status: 'classifying' as ImportStatus } : i
@@ -882,7 +890,12 @@ Respond ONLY with a JSON object with keys: title, category, risk, departments, s
                 text="Upload & Classify"
                 iconProps={{ iconName: 'Processing' }}
                 disabled={uploading || imports.length === 0}
-                onClick={async () => { await this.uploadToSharePoint(); await this.classifyWithAI(); }}
+                onClick={async () => {
+                  await this.uploadToSharePoint();
+                  // Small delay to let React state flush after upload
+                  await new Promise(r => setTimeout(r, 500));
+                  await this.classifyWithAI();
+                }}
                 styles={{ root: { borderRadius: 4 } }}
               />
             </div>

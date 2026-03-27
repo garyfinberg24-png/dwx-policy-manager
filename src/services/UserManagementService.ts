@@ -61,7 +61,7 @@ export class UserManagementService {
   private readonly EMPLOYEE_FIELDS = [
     'Id', 'Title', 'FirstName', 'LastName', 'Email', 'EmployeeNumber',
     'JobTitle', 'Department', 'Location', 'OfficePhone', 'MobilePhone',
-    'ManagerEmail', 'Status', 'EmploymentType', 'CostCenter',
+    'ManagerEmail', 'EmployeeStatus', 'EmploymentType', 'CostCenter',
     'EntraObjectId', 'PMRole', 'ManagedDepartments', 'LastSyncedAt', 'Notes', 'Created', 'Modified'
   ];
 
@@ -88,7 +88,7 @@ export class UserManagementService {
         filterParts.push(`Department eq '${ValidationUtils.sanitizeForOData(filters.department)}'`);
       }
       if (filters?.status) {
-        filterParts.push(`Status eq '${ValidationUtils.sanitizeForOData(filters.status)}'`);
+        filterParts.push(`EmployeeStatus eq '${ValidationUtils.sanitizeForOData(filters.status)}'`);
       }
       if (filters?.search) {
         const term = ValidationUtils.sanitizeForOData(filters.search);

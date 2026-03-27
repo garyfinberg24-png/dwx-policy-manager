@@ -15,7 +15,7 @@ Enterprise-grade Policy Lifecycle Management system built on SharePoint Framewor
 | --- | --- |
 | DWx Policy Manager | First Digital / Gary Finberg |
 
-## Web Parts (14)
+## Web Parts (16)
 
 | Web Part | Description | Page |
 | --- | --- | --- |
@@ -32,6 +32,8 @@ Enterprise-grade Policy Lifecycle Management system built on SharePoint Framewor
 | **JmlPolicyDistribution** | Distribution campaign management — create, track, and manage policy distribution with live SharePoint data | `PolicyDistribution.aspx` |
 | **JmlPolicyAnalytics** | Executive analytics dashboard (6 tabs: Executive, Policy Metrics, Acknowledgements, SLA, Compliance, Audit) with live SP data | `PolicyAnalytics.aspx` |
 | **DwxPolicyManagerView** | Manager compliance dashboard — team compliance, approvals, delegations, reviews, reports | `PolicyManagerView.aspx` |
+| **DwxPolicyAuthorReports** | Author-specific reports — policy performance, ack rates, review schedules, quiz stats | `PolicyAuthorReports.aspx` |
+| **DwxPolicyBulkUpload** | Bulk policy import with drag-and-drop, AI classification, batch metadata assignment | `PolicyBulkUpload.aspx` |
 
 ## Architecture
 

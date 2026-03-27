@@ -62,7 +62,7 @@ Do NOT skip step 2 and jump straight to implementation. The user must confirm un
 
 ## Architecture Overview
 
-### WebParts (14 total)
+### WebParts (16 total)
 1. **jmlMyPolicies** - Personal policy dashboard for employees
 2. **jmlPolicyHub** - Central policy discovery, browsing, and search
 3. **jmlPolicyAdmin** - Administrative interface (sidebar + content layout)
@@ -76,6 +76,8 @@ Do NOT skip step 2 and jump straight to implementation. The user must confirm un
 11. **jmlPolicyAnalytics** - Executive analytics dashboard (6 tabs: Executive, Policy Metrics, Acknowledgements, SLA, Compliance, Audit)
 12. **dwxPolicyAuthorView** - Author dashboard with policies, approvals, delegations, activity tabs
 13. **dwxPolicyManagerView** - Manager dashboard for team compliance, approvals, delegations, reviews, reports
+14. **dwxPolicyAuthorReports** - Author-specific reports: policy performance, ack rates, review schedules, quiz stats
+15. **dwxPolicyBulkUpload** - Bulk policy import with drag-and-drop, AI classification, batch metadata assignment
 
 ### SharePoint Pages
 | Page | WebPart | Purpose |
@@ -93,6 +95,8 @@ Do NOT skip step 2 and jump straight to implementation. The user must confirm un
 | PolicyDistribution.aspx | jmlPolicyDistribution | Distribution campaigns |
 | PolicyAnalytics.aspx | jmlPolicyAnalytics | Executive analytics dashboard |
 | PolicyManagerView.aspx | dwxPolicyManagerView | Manager compliance dashboard |
+| PolicyAuthorReports.aspx | dwxPolicyAuthorReports | Author performance reports |
+| PolicyBulkUpload.aspx | dwxPolicyBulkUpload | Bulk policy import with AI |
 
 ### Directory Structure
 ```
@@ -812,7 +816,7 @@ The QuizBuilder's "AI Generate" panel calls the Azure Function with:
 
 ---
 
-## Session State (Last Updated: 26 Mar 2026 — Session 18 Complete)
+## Session State (Last Updated: 27 Mar 2026 — Session 19 Complete)
 
 ### Production Readiness Rules (MANDATORY)
 
@@ -850,8 +854,63 @@ See: docs/production-readiness-results.md, docs/production-hardening-script.md
 - `pre-production-hardening` — before production audit (commit `4693afc`)
 - `session-17-complete` — end of Session 17 (commit `ec0077d`)
 - `session-18-complete` — end of Session 18 (commit `bcbaaca`)
+- Session 19 start: commit `c8b683a`, Session 19 end: commit `aae0f17`
 
-### Recently Completed (Session 18 — 25 Mar 2026)
+### Recently Completed (Session 19 — 27 Mar 2026)
+
+#### Author Reports, Bulk Upload, Revise/Retire Workflows, Premium Email Templates
+
+**10 Outstanding Items Resolved:**
+- Hero banner search bottom-alignment fixed (alignSelf + margin: 0)
+- Submit for Review: 4 bugs fixed across 3 entry points (Priority mismatch, NotificationType mismatch, audit log title, Kanban path rewritten)
+- Save as Fast Track Template button on wizard Review step
+- PolicyHub featured: real ack %, description, category from SP
+- Audience resolution wired into publish + distribution flows
+- PM_ReminderSchedule list + ReminderScheduleService
+- CampaignName + 7 missing distribution columns provisioning script
+- MyPolicies, Reports — confirmed already live (CLAUDE.md was stale)
+- Audience Rule Builder — confirmed already existed in Admin Centre
+
+**New Webparts (2):**
+- `dwxPolicyAuthorReports` — Author-specific reports page (policy performance table, KPI cards, upcoming reviews, quiz stats, activity feed). Live data from PM_Policies, PM_PolicyAcknowledgements, PM_PolicyQuizResults, PM_PolicyAuditLog
+- `dwxPolicyBulkUpload` — 3-phase bulk import: Upload (drag-and-drop, 50 files, 25MB) → AI Classify (Azure OpenAI + heuristic fallback) → Review & Assign (batch metadata, individual wizard). Draft stubs with `CreationMethod: BulkImport`
+
+**Revise Workflow (Approved/Published):**
+- Version snapshot via `createEditableVersion` before editing
+- Reviewer notifications that revision is underway
+- Policy Builder shows blue "Revision Mode" banner + sidebar header adapts
+- Redirects to wizard after snapshot; original version stays published during revision
+
+**Retire Workflow (Approved/Published):**
+- Retirement reason prompt (recorded in audit with ComplianceRelevant: true)
+- Outstanding acknowledgements cancelled (AckStatus → 'Cancelled')
+- In-app + email notifications to affected users (slate-grey branded template)
+- Scheduled reminders cancelled (PM_ReminderSchedule → 'Skipped')
+
+**Premium Email Templates:**
+- `EmailTemplateBuilder` utility (src/utils/EmailTemplateBuilder.ts) — 15 typed notification templates
+- Compact gradient card design (Variation B): teal header, alternating metadata grid, CTA button, plain text link, branded footer
+- Colour-coded: Teal (info), Blue (update), Amber (warning), Orange (urgent), Red (overdue/rejected), Dark Red (SLA), Green (success), Slate (retired)
+- Personalised greeting, policy number, department, risk level in every email
+- `buildEmailShell()` in PolicyNotificationService + EmailQueueService replaced with premium design
+- 15 HTML mockups in docs/email-mockups/notifications/ for reference
+
+**Pipeline Published View:**
+- Published policies now appear in Drafts & Pipeline with 6th KPI card (teal)
+- Actions for Published: View, Create Quiz, Revise, Retire
+
+**Nav Updates:**
+- Author dropdown: Reports + Bulk Upload added (separate pages)
+- 16 webparts total, registered in config.json
+
+**Provisioning Scripts:**
+- `24-Distribution-Missing-Columns.ps1` — 8 columns for PM_PolicyDistributions
+- `25-ReminderSchedule-List.ps1` — PM_ReminderSchedule list (12 columns, 3 indexes)
+
+**Build:** Zero errors, 16 webpart manifests
+**Commits:** `7c28a2e` (main), `aae0f17` (email templates) — pushed to ADO + GitHub
+
+### Previously Completed (Session 18 — 25 Mar 2026)
 
 #### Email Pipeline Live, Field Name Audit, Wizard Redesign, Notification Wiring
 
@@ -1297,13 +1356,14 @@ Three parallel audit streams identified ~45 optimization opportunities:
 
 | Area | Score | Notes |
 | ------ | ------- | ------- |
-| Security | 8.5/10 | XSS fixed, OData sanitized, auth checks, visibility filtering, PII redaction in telemetry. Remaining: expand sanitization to all 100+ filter sites, npm audit |
+| Security | 8.5/10 | XSS fixed, OData sanitized, auth checks, visibility filtering, PII redaction, escapeHtml in all email templates |
 | Performance | 7.5/10 | Parallelized loads, reduced query limits, live data. Remaining: React.lazy, virtualization, server-side pagination |
-| Reliability | 8.5/10 | ErrorBoundary on all webparts + App Insights logging, _isMounted guards on 8 components, PII redaction. Remaining: @ts-nocheck removal from ~198 files |
-| Code Quality | 7/10 | Types extracted, tab decomposition started (6 tabs extracted from god component), AdminConfigService. Remaining: complete decomposition |
+| Reliability | 8.5/10 | ErrorBoundary on all 16 webparts, _isMounted guards, PII redaction, consistent notification patterns |
+| Code Quality | 7.5/10 | EmailTemplateBuilder centralised, tab decomposition, AdminConfigService. Remaining: @ts-nocheck removal |
+| Notifications | 9/10 | 15 premium email templates, colour-coded, personalised, with plain-text fallback links. EmailTemplateBuilder utility |
 | Testing | 3.5/10 | Jest config + mocks + 6 unit test suites. Remaining: integration tests, component tests, E2E |
 | Accessibility | 3/10 | Basic Fluent UI a11y only. No ARIA roles, keyboard nav, screen reader testing |
-| Overall | ~78/100 | Up from 76/100. ErrorBoundary on all webparts, _isMounted guards, PII redaction, App Insights error logging |
+| Overall | ~80/100 | Up from 78. Premium emails, audience resolution, revise/retire workflows, 2 new webparts, all data wired |
 
 ### Known Issues
 
@@ -1313,21 +1373,19 @@ Three parallel audit streams identified ~45 optimization opportunities:
 - Image upload metadata (`DocumentType`, `FileStatus`, etc.) fails with 400 if PM_PolicySourceDocuments custom columns not provisioned — non-blocking, caught by try/catch
 - DWx Hub integration is experimental — `@dwx/core` services are wired but Hub site may not exist yet; all calls degrade gracefully
 - OData sanitization covers 9 HIGH RISK sites; ~90+ MEDIUM/LOW risk sites remain (numeric IDs, enum constants — lower priority)
-- `@ts-nocheck` remains in ~198 files — PolicyService.ts and LoggingService.ts are fully type-checked
+- `@ts-nocheck` remains in ~108 files — PolicyService.ts and LoggingService.ts are fully type-checked
 - PnP PowerShell `Add-PnPField` does NOT support `-DefaultValue` — use `Set-PnPField -Values @{DefaultValue="..."}` separately
-- Disk space on dev machine was critically low (162MB free / 879GB) during Session 8 — may need cleanup
 - Logic App API connections (Office 365 + SharePoint) require manual OAuth authorization in Azure Portal after deployment — ARM/Bicep cannot perform consent
 
 ### Next Steps
 
-- Configure AI Chat Assistant in Admin → paste function URL, enable, test connection in SharePoint
-- User testing of AI Chat: Policy Q&A mode with real policies, Author Assist mode for drafting, Help mode for navigation
-- Run `15-ManagedDepartments-Column.ps1` to provision ManagedDepartments column on PM_UserProfiles
-- Test email pipeline end-to-end: queue email via SPFx → verify Logic App sends → check inbox
-- User testing of versioning, visibility, subcategories in live SharePoint
-- Run `Provision-SharePointPages.ps1` to create all 13 SharePoint pages
-- Initialize Application Insights in production — set connection string in PM_Configuration or Admin Settings
-- Wire remaining webparts to live SharePoint data (MyPolicies featured/stats, PolicyHub featured section)
+- Run provisioning scripts: `24-Distribution-Missing-Columns.ps1`, `25-ReminderSchedule-List.ps1` (done), `Provision-SharePointPages.ps1` for new pages (PolicyAuthorReports.aspx, PolicyBulkUpload.aspx)
+- Test Bulk Upload end-to-end in SharePoint: file upload → AI classification → batch metadata → open in wizard
+- Test Revise workflow: Published → snapshot → Draft → edit → Submit for Review → re-approve → republish
+- Test Retire workflow: reason prompt → ack cancellation → user notifications → reminder cancellation
+- Verify premium email templates render correctly in Outlook, Gmail, Apple Mail
+- Configure AI Chat Assistant in Admin → paste function URL, enable, test connection
+- Initialize Application Insights in production — set connection string in PM_Configuration
 - Continue @ts-nocheck removal from critical services (ApprovalService, QuizService, PolicyHubService)
 - Expand unit test coverage (currently 6 suites — need component tests, integration tests)
 - Add accessibility improvements (ARIA roles, keyboard navigation, screen reader support)

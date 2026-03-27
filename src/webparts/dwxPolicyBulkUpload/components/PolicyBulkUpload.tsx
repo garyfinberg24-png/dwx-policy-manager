@@ -24,6 +24,20 @@ type UploadPhase = 'upload' | 'classify' | 'review';
 
 type ImportStatus = 'uploaded' | 'classifying' | 'classified' | 'metadata-complete' | 'ready' | 'failed';
 
+interface IFastTrackTemplate {
+  Id: number;
+  Title: string;
+  ProfileName: string;
+  PolicyCategory: string;
+  ComplianceRisk: string;
+  ReadTimeframe: string;
+  RequiresAcknowledgement: boolean;
+  RequiresQuiz: boolean;
+  TargetDepartments: string;
+}
+
+type MatchConfidence = 'Strong' | 'Likely' | 'Possible' | 'None';
+
 interface IBulkImportItem {
   id: string;  // temp ID until SP item created
   spId?: number; // SP list item ID once created
@@ -33,18 +47,26 @@ interface IBulkImportItem {
   file?: File;
   documentUrl?: string;
   status: ImportStatus;
-  // AI-suggested metadata
+  // AI-extracted metadata
+  extractedTitle?: string;
   suggestedCategory?: string;
   suggestedRisk?: string;
   suggestedDepartments?: string[];
   suggestedSummary?: string;
   suggestedKeyPoints?: string[];
   suggestedReadTimeframe?: string;
-  // User-confirmed metadata
+  suggestedRequiresAck?: boolean;
+  // Template matching
+  matchedTemplateId?: number;
+  matchedTemplateName?: string;
+  matchConfidence?: MatchConfidence;
+  // User-confirmed metadata (editable in classify table)
+  confirmedTitle?: string;
   confirmedCategory?: string;
   confirmedRisk?: string;
   confirmedDepartments?: string[];
-  policyTitle?: string;
+  confirmedTemplateId?: number;
+  templateApplied?: boolean;
   // Selection
   selected?: boolean;
   error?: string;
@@ -65,10 +87,13 @@ interface IPolicyBulkUploadState {
   statusFilter: 'All' | ImportStatus;
   batchCategory: string;
   batchRisk: string;
+  batchTemplateId: string;
   showBatchPanel: boolean;
   successMessage: string;
   errorMessage: string;
   dragOver: boolean;
+  fastTrackTemplates: IFastTrackTemplate[];
+  templatesLoaded: boolean;
 }
 
 // ============================================================================
@@ -127,10 +152,13 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
       statusFilter: 'All',
       batchCategory: '',
       batchRisk: '',
+      batchTemplateId: '',
       showBatchPanel: false,
       successMessage: '',
       errorMessage: '',
-      dragOver: false
+      dragOver: false,
+      fastTrackTemplates: [],
+      templatesLoaded: false
     };
   }
 
@@ -153,6 +181,123 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
       // Fallback: assume Author role so the page loads
       if (this._isMounted) this.setState({ detectedRole: PolicyManagerRole.Author, loading: false });
     }
+  }
+
+  // ============================================================================
+  // FAST TRACK TEMPLATE LOADING + MATCHING
+  // ============================================================================
+
+  private async loadFastTrackTemplates(): Promise<void> {
+    if (this.state.templatesLoaded) return;
+    try {
+      const items = await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_METADATA_PROFILES)
+        .items.filter('IsActive ne 0')
+        .select('Id', 'Title', 'ProfileName', 'PolicyCategory', 'ComplianceRisk', 'ReadTimeframe', 'RequiresAcknowledgement', 'RequiresQuiz', 'TargetDepartments')
+        .orderBy('Title').top(100)();
+      const templates: IFastTrackTemplate[] = items.map((t: any) => ({
+        Id: t.Id, Title: t.Title || t.ProfileName, ProfileName: t.ProfileName || t.Title,
+        PolicyCategory: t.PolicyCategory || '', ComplianceRisk: t.ComplianceRisk || 'Medium',
+        ReadTimeframe: t.ReadTimeframe || 'Week 1',
+        RequiresAcknowledgement: t.RequiresAcknowledgement !== false,
+        RequiresQuiz: t.RequiresQuiz || false,
+        TargetDepartments: t.TargetDepartments || ''
+      }));
+      if (this._isMounted) this.setState({ fastTrackTemplates: templates, templatesLoaded: true });
+    } catch {
+      if (this._isMounted) this.setState({ templatesLoaded: true });
+    }
+  }
+
+  private matchTemplate(item: IBulkImportItem): { templateId: number; templateName: string; confidence: MatchConfidence } | null {
+    const { fastTrackTemplates } = this.state;
+    if (fastTrackTemplates.length === 0) return null;
+
+    const category = (item.suggestedCategory || '').toLowerCase();
+    const risk = (item.suggestedRisk || '').toLowerCase();
+    const depts = (item.suggestedDepartments || []).map(d => d.toLowerCase());
+
+    let bestMatch: IFastTrackTemplate | null = null;
+    let bestScore = 0;
+
+    for (const tmpl of fastTrackTemplates) {
+      let score = 0;
+      // Category match (strongest signal)
+      if (tmpl.PolicyCategory.toLowerCase() === category) score += 3;
+      // Risk match
+      if (tmpl.ComplianceRisk.toLowerCase() === risk) score += 2;
+      // Department overlap
+      const tmplDepts = (tmpl.TargetDepartments || '').split(';').map(d => d.trim().toLowerCase()).filter(Boolean);
+      if (tmplDepts.length > 0 && depts.some(d => tmplDepts.includes(d))) score += 1;
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestMatch = tmpl;
+      }
+    }
+
+    if (!bestMatch || bestScore === 0) return null;
+
+    const confidence: MatchConfidence = bestScore >= 5 ? 'Strong' : bestScore >= 3 ? 'Likely' : 'Possible';
+    return { templateId: bestMatch.Id, templateName: bestMatch.Title || bestMatch.ProfileName, confidence };
+  }
+
+  private async applyTemplateToItem(itemId: string, templateId: number): Promise<void> {
+    const template = this.state.fastTrackTemplates.find(t => t.Id === templateId);
+    if (!template) return;
+
+    const item = this.state.imports.find(i => i.id === itemId);
+    if (!item?.spId) return;
+
+    // Update SP list item with template metadata
+    try {
+      await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES).items.getById(item.spId).update({
+        PolicyCategory: template.PolicyCategory,
+        ComplianceRisk: template.ComplianceRisk,
+        ReadTimeframe: template.ReadTimeframe,
+        RequiresAcknowledgement: template.RequiresAcknowledgement,
+        RequiresQuiz: template.RequiresQuiz,
+        Departments: template.TargetDepartments
+      });
+    } catch { /* best-effort — column may not exist */ }
+
+    // Update local state
+    const updated = this.state.imports.map(i =>
+      i.id === itemId ? {
+        ...i,
+        confirmedCategory: template.PolicyCategory,
+        confirmedRisk: template.ComplianceRisk,
+        confirmedTemplateId: templateId,
+        templateApplied: true,
+        status: 'metadata-complete' as ImportStatus
+      } : i
+    );
+    this.setState({ imports: updated });
+  }
+
+  private async applyTemplateToSelected(templateId: number): Promise<void> {
+    const { selectedIds } = this.state;
+    for (const id of selectedIds) {
+      await this.applyTemplateToItem(id, templateId);
+    }
+    this.setState({
+      selectedIds: new Set(),
+      successMessage: `Template applied to ${selectedIds.size} polic${selectedIds.size !== 1 ? 'ies' : 'y'}.`
+    });
+    setTimeout(() => this.setState({ successMessage: '' }), 4000);
+  }
+
+  private async acceptAllSuggestions(): Promise<void> {
+    const { imports } = this.state;
+    const classifiedItems = imports.filter(i => i.status === 'classified' && i.matchedTemplateId);
+    for (const item of classifiedItems) {
+      if (item.matchedTemplateId) {
+        await this.applyTemplateToItem(item.id, item.matchedTemplateId);
+      }
+    }
+    this.setState({
+      successMessage: `Accepted AI suggestions for ${classifiedItems.length} polic${classifiedItems.length !== 1 ? 'ies' : 'y'}.`
+    });
+    setTimeout(() => this.setState({ successMessage: '' }), 4000);
   }
 
   // ============================================================================
@@ -330,6 +475,9 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
 
     this.setState({ classifying: true, classifyProgress: 0 });
 
+    // Load Fast Track Templates for matching
+    await this.loadFastTrackTemplates();
+
     // Get AI chat function URL from config or localStorage
     let functionUrl = '';
     try {
@@ -365,15 +513,17 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 mode: 'author-assist',
-                message: `Classify this policy document. Based on the filename "${item.fileName}" and title "${item.policyTitle}", suggest:
-1. PolicyCategory (one of: IT Security, HR, Compliance, Data Protection, Health & Safety, Finance, Legal, Operations, Governance, Other)
-2. ComplianceRisk (one of: Critical, High, Medium, Low, Informational)
-3. Departments (comma-separated, e.g., "IT, All Employees")
-4. Summary (1-2 sentences)
-5. KeyPoints (3-5 bullet points)
-6. ReadTimeframe (one of: Immediate, Day 1, Day 3, Week 1, Week 2, Month 1)
+                message: `Classify this policy document. Based on the filename "${item.fileName}" and any title hints, extract and suggest:
+1. Title — a clean, professional policy title (e.g., "Information Security Policy" not the filename)
+2. PolicyCategory (one of: IT Security, HR, Compliance, Data Protection, Health & Safety, Finance, Legal, Operations, Governance, Other)
+3. ComplianceRisk (one of: Critical, High, Medium, Low, Informational)
+4. Departments (comma-separated, e.g., "IT, All Employees")
+5. Summary (1-2 sentences describing the policy)
+6. KeyPoints (3-5 bullet points of what the policy covers)
+7. ReadTimeframe (one of: Immediate, Day 1, Day 3, Week 1, Week 2, Month 1)
+8. RequiresAcknowledgement (true/false — true if it's a compliance/mandatory policy)
 
-Respond ONLY with a JSON object with keys: category, risk, departments, summary, keyPoints, readTimeframe`,
+Respond ONLY with a JSON object with keys: title, category, risk, departments, summary, keyPoints, readTimeframe, requiresAck`,
                 history: [],
                 context: []
               }),
@@ -400,20 +550,38 @@ Respond ONLY with a JSON object with keys: category, risk, departments, summary,
           suggestions = this.heuristicClassify(item.fileName, item.policyTitle || '');
         }
 
+        // Build the classified item
+        const classifiedItem: Partial<IBulkImportItem> = {
+          status: 'classified' as ImportStatus,
+          extractedTitle: suggestions.title || item.policyTitle || item.fileName.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' '),
+          suggestedCategory: suggestions.category || 'Other',
+          suggestedRisk: suggestions.risk || 'Medium',
+          suggestedDepartments: Array.isArray(suggestions.departments) ? suggestions.departments : (suggestions.departments || '').split(',').map((d: string) => d.trim()).filter(Boolean),
+          suggestedSummary: suggestions.summary || '',
+          suggestedKeyPoints: Array.isArray(suggestions.keyPoints) ? suggestions.keyPoints : [],
+          suggestedReadTimeframe: suggestions.readTimeframe || 'Week 1',
+          suggestedRequiresAck: suggestions.requiresAck === true || suggestions.requiresAck === 'true',
+          // Pre-fill confirmed with suggestions
+          confirmedTitle: suggestions.title || item.policyTitle || item.fileName.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' '),
+          confirmedCategory: suggestions.category || 'Other',
+          confirmedRisk: suggestions.risk || 'Medium',
+          confirmedDepartments: Array.isArray(suggestions.departments) ? suggestions.departments : (suggestions.departments || '').split(',').map((d: string) => d.trim()).filter(Boolean),
+        };
+
+        // Match to a Fast Track Template
+        const tempItem = { ...item, ...classifiedItem } as IBulkImportItem;
+        const templateMatch = this.matchTemplate(tempItem);
+        if (templateMatch) {
+          classifiedItem.matchedTemplateId = templateMatch.templateId;
+          classifiedItem.matchedTemplateName = templateMatch.templateName;
+          classifiedItem.matchConfidence = templateMatch.confidence;
+          classifiedItem.confirmedTemplateId = templateMatch.templateId;
+        }
+
         updated = this.state.imports.map(i =>
           i.id === item.id ? {
             ...i,
-            status: 'classified' as ImportStatus,
-            suggestedCategory: suggestions.category || 'Other',
-            suggestedRisk: suggestions.risk || 'Medium',
-            suggestedDepartments: Array.isArray(suggestions.departments) ? suggestions.departments : (suggestions.departments || '').split(',').map((d: string) => d.trim()).filter(Boolean),
-            suggestedSummary: suggestions.summary || '',
-            suggestedKeyPoints: Array.isArray(suggestions.keyPoints) ? suggestions.keyPoints : [],
-            suggestedReadTimeframe: suggestions.readTimeframe || 'Week 1',
-            // Pre-fill confirmed with suggestions
-            confirmedCategory: suggestions.category || 'Other',
-            confirmedRisk: suggestions.risk || 'Medium',
-            confirmedDepartments: Array.isArray(suggestions.departments) ? suggestions.departments : (suggestions.departments || '').split(',').map((d: string) => d.trim()).filter(Boolean)
+            ...classifiedItem
           } : i
         );
         processed++;
@@ -449,7 +617,9 @@ Respond ONLY with a JSON object with keys: category, risk, departments, summary,
     else if (/legal|contract|intellectual|nda|confidential/i.test(text)) { category = 'Legal'; risk = 'High'; }
     else if (/operat|process|procedure|workflow|standard/i.test(text)) { category = 'Operations'; risk = 'Low'; }
     else if (/govern|board|ethic|whistleblow|conflict/i.test(text)) { category = 'Governance'; risk = 'High'; }
-    return { category, risk, departments: ['All Employees'], summary: '', keyPoints: [], readTimeframe: 'Week 1' };
+    // Clean title from filename
+    const cleanTitle = (fileName + '').replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    return { title: cleanTitle, category, risk, departments: ['All Employees'], summary: '', keyPoints: [], readTimeframe: 'Week 1', requiresAck: ['Critical', 'High'].includes(risk) };
   }
 
   // ============================================================================
@@ -724,54 +894,235 @@ Respond ONLY with a JSON object with keys: category, risk, departments, summary,
 
   // ---- CLASSIFY PHASE ----
   private renderClassifyPhase(): React.ReactElement {
-    const { imports, classifying, classifyProgress } = this.state;
+    const { imports, classifying, classifyProgress, selectedIds, fastTrackTemplates, searchQuery } = this.state;
     const unclassified = imports.filter(i => i.status === 'uploaded' && i.spId);
     const classified = imports.filter(i => ['classified', 'metadata-complete'].includes(i.status));
+    const withTemplateMatch = classified.filter(i => i.matchedTemplateId);
+
+    // Template dropdown options
+    const templateOptions: IDropdownOption[] = [
+      { key: '', text: '— No template —' },
+      ...fastTrackTemplates.map(t => ({ key: String(t.Id), text: t.Title || t.ProfileName }))
+    ];
+
+    // Update a field on an import item
+    const updateItem = (id: string, field: string, value: any): void => {
+      const updated = this.state.imports.map(i => i.id === id ? { ...i, [field]: value } : i);
+      this.setState({ imports: updated });
+    };
+
+    // Confidence badge colours
+    const confidenceStyle = (c?: MatchConfidence) => {
+      switch (c) {
+        case 'Strong': return { bg: '#f0fdf4', color: '#059669' };
+        case 'Likely': return { bg: '#eff6ff', color: '#2563eb' };
+        case 'Possible': return { bg: '#fef3c7', color: '#d97706' };
+        default: return { bg: '#f1f5f9', color: '#94a3b8' };
+      }
+    };
+
+    // Filtered items for display
+    let displayItems = imports.filter(i => i.suggestedCategory || i.status === 'classifying');
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      displayItems = displayItems.filter(i => (i.confirmedTitle || i.extractedTitle || i.fileName).toLowerCase().includes(q));
+    }
+
+    const allDisplaySelected = displayItems.length > 0 && displayItems.every(i => selectedIds.has(i.id));
 
     return (
       <>
-        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: 24, marginBottom: 20 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <div>
-              <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', margin: 0 }}>AI Classification</h2>
-              <p style={{ fontSize: 12, color: '#64748b', margin: '4px 0 0' }}>
-                {unclassified.length > 0 ? `${unclassified.length} polic${unclassified.length !== 1 ? 'ies' : 'y'} ready for AI classification` : `${classified.length} polic${classified.length !== 1 ? 'ies' : 'y'} classified`}
-              </p>
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              {unclassified.length > 0 && (
-                <PrimaryButton
-                  text={classifying ? 'Classifying...' : `Classify ${unclassified.length} Polic${unclassified.length !== 1 ? 'ies' : 'y'}`}
-                  iconProps={{ iconName: 'Processing' }}
-                  disabled={classifying}
-                  onClick={() => this.classifyWithAI()}
-                  styles={{ root: { background: '#7c3aed', borderColor: '#7c3aed', borderRadius: 4 }, rootHovered: { background: '#6d28d9', borderColor: '#6d28d9' } }}
-                />
-              )}
-              {classified.length > 0 && (
-                <PrimaryButton text="Continue to Review" iconProps={{ iconName: 'Forward' }} onClick={() => this.setState({ phase: 'review' })}
-                  styles={{ root: { background: '#0d9488', borderColor: '#0d9488', borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
-                />
-              )}
-            </div>
+        {/* Header + Actions */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <div>
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', margin: 0 }}>AI Classification & Template Matching</h2>
+            <p style={{ fontSize: 12, color: '#64748b', margin: '4px 0 0' }}>
+              {unclassified.length > 0 ? `${unclassified.length} awaiting classification` : ''}{unclassified.length > 0 && classified.length > 0 ? ' · ' : ''}{classified.length > 0 ? `${classified.length} classified` : ''}{withTemplateMatch.length > 0 ? ` · ${withTemplateMatch.length} template matches` : ''}
+            </p>
           </div>
-
-          {classifying && <ProgressIndicator label={`Classifying... ${classifyProgress}%`} percentComplete={classifyProgress / 100} style={{ marginBottom: 16 }} />}
-
-          {/* Classification results */}
-          {imports.filter(i => i.suggestedCategory).map(item => (
-            <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 0', borderBottom: '1px solid #f1f5f9' }}>
-              <Icon iconName={this.getFileIcon(item.fileType)} styles={{ root: { fontSize: 18, color: '#0d9488', flexShrink: 0 } }} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.policyTitle || item.fileName}</div>
-                {item.suggestedSummary && <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>{item.suggestedSummary.substring(0, 100)}...</div>}
-              </div>
-              <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 4, background: '#f5f3ff', color: '#7c3aed' }}>{item.suggestedCategory}</span>
-              <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 4, background: item.suggestedRisk === 'Critical' ? '#fef2f2' : item.suggestedRisk === 'High' ? '#fff7ed' : '#f0fdf4', color: item.suggestedRisk === 'Critical' ? '#dc2626' : item.suggestedRisk === 'High' ? '#d97706' : '#059669' }}>{item.suggestedRisk}</span>
-              <DefaultButton text="Accept" onClick={() => this.acceptAISuggestions(item.id)} styles={{ root: { fontSize: 11, height: 26, minWidth: 60, borderRadius: 4 } }} />
-            </div>
-          ))}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {unclassified.length > 0 && (
+              <PrimaryButton
+                text={classifying ? 'Classifying...' : `Classify ${unclassified.length}`}
+                iconProps={{ iconName: 'Processing' }}
+                disabled={classifying}
+                onClick={() => this.classifyWithAI()}
+                styles={{ root: { background: '#7c3aed', borderColor: '#7c3aed', borderRadius: 4, fontSize: 12, height: 30 }, rootHovered: { background: '#6d28d9', borderColor: '#6d28d9' } }}
+              />
+            )}
+            {withTemplateMatch.length > 0 && (
+              <DefaultButton
+                text={`Accept All Matches (${withTemplateMatch.length})`}
+                iconProps={{ iconName: 'Accept' }}
+                onClick={() => this.acceptAllSuggestions()}
+                styles={{ root: { fontSize: 12, height: 30, borderRadius: 4, color: '#059669', borderColor: '#bbf7d0' }, rootHovered: { background: '#f0fdf4', borderColor: '#059669' } }}
+              />
+            )}
+            {selectedIds.size > 0 && (
+              <DefaultButton
+                text={`Apply Template (${selectedIds.size})`}
+                iconProps={{ iconName: 'Tag' }}
+                onClick={() => this.setState({ showBatchPanel: true })}
+                styles={{ root: { fontSize: 12, height: 30, borderRadius: 4 } }}
+              />
+            )}
+            {classified.length > 0 && (
+              <PrimaryButton text="Continue to Review" iconProps={{ iconName: 'Forward' }} onClick={() => this.setState({ phase: 'review' })}
+                styles={{ root: { background: '#0d9488', borderColor: '#0d9488', borderRadius: 4, fontSize: 12, height: 30 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+              />
+            )}
+          </div>
         </div>
+
+        {/* Search */}
+        <div style={{ marginBottom: 12 }}>
+          <SearchBox placeholder="Search by title or filename..." value={searchQuery} onChange={(_, v) => this.setState({ searchQuery: v || '' })} styles={{ root: { width: 280 } }} />
+        </div>
+
+        {classifying && <ProgressIndicator label={`Classifying... ${classifyProgress}%`} percentComplete={classifyProgress / 100} style={{ marginBottom: 16 }} />}
+
+        {/* Classification Table */}
+        {displayItems.length > 0 && (
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
+            {/* Table Header */}
+            <div style={{
+              display: 'grid', gridTemplateColumns: '36px 1fr 130px 90px 110px 180px 80px 70px',
+              padding: '10px 16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0',
+              fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, color: '#64748b'
+            }}>
+              <div><input type="checkbox" checked={allDisplaySelected} onChange={() => {
+                if (allDisplaySelected) this.setState({ selectedIds: new Set() });
+                else this.setState({ selectedIds: new Set(displayItems.map(i => i.id)) });
+              }} /></div>
+              <div>Extracted Title</div>
+              <div>Category</div>
+              <div>Risk</div>
+              <div>Department</div>
+              <div>Fast Track Template</div>
+              <div>Confidence</div>
+              <div>Actions</div>
+            </div>
+
+            {/* Table Rows */}
+            {displayItems.map(item => {
+              const isSelected = selectedIds.has(item.id);
+              const cStyle = confidenceStyle(item.matchConfidence);
+              const isClassifying = item.status === 'classifying';
+
+              return (
+                <div key={item.id} style={{
+                  display: 'grid', gridTemplateColumns: '36px 1fr 130px 90px 110px 180px 80px 70px',
+                  padding: '10px 16px', borderBottom: '1px solid #f1f5f9', alignItems: 'center',
+                  background: isSelected ? '#f0fdfa' : item.templateApplied ? '#f0fdf4' : '#fff',
+                  opacity: isClassifying ? 0.6 : 1
+                }}>
+                  <div><input type="checkbox" checked={isSelected} onChange={() => {
+                    const next = new Set(selectedIds);
+                    if (next.has(item.id)) next.delete(item.id); else next.add(item.id);
+                    this.setState({ selectedIds: next });
+                  }} disabled={isClassifying} /></div>
+
+                  {/* Extracted Title — editable */}
+                  <div>
+                    {isClassifying ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <Spinner size={SpinnerSize.xSmall} />
+                        <span style={{ fontSize: 12, color: '#94a3b8' }}>Classifying...</span>
+                      </div>
+                    ) : (
+                      <>
+                        <input
+                          type="text"
+                          value={item.confirmedTitle || item.extractedTitle || ''}
+                          onChange={(e) => updateItem(item.id, 'confirmedTitle', (e.target as HTMLInputElement).value)}
+                          style={{ width: '100%', border: 'none', background: 'transparent', fontSize: 13, fontWeight: 600, color: '#0f172a', outline: 'none', padding: '2px 0' }}
+                          title="Click to edit title"
+                        />
+                        <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {item.fileName}
+                          {item.suggestedSummary && <span> · {item.suggestedSummary.substring(0, 60)}...</span>}
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Category — dropdown */}
+                  <div>
+                    <Dropdown
+                      selectedKey={item.confirmedCategory || item.suggestedCategory || ''}
+                      options={CATEGORY_OPTIONS}
+                      onChange={(_, opt) => updateItem(item.id, 'confirmedCategory', opt?.key || '')}
+                      styles={{ root: { minWidth: 0 }, title: { fontSize: 12, height: 26, lineHeight: '24px', borderColor: '#e2e8f0' }, caretDownWrapper: { height: 26, lineHeight: '26px' } }}
+                      disabled={isClassifying}
+                    />
+                  </div>
+
+                  {/* Risk — dropdown */}
+                  <div>
+                    <Dropdown
+                      selectedKey={item.confirmedRisk || item.suggestedRisk || ''}
+                      options={RISK_OPTIONS}
+                      onChange={(_, opt) => updateItem(item.id, 'confirmedRisk', opt?.key || '')}
+                      styles={{ root: { minWidth: 0 }, title: { fontSize: 12, height: 26, lineHeight: '24px', borderColor: '#e2e8f0' }, caretDownWrapper: { height: 26, lineHeight: '26px' } }}
+                      disabled={isClassifying}
+                    />
+                  </div>
+
+                  {/* Department */}
+                  <div style={{ fontSize: 12, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {(item.confirmedDepartments || item.suggestedDepartments || []).join(', ') || '-'}
+                  </div>
+
+                  {/* Fast Track Template — lookup dropdown */}
+                  <div>
+                    <Dropdown
+                      selectedKey={item.confirmedTemplateId ? String(item.confirmedTemplateId) : (item.matchedTemplateId ? String(item.matchedTemplateId) : '')}
+                      options={templateOptions}
+                      onChange={(_, opt) => updateItem(item.id, 'confirmedTemplateId', opt?.key ? parseInt(String(opt.key)) : undefined)}
+                      styles={{ root: { minWidth: 0 }, title: { fontSize: 12, height: 26, lineHeight: '24px', borderColor: item.matchedTemplateId ? '#bbf7d0' : '#e2e8f0', background: item.templateApplied ? '#f0fdf4' : '#fff' }, caretDownWrapper: { height: 26, lineHeight: '26px' } }}
+                      disabled={isClassifying}
+                    />
+                  </div>
+
+                  {/* Confidence badge */}
+                  <div>
+                    {item.matchConfidence ? (
+                      <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 4, background: cStyle.bg, color: cStyle.color }}>{item.matchConfidence}</span>
+                    ) : item.templateApplied ? (
+                      <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 4, background: '#f0fdf4', color: '#059669' }}>Applied</span>
+                    ) : (
+                      <span style={{ fontSize: 10, color: '#cbd5e1' }}>—</span>
+                    )}
+                  </div>
+
+                  {/* Actions */}
+                  <div style={{ display: 'flex', gap: 2 }}>
+                    {(item.confirmedTemplateId || item.matchedTemplateId) && !item.templateApplied && (
+                      <IconButton
+                        iconProps={{ iconName: 'Accept' }}
+                        title="Apply template"
+                        onClick={() => this.applyTemplateToItem(item.id, item.confirmedTemplateId || item.matchedTemplateId!)}
+                        styles={{ root: { width: 26, height: 26 }, icon: { fontSize: 12, color: '#059669' } }}
+                      />
+                    )}
+                    <IconButton
+                      iconProps={{ iconName: 'Cancel' }}
+                      title="Remove"
+                      onClick={() => this.removeImport(item.id)}
+                      styles={{ root: { width: 26, height: 26 }, icon: { fontSize: 12, color: '#dc2626' } }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {displayItems.length === 0 && !classifying && (
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: 40, textAlign: 'center' }}>
+            <Text style={{ color: '#94a3b8', fontSize: 13 }}>No classified items yet. Click "Classify" to start AI analysis.</Text>
+          </div>
+        )}
       </>
     );
   }
@@ -873,17 +1224,41 @@ Respond ONLY with a JSON object with keys: category, risk, departments, summary,
 
   // ---- BATCH PANEL ----
   private renderBatchPanel(): React.ReactElement {
-    const { showBatchPanel, batchCategory, batchRisk, selectedIds } = this.state;
+    const { showBatchPanel, batchCategory, batchRisk, batchTemplateId, selectedIds, fastTrackTemplates } = this.state;
+
+    const templateOptions: IDropdownOption[] = [
+      { key: '', text: '— No template —' },
+      ...fastTrackTemplates.map(t => ({ key: String(t.Id), text: t.Title || t.ProfileName }))
+    ];
+
+    const hasTemplateSelected = !!batchTemplateId;
+    const hasMetadata = !!batchCategory || !!batchRisk;
 
     return (
       <StyledPanel
         isOpen={showBatchPanel}
         onDismiss={() => this.setState({ showBatchPanel: false })}
-        headerText={`Batch Assign Metadata (${selectedIds.size} selected)`}
+        headerText={`Batch Assign (${selectedIds.size} selected)`}
         type={PanelType.smallFixedFar}
         onRenderFooterContent={() => (
-          <Stack horizontal tokens={{ childrenGap: 8 }} style={{ padding: '16px 0' }}>
-            <PrimaryButton text="Apply to Selected" onClick={this.applyBatchMetadata} disabled={!batchCategory && !batchRisk} />
+          <Stack tokens={{ childrenGap: 8 }} style={{ padding: '16px 0' }}>
+            {hasTemplateSelected && (
+              <PrimaryButton
+                text="Apply Template to Selected"
+                iconProps={{ iconName: 'Tag' }}
+                onClick={async () => {
+                  await this.applyTemplateToSelected(parseInt(batchTemplateId));
+                  this.setState({ showBatchPanel: false, batchTemplateId: '' });
+                }}
+                styles={{ root: { background: '#0d9488', borderColor: '#0d9488' } }}
+              />
+            )}
+            {hasMetadata && (
+              <DefaultButton
+                text="Apply Metadata Only"
+                onClick={() => { this.applyBatchMetadata(); }}
+              />
+            )}
             <DefaultButton text="Cancel" onClick={() => this.setState({ showBatchPanel: false })} />
           </Stack>
         )}
@@ -891,8 +1266,25 @@ Respond ONLY with a JSON object with keys: category, risk, departments, summary,
       >
         <Stack tokens={{ childrenGap: 20 }} style={{ paddingTop: 16 }}>
           <Text style={{ fontSize: 13, color: '#64748b' }}>
-            Set metadata for all {selectedIds.size} selected polic{selectedIds.size !== 1 ? 'ies' : 'y'}. Only fields you fill in will be applied — blank fields are left unchanged.
+            Apply a Fast Track Template or set metadata for {selectedIds.size} selected polic{selectedIds.size !== 1 ? 'ies' : 'y'}.
           </Text>
+
+          {/* Fast Track Template selector */}
+          <div style={{ background: '#f0fdfa', border: '1px solid #99f6e4', borderRadius: 8, padding: 16 }}>
+            <Text style={{ fontWeight: 600, color: '#0f172a', fontSize: 13, display: 'block', marginBottom: 8 }}>Fast Track Template</Text>
+            <Dropdown
+              selectedKey={batchTemplateId}
+              options={templateOptions}
+              onChange={(_, opt) => this.setState({ batchTemplateId: String(opt?.key || '') })}
+              placeholder="Select a template..."
+            />
+            <Text style={{ fontSize: 11, color: '#64748b', marginTop: 6, display: 'block' }}>
+              Applies category, risk, read timeframe, acknowledgement, and quiz settings from the template.
+            </Text>
+          </div>
+
+          <Text style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center' }}>— or set individual fields —</Text>
+
           <Dropdown label="Category" selectedKey={batchCategory} options={CATEGORY_OPTIONS}
             onChange={(_, opt) => this.setState({ batchCategory: String(opt?.key || '') })} />
           <Dropdown label="Compliance Risk" selectedKey={batchRisk} options={RISK_OPTIONS}

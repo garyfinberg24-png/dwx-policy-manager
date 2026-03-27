@@ -87,9 +87,12 @@ interface IPolicyEnhanced extends IPolicy {
 interface IFeaturedPolicy {
   id: number;
   title: string;
+  description?: string;
+  category?: string;
   iconName: string;
   readTime: number;
   isMandatory: boolean;
+  acknowledgedPercent?: number;
 }
 
 // Recently viewed policy
@@ -340,11 +343,11 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
    */
   private async initializeFeaturedAndRecent(): Promise<void> {
     try {
-      // Featured: first 3 published mandatory policies
+      // Featured: first 3 published policies (most recently modified)
       const featuredItems = await this.props.sp.web.lists.getByTitle('PM_Policies')
         .items
         .filter("PolicyStatus eq 'Published'")
-        .select('Id', 'Title', 'PolicyName', 'PolicyCategory', 'IsMandatory')
+        .select('Id', 'Title', 'PolicyName', 'PolicyCategory', 'PolicyDescription', 'IsMandatory', 'ReadTimeframe')
         .orderBy('Modified', false)
         .top(3)();
 
@@ -353,13 +356,44 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
         'Data Protection': 'Lock', 'Health & Safety': 'HeartFill', 'Finance': 'Money'
       };
 
-      const featuredPolicies: IFeaturedPolicy[] = featuredItems.map((item: any) => ({
-        id: item.Id,
-        title: item.PolicyName || item.Title,
-        iconName: iconMap[item.PolicyCategory] || 'Document',
-        readTime: 10,
-        isMandatory: !!item.IsMandatory
-      }));
+      // Read timeframe to minutes estimate
+      const readTimeMap: Record<string, number> = {
+        'Immediate': 5, 'Day 1': 10, 'Day 3': 15, 'Week 1': 20, 'Week 2': 25, 'Month 1': 30, 'Month 3': 45, 'Month 6': 60
+      };
+
+      // Calculate acknowledgement percentage per featured policy
+      const featuredIds = featuredItems.map((item: any) => item.Id);
+      let ackCounts: Record<number, { total: number; done: number }> = {};
+      if (featuredIds.length > 0) {
+        try {
+          const ackFilter = featuredIds.map((id: number) => `PolicyId eq ${id}`).join(' or ');
+          const ackItems = await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_ACKNOWLEDGEMENTS)
+            .items.filter(ackFilter)
+            .select('PolicyId', 'AckStatus')
+            .top(500)();
+          for (const ack of ackItems) {
+            const pid = ack.PolicyId;
+            if (!ackCounts[pid]) ackCounts[pid] = { total: 0, done: 0 };
+            ackCounts[pid].total++;
+            if (ack.AckStatus === 'Acknowledged' || ack.AckStatus === 'completed') ackCounts[pid].done++;
+          }
+        } catch { /* ack list may not exist */ }
+      }
+
+      const featuredPolicies: IFeaturedPolicy[] = featuredItems.map((item: any) => {
+        const counts = ackCounts[item.Id];
+        const ackPercent = counts && counts.total > 0 ? Math.round((counts.done / counts.total) * 100) : 0;
+        return {
+          id: item.Id,
+          title: item.PolicyName || item.Title,
+          description: item.PolicyDescription || '',
+          category: item.PolicyCategory || '',
+          iconName: iconMap[item.PolicyCategory] || 'Document',
+          readTime: readTimeMap[item.ReadTimeframe] || 10,
+          isMandatory: !!item.IsMandatory,
+          acknowledgedPercent: ackPercent
+        };
+      });
 
       // Recently viewed: next 5 most recently modified published policies
       const recentItems = await this.props.sp.web.lists.getByTitle('PM_Policies')
@@ -1704,12 +1738,12 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
         <div style={{ maxWidth: 1400, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', alignItems: 'flex-end', position: 'relative', zIndex: 1 }}>
           {/* Column 1: Title + subtitle */}
           <div>
-            <h1 style={{ fontSize: 22, fontWeight: 700, color: '#fff', marginBottom: 2 }}>{(this as any)._secureLibraryTitle || 'Policy Hub'}</h1>
-            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)' }}>{(this as any)._secureLibraryTitle ? 'Secure policy library' : 'Browse and discover organisational policies'}</p>
+            <h1 style={{ fontSize: 22, fontWeight: 700, color: '#fff', margin: '0 0 2px 0' }}>{(this as any)._secureLibraryTitle || 'Policy Hub'}</h1>
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', margin: 0 }}>{(this as any)._secureLibraryTitle ? 'Secure policy library' : 'Browse and discover organisational policies'}</p>
           </div>
 
           {/* Column 2: Search — centred in middle third, bottom-aligned with subtitle */}
-          <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', alignSelf: 'flex-end' }}>
             <div style={{ width: '100%', maxWidth: 480, position: 'relative' }}>
               <svg viewBox="0 0 24 24" fill="none" width="16" height="16" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.6)' }}>
                 <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />

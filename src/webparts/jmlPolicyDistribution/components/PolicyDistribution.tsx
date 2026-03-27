@@ -521,7 +521,29 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
       return;
     }
 
-    const targetUsers = formTargetUsers ? formTargetUsers.split(',').map(s => s.trim()).filter(Boolean) : [];
+    let targetUsers = formTargetUsers ? formTargetUsers.split(',').map(s => s.trim()).filter(Boolean) : [];
+
+    // Resolve audience for scope-based targeting
+    if (formScope === 'All Employees' || formScope === 'Department') {
+      try {
+        const { AudienceRuleService } = await import('../../../services/AudienceRuleService');
+        const audienceSvc = new AudienceRuleService(this.props.sp);
+        let rules: Array<{ field: string; operator: string; value: string }> = [];
+        if (formScope === 'All Employees') {
+          rules = [{ field: 'IsActive', operator: 'equals', value: 'true' }];
+        } else if (formScope === 'Department' && targetUsers.length === 0) {
+          // Use department-based targeting from target groups
+          const targetGroups2 = formTargetGroups ? formTargetGroups.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
+          rules = targetGroups2.map((dept: string) => ({ field: 'Department', operator: 'equals', value: dept }));
+        }
+        if (rules.length > 0) {
+          const resolvedUsers = await audienceSvc.evaluateRules(rules, formScope === 'Department' ? 'OR' : 'AND');
+          targetUsers = resolvedUsers.map(u => u.Email).filter(Boolean);
+        }
+      } catch (err) {
+        console.warn('[PolicyDistribution] Audience resolution failed, using manual targets:', err);
+      }
+    }
     const targetGroups = formTargetGroups ? formTargetGroups.split(',').map(s => s.trim()).filter(Boolean) : [];
 
     // Resolve the display name for the selected policy or pack
@@ -595,7 +617,7 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
         TargetGroups: targetGroups.join(', '),
         ScheduledDate: formScheduledDate ? formScheduledDate.toISOString() : null,
         DueDate: formDueDate ? formDueDate.toISOString() : null,
-        TargetCount: formScope === 'All Employees' ? 342 : (targetUsers.length + targetGroups.length * 25),
+        TargetCount: targetUsers.length + targetGroups.length * 25,
         TotalSent: 0,
         TotalDelivered: 0,
         TotalOpened: 0,

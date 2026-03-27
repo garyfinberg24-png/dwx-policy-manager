@@ -127,7 +127,7 @@ const NAV_SECTIONS: INavSection[] = [
     items: [
       { key: 'categories', label: 'Categories', icon: 'BulletedList2', description: 'Manage policy categories' },
       { key: 'templates', label: 'Templates', icon: 'DocumentSet', description: 'Reusable policy templates with defaults' },
-      { key: 'metadata', label: 'Metadata Profiles', icon: 'Tag', description: 'Compliance presets for quick policy setup' },
+      { key: 'metadata', label: 'Fast Track Templates', icon: 'LightningBolt', description: 'Pre-configured templates for fast policy creation' },
       { key: 'naming', label: 'Naming Rules', icon: 'Rename', description: 'Auto-generated policy numbering conventions' }
     ]
   },
@@ -1681,7 +1681,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     return (
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 16 }}>
-          {this.renderSectionIntro('Metadata Profiles', 'Metadata profiles are reusable sets of default values (risk level, read timeframe, acknowledgement requirements) that authors can apply when creating policies. This saves time and ensures consistency across similar policy types.', ['Create profiles for common policy types: \'Critical Compliance\', \'General Awareness\', \'Onboarding\'', 'Authors can still override individual settings after applying a profile'])}
+          {this.renderSectionIntro('Fast Track Templates', 'Fast Track templates are pre-configured policy setups that allow authors to skip multiple wizard steps. Each template includes category, risk level, read timeframe, acknowledgement requirements, and preferred document type.', ['Create templates for common policy types: \'IT Security\', \'HR Policy\', \'Regulatory Compliance\'', 'Authors can override any setting in the Policy Builder'])}
           <Stack horizontal horizontalAlign="end" verticalAlign="center" style={{ marginBottom: 8 }}>
             <Text style={{ fontSize: 12, color: '#94a3b8', marginRight: 'auto' }}>{metadataProfiles.length} profiles</Text>
             <PrimaryButton text="New Profile" iconProps={{ iconName: 'Add' }} onClick={() => this.setState({ _editingProfile: { Id: 0, Title: '', ProfileName: '', Description: '', PolicyCategory: 'HR Policies', ComplianceRisk: 'Medium', ReadTimeframe: 'Week 1', RequiresAcknowledgement: true, RequiresQuiz: false, RequiresDigitalSignature: false, TargetDepartments: '', Classification: 'Internal', RegulatoryFramework: 'None', ReviewCycleMonths: 12, EstimatedReadTimeMinutes: 15, RetentionYears: 7, DistributionScope: 'All Employees', AutoNotifyOnUpdate: true }, _showProfilePanel: true } as any)} />
@@ -1726,7 +1726,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           isOpen={!!showProfilePanel}
           onDismiss={() => this.setState({ _showProfilePanel: false, _editingProfile: null } as any)}
           type={PanelType.medium}
-          headerText={editingProfile?.Id ? 'Edit Metadata Profile' : 'New Metadata Profile'}
+          headerText={editingProfile?.Id ? 'Edit Fast Track Template' : 'New Fast Track Template'}
           onRenderFooterContent={() => (
             <Stack horizontal tokens={{ childrenGap: 8 }}>
               <PrimaryButton text="Save" disabled={this.state.saving || !editingProfile?.ProfileName?.trim()} onClick={async () => {
@@ -1759,8 +1759,46 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         >
           {editingProfile && (
             <Stack tokens={{ childrenGap: 16 }} style={LayoutStyles.paddingTop16}>
-              <TextField label="Profile Name" required value={editingProfile.ProfileName || ''} onChange={(_, v) => this.setState({ _editingProfile: { ...editingProfile, ProfileName: v || '' } } as any)} errorMessage={editingProfile.ProfileName !== undefined && !editingProfile.ProfileName?.trim() ? 'Profile name is required' : undefined} />
-              <TextField label="Description" multiline rows={2} value={editingProfile.Description || ''} onChange={(_, v) => this.setState({ _editingProfile: { ...editingProfile, Description: v || '' } } as any)} placeholder="Describe when this profile should be used" />
+              <TextField label="Template Name" required value={editingProfile.ProfileName || ''} onChange={(_, v) => this.setState({ _editingProfile: { ...editingProfile, ProfileName: v || '' } } as any)} errorMessage={editingProfile.ProfileName !== undefined && !editingProfile.ProfileName?.trim() ? 'Template name is required' : undefined} />
+              <TextField label="Description" multiline rows={2} value={editingProfile.Description || ''} onChange={(_, v) => this.setState({ _editingProfile: { ...editingProfile, Description: v || '' } } as any)} placeholder="Describe when this template should be used" />
+
+              <Separator>Document Type</Separator>
+
+              <Dropdown
+                label="Template Type"
+                selectedKey={(editingProfile as any).TemplateType || 'word'}
+                options={[
+                  { key: 'word', text: 'Word Document' },
+                  { key: 'excel', text: 'Excel Spreadsheet' },
+                  { key: 'powerpoint', text: 'PowerPoint Presentation' },
+                  { key: 'html', text: 'HTML / Rich Text' },
+                  { key: 'infographic', text: 'Infographic / Image' }
+                ]}
+                onChange={(_, opt) => opt && this.setState({ _editingProfile: { ...editingProfile, TemplateType: opt.key as string } } as any)}
+              />
+
+              {(editingProfile as any).TemplateType && (editingProfile as any).TemplateType !== 'infographic' && (
+                <Dropdown
+                  label="Document Template"
+                  placeholder="Select a document template (optional)"
+                  selectedKey={(editingProfile as any).DocumentTemplateId || ''}
+                  options={[
+                    { key: '', text: '(Blank — no template)' },
+                    ...((this.state as any).templates || [])
+                      .filter((t: any) => {
+                        const typeMap: Record<string, string[]> = {
+                          word: ['word', 'corporate', 'regulatory', 'Standard', 'General'],
+                          excel: ['excel'],
+                          powerpoint: ['powerpoint'],
+                          html: ['html', 'richtext', 'blank']
+                        };
+                        return (typeMap[(editingProfile as any).TemplateType] || []).some((m: string) => m.toLowerCase() === (t.TemplateType || '').toLowerCase());
+                      })
+                      .map((t: any) => ({ key: String(t.Id), text: t.TemplateName || t.Title }))
+                  ]}
+                  onChange={(_, opt) => opt && this.setState({ _editingProfile: { ...editingProfile, DocumentTemplateId: opt.key } } as any)}
+                />
+              )}
 
               <Separator>Compliance & Risk</Separator>
 

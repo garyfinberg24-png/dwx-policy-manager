@@ -1,0 +1,25 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx/client-side-web-part-manifest.schema.json",
+  "id": "b2c3d4e5-6f7a-8b9c-0d1e-f2a3b4c5d6e7",
+  "alias": "DwxPolicyBulkUploadWebPart",
+  "componentType": "WebPart",
+
+  "version": "*",
+  "manifestVersion": 2,
+
+  "requiresCustomScript": false,
+  "supportedHosts": ["SharePointWebPart", "SharePointFullPage", "TeamsPersonalApp", "TeamsTab"],
+  "supportsThemeVariants": true,
+
+  "preconfiguredEntries": [{
+    "groupId": "e4b0a295-44e2-4fa4-8f15-4eac5edf4275",
+    "group": { "default": "DWx Policy Manager" },
+    "title": { "default": "DWx Policy Bulk Upload" },
+    "description": { "default": "Bulk upload existing policies with AI-powered classification and metadata assignment" },
+    "officeFabricIconFontName": "BulkUpload",
+    "properties": {
+      "title": "Policy Bulk Upload"
+    }
+  }],
+  "supportsFullBleed": true
+}

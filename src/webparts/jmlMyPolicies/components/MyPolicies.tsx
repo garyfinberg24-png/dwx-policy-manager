@@ -414,8 +414,8 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
             </div>
             {/* Greeting */}
             <div>
-              <h1 style={{ fontSize: 20, fontWeight: 700, color: '#fff', marginBottom: 2 }}>{greeting}, {userName}</h1>
-              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)' }}>
+              <h1 style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: '0 0 2px 0' }}>{greeting}, {userName}</h1>
+              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', margin: 0 }}>
                 {kpi.pending > 0 || kpi.overdue > 0
                   ? `${kpi.pending} pending${kpi.overdue > 0 ? `, ${kpi.overdue} overdue` : ''}`
                   : 'Fully compliant'}

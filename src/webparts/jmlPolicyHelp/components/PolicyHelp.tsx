@@ -662,11 +662,11 @@ export default class PolicyHelp extends React.Component<IPolicyHelpProps, IPolic
               <div style={{ maxWidth: 1400, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', alignItems: 'flex-end', position: 'relative', zIndex: 1 }}>
                 {/* Column 1: Title + subtitle */}
                 <div>
-                  <h1 style={{ fontSize: 22, fontWeight: 700, color: '#fff', marginBottom: 2 }}>Help Centre</h1>
-                  <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)' }}>Find answers, learn best practices, and get support</p>
+                  <h1 style={{ fontSize: 22, fontWeight: 700, color: '#fff', margin: '0 0 2px 0' }}>Help Centre</h1>
+                  <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', margin: 0 }}>Find answers, learn best practices, and get support</p>
                 </div>
-                {/* Column 2: Search — centred in middle third */}
-                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                {/* Column 2: Search — centred in middle third, bottom-aligned with subtitle */}
+                <div style={{ display: 'flex', justifyContent: 'center', alignSelf: 'flex-end' }}>
                   <div style={{ width: '100%', maxWidth: 480, position: 'relative' }}>
                     <svg viewBox="0 0 24 24" fill="none" width="16" height="16" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.6)' }}>
                       <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />

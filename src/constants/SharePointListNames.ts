@@ -232,6 +232,8 @@ export const SystemLists = {
   FILE_CONVERSION_QUEUE: 'PM_FileConversionQueue',
   /** Policy source documents */
   POLICY_SOURCE_DOCUMENTS: 'PM_PolicySourceDocuments',
+  /** Reminder schedule for revision/review/expiry reminders */
+  REMINDER_SCHEDULE: 'PM_ReminderSchedule',
 } as const;
 
 /**

@@ -105,6 +105,22 @@
           "manifest": "./src/webparts/dwxPolicyManagerView/DwxPolicyManagerViewWebPart.manifest.json"
         }
       ]
+    },
+    "dwx-policy-author-reports-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/dwxPolicyAuthorReports/DwxPolicyAuthorReportsWebPart.js",
+          "manifest": "./src/webparts/dwxPolicyAuthorReports/DwxPolicyAuthorReportsWebPart.manifest.json"
+        }
+      ]
+    },
+    "dwx-policy-bulk-upload-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/dwxPolicyBulkUpload/DwxPolicyBulkUploadWebPart.js",
+          "manifest": "./src/webparts/dwxPolicyBulkUpload/DwxPolicyBulkUploadWebPart.manifest.json"
+        }
+      ]
     }
   },
   "externals": {},
@@ -122,6 +138,8 @@
     "JmlPolicyAnalyticsWebPartStrings": "lib/webparts/jmlPolicyAnalytics/loc/{locale}.js",
     "DwxPolicyAuthorViewWebPartStrings": "lib/webparts/dwxPolicyAuthorView/loc/{locale}.js",
     "DwxPolicyManagerViewWebPartStrings": "lib/webparts/dwxPolicyManagerView/loc/{locale}.js",
+    "DwxPolicyAuthorReportsWebPartStrings": "lib/webparts/dwxPolicyAuthorReports/loc/{locale}.js",
+    "DwxPolicyBulkUploadWebPartStrings": "lib/webparts/dwxPolicyBulkUpload/loc/{locale}.js",
     "ControlStrings": "node_modules/@pnp/spfx-controls-react/lib/loc/{locale}.js"
   }
 }

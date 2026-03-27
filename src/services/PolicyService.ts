@@ -606,12 +606,16 @@ export class PolicyService {
           PolicyStatus: PolicyStatus.InReview
         });
 
+      // Fetch policy for audit + notifications
+      const policy = await this.getPolicyById(policyId);
+      const policyTitle = policy?.PolicyName || policy?.Title || `Policy ${policyId}`;
+
       await this.logAudit({
         EntityType: 'Policy',
         EntityId: policyId,
         PolicyId: policyId,
         AuditAction: 'SubmittedForReview',
-        ActionDescription: 'Policy submitted for review',
+        ActionDescription: `Policy "${policyTitle}" submitted for review`,
         PerformedById: this.currentUserId,
         PerformedByEmail: this.currentUserEmail,
         ActionDate: new Date(),
@@ -619,7 +623,6 @@ export class PolicyService {
       });
 
       // Send notifications to reviewers (non-blocking)
-      const policy = await this.getPolicyById(policyId);
       if (this.notificationService && reviewerIds.length > 0) {
         try {
           await this.notificationService.sendSubmittedForReviewNotification(

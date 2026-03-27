@@ -75,7 +75,7 @@ type RequestStatusFilter = 'All' | 'New' | 'Assigned' | 'InProgress' | 'Draft Re
 
 type AuthorViewTab = 'pipeline' | 'requests' | 'approvals' | 'delegations';
 
-type PipelineStatusFilter = 'All' | 'Draft' | 'In Review' | 'Pending Approval' | 'Approved' | 'Rejected';
+type PipelineStatusFilter = 'All' | 'Draft' | 'In Review' | 'Pending Approval' | 'Approved' | 'Published' | 'Rejected';
 
 export interface IPipelinePolicy {
   Id: number;
@@ -549,14 +549,14 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
   }
 
   /**
-   * Load non-published policies for the current user (authored + reviewing).
-   * Statuses: Draft, In Review, Pending Approval, Approved, Rejected
+   * Load pipeline policies for the current user (authored + reviewing).
+   * Statuses: Draft, In Review, Pending Approval, Approved, Published, Rejected
    */
   private async loadPipelinePolicies(currentUserId: number, currentUserName: string): Promise<IPipelinePolicy[]> {
     try {
       // Query all non-published policies — filter by author/reviewer client-side
       // because OData can't do "contains" on multi-value reviewer fields
-      const excludedStatuses = ['Published', 'Archived', 'Retired', 'Expired'];
+      const excludedStatuses = ['Archived', 'Retired', 'Expired'];
       let items: any[];
       try {
         // Try with PolicyOwner field (may not exist on all sites)
@@ -732,7 +732,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
       return <div style={{ padding: 40, textAlign: 'center' }}><Spinner size={SpinnerSize.large} label="Loading pipeline..." /></div>;
     }
 
-    const statusFilters: PipelineStatusFilter[] = ['Draft', 'In Review', 'Pending Approval', 'Approved', 'Rejected', 'All'];
+    const statusFilters: PipelineStatusFilter[] = ['Draft', 'In Review', 'Pending Approval', 'Approved', 'Published', 'Rejected', 'All'];
 
     // Apply filters
     let filtered = pipelineFilter === 'All' ? pipelinePolicies : pipelinePolicies.filter(p => p.PolicyStatus === pipelineFilter);
@@ -750,6 +750,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
     const inReviewCount = pipelinePolicies.filter(p => p.PolicyStatus === 'In Review').length;
     const pendingApprovalCount = pipelinePolicies.filter(p => p.PolicyStatus === 'Pending Approval').length;
     const rejectedCount = pipelinePolicies.filter(p => p.PolicyStatus === 'Rejected').length;
+    const publishedCount = pipelinePolicies.filter(p => p.PolicyStatus === 'Published').length;
     const reviewingCount = pipelinePolicies.filter(p => p.IsReviewer).length;
 
     // Bulk selection helpers
@@ -818,10 +819,11 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
             {[
               { label: 'Drafts', count: draftCount, color: '#64748b', filter: 'Draft' as PipelineStatusFilter },
               { label: 'In Review', count: inReviewCount, color: '#2563eb', filter: 'In Review' as PipelineStatusFilter },
-              { label: 'Pending Approval', count: pendingApprovalCount, color: '#d97706', filter: 'Pending Approval' as PipelineStatusFilter },
+              { label: 'Pending', count: pendingApprovalCount, color: '#d97706', filter: 'Pending Approval' as PipelineStatusFilter },
               { label: 'Approved', count: pipelinePolicies.filter(p => p.PolicyStatus === 'Approved').length, color: '#059669', filter: 'Approved' as PipelineStatusFilter },
+              { label: 'Published', count: publishedCount, color: '#0d9488', filter: 'Published' as PipelineStatusFilter },
               { label: 'Rejected', count: rejectedCount, color: '#dc2626', filter: 'Rejected' as PipelineStatusFilter }
-            ].map((kpi, i) => (
+            ].map((kpi, i, arr) => (
               <React.Fragment key={kpi.label}>
                 <div
                   onClick={() => this.setState({ pipelineFilter: kpi.filter })}
@@ -840,7 +842,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                   <div style={{ fontSize: 24, fontWeight: 700, lineHeight: 1.1, color: kpi.color }}>{kpi.count}</div>
                   <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#94a3b8', fontWeight: 600, marginTop: 4 }}>{kpi.label}</div>
                 </div>
-                {i < 4 && (
+                {i < arr.length - 1 && (
                   <div style={{ padding: '0 6px', color: '#cbd5e1', fontSize: 16, flexShrink: 0 }}>&#x25B6;</div>
                 )}
               </React.Fragment>
@@ -1066,6 +1068,16 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                           ariaLabel={`Withdraw ${policy.Title}`}
                         />
                       )}
+                      {/* Create Quiz */}
+                      {['Draft', 'Approved', 'Published'].includes(policy.PolicyStatus) && (
+                        <IconButton
+                          iconProps={{ iconName: 'Questionnaire' }}
+                          title="Create / Edit Quiz"
+                          href={`${siteUrl}/SitePages/QuizBuilder.aspx?policyId=${policy.Id}`}
+                          styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: '#7c3aed' } }}
+                          ariaLabel={`Create quiz for ${policy.Title}`}
+                        />
+                      )}
                       {/* Delete — Draft only */}
                       {policy.PolicyStatus === 'Draft' && (
                         <IconButton
@@ -1076,12 +1088,12 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                           ariaLabel={`Delete ${policy.Title}`}
                         />
                       )}
-                      {/* Revision — Approved, Published */}
+                      {/* Revise — Approved, Published: snapshot version + reopen as Draft for review cycle */}
                       {['Approved', 'Published'].includes(policy.PolicyStatus) && (
                         <IconButton
                           iconProps={{ iconName: 'PageEdit' }}
-                          title="Create Revision"
-                          href={`${siteUrl}/SitePages/PolicyBuilder.aspx?editPolicyId=${policy.Id}&revision=true`}
+                          title="Revise Policy"
+                          onClick={() => this.handlePipelineRevise(policy.Id, policy.Title)}
                           styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: '#2563eb' } }}
                           ariaLabel={`Revise ${policy.Title}`}
                         />
@@ -1091,7 +1103,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                         <IconButton
                           iconProps={{ iconName: 'Archive' }}
                           title="Retire Policy"
-                          onClick={() => this.handlePipelineRetire(policy.Id, policy.Title)}
+                          onClick={() => this.handlePipelineRetireEnhanced(policy.Id, policy.Title)}
                           styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: '#94a3b8' } }}
                           ariaLabel={`Retire ${policy.Title}`}
                         />
@@ -1165,7 +1177,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                 Message: `"${title}" has been submitted for your review.`,
                 RelatedItemId: policyId,
                 IsRead: false,
-                Priority: 'Normal',
+                Priority: 'High',
                 ActionUrl: `${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policyId}&mode=review`
               });
             } catch { /* notification list may not exist */ }
@@ -1205,7 +1217,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                     SenderEmail: this.props.context?.pageContext?.user?.email || '',
                     PolicyId: policyId,
                     PolicyTitle: title,
-                    NotificationType: 'ReviewRequired',
+                    NotificationType: 'review-required',
                     Channel: 'Email',
                     Message: emailHtml,
                     QueueStatus: 'Pending',
@@ -1416,38 +1428,110 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
         });
       } catch { /* best-effort */ }
 
-      // Queue email notification
+      // Resolve audience and create acknowledgement records + notifications
       try {
         const siteUrl = this.props.context?.pageContext?.web?.absoluteUrl || '/sites/PolicyManager';
         const policyUrl = `${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policyId}`;
         const publisherName = this.props.context?.pageContext?.user?.displayName || 'An author';
+
+        // Read policy audience settings
+        const policyItem = await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES)
+          .items.getById(policyId)
+          .select('Visibility', 'Departments', 'IsMandatory', 'ReadTimeframe', 'RequiresAcknowledgement')();
+
+        const visibility = policyItem.Visibility || 'AllEmployees';
+        const requiresAck = policyItem.RequiresAcknowledgement !== false;
+        const departments = policyItem.Departments ? policyItem.Departments.split(';').map((d: string) => d.trim()).filter(Boolean) : [];
+
+        // Resolve target users via AudienceRuleService
+        let targetUsers: Array<{ Id: number; Email: string; Title: string }> = [];
+        if (visibility === 'AllEmployees') {
+          // All active users from PM_UserProfiles
+          try {
+            const { AudienceRuleService } = await import('../../../services/AudienceRuleService');
+            const audienceSvc = new AudienceRuleService(this.props.sp);
+            const users = await audienceSvc.evaluateRules([{ field: 'IsActive', operator: 'equals', value: 'true' }], 'AND');
+            targetUsers = users.map(u => ({ Id: u.Id, Email: u.Email, Title: u.Title }));
+          } catch { /* audience resolution optional */ }
+        } else if (visibility === 'Department' && departments.length > 0) {
+          try {
+            const { AudienceRuleService } = await import('../../../services/AudienceRuleService');
+            const audienceSvc = new AudienceRuleService(this.props.sp);
+            const rules = departments.map((dept: string) => ({ field: 'Department', operator: 'equals', value: dept }));
+            const users = await audienceSvc.evaluateRules(rules, 'OR');
+            targetUsers = users.map(u => ({ Id: u.Id, Email: u.Email, Title: u.Title }));
+          } catch { /* audience resolution optional */ }
+        }
+
+        // Create acknowledgement records for target users (if required)
+        if (requiresAck && targetUsers.length > 0) {
+          const dueDate = new Date();
+          dueDate.setDate(dueDate.getDate() + 30); // 30-day default deadline
+          let ackCreated = 0;
+          for (const user of targetUsers) {
+            try {
+              await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_ACKNOWLEDGEMENTS).items.add({
+                Title: `Ack - ${title}`,
+                PolicyId: policyId,
+                PolicyName: title,
+                AckUserId: user.Id,
+                AckStatus: 'Pending',
+                AssignedDate: new Date().toISOString(),
+                DueDate: dueDate.toISOString(),
+                IsMandatory: policyItem.IsMandatory || false
+              });
+              ackCreated++;
+            } catch { /* per-user — continue on failure */ }
+          }
+          console.log(`[PolicyAuthorView] Created ${ackCreated}/${targetUsers.length} acknowledgement records for policy ${policyId}`);
+        }
+
+        // Queue publish notification emails (first 50 users to avoid overloading)
+        const emailRecipients = targetUsers.slice(0, 50);
         const emailHtml = `
           <div style="font-family:'Segoe UI',sans-serif;max-width:600px;margin:0 auto">
             <div style="background:linear-gradient(135deg,#059669,#047857);padding:24px 32px;border-radius:8px 8px 0 0">
-              <h1 style="color:#fff;margin:0;font-size:20px">Policy Published</h1>
+              <h1 style="color:#fff;margin:0;font-size:20px">New Policy Published</h1>
               <p style="color:rgba(255,255,255,0.8);margin:4px 0 0;font-size:13px">Policy Manager — DWx Digital Workplace</p>
             </div>
             <div style="background:#fff;padding:24px 32px;border:1px solid #e2e8f0;border-top:none">
-              <p style="font-size:14px;color:#475569"><strong>${title}</strong> has been published and is now available.</p>
-              <p style="margin:24px 0 16px"><a href="${policyUrl}" style="background:#059669;color:#fff;padding:10px 24px;border-radius:4px;text-decoration:none;font-weight:600;font-size:14px;display:inline-block">View Published Policy</a></p>
+              <p style="font-size:14px;color:#475569"><strong>${escapeHtml(title)}</strong> has been published${requiresAck ? ' and requires your acknowledgement' : ''}.</p>
+              <p style="margin:24px 0 16px"><a href="${policyUrl}" style="background:#059669;color:#fff;padding:10px 24px;border-radius:4px;text-decoration:none;font-weight:600;font-size:14px;display:inline-block">${requiresAck ? 'Read & Acknowledge' : 'View Policy'}</a></p>
             </div>
             <div style="background:#f8fafc;padding:16px 32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;text-align:center">
               <p style="margin:0;font-size:11px;color:#94a3b8">First Digital — DWx Policy Manager</p>
             </div>
           </div>`;
-        await this.queueEmail({
-          Title: `Policy Published: ${title}`,
-          RecipientEmail: this.props.context?.pageContext?.user?.email || '',
-          RecipientName: publisherName,
-          PolicyId: policyId,
-          PolicyTitle: title,
-          NotificationType: 'PolicyPublished',
-          Channel: 'Email',
-          Message: emailHtml,
-          QueueStatus: 'Pending',
-          Priority: 'Normal'
-        });
-      } catch { /* notification best-effort */ }
+        for (const user of emailRecipients) {
+          try {
+            await this.queueEmail({
+              Title: `New Policy: ${title}`,
+              RecipientEmail: user.Email,
+              RecipientName: user.Title || '',
+              SenderName: publisherName,
+              SenderEmail: this.props.context?.pageContext?.user?.email || '',
+              PolicyId: policyId,
+              PolicyTitle: title,
+              NotificationType: 'policy-published',
+              Channel: 'Email',
+              Message: emailHtml,
+              QueueStatus: 'Pending',
+              Priority: requiresAck ? 'High' : 'Normal'
+            });
+          } catch { /* per-recipient — continue on failure */ }
+        }
+      } catch { /* audience/notification best-effort */ }
+
+      // Schedule revision/expiry reminders if applicable
+      try {
+        const reviewFrequency = policyItem.ReviewFrequency || '';
+        const authorEmail = this.props.context?.pageContext?.user?.email || '';
+        if (reviewFrequency && reviewFrequency !== 'None' && authorEmail) {
+          const { ReminderScheduleService } = await import('../../../services/ReminderScheduleService');
+          const reminderSvc = new ReminderScheduleService(this.props.sp);
+          await reminderSvc.scheduleRevisionReminder(policyId, title, reviewFrequency, authorEmail);
+        }
+      } catch { /* reminder scheduling best-effort */ }
 
       await this.reloadPipeline();
       void this.dialogManager.showAlert(`"${title}" has been published successfully!`, { variant: 'success', title: 'Policy Published' });
@@ -1480,6 +1564,202 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
 
       await this.reloadPipeline();
       void this.dialogManager.showAlert(`"${title}" has been retired.`, { variant: 'success' });
+    } catch (err) {
+      console.error('Retire failed:', err);
+      void this.dialogManager.showAlert('Failed to retire policy. Please try again.', { variant: 'error' });
+    }
+  }
+
+  /**
+   * Revise — create a new draft version from an Approved/Published policy.
+   * Snapshots the current version, bumps minor, sets to Draft, notifies reviewers.
+   */
+  private async handlePipelineRevise(policyId: number, title: string): Promise<void> {
+    const confirmed = await this.dialogManager.showConfirm(
+      `Revise "${title}"?\n\nThis will:\n• Snapshot the current version for audit history\n• Create a new draft for editing\n• The policy remains published until the revision is approved and republished\n\nYou'll be taken to the Policy Builder to make your changes.`,
+      { title: 'Start Revision', confirmText: 'Start Revision', cancelText: 'Cancel' }
+    );
+    if (!confirmed) return;
+
+    const siteUrl = this.props.context?.pageContext?.web?.absoluteUrl || '/sites/PolicyManager';
+
+    try {
+      // Import PolicyService to call createEditableVersion
+      const { PolicyService } = await import('../../../services/PolicyService');
+      const policyService = new PolicyService(
+        this.props.sp,
+        siteUrl,
+        this.props.context?.pageContext?.user?.email || ''
+      );
+      const result = await policyService.createEditableVersion(policyId, `Revision initiated by author`);
+
+      // Notify reviewers that a revision is underway
+      try {
+        const reviewerItems = await this.props.sp.web.lists
+          .getByTitle(PM_LISTS.POLICY_REVIEWERS)
+          .items.filter(`PolicyId eq ${policyId}`)
+          .select('ReviewerId').top(50)();
+        const reviewerIds = reviewerItems.map((r: any) => r.ReviewerId).filter(Boolean);
+
+        for (const reviewerId of reviewerIds) {
+          try {
+            await this.props.sp.web.lists.getByTitle('PM_Notifications').items.add({
+              Title: `Revision Started: ${title}`,
+              RecipientId: reviewerId,
+              Type: 'Policy',
+              Message: `A new revision (v${result.newVersionNumber}) of "${title}" has been started. You will be notified when it's ready for review.`,
+              RelatedItemId: policyId,
+              IsRead: false,
+              Priority: 'Normal',
+              ActionUrl: `${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policyId}`
+            });
+          } catch { /* per-reviewer — continue */ }
+        }
+      } catch { /* reviewer notification best-effort */ }
+
+      // Redirect to Policy Builder
+      window.location.href = `${siteUrl}/SitePages/PolicyBuilder.aspx?editPolicyId=${policyId}`;
+    } catch (err) {
+      console.error('Revise failed:', err);
+      void this.dialogManager.showAlert('Failed to start revision. Please try again.', { variant: 'error' });
+    }
+  }
+
+  /**
+   * Retire — remove a policy from circulation.
+   * Prompts for reason, cancels outstanding acks, notifies assigned users.
+   */
+  private async handlePipelineRetireEnhanced(policyId: number, title: string): Promise<void> {
+    const reason = await this.dialogManager.showPrompt(
+      `Why is "${title}" being retired? This will be recorded in the audit trail.`,
+      { title: 'Retire Policy', defaultValue: '' }
+    );
+    // If user cancelled the prompt (null), abort
+    if (reason === null || reason === undefined) return;
+
+    const confirmed = await this.dialogManager.showConfirm(
+      `Confirm retirement of "${title}"?\n\nThis will:\n• Remove the policy from the Policy Hub\n• Cancel all outstanding acknowledgement requests\n• Notify affected users that the policy is no longer in effect\n\nThis action can be reversed by an Admin.`,
+      { title: 'Confirm Retirement', confirmText: 'Retire', cancelText: 'Cancel' }
+    );
+    if (!confirmed) return;
+
+    const siteUrl = this.props.context?.pageContext?.web?.absoluteUrl || '/sites/PolicyManager';
+
+    try {
+      // 1. Set status to Retired
+      await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES)
+        .items.getById(policyId).update({ PolicyStatus: 'Retired', IsActive: false });
+
+      // 2. Audit log with reason
+      try {
+        await this.props.sp.web.lists.getByTitle('PM_PolicyAuditLog').items.add({
+          Title: `Retired - Policy ${policyId}`,
+          PolicyId: policyId,
+          EntityType: 'Policy',
+          EntityId: policyId,
+          AuditAction: 'Retired',
+          ActionDescription: `Policy "${title}" retired. Reason: ${reason || 'No reason provided'}`,
+          PerformedByEmail: this.props.context?.pageContext?.user?.email || '',
+          ActionDate: new Date().toISOString(),
+          ComplianceRelevant: true
+        });
+      } catch { /* audit best-effort */ }
+
+      // 3. Cancel outstanding acknowledgements
+      let cancelledAckCount = 0;
+      try {
+        const pendingAcks = await this.props.sp.web.lists
+          .getByTitle(PM_LISTS.POLICY_ACKNOWLEDGEMENTS)
+          .items.filter(`PolicyId eq ${policyId} and AckStatus ne 'Acknowledged' and AckStatus ne 'completed'`)
+          .select('Id', 'AckUserId')
+          .top(500)();
+
+        for (const ack of pendingAcks) {
+          try {
+            await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_ACKNOWLEDGEMENTS)
+              .items.getById(ack.Id).update({ AckStatus: 'Cancelled' });
+            cancelledAckCount++;
+          } catch { /* per-ack — continue */ }
+        }
+
+        // 4. Notify affected users
+        const notifiedUserIds = new Set<number>();
+        for (const ack of pendingAcks) {
+          if (ack.AckUserId && !notifiedUserIds.has(ack.AckUserId)) {
+            notifiedUserIds.add(ack.AckUserId);
+            try {
+              await this.props.sp.web.lists.getByTitle('PM_Notifications').items.add({
+                Title: `Policy Retired: ${title}`,
+                RecipientId: ack.AckUserId,
+                Type: 'Policy',
+                Message: `"${title}" has been retired and is no longer in effect. Your outstanding acknowledgement has been cancelled.`,
+                RelatedItemId: policyId,
+                IsRead: false,
+                Priority: 'Normal',
+                ActionUrl: `${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policyId}`
+              });
+            } catch { /* per-user — continue */ }
+          }
+        }
+
+        // 5. Queue email notification to users with pending acks
+        const uniqueUserIds = Array.from(notifiedUserIds).slice(0, 50);
+        for (const userId of uniqueUserIds) {
+          try {
+            const user = await this.props.sp.web.siteUsers.getById(userId).select('Email', 'Title')();
+            if (user?.Email) {
+              const emailHtml = `
+                <div style="font-family:'Segoe UI',sans-serif;max-width:600px;margin:0 auto">
+                  <div style="background:linear-gradient(135deg,#94a3b8,#64748b);padding:24px 32px;border-radius:8px 8px 0 0">
+                    <h1 style="color:#fff;margin:0;font-size:20px">Policy Retired</h1>
+                    <p style="color:rgba(255,255,255,0.8);margin:4px 0 0;font-size:13px">Policy Manager — DWx Digital Workplace</p>
+                  </div>
+                  <div style="background:#fff;padding:24px 32px;border:1px solid #e2e8f0;border-top:none">
+                    <p style="font-size:14px;color:#475569">Hi <strong>${escapeHtml(user.Title || 'there')}</strong>,</p>
+                    <p style="font-size:14px;color:#475569">The policy <strong>${escapeHtml(title)}</strong> has been retired and is no longer in effect.</p>
+                    ${reason ? `<p style="font-size:13px;color:#64748b;background:#f8fafc;padding:12px;border-radius:4px"><em>Reason: ${escapeHtml(reason)}</em></p>` : ''}
+                    <p style="font-size:14px;color:#475569">Your outstanding acknowledgement for this policy has been cancelled. No further action is required.</p>
+                  </div>
+                  <div style="background:#f8fafc;padding:16px 32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;text-align:center">
+                    <p style="margin:0;font-size:11px;color:#94a3b8">First Digital — DWx Policy Manager</p>
+                  </div>
+                </div>`;
+              await this.queueEmail({
+                Title: `Policy Retired: ${title}`,
+                RecipientEmail: user.Email,
+                RecipientName: user.Title || '',
+                PolicyId: policyId,
+                PolicyTitle: title,
+                NotificationType: 'policy-retired',
+                Channel: 'Email',
+                Message: emailHtml,
+                QueueStatus: 'Pending',
+                Priority: 'Normal'
+              });
+            }
+          } catch { /* per-user email — continue */ }
+        }
+      } catch { /* ack cancellation best-effort */ }
+
+      // 6. Cancel any scheduled reminders for this policy
+      try {
+        const reminders = await this.props.sp.web.lists
+          .getByTitle(PM_LISTS.REMINDER_SCHEDULE)
+          .items.filter(`PolicyId eq ${policyId} and ReminderStatus eq 'Pending'`)
+          .select('Id').top(50)();
+        for (const r of reminders) {
+          try {
+            await this.props.sp.web.lists.getByTitle(PM_LISTS.REMINDER_SCHEDULE)
+              .items.getById(r.Id).update({ ReminderStatus: 'Skipped' });
+          } catch { /* per-reminder — continue */ }
+        }
+      } catch { /* reminder cancellation best-effort */ }
+
+      await this.reloadPipeline();
+      void this.dialogManager.showAlert(
+        `"${title}" has been retired.${cancelledAckCount > 0 ? ` ${cancelledAckCount} outstanding acknowledgement${cancelledAckCount !== 1 ? 's' : ''} cancelled.` : ''}`,
+        { variant: 'success', title: 'Policy Retired' }
+      );
     } catch (err) {
       console.error('Retire failed:', err);
       void this.dialogManager.showAlert('Failed to retire policy. Please try again.', { variant: 'error' });

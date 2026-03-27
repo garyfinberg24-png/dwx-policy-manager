@@ -189,6 +189,21 @@ const NavIcons = {
       <path d="M22 2L15 22l-4-9-9-4 20-7z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   ),
+  authorReports: (
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M14 2v6h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M8 13h3M8 17h5M8 9h2" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M16 13v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+    </svg>
+  ),
+  bulkUpload: (
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M17 8l-5-5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M12 3v12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+    </svg>
+  ),
   manager: (
     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -533,10 +548,12 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
     {
       key: 'author-group', text: 'Author', icon: NavIcons.authored, minRole: 'Author',
       children: [
-        { key: 'newpolicy', text: '+ New Policy', icon: NavIcons.create, href: '/sites/PolicyManager/SitePages/PolicyBuilder.aspx' },
+        { key: 'newpolicy', text: 'New Policy', icon: NavIcons.create, href: '/sites/PolicyManager/SitePages/PolicyBuilder.aspx' },
         { key: 'author', text: 'Drafts & Pipeline', icon: NavIcons.authored, href: '/sites/PolicyManager/SitePages/PolicyAuthor.aspx' },
         { key: 'packs', text: 'Policy Packs', icon: NavIcons.packs, href: '/sites/PolicyManager/SitePages/PolicyPacks.aspx' },
         { key: 'quiz', text: 'Quiz Builder', icon: NavIcons.quiz, href: '/sites/PolicyManager/SitePages/QuizBuilder.aspx' },
+        { key: 'author-reports', text: 'Reports', icon: NavIcons.authorReports, href: '/sites/PolicyManager/SitePages/PolicyAuthorReports.aspx' },
+        { key: 'bulk-upload', text: 'Bulk Upload', icon: NavIcons.bulkUpload, href: '/sites/PolicyManager/SitePages/PolicyBulkUpload.aspx' },
       ]
     },
     {

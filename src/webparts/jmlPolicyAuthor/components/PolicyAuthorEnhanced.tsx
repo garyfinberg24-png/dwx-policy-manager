@@ -673,7 +673,9 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         _selectedProfileId: (policy as any).MetadataProfileId || null,
         // Restore source references
         sourceRequestId: (policy as any).SourceRequestId || undefined,
-        // Open on Step 2 (Basic Info) when loading existing policy for editing
+        // Always open existing policies in Standard mode (all 8 steps visible)
+        _wizardMode: 'standard',
+        _isRevision: new URLSearchParams(window.location.search).get('revision') === 'true',
         currentStep: 1,
         loading: false
       } as any); }
@@ -1062,6 +1064,46 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     const { policyId, policyName, autoSaveEnabled } = this.state;
     if (!autoSaveEnabled || !policyId || !policyName) return;
     await this.handleSaveDraft(true);
+  };
+
+  private handleSaveAsFastTrackTemplate = async (): Promise<void> => {
+    const { policyName, policyCategory, complianceRisk, readTimeframe,
+      requiresAcknowledgement, requiresQuiz, targetDepartments, targetRoles } = this.state;
+    const templateName = await this.dialogManager.showPrompt(
+      'Enter a name for this Fast Track Template:',
+      { title: 'Save as Fast Track Template', defaultValue: policyName ? `${policyName} Template` : '' }
+    );
+    if (!templateName || !templateName.trim()) return;
+    try {
+      this.setState({ saving: true });
+      const { AdminConfigService } = await import('../../../services/AdminConfigService');
+      const adminService = new AdminConfigService(this.props.sp);
+      await adminService.createMetadataProfile({
+        Title: templateName.trim(),
+        ProfileName: templateName.trim(),
+        PolicyCategory: policyCategory || '',
+        ComplianceRisk: complianceRisk || 'Medium',
+        ReadTimeframe: readTimeframe || 'Week 1',
+        RequiresAcknowledgement: requiresAcknowledgement,
+        RequiresQuiz: requiresQuiz,
+        TargetDepartments: targetDepartments.join(';'),
+        TargetRoles: targetRoles.join(';'),
+        IsActive: true,
+        Description: `Created from "${policyName || 'Untitled'}" policy`
+      });
+      void this.dialogManager.showAlert(
+        `Fast Track Template "${templateName.trim()}" saved successfully. It will appear in the Fast Track wizard.`,
+        { title: 'Template Saved', variant: 'success' }
+      );
+    } catch (err) {
+      console.error('[PolicyAuthorEnhanced] Save as Fast Track Template failed:', err);
+      void this.dialogManager.showAlert(
+        'Failed to save template. Please try again.',
+        { title: 'Error', variant: 'error' }
+      );
+    } finally {
+      this.setState({ saving: false });
+    }
   };
 
   private handleSaveDraft = async (isAutoSave: boolean = false): Promise<void> => {
@@ -4703,7 +4745,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
   private handleSubmitForReviewFromKanban = async (policyId: number): Promise<void> => {
     const confirmed = await this.dialogManager.showConfirm(
-      'Are you sure you want to submit this policy for approval? The policy will be moved to the In Review column.',
+      'Are you sure you want to submit this policy for review? Reviewers will be notified.',
       { title: 'Submit for Review', confirmText: 'Submit', cancelText: 'Cancel' }
     );
 
@@ -4711,30 +4753,22 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
     try {
       this.setState({ saving: true });
-      // Update status to In Review (not PendingApproval)
-      await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES)
-        .items.getById(policyId).update({ PolicyStatus: PolicyStatus.InReview });
 
-      // Send approval notification to approvers
+      // Gather reviewer IDs from PM_PolicyReviewers list
+      let reviewerIds: number[] = [];
       try {
-        const { ApprovalNotificationService } = await import('../../../services/ApprovalNotificationService');
-        const notifService = new ApprovalNotificationService(this.props.sp);
-        const policy = await this.policyService.getPolicyById(policyId);
-        if (policy) {
-          await notifService.sendNewApprovalNotification({
-            Title: policy.PolicyName || policy.Title,
-            PolicyId: policyId,
-            RequestedBy: this.props.context.pageContext.user?.displayName || '',
-            RequestedByEmail: this.props.context.pageContext.user?.email || '',
-            Status: 'Pending'
-          } as any);
-        }
-      } catch (notifErr) {
-        console.warn('Approval notification failed (non-blocking):', notifErr);
-      }
+        const reviewerItems = await this.props.sp.web.lists
+          .getByTitle(PM_LISTS.POLICY_REVIEWERS)
+          .items.filter(`PolicyId eq ${policyId}`)
+          .select('ReviewerId').top(50)();
+        reviewerIds = reviewerItems.map((r: any) => r.ReviewerId).filter(Boolean);
+      } catch { /* reviewer list may not exist — continue without */ }
+
+      // Delegate to PolicyService — handles status change, audit log, and notifications
+      await this.policyService.submitForReview(policyId, reviewerIds);
 
       void this.dialogManager.showAlert(
-        'The policy has been submitted for approval and approvers have been notified.',
+        'The policy has been submitted for review and reviewers have been notified.',
         { title: 'Submitted for Review', variant: 'success' }
       );
 
@@ -7636,9 +7670,15 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         {/* ── LEFT SIDEBAR ── */}
         <aside style={S.sidebar}>
           <div style={S.sidebarHeader}>
-            <Text style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', display: 'block' }}>New Policy Wizard</Text>
+            <Text style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', display: 'block' }}>{st._isRevision ? 'Policy Revision' : (this.state.policyId ? 'Edit Policy' : 'New Policy Wizard')}</Text>
             <Text style={{ fontSize: 11, color: '#94a3b8', marginTop: 2, display: 'block' }}>{activeSteps.length} steps to complete</Text>
           </div>
+          {st._isRevision && (
+            <div style={{ margin: '8px 20px', padding: '8px 12px', background: '#eff6ff', border: '1px solid #93c5fd', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <svg viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              <span style={{ fontSize: 11, fontWeight: 600, color: '#2563eb' }}>Revision Mode — edit and resubmit for review</span>
+            </div>
+          )}
           {isFastTrack && (
             <div style={{ margin: '8px 20px', padding: '8px 12px', background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ fontSize: 16 }}>&#x26A1;</span>
@@ -7768,13 +7808,24 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                 Next <Icon iconName="ChevronRight" style={{ marginLeft: 6 }} />
               </PrimaryButton>
             ) : (
-              <PrimaryButton
-                text="Submit for Review"
-                iconProps={{ iconName: 'Send' }}
-                onClick={() => { this.handleSubmitForReview(); }}
-                disabled={saving}
-                styles={{ root: { background: '#0d9488', borderColor: '#0d9488', borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
-              />
+              <>
+                {(this.state as any)._wizardMode !== 'fast-track' && (
+                  <DefaultButton
+                    text="Save as Template"
+                    iconProps={{ iconName: 'SaveTemplate' }}
+                    onClick={() => { this.handleSaveAsFastTrackTemplate(); }}
+                    disabled={saving}
+                    styles={{ root: { borderRadius: 4, border: '1px solid #e2e8f0', color: '#7c3aed', minWidth: 120 }, rootHovered: { borderColor: '#7c3aed', background: '#f5f3ff' } }}
+                  />
+                )}
+                <PrimaryButton
+                  text="Submit for Review"
+                  iconProps={{ iconName: 'Send' }}
+                  onClick={() => { this.handleSubmitForReview(); }}
+                  disabled={saving}
+                  styles={{ root: { background: '#0d9488', borderColor: '#0d9488', borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+                />
+              </>
             )}
           </div>
         </div>

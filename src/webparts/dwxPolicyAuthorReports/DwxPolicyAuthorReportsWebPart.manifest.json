@@ -1,0 +1,25 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx/client-side-web-part-manifest.schema.json",
+  "id": "a1b2c3d4-5e6f-7a8b-9c0d-e1f2a3b4c5d6",
+  "alias": "DwxPolicyAuthorReportsWebPart",
+  "componentType": "WebPart",
+
+  "version": "*",
+  "manifestVersion": 2,
+
+  "requiresCustomScript": false,
+  "supportedHosts": ["SharePointWebPart", "SharePointFullPage", "TeamsPersonalApp", "TeamsTab"],
+  "supportsThemeVariants": true,
+
+  "preconfiguredEntries": [{
+    "groupId": "e4b0a295-44e2-4fa4-8f15-4eac5edf4275",
+    "group": { "default": "DWx Policy Manager" },
+    "title": { "default": "DWx Policy Author Reports" },
+    "description": { "default": "Author-specific reports — policy performance, acknowledgement rates, review schedules, and activity metrics" },
+    "officeFabricIconFontName": "ReportDocument",
+    "properties": {
+      "title": "Policy Author Reports"
+    }
+  }],
+  "supportsFullBleed": true
+}

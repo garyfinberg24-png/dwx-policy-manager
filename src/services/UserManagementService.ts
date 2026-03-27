@@ -61,7 +61,7 @@ export class UserManagementService {
   private readonly EMPLOYEE_FIELDS = [
     'Id', 'Title', 'FirstName', 'LastName', 'Email', 'EmployeeNumber',
     'JobTitle', 'Department', 'Location', 'OfficePhone', 'MobilePhone',
-    'ManagerEmail', 'EmployeeStatus', 'EmploymentType', 'CostCenter',
+    'ManagerEmail', 'EmployeeStatus', 'EmployeeType', 'CostCenter',
     'EntraObjectId', 'PMRole', 'ManagedDepartments', 'LastSyncedAt', 'Notes', 'Created', 'Modified'
   ];
 

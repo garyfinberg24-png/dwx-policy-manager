@@ -240,25 +240,34 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
           await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_SOURCE_DOCUMENTS)
             .rootFolder.folders.getByUrl(folderPath)();
         } catch {
-          await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_SOURCE_DOCUMENTS)
-            .rootFolder.folders.addUsingPath(folderPath);
+          try {
+            await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_SOURCE_DOCUMENTS)
+              .rootFolder.folders.addUsingPath(folderPath);
+          } catch { /* folder may already exist */ }
         }
+
+        // Convert File to ArrayBuffer for PnP upload
+        const fileBuffer = await item.file.arrayBuffer();
         const uploadResult = await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_SOURCE_DOCUMENTS)
           .rootFolder.folders.getByUrl(folderPath)
-          .files.addUsingPath(item.fileName, item.file, { Overwrite: true });
+          .files.addUsingPath(item.fileName, fileBuffer, { Overwrite: true });
         const docUrl = uploadResult.data?.ServerRelativeUrl || '';
 
         // Create Draft policy stub in PM_Policies
-        const policyResult = await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES).items.add({
-          Title: item.policyTitle || item.fileName.replace(/\.[^.]+$/, ''),
-          PolicyName: item.policyTitle || item.fileName.replace(/\.[^.]+$/, ''),
+        const policyTitle = item.policyTitle || item.fileName.replace(/\.[^.]+$/, '');
+        const policyData: Record<string, unknown> = {
+          Title: policyTitle,
+          PolicyName: policyTitle,
           PolicyStatus: 'Draft',
           DocumentURL: docUrl,
-          DocumentFormat: item.fileType.replace('.', '').toUpperCase(),
           PolicyCategory: '',
-          ComplianceRisk: 'Medium',
-          CreationMethod: 'BulkImport'
-        });
+          ComplianceRisk: 'Medium'
+        };
+        // Optional columns — only include if they exist (avoids 400 on missing columns)
+        try {
+          policyData.DocumentFormat = item.fileType.replace('.', '').toUpperCase();
+        } catch { /* */ }
+        const policyResult = await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES).items.add(policyData);
         const spId = policyResult?.data?.Id || policyResult?.data?.id;
 
         // Update local state

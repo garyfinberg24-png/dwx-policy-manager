@@ -286,7 +286,7 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
         const title = item.title || item.fileName.replace(/\.[^.]+$/, '');
         const result = await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES).items.add({ Title: title, PolicyStatus: 'Draft' });
         const spId = result?.data?.Id || result?.data?.id;
-        if (spId && docUrl) { try { await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES).items.getById(spId).update({ PolicyName: title, DocumentURL: docUrl }); } catch { /* */ } }
+        if (spId) { try { const updateData: Record<string, unknown> = { PolicyName: title, CreationMethod: 'BulkImport' }; if (docUrl) updateData.DocumentURL = docUrl; await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES).items.getById(spId).update(updateData); } catch { /* CreationMethod column may not exist */ } }
         this.updateItem(item.id, { spId, documentUrl: docUrl, status: 'uploaded' });
         this.log(`Uploaded: ${item.fileName}`, 'success'); succeeded++;
       } catch (err) {

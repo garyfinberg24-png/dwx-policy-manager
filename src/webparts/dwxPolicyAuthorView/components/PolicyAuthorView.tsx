@@ -91,6 +91,7 @@ export interface IPipelinePolicy {
   Created: string;
   Version: string;
   IsReviewer: boolean; // true if current user is a reviewer, not the author
+  IsBulkImport: boolean;
 }
 
 export interface IPolicyApproval {
@@ -143,6 +144,7 @@ interface IPolicyAuthorViewState {
   delegations: IDelegation[];
   loading: boolean;
   pipelineFilter: PipelineStatusFilter;
+  pipelineBulkOnly: boolean;
   pipelineSearch: string;
   selectedPipelineIds: Set<number>;
   statusFilter: RequestStatusFilter;
@@ -195,6 +197,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
       delegations: [],
       loading: true,
       pipelineFilter: 'Draft',
+      pipelineBulkOnly: false,
       pipelineSearch: '',
       selectedPipelineIds: new Set<number>(),
       statusFilter: 'All',
@@ -566,7 +569,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
           .items.select(
             'Id', 'Title', 'PolicyNumber', 'PolicyCategory', 'PolicyStatus',
             'ComplianceRisk', 'Author/Id', 'Author/Title', 'PolicyOwner/Id',
-            'Modified', 'Created', 'VersionNumber'
+            'Modified', 'Created', 'VersionNumber', 'CreationMethod'
           )
           .expand('Author', 'PolicyOwner')
           .orderBy('Modified', false)
@@ -579,7 +582,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
           .items.select(
             'Id', 'Title', 'PolicyNumber', 'PolicyCategory', 'PolicyStatus',
             'ComplianceRisk', 'Author/Id', 'Author/Title',
-            'Modified', 'Created', 'VersionNumber'
+            'Modified', 'Created', 'VersionNumber', 'CreationMethod'
           )
           .expand('Author')
           .orderBy('Modified', false)
@@ -607,7 +610,8 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
           Modified: item.Modified || '',
           Created: item.Created || '',
           Version: item.VersionNumber || '0.1',
-          IsReviewer: false
+          IsReviewer: false,
+          IsBulkImport: item.CreationMethod === 'BulkImport'
         }));
     } catch (err) {
       console.warn('[PolicyAuthorView] loadPipelinePolicies failed:', err);
@@ -737,6 +741,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
 
     // Apply filters
     let filtered = pipelineFilter === 'All' ? pipelinePolicies : pipelinePolicies.filter(p => p.PolicyStatus === pipelineFilter);
+    if (this.state.pipelineBulkOnly) filtered = filtered.filter(p => p.IsBulkImport);
     if (pipelineSearch.trim()) {
       const q = pipelineSearch.toLowerCase();
       filtered = filtered.filter(p =>
@@ -873,6 +878,17 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                 >{f}</button>
               ))}
             </div>
+            {/* Bulk Import filter toggle */}
+            <button
+              onClick={() => this.setState(prev => ({ pipelineBulkOnly: !prev.pipelineBulkOnly }))}
+              style={{
+                padding: '5px 12px', fontSize: 12, fontWeight: this.state.pipelineBulkOnly ? 700 : 500,
+                border: `1px solid ${this.state.pipelineBulkOnly ? '#2563eb' : '#e2e8f0'}`,
+                borderRadius: 4, cursor: 'pointer',
+                background: this.state.pipelineBulkOnly ? '#2563eb' : '#fff',
+                color: this.state.pipelineBulkOnly ? '#fff' : '#64748b'
+              }}
+            >Bulk Import</button>
             {/* Spacer */}
             <div style={{ flex: 1 }} />
             {/* Bulk Actions */}
@@ -975,6 +991,9 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                         {policy.PolicyNumber || 'No number'} • v{policy.Version}
                         {policy.IsReviewer && (
                           <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 4, background: '#f5f3ff', color: '#7c3aed' }}>Reviewer</span>
+                        )}
+                        {policy.IsBulkImport && (
+                          <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 4, background: '#eff6ff', color: '#2563eb' }}>Bulk Import</span>
                         )}
                       </div>
                     </div>

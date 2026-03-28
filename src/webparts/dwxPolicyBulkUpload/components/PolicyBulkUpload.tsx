@@ -681,7 +681,7 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
               onClick={() => this.setState({ wizardStep: Math.max(1, wizardStep - 1) as WizardStep })}
               styles={{ root: { borderRadius: 4, visibility: wizardStep === 1 ? 'hidden' : 'visible' } }} />
             {wizardStep < 5 ? (
-              <PrimaryButton text="Next" onClick={() => this.handleNext()}
+              <PrimaryButton onClick={() => this.handleNext()}
                 styles={{ root: { background: '#0d9488', borderColor: '#0d9488', borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}>
                 Next <Icon iconName="ChevronRight" style={{ marginLeft: 6 }} />
               </PrimaryButton>
@@ -911,50 +911,103 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
     const { imports, classifying, classifyProgress, selectedIds } = this.state;
     const needsClassification = imports.filter(i => i.status === 'uploaded' && !i.useExistingMetadata);
     const classified = imports.filter(i => ['classified', 'template-applied'].includes(i.status));
+    const beingClassified = imports.filter(i => i.status === 'classifying');
     const skipped = imports.filter(i => i.useExistingMetadata);
+
+    // All items that should appear in the classify table
+    const classifyItems = imports.filter(i => !i.useExistingMetadata && !['pending', 'failed'].includes(i.status));
+    const riskColor = (r?: string) => r === 'Critical' ? '#dc2626' : r === 'High' ? '#d97706' : r === 'Medium' ? '#0d9488' : r === 'Low' ? '#059669' : '#94a3b8';
+    const riskBg = (r?: string) => r === 'Critical' ? '#fef2f2' : r === 'High' ? '#fff7ed' : '#f0fdf4';
 
     return (
       <>
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', margin: '0 0 4px' }}>AI Classification</h2>
-        <p style={{ fontSize: 13, color: '#64748b', margin: '0 0 16px' }}>
-          {needsClassification.length} file{needsClassification.length !== 1 ? 's' : ''} ready for AI classification.
-          {skipped.length > 0 && ` ${skipped.length} skipped (using existing metadata).`}
-        </p>
-
-        {classifying && <ProgressIndicator label={`Classifying... ${classifyProgress}%`} percentComplete={classifyProgress / 100} style={{ marginBottom: 16 }} />}
-
-        {!classifying && needsClassification.length > 0 && classified.length === 0 && (
-          <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-            <PrimaryButton text={`Classify ${selectedIds.size > 0 ? selectedIds.size : needsClassification.length} File${(selectedIds.size > 0 ? selectedIds.size : needsClassification.length) !== 1 ? 's' : ''}`}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+          <div>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', margin: '0 0 4px' }}>AI Classification</h2>
+            <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>
+              {classifying ? `Classifying... ${classifyProgress}%` :
+                needsClassification.length > 0 ? `${needsClassification.length} file${needsClassification.length !== 1 ? 's' : ''} ready for classification` :
+                  classified.length > 0 ? `${classified.length} file${classified.length !== 1 ? 's' : ''} classified` : 'All files processed'}
+              {skipped.length > 0 && ` · ${skipped.length} skipped (existing metadata)`}
+            </p>
+          </div>
+          {!classifying && needsClassification.length > 0 && (
+            <PrimaryButton text={`Classify ${needsClassification.length} File${needsClassification.length !== 1 ? 's' : ''}`}
               iconProps={{ iconName: 'Processing' }} onClick={() => {
-                if (selectedIds.size === 0) this.setState({ selectedIds: new Set(needsClassification.map(i => i.id)) }, () => this.classifySelected());
-                else this.classifySelected();
+                this.setState({ selectedIds: new Set(needsClassification.map(i => i.id)) }, () => this.classifySelected());
               }}
               styles={{ root: { background: '#7c3aed', borderColor: '#7c3aed', borderRadius: 4 }, rootHovered: { background: '#6d28d9', borderColor: '#6d28d9' } }} />
-          </div>
-        )}
+          )}
+        </div>
 
-        {/* Classification results */}
-        {classified.length > 0 && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 12 }}>
-            {classified.map(item => (
-              <div key={item.id} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: 16, borderLeft: `4px solid ${item.suggestedRisk === 'Critical' ? '#dc2626' : item.suggestedRisk === 'High' ? '#d97706' : '#0d9488'}` }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 4 }}>{item.extractedTitle || item.confirmedTitle}</div>
-                <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 10 }}>{item.fileName}</div>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
-                  <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 4, background: '#f5f3ff', color: '#7c3aed' }}>{item.suggestedCategory}</span>
-                  <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 4, background: item.suggestedRisk === 'Critical' ? '#fef2f2' : item.suggestedRisk === 'High' ? '#fff7ed' : '#f0fdf4', color: item.suggestedRisk === 'Critical' ? '#dc2626' : item.suggestedRisk === 'High' ? '#d97706' : '#059669' }}>{item.suggestedRisk}</span>
-                  {item.matchConfidence && <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 4, background: '#eff6ff', color: '#2563eb' }}>{item.matchConfidence} match</span>}
+        {classifying && <ProgressIndicator percentComplete={classifyProgress / 100} style={{ marginBottom: 12 }} />}
+
+        {/* Classification table — columns populate as AI processes each file */}
+        {classifyItems.length > 0 && (
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 110px 80px 110px 1fr 80px', padding: '8px 16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, color: '#64748b' }}>
+              <div>Policy Title</div><div>Category</div><div>Risk</div><div>Department</div><div>Summary</div><div>Status</div>
+            </div>
+            {classifyItems.map(item => {
+              const isClassifying = item.status === 'classifying';
+              const isDone = ['classified', 'template-applied'].includes(item.status);
+              const isWaiting = item.status === 'uploaded';
+
+              return (
+                <div key={item.id} style={{ display: 'grid', gridTemplateColumns: '1fr 110px 80px 110px 1fr 80px', padding: '10px 16px', borderBottom: '1px solid #f1f5f9', alignItems: 'center', background: isClassifying ? '#faf5ff' : isDone ? '#fff' : '#fafafa', opacity: isWaiting ? 0.5 : 1, transition: 'all 0.3s' }}>
+                  {/* Title */}
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: isDone ? '#0f172a' : '#94a3b8' }}>
+                      {isDone ? (item.extractedTitle || item.confirmedTitle) : item.confirmedTitle || item.fileName}
+                    </div>
+                    <div style={{ fontSize: 10, color: '#cbd5e1' }}>{item.fileName}</div>
+                  </div>
+                  {/* Category */}
+                  <div>
+                    {isDone ? (
+                      <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 4, background: '#f5f3ff', color: '#7c3aed' }}>{item.suggestedCategory}</span>
+                    ) : isClassifying ? (
+                      <div style={{ width: 60, height: 8, background: '#e9d5ff', borderRadius: 4, overflow: 'hidden' }}><div style={{ width: '60%', height: '100%', background: '#7c3aed', borderRadius: 4, animation: 'pulse 1.5s infinite' }} /></div>
+                    ) : <span style={{ color: '#e2e8f0' }}>—</span>}
+                  </div>
+                  {/* Risk */}
+                  <div>
+                    {isDone ? (
+                      <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 4, background: riskBg(item.suggestedRisk), color: riskColor(item.suggestedRisk) }}>{item.suggestedRisk}</span>
+                    ) : isClassifying ? (
+                      <div style={{ width: 40, height: 8, background: '#e9d5ff', borderRadius: 4 }} />
+                    ) : <span style={{ color: '#e2e8f0' }}>—</span>}
+                  </div>
+                  {/* Department */}
+                  <div style={{ fontSize: 11, color: isDone ? '#475569' : '#e2e8f0' }}>
+                    {isDone ? ((item.suggestedDepartments || []).join(', ') || 'All') : isClassifying ? '...' : '—'}
+                  </div>
+                  {/* Summary */}
+                  <div style={{ fontSize: 11, color: isDone ? '#64748b' : '#e2e8f0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {isDone ? (item.suggestedSummary || '—').substring(0, 80) : isClassifying ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Spinner size={SpinnerSize.xSmall} /><span style={{ color: '#7c3aed', fontSize: 11 }}>Analysing...</span></div>
+                    ) : '—'}
+                  </div>
+                  {/* Status */}
+                  <div>
+                    {isDone ? (
+                      <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 4, background: '#f0fdf4', color: '#059669' }}>Done</span>
+                    ) : isClassifying ? (
+                      <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 4, background: '#f5f3ff', color: '#7c3aed' }}>AI...</span>
+                    ) : (
+                      <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 4, background: '#f1f5f9', color: '#94a3b8' }}>Waiting</span>
+                    )}
+                  </div>
                 </div>
-                {item.suggestedSummary && <div style={{ fontSize: 12, color: '#64748b', lineHeight: 1.5, marginBottom: 8 }}>{item.suggestedSummary.substring(0, 120)}{item.suggestedSummary.length > 120 ? '...' : ''}</div>}
-                <div style={{ fontSize: 11, color: '#94a3b8' }}>Departments: {(item.suggestedDepartments || []).join(', ') || 'All'}</div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
-        {needsClassification.length === 0 && classified.length === 0 && (
-          <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>All files are either classified or using existing metadata. Proceed to Templates.</div>
+        {classifyItems.length === 0 && (
+          <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8', background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, fontSize: 13 }}>
+            {skipped.length > 0 ? `All ${skipped.length} files are using existing metadata. Proceed to Templates.` : 'No files to classify. Go back to Review to select files.'}
+          </div>
         )}
       </>
     );

@@ -106,6 +106,7 @@ interface IPolicyBulkUploadState {
   batchTemplateId: string;
   batchCategory: string;
   batchRisk: string;
+  groupBy: string;
 }
 
 // ============================================================================
@@ -162,7 +163,8 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
       successMessage: '', errorMessage: '', dragOver: false,
       fastTrackTemplates: [], templatesLoaded: false,
       activityLog: [], showBatchPanel: false,
-      batchTemplateId: '', batchCategory: '', batchRisk: ''
+      batchTemplateId: '', batchCategory: '', batchRisk: '',
+      groupBy: 'None'
     };
   }
 
@@ -777,7 +779,7 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
   // ============================================================================
 
   private renderStep2_Review(): React.ReactElement {
-    const { imports, searchQuery, filterType, selectedIds } = this.state;
+    const { imports, searchQuery, filterType, selectedIds, groupBy } = this.state;
     const uploaded = imports.filter(i => !['pending', 'failed'].includes(i.status));
 
     let filtered = uploaded;
@@ -786,6 +788,63 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
 
     const allSelected = filtered.length > 0 && filtered.every(i => selectedIds.has(i.id));
     const withMetadata = filtered.filter(i => i.hasExistingMetadata);
+
+    // Group items
+    const getGroupKey = (item: IBulkImportItem): string => {
+      switch (groupBy) {
+        case 'Type': return item.fileType.replace('.', '').toUpperCase();
+        case 'Metadata': return item.hasExistingMetadata ? 'Has Metadata' : 'No Metadata';
+        case 'Category': return item.existingMetadata?.category || 'Uncategorised';
+        case 'Author': return item.existingMetadata?.author || 'Unknown Author';
+        default: return '';
+      }
+    };
+
+    const groups: Array<{ key: string; items: IBulkImportItem[] }> = [];
+    if (groupBy === 'None') {
+      groups.push({ key: '', items: filtered });
+    } else {
+      const groupMap = new Map<string, IBulkImportItem[]>();
+      for (const item of filtered) {
+        const key = getGroupKey(item);
+        if (!groupMap.has(key)) groupMap.set(key, []);
+        groupMap.get(key)!.push(item);
+      }
+      // Sort groups alphabetically
+      for (const [key, items] of Array.from(groupMap.entries()).sort((a, b) => a[0].localeCompare(b[0]))) {
+        groups.push({ key, items });
+      }
+    }
+
+    const renderRow = (item: IBulkImportItem) => {
+      const isSelected = selectedIds.has(item.id);
+      const meta = item.existingMetadata || {};
+      return (
+        <div key={item.id} style={{ display: 'grid', gridTemplateColumns: '36px 1fr 100px 100px 100px 100px 60px', padding: '10px 16px', borderBottom: '1px solid #f1f5f9', alignItems: 'center', background: isSelected ? '#f0fdfa' : item.useExistingMetadata ? '#f0fdf4' : '#fff' }}>
+          <div><input type="checkbox" checked={isSelected} onChange={() => {
+            const next = new Set(selectedIds); if (next.has(item.id)) next.delete(item.id); else next.add(item.id); this.setState({ selectedIds: next });
+          }} /></div>
+          <div>
+            <input type="text" value={item.confirmedTitle || ''} onChange={(e) => {
+              const v = (e.target as HTMLInputElement).value;
+              this.setState({ imports: this.state.imports.map(i => i.id === item.id ? { ...i, confirmedTitle: v } : i) });
+            }} style={{ width: '100%', border: 'none', background: 'transparent', fontSize: 13, fontWeight: 600, color: '#0f172a', outline: 'none', padding: '2px 0' }} />
+            <div style={{ fontSize: 10, color: '#94a3b8' }}>{item.fileName} · {item.fileType.replace('.', '').toUpperCase()}</div>
+          </div>
+          <div>{item.hasExistingMetadata ? <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 4, background: '#f0fdf4', color: '#059669' }}>Found</span> : <span style={{ fontSize: 10, color: '#cbd5e1' }}>—</span>}</div>
+          <div style={{ fontSize: 11, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{meta.author || '—'}</div>
+          <div style={{ fontSize: 11, color: '#475569' }}>{meta.category || '—'}</div>
+          <div style={{ fontSize: 11, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{meta.keywords || '—'}</div>
+          <div>
+            {item.hasExistingMetadata && (
+              <Checkbox checked={item.useExistingMetadata} onChange={(_, checked) => {
+                this.setState({ imports: this.state.imports.map(i => i.id === item.id ? { ...i, useExistingMetadata: !!checked } : i) });
+              }} styles={{ root: { marginBottom: 0 } }} />
+            )}
+          </div>
+        </div>
+      );
+    };
 
     return (
       <>
@@ -800,51 +859,45 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
 
         {/* Toolbar */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
-          <SearchBox placeholder="Search..." value={searchQuery} onChange={(_, v) => this.setState({ searchQuery: v || '' })} styles={{ root: { width: 220 } }} />
+          <SearchBox placeholder="Search..." value={searchQuery} onChange={(_, v) => this.setState({ searchQuery: v || '' })} styles={{ root: { width: 200 } }} />
           <Dropdown selectedKey={filterType} options={[{ key: 'All', text: 'All Types' }, { key: 'DOCX', text: 'DOCX' }, { key: 'PDF', text: 'PDF' }, { key: 'XLSX', text: 'XLSX' }, { key: 'PPTX', text: 'PPTX' }]}
             onChange={(_, opt) => this.setState({ filterType: String(opt?.key || 'All') })}
-            styles={{ root: { width: 120 }, title: { borderRadius: 4 }, dropdown: { borderRadius: 4 } }} />
+            styles={{ root: { width: 110 }, title: { borderRadius: 4 }, dropdown: { borderRadius: 4 } }} />
+          <Dropdown selectedKey={groupBy} options={[{ key: 'None', text: 'No grouping' }, { key: 'Type', text: 'Group by Type' }, { key: 'Metadata', text: 'Group by Metadata' }, { key: 'Category', text: 'Group by Category' }, { key: 'Author', text: 'Group by Author' }]}
+            onChange={(_, opt) => this.setState({ groupBy: String(opt?.key || 'None') })}
+            styles={{ root: { width: 160 }, title: { borderRadius: 4 }, dropdown: { borderRadius: 4 } }} />
           <div style={{ flex: 1 }} />
-          <span style={{ fontSize: 12, color: '#64748b' }}>{selectedIds.size} selected</span>
+          <span style={{ fontSize: 12, color: '#64748b' }}>{selectedIds.size} selected · {filtered.length} file{filtered.length !== 1 ? 's' : ''}</span>
         </div>
 
-        {/* Table */}
+        {/* Table with optional group headers */}
         <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '36px 1fr 120px 100px 100px 100px 80px', padding: '8px 16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, color: '#64748b' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '36px 1fr 100px 100px 100px 100px 60px', padding: '8px 16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, color: '#64748b' }}>
             <div><input type="checkbox" checked={allSelected} onChange={() => {
               if (allSelected) this.setState({ selectedIds: new Set() }); else this.setState({ selectedIds: new Set(filtered.map(i => i.id)) });
             }} /></div>
-            <div>Title / File</div><div>Existing Meta</div><div>Author</div><div>Category</div><div>Keywords</div><div>Skip AI</div>
+            <div>Title / File</div><div>Metadata</div><div>Author</div><div>Category</div><div>Keywords</div><div>Skip AI</div>
           </div>
-          {filtered.map(item => {
-            const isSelected = selectedIds.has(item.id);
-            const meta = item.existingMetadata || {};
-            return (
-              <div key={item.id} style={{ display: 'grid', gridTemplateColumns: '36px 1fr 120px 100px 100px 100px 80px', padding: '10px 16px', borderBottom: '1px solid #f1f5f9', alignItems: 'center', background: isSelected ? '#f0fdfa' : item.useExistingMetadata ? '#f0fdf4' : '#fff' }}>
-                <div><input type="checkbox" checked={isSelected} onChange={() => {
-                  const next = new Set(selectedIds); if (next.has(item.id)) next.delete(item.id); else next.add(item.id); this.setState({ selectedIds: next });
-                }} /></div>
-                <div>
-                  <input type="text" value={item.confirmedTitle || ''} onChange={(e) => {
-                    const v = (e.target as HTMLInputElement).value;
-                    this.setState({ imports: this.state.imports.map(i => i.id === item.id ? { ...i, confirmedTitle: v } : i) });
-                  }} style={{ width: '100%', border: 'none', background: 'transparent', fontSize: 13, fontWeight: 600, color: '#0f172a', outline: 'none', padding: '2px 0' }} />
-                  <div style={{ fontSize: 10, color: '#94a3b8' }}>{item.fileName}</div>
+          {groups.map(group => (
+            <React.Fragment key={group.key || '__all'}>
+              {group.key && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 16px', background: '#f0fdfa', borderBottom: '1px solid #e2e8f0', cursor: 'pointer' }}
+                  onClick={() => {
+                    // Select/deselect all in group
+                    const groupIds = group.items.map(i => i.id);
+                    const allGroupSelected = groupIds.every(id => selectedIds.has(id));
+                    const next = new Set(selectedIds);
+                    if (allGroupSelected) { groupIds.forEach(id => next.delete(id)); } else { groupIds.forEach(id => next.add(id)); }
+                    this.setState({ selectedIds: next });
+                  }}>
+                  <input type="checkbox" checked={group.items.every(i => selectedIds.has(i.id))} readOnly style={{ marginRight: 4 }} />
+                  <span style={{ fontSize: 12, fontWeight: 700, color: '#0d9488' }}>{group.key}</span>
+                  <span style={{ fontSize: 11, color: '#94a3b8' }}>({group.items.length} file{group.items.length !== 1 ? 's' : ''})</span>
                 </div>
-                <div>{item.hasExistingMetadata ? <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 4, background: '#f0fdf4', color: '#059669' }}>Found</span> : <span style={{ fontSize: 10, color: '#cbd5e1' }}>—</span>}</div>
-                <div style={{ fontSize: 11, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{meta.author || '—'}</div>
-                <div style={{ fontSize: 11, color: '#475569' }}>{meta.category || '—'}</div>
-                <div style={{ fontSize: 11, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{meta.keywords || '—'}</div>
-                <div>
-                  {item.hasExistingMetadata && (
-                    <Checkbox checked={item.useExistingMetadata} onChange={(_, checked) => {
-                      this.setState({ imports: this.state.imports.map(i => i.id === item.id ? { ...i, useExistingMetadata: !!checked } : i) });
-                    }} styles={{ root: { marginBottom: 0 } }} />
-                  )}
-                </div>
-              </div>
-            );
-          })}
+              )}
+              {group.items.map(renderRow)}
+            </React.Fragment>
+          ))}
         </div>
       </>
     );

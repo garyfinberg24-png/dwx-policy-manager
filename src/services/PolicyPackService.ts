@@ -81,6 +81,7 @@ export class PolicyPackService {
         PolicySequence: request.isSequential ? JSON.stringify(request.policyIds) : undefined,
         SendWelcomeEmail: request.sendWelcomeEmail ?? true,
         SendTeamsNotification: request.sendTeamsNotification ?? true,
+        ApproverEmails: request.approverEmails ? request.approverEmails.join(';') : '',
         TotalAssignments: 0,
         TotalCompleted: 0,
         AverageCompletionDays: 0,

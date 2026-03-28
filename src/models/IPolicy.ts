@@ -1612,6 +1612,7 @@ export interface ICreatePolicyPackRequest {
   readTimeframe?: ReadTimeframe;
   sendWelcomeEmail?: boolean;
   sendTeamsNotification?: boolean;
+  approverEmails?: string[];
 }
 
 export interface IAssignPolicyPackRequest {

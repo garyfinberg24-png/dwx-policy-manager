@@ -63,6 +63,7 @@ export interface IPolicyPackManagerState {
   isSequential: boolean;
   sendWelcomeEmail: boolean;
   sendTeamsNotification: boolean;
+  approverEmails: string[];
   submitting: boolean;
   deploymentResult: IPolicyPackDeploymentResult | null;
   policySearchFilter: string;
@@ -99,6 +100,7 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
       isSequential: false,
       sendWelcomeEmail: true,
       sendTeamsNotification: true,
+      approverEmails: [],
       submitting: false,
       deploymentResult: null,
       policySearchFilter: '',
@@ -153,7 +155,8 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
       selectedPolicyIds: [],
       isSequential: false,
       sendWelcomeEmail: true,
-      sendTeamsNotification: true
+      sendTeamsNotification: true,
+      approverEmails: []
     });
   };
 
@@ -200,7 +203,8 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
         targetProcessType: targetProcessType as any,
         isSequential,
         sendWelcomeEmail,
-        sendTeamsNotification
+        sendTeamsNotification,
+        approverEmails: this.state.approverEmails
       };
 
       if (editingPackId) {
@@ -846,12 +850,13 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
                     personSelectionLimit={10}
                     principalTypes={[PrincipalType.User]}
                     resolveDelay={500}
-                    placeholder="Search for approvers in Entra ID..."
+                    placeholder="Search for approvers..."
                     groupName=""
                     showHiddenInUI={false}
+                    ensureUser={true}
                     onChange={(items: any[]) => {
-                      const approvers = items.map(item => item.secondaryText || item.text || '').filter(Boolean);
-                      console.log('Selected approvers:', approvers);
+                      const approverEmails = items.map(item => item.secondaryText || item.loginName || '').filter(Boolean);
+                      this.setState({ approverEmails });
                     }}
                   />
                 </div>

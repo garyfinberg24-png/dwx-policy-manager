@@ -32,8 +32,8 @@ Enterprise-grade Policy Lifecycle Management system built on SharePoint Framewor
 | **JmlPolicyDistribution** | Distribution campaign management — create, track, and manage policy distribution with live SharePoint data | `PolicyDistribution.aspx` |
 | **JmlPolicyAnalytics** | Executive analytics dashboard (6 tabs: Executive, Policy Metrics, Acknowledgements, SLA, Compliance, Audit) with live SP data | `PolicyAnalytics.aspx` |
 | **DwxPolicyManagerView** | Manager compliance dashboard — team compliance, approvals, delegations, reviews, reports | `PolicyManagerView.aspx` |
-| **DwxPolicyAuthorReports** | Author-specific reports — policy performance, ack rates, review schedules, quiz stats | `PolicyAuthorReports.aspx` |
-| **DwxPolicyBulkUpload** | Bulk policy import with drag-and-drop, AI classification, batch metadata assignment | `PolicyBulkUpload.aspx` |
+| **DwxPolicyAuthorReports** | 5-tab author reports: Overview, Acknowledgements, Policy Lifecycle, Review Schedule, Activity History — all live from SP | `PolicyAuthorReports.aspx` |
+| **DwxPolicyBulkUpload** | 4-step wizard: Upload → Review (metadata extraction) → Enrich (AI/template/manual) → Finish (batch actions). File metadata extraction, Fast Track matching, sessionStorage persistence | `PolicyBulkUpload.aspx` |
 
 ## Architecture
 

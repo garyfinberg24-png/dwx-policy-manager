@@ -816,7 +816,7 @@ The QuizBuilder's "AI Generate" panel calls the Azure Function with:
 
 ---
 
-## Session State (Last Updated: 27 Mar 2026 — Session 19 Complete)
+## Session State (Last Updated: 28 Mar 2026 — Session 19b Complete)
 
 ### Production Readiness Rules (MANDATORY)
 
@@ -856,7 +856,66 @@ See: docs/production-readiness-results.md, docs/production-hardening-script.md
 - `session-18-complete` — end of Session 18 (commit `bcbaaca`)
 - Session 19 start: commit `c8b683a`, Session 19 end: commit `aae0f17`
 
-### Recently Completed (Session 19 — 27 Mar 2026)
+### Recently Completed (Session 19b — 28 Mar 2026)
+
+#### Bulk Upload Wizard, Author Reports, User Unification, Email Templates, Bug Fixes
+
+**Bulk Upload — Complete 4-Step Wizard Rewrite:**
+- Step 1 (Upload): drag-drop with file metadata extraction (DOCX/PDF/PPTX properties)
+- Step 2 (Review): editable titles, existing metadata display, group/sort/filter, file type badges
+- Step 3 (Enrich): merged Classify+Templates into single editable table — AI classify, Fast Track Template dropdown, manual edit, fill-down for batch operations. AI completely optional.
+- Step 4 (Finish): processed files table, KPI summary, batch actions (Submit All for Review, Publish All with confirmation), collapsible activity log + import history
+- sessionStorage persistence — state survives page navigation
+- File upload via XMLHttpRequest (bypasses PnP/SPFx serialization issues)
+- Document text extraction for AI accuracy (DOCX XML nodes, PDF ASCII, PPTX/XLSX tags)
+- Fast Track Template matching with confidence scoring (Strong/Likely/Possible)
+- CreationMethod: 'BulkImport' written to PM_Policies for pipeline filtering
+
+**Author Reports — 5 Tabbed Reports:**
+- Overview: KPI cards, status/category distribution bar charts, quiz stats, reviews due
+- Acknowledgements: per-policy ack table with progress bars, sortable, searchable
+- Policy Lifecycle: visual pipeline (Draft→Review→Approved→Published→Retired) with counts
+- Review Schedule: grouped by urgency (Overdue/Due Soon/Upcoming) with day badges
+- Activity History: timeline-style audit log with colour-coded action badges
+
+**Pipeline Enhancements:**
+- Wider layout (1400→1600px) — icons no longer cut off
+- "Bulk Import" blue badge on imported policies + filter toggle button
+- "Batch Metadata" button — select multiple policies → StyledPanel with Fast Track Template/Category/Risk → apply to all
+- "View Policy" opens in read-only browse mode (no acknowledgement process)
+
+**Unified User List (PM_UserProfiles):**
+- EntraUserSyncService → PM_UserProfiles (was PM_Employees)
+- UserManagementService → PM_UserProfiles
+- AudienceService → PM_UserProfiles + reads Rules column (was Criteria)
+- Complete Entra→Audience→Distribution→Publish chain now connected
+- Status field → EmployeeStatus (reserved SP field name fix)
+- EmploymentType → EmployeeType column name fix
+
+**Premium Email Templates:**
+- EmailTemplateBuilder utility (15 typed notification templates)
+- Compact gradient card design — colour-coded per notification type
+- buildEmailShell() replaced in PolicyNotificationService + EmailQueueService + ReminderScheduleService
+- 15 HTML mockups in docs/email-mockups/notifications/
+
+**Missing Lists + Provisioning:**
+- Script 27: 9 missing lists created + column patches on 4 existing lists
+- Script 26: PM_UserProfiles unified user directory
+- Script 24/25: Distribution columns + ReminderSchedule
+- PM_Delegations, PM_Configuration, PM_HelpArticles, PM_Cheatsheets, PM_HelpTickets provisioned
+- PM_Audiences schema fixed (Criteria→Rules column)
+- CreationMethod column on PM_Policies
+
+**Console Error Fixes:**
+- PolicyHubService.getDelegationRequests: RequestedById→DelegatedToId
+- PolicyNotificationQueueProcessor: Status→QueueStatus (9 occurrences)
+- UserManagementService: EmploymentType→EmployeeType
+- RoleDetectionService constructor args fixed in both new webparts
+- Featured policy cards: compact sizing (was oversized)
+
+**16 webparts total.** Build: zero errors. 30+ commits in session.
+
+### Previously Completed (Session 19 — 27 Mar 2026)
 
 #### Author Reports, Bulk Upload, Revise/Retire Workflows, Premium Email Templates
 

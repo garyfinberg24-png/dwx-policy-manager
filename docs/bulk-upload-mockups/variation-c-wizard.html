@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bulk Upload — Wizard Steps (Variation C) | Policy Manager</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif; background: #f8fafc; color: #0f172a; height: 100vh; display: flex; flex-direction: column; }
+
+  /* Header */
+  .app-header { background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%); padding: 16px 24px; display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+  .app-header svg { width: 28px; height: 28px; stroke: #fff; fill: none; stroke-width: 1.8; }
+  .app-header h1 { color: #fff; font-size: 18px; font-weight: 600; }
+  .app-header .subtitle { color: rgba(255,255,255,.75); font-size: 13px; margin-left: auto; }
+
+  /* Layout */
+  .wizard-wrap { max-width: 1400px; width: 100%; margin: 0 auto; padding: 24px; flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  .page-title { font-size: 26px; font-weight: 700; margin-bottom: 4px; }
+  .page-subtitle { font-size: 13px; color: #64748b; margin-bottom: 20px; }
+
+  .wizard-layout { display: grid; grid-template-columns: 240px 1fr; gap: 20px; flex: 1; min-height: 0; }
+
+  /* Sidebar */
+  .wizard-sidebar { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px 0; display: flex; flex-direction: column; }
+  .sidebar-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: #94a3b8; padding: 0 20px; margin-bottom: 12px; }
+
+  .step-item { display: flex; align-items: center; gap: 12px; padding: 12px 20px; cursor: pointer; transition: all .15s; border-left: 3px solid transparent; }
+  .step-item:hover { background: #f8fafc; }
+  .step-item.active { border-left-color: #0d9488; background: #f0fdfa; }
+  .step-item.completed { opacity: 1; }
+  .step-item.locked { opacity: .4; cursor: not-allowed; }
+  .step-item.locked:hover { background: transparent; }
+
+  .step-num { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; background: #e2e8f0; color: #64748b; }
+  .step-item.active .step-num { background: #0d9488; color: #fff; }
+  .step-item.completed .step-num { background: #059669; color: #fff; }
+  .step-label { font-size: 13px; font-weight: 500; }
+  .step-item.active .step-label { color: #0d9488; font-weight: 600; }
+  .step-item.completed .step-label { color: #059669; }
+  .step-desc { font-size: 11px; color: #94a3b8; }
+
+  /* Progress bar in sidebar */
+  .progress-section { margin-top: auto; padding: 20px; border-top: 1px solid #e2e8f0; }
+  .progress-label { font-size: 11px; font-weight: 600; color: #64748b; margin-bottom: 8px; display: flex; justify-content: space-between; }
+  .progress-bar { height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; }
+  .progress-bar .fill { height: 100%; background: linear-gradient(90deg, #0d9488, #059669); border-radius: 3px; transition: width .4s ease; }
+
+  /* Main content */
+  .wizard-main { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; display: flex; flex-direction: column; min-height: 0; }
+  .main-header { padding: 20px 24px; border-bottom: 1px solid #e2e8f0; }
+  .main-header h2 { font-size: 18px; font-weight: 600; }
+  .main-header p { font-size: 13px; color: #94a3b8; margin-top: 2px; }
+  .main-body { padding: 24px; flex: 1; overflow-y: auto; }
+  .main-footer { padding: 16px 24px; border-top: 1px solid #e2e8f0; display: flex; align-items: center; gap: 12px; background: #f8fafc; border-radius: 0 0 10px 10px; }
+  .main-footer .spacer { flex: 1; }
+
+  /* Step content */
+  .step-content { display: none; }
+  .step-content.active { display: block; }
+
+  /* Drop zone */
+  .drop-zone { border: 2px dashed #cbd5e1; border-radius: 10px; padding: 48px 24px; text-align: center; background: #f8fafc; cursor: pointer; transition: all .2s; }
+  .drop-zone:hover, .drop-zone.dragover { border-color: #0d9488; background: #f0fdfa; }
+  .drop-zone svg { width: 48px; height: 48px; stroke: #94a3b8; fill: none; stroke-width: 1.5; margin-bottom: 12px; }
+  .drop-zone.dragover svg { stroke: #0d9488; }
+  .drop-zone h3 { font-size: 16px; font-weight: 600; color: #334155; margin-bottom: 4px; }
+  .drop-zone p { font-size: 13px; color: #94a3b8; }
+
+  /* File list compact */
+  .file-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 6px; background: #fff; }
+  .file-row svg { width: 18px; height: 18px; stroke: #64748b; fill: none; stroke-width: 1.8; flex-shrink: 0; }
+  .file-row .fname { flex: 1; font-size: 13px; font-weight: 500; }
+  .file-row .fsize { font-size: 11px; color: #94a3b8; }
+  .file-row .remove-btn { border: none; background: none; cursor: pointer; color: #94a3b8; font-size: 16px; padding: 2px 4px; }
+  .file-row .remove-btn:hover { color: #dc2626; }
+
+  /* Upload progress */
+  .upload-prog { height: 4px; background: #e2e8f0; border-radius: 2px; margin-top: 16px; overflow: hidden; }
+  .upload-prog .bar { height: 100%; background: linear-gradient(90deg, #0d9488, #059669); border-radius: 2px; width: 0; transition: width .3s; }
+
+  /* Buttons */
+  .btn { padding: 10px 20px; border-radius: 4px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all .15s; font-family: inherit; }
+  .btn-primary { background: #0d9488; color: #fff; }
+  .btn-primary:hover { background: #0f766e; }
+  .btn-primary:disabled { background: #94a3b8; cursor: not-allowed; }
+  .btn-outline { background: #fff; color: #0d9488; border: 1px solid #0d9488; }
+  .btn-outline:hover { background: #f0fdfa; }
+  .btn-ghost { background: #fff; color: #64748b; border: 1px solid #e2e8f0; }
+  .btn-ghost:hover { background: #f8fafc; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+  .btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+  /* Table */
+  .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .data-table th { text-align: left; padding: 10px 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: #64748b; border-bottom: 2px solid #e2e8f0; background: #f8fafc; }
+  .data-table td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+  .data-table tr:hover td { background: #f0fdfa; }
+  .data-table input[type="checkbox"] { width: 16px; height: 16px; accent-color: #0d9488; cursor: pointer; }
+
+  /* Badges */
+  .badge { font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px; letter-spacing: .5px; white-space: nowrap; }
+  .badge-success { background: #dcfce7; color: #059669; }
+  .badge-teal { background: #ccfbf1; color: #0d9488; }
+  .ftype-docx { background: #dbeafe; color: #2563eb; }
+  .ftype-pdf { background: #fee2e2; color: #dc2626; }
+  .risk-critical { background: #fee2e2; color: #dc2626; }
+  .risk-high { background: #ffedd5; color: #ea580c; }
+  .risk-medium { background: #fef3c7; color: #d97706; }
+  .risk-low { background: #dcfce7; color: #059669; }
+  .conf-strong { background: #dcfce7; color: #059669; }
+  .conf-likely { background: #dbeafe; color: #2563eb; }
+  .conf-possible { background: #fef3c7; color: #d97706; }
+
+  /* Classification cards grid */
+  .classify-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+  .classify-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; transition: all .2s; }
+  .classify-card:hover { border-color: #0d9488; box-shadow: 0 4px 16px rgba(13,148,136,.1); transform: translateY(-2px); }
+  .classify-card .card-top { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+  .classify-card .card-icon { width: 40px; height: 40px; border-radius: 8px; background: #f0fdfa; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .classify-card .card-icon svg { width: 20px; height: 20px; stroke: #0d9488; fill: none; stroke-width: 1.8; }
+  .classify-card .card-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .classify-card .card-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+  .classify-card .card-summary { font-size: 12px; color: #64748b; line-height: 1.5; margin-bottom: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .confidence-meter { height: 4px; background: #e2e8f0; border-radius: 2px; overflow: hidden; margin-top: 4px; }
+  .confidence-meter .meter-fill { height: 100%; border-radius: 2px; }
+  .conf-meter-strong { background: #059669; width: 95%; }
+  .conf-meter-likely { background: #2563eb; width: 75%; }
+  .conf-meter-possible { background: #d97706; width: 50%; }
+
+  .card-actions { display: flex; gap: 6px; margin-top: 12px; }
+  .card-expand { display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0; }
+  .card-expand.open { display: block; }
+  .card-expand label { font-size: 11px; font-weight: 600; color: #64748b; display: block; margin-bottom: 4px; margin-top: 10px; }
+  .card-expand input, .card-expand select { width: 100%; padding: 6px 10px; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 13px; font-family: inherit; }
+  .card-expand input:focus, .card-expand select:focus { outline: none; border-color: #0d9488; }
+
+  /* Template matching (Step 4) */
+  .template-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .template-list-section h3, .template-library-section h3 { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+  .template-file-row { display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 6px; }
+  .template-file-row .fname { flex: 1; font-size: 13px; font-weight: 500; }
+  .template-file-row select { padding: 5px 8px; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 12px; font-family: inherit; min-width: 180px; }
+  .template-file-row select:focus { outline: none; border-color: #0d9488; }
+
+  .template-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; transition: all .15s; }
+  .template-card:hover { border-color: #0d9488; background: #f0fdfa; }
+  .template-card .tmpl-icon { width: 36px; height: 36px; border-radius: 6px; background: linear-gradient(135deg, #f0fdfa, #ccfbf1); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .template-card .tmpl-icon svg { width: 18px; height: 18px; stroke: #0d9488; fill: none; stroke-width: 1.8; }
+  .template-card .tmpl-name { font-size: 13px; font-weight: 600; }
+  .template-card .tmpl-meta { font-size: 11px; color: #94a3b8; }
+
+  /* KPI Cards */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .kpi-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; }
+  .kpi-card .kpi-value { font-size: 28px; font-weight: 700; }
+  .kpi-card .kpi-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; color: #64748b; margin-top: 4px; }
+
+  /* Activity log */
+  .activity-log { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; max-height: 250px; overflow-y: auto; margin-top: 20px; }
+  .activity-log h4 { font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 8px; }
+  .log-entry { display: flex; gap: 8px; padding: 6px 0; border-bottom: 1px solid #e2e8f0; font-size: 11px; }
+  .log-entry:last-child { border-bottom: none; }
+  .log-time { color: #94a3b8; width: 55px; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+  .log-text { color: #334155; flex: 1; }
+
+  /* Spinner */
+  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #e2e8f0; border-top-color: #0d9488; border-radius: 50%; animation: spin .6s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Filter bar */
+  .filter-bar { display: flex; gap: 8px; margin-bottom: 16px; }
+  .filter-bar input { flex: 1; max-width: 300px; padding: 7px 10px; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 13px; font-family: inherit; }
+  .filter-bar input:focus { outline: none; border-color: #0d9488; }
+
+  /* Classify progress */
+  .classify-progress { text-align: center; padding: 40px 20px; }
+  .classify-progress .big-spinner { width: 40px; height: 40px; border-width: 3px; margin: 0 auto 16px; }
+  .classify-bar { height: 6px; background: #e2e8f0; border-radius: 3px; max-width: 400px; margin: 12px auto 0; overflow: hidden; }
+  .classify-bar .fill { height: 100%; background: linear-gradient(90deg, #0d9488, #059669); border-radius: 3px; transition: width .3s; }
+
+  /* Toast */
+  .toast { position: fixed; bottom: 24px; right: 24px; background: #0f172a; color: #fff; padding: 12px 20px; border-radius: 8px; font-size: 13px; font-weight: 500; transform: translateY(80px); opacity: 0; transition: all .3s ease; z-index: 1000; display: flex; align-items: center; gap: 8px; }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast svg { width: 18px; height: 18px; stroke: #34d399; fill: none; stroke-width: 2; }
+
+  /* Inline edit row */
+  .inline-input { border: 1px solid #e2e8f0; border-radius: 4px; padding: 4px 8px; font-size: 13px; font-family: inherit; width: 100%; }
+  .inline-input:focus { outline: none; border-color: #0d9488; }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <svg viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+  <h1>Policy Manager</h1>
+  <span class="subtitle">Bulk Upload &mdash; Wizard Steps (Variation C)</span>
+</div>
+
+<div class="wizard-wrap">
+  <h2 class="page-title">Bulk Policy Upload</h2>
+  <p class="page-subtitle">Upload, classify, and prepare multiple policy documents for the Policy Builder pipeline.</p>
+
+  <div class="wizard-layout">
+    <!-- Sidebar -->
+    <div class="wizard-sidebar">
+      <div class="sidebar-title">Steps</div>
+
+      <div class="step-item active" data-step="1" onclick="goToStep(1)">
+        <span class="step-num">1</span>
+        <div>
+          <div class="step-label">Upload</div>
+          <div class="step-desc">Add documents</div>
+        </div>
+      </div>
+      <div class="step-item locked" data-step="2" onclick="goToStep(2)">
+        <span class="step-num">2</span>
+        <div>
+          <div class="step-label">Review</div>
+          <div class="step-desc">Verify &amp; select</div>
+        </div>
+      </div>
+      <div class="step-item locked" data-step="3" onclick="goToStep(3)">
+        <span class="step-num">3</span>
+        <div>
+          <div class="step-label">Classify</div>
+          <div class="step-desc">AI categorisation</div>
+        </div>
+      </div>
+      <div class="step-item locked" data-step="4" onclick="goToStep(4)">
+        <span class="step-num">4</span>
+        <div>
+          <div class="step-label">Templates</div>
+          <div class="step-desc">Assign templates</div>
+        </div>
+      </div>
+      <div class="step-item locked" data-step="5" onclick="goToStep(5)">
+        <span class="step-num">5</span>
+        <div>
+          <div class="step-label">Finish</div>
+          <div class="step-desc">Summary &amp; launch</div>
+        </div>
+      </div>
+
+      <div class="progress-section">
+        <div class="progress-label">
+          <span>Progress</span>
+          <span id="progressPct">0%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="fill" id="progressFill" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main -->
+    <div class="wizard-main">
+      <!-- Step 1: Upload -->
+      <div class="step-content active" id="step-1">
+        <div class="main-header">
+          <h2>Upload Documents</h2>
+          <p>Drag and drop your policy documents or click to browse. Supported formats: DOCX, PDF, XLSX, PPTX.</p>
+        </div>
+        <div class="main-body">
+          <div class="drop-zone" id="dropZone" onclick="addFiles()" ondragover="event.preventDefault(); this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="event.preventDefault(); this.classList.remove('dragover'); addFiles()">
+            <svg viewBox="0 0 24 24"><path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+            <h3>Drag &amp; drop files here</h3>
+            <p>or click to browse your computer</p>
+          </div>
+          <div id="fileList" style="margin-top:16px;"></div>
+          <div class="upload-prog" id="uploadProg" style="display:none;"><div class="bar" id="uploadBar"></div></div>
+        </div>
+        <div class="main-footer">
+          <span class="spacer"></span>
+          <button class="btn btn-primary" id="uploadBtn" disabled onclick="doUpload()">
+            <svg viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+            Upload &amp; Continue
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 2: Review -->
+      <div class="step-content" id="step-2">
+        <div class="main-header">
+          <h2>Review Uploaded Files</h2>
+          <p>Verify file details, rename titles, and select which files to classify with AI.</p>
+        </div>
+        <div class="main-body">
+          <div class="filter-bar">
+            <input type="text" placeholder="Search files..." id="reviewSearch" oninput="filterReview()">
+          </div>
+          <table class="data-table" id="reviewTable">
+            <thead>
+              <tr>
+                <th style="width:40px"><input type="checkbox" id="selectAllCb" onchange="toggleSelectAll()"></th>
+                <th>Title (editable)</th>
+                <th>Original File</th>
+                <th>Size</th>
+                <th>Type</th>
+                <th style="width:40px"></th>
+              </tr>
+            </thead>
+            <tbody id="reviewBody"></tbody>
+          </table>
+        </div>
+        <div class="main-footer">
+          <button class="btn btn-ghost" onclick="goToStep(1)">
+            <svg viewBox="0 0 24 24"><path d="M11 17l-5-5m0 0l5-5m-5 5h12"/></svg>
+            Previous
+          </button>
+          <span class="spacer"></span>
+          <span style="font-size:13px; color:#64748b;" id="reviewSelCount">0 selected for classification</span>
+          <button class="btn btn-primary" id="reviewNextBtn" disabled onclick="goToStep(3)">
+            Next: Classify
+            <svg viewBox="0 0 24 24"><path d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 3: Classify -->
+      <div class="step-content" id="step-3">
+        <div class="main-header">
+          <h2>AI Classification</h2>
+          <p>AI is analysing your documents to suggest categories, risk levels, and metadata.</p>
+        </div>
+        <div class="main-body">
+          <div class="classify-progress" id="classifyProgress">
+            <div class="spinner big-spinner" style="width:40px;height:40px;border-width:3px;"></div>
+            <p style="font-size:14px; color:#334155; font-weight:600; margin-top:12px;">Classifying documents...</p>
+            <p style="font-size:13px; color:#94a3b8;" id="classifyProgressText">0 of 0 complete</p>
+            <div class="classify-bar"><div class="fill" id="classifyBarFill" style="width:0%"></div></div>
+          </div>
+          <div id="classifyResults" style="display:none;">
+            <div style="display:flex; justify-content:flex-end; margin-bottom:12px;">
+              <button class="btn btn-outline btn-sm" onclick="acceptAllCards()">
+                <svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Accept All Suggestions
+              </button>
+            </div>
+            <div class="classify-grid" id="classifyGrid"></div>
+          </div>
+        </div>
+        <div class="main-footer">
+          <button class="btn btn-ghost" onclick="goToStep(2)">
+            <svg viewBox="0 0 24 24"><path d="M11 17l-5-5m0 0l5-5m-5 5h12"/></svg>
+            Previous
+          </button>
+          <span class="spacer"></span>
+          <button class="btn btn-primary" id="classifyNextBtn" disabled onclick="goToStep(4)">
+            Next: Templates
+            <svg viewBox="0 0 24 24"><path d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 4: Templates -->
+      <div class="step-content" id="step-4">
+        <div class="main-header">
+          <h2>Assign Templates</h2>
+          <p>Match classified files with Fast Track Templates. Use Auto-Match or assign manually.</p>
+        </div>
+        <div class="main-body">
+          <div style="display:flex; justify-content:flex-end; margin-bottom:16px;">
+            <button class="btn btn-primary btn-sm" onclick="autoMatchAll()">
+              <svg viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+              Auto-Match All
+            </button>
+          </div>
+          <div class="template-layout">
+            <div class="template-list-section">
+              <h3>Classified Files</h3>
+              <div id="templateFileList"></div>
+            </div>
+            <div class="template-library-section">
+              <h3>Template Library</h3>
+              <div id="templateLibrary"></div>
+            </div>
+          </div>
+        </div>
+        <div class="main-footer">
+          <button class="btn btn-ghost" onclick="goToStep(3)">
+            <svg viewBox="0 0 24 24"><path d="M11 17l-5-5m0 0l5-5m-5 5h12"/></svg>
+            Previous
+          </button>
+          <span class="spacer"></span>
+          <button class="btn btn-primary" onclick="goToStep(5)">
+            Next: Finish
+            <svg viewBox="0 0 24 24"><path d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 5: Finish -->
+      <div class="step-content" id="step-5">
+        <div class="main-header">
+          <h2>Summary &amp; Launch</h2>
+          <p>Review the final state of all uploaded policies and open them in the Policy Builder pipeline.</p>
+        </div>
+        <div class="main-body">
+          <div class="kpi-grid" id="finishKpis"></div>
+          <div style="display:flex; gap:12px; margin-bottom:20px;">
+            <button class="btn btn-primary" onclick="showToast('Opening all policies in Drafts & Pipeline...')">
+              <svg viewBox="0 0 24 24"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+              Open Pipeline
+            </button>
+            <button class="btn btn-outline" onclick="showToast('Exporting summary CSV...')">
+              <svg viewBox="0 0 24 24"><path d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+              Export Summary
+            </button>
+          </div>
+          <table class="data-table" id="finishTable">
+            <thead>
+              <tr>
+                <th>Policy Title</th>
+                <th>Category</th>
+                <th>Risk</th>
+                <th>Template</th>
+                <th>Status</th>
+                <th style="width:140px">Action</th>
+              </tr>
+            </thead>
+            <tbody id="finishBody"></tbody>
+          </table>
+          <div class="activity-log" id="activityLog">
+            <h4>Activity Log</h4>
+            <div id="logEntries"></div>
+          </div>
+        </div>
+        <div class="main-footer">
+          <button class="btn btn-ghost" onclick="goToStep(4)">
+            <svg viewBox="0 0 24 24"><path d="M11 17l-5-5m0 0l5-5m-5 5h12"/></svg>
+            Previous
+          </button>
+          <span class="spacer"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const FILES = [
+  { name: 'Information Security Policy v2.docx', size: '2.4 MB', type: 'docx', category: 'IT Security', risk: 'High', summary: 'Comprehensive information security controls, access management, and incident response procedures.', template: 'IT Security Template', confidence: 'Strong' },
+  { name: 'Code of Conduct 2026.pdf', size: '1.1 MB', type: 'pdf', category: 'HR', risk: 'Medium', summary: 'Employee behavioural standards, ethics guidelines, and disciplinary procedures.', template: 'HR Policy Template', confidence: 'Strong' },
+  { name: 'Data Privacy GDPR Compliance.docx', size: '3.2 MB', type: 'docx', category: 'Data Protection', risk: 'Critical', summary: 'GDPR compliance framework, data subject rights, breach notification procedures.', template: 'Data Protection Template', confidence: 'Strong' },
+  { name: 'Travel & Expense Policy.pdf', size: '890 KB', type: 'pdf', category: 'Finance', risk: 'Low', summary: 'Travel booking procedures, expense limits, and reimbursement guidelines.', template: 'Finance Template', confidence: 'Likely' },
+  { name: 'Workplace Health & Safety.docx', size: '1.8 MB', type: 'docx', category: 'Health & Safety', risk: 'High', summary: 'WHS obligations, hazard identification, incident reporting, and emergency procedures.', template: 'H&S Template', confidence: 'Strong' },
+  { name: 'Anti-Bribery & Corruption.pdf', size: '1.5 MB', type: 'pdf', category: 'Compliance', risk: 'Critical', summary: 'Anti-corruption controls, gift & hospitality register, third-party due diligence.', template: 'Compliance Template', confidence: 'Strong' },
+  { name: 'Remote Work Guidelines.docx', size: '720 KB', type: 'docx', category: 'HR', risk: 'Medium', summary: 'Remote working eligibility, equipment provision, and performance expectations.', template: 'HR Policy Template', confidence: 'Likely' },
+  { name: 'IT Acceptable Use Policy.pdf', size: '950 KB', type: 'pdf', category: 'IT Security', risk: 'High', summary: 'Acceptable use of IT systems, BYOD rules, monitoring, and enforcement.', template: 'IT Security Template', confidence: 'Likely' }
+];
+
+const TEMPLATES_LIST = [
+  { name: 'IT Security Template', cat: 'IT Security', risk: 'High' },
+  { name: 'HR Policy Template', cat: 'HR', risk: 'Medium' },
+  { name: 'Compliance Template', cat: 'Compliance', risk: 'Critical' },
+  { name: 'Data Protection Template', cat: 'Data Protection', risk: 'Critical' },
+  { name: 'Finance Template', cat: 'Finance', risk: 'Low' },
+  { name: 'H&S Template', cat: 'Health & Safety', risk: 'High' }
+];
+
+const CATEGORIES = ['IT Security', 'HR', 'Data Protection', 'Finance', 'Health & Safety', 'Compliance', 'Operations', 'Legal'];
+const RISKS = ['Critical', 'High', 'Medium', 'Low'];
+const TEMPLATE_NAMES = ['', ...TEMPLATES_LIST.map(t => t.name)];
+
+let files = [];
+let selectedForClassify = new Set();
+let classifiedFiles = [];
+let currentStep = 1;
+let stepStatus = { 1: 'active', 2: 'locked', 3: 'locked', 4: 'locked', 5: 'locked' };
+let logs = [];
+
+function addLog(text) {
+  const now = new Date();
+  logs.unshift({ time: now.toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false }), text });
+}
+
+function updateProgress() {
+  const completed = Object.values(stepStatus).filter(s => s === 'completed').length;
+  const pct = Math.round((completed / 5) * 100);
+  document.getElementById('progressPct').textContent = pct + '%';
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+
+function goToStep(step) {
+  if (stepStatus[step] === 'locked') return;
+  currentStep = step;
+
+  document.querySelectorAll('.step-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('step-' + step).classList.add('active');
+
+  document.querySelectorAll('.step-item').forEach(el => {
+    const s = parseInt(el.dataset.step);
+    el.classList.remove('active', 'completed', 'locked');
+    if (s === step) el.classList.add('active');
+    else el.classList.add(stepStatus[s]);
+  });
+
+  // Trigger step-specific logic
+  if (step === 3 && classifiedFiles.length === 0) runClassification();
+  if (step === 4) renderTemplateStep();
+  if (step === 5) renderFinish();
+}
+
+function unlockStep(step) {
+  stepStatus[step] = 'unlocked';
+  document.querySelector(`.step-item[data-step="${step}"]`).classList.remove('locked');
+}
+
+function completeStep(step) {
+  stepStatus[step] = 'completed';
+  updateProgress();
+}
+
+function riskBadge(risk) {
+  return `<span class="badge risk-${risk.toLowerCase()}">${risk}</span>`;
+}
+function confBadge(conf) {
+  const cls = conf === 'Strong' ? 'conf-strong' : conf === 'Likely' ? 'conf-likely' : 'conf-possible';
+  return `<span class="badge ${cls}">${conf}</span>`;
+}
+function typeBadge(type) {
+  const cls = type === 'docx' ? 'ftype-docx' : type === 'pdf' ? 'ftype-pdf' : 'ftype-xlsx';
+  return `<span class="badge ${cls}">${type.toUpperCase()}</span>`;
+}
+
+// Step 1: Upload
+function addFiles() {
+  if (files.length > 0) return;
+  files = FILES.map(f => ({ ...f, title: f.name.replace(/\.(docx|pdf|xlsx|pptx)$/i, '') }));
+  document.getElementById('uploadBtn').disabled = false;
+  renderFileList();
+  addLog('8 files added to upload queue');
+}
+
+function renderFileList() {
+  document.getElementById('fileList').innerHTML = files.map((f, i) => `
+    <div class="file-row">
+      <svg viewBox="0 0 24 24"><path d="M7 21h10a2 2 0 002-2V9l-5-5H7a2 2 0 00-2 2v13a2 2 0 002 2z"/><polyline points="13 3 13 9 19 9"/></svg>
+      <span class="fname">${f.name}</span>
+      ${typeBadge(f.type)}
+      <span class="fsize">${f.size}</span>
+      <button class="remove-btn" onclick="removeFile(${i})">&times;</button>
+    </div>
+  `).join('');
+}
+
+function removeFile(i) {
+  files.splice(i, 1);
+  renderFileList();
+  if (files.length === 0) document.getElementById('uploadBtn').disabled = true;
+}
+
+function doUpload() {
+  const prog = document.getElementById('uploadProg');
+  const bar = document.getElementById('uploadBar');
+  prog.style.display = 'block';
+  document.getElementById('uploadBtn').disabled = true;
+  let pct = 0;
+  const iv = setInterval(() => {
+    pct += Math.random() * 15 + 5;
+    if (pct >= 100) { pct = 100; clearInterval(iv); uploadDone(); }
+    bar.style.width = pct + '%';
+  }, 200);
+}
+
+function uploadDone() {
+  addLog('8 files uploaded successfully');
+  completeStep(1);
+  unlockStep(2);
+  goToStep(2);
+  renderReviewTable();
+  showToast('All files uploaded');
+}
+
+// Step 2: Review
+function renderReviewTable() {
+  document.getElementById('reviewBody').innerHTML = files.map((f, i) => `
+    <tr data-idx="${i}" data-name="${f.name.toLowerCase()}">
+      <td><input type="checkbox" class="sel-cb" data-idx="${i}" onchange="updateReviewSel()" checked></td>
+      <td><input class="inline-input" value="${f.title}" onchange="files[${i}].title=this.value" style="max-width:260px"></td>
+      <td style="font-size:12px; color:#64748b;">${f.name}</td>
+      <td>${f.size}</td>
+      <td>${typeBadge(f.type)}</td>
+      <td><button class="remove-btn" onclick="removeReviewFile(${i})">&times;</button></td>
+    </tr>
+  `).join('');
+  // Select all by default
+  document.getElementById('selectAllCb').checked = true;
+  files.forEach((_, i) => selectedForClassify.add(i));
+  updateReviewSel();
+}
+
+function filterReview() {
+  const q = document.getElementById('reviewSearch').value.toLowerCase();
+  document.querySelectorAll('#reviewBody tr').forEach(row => {
+    row.style.display = row.dataset.name.includes(q) ? '' : 'none';
+  });
+}
+
+function toggleSelectAll() {
+  const checked = document.getElementById('selectAllCb').checked;
+  document.querySelectorAll('.sel-cb').forEach(cb => cb.checked = checked);
+  updateReviewSel();
+}
+
+function updateReviewSel() {
+  selectedForClassify.clear();
+  document.querySelectorAll('.sel-cb:checked').forEach(cb => selectedForClassify.add(parseInt(cb.dataset.idx)));
+  document.getElementById('reviewSelCount').textContent = `${selectedForClassify.size} selected for classification`;
+  document.getElementById('reviewNextBtn').disabled = selectedForClassify.size === 0;
+}
+
+function removeReviewFile(i) {
+  files.splice(i, 1);
+  selectedForClassify.delete(i);
+  renderReviewTable();
+}
+
+// Step 3: Classify
+function runClassification() {
+  completeStep(2);
+  const indices = [...selectedForClassify];
+  classifiedFiles = [];
+  let done = 0;
+  const progEl = document.getElementById('classifyProgress');
+  const resultsEl = document.getElementById('classifyResults');
+  progEl.style.display = '';
+  resultsEl.style.display = 'none';
+  document.getElementById('classifyNextBtn').disabled = true;
+
+  function classifyNext() {
+    if (done >= indices.length) {
+      progEl.style.display = 'none';
+      resultsEl.style.display = '';
+      renderClassifyCards();
+      document.getElementById('classifyNextBtn').disabled = false;
+      addLog(`AI classification complete for ${indices.length} documents`);
+      return;
+    }
+    classifiedFiles.push({ ...files[indices[done]], accepted: false });
+    done++;
+    document.getElementById('classifyProgressText').textContent = `${done} of ${indices.length} complete`;
+    document.getElementById('classifyBarFill').style.width = Math.round((done / indices.length) * 100) + '%';
+    setTimeout(classifyNext, 500);
+  }
+  setTimeout(classifyNext, 800);
+}
+
+function renderClassifyCards() {
+  document.getElementById('classifyGrid').innerHTML = classifiedFiles.map((f, i) => `
+    <div class="classify-card" id="cCard${i}">
+      <div class="card-top">
+        <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M7 21h10a2 2 0 002-2V9l-5-5H7a2 2 0 00-2 2v13a2 2 0 002 2z"/><polyline points="13 3 13 9 19 9"/></svg></div>
+        <div style="flex:1; min-width:0;">
+          <div class="card-title">${f.title}</div>
+          <div class="card-badges">
+            <span class="badge badge-teal">${f.category}</span>
+            ${riskBadge(f.risk)}
+            ${confBadge(f.confidence)}
+          </div>
+        </div>
+      </div>
+      <div class="card-summary">${f.summary}</div>
+      <div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span style="font-size:10px; color:#94a3b8; text-transform:uppercase; letter-spacing:.5px;">Confidence</span>
+          <span style="font-size:11px; font-weight:600; color:${f.confidence==='Strong'?'#059669':f.confidence==='Likely'?'#2563eb':'#d97706'}">${f.confidence === 'Strong' ? '95%' : f.confidence === 'Likely' ? '78%' : '52%'}</span>
+        </div>
+        <div class="confidence-meter"><div class="meter-fill conf-meter-${f.confidence.toLowerCase()}"></div></div>
+      </div>
+      <div class="card-actions">
+        <button class="btn btn-sm btn-primary" onclick="acceptCard(${i})">
+          <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+          Accept
+        </button>
+        <button class="btn btn-sm btn-outline" onclick="toggleExpand(${i})">
+          <svg viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+          Edit
+        </button>
+      </div>
+      <div class="card-expand" id="cExpand${i}">
+        <label>Policy Title</label>
+        <input value="${f.title}" onchange="classifiedFiles[${i}].title=this.value">
+        <label>Category</label>
+        <select onchange="classifiedFiles[${i}].category=this.value">
+          ${CATEGORIES.map(c => `<option${c===f.category?' selected':''}>${c}</option>`).join('')}
+        </select>
+        <label>Risk Level</label>
+        <select onchange="classifiedFiles[${i}].risk=this.value">
+          ${RISKS.map(r => `<option${r===f.risk?' selected':''}>${r}</option>`).join('')}
+        </select>
+        <div style="margin-top:10px;">
+          <button class="btn btn-sm btn-primary" onclick="toggleExpand(${i}); renderClassifyCards();">Save</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleExpand(i) {
+  document.getElementById('cExpand' + i).classList.toggle('open');
+}
+
+function acceptCard(i) {
+  classifiedFiles[i].accepted = true;
+  const card = document.getElementById('cCard' + i);
+  card.style.borderColor = '#059669';
+  card.style.background = '#f0fdf4';
+  const btns = card.querySelector('.card-actions');
+  btns.innerHTML = '<span class="badge badge-success" style="font-size:11px; padding:6px 12px;">Accepted</span>';
+  addLog(`Accepted: ${classifiedFiles[i].title}`);
+}
+
+function acceptAllCards() {
+  classifiedFiles.forEach((_, i) => acceptCard(i));
+  showToast('All AI suggestions accepted');
+}
+
+// Step 4: Templates
+function renderTemplateStep() {
+  completeStep(3);
+  unlockStep(4);
+
+  document.getElementById('templateFileList').innerHTML = classifiedFiles.map((f, i) => `
+    <div class="template-file-row">
+      <span class="fname">${f.title}</span>
+      <select id="tmplSel${i}" onchange="classifiedFiles[${i}].template=this.value">
+        ${TEMPLATE_NAMES.map(t => `<option${t===f.template?' selected':''}>${t || '-- None --'}</option>`).join('')}
+      </select>
+    </div>
+  `).join('');
+
+  document.getElementById('templateLibrary').innerHTML = TEMPLATES_LIST.map(t => `
+    <div class="template-card">
+      <div class="tmpl-icon"><svg viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div>
+      <div>
+        <div class="tmpl-name">${t.name}</div>
+        <div class="tmpl-meta">${t.cat} &middot; ${t.risk} Risk</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function autoMatchAll() {
+  classifiedFiles.forEach((f, i) => {
+    const match = TEMPLATES_LIST.find(t => t.cat === f.category);
+    if (match) {
+      f.template = match.name;
+      document.getElementById('tmplSel' + i).value = match.name;
+    }
+  });
+  addLog('Auto-matched templates for all files');
+  showToast('Templates auto-matched based on category');
+}
+
+// Step 5: Finish
+function renderFinish() {
+  completeStep(4);
+  unlockStep(5);
+
+  const withTemplate = classifiedFiles.filter(f => f.template).length;
+  document.getElementById('finishKpis').innerHTML = `
+    <div class="kpi-card" style="border-top:3px solid #0d9488"><div class="kpi-value" style="color:#0d9488">${files.length}</div><div class="kpi-label">Files Uploaded</div></div>
+    <div class="kpi-card" style="border-top:3px solid #2563eb"><div class="kpi-value" style="color:#2563eb">${classifiedFiles.length}</div><div class="kpi-label">Classified</div></div>
+    <div class="kpi-card" style="border-top:3px solid #7c3aed"><div class="kpi-value" style="color:#7c3aed">${withTemplate}</div><div class="kpi-label">Templates Assigned</div></div>
+    <div class="kpi-card" style="border-top:3px solid #059669"><div class="kpi-value" style="color:#059669">${classifiedFiles.length}</div><div class="kpi-label">Ready for Review</div></div>
+  `;
+
+  document.getElementById('finishBody').innerHTML = classifiedFiles.map(f => `
+    <tr>
+      <td style="font-weight:500">${f.title}</td>
+      <td><span class="badge badge-teal">${f.category}</span></td>
+      <td>${riskBadge(f.risk)}</td>
+      <td style="font-size:12px; color:#64748b">${f.template || '---'}</td>
+      <td><span class="badge badge-success">Ready</span></td>
+      <td><button class="btn btn-primary btn-sm" onclick="showToast('Opening ${f.title} in Policy Builder...')">Open in Builder</button></td>
+    </tr>
+  `).join('');
+
+  addLog('Bulk upload workflow complete');
+  completeStep(5);
+  renderLogEntries();
+}
+
+function renderLogEntries() {
+  document.getElementById('logEntries').innerHTML = logs.map(l =>
+    `<div class="log-entry"><span class="log-time">${l.time}</span><span class="log-text">${l.text}</span></div>`
+  ).join('');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.innerHTML = '<svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>' + msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>

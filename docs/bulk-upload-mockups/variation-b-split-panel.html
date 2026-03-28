@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bulk Upload — Split Panel (Variation B) | Policy Manager</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif; background: #f8fafc; color: #0f172a; height: 100vh; display: flex; flex-direction: column; }
+
+  /* Header */
+  .app-header { background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%); padding: 16px 24px; display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+  .app-header svg { width: 28px; height: 28px; stroke: #fff; fill: none; stroke-width: 1.8; }
+  .app-header h1 { color: #fff; font-size: 18px; font-weight: 600; }
+  .app-header .subtitle { color: rgba(255,255,255,.75); font-size: 13px; margin-left: auto; }
+
+  /* Page chrome */
+  .page-wrap { max-width: 1400px; width: 100%; margin: 0 auto; padding: 24px; flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  .page-title { font-size: 26px; font-weight: 700; margin-bottom: 4px; }
+  .page-subtitle { font-size: 13px; color: #64748b; margin-bottom: 20px; }
+
+  /* Split Layout */
+  .split { display: grid; grid-template-columns: 1fr 420px; gap: 20px; flex: 1; min-height: 0; }
+
+  /* Cards */
+  .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; }
+  .card-header { padding: 16px 20px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; gap: 10px; background: #f8fafc; }
+  .card-header h3 { font-size: 14px; font-weight: 600; flex: 1; }
+  .card-body { padding: 20px; flex: 1; overflow-y: auto; }
+
+  /* Drop Zone (compact) */
+  .drop-zone { border: 2px dashed #cbd5e1; border-radius: 8px; padding: 20px 16px; text-align: center; background: #f8fafc; cursor: pointer; transition: all .2s; }
+  .drop-zone:hover, .drop-zone.dragover { border-color: #0d9488; background: #f0fdfa; }
+  .drop-zone svg { width: 32px; height: 32px; stroke: #94a3b8; fill: none; stroke-width: 1.5; margin-bottom: 6px; }
+  .drop-zone.dragover svg { stroke: #0d9488; }
+  .drop-zone h3 { font-size: 14px; font-weight: 600; color: #334155; margin-bottom: 2px; }
+  .drop-zone p { font-size: 12px; color: #94a3b8; }
+  .drop-zone.collapsed { padding: 10px 16px; display: flex; align-items: center; gap: 10px; }
+  .drop-zone.collapsed svg { width: 20px; height: 20px; margin: 0; }
+  .drop-zone.collapsed h3, .drop-zone.collapsed p:last-of-type { display: none; }
+  .drop-zone.collapsed p { margin: 0; }
+
+  /* Filter bar */
+  .filter-bar { display: flex; gap: 8px; padding: 12px 0; align-items: center; }
+  .filter-bar input { flex: 1; padding: 7px 10px; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 13px; font-family: inherit; }
+  .filter-bar input:focus { outline: none; border-color: #0d9488; box-shadow: 0 0 0 2px rgba(13,148,136,.15); }
+  .filter-bar select { padding: 7px 10px; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 12px; font-family: inherit; min-width: 110px; }
+  .filter-bar select:focus { outline: none; border-color: #0d9488; }
+
+  /* File list items */
+  .flist-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 6px; cursor: pointer; transition: all .15s; }
+  .flist-item:hover { border-color: #94a3b8; }
+  .flist-item.selected { border-color: #0d9488; background: #f0fdfa; box-shadow: 0 0 0 2px rgba(13,148,136,.12); }
+  .flist-item input[type="checkbox"] { width: 16px; height: 16px; accent-color: #0d9488; cursor: pointer; flex-shrink: 0; }
+  .flist-item svg.ficon { width: 18px; height: 18px; stroke: #64748b; fill: none; stroke-width: 1.8; flex-shrink: 0; }
+  .flist-item .fname { flex: 1; font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .flist-item .fsize { font-size: 11px; color: #94a3b8; flex-shrink: 0; }
+
+  /* Status indicator */
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .status-uploaded { background: #60a5fa; }
+  .status-classifying { background: #fbbf24; animation: pulse 1s infinite; }
+  .status-classified { background: #34d399; }
+  .status-template { background: #818cf8; }
+  .status-ready { background: #059669; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+
+  /* Batch action bar */
+  .batch-bar { padding: 12px 20px; border-top: 1px solid #e2e8f0; display: flex; align-items: center; gap: 8px; background: #f8fafc; }
+  .batch-bar .count { font-size: 12px; color: #64748b; flex: 1; }
+
+  /* Buttons */
+  .btn { padding: 8px 16px; border-radius: 4px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all .15s; font-family: inherit; }
+  .btn-primary { background: #0d9488; color: #fff; }
+  .btn-primary:hover { background: #0f766e; }
+  .btn-primary:disabled { background: #94a3b8; cursor: not-allowed; }
+  .btn-outline { background: #fff; color: #0d9488; border: 1px solid #0d9488; }
+  .btn-outline:hover { background: #f0fdfa; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+  .btn-danger-sm { padding: 6px 12px; font-size: 12px; background: #fff; color: #dc2626; border: 1px solid #fca5a5; }
+  .btn-danger-sm:hover { background: #fef2f2; }
+  .btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+  /* Badges */
+  .badge { font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px; letter-spacing: .5px; white-space: nowrap; }
+  .badge-success { background: #dcfce7; color: #059669; }
+  .badge-teal { background: #ccfbf1; color: #0d9488; }
+  .ftype-docx { background: #dbeafe; color: #2563eb; }
+  .ftype-pdf { background: #fee2e2; color: #dc2626; }
+  .ftype-xlsx { background: #dcfce7; color: #059669; }
+  .risk-critical { background: #fee2e2; color: #dc2626; }
+  .risk-high { background: #ffedd5; color: #ea580c; }
+  .risk-medium { background: #fef3c7; color: #d97706; }
+  .risk-low { background: #dcfce7; color: #059669; }
+  .conf-strong { background: #dcfce7; color: #059669; }
+  .conf-likely { background: #dbeafe; color: #2563eb; }
+  .conf-possible { background: #fef3c7; color: #d97706; }
+
+  /* Right panel detail */
+  .detail-section { margin-bottom: 20px; }
+  .detail-section h4 { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: #94a3b8; margin-bottom: 8px; }
+  .detail-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .detail-row label { font-size: 12px; font-weight: 500; color: #64748b; width: 100px; flex-shrink: 0; }
+  .detail-row .val { font-size: 13px; font-weight: 500; flex: 1; }
+  .detail-input { width: 100%; padding: 6px 10px; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 13px; font-family: inherit; }
+  .detail-input:focus { outline: none; border-color: #0d9488; box-shadow: 0 0 0 2px rgba(13,148,136,.12); }
+  .detail-select { width: 100%; padding: 6px 10px; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 13px; font-family: inherit; }
+  .detail-select:focus { outline: none; border-color: #0d9488; }
+
+  /* Status flow */
+  .status-flow { display: flex; align-items: center; gap: 4px; margin-bottom: 16px; }
+  .sf-step { font-size: 10px; font-weight: 600; padding: 3px 10px; border-radius: 4px; background: #f1f5f9; color: #94a3b8; }
+  .sf-step.done { background: #ccfbf1; color: #0d9488; }
+  .sf-step.current { background: #0d9488; color: #fff; }
+  .sf-arrow { color: #cbd5e1; font-size: 10px; }
+
+  /* Summary (no selection) */
+  .empty-panel { text-align: center; padding: 40px 20px; color: #94a3b8; }
+  .empty-panel svg { width: 48px; height: 48px; stroke: #cbd5e1; fill: none; stroke-width: 1.5; margin-bottom: 12px; }
+  .empty-panel h3 { font-size: 16px; font-weight: 600; color: #334155; margin-bottom: 4px; }
+  .empty-panel p { font-size: 13px; }
+
+  /* Stats grid */
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+  .stat-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; text-align: center; }
+  .stat-card .stat-val { font-size: 22px; font-weight: 700; }
+  .stat-card .stat-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: #64748b; margin-top: 2px; }
+
+  /* Activity log */
+  .log-section { margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 16px; }
+  .log-section h4 { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: #94a3b8; margin-bottom: 8px; }
+  .log-entry { display: flex; gap: 8px; padding: 6px 0; border-bottom: 1px solid #f1f5f9; font-size: 11px; }
+  .log-entry:last-child { border-bottom: none; }
+  .log-time { color: #94a3b8; width: 55px; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+  .log-text { color: #334155; flex: 1; }
+
+  /* Spinner */
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #e2e8f0; border-top-color: #0d9488; border-radius: 50%; animation: spin .6s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Toast */
+  .toast { position: fixed; bottom: 24px; right: 24px; background: #0f172a; color: #fff; padding: 12px 20px; border-radius: 8px; font-size: 13px; font-weight: 500; transform: translateY(80px); opacity: 0; transition: all .3s ease; z-index: 1000; display: flex; align-items: center; gap: 8px; }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast svg { width: 18px; height: 18px; stroke: #34d399; fill: none; stroke-width: 2; }
+
+  /* Batch panel */
+  .batch-panel { padding: 20px; }
+  .batch-panel h3 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .batch-panel p { font-size: 12px; color: #94a3b8; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <svg viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+  <h1>Policy Manager</h1>
+  <span class="subtitle">Bulk Upload &mdash; Split Panel (Variation B)</span>
+</div>
+
+<div class="page-wrap">
+  <h2 class="page-title">Bulk Policy Upload</h2>
+  <p class="page-subtitle">Upload, classify, and prepare multiple policy documents for the Policy Builder pipeline.</p>
+
+  <div class="split">
+    <!-- LEFT PANEL -->
+    <div class="card" id="leftPanel">
+      <div class="card-header">
+        <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#64748b;fill:none;stroke-width:1.8;"><path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+        <h3>Documents <span id="fileCountBadge" style="font-size:11px; color:#94a3b8; font-weight:400"></span></h3>
+        <button class="btn btn-sm btn-outline" id="addMoreBtn" style="display:none" onclick="simulateAddFiles()">
+          <svg viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg> Add More
+        </button>
+      </div>
+      <div class="card-body" id="leftBody">
+        <!-- Drop zone -->
+        <div class="drop-zone" id="dropZone" onclick="simulateAddFiles()" ondragover="event.preventDefault(); this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="event.preventDefault(); this.classList.remove('dragover'); simulateAddFiles()">
+          <svg viewBox="0 0 24 24"><path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+          <h3>Drag &amp; drop files here</h3>
+          <p>DOCX, PDF, XLSX, PPTX &mdash; up to 25MB each</p>
+        </div>
+
+        <!-- Filter bar (hidden initially) -->
+        <div class="filter-bar" id="filterBar" style="display:none;">
+          <input type="text" placeholder="Search files..." id="searchInput" oninput="filterFiles()">
+          <select id="statusFilter" onchange="filterFiles()">
+            <option value="">All Status</option>
+            <option value="uploaded">Uploaded</option>
+            <option value="classifying">Classifying</option>
+            <option value="classified">Classified</option>
+            <option value="ready">Ready</option>
+          </select>
+        </div>
+
+        <!-- File list -->
+        <div id="fileListContainer"></div>
+      </div>
+
+      <!-- Batch action bar -->
+      <div class="batch-bar" id="batchBar" style="display:none">
+        <span class="count" id="batchCount">0 selected</span>
+        <button class="btn btn-sm btn-outline" onclick="classifySelected()">
+          <svg viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+          Classify
+        </button>
+        <button class="btn btn-sm btn-primary" onclick="classifyAll()">Classify All</button>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="card" id="rightPanel">
+      <div class="card-header">
+        <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#64748b;fill:none;stroke-width:1.8;"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <h3 id="rightTitle">Details</h3>
+      </div>
+      <div class="card-body" id="rightBody">
+        <div class="empty-panel" id="emptyState">
+          <svg viewBox="0 0 24 24"><path d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/></svg>
+          <h3>Select a file</h3>
+          <p>Click a file on the left to view details, or upload files to get started.</p>
+        </div>
+        <div id="detailContent" style="display:none"></div>
+        <div id="batchContent" style="display:none"></div>
+        <div id="statsContent" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const FILES = [
+  { name: 'Information Security Policy v2.docx', size: '2.4 MB', type: 'docx', category: 'IT Security', risk: 'High', dept: 'IT Security', summary: 'Comprehensive information security controls, access management, and incident response procedures.', template: 'IT Security Template', confidence: 'Strong', keyPoints: ['Access control requirements', 'Incident response procedures', 'Data classification standards'] },
+  { name: 'Code of Conduct 2026.pdf', size: '1.1 MB', type: 'pdf', category: 'HR', risk: 'Medium', dept: 'Human Resources', summary: 'Employee behavioural standards, ethics guidelines, and disciplinary procedures.', template: 'HR Policy Template', confidence: 'Strong', keyPoints: ['Employee ethics standards', 'Conflict of interest rules', 'Disciplinary framework'] },
+  { name: 'Data Privacy GDPR Compliance.docx', size: '3.2 MB', type: 'docx', category: 'Data Protection', risk: 'Critical', dept: 'Legal', summary: 'GDPR compliance framework, data subject rights, breach notification procedures.', template: 'Data Protection Template', confidence: 'Strong', keyPoints: ['Data subject rights', 'Breach notification process', 'Lawful basis for processing'] },
+  { name: 'Travel & Expense Policy.pdf', size: '890 KB', type: 'pdf', category: 'Finance', risk: 'Low', dept: 'Finance', summary: 'Travel booking procedures, expense limits, and reimbursement guidelines.', template: 'Finance Template', confidence: 'Likely', keyPoints: ['Expense claim limits', 'Booking procedures', 'Reimbursement timelines'] },
+  { name: 'Workplace Health & Safety.docx', size: '1.8 MB', type: 'docx', category: 'Health & Safety', risk: 'High', dept: 'Operations', summary: 'WHS obligations, hazard identification, incident reporting, and emergency procedures.', template: 'H&S Template', confidence: 'Strong', keyPoints: ['Hazard identification', 'Incident reporting', 'Emergency procedures'] },
+  { name: 'Anti-Bribery & Corruption.pdf', size: '1.5 MB', type: 'pdf', category: 'Compliance', risk: 'Critical', dept: 'Legal', summary: 'Anti-corruption controls, gift & hospitality register, third-party due diligence.', template: 'Compliance Template', confidence: 'Strong', keyPoints: ['Gift & hospitality register', 'Third-party due diligence', 'Whistleblower protections'] },
+  { name: 'Remote Work Guidelines.docx', size: '720 KB', type: 'docx', category: 'HR', risk: 'Medium', dept: 'Human Resources', summary: 'Remote working eligibility, equipment provision, and performance expectations.', template: 'HR Policy Template', confidence: 'Likely', keyPoints: ['Eligibility criteria', 'Equipment provision', 'Performance monitoring'] },
+  { name: 'IT Acceptable Use Policy.pdf', size: '950 KB', type: 'pdf', category: 'IT Security', risk: 'High', dept: 'IT Security', summary: 'Acceptable use of IT systems, BYOD rules, monitoring, and enforcement.', template: 'IT Security Template', confidence: 'Likely', keyPoints: ['BYOD policy', 'Monitoring disclosure', 'Enforcement actions'] }
+];
+
+const TEMPLATES = ['', 'IT Security Template', 'HR Policy Template', 'Compliance Template', 'Data Protection Template', 'Finance Template', 'H&S Template'];
+const CATEGORIES = ['IT Security', 'HR', 'Data Protection', 'Finance', 'Health & Safety', 'Compliance', 'Operations', 'Legal'];
+const RISKS = ['Critical', 'High', 'Medium', 'Low'];
+
+let files = [];
+let selectedIdx = -1;
+let multiSelect = new Set();
+let logs = [];
+
+function addLog(text) {
+  const now = new Date();
+  logs.unshift({ time: now.toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false }), text });
+}
+
+function simulateAddFiles() {
+  if (files.length > 0) return;
+  files = FILES.map(f => ({ ...f, status: 'uploaded', title: f.name.replace(/\.(docx|pdf|xlsx|pptx)$/i, '') }));
+  document.getElementById('dropZone').classList.add('collapsed');
+  document.getElementById('dropZone').innerHTML = '<svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:#94a3b8;fill:none;stroke-width:1.5;"><path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg><p style="font-size:12px;color:#94a3b8;margin:0;">Drop more files here</p>';
+  document.getElementById('filterBar').style.display = '';
+  document.getElementById('batchBar').style.display = '';
+  document.getElementById('addMoreBtn').style.display = '';
+  document.getElementById('fileCountBadge').textContent = `(${files.length} files)`;
+  addLog('8 files uploaded successfully');
+  renderFileList();
+  showStats();
+  showToast('8 files uploaded successfully');
+}
+
+function renderFileList() {
+  const container = document.getElementById('fileListContainer');
+  container.innerHTML = files.map((f, i) => {
+    const isSelected = i === selectedIdx;
+    const isMulti = multiSelect.has(i);
+    return `
+      <div class="flist-item ${isSelected ? 'selected' : ''}" data-idx="${i}" data-status="${f.status}" data-name="${f.name.toLowerCase()}" onclick="selectFile(${i}, event)">
+        <input type="checkbox" ${isMulti ? 'checked' : ''} onclick="event.stopPropagation(); toggleMulti(${i})" />
+        <div class="status-dot status-${f.status}" title="${f.status}"></div>
+        <svg class="ficon" viewBox="0 0 24 24"><path d="M7 21h10a2 2 0 002-2V9l-5-5H7a2 2 0 00-2 2v13a2 2 0 002 2z"/><polyline points="13 3 13 9 19 9"/></svg>
+        <span class="fname" title="${f.name}">${f.name}</span>
+        <span class="badge ${f.type === 'docx' ? 'ftype-docx' : f.type === 'pdf' ? 'ftype-pdf' : 'ftype-xlsx'}" style="font-size:9px">${f.type.toUpperCase()}</span>
+        <span class="fsize">${f.size}</span>
+      </div>
+    `;
+  }).join('');
+  updateBatchCount();
+}
+
+function filterFiles() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const status = document.getElementById('statusFilter').value;
+  document.querySelectorAll('.flist-item').forEach(el => {
+    const matchName = el.dataset.name.includes(q);
+    const matchStatus = !status || el.dataset.status === status;
+    el.style.display = matchName && matchStatus ? '' : 'none';
+  });
+}
+
+function selectFile(i, event) {
+  if (event && event.shiftKey && multiSelect.size > 0) {
+    const last = [...multiSelect].pop();
+    const [from, to] = [Math.min(last, i), Math.max(last, i)];
+    for (let j = from; j <= to; j++) multiSelect.add(j);
+    renderFileList();
+    showBatchPanel();
+    return;
+  }
+  selectedIdx = i;
+  multiSelect.clear();
+  multiSelect.add(i);
+  renderFileList();
+  showDetail(i);
+}
+
+function toggleMulti(i) {
+  if (multiSelect.has(i)) multiSelect.delete(i); else multiSelect.add(i);
+  updateBatchCount();
+  if (multiSelect.size > 1) showBatchPanel();
+  else if (multiSelect.size === 1) { selectedIdx = [...multiSelect][0]; showDetail(selectedIdx); }
+  else showStats();
+  renderFileList();
+}
+
+function updateBatchCount() {
+  document.getElementById('batchCount').textContent = `${multiSelect.size} selected`;
+}
+
+function showDetail(i) {
+  const f = files[i];
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('batchContent').style.display = 'none';
+  document.getElementById('statsContent').style.display = 'none';
+  document.getElementById('detailContent').style.display = '';
+  document.getElementById('rightTitle').textContent = 'File Details';
+
+  const statusSteps = ['uploaded','classifying','classified','ready'];
+  const labels = ['Uploaded','Classifying','Classified','Ready'];
+  const currentStep = statusSteps.indexOf(f.status);
+
+  document.getElementById('detailContent').innerHTML = `
+    <div class="status-flow">
+      ${statusSteps.map((s, si) => `
+        <span class="sf-step ${si < currentStep ? 'done' : si === currentStep ? 'current' : ''}">${labels[si]}</span>
+        ${si < statusSteps.length - 1 ? '<span class="sf-arrow">&#9654;</span>' : ''}
+      `).join('')}
+    </div>
+
+    <div class="detail-section">
+      <h4>File Information</h4>
+      <div class="detail-row"><label>File Name</label><span class="val" style="font-size:12px">${f.name}</span></div>
+      <div class="detail-row"><label>Size</label><span class="val">${f.size}</span></div>
+      <div class="detail-row"><label>Type</label><span class="badge ${f.type === 'docx' ? 'ftype-docx' : f.type === 'pdf' ? 'ftype-pdf' : 'ftype-xlsx'}">${f.type.toUpperCase()}</span></div>
+    </div>
+
+    ${f.status === 'uploaded' ? `
+      <div style="text-align:center; padding:20px 0;">
+        <p style="font-size:13px; color:#94a3b8; margin-bottom:12px;">This file has not been classified yet.</p>
+        <button class="btn btn-primary btn-sm" onclick="classifySingle(${i})">
+          <svg viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+          Classify with AI
+        </button>
+      </div>
+    ` : f.status === 'classifying' ? `
+      <div style="text-align:center; padding:20px 0;">
+        <div class="spinner" style="width:24px;height:24px;margin:0 auto 8px;"></div>
+        <p style="font-size:13px; color:#64748b;">Classifying...</p>
+      </div>
+    ` : `
+      <div class="detail-section">
+        <h4>AI Classification</h4>
+        <div class="detail-row"><label>Policy Title</label><input class="detail-input" value="${f.title}" onchange="files[${i}].title=this.value"></div>
+        <div class="detail-row"><label>Category</label>
+          <select class="detail-select" onchange="files[${i}].category=this.value">
+            ${CATEGORIES.map(c => `<option${c===f.category?' selected':''}>${c}</option>`).join('')}
+          </select>
+        </div>
+        <div class="detail-row"><label>Risk Level</label>
+          <select class="detail-select" onchange="files[${i}].risk=this.value">
+            ${RISKS.map(r => `<option${r===f.risk?' selected':''}>${r}</option>`).join('')}
+          </select>
+        </div>
+        <div class="detail-row"><label>Template</label>
+          <select class="detail-select" onchange="files[${i}].template=this.value">
+            ${TEMPLATES.map(t => `<option${t===f.template?' selected':''}>${t||'-- None --'}</option>`).join('')}
+          </select>
+        </div>
+        <div class="detail-row"><label>Confidence</label><span class="badge ${f.confidence==='Strong'?'conf-strong':f.confidence==='Likely'?'conf-likely':'conf-possible'}">${f.confidence}</span></div>
+      </div>
+
+      <div class="detail-section">
+        <h4>Summary</h4>
+        <p style="font-size:13px; color:#334155; line-height:1.5;">${f.summary}</p>
+      </div>
+
+      <div class="detail-section">
+        <h4>Key Points</h4>
+        <ul style="font-size:12px; color:#64748b; padding-left:16px; line-height:1.8;">
+          ${(f.keyPoints||[]).map(kp => `<li>${kp}</li>`).join('')}
+        </ul>
+      </div>
+
+      <div style="display:flex; gap:8px; margin-top:16px;">
+        <button class="btn btn-primary btn-sm" onclick="markReady(${i})">
+          <svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          Mark Ready
+        </button>
+        <button class="btn btn-outline btn-sm" onclick="showToast('Opening ${f.title} in Policy Builder...')">
+          <svg viewBox="0 0 24 24"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+          Open in Builder
+        </button>
+      </div>
+    `}
+
+    <div class="log-section">
+      <h4>Activity Log</h4>
+      ${logs.length === 0 ? '<p style="font-size:12px; color:#94a3b8;">No activity yet.</p>' :
+        logs.slice(0, 8).map(l => `<div class="log-entry"><span class="log-time">${l.time}</span><span class="log-text">${l.text}</span></div>`).join('')}
+    </div>
+  `;
+}
+
+function showBatchPanel() {
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('detailContent').style.display = 'none';
+  document.getElementById('statsContent').style.display = 'none';
+  document.getElementById('batchContent').style.display = '';
+  document.getElementById('rightTitle').textContent = `Batch Actions (${multiSelect.size} files)`;
+  document.getElementById('batchContent').innerHTML = `
+    <div class="batch-panel">
+      <h3>${multiSelect.size} files selected</h3>
+      <p>Apply settings to all selected files at once.</p>
+
+      <div class="detail-section">
+        <h4>Apply Template</h4>
+        <select class="detail-select" id="batchTemplate">
+          ${TEMPLATES.map(t => `<option>${t||'-- Select Template --'}</option>`).join('')}
+        </select>
+      </div>
+      <div class="detail-section">
+        <h4>Set Category</h4>
+        <select class="detail-select" id="batchCategory">
+          <option value="">-- Keep Existing --</option>
+          ${CATEGORIES.map(c => `<option>${c}</option>`).join('')}
+        </select>
+      </div>
+      <div class="detail-section">
+        <h4>Set Risk Level</h4>
+        <select class="detail-select" id="batchRisk">
+          <option value="">-- Keep Existing --</option>
+          ${RISKS.map(r => `<option>${r}</option>`).join('')}
+        </select>
+      </div>
+
+      <div style="display:flex; gap:8px; margin-top:20px;">
+        <button class="btn btn-primary" onclick="applyBatch()">
+          <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+          Apply to Selected
+        </button>
+        <button class="btn btn-danger-sm" onclick="multiSelect.clear(); renderFileList(); showStats();">Cancel</button>
+      </div>
+    </div>
+  `;
+}
+
+function showStats() {
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('detailContent').style.display = 'none';
+  document.getElementById('batchContent').style.display = 'none';
+  document.getElementById('statsContent').style.display = '';
+  document.getElementById('rightTitle').textContent = 'Overview';
+
+  const uploaded = files.filter(f => f.status === 'uploaded').length;
+  const classified = files.filter(f => f.status === 'classified' || f.status === 'ready').length;
+  const withTemplate = files.filter(f => f.template).length;
+  const ready = files.filter(f => f.status === 'ready').length;
+
+  document.getElementById('statsContent').innerHTML = `
+    <div class="stats-grid">
+      <div class="stat-card" style="border-top:3px solid #0d9488"><div class="stat-val" style="color:#0d9488">${files.length}</div><div class="stat-lbl">Uploaded</div></div>
+      <div class="stat-card" style="border-top:3px solid #2563eb"><div class="stat-val" style="color:#2563eb">${classified}</div><div class="stat-lbl">Classified</div></div>
+      <div class="stat-card" style="border-top:3px solid #7c3aed"><div class="stat-val" style="color:#7c3aed">${withTemplate}</div><div class="stat-lbl">Templates</div></div>
+      <div class="stat-card" style="border-top:3px solid #059669"><div class="stat-val" style="color:#059669">${ready}</div><div class="stat-lbl">Ready</div></div>
+    </div>
+
+    <div style="margin-top:20px; display:flex; flex-direction:column; gap:8px;">
+      <button class="btn btn-primary" onclick="classifyAll()" ${classified === files.length ? 'disabled' : ''}>
+        <svg viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+        Classify All with AI
+      </button>
+      <button class="btn btn-outline" onclick="showToast('Opening all policies in Pipeline...')" ${ready === 0 ? 'disabled' : ''}>
+        <svg viewBox="0 0 24 24"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+        Open All in Pipeline
+      </button>
+    </div>
+
+    <div class="log-section">
+      <h4>Activity Log</h4>
+      ${logs.length === 0 ? '<p style="font-size:12px; color:#94a3b8;">No activity yet.</p>' :
+        logs.slice(0, 10).map(l => `<div class="log-entry"><span class="log-time">${l.time}</span><span class="log-text">${l.text}</span></div>`).join('')}
+    </div>
+  `;
+}
+
+function classifySingle(i) {
+  files[i].status = 'classifying';
+  renderFileList();
+  showDetail(i);
+  addLog(`Classifying: ${files[i].name}`);
+  setTimeout(() => {
+    files[i].status = 'classified';
+    renderFileList();
+    showDetail(i);
+    addLog(`Classified: ${files[i].title} (${files[i].category}, ${files[i].risk})`);
+  }, 1500);
+}
+
+function classifySelected() {
+  const indices = [...multiSelect].filter(i => files[i].status === 'uploaded');
+  if (indices.length === 0) { showToast('No unclassified files selected'); return; }
+  indices.forEach(i => { files[i].status = 'classifying'; });
+  renderFileList();
+  addLog(`Classifying ${indices.length} files...`);
+
+  let done = 0;
+  function next() {
+    if (done >= indices.length) {
+      showStats();
+      showToast(`${indices.length} files classified`);
+      return;
+    }
+    files[indices[done]].status = 'classified';
+    done++;
+    addLog(`Classified: ${files[indices[done-1]].title}`);
+    renderFileList();
+    setTimeout(next, 500);
+  }
+  setTimeout(next, 800);
+}
+
+function classifyAll() {
+  multiSelect.clear();
+  files.forEach((_, i) => multiSelect.add(i));
+  classifySelected();
+}
+
+function markReady(i) {
+  files[i].status = 'ready';
+  addLog(`Marked ready: ${files[i].title}`);
+  renderFileList();
+  showDetail(i);
+  showToast(`${files[i].title} is ready for Policy Builder`);
+}
+
+function applyBatch() {
+  const tmpl = document.getElementById('batchTemplate').value;
+  const cat = document.getElementById('batchCategory').value;
+  const risk = document.getElementById('batchRisk').value;
+  [...multiSelect].forEach(i => {
+    if (tmpl && tmpl !== '-- Select Template --') files[i].template = tmpl;
+    if (cat) files[i].category = cat;
+    if (risk) files[i].risk = risk;
+  });
+  addLog(`Batch applied to ${multiSelect.size} files`);
+  showToast(`Settings applied to ${multiSelect.size} files`);
+  multiSelect.clear();
+  renderFileList();
+  showStats();
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.innerHTML = '<svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>' + msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>

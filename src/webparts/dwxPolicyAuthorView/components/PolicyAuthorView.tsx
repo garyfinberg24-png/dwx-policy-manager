@@ -149,6 +149,7 @@ interface IPolicyAuthorViewState {
   batchMetaTemplateId: string;
   batchMetaCategory: string;
   batchMetaRisk: string;
+  batchMetaReadTimeframe: string;
   fastTrackTemplates: Array<{ Id: number; Title: string; PolicyCategory: string; ComplianceRisk: string; ReadTimeframe: string; RequiresAcknowledgement: boolean; RequiresQuiz: boolean; TargetDepartments: string }>;
   ftTemplatesLoaded: boolean;
   pipelineSearch: string;
@@ -208,6 +209,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
       batchMetaTemplateId: '',
       batchMetaCategory: '',
       batchMetaRisk: '',
+      batchMetaReadTimeframe: '',
       fastTrackTemplates: [],
       ftTemplatesLoaded: false,
       pipelineSearch: '',
@@ -1201,7 +1203,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
           type={PanelType.smallFixedFar}
           onRenderFooterContent={() => {
             const hasTemplate = !!this.state.batchMetaTemplateId;
-            const hasMeta = !!this.state.batchMetaCategory || !!this.state.batchMetaRisk;
+            const hasMeta = !!this.state.batchMetaCategory || !!this.state.batchMetaRisk || !!this.state.batchMetaReadTimeframe;
             return (
               <Stack horizontal tokens={{ childrenGap: 8 }} style={{ padding: '16px 0' }}>
                 <PrimaryButton text="Apply" disabled={!hasTemplate && !hasMeta}
@@ -1221,12 +1223,13 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                         } else {
                           if (this.state.batchMetaCategory) updates.PolicyCategory = this.state.batchMetaCategory;
                           if (this.state.batchMetaRisk) updates.ComplianceRisk = this.state.batchMetaRisk;
+                          if (this.state.batchMetaReadTimeframe) updates.ReadTimeframe = this.state.batchMetaReadTimeframe;
                         }
                         await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES).items.getById(id).update(updates);
                         count++;
                       } catch { /* per-item — continue */ }
                     }
-                    this.setState({ showBatchMetadataPanel: false, batchMetaTemplateId: '', batchMetaCategory: '', batchMetaRisk: '', selectedPipelineIds: new Set<number>() });
+                    this.setState({ showBatchMetadataPanel: false, batchMetaTemplateId: '', batchMetaCategory: '', batchMetaRisk: '', batchMetaReadTimeframe: '', selectedPipelineIds: new Set<number>() });
                     await this.reloadPipeline();
                     void this.dialogManager.showAlert(`Metadata applied to ${count} polic${count !== 1 ? 'ies' : 'y'}.`, { variant: 'success' });
                   }}
@@ -1260,6 +1263,10 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
             <Dropdown label="Compliance Risk" selectedKey={this.state.batchMetaRisk}
               options={[{ key: '', text: '(select)' }, { key: 'Critical', text: 'Critical' }, { key: 'High', text: 'High' }, { key: 'Medium', text: 'Medium' }, { key: 'Low', text: 'Low' }, { key: 'Informational', text: 'Informational' }]}
               onChange={(_, opt) => this.setState({ batchMetaRisk: String(opt?.key || '') })}
+              styles={{ title: { borderRadius: 4 }, dropdown: { borderRadius: 4 } }} />
+            <Dropdown label="Read Timeframe" selectedKey={this.state.batchMetaReadTimeframe}
+              options={[{ key: '', text: '(select)' }, { key: 'Immediate', text: 'Immediate' }, { key: 'Day 1', text: 'Day 1' }, { key: 'Day 3', text: 'Day 3' }, { key: 'Week 1', text: 'Week 1' }, { key: 'Week 2', text: 'Week 2' }, { key: 'Month 1', text: 'Month 1' }, { key: 'Month 3', text: 'Month 3' }, { key: 'Month 6', text: 'Month 6' }]}
+              onChange={(_, opt) => this.setState({ batchMetaReadTimeframe: String(opt?.key || '') })}
               styles={{ title: { borderRadius: 4 }, dropdown: { borderRadius: 4 } }} />
           </Stack>
         </StyledPanel>

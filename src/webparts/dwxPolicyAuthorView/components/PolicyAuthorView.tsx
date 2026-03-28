@@ -2871,24 +2871,21 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
             onChange={(_, option) => {
               if (option) this.updateDelegationForm({ taskType: option.key as IDelegationForm['taskType'] });
             }}
-            styles={{ flexContainer: { display: 'flex', gap: 12, flexWrap: 'wrap' } }}
-          />
-
-          <Label required>Priority</Label>
-          <ChoiceGroup
-            options={priorityOptions}
-            selectedKey={delegationForm.priority}
-            onChange={(_, option) => {
-              if (option) this.updateDelegationForm({ priority: option.key as IDelegationForm['priority'] });
+            styles={{
+              flexContainer: { display: 'flex', gap: 8, flexWrap: 'nowrap' },
+              choiceFieldWrapper: { minWidth: 0, flex: '1 1 0' },
+              iconWrapper: { fontSize: 20, height: 36 },
+              field: { padding: '6px 4px', minWidth: 0 }
             }}
-            styles={{ flexContainer: { display: 'flex', gap: 12 } }}
           />
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <Separator>Delegation Period</Separator>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <DatePicker
-              label="Start Date"
+              label="From"
               isRequired
-              placeholder="Delegation starts"
+              placeholder="Start date"
               value={(delegationForm as any).startDate ? new Date((delegationForm as any).startDate) : new Date()}
               onSelectDate={(date) => {
                 if (date) this.updateDelegationForm({ startDate: date.toISOString() } as any);
@@ -2896,9 +2893,9 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
               minDate={new Date()}
             />
             <DatePicker
-              label="End Date"
+              label="To"
               isRequired
-              placeholder="Delegation ends"
+              placeholder="End date"
               value={delegationForm.dueDate ? new Date(delegationForm.dueDate) : undefined}
               onSelectDate={(date) => {
                 if (date) this.updateDelegationForm({ dueDate: date.toISOString() });
@@ -2907,10 +2904,9 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
             />
           </div>
 
-          <Separator>Scope & Options</Separator>
-
           <Dropdown
             label="Reason for Delegation"
+            required
             placeholder="Select a reason..."
             selectedKey={(delegationForm as any).reason || ''}
             options={[
@@ -2923,7 +2919,20 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
               { key: 'Other', text: 'Other' }
             ]}
             onChange={(_, opt) => opt && this.updateDelegationForm({ reason: opt.key as string } as any)}
+            styles={{ title: { borderRadius: 4 }, dropdown: { borderRadius: 4 } }}
           />
+
+          <Label required>Priority</Label>
+          <ChoiceGroup
+            options={priorityOptions}
+            selectedKey={delegationForm.priority}
+            onChange={(_, option) => {
+              if (option) this.updateDelegationForm({ priority: option.key as IDelegationForm['priority'] });
+            }}
+            styles={{ flexContainer: { display: 'flex', gap: 12 } }}
+          />
+
+          <Separator>Scope & Options</Separator>
 
           <Checkbox
             label="Delegate ALL tasks of this type (not just the selected policy)"

@@ -1152,7 +1152,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                         <IconButton
                           iconProps={{ iconName: 'Questionnaire' }}
                           title="Create / Edit Quiz"
-                          href={`${siteUrl}/SitePages/QuizBuilder.aspx?policyId=${policy.Id}`}
+                          href={`${siteUrl}/SitePages/QuizBuilder.aspx?quizId=new&policyId=${policy.Id}&policyTitle=${encodeURIComponent(policy.Title || policy.PolicyName || '')}`}
                           styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: '#7c3aed' } }}
                           ariaLabel={`Create quiz for ${policy.Title}`}
                         />

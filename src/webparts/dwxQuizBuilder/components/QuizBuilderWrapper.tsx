@@ -34,6 +34,7 @@ export const QuizBuilderWrapper: React.FC<IQuizBuilderWrapperProps> = (props) =>
   const isNewQuiz = rawQuizId === 'new';
   const quizId = isNewQuiz ? -1 : (rawQuizId ? parseInt(rawQuizId, 10) : undefined);
   const policyId = urlParams.get('policyId') ? parseInt(urlParams.get('policyId')!, 10) : undefined;
+  const policyTitle = urlParams.get('policyTitle') || undefined;
 
   // Quiz list state
   const [quizzes, setQuizzes] = React.useState<IQuiz[]>([]);
@@ -569,6 +570,7 @@ export const QuizBuilderWrapper: React.FC<IQuizBuilderWrapperProps> = (props) =>
           context={context}
           quizId={isNewQuiz ? undefined : quizId}
           policyId={policyId}
+          policyTitle={policyTitle}
           aiFunctionUrl={props.aiFunctionUrl}
           onSave={handleSave}
           onCancel={handleCancel}

@@ -54,6 +54,7 @@ export interface IQuizBuilderProps {
   context?: WebPartContext;
   quizId?: number;
   policyId?: number;
+  policyTitle?: string;
   aiFunctionUrl?: string;
   onSave?: (quiz: IQuiz) => void;
   onCancel?: () => void;
@@ -489,7 +490,7 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
       activeTab: 'settings',
 
       quizId: props.quizId || null,
-      title: '',
+      title: props.policyTitle ? `${props.policyTitle} Quiz` : '',
       description: '',
       policyId: props.policyId || null,
       passingScore: 70,
@@ -614,6 +615,14 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
             certificateTemplateId: quiz.CertificateTemplateId ?? null,
             questions
           });
+        }
+      }
+
+      // Pre-fill quiz title from policy name when creating a new quiz with policyId
+      if (!this.props.quizId && this.props.policyId && !this.state.title) {
+        const matchedPolicy = policies.find(p => p.Id === this.props.policyId);
+        if (matchedPolicy?.PolicyName) {
+          this.setState({ title: `${matchedPolicy.PolicyName} Quiz` });
         }
       }
 

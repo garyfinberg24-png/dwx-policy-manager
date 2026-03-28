@@ -129,7 +129,11 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
 
       const packs = await this.packService.getPolicyPacks();
       const allPolicies = await this.policyService.getAllPolicies();
-      const policies = allPolicies.filter((p: IPolicy) => p.PolicyStatus === PolicyStatus.Published);
+      const policies = allPolicies.filter((p: IPolicy) =>
+        p.PolicyStatus === PolicyStatus.Published ||
+        p.PolicyStatus === PolicyStatus.Approved ||
+        p.PolicyStatus === PolicyStatus.Draft
+      );
 
       if (this._isMounted) { this.setState({
         policyPacks: packs,
@@ -849,11 +853,12 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
                     context={this.props.context as any}
                     personSelectionLimit={10}
                     principalTypes={[PrincipalType.User]}
-                    resolveDelay={500}
+                    resolveDelay={300}
                     placeholder="Search for approvers..."
                     groupName=""
                     showHiddenInUI={false}
                     ensureUser={true}
+                    webAbsoluteUrl={this.props.context?.pageContext?.web?.absoluteUrl}
                     onChange={(items: any[]) => {
                       const approverEmails = items.map(item => item.secondaryText || item.loginName || '').filter(Boolean);
                       this.setState({ approverEmails });

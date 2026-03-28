@@ -127,15 +127,22 @@ export class PolicyPackService {
    */
   public async getPolicyPacks(packType?: string): Promise<IPolicyPack[]> {
     try {
-      let query = this.sp.web.lists
-        .getByTitle(this.POLICY_PACKS_LIST)
-        .items.filter('IsActive eq true');
-
-      if (packType) {
-        query = query.filter(`PackType eq '${ValidationUtils.sanitizeForOData(packType)}'`);
+      let packs: any[];
+      try {
+        // Try filtered query first
+        let query = this.sp.web.lists
+          .getByTitle(this.POLICY_PACKS_LIST)
+          .items.filter('IsActive eq true');
+        if (packType) {
+          query = query.filter(`PackType eq '${ValidationUtils.sanitizeForOData(packType)}'`);
+        }
+        packs = await query.top(1000)();
+      } catch {
+        // Fallback: load all items if IsActive column doesn't exist or filter fails
+        packs = await this.sp.web.lists
+          .getByTitle(this.POLICY_PACKS_LIST)
+          .items.top(1000)();
       }
-
-      const packs = await query.top(1000)();
       return packs.map(p => this.mapPolicyPack(p));
     } catch (error) {
       logger.error('PolicyPackService', 'Failed to get policy packs:', error);
@@ -148,33 +155,39 @@ export class PolicyPackService {
    */
   public async updatePolicyPack(packId: number, request: ICreatePolicyPackRequest): Promise<IPolicyPack> {
     try {
-      const packData = {
+      // Phase 1: Core fields
+      const coreData: Record<string, unknown> = {
         Title: request.packName,
         PackName: request.packName,
         PackDescription: request.packDescription,
-        PackCategory: request.packType,
-        PackType: request.packType,
-        TargetDepartments: request.targetDepartments ? JSON.stringify(request.targetDepartments) : undefined,
-        TargetRoles: request.targetRoles ? JSON.stringify(request.targetRoles) : undefined,
-        TargetLocations: request.targetLocations ? JSON.stringify(request.targetLocations) : undefined,
-        TargetProcessType: request.targetProcessType,
         PolicyIds: JSON.stringify(request.policyIds),
-        PolicyCount: request.policyIds.length,
-        RequireAllAcknowledged: request.requireAllAcknowledged ?? true,
-        AcknowledgementDeadlineDays: request.acknowledgementDeadlineDays,
-        ReadTimeframe: request.readTimeframe,
-        IsSequential: request.isSequential ?? false,
-        PolicySequence: request.isSequential ? JSON.stringify(request.policyIds) : undefined,
-        SendWelcomeEmail: request.sendWelcomeEmail ?? true,
-        SendTeamsNotification: request.sendTeamsNotification ?? true,
-        ModifiedById: this.currentUserId,
-        ModifiedDate: new Date().toISOString()
+        PolicyCount: request.policyIds.length
       };
 
       await this.sp.web.lists
         .getByTitle(this.POLICY_PACKS_LIST)
         .items.getById(packId)
-        .update(packData);
+        .update(coreData);
+
+      // Phase 2: Optional fields
+      try {
+        const optionalData: Record<string, unknown> = {
+          PackCategory: request.packType,
+          PackType: request.packType,
+          IsSequential: request.isSequential ?? false,
+          SendWelcomeEmail: request.sendWelcomeEmail ?? true,
+          SendTeamsNotification: request.sendTeamsNotification ?? true
+        };
+        if (request.targetDepartments) optionalData.TargetDepartments = JSON.stringify(request.targetDepartments);
+        if (request.targetRoles) optionalData.TargetRoles = JSON.stringify(request.targetRoles);
+        if (request.targetLocations) optionalData.TargetLocations = JSON.stringify(request.targetLocations);
+        if (request.targetProcessType) optionalData.TargetProcessType = request.targetProcessType;
+        if (request.isSequential) optionalData.PolicySequence = JSON.stringify(request.policyIds);
+        if (request.approverEmails && request.approverEmails.length > 0) optionalData.ApproverEmails = request.approverEmails.join(';');
+        await this.sp.web.lists.getByTitle(this.POLICY_PACKS_LIST).items.getById(packId).update(optionalData);
+      } catch (optErr) {
+        console.warn('[PolicyPackService] Optional fields update skipped:', optErr);
+      }
 
       logger.info('PolicyPackService', `Updated policy pack ${packId}`);
       return await this.getPolicyPackById(packId);

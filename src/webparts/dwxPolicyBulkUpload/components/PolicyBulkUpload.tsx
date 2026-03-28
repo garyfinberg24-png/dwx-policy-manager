@@ -711,9 +711,16 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
               <Dropdown placeholder="Fill Risk ↓" options={RISK_OPTIONS.filter(o => o.key)}
                 onChange={(_, opt) => { if (opt?.key) fillDown('risk', String(opt.key)); }}
                 styles={{ root: { width: 110 }, title: { borderRadius: 4, height: 30, lineHeight: '28px', fontSize: 11, color: '#0d9488', borderColor: '#99f6e4' }, caretDownWrapper: { height: 30, lineHeight: '30px' } }} />
-              <Dropdown placeholder="Fill Template ↓" options={templateOptions.filter(o => o.key)}
-                onChange={(_, opt) => { if (opt?.key) { for (const id of selectedIds) this.applyTemplate(id, parseInt(String(opt.key))); this.setState({ selectedIds: new Set() }); } }}
-                styles={{ root: { width: 140 }, title: { borderRadius: 4, height: 30, lineHeight: '28px', fontSize: 11, color: '#059669', borderColor: '#bbf7d0' }, caretDownWrapper: { height: 30, lineHeight: '30px' } }} />
+              <Dropdown placeholder="Fill Template ↓" selectedKey="" options={[{ key: '', text: 'Fill Template ↓' }, ...templateOptions.filter(o => o.key)]}
+                onChange={(_, opt) => {
+                  if (opt?.key) {
+                    const templateId = parseInt(String(opt.key));
+                    const ids = Array.from(selectedIds);
+                    ids.forEach(id => this.applyTemplate(id, templateId));
+                    this.log(`Template applied to ${ids.length} files`, 'success');
+                  }
+                }}
+                styles={{ root: { width: 150 }, title: { borderRadius: 4, height: 30, lineHeight: '28px', fontSize: 11, color: '#059669', borderColor: '#bbf7d0' }, caretDownWrapper: { height: 30, lineHeight: '30px' } }} />
             </>
           )}
           <span style={{ fontSize: 11, color: '#94a3b8' }}>{selectedCount > 0 ? `${selectedCount} sel` : ''} · {enrichable.length} files</span>
@@ -797,76 +804,93 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
   // ============================================================================
 
   private renderStep4_Finish(siteUrl: string): React.ReactElement {
-    const { imports, activityLog, importHistory } = this.state;
-    const uploaded = imports.filter(i => !['pending', 'failed'].includes(i.status)).length;
+    const { imports, activityLog, importHistory, selectedIds } = this.state;
+    const processedItems = imports.filter(i => !['pending', 'failed'].includes(i.status));
+    const uploaded = processedItems.length;
     const enriched = imports.filter(i => ['classified', 'enriched'].includes(i.status)).length;
     const templated = imports.filter(i => !!i.templateId).length;
     const failed = imports.filter(i => i.status === 'failed').length;
+    const selectedCount = Array.from(selectedIds).filter(id => processedItems.some(p => p.id === id)).length;
+    const allSelected = processedItems.length > 0 && processedItems.every(i => selectedIds.has(i.id));
+
+    // Batch action helper
+    const batchUpdateStatus = async (status: string, label: string, itemFilter: (i: IBulkImportItem) => boolean, extraFields?: Record<string, unknown>) => {
+      const targets = itemFilter === null ? processedItems.filter(i => i.spId) : processedItems.filter(i => i.spId && itemFilter(i));
+      const desc = targets.length === uploaded ? 'all' : `${targets.length} selected`;
+      if (!window.confirm(`Are you sure you want to ${label.toLowerCase()} ${desc} polic${targets.length !== 1 ? 'ies' : 'y'}?${status === 'Published' ? '\n\nThis will make them visible to their target audience.' : ''}`)) return;
+      let count = 0;
+      for (const item of targets) {
+        try { await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES).items.getById(item.spId).update({ PolicyStatus: status, ...extraFields }); count++; } catch { /* */ }
+      }
+      this.log(`${label}: ${count} policies`, 'success');
+      this.setState({ successMessage: `${count} policies ${label.toLowerCase()}.`, selectedIds: new Set() });
+    };
 
     return (
       <>
         <h2 style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', margin: '0 0 4px' }}>Import Summary</h2>
-        <p style={{ fontSize: 13, color: '#64748b', margin: '0 0 20px' }}>Your policies are imported as drafts. Open them in the Policy Builder to add content and submit.</p>
+        <p style={{ fontSize: 13, color: '#64748b', margin: '0 0 16px' }}>Review your imported policies. Select files to approve or publish individually, or use batch actions.</p>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
+        {/* KPI cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 16 }}>
           {[{ l: 'Uploaded', v: uploaded, c: '#2563eb' }, { l: 'Enriched', v: enriched, c: '#7c3aed' }, { l: 'With Template', v: templated, c: '#059669' }, { l: 'Failed', v: failed, c: failed > 0 ? '#dc2626' : '#94a3b8' }].map(k =>
-            <div key={k.l} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, borderTop: `3px solid ${k.c}`, padding: '14px 16px', textAlign: 'center' }}>
-              <div style={{ fontSize: 24, fontWeight: 700, color: k.c }}>{k.v}</div>
-              <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5, color: '#94a3b8', fontWeight: 600, marginTop: 2 }}>{k.l}</div>
+            <div key={k.l} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, borderTop: `3px solid ${k.c}`, padding: '12px 14px', textAlign: 'center' }}>
+              <div style={{ fontSize: 22, fontWeight: 700, color: k.c }}>{k.v}</div>
+              <div style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: 0.5, color: '#94a3b8', fontWeight: 600, marginTop: 2 }}>{k.l}</div>
             </div>
           )}
         </div>
 
-        <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+        {/* Action buttons */}
+        <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
           <PrimaryButton text="Open Drafts & Pipeline" iconProps={{ iconName: 'ViewAll' }} href={`${siteUrl}/SitePages/PolicyAuthor.aspx`}
-            styles={{ root: { background: '#0d9488', borderColor: '#0d9488', borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }} />
-          <DefaultButton text="Submit All for Review" iconProps={{ iconName: 'Send' }}
-            disabled={uploaded === 0}
-            onClick={async () => {
-              if (!window.confirm(`Are you sure you want to submit all ${uploaded} imported policies for review?\n\nThis will change their status from Draft to In Review and notify reviewers.`)) return;
-              let count = 0;
-              for (const item of imports.filter(i => i.spId && !['pending', 'failed'].includes(i.status))) {
-                try { await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES).items.getById(item.spId).update({ PolicyStatus: 'In Review' }); count++; } catch { /* */ }
-              }
-              this.log(`Submitted ${count} policies for review`, 'success');
-              this.setState({ successMessage: `${count} policies submitted for review.` });
-            }}
-            styles={{ root: { borderRadius: 4, color: '#2563eb', borderColor: '#93c5fd' }, rootHovered: { background: '#eff6ff' } }} />
-          <DefaultButton text="Publish All" iconProps={{ iconName: 'PublishContent' }}
-            disabled={uploaded === 0}
-            onClick={async () => {
-              if (!window.confirm(`Are you sure you want to publish all ${uploaded} imported policies?\n\nThis will make them immediately visible to their target audience. This action should only be taken after content has been reviewed.`)) return;
-              let count = 0;
-              for (const item of imports.filter(i => i.spId && !['pending', 'failed'].includes(i.status))) {
-                try { await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES).items.getById(item.spId).update({ PolicyStatus: 'Published', IsActive: true }); count++; } catch { /* */ }
-              }
-              this.log(`Published ${count} policies`, 'success');
-              this.setState({ successMessage: `${count} policies published.` });
-            }}
-            styles={{ root: { borderRadius: 4, color: '#059669', borderColor: '#bbf7d0' }, rootHovered: { background: '#f0fdf4' } }} />
+            styles={{ root: { background: '#0d9488', borderColor: '#0d9488', borderRadius: 4, fontSize: 12, height: 32 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }} />
+          <div style={{ width: 1, height: 24, background: '#e2e8f0', margin: '0 4px' }} />
+          {selectedCount > 0 ? (
+            <>
+              <DefaultButton text={`Submit Selected (${selectedCount})`} iconProps={{ iconName: 'Send' }}
+                onClick={() => batchUpdateStatus('In Review', 'Submitted for review', (i) => selectedIds.has(i.id))}
+                styles={{ root: { borderRadius: 4, fontSize: 12, height: 32, color: '#2563eb', borderColor: '#93c5fd' }, rootHovered: { background: '#eff6ff' } }} />
+              <DefaultButton text={`Publish Selected (${selectedCount})`} iconProps={{ iconName: 'PublishContent' }}
+                onClick={() => batchUpdateStatus('Published', 'Published', (i) => selectedIds.has(i.id), { IsActive: true })}
+                styles={{ root: { borderRadius: 4, fontSize: 12, height: 32, color: '#059669', borderColor: '#bbf7d0' }, rootHovered: { background: '#f0fdf4' } }} />
+            </>
+          ) : null}
+          <DefaultButton text="Submit All for Review" iconProps={{ iconName: 'Send' }} disabled={uploaded === 0}
+            onClick={() => batchUpdateStatus('In Review', 'Submitted for review', null)}
+            styles={{ root: { borderRadius: 4, fontSize: 12, height: 32, color: '#2563eb', borderColor: '#dbeafe' } }} />
+          <DefaultButton text="Publish All" iconProps={{ iconName: 'PublishContent' }} disabled={uploaded === 0}
+            onClick={() => batchUpdateStatus('Published', 'Published', null, { IsActive: true })}
+            styles={{ root: { borderRadius: 4, fontSize: 12, height: 32, color: '#059669', borderColor: '#d1fae5' } }} />
+          <div style={{ flex: 1 }} />
           <DefaultButton text="New Import" iconProps={{ iconName: 'Add' }}
             onClick={() => {
-              // Save current batch to history
               const batch = { date: new Date().toISOString(), fileCount: imports.length, classified: enriched, templates: templated };
               this.setState({ wizardStep: 1, completedSteps: new Set(), imports: [], selectedIds: new Set(), activityLog: [], importHistory: [batch, ...this.state.importHistory.slice(0, 19)] });
               sessionStorage.removeItem(SESSION_KEY);
             }}
-            styles={{ root: { borderRadius: 4 } }} />
+            styles={{ root: { borderRadius: 4, fontSize: 12, height: 32 } }} />
         </div>
 
-        {/* Processed Files Table */}
+        {/* Processed Files Table with checkboxes */}
         <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden', marginBottom: 20 }}>
-          <div style={{ padding: '10px 16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontWeight: 600, fontSize: 13, color: '#0f172a' }}>Processed Files ({imports.filter(i => !['pending'].includes(i.status)).length})</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 110px 80px 100px 140px 70px', padding: '6px 16px', background: '#fafafa', borderBottom: '1px solid #f1f5f9', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, color: '#64748b' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+            <span style={{ fontWeight: 600, fontSize: 13, color: '#0f172a' }}>Processed Files ({processedItems.length})</span>
+            {selectedCount > 0 && <span style={{ fontSize: 12, color: '#0d9488', fontWeight: 600 }}>{selectedCount} selected</span>}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '32px 1fr 110px 80px 100px 140px 70px', padding: '6px 16px', background: '#fafafa', borderBottom: '1px solid #f1f5f9', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, color: '#64748b' }}>
+            <div><input type="checkbox" checked={allSelected} onChange={() => { if (allSelected) this.setState({ selectedIds: new Set() }); else this.setState({ selectedIds: new Set(processedItems.map(i => i.id)) }); }} /></div>
             <div>Policy Title</div><div>Category</div><div>Risk</div><div>Department</div><div>Template</div><div>Status</div>
           </div>
-          <div style={{ maxHeight: 350, overflowY: 'auto' }}>
-            {imports.filter(i => !['pending'].includes(i.status)).map(item => {
+          <div style={{ maxHeight: 400, overflowY: 'auto' }}>
+            {processedItems.map(item => {
               const rc = item.risk === 'Critical' ? '#dc2626' : item.risk === 'High' ? '#d97706' : item.risk === 'Medium' ? '#0d9488' : '#059669';
               const sc = item.status === 'failed' ? '#dc2626' : ['classified', 'enriched'].includes(item.status) ? '#059669' : '#2563eb';
               const sl = item.status === 'failed' ? 'Failed' : ['classified', 'enriched'].includes(item.status) ? 'Ready' : 'Uploaded';
+              const isSelected = selectedIds.has(item.id);
               return (
-                <div key={item.id} style={{ display: 'grid', gridTemplateColumns: '1fr 110px 80px 100px 140px 70px', padding: '8px 16px', borderBottom: '1px solid #f8fafc', alignItems: 'center', fontSize: 12 }}>
+                <div key={item.id} style={{ display: 'grid', gridTemplateColumns: '32px 1fr 110px 80px 100px 140px 70px', padding: '8px 16px', borderBottom: '1px solid #f8fafc', alignItems: 'center', fontSize: 12, background: isSelected ? '#f0fdfa' : '#fff' }}>
+                  <div><input type="checkbox" checked={isSelected} onChange={() => { const n = new Set(selectedIds); if (n.has(item.id)) n.delete(item.id); else n.add(item.id); this.setState({ selectedIds: n }); }} /></div>
                   <div><div style={{ fontWeight: 600, color: '#0f172a', fontSize: 13 }}>{item.title}</div><div style={{ fontSize: 10, color: '#cbd5e1' }}>{item.fileName}</div></div>
                   <div>{item.category ? <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 4, background: '#f5f3ff', color: '#7c3aed' }}>{item.category}</span> : <span style={{ color: '#cbd5e1' }}>—</span>}</div>
                   <div>{item.risk ? <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 4, background: `${rc}10`, color: rc }}>{item.risk}</span> : <span style={{ color: '#cbd5e1' }}>—</span>}</div>

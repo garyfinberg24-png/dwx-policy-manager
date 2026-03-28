@@ -2160,9 +2160,10 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
           {showOverride ? (
             <Stack tokens={{ childrenGap: 12 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
                 <Dropdown label="Category" selectedKey={policyCategory} options={Object.values(PolicyCategory).map(c => ({ key: c, text: c }))} onChange={(_, o) => o && this.setState({ policyCategory: o.key as string })} />
                 <Dropdown label="Risk Level" selectedKey={complianceRisk} options={[{ key: 'Critical', text: 'Critical' }, { key: 'High', text: 'High' }, { key: 'Medium', text: 'Medium' }, { key: 'Low', text: 'Low' }]} onChange={(_, o) => o && this.setState({ complianceRisk: o.key as string })} />
+                <Dropdown label="Document Type" selectedKey={this.state.creationMethod || 'word'} options={[{ key: 'word', text: 'Word Document' }, { key: 'excel', text: 'Excel Spreadsheet' }, { key: 'powerpoint', text: 'PowerPoint' }, { key: 'html', text: 'HTML / Rich Text' }, { key: 'upload', text: 'Upload Existing' }]} onChange={(_, o) => o && this.setState({ creationMethod: o.key as string })} />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <Dropdown label="Read Timeframe" selectedKey={readTimeframe} options={[{ key: 'Day 1', text: 'Day 1' }, { key: 'Day 3', text: '3 Days' }, { key: 'Week 1', text: '1 Week' }, { key: 'Week 2', text: '2 Weeks' }, { key: 'Month 1', text: '1 Month' }]} onChange={(_, o) => o && this.setState({ readTimeframe: o.key as string })} />
@@ -2174,6 +2175,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
               {[
+                { label: 'Document Type', value: ({ word: 'Word', excel: 'Excel', powerpoint: 'PowerPoint', html: 'HTML', upload: 'Upload', blank: 'Blank' } as Record<string, string>)[this.state.creationMethod || 'word'] || (this.state.creationMethod || 'Word'), color: '#2563eb' },
                 { label: 'Category', value: policyCategory },
                 { label: 'Risk Level', value: complianceRisk, color: complianceRisk === 'Critical' || complianceRisk === 'High' ? '#dc2626' : undefined },
                 { label: 'Read Timeframe', value: readTimeframe },

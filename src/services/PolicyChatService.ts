@@ -320,22 +320,35 @@ export class PolicyChatService {
    * Call the Azure Function chat endpoint.
    */
   private async callChatFunction(request: ChatFunctionRequest): Promise<ChatFunctionResponse> {
-    const response = await fetch(this.functionUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(request),
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => 'Unknown error');
-      if (response.status === 429) {
-        throw new Error('Too many requests. Please wait a moment before trying again.');
+    try {
+      const response = await fetch(this.functionUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(request),
+        signal: controller.signal
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => 'Unknown error');
+        if (response.status === 429) {
+          throw new Error('Too many requests. Please wait a moment before trying again.');
+        }
+        logger.error('PolicyChatService', `Function call failed: ${response.status} — ${errorText}`);
+        throw new Error('AI service temporarily unavailable. Please try again in a moment.');
       }
-      logger.error('PolicyChatService', `Function call failed: ${response.status} — ${errorText}`);
-      throw new Error('AI service temporarily unavailable. Please try again in a moment.');
-    }
 
-    return response.json() as Promise<ChatFunctionResponse>;
+      return response.json() as Promise<ChatFunctionResponse>;
+    } catch (err) {
+      if ((err as any)?.name === 'AbortError') {
+        throw new Error('Request timed out. The AI service is taking too long to respond. Please try again.');
+      }
+      throw err;
+    } finally {
+      clearTimeout(timeoutId);
+    }
   }
 
   // ──────────── Session Persistence ────────────

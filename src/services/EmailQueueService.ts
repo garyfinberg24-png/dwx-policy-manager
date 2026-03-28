@@ -95,8 +95,8 @@ export interface IBatchQueueResult {
 
 export class EmailQueueService {
   private sp: SPFI;
-  private readonly listName = 'PM_EmailQueue';
-  private readonly sourceSystem = 'JML-Workflow';
+  private readonly listName = 'PM_NotificationQueue';
+  private readonly sourceSystem = 'PolicyManager';
 
   constructor(sp: SPFI) {
     this.sp = sp;
@@ -117,12 +117,13 @@ export class EmailQueueService {
 
       const queueItem: Partial<IEmailQueueItem> = {
         Title: options.subject.substring(0, 255), // SharePoint Title limit
-        To: options.to.join(';'),
+        RecipientEmail: options.to.join(';'),
         CC: options.cc?.join(';'),
         Subject: options.subject,
-        Body: options.htmlBody,
+        Message: options.htmlBody,
         Priority: options.priority || EmailPriority.Normal,
-        Status: EmailQueueStatus.Queued,
+        QueueStatus: 'Pending',
+        Channel: 'Email',
         QueuedAt: new Date().toISOString(),
         AttemptCount: 0,
         ProcessId: options.processId,

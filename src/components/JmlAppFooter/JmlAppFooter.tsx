@@ -13,6 +13,9 @@ const footerStyles: Record<string, React.CSSProperties> = {
     padding: 0,
     marginTop: 'auto',
     width: '100%',
+    position: 'sticky' as const,
+    bottom: 0,
+    zIndex: 10,
     fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
   },
   footerCompact: {
@@ -21,6 +24,9 @@ const footerStyles: Record<string, React.CSSProperties> = {
     padding: 0,
     marginTop: 'auto',
     width: '100%',
+    position: 'sticky' as const,
+    bottom: 0,
+    zIndex: 10,
     fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
   },
   topBar: {

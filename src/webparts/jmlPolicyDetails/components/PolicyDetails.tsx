@@ -1363,11 +1363,15 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                     title="Print"
                     ariaLabel="Print policy"
                     onClick={() => {
-                      const printWindow = window.open('', '_blank');
+                      const html = `<!DOCTYPE html><html><head><title>${escapeHtml(policy.PolicyName || 'Policy')}</title></head><body>${sanitizeHtml(policy.PolicyContent || '')}</body></html>`;
+                      const blob = new Blob([html], { type: 'text/html' });
+                      const url = URL.createObjectURL(blob);
+                      const printWindow = window.open(url, '_blank');
                       if (printWindow) {
-                        printWindow.document.write(`<!DOCTYPE html><html><head><title>${policy.PolicyName || 'Policy'}</title></head><body>${sanitizeHtml(policy.PolicyContent || '')}</body></html>`);
-                        printWindow.document.close();
-                        printWindow.print();
+                        printWindow.addEventListener('afterprint', () => URL.revokeObjectURL(url));
+                        printWindow.onload = () => printWindow.print();
+                      } else {
+                        URL.revokeObjectURL(url);
                       }
                     }}
                     styles={{ root: { height: 28, width: 28 }, icon: { fontSize: 14, color: '#0d9488' } }}

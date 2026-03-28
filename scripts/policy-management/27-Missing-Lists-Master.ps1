@@ -239,6 +239,7 @@ Add-PnPField -List "PM_Policies" -DisplayName "Next Review Date" -InternalName "
 Add-PnPField -List "PM_Policies" -DisplayName "Review Frequency" -InternalName "ReviewFrequency" -Type Choice -Choices "Monthly","Quarterly","Biannual","Annual","None" -ErrorAction SilentlyContinue | Out-Null
 Add-PnPField -List "PM_Policies" -DisplayName "Requires Acknowledgement" -InternalName "RequiresAcknowledgement" -Type Boolean -ErrorAction SilentlyContinue | Out-Null
 Add-PnPField -List "PM_Policies" -DisplayName "Requires Quiz" -InternalName "RequiresQuiz" -Type Boolean -ErrorAction SilentlyContinue | Out-Null
+Add-PnPField -List "PM_Policies" -DisplayName "Creation Method" -InternalName "CreationMethod" -Type Text -ErrorAction SilentlyContinue | Out-Null
 
 # ============================================================================
 # SUMMARY

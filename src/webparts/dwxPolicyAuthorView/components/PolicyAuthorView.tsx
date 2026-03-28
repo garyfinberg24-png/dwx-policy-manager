@@ -145,6 +145,12 @@ interface IPolicyAuthorViewState {
   loading: boolean;
   pipelineFilter: PipelineStatusFilter;
   pipelineBulkOnly: boolean;
+  showBatchMetadataPanel: boolean;
+  batchMetaTemplateId: string;
+  batchMetaCategory: string;
+  batchMetaRisk: string;
+  fastTrackTemplates: Array<{ Id: number; Title: string; PolicyCategory: string; ComplianceRisk: string; ReadTimeframe: string; RequiresAcknowledgement: boolean; RequiresQuiz: boolean; TargetDepartments: string }>;
+  ftTemplatesLoaded: boolean;
   pipelineSearch: string;
   selectedPipelineIds: Set<number>;
   statusFilter: RequestStatusFilter;
@@ -198,6 +204,12 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
       loading: true,
       pipelineFilter: 'Draft',
       pipelineBulkOnly: false,
+      showBatchMetadataPanel: false,
+      batchMetaTemplateId: '',
+      batchMetaCategory: '',
+      batchMetaRisk: '',
+      fastTrackTemplates: [],
+      ftTemplatesLoaded: false,
       pipelineSearch: '',
       selectedPipelineIds: new Set<number>(),
       statusFilter: 'All',
@@ -902,6 +914,22 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                   styles={{ root: { fontSize: 12, height: 30 } }}
                 />
                 <DefaultButton
+                  text="Batch Metadata"
+                  iconProps={{ iconName: 'Tag' }}
+                  onClick={async () => {
+                    if (!this.state.ftTemplatesLoaded) {
+                      try {
+                        const items = await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_METADATA_PROFILES)
+                          .items.select('Id', 'Title', 'ProfileName', 'PolicyCategory', 'ComplianceRisk', 'ReadTimeframe', 'RequiresAcknowledgement', 'RequiresQuiz', 'TargetDepartments')
+                          .orderBy('Title').top(100)();
+                        this.setState({ fastTrackTemplates: items.map((t: any) => ({ Id: t.Id, Title: t.Title || t.ProfileName, PolicyCategory: t.PolicyCategory || '', ComplianceRisk: t.ComplianceRisk || 'Medium', ReadTimeframe: t.ReadTimeframe || 'Week 1', RequiresAcknowledgement: t.RequiresAcknowledgement !== false, RequiresQuiz: t.RequiresQuiz || false, TargetDepartments: t.TargetDepartments || '' })), ftTemplatesLoaded: true });
+                      } catch { this.setState({ ftTemplatesLoaded: true }); }
+                    }
+                    this.setState({ showBatchMetadataPanel: true });
+                  }}
+                  styles={{ root: { fontSize: 12, height: 30, color: '#0d9488', borderColor: '#99f6e4' } }}
+                />
+                <DefaultButton
                   text="Delete"
                   iconProps={{ iconName: 'Delete' }}
                   onClick={handleBulkDelete}
@@ -1135,6 +1163,77 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
             </div>
           )}
         </section>
+
+        {/* Batch Metadata Panel */}
+        <StyledPanel
+          isOpen={this.state.showBatchMetadataPanel}
+          onDismiss={() => this.setState({ showBatchMetadataPanel: false })}
+          headerText={`Batch Metadata (${selectedPipelineIds.size} selected)`}
+          type={PanelType.smallFixedFar}
+          onRenderFooterContent={() => {
+            const hasTemplate = !!this.state.batchMetaTemplateId;
+            const hasMeta = !!this.state.batchMetaCategory || !!this.state.batchMetaRisk;
+            return (
+              <Stack horizontal tokens={{ childrenGap: 8 }} style={{ padding: '16px 0' }}>
+                <PrimaryButton text="Apply" disabled={!hasTemplate && !hasMeta}
+                  onClick={async () => {
+                    const template = hasTemplate ? this.state.fastTrackTemplates.find(t => t.Id === parseInt(this.state.batchMetaTemplateId)) : null;
+                    let count = 0;
+                    for (const id of selectedPipelineIds) {
+                      try {
+                        const updates: Record<string, unknown> = {};
+                        if (template) {
+                          updates.PolicyCategory = template.PolicyCategory;
+                          updates.ComplianceRisk = template.ComplianceRisk;
+                          if (template.ReadTimeframe) updates.ReadTimeframe = template.ReadTimeframe;
+                          if (template.RequiresAcknowledgement !== undefined) updates.RequiresAcknowledgement = template.RequiresAcknowledgement;
+                          if (template.RequiresQuiz !== undefined) updates.RequiresQuiz = template.RequiresQuiz;
+                          if (template.TargetDepartments) updates.Departments = template.TargetDepartments;
+                        } else {
+                          if (this.state.batchMetaCategory) updates.PolicyCategory = this.state.batchMetaCategory;
+                          if (this.state.batchMetaRisk) updates.ComplianceRisk = this.state.batchMetaRisk;
+                        }
+                        await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES).items.getById(id).update(updates);
+                        count++;
+                      } catch { /* per-item — continue */ }
+                    }
+                    this.setState({ showBatchMetadataPanel: false, batchMetaTemplateId: '', batchMetaCategory: '', batchMetaRisk: '', selectedPipelineIds: new Set<number>() });
+                    await this.reloadPipeline();
+                    void this.dialogManager.showAlert(`Metadata applied to ${count} polic${count !== 1 ? 'ies' : 'y'}.`, { variant: 'success' });
+                  }}
+                  styles={{ root: { background: '#0d9488', borderColor: '#0d9488', borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }} />
+                <DefaultButton text="Cancel" onClick={() => this.setState({ showBatchMetadataPanel: false })} styles={{ root: { borderRadius: 4 } }} />
+              </Stack>
+            );
+          }}
+          isFooterAtBottom={true}
+        >
+          <Stack tokens={{ childrenGap: 16 }} style={{ paddingTop: 16 }}>
+            <Text style={{ fontSize: 13, color: '#64748b' }}>
+              Apply a Fast Track Template or set metadata for {selectedPipelineIds.size} selected polic{selectedPipelineIds.size !== 1 ? 'ies' : 'y'}.
+            </Text>
+            <div style={{ background: '#f0fdfa', border: '1px solid #99f6e4', borderRadius: 4, padding: 14 }}>
+              <Text style={{ fontWeight: 600, color: '#0f172a', fontSize: 13, display: 'block', marginBottom: 6 }}>Fast Track Template</Text>
+              <Dropdown
+                selectedKey={this.state.batchMetaTemplateId}
+                options={[{ key: '', text: '— No template —' }, ...this.state.fastTrackTemplates.map(t => ({ key: String(t.Id), text: t.Title }))]}
+                onChange={(_, opt) => this.setState({ batchMetaTemplateId: String(opt?.key || '') })}
+                placeholder="Select a template..."
+                styles={{ title: { borderRadius: 4 }, dropdown: { borderRadius: 4 } }}
+              />
+              <Text style={{ fontSize: 11, color: '#64748b', marginTop: 6, display: 'block' }}>Applies category, risk, read timeframe, and compliance settings.</Text>
+            </div>
+            <Text style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center' }}>— or set individual fields —</Text>
+            <Dropdown label="Category" selectedKey={this.state.batchMetaCategory}
+              options={[{ key: '', text: '(select)' }, { key: 'IT Security', text: 'IT Security' }, { key: 'HR', text: 'Human Resources' }, { key: 'Compliance', text: 'Compliance' }, { key: 'Data Protection', text: 'Data Protection' }, { key: 'Health & Safety', text: 'Health & Safety' }, { key: 'Finance', text: 'Finance' }, { key: 'Legal', text: 'Legal' }, { key: 'Operations', text: 'Operations' }, { key: 'Governance', text: 'Governance' }, { key: 'Other', text: 'Other' }]}
+              onChange={(_, opt) => this.setState({ batchMetaCategory: String(opt?.key || '') })}
+              styles={{ title: { borderRadius: 4 }, dropdown: { borderRadius: 4 } }} />
+            <Dropdown label="Compliance Risk" selectedKey={this.state.batchMetaRisk}
+              options={[{ key: '', text: '(select)' }, { key: 'Critical', text: 'Critical' }, { key: 'High', text: 'High' }, { key: 'Medium', text: 'Medium' }, { key: 'Low', text: 'Low' }, { key: 'Informational', text: 'Informational' }]}
+              onChange={(_, opt) => this.setState({ batchMetaRisk: String(opt?.key || '') })}
+              styles={{ title: { borderRadius: 4 }, dropdown: { borderRadius: 4 } }} />
+          </Stack>
+        </StyledPanel>
       </>
     );
   }

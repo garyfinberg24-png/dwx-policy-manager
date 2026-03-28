@@ -663,7 +663,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
         breadcrumbs={[{ text: 'Policy Manager', url: '/sites/PolicyManager' }, { text: 'Policy Author' }]}
       >
         {/* Page Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '32px 40px 0', maxWidth: 1400, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '32px 40px 0', maxWidth: 1600, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
           <div>
             <h1 style={{ fontSize: 26, fontWeight: 700, letterSpacing: -0.5, margin: 0 }}>Policy Author</h1>
             <div style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>Manage your policies, track approvals, and collaborate with reviewers</div>
@@ -814,7 +814,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
 
     return (
       <>
-        <section style={{ padding: '24px 40px', maxWidth: 1400, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+        <section style={{ padding: '24px 40px', maxWidth: 1600, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
           {/* KPI Cards with workflow arrows */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 24 }}>
             {[
@@ -912,7 +912,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
             <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
               {/* Table Header */}
               <div style={{
-                display: 'grid', gridTemplateColumns: '36px 1fr 140px 130px 160px 100px 120px 150px',
+                display: 'grid', gridTemplateColumns: '36px 1fr 130px 120px 150px 90px 110px 210px',
                 padding: '10px 16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0',
                 fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, color: '#64748b'
               }}>
@@ -945,7 +945,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                   <div
                     key={policy.Id}
                     style={{
-                      display: 'grid', gridTemplateColumns: '36px 1fr 140px 130px 160px 100px 120px 150px',
+                      display: 'grid', gridTemplateColumns: '36px 1fr 130px 120px 150px 90px 110px 210px',
                       padding: '12px 16px', borderBottom: '1px solid #f1f5f9', alignItems: 'center',
                       background: isSelected ? '#f0fdfa' : '#fff',
                       transition: 'background 0.1s'
@@ -1030,11 +1030,11 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                           ariaLabel={`Publish ${policy.Title}`}
                         />
                       )}
-                      {/* View — all statuses */}
+                      {/* View — read-only simple reader (no acknowledgement) */}
                       <IconButton
                         iconProps={{ iconName: 'View' }}
-                        title="View Policy Details"
-                        href={`${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policy.Id}`}
+                        title="View Policy"
+                        href={`${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policy.Id}&mode=browse`}
                         target="_blank"
                         styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: '#2563eb' } }}
                         ariaLabel={`View ${policy.Title}`}
@@ -1794,7 +1794,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
     const criticalCount = policyRequests.filter(r => r.Priority === 'Critical' && r.Status !== 'Completed').length;
 
     return (
-      <section style={{ padding: '24px 40px', maxWidth: 1400, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+      <section style={{ padding: '24px 40px', maxWidth: 1600, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
         {/* KPI Summary Cards with arrows */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 24 }}>
           {[
@@ -2209,7 +2209,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
     const urgentCount = approvals.filter(a => a.Status === 'Pending' && a.Priority === 'Urgent').length;
 
     return (
-      <section style={{ padding: '24px 40px', maxWidth: 1400, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+      <section style={{ padding: '24px 40px', maxWidth: 1600, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
         {/* KPI Row */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
           {this.renderKpiCard('Pending', pendingCount, 'Clock', '#f59e0b', '#fff8e6', () => this.setState({ approvalFilter: 'Pending' }))}
@@ -2441,7 +2441,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
     const overdueCount = delegations.filter(d => d.Status === 'Overdue').length;
 
     return (
-      <section style={{ padding: '24px 40px', maxWidth: 1400, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+      <section style={{ padding: '24px 40px', maxWidth: 1600, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
         <Stack horizontal horizontalAlign="end" style={{ marginBottom: 16 }}>
           <PrimaryButton
             text="Add Delegation"

@@ -796,6 +796,19 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
       const confirmed = await this.dialogManager.showConfirm(`Delete ${count} draft polic${count === 1 ? 'y' : 'ies'}? This cannot be undone.`, { title: 'Bulk Delete', confirmText: 'Delete', cancelText: 'Cancel' });
       if (!confirmed) return;
       try {
+        // Clean up reviewer records before deleting policies
+        for (const id of selectedPipelineIds) {
+          try {
+            const reviewers = await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_REVIEWERS)
+              .items.filter(`PolicyId eq ${id}`).select('Id').top(50)();
+            for (const r of reviewers) {
+              try {
+                await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_REVIEWERS)
+                  .items.getById(r.Id).delete();
+              } catch { /* per-reviewer — continue */ }
+            }
+          } catch { /* reviewer cleanup best-effort */ }
+        }
         const batch = this.props.sp.web.createBatch();
         for (const id of selectedPipelineIds) {
           this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES).items.getById(id).inBatch(batch).delete();
@@ -815,10 +828,26 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
       const confirmed = await this.dialogManager.showConfirm(`Submit ${drafts.length} draft polic${drafts.length === 1 ? 'y' : 'ies'} for review?`, { title: 'Bulk Submit', confirmText: 'Submit', cancelText: 'Cancel' });
       if (!confirmed) return;
       try {
+        const userEmail = this.props.context?.pageContext?.user?.email || '';
         for (const policy of drafts) {
-          await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES).items.getById(policy.Id).update({
-            PolicyStatus: 'In Review'
-          });
+          try {
+            await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES).items.getById(policy.Id).update({
+              PolicyStatus: 'In Review'
+            });
+            // Audit log per policy
+            try {
+              await this.props.sp.web.lists.getByTitle('PM_PolicyAuditLog').items.add({
+                Title: `Submitted for Review - ${policy.Title || policy.PolicyName || ''}`,
+                PolicyId: policy.Id,
+                EntityType: 'Policy',
+                EntityId: policy.Id,
+                AuditAction: 'SubmittedForReview',
+                ActionDescription: `Policy "${policy.Title || policy.PolicyName || ''}" submitted for review (bulk action)`,
+                PerformedByEmail: userEmail,
+                ActionDate: new Date().toISOString()
+              });
+            } catch { /* audit best-effort */ }
+          } catch { /* per-policy — continue */ }
         }
         this.setState({ selectedPipelineIds: new Set<number>() });
         await this.reloadPipeline();
@@ -1464,7 +1493,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
         const reviewerItems = await this.props.sp.web.lists
           .getByTitle(PM_LISTS.POLICY_REVIEWERS)
           .items.filter(`PolicyId eq ${policyId}`)
-          .select('ReviewerId').top(50)();
+          .select('Id', 'ReviewerId').top(50)();
 
         for (const r of reviewerItems) {
           try {
@@ -1728,7 +1757,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
       } catch { /* reviewer notification best-effort */ }
 
       // Redirect to Policy Builder
-      window.location.href = `${siteUrl}/SitePages/PolicyBuilder.aspx?editPolicyId=${policyId}`;
+      window.location.href = `${siteUrl}/SitePages/PolicyBuilder.aspx?editPolicyId=${policyId}&revision=true`;
     } catch (err) {
       console.error('Revise failed:', err);
       void this.dialogManager.showAlert('Failed to start revision. Please try again.', { variant: 'error' });
@@ -1756,6 +1785,14 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
     const siteUrl = this.props.context?.pageContext?.web?.absoluteUrl || '/sites/PolicyManager';
 
     try {
+      // 0. Fetch PolicyNumber for email template
+      let policyNumber = '';
+      try {
+        const policyItem = await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES)
+          .items.getById(policyId).select('PolicyNumber')();
+        policyNumber = policyItem?.PolicyNumber || '';
+      } catch { /* non-blocking */ }
+
       // 1. Set status to Retired
       await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES)
         .items.getById(policyId).update({ PolicyStatus: 'Retired', IsActive: false });
@@ -1780,7 +1817,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
       try {
         const pendingAcks = await this.props.sp.web.lists
           .getByTitle(PM_LISTS.POLICY_ACKNOWLEDGEMENTS)
-          .items.filter(`PolicyId eq ${policyId} and AckStatus ne 'Acknowledged' and AckStatus ne 'completed'`)
+          .items.filter(`PolicyId eq ${policyId} and AckStatus ne 'Acknowledged' and AckStatus ne 'Completed'`)
           .select('Id', 'AckUserId')
           .top(500)();
 
@@ -1821,7 +1858,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
               const retireEmailHtml = EmailTemplateBuilder.policyRetired({
                 recipientName: user.Title || 'Colleague',
                 policyTitle: title,
-                policyNumber: '',
+                policyNumber: policyNumber,
                 retiredBy: this.props.context?.pageContext?.user?.displayName || 'An administrator',
                 retirementDate: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }),
                 reason: reason || 'No reason provided',

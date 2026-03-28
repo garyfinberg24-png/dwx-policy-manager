@@ -1243,6 +1243,11 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         }
         spData.PolicyNumber = genNumber;
         spData.PolicyStatus = 'Draft'; // Only set status on new policies
+        spData.VersionNumber = '0.1';
+        // Persist creation method: fast-track, word, excel, powerpoint, upload, blank, etc.
+        const wizardMode = (this.state as any)._wizardMode;
+        const method = wizardMode === 'fast-track' ? 'FastTrack' : (this.state.creationMethod || 'Standard');
+        spData.CreationMethod = method;
         const result = await this.props.sp.web.lists
           .getByTitle(PM_LISTS.POLICIES)
           .items.add(spData);

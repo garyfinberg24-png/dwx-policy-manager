@@ -2291,12 +2291,48 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
               <PrimaryButton
                 text="Accept & Start Drafting"
                 iconProps={{ iconName: 'Play' }}
-                onClick={() => {
-                  const updated = { ...request, Status: 'InProgress' as const, AssignedAuthor: 'Current User', AssignedAuthorEmail: 'user@company.com' };
+                onClick={async () => {
+                  const currentUser = this.props.context?.pageContext?.user;
+                  const authorName = currentUser?.displayName || 'Current User';
+                  const authorEmail = currentUser?.email || '';
+                  const siteUrl = this.props.context?.pageContext?.web?.absoluteUrl || '/sites/PolicyManager';
+
+                  // 1. Update status in SP
+                  try {
+                    await this.props.sp.web.lists.getByTitle('PM_PolicyRequests')
+                      .items.getById(request.Id).update({
+                        Status: 'InProgress',
+                        AssignedAuthor: authorName,
+                        AssignedAuthorEmail: authorEmail
+                      });
+                  } catch (err) {
+                    console.warn('[PolicyAuthorView] Failed to update request status in SP:', err);
+                  }
+
+                  // 2. Update local state
+                  const updated = { ...request, Status: 'InProgress' as const, AssignedAuthor: authorName, AssignedAuthorEmail: authorEmail };
                   this.setState({
                     selectedRequest: updated,
-                    policyRequests: this.state.policyRequests.map(r => r.Id === updated.Id ? updated : r)
+                    policyRequests: this.state.policyRequests.map(r => r.Id === updated.Id ? updated : r),
+                    showDetailPanel: false
                   });
+
+                  // 3. Navigate to Policy Builder with request data pre-filled
+                  const params = new URLSearchParams({
+                    fromRequest: 'true',
+                    requestId: String(request.Id),
+                    requestTitle: request.Title || '',
+                    requestCategory: request.PolicyCategory || '',
+                    requestJustification: (request.BusinessJustification || '').substring(0, 500),
+                    requestPriority: request.Priority || 'Medium'
+                  });
+                  if (request.DesiredEffectiveDate) params.set('requestEffectiveDate', request.DesiredEffectiveDate);
+                  if (request.ReadTimeframeDays) params.set('requestReadDays', String(request.ReadTimeframeDays));
+                  if (request.RequiresAcknowledgement) params.set('requestAck', 'true');
+                  if (request.RequiresQuiz) params.set('requestQuiz', 'true');
+                  if (request.TargetAudience) params.set('requestAudience', request.TargetAudience);
+
+                  window.location.href = `${siteUrl}/SitePages/PolicyBuilder.aspx?${params.toString()}`;
                 }}
               />
             )}

@@ -108,29 +108,42 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     const policyId = urlParams.get(URL_PARAMS.EDIT_POLICY_ID);
     const tabParam = urlParams.get(URL_PARAMS.TAB) as PolicyBuilderTab | null;
 
+    // Pre-fill from Policy Request (when navigating from "Accept & Start Drafting")
+    const fromRequest = urlParams.get('fromRequest') === 'true';
+    const requestTitle = fromRequest ? (urlParams.get('requestTitle') || '') : '';
+    const requestCategory = fromRequest ? (urlParams.get('requestCategory') || '') : '';
+    const requestJustification = fromRequest ? (urlParams.get('requestJustification') || '') : '';
+    const requestPriority = fromRequest ? (urlParams.get('requestPriority') || 'Medium') : 'Medium';
+    const requestEffectiveDate = fromRequest ? (urlParams.get('requestEffectiveDate') || '') : '';
+    const requestReadDays = fromRequest ? parseInt(urlParams.get('requestReadDays') || '7', 10) : 7;
+    const requestAck = fromRequest ? urlParams.get('requestAck') === 'true' : true;
+    const requestQuiz = fromRequest ? urlParams.get('requestQuiz') === 'true' : false;
+    const requestSourceId = fromRequest ? (urlParams.get('requestId') || '') : '';
+
     this.state = {
       loading: !!policyId,
       error: null,
       saving: false,
       policyId: policyId ? (Number.isFinite(Number(policyId)) && Number(policyId) > 0 ? parseInt(policyId, 10) : null) : null,
       policyNumber: '',
-      policyName: '',
-      policyCategory: '',
-      policySummary: '',
+      policyName: requestTitle,
+      policyCategory: requestCategory,
+      policySummary: requestJustification,
       policyContent: '',
       keyPoints: [],
       newKeyPoint: '',
-      complianceRisk: 'Medium',
-      readTimeframe: ReadTimeframe.Week1,
-      readTimeframeDays: 7,
-      requiresAcknowledgement: true,
-      requiresQuiz: false,
+      complianceRisk: requestPriority as any,
+      readTimeframe: fromRequest ? `Day ${requestReadDays}` as any : ReadTimeframe.Week1,
+      readTimeframeDays: requestReadDays,
+      requiresAcknowledgement: requestAck,
+      requiresQuiz: requestQuiz,
       selectedQuizId: null,
       selectedQuizTitle: '',
       availableQuizzes: [],
       availableQuizzesLoading: false,
-      effectiveDate: new Date().toISOString().split('T')[0],
+      effectiveDate: requestEffectiveDate || new Date().toISOString().split('T')[0],
       expiryDate: '',
+      sourceRequestId: requestSourceId ? parseInt(requestSourceId, 10) : null,
 
       showTemplatePanel: false,
       showFileUploadPanel: false,

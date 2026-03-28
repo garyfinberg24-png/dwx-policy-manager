@@ -29,6 +29,7 @@ import {
 import { injectPortalStyles } from '../../../utils/injectPortalStyles';
 import { signalAppReady } from '../../../utils/SharePointOverrides';
 import { sanitizeHtml, escapeHtml } from '../../../utils/sanitizeHtml';
+import { BookmarkService } from '../../../services/BookmarkService';
 import { EmailTemplateBuilder } from '../../../utils/EmailTemplateBuilder';
 import { JmlAppLayout } from '../../../components/JmlAppLayout';
 import { ErrorBoundary } from '../../../components/ErrorBoundary/ErrorBoundary';
@@ -3347,6 +3348,16 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
               >
                 <svg viewBox="0 0 24 24" fill="none" width="12" height="12"><path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 Fullscreen
+              </button>
+              <button
+                onClick={() => {
+                  BookmarkService.toggle(policy.Id, policy.PolicyName || policy.Title || '', policy.PolicyCategory || '');
+                  this.forceUpdate();
+                }}
+                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 4, fontSize: 11, fontWeight: 500, color: BookmarkService.isBookmarked(policy.Id) ? '#0d9488' : '#64748b', background: '#fff', border: `1px solid ${BookmarkService.isBookmarked(policy.Id) ? '#0d9488' : '#e2e8f0'}`, cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                <svg viewBox="0 0 24 24" fill={BookmarkService.isBookmarked(policy.Id) ? 'currentColor' : 'none'} width="12" height="12"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                {BookmarkService.isBookmarked(policy.Id) ? 'Bookmarked' : 'Bookmark'}
               </button>
             </div>
           </div>

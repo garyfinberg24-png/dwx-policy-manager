@@ -46,6 +46,7 @@ import { Icon } from '@fluentui/react/lib/Icon';
 import { PM_LISTS } from '../../../constants/SharePointListNames';
 import { signalAppReady } from '../../../utils/SharePointOverrides';
 import { injectPortalStyles } from '../../../utils/injectPortalStyles';
+import { BookmarkService } from '../../../services/BookmarkService';
 import { JmlAppLayout } from '../../../components/JmlAppLayout';
 import { ErrorBoundary } from '../../../components/ErrorBoundary/ErrorBoundary';
 import { StyledPanel } from '../../../components/StyledPanel';
@@ -281,7 +282,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
       groupBy: 'none',
       selectedTimeline: '',
       selectedReadTime: '',
-      bookmarkedPolicyIds: new Set<number>(),
+      bookmarkedPolicyIds: BookmarkService.getBookmarkedIds(),
       showFeaturedSection: true,
       showRecentSection: true,
       totalResults: 0,
@@ -921,16 +922,9 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
     });
   };
 
-  private handleToggleBookmark = (policyId: number): void => {
-    this.setState(prevState => {
-      const newBookmarks = new Set(prevState.bookmarkedPolicyIds);
-      if (newBookmarks.has(policyId)) {
-        newBookmarks.delete(policyId);
-      } else {
-        newBookmarks.add(policyId);
-      }
-      return { bookmarkedPolicyIds: newBookmarks };
-    });
+  private handleToggleBookmark = (policyId: number, title?: string, category?: string): void => {
+    BookmarkService.toggle(policyId, title || '', category || '');
+    this.setState({ bookmarkedPolicyIds: BookmarkService.getBookmarkedIds() });
   };
 
   private handleToggleFeaturedSection = (): void => {
@@ -2282,10 +2276,19 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
             <span style={{ fontSize: 10, color: '#94a3b8' }}>
               {modifiedDate ? `Updated ${modifiedDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}
             </span>
-            <span style={{ fontSize: 10, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 4 }}>
-              <svg width="12" height="12" viewBox="0 0 20 20" fill="#94a3b8"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-              {viewCount.toLocaleString()}
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 10, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <svg width="12" height="12" viewBox="0 0 20 20" fill="#94a3b8"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                {viewCount.toLocaleString()}
+              </span>
+              <button
+                style={{ width: 24, height: 24, borderRadius: 4, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: this.state.bookmarkedPolicyIds.has(policy.Id) ? '#0d9488' : '#cbd5e1', padding: 0 }}
+                title={this.state.bookmarkedPolicyIds.has(policy.Id) ? 'Remove bookmark' : 'Bookmark this policy'}
+                onClick={(e) => { e.stopPropagation(); this.handleToggleBookmark(policy.Id, policy.PolicyName, policy.PolicyCategory); }}
+              >
+                <svg viewBox="0 0 24 24" fill={this.state.bookmarkedPolicyIds.has(policy.Id) ? 'currentColor' : 'none'} width="14" height="14"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -2460,7 +2463,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
                   <button
                     style={{ width: 28, height: 28, borderRadius: 4, border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: bookmarkedPolicyIds.has(policy.Id) ? '#0d9488' : '#64748b' }}
                     title={bookmarkedPolicyIds.has(policy.Id) ? 'Remove bookmark' : 'Add bookmark'}
-                    onClick={() => this.handleToggleBookmark(policy.Id)}
+                    onClick={(e) => { e.stopPropagation(); this.handleToggleBookmark(policy.Id, policy.PolicyName, policy.PolicyCategory); }}
                   >
                     <svg viewBox="0 0 24 24" fill={bookmarkedPolicyIds.has(policy.Id) ? 'currentColor' : 'none'} width="14" height="14"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
                   </button>
@@ -2601,7 +2604,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
               <DefaultButton
                 text={this.state.bookmarkedPolicyIds.has(policy.Id) ? 'Bookmarked' : 'Bookmark'}
                 iconProps={{ iconName: this.state.bookmarkedPolicyIds.has(policy.Id) ? 'SingleBookmarkSolid' : 'SingleBookmark' }}
-                onClick={() => this.handleToggleBookmark(policy.Id)}
+                onClick={() => this.handleToggleBookmark(policy.Id, policy.PolicyName, policy.PolicyCategory)}
                 styles={{ root: { flex: 1 } }}
               />
             </div>

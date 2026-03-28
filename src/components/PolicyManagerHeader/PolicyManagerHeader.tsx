@@ -5,6 +5,7 @@ import styles from './PolicyManagerHeader.module.scss';
 import { SPFI } from '@pnp/sp';
 import { PolicyManagerRole, filterNavForRole, getHeaderVisibility, IRolePermissionEntry } from '../../services/PolicyRoleService';
 import { RecentlyViewedService, IRecentlyViewedDisplay } from '../../services/RecentlyViewedService';
+import { BookmarkService, IBookmarkEntry } from '../../services/BookmarkService';
 import { PolicyRequestWizard } from './PolicyRequestWizard';
 import { DwxHubService, DwxNotificationService, DwxNotificationBell } from '@dwx/core';
 import { PolicyChatPanel } from '../PolicyChatPanel';
@@ -387,9 +388,14 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
   // Refs for click-outside detection
   const profileRef = React.useRef<HTMLDivElement>(null);
   const recentlyViewedRef = React.useRef<HTMLDivElement>(null);
+  const bookmarksRef = React.useRef<HTMLDivElement>(null);
 
   // Recently viewed policies — loaded from localStorage via RecentlyViewedService
   const [recentlyViewedPolicies, setRecentlyViewedPolicies] = React.useState<IRecentlyViewedDisplay[]>([]);
+
+  // Bookmarked policies — loaded from localStorage via BookmarkService
+  const [showBookmarksDropdown, setShowBookmarksDropdown] = React.useState(false);
+  const [bookmarkedPolicies, setBookmarkedPolicies] = React.useState<IBookmarkEntry[]>([]);
 
   React.useEffect(() => {
     setRecentlyViewedPolicies(RecentlyViewedService.getRecentlyViewed(5));
@@ -402,6 +408,12 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
     }
   }, [showRecentlyViewedDropdown]);
 
+  React.useEffect(() => {
+    if (showBookmarksDropdown) {
+      setBookmarkedPolicies(BookmarkService.getAll());
+    }
+  }, [showBookmarksDropdown]);
+
   // Click-outside handler to close dropdowns
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -410,6 +422,9 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
       }
       if (recentlyViewedRef.current && !recentlyViewedRef.current.contains(event.target as Node)) {
         setShowRecentlyViewedDropdown(false);
+      }
+      if (bookmarksRef.current && !bookmarksRef.current.contains(event.target as Node)) {
+        setShowBookmarksDropdown(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -908,6 +923,91 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Bookmarks dropdown */}
+          <div className={styles.dropdownContainer} ref={bookmarksRef} style={{ display: 'inline-flex' }}>
+            <button
+              className={styles.quickActionBtn}
+              type="button"
+              title="Bookmarks"
+              aria-label="Bookmarked Policies"
+              onClick={() => {
+                setShowBookmarksDropdown(!showBookmarksDropdown);
+                setShowRecentlyViewedDropdown(false);
+                setShowProfileDropdown(false);
+              }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Bookmarks
+            </button>
+
+            {showBookmarksDropdown && (
+              <div className={styles.dropdownPanel} style={{ left: 0, right: 'auto', minWidth: '340px' }}>
+                <div className={styles.dropdownArrow} style={{ left: '40px', right: 'auto' }} />
+                <div className={styles.dropdownPanelHeader}>
+                  <span className={styles.dropdownPanelTitle}>Bookmarked Policies</span>
+                  <span className={styles.dropdownPanelBadge}>{bookmarkedPolicies.length} saved</span>
+                </div>
+                <div className={styles.dropdownPanelBody}>
+                  {bookmarkedPolicies.length === 0 ? (
+                    <div style={{ padding: '16px 20px', textAlign: 'center', color: '#605e5c', fontSize: '13px' }}>
+                      No bookmarked policies yet. Click the bookmark icon on any policy to save it here.
+                    </div>
+                  ) : (
+                    bookmarkedPolicies.map(policy => (
+                      <a
+                        key={policy.id}
+                        href={`/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${policy.id}`}
+                        className={styles.notificationItem}
+                        style={{ textDecoration: 'none', color: 'inherit' }}
+                        onClick={() => setShowBookmarksDropdown(false)}
+                      >
+                        <div
+                          className={styles.notificationItemIcon}
+                          style={{ background: '#0d9488' }}
+                        >
+                          <svg viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg" style={{ width: 16, height: 16 }}>
+                            <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </div>
+                        <div className={styles.notificationItemContent}>
+                          <span className={styles.notificationItemTitle}>{policy.title}</span>
+                          <span className={styles.notificationItemMessage}>{policy.category || 'Policy'}</span>
+                        </div>
+                        <button
+                          type="button"
+                          title="Remove bookmark"
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 4, flexShrink: 0 }}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            BookmarkService.remove(policy.id);
+                            setBookmarkedPolicies(BookmarkService.getAll());
+                          }}
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M6 18L18 6M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        </button>
+                      </a>
+                    ))
+                  )}
+                </div>
+                {bookmarkedPolicies.length > 0 && (
+                  <div className={styles.dropdownPanelFooter}>
+                    <button
+                      type="button"
+                      onClick={() => { BookmarkService.clearAll(); setBookmarkedPolicies([]); }}
+                      className={styles.dropdownFooterLink}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#0d9488', fontSize: 12 }}
+                    >
+                      Clear All Bookmarks
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Search icon button */}

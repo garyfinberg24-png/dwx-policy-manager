@@ -472,11 +472,6 @@ export default class PolicyRequestsTab extends React.Component<IPolicyRequestsTa
                   />
                 )}
                 <DefaultButton
-                  text="Create Policy from Request"
-                  iconProps={{ iconName: 'PageAdd' }}
-                  onClick={() => onCreatePolicyFromRequest(selectedPolicyRequest)}
-                />
-                <DefaultButton
                   text="Close"
                   onClick={() => onSetState({ showPolicyRequestDetailPanel: false, selectedPolicyRequest: null })}
                 />

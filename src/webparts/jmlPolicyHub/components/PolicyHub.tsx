@@ -43,6 +43,8 @@ import {
   SelectionMode
 } from '@fluentui/react';
 import { Icon } from '@fluentui/react/lib/Icon';
+import { PM_LISTS } from '../../../constants/SharePointListNames';
+import { signalAppReady } from '../../../utils/SharePointOverrides';
 import { injectPortalStyles } from '../../../utils/injectPortalStyles';
 import { JmlAppLayout } from '../../../components/JmlAppLayout';
 import { ErrorBoundary } from '../../../components/ErrorBoundary/ErrorBoundary';
@@ -326,6 +328,9 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
 
     // Start the notification queue processor after data is loaded
     try { this.notificationProcessor.start(); } catch { /* non-critical */ }
+
+    // Dismiss SharePoint loading skeleton
+    try { signalAppReady(); } catch { /* non-critical */ }
   }
 
   public componentWillUnmount(): void {
@@ -1789,6 +1794,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
     const statusCounts = countBy('PolicyStatus');
     const categoryCounts = countBy('PolicyCategory');
     const riskCounts = countBy('ComplianceRisk');
+    const departmentCounts = countBy('DistributionScope');
 
     const facetItemStyle: React.CSSProperties = {
       display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0', fontSize: 12, color: '#334155', cursor: 'pointer'
@@ -1836,7 +1842,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
         <div style={groupStyle}>
           <div style={titleStyle}>Department</div>
           {['All Employees', 'Finance', 'Operations', 'IT', 'Legal', 'HR'].map(d =>
-            renderFacetItem(d, 0, selectedDepartment === d, () =>
+            renderFacetItem(d, departmentCounts[d] || 0, selectedDepartment === d, () =>
               this.handleFilterChange('selectedDepartment', selectedDepartment === d ? '' : d)
             )
           )}

@@ -17,8 +17,12 @@ import {
   Dropdown,
   IDropdownOption,
   Spinner,
-  SpinnerSize
+  SpinnerSize,
+  Dialog,
+  DialogType,
+  DialogFooter
 } from '@fluentui/react';
+import { ErrorBoundary } from '../ErrorBoundary/ErrorBoundary';
 import {
   QuizService,
   IQuiz,
@@ -71,6 +75,8 @@ export interface IQuizTakerState {
   error: string | null;
   showResults: boolean;
   startTime: Date;
+  showSubmitConfirm: boolean;
+  unansweredCount: number;
 }
 
 // ============================================================================
@@ -78,6 +84,7 @@ export interface IQuizTakerState {
 // ============================================================================
 
 export class QuizTaker extends React.Component<IQuizTakerProps, IQuizTakerState> {
+  private _isMounted = false;
   private quizService: QuizService;
   private timerInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -97,15 +104,19 @@ export class QuizTaker extends React.Component<IQuizTakerProps, IQuizTakerState>
       result: null,
       error: null,
       showResults: false,
-      startTime: new Date()
+      startTime: new Date(),
+      showSubmitConfirm: false,
+      unansweredCount: 0
     };
   }
 
   public async componentDidMount(): Promise<void> {
+    this._isMounted = true;
     await this.loadQuiz();
   }
 
   public componentWillUnmount(): void {
+    this._isMounted = false;
     this.clearTimer();
   }
 
@@ -185,19 +196,20 @@ export class QuizTaker extends React.Component<IQuizTakerProps, IQuizTakerState>
         return;
       }
 
-      this.setState({
-        quiz,
-        questions,
-        attemptId: attempt.Id,
-        timeRemaining: quiz.TimeLimit * 60,
-        startTime: new Date(),
-        isLoading: false
-      });
-
-      this.startTimer();
+      if (this._isMounted) {
+        this.setState({
+          quiz,
+          questions,
+          attemptId: attempt.Id,
+          timeRemaining: quiz.TimeLimit * 60,
+          startTime: new Date(),
+          isLoading: false
+        });
+        this.startTimer();
+      }
     } catch (error) {
       console.error("Failed to load quiz:", error);
-      this.setState({ error: "Failed to load quiz", isLoading: false });
+      if (this._isMounted) this.setState({ error: "Failed to load quiz", isLoading: false });
     }
   }
 
@@ -288,12 +300,18 @@ export class QuizTaker extends React.Component<IQuizTakerProps, IQuizTakerState>
     // Check if all questions are answered
     const unansweredCount = questions.filter(q => !answers.has(q.Id)).length;
     if (unansweredCount > 0) {
-      if (!window.confirm(`You have ${unansweredCount} unanswered questions. Submit anyway?`)) {
-        return;
-      }
+      this.setState({ showSubmitConfirm: true, unansweredCount });
+      return;
     }
 
-    this.setState({ isSubmitting: true });
+    this.doSubmit();
+  }
+
+  private async doSubmit(): Promise<void> {
+    const { quiz, questions, answers, attemptId } = this.state;
+    if (!quiz || !attemptId) return;
+
+    this.setState({ isSubmitting: true, showSubmitConfirm: false });
 
     try {
       // Grade answers
@@ -1176,7 +1194,21 @@ export class QuizTaker extends React.Component<IQuizTakerProps, IQuizTakerState>
     const answeredCount = answers.size;
 
     return (
+      <ErrorBoundary fallbackMessage="An error occurred in the Quiz. Please try again.">
       <div className={styles.quizTaker}>
+        {/* Unanswered questions confirmation dialog */}
+        <Dialog
+          hidden={!this.state.showSubmitConfirm}
+          onDismiss={() => this.setState({ showSubmitConfirm: false })}
+          dialogContentProps={{ type: DialogType.normal, title: 'Unanswered Questions', subText: `You have ${this.state.unansweredCount} unanswered question${this.state.unansweredCount === 1 ? '' : 's'}. Submit anyway?` }}
+          modalProps={{ isBlocking: true }}
+        >
+          <DialogFooter>
+            <PrimaryButton text="Submit Anyway" onClick={() => this.doSubmit()} />
+            <DefaultButton text="Go Back" onClick={() => this.setState({ showSubmitConfirm: false })} />
+          </DialogFooter>
+        </Dialog>
+
         <div className={styles.header}>
           <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
             <Stack tokens={{ childrenGap: 4 }}>
@@ -1234,6 +1266,7 @@ export class QuizTaker extends React.Component<IQuizTakerProps, IQuizTakerState>
           </div>
         </div>
       </div>
+      </ErrorBoundary>
     );
   }
 }

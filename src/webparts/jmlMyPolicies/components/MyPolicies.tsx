@@ -186,6 +186,8 @@ const ExclamationIcon: React.FC<{ size?: number; color?: string }> = ({ size = 1
 );
 
 export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPoliciesState> {
+  private _isMounted = false;
+
   constructor(props: IMyPoliciesProps) {
     super(props);
     this.state = {
@@ -199,12 +201,17 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
   }
 
   public async componentDidMount(): Promise<void> {
+    this._isMounted = true;
     try {
       await this.loadFromSharePoint();
     } catch (err) {
       console.warn('Could not load from SharePoint, falling back to mock data:', err);
-      this.loadMockData();
+      if (this._isMounted) this.loadMockData();
     }
+  }
+
+  public componentWillUnmount(): void {
+    this._isMounted = false;
   }
 
   private async loadFromSharePoint(): Promise<void> {
@@ -262,11 +269,13 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
 
     const completed = policies.filter(p => p.status === 'completed').length;
     const total = policies.length;
-    this.setState({
-      loading: false,
-      policies,
-      compliancePercent: total > 0 ? Math.round((completed / total) * 100) : 0,
-    });
+    if (this._isMounted) {
+      this.setState({
+        loading: false,
+        policies,
+        compliancePercent: total > 0 ? Math.round((completed / total) * 100) : 0,
+      });
+    }
   }
 
   private loadMockData(): void {
@@ -1054,20 +1063,20 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
             )}
           </div>
 
-          {/* Secondary Actions */}
+          {/* STUB: Secondary actions — not yet wired to backend. Logged for backlog review. */}
           {policy.status !== 'completed' && (
             <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-              <button type="button" style={{ flex: 1, padding: '8px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', border: '1px solid #e2e8f0', fontFamily: 'inherit', textAlign: 'center', background: '#fff', color: '#64748b' }}
+              <button type="button" style={{ flex: 1, padding: '8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', border: '1px solid #e2e8f0', fontFamily: 'inherit', textAlign: 'center', background: '#fff', color: '#64748b' }}
                 onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#0d9488'; e.currentTarget.style.color = '#0d9488'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#64748b'; }}>
                 Mark as Read
               </button>
-              <button type="button" style={{ flex: 1, padding: '8px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', border: '1px solid #e2e8f0', fontFamily: 'inherit', textAlign: 'center', background: '#fff', color: '#64748b' }}
+              <button type="button" style={{ flex: 1, padding: '8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', border: '1px solid #e2e8f0', fontFamily: 'inherit', textAlign: 'center', background: '#fff', color: '#64748b' }}
                 onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#d97706'; e.currentTarget.style.color = '#d97706'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#64748b'; }}>
                 Snooze Reminder
               </button>
-              <button type="button" style={{ flex: 1, padding: '8px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', border: '1px solid #e2e8f0', fontFamily: 'inherit', textAlign: 'center', background: '#fff', color: '#64748b' }}
+              <button type="button" style={{ flex: 1, padding: '8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', border: '1px solid #e2e8f0', fontFamily: 'inherit', textAlign: 'center', background: '#fff', color: '#64748b' }}
                 onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#2563eb'; e.currentTarget.style.color = '#2563eb'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#64748b'; }}>
                 Request Extension

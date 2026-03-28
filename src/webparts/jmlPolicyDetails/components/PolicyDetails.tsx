@@ -3235,9 +3235,9 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
     // 3. Description: basic text fallback
     const bodyHtml = policy.HTMLContent || policy.PolicyContent || policy.Description || '';
     const hasContent = bodyHtml.length > 10;
+    const ext = documentUrl?.split('.').pop()?.toLowerCase() || '';
     const isPdf = ext === 'pdf';
     const viewerUrl = documentUrl ? this.getDocumentViewerUrl(documentUrl) : '';
-    const ext = documentUrl?.split('.').pop()?.toLowerCase() || '';
 
     // Category badge color
     const catColors: Record<string, { bg: string; color: string }> = {

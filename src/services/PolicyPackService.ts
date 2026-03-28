@@ -60,39 +60,44 @@ export class PolicyPackService {
    */
   public async createPolicyPack(request: ICreatePolicyPackRequest): Promise<IPolicyPack> {
     try {
-      const packData = {
+      // Phase 1: Core fields only — these must exist on the list
+      const coreData: Record<string, unknown> = {
         Title: request.packName,
         PackName: request.packName,
         PackDescription: request.packDescription,
-        PackCategory: request.packType,
-        PackType: request.packType,
-        IsActive: true,
-        IsMandatory: true,
-        TargetDepartments: request.targetDepartments ? JSON.stringify(request.targetDepartments) : undefined,
-        TargetRoles: request.targetRoles ? JSON.stringify(request.targetRoles) : undefined,
-        TargetLocations: request.targetLocations ? JSON.stringify(request.targetLocations) : undefined,
-        TargetProcessType: request.targetProcessType,
         PolicyIds: JSON.stringify(request.policyIds),
         PolicyCount: request.policyIds.length,
-        RequireAllAcknowledged: request.requireAllAcknowledged ?? true,
-        AcknowledgementDeadlineDays: request.acknowledgementDeadlineDays,
-        ReadTimeframe: request.readTimeframe,
-        IsSequential: request.isSequential ?? false,
-        PolicySequence: request.isSequential ? JSON.stringify(request.policyIds) : undefined,
-        SendWelcomeEmail: request.sendWelcomeEmail ?? true,
-        SendTeamsNotification: request.sendTeamsNotification ?? true,
-        ApproverEmails: request.approverEmails ? request.approverEmails.join(';') : '',
-        TotalAssignments: 0,
-        TotalCompleted: 0,
-        AverageCompletionDays: 0,
-        CompletionRate: 0,
-        CreatedDate: new Date().toISOString(),
-        Version: '1.0'
+        IsActive: true
       };
 
       const result = await this.sp.web.lists
         .getByTitle(this.POLICY_PACKS_LIST)
-        .items.add(packData);
+        .items.add(coreData);
+
+      // Phase 2: Optional fields — columns may not be provisioned yet
+      const newId = result.data?.Id || result.data?.id;
+      if (newId) {
+        try {
+          const optionalData: Record<string, unknown> = {
+            PackCategory: request.packType,
+            PackType: request.packType,
+            IsMandatory: true,
+            IsSequential: request.isSequential ?? false,
+            SendWelcomeEmail: request.sendWelcomeEmail ?? true,
+            SendTeamsNotification: request.sendTeamsNotification ?? true
+          };
+          if (request.targetDepartments) optionalData.TargetDepartments = JSON.stringify(request.targetDepartments);
+          if (request.targetRoles) optionalData.TargetRoles = JSON.stringify(request.targetRoles);
+          if (request.targetLocations) optionalData.TargetLocations = JSON.stringify(request.targetLocations);
+          if (request.targetProcessType) optionalData.TargetProcessType = request.targetProcessType;
+          if (request.isSequential) optionalData.PolicySequence = JSON.stringify(request.policyIds);
+          if (request.approverEmails && request.approverEmails.length > 0) optionalData.ApproverEmails = request.approverEmails.join(';');
+          if (request.readTimeframe) optionalData.ReadTimeframe = request.readTimeframe;
+          await this.sp.web.lists.getByTitle(this.POLICY_PACKS_LIST).items.getById(newId).update(optionalData);
+        } catch (optErr) {
+          console.warn('[PolicyPackService] Optional fields save skipped (columns may not exist):', optErr);
+        }
+      }
 
       return await this.getPolicyPackById(result.data.Id);
     } catch (error) {

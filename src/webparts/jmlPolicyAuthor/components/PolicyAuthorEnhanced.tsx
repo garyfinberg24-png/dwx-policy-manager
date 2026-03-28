@@ -1197,8 +1197,18 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       if (reviewFrequency) { optionalData.ReviewFrequency = reviewFrequency; }
       if (nextReviewDate) { optionalData.NextReviewDate = new Date(nextReviewDate).toISOString(); }
       if (supersedesPolicy) { optionalData.SupersedesPolicy = supersedesPolicy; }
-      if (policyOwner && policyOwner.length > 0 && (policyOwner[0] as any)?.id) {
-        optionalData.PolicyOwnerId = (policyOwner[0] as any).id;
+      if (policyOwner && policyOwner.length > 0) {
+        const ownerVal = policyOwner[0] as any;
+        if (typeof ownerVal === 'object' && ownerVal?.id) {
+          // Persona object with .id (from PnP PeoplePicker resolved user)
+          optionalData.PolicyOwnerId = ownerVal.id;
+        } else if (typeof ownerVal === 'string' && ownerVal.includes('@')) {
+          // Email string — resolve to SP user ID
+          try {
+            const ensured = await this.props.sp.web.ensureUser(ownerVal);
+            if (ensured?.data?.Id) optionalData.PolicyOwnerId = ensured.data.Id;
+          } catch { /* ensureUser failed — keep default owner */ }
+        }
       }
 
       if (policyId) {

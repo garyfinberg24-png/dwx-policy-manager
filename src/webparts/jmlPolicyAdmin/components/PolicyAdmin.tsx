@@ -187,6 +187,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
   private userManagementService: UserManagementService;
   private audienceService: AudienceService;
   private dialogManager = createDialogManager();
+  private _isMounted = false;
   private _userSearchTimer: any = null;
 
   constructor(props: IPolicyAdminProps) {
@@ -265,12 +266,17 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
   private spService: SPService;
 
   public componentDidMount(): void {
+    this._isMounted = true;
     if (this.props.userRole && this.props.userRole !== 'Admin') {
       this.setState({ error: 'Access denied. Administrator role required.' } as any);
       return;
     }
     injectPortalStyles();
     this.loadSavedSettings();
+  }
+
+  public componentWillUnmount(): void {
+    this._isMounted = false;
   }
 
   private loadSavedSettings = async (): Promise<void> => {
@@ -383,6 +389,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         category: t.category || this._inferEmailCategory(t.event)
       }));
 
+      if (!this._isMounted) return;
       this.setState({
         namingRules,
         slaConfigs,

@@ -13,6 +13,7 @@ import { StyledPanel } from '../../../components/StyledPanel';
 import { PanelType } from '@fluentui/react';
 import { PM_LISTS } from '../../../constants/SharePointListNames';
 import { RoleDetectionService } from '../../../services/RoleDetectionService';
+import { createDialogManager } from '../../../hooks/useDialog';
 import { PolicyManagerRole, getHighestPolicyRole, hasMinimumRole } from '../../../services/PolicyRoleService';
 
 // ============================================================================
@@ -91,6 +92,7 @@ const WIZARD_STEPS = [
 export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadProps, IPolicyBulkUploadState> {
   private _isMounted = false;
   private _fileInputRef: React.RefObject<HTMLInputElement>;
+  private dialogManager = createDialogManager();
 
   constructor(props: IPolicyBulkUploadProps) {
     super(props);
@@ -785,7 +787,7 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
                 {/* Open in builder */}
                 <div>
                   {item.spId && <IconButton iconProps={{ iconName: 'Edit' }} title="Open in Policy Builder"
-                    onClick={() => { if (window.confirm(`Open "${item.title}" in Policy Builder?\n\nYou will leave the Bulk Upload wizard. Your progress is saved.`)) window.location.href = `${siteUrl}/SitePages/PolicyBuilder.aspx?editPolicyId=${item.spId}`; }}
+                    onClick={async () => { const ok = await this.dialogManager.showConfirm(`Open "${item.title}" in Policy Builder?\n\nYou will leave the Bulk Upload wizard. Your progress is saved.`, { title: 'Open in Builder', confirmText: 'Open', cancelText: 'Cancel' }); if (ok) window.location.href = `${siteUrl}/SitePages/PolicyBuilder.aspx?editPolicyId=${item.spId}`; }}
                     styles={{ root: { width: 24, height: 24 }, icon: { fontSize: 12, color: '#0d9488' } }} />}
                 </div>
               </div>
@@ -817,7 +819,8 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
     const batchUpdateStatus = async (status: string, label: string, itemFilter: (i: IBulkImportItem) => boolean, extraFields?: Record<string, unknown>) => {
       const targets = itemFilter === null ? processedItems.filter(i => i.spId) : processedItems.filter(i => i.spId && itemFilter(i));
       const desc = targets.length === uploaded ? 'all' : `${targets.length} selected`;
-      if (!window.confirm(`Are you sure you want to ${label.toLowerCase()} ${desc} polic${targets.length !== 1 ? 'ies' : 'y'}?${status === 'Published' ? '\n\nThis will make them visible to their target audience.' : ''}`)) return;
+      const confirmed = await this.dialogManager.showConfirm(`Are you sure you want to ${label.toLowerCase()} ${desc} polic${targets.length !== 1 ? 'ies' : 'y'}?${status === 'Published' ? '\n\nThis will make them visible to their target audience.' : ''}`, { title: label, confirmText: label, cancelText: 'Cancel' });
+      if (!confirmed) return;
       let count = 0;
       for (const item of targets) {
         try { await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES).items.getById(item.spId).update({ PolicyStatus: status, ...extraFields }); count++; } catch { /* */ }

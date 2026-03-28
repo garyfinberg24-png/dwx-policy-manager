@@ -596,14 +596,14 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
     if (auditLog.length > 0) {
       const auditEntries: IAuditEntry[] = auditLog.map((item, idx) => ({
         id: item.Id || idx + 1,
-        timestamp: item.PerformedDate
-          ? new Date(item.PerformedDate).toLocaleString('en-ZA', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+        timestamp: item.ActionDate
+          ? new Date(item.ActionDate).toLocaleString('en-ZA', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
           : 'Unknown',
-        userName: item.PerformedBy || 'System',
-        action: item.ActionType || item.Title || 'Unknown Action',
-        category: this.mapAuditCategory(item.ActionCategory || item.ActionType || ''),
-        resourceTitle: item.ResourceTitle || item.Title || 'Unknown',
-        department: item.Department || 'Unknown',
+        userName: item.PerformedByEmail || 'System',
+        action: item.AuditAction || item.Title || 'Unknown Action',
+        category: this.mapAuditCategory(item.EntityType || item.AuditAction || ''),
+        resourceTitle: item.ActionDescription || item.Title || 'Unknown',
+        department: 'Policy',
       }));
 
       if (this._isMounted) { this.setState({
@@ -738,10 +738,10 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
     try {
       return await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_AUDIT_LOG)
         .items.select(
-          'Id', 'Title', 'ActionType', 'ActionCategory',
-          'PerformedBy', 'PerformedDate', 'ResourceTitle', 'Department'
+          'Id', 'Title', 'AuditAction', 'EntityType',
+          'PerformedByEmail', 'ActionDate', 'ActionDescription', 'PolicyId'
         )
-        .orderBy('PerformedDate', false)
+        .orderBy('ActionDate', false)
         .top(50)();
     } catch (err) {
       console.warn('Analytics: Failed to load audit log:', err);
@@ -912,8 +912,8 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
   private buildViolations(auditLog: any[]): any[] {
     const violationKeywords = ['violation', 'compliance', 'breach', 'escalat', 'unauthorized'];
     const filtered = auditLog.filter(entry => {
-      const cat = (entry.ActionCategory || '').toLowerCase();
-      const action = (entry.ActionType || entry.Title || '').toLowerCase();
+      const cat = (entry.EntityType || '').toLowerCase();
+      const action = (entry.AuditAction || entry.Title || '').toLowerCase();
       return violationKeywords.some(kw => cat.includes(kw) || action.includes(kw));
     });
 
@@ -925,7 +925,7 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
     };
 
     return filtered.slice(0, 10).map((entry, idx) => {
-      const actionLower = ((entry.ActionCategory || '') + ' ' + (entry.ActionType || '')).toLowerCase();
+      const actionLower = ((entry.EntityType || '') + ' ' + (entry.AuditAction || '')).toLowerCase();
       let severity = 'Minor';
       for (const [kw, sev] of Object.entries(severityMap)) {
         if (actionLower.includes(kw)) { severity = sev; break; }
@@ -933,11 +933,11 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
       return {
         id: entry.Id || idx + 1,
         severity,
-        policyTitle: entry.ResourceTitle || entry.Title || 'Unknown Policy',
+        policyTitle: entry.ActionDescription || entry.Title || 'Unknown Policy',
         department: entry.Department || 'Unknown',
         status: 'Open',
-        detectedDate: entry.PerformedDate
-          ? new Date(entry.PerformedDate).toISOString().split('T')[0]
+        detectedDate: entry.ActionDate
+          ? new Date(entry.ActionDate).toISOString().split('T')[0]
           : new Date().toISOString().split('T')[0],
       };
     });

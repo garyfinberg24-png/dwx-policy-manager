@@ -206,10 +206,12 @@ export class PolicyPackService {
   public async assignPolicyPack(request: IAssignPolicyPackRequest): Promise<IPolicyPackDeploymentResult> {
     try {
       const pack = await this.getPolicyPackById(request.packId);
+      // Support both field names: userIds (service) and targetUserIds (component)
+      const resolvedUserIds = request.userIds || request.targetUserIds || [];
       const result: IPolicyPackDeploymentResult = {
         packId: request.packId,
         packName: pack.PackName,
-        totalUsers: request.userIds.length,
+        totalUsers: resolvedUserIds.length,
         successfulAssignments: 0,
         failedAssignments: 0,
         emailsSent: 0,
@@ -218,7 +220,7 @@ export class PolicyPackService {
         assignmentIds: []
       };
 
-      for (const userId of request.userIds) {
+      for (const userId of resolvedUserIds) {
         try {
           const assignmentId = await this.assignPackToUser(
             request.packId,

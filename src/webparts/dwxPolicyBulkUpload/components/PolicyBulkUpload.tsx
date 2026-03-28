@@ -448,7 +448,7 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
     const siteUrl = this.props.context?.pageContext?.web?.absoluteUrl || '/sites/PolicyManager';
 
     return (
-      <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', minHeight: 'calc(100vh - 180px)', background: '#fff', borderRadius: 10, overflow: 'hidden', border: '1px solid #e2e8f0', margin: '0 auto', maxWidth: 1400 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', minHeight: 'calc(100vh - 180px)', background: '#fff', borderRadius: 10, overflow: 'hidden', border: '1px solid #e2e8f0', margin: '0 auto', maxWidth: 1600 }}>
         {/* Sidebar */}
         <aside style={{ background: '#fff', borderRight: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column' }}>
           <div style={{ padding: '20px 16px 14px', borderBottom: '1px solid #e2e8f0' }}>
@@ -553,10 +553,37 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
   // ============================================================================
 
   private renderStep2_Review(): React.ReactElement {
-    const { imports, searchQuery, selectedIds } = this.state;
-    const uploaded = imports.filter(i => !['pending', 'failed'].includes(i.status));
-    let filtered = uploaded;
-    if (searchQuery.trim()) { const q = searchQuery.toLowerCase(); filtered = filtered.filter(i => i.title.toLowerCase().includes(q) || i.fileName.toLowerCase().includes(q)); }
+    const { imports, searchQuery, selectedIds, filterType, groupBy } = this.state;
+    let uploaded = imports.filter(i => !['pending', 'failed'].includes(i.status));
+
+    // Filter
+    if (searchQuery.trim()) { const q = searchQuery.toLowerCase(); uploaded = uploaded.filter(i => i.title.toLowerCase().includes(q) || i.fileName.toLowerCase().includes(q)); }
+    if (filterType !== 'All') uploaded = uploaded.filter(i => i.fileType === `.${filterType.toLowerCase()}`);
+
+    // Sort
+    const sortKey = this.state.enrichSortBy || 'title';
+    uploaded = [...uploaded].sort((a, b) => {
+      if (sortKey === 'title') return a.title.localeCompare(b.title);
+      if (sortKey === 'type') return a.fileType.localeCompare(b.fileType);
+      if (sortKey === 'metadata') return (b.hasExistingMetadata ? 1 : 0) - (a.hasExistingMetadata ? 1 : 0);
+      return 0;
+    });
+
+    // Group
+    const groups: Array<{ key: string; items: typeof uploaded }> = [];
+    if (groupBy === 'None' || !groupBy) {
+      groups.push({ key: '', items: uploaded });
+    } else {
+      const map = new Map<string, typeof uploaded>();
+      for (const item of uploaded) {
+        const key = groupBy === 'Type' ? item.fileType.replace('.', '').toUpperCase() : groupBy === 'Metadata' ? (item.hasExistingMetadata ? 'Has Metadata' : 'No Metadata') : groupBy === 'Author' ? (item.existingMetadata?.author || 'Unknown') : '';
+        if (!map.has(key)) map.set(key, []);
+        map.get(key)!.push(item);
+      }
+      for (const [key, items] of Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]))) groups.push({ key, items });
+    }
+
+    const filtered = uploaded;
     const allSelected = filtered.length > 0 && filtered.every(i => selectedIds.has(i.id));
 
     return (
@@ -564,10 +591,19 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
         <h2 style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', margin: '0 0 4px' }}>Review Uploaded Documents</h2>
         <p style={{ fontSize: 13, color: '#64748b', margin: '0 0 14px' }}>Check existing metadata, edit titles. Select files for the next step.</p>
 
-        <div style={{ display: 'flex', gap: 10, marginBottom: 12, alignItems: 'center' }}>
-          <SearchBox placeholder="Search..." value={searchQuery} onChange={(_, v) => this.setState({ searchQuery: v || '' })} styles={{ root: { width: 220 } }} />
+        <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+          <SearchBox placeholder="Search..." value={searchQuery} onChange={(_, v) => this.setState({ searchQuery: v || '' })} styles={{ root: { width: 180, borderRadius: 4 }, field: { borderRadius: 4 } }} />
+          <Dropdown selectedKey={filterType} options={[{ key: 'All', text: 'All Types' }, { key: 'DOCX', text: 'DOCX' }, { key: 'PDF', text: 'PDF' }, { key: 'XLSX', text: 'XLSX' }, { key: 'PPTX', text: 'PPTX' }]}
+            onChange={(_, opt) => this.setState({ filterType: String(opt?.key || 'All') })}
+            styles={{ root: { width: 110 }, title: { borderRadius: 4, height: 30, lineHeight: '28px', fontSize: 12 }, caretDownWrapper: { height: 30, lineHeight: '30px' } }} />
+          <Dropdown selectedKey={sortKey} options={[{ key: 'title', text: 'Sort: Title' }, { key: 'type', text: 'Sort: Type' }, { key: 'metadata', text: 'Sort: Metadata' }]}
+            onChange={(_, opt) => this.setState({ enrichSortBy: String(opt?.key || 'title') })}
+            styles={{ root: { width: 120 }, title: { borderRadius: 4, height: 30, lineHeight: '28px', fontSize: 12 }, caretDownWrapper: { height: 30, lineHeight: '30px' } }} />
+          <Dropdown selectedKey={groupBy || 'None'} options={[{ key: 'None', text: 'No grouping' }, { key: 'Type', text: 'Group: Type' }, { key: 'Metadata', text: 'Group: Metadata' }, { key: 'Author', text: 'Group: Author' }]}
+            onChange={(_, opt) => this.setState({ groupBy: String(opt?.key || 'None') })}
+            styles={{ root: { width: 130 }, title: { borderRadius: 4, height: 30, lineHeight: '28px', fontSize: 12 }, caretDownWrapper: { height: 30, lineHeight: '30px' } }} />
           <div style={{ flex: 1 }} />
-          <span style={{ fontSize: 12, color: '#64748b' }}>{selectedIds.size} selected · {filtered.length} files</span>
+          <span style={{ fontSize: 11, color: '#94a3b8' }}>{selectedIds.size} selected · {filtered.length} files</span>
         </div>
 
         <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
@@ -575,7 +611,17 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
             <div><input type="checkbox" checked={allSelected} onChange={() => { if (allSelected) this.setState({ selectedIds: new Set() }); else this.setState({ selectedIds: new Set(filtered.map(i => i.id)) }); }} /></div>
             <div>Title / File</div><div>Author</div><div>Category</div><div>Keywords</div><div>Metadata</div>
           </div>
-          {filtered.map(item => {
+          {groups.map(group => (
+            <React.Fragment key={group.key || '__all'}>
+              {group.key && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 14px', background: '#f0fdfa', borderBottom: '1px solid #e2e8f0', cursor: 'pointer' }}
+                  onClick={() => { const ids = group.items.map(i => i.id); const allGrp = ids.every(id => selectedIds.has(id)); const next = new Set(selectedIds); if (allGrp) ids.forEach(id => next.delete(id)); else ids.forEach(id => next.add(id)); this.setState({ selectedIds: next }); }}>
+                  <input type="checkbox" checked={group.items.every(i => selectedIds.has(i.id))} readOnly />
+                  <span style={{ fontSize: 12, fontWeight: 700, color: '#0d9488' }}>{group.key}</span>
+                  <span style={{ fontSize: 11, color: '#94a3b8' }}>({group.items.length})</span>
+                </div>
+              )}
+              {group.items.map(item => {
             const meta = item.existingMetadata || {};
             return (
               <div key={item.id} style={{ display: 'grid', gridTemplateColumns: '32px 1fr 90px 90px 90px 80px', padding: '8px 14px', borderBottom: '1px solid #f1f5f9', alignItems: 'center', background: selectedIds.has(item.id) ? '#f0fdfa' : '#fff' }}>
@@ -592,6 +638,8 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
               </div>
             );
           })}
+            </React.Fragment>
+          ))}
         </div>
       </>
     );
@@ -640,7 +688,7 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
 
         {/* Toolbar */}
         <div style={{ display: 'flex', gap: 6, marginBottom: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-          <SearchBox placeholder="Search..." value={searchQuery} onChange={(_, v) => this.setState({ searchQuery: v || '' })} styles={{ root: { width: 180 } }} />
+          <SearchBox placeholder="Search..." value={searchQuery} onChange={(_, v) => this.setState({ searchQuery: v || '' })} styles={{ root: { width: 180, borderRadius: 4 }, field: { borderRadius: 4 } }} />
           <Dropdown selectedKey={enrichFilterCat} options={[{ key: 'All', text: 'All Categories' }, ...CATEGORY_OPTIONS.filter(o => o.key)]}
             onChange={(_, opt) => this.setState({ enrichFilterCat: String(opt?.key || 'All') })}
             styles={{ root: { width: 130 }, title: { borderRadius: 4, height: 30, lineHeight: '28px', fontSize: 12 }, caretDownWrapper: { height: 30, lineHeight: '30px' } }} />
@@ -663,6 +711,9 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
               <Dropdown placeholder="Fill Risk ↓" options={RISK_OPTIONS.filter(o => o.key)}
                 onChange={(_, opt) => { if (opt?.key) fillDown('risk', String(opt.key)); }}
                 styles={{ root: { width: 110 }, title: { borderRadius: 4, height: 30, lineHeight: '28px', fontSize: 11, color: '#0d9488', borderColor: '#99f6e4' }, caretDownWrapper: { height: 30, lineHeight: '30px' } }} />
+              <Dropdown placeholder="Fill Template ↓" options={templateOptions.filter(o => o.key)}
+                onChange={(_, opt) => { if (opt?.key) { for (const id of selectedIds) this.applyTemplate(id, parseInt(String(opt.key))); this.setState({ selectedIds: new Set() }); } }}
+                styles={{ root: { width: 140 }, title: { borderRadius: 4, height: 30, lineHeight: '28px', fontSize: 11, color: '#059669', borderColor: '#bbf7d0' }, caretDownWrapper: { height: 30, lineHeight: '30px' } }} />
             </>
           )}
           <span style={{ fontSize: 11, color: '#94a3b8' }}>{selectedCount > 0 ? `${selectedCount} sel` : ''} · {enrichable.length} files</span>
@@ -726,7 +777,8 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
 
                 {/* Open in builder */}
                 <div>
-                  {item.spId && <IconButton iconProps={{ iconName: 'Edit' }} title="Open in Policy Builder" href={`${siteUrl}/SitePages/PolicyBuilder.aspx?editPolicyId=${item.spId}`}
+                  {item.spId && <IconButton iconProps={{ iconName: 'Edit' }} title="Open in Policy Builder"
+                    onClick={() => { if (window.confirm(`Open "${item.title}" in Policy Builder?\n\nYou will leave the Bulk Upload wizard. Your progress is saved.`)) window.location.href = `${siteUrl}/SitePages/PolicyBuilder.aspx?editPolicyId=${item.spId}`; }}
                     styles={{ root: { width: 24, height: 24 }, icon: { fontSize: 12, color: '#0d9488' } }} />}
                 </div>
               </div>
@@ -802,32 +854,60 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
             styles={{ root: { borderRadius: 4 } }} />
         </div>
 
-        {/* Activity Log */}
+        {/* Processed Files Table */}
         <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden', marginBottom: 20 }}>
-          <div style={{ padding: '10px 16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontWeight: 600, fontSize: 13, color: '#0f172a' }}>Activity Log</div>
-          <div style={{ maxHeight: 250, overflowY: 'auto' }}>
-            {activityLog.length === 0 ? <div style={{ padding: 20, textAlign: 'center', color: '#94a3b8', fontSize: 12 }}>No activity</div> :
-              activityLog.map((e, i) => (
-                <div key={i} style={{ display: 'flex', gap: 8, padding: '6px 16px', borderBottom: '1px solid #f8fafc', fontSize: 11 }}>
-                  <span style={{ color: '#94a3b8', flexShrink: 0, minWidth: 55 }}>{e.time.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
-                  <span style={{ width: 6, height: 6, borderRadius: '50%', marginTop: 4, flexShrink: 0, background: e.type === 'success' ? '#059669' : e.type === 'error' ? '#dc2626' : e.type === 'warning' ? '#d97706' : '#94a3b8' }} />
-                  <span style={{ color: e.type === 'error' ? '#dc2626' : '#334155' }}>{e.message}</span>
+          <div style={{ padding: '10px 16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontWeight: 600, fontSize: 13, color: '#0f172a' }}>Processed Files ({imports.filter(i => !['pending'].includes(i.status)).length})</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 110px 80px 100px 140px 70px', padding: '6px 16px', background: '#fafafa', borderBottom: '1px solid #f1f5f9', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, color: '#64748b' }}>
+            <div>Policy Title</div><div>Category</div><div>Risk</div><div>Department</div><div>Template</div><div>Status</div>
+          </div>
+          <div style={{ maxHeight: 350, overflowY: 'auto' }}>
+            {imports.filter(i => !['pending'].includes(i.status)).map(item => {
+              const rc = item.risk === 'Critical' ? '#dc2626' : item.risk === 'High' ? '#d97706' : item.risk === 'Medium' ? '#0d9488' : '#059669';
+              const sc = item.status === 'failed' ? '#dc2626' : ['classified', 'enriched'].includes(item.status) ? '#059669' : '#2563eb';
+              const sl = item.status === 'failed' ? 'Failed' : ['classified', 'enriched'].includes(item.status) ? 'Ready' : 'Uploaded';
+              return (
+                <div key={item.id} style={{ display: 'grid', gridTemplateColumns: '1fr 110px 80px 100px 140px 70px', padding: '8px 16px', borderBottom: '1px solid #f8fafc', alignItems: 'center', fontSize: 12 }}>
+                  <div><div style={{ fontWeight: 600, color: '#0f172a', fontSize: 13 }}>{item.title}</div><div style={{ fontSize: 10, color: '#cbd5e1' }}>{item.fileName}</div></div>
+                  <div>{item.category ? <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 4, background: '#f5f3ff', color: '#7c3aed' }}>{item.category}</span> : <span style={{ color: '#cbd5e1' }}>—</span>}</div>
+                  <div>{item.risk ? <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 4, background: `${rc}10`, color: rc }}>{item.risk}</span> : <span style={{ color: '#cbd5e1' }}>—</span>}</div>
+                  <div style={{ fontSize: 11, color: '#475569' }}>{item.department || '—'}</div>
+                  <div style={{ fontSize: 11, color: item.templateName ? '#059669' : '#cbd5e1' }}>{item.templateName || '—'}</div>
+                  <div><span style={{ fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 4, background: `${sc}10`, color: sc }}>{sl}</span></div>
                 </div>
-              ))}
+              );
+            })}
           </div>
         </div>
 
-        {/* Import History */}
+        {/* Collapsible Activity Log */}
+        <details style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden', marginBottom: 20 }}>
+          <summary style={{ padding: '10px 16px', background: '#f8fafc', cursor: 'pointer', fontWeight: 600, fontSize: 12, color: '#64748b', userSelect: 'none' }}>
+            Activity Log ({activityLog.length} entries)
+          </summary>
+          <div style={{ maxHeight: 200, overflowY: 'auto' }}>
+            {activityLog.map((e, i) => (
+              <div key={i} style={{ display: 'flex', gap: 8, padding: '5px 16px', borderBottom: '1px solid #f8fafc', fontSize: 11 }}>
+                <span style={{ color: '#94a3b8', flexShrink: 0, minWidth: 55 }}>{e.time.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', marginTop: 4, flexShrink: 0, background: e.type === 'success' ? '#059669' : e.type === 'error' ? '#dc2626' : e.type === 'warning' ? '#d97706' : '#94a3b8' }} />
+                <span style={{ color: e.type === 'error' ? '#dc2626' : '#334155' }}>{e.message}</span>
+              </div>
+            ))}
+          </div>
+        </details>
+
+        {/* Import History — collapsible */}
         {importHistory.length > 0 && (
-          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
-            <div style={{ padding: '10px 16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontWeight: 600, fontSize: 13, color: '#0f172a' }}>Import History</div>
+          <details style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
+            <summary style={{ padding: '10px 16px', background: '#f8fafc', cursor: 'pointer', fontWeight: 600, fontSize: 12, color: '#64748b', userSelect: 'none' }}>
+              Import History ({importHistory.length} batches)
+            </summary>
             {importHistory.map((batch, i) => (
               <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 16px', borderBottom: '1px solid #f8fafc', fontSize: 12 }}>
                 <span style={{ color: '#334155' }}>{new Date(batch.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                 <span style={{ color: '#64748b' }}>{batch.fileCount} files · {batch.classified} enriched · {batch.templates} templates</span>
               </div>
             ))}
-          </div>
+          </details>
         )}
       </>
     );

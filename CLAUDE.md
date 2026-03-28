@@ -1390,3 +1390,12 @@ Three parallel audit streams identified ~45 optimization opportunities:
 - Expand unit test coverage (currently 6 suites — need component tests, integration tests)
 - Add accessibility improvements (ARIA roles, keyboard navigation, screen reader support)
 - Continue component decomposition — extract remaining sections from PolicyAuthorEnhanced.tsx
+
+### Feature Backlog
+
+- **Pipeline Batch Metadata** — Add "Batch Metadata" button to Drafts & Pipeline toolbar. Multi-select policies → open StyledPanel with Fast Track Template dropdown + Category/Risk/ReadTimeframe fields → apply to all selected PM_Policies items. Reuses same pattern as Bulk Upload Enrich step.
+- **Improve AI classification accuracy** — Send more document content (full text extraction), use structured prompts, cache results
+- **Bulk Upload activity log persistence** — Write completed import batches to PM_BulkImports SP list for permanent audit trail (currently sessionStorage only)
+- **StyledSelect component** — Custom teal-themed native select replacement
+- **Retired/Archived policies view** in pipeline (filter exists but no dedicated view)
+- **PDF rendering improvements** in simple reader iframe

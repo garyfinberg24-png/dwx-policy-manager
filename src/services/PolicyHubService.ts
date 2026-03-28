@@ -1123,7 +1123,14 @@ export class PolicyHubService {
         }
 
         case PolicyVisibility.SecurityGroup: {
-          const targets = policy.TargetSecurityGroups || [];
+          // TargetSecurityGroups is stored as a JSON string in SP Note field
+          const raw = policy.TargetSecurityGroups;
+          let targets: string[] = [];
+          if (Array.isArray(raw)) {
+            targets = raw;
+          } else if (typeof raw === 'string' && raw) {
+            try { targets = JSON.parse(raw); } catch { targets = []; }
+          }
           if (targets.length === 0) return true;
           return targets.some(group =>
             ctx.groupNames.some(userGroup =>

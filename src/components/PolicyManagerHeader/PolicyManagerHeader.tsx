@@ -928,7 +928,7 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
           {/* Bookmarks dropdown */}
           <div className={styles.dropdownContainer} ref={bookmarksRef} style={{ display: 'inline-flex' }}>
             <button
-              className={styles.quickActionBtn}
+              className={styles.actionButton}
               type="button"
               title="Bookmarks"
               aria-label="Bookmarked Policies"
@@ -941,7 +941,6 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
               <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
-              Bookmarks
             </button>
 
             {showBookmarksDropdown && (
@@ -960,7 +959,7 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
                     bookmarkedPolicies.map(policy => (
                       <a
                         key={policy.id}
-                        href={`/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${policy.id}`}
+                        href={`/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${policy.id}&mode=browse`}
                         className={styles.notificationItem}
                         style={{ textDecoration: 'none', color: 'inherit' }}
                         onClick={() => setShowBookmarksDropdown(false)}

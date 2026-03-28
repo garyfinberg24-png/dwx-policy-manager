@@ -574,8 +574,24 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
 
       await this.policyService.initialize();
 
-      // Load policies for dropdown
-      const policies = await this.policyService.getPolicies({ status: PolicyStatus.Published });
+      // Load policies for dropdown — include Draft/InReview/Approved/Published so quizzes
+      // can be created for policies at any stage of the authoring lifecycle
+      let policies: IPolicy[] = [];
+      try {
+        const [published, drafts, inReview, approved] = await Promise.all([
+          this.policyService.getPolicies({ status: PolicyStatus.Published }).catch(() => []),
+          this.policyService.getPolicies({ status: PolicyStatus.Draft }).catch(() => []),
+          this.policyService.getPolicies({ status: 'In Review' as any }).catch(() => []),
+          this.policyService.getPolicies({ status: PolicyStatus.Approved }).catch(() => [])
+        ]);
+        // Deduplicate by Id
+        const seen = new Set<number>();
+        for (const p of [...published, ...approved, ...inReview, ...drafts]) {
+          if (p.Id && !seen.has(p.Id)) { seen.add(p.Id); policies.push(p); }
+        }
+      } catch {
+        policies = await this.policyService.getPolicies({ status: PolicyStatus.Published }).catch(() => []);
+      }
 
       // Load question banks (non-blocking — list may not exist yet)
       let questionBanks: any[] = [];

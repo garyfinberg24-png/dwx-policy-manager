@@ -51,6 +51,7 @@ interface IPolicyBulkUploadState {
   fastTrackTemplates: IFastTrackTemplate[]; templatesLoaded: boolean;
   activityLog: IActivityLogEntry[];
   showBatchPanel: boolean; batchTemplateId: string; batchCategory: string; batchRisk: string;
+  enrichSortBy: string; enrichFilterCat: string;
   importHistory: Array<{ date: string; fileCount: number; classified: number; templates: number }>;
 }
 
@@ -122,6 +123,7 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
       fastTrackTemplates: [], templatesLoaded: false,
       activityLog: restored.activityLog || [],
       showBatchPanel: false, batchTemplateId: '', batchCategory: '', batchRisk: '',
+      enrichSortBy: 'title', enrichFilterCat: 'All',
       importHistory: restored.importHistory || [],
     };
   }
@@ -600,34 +602,73 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
   // ============================================================================
 
   private renderStep3_Enrich(siteUrl: string): React.ReactElement {
-    const { imports, classifying, classifyProgress, selectedIds, fastTrackTemplates } = this.state;
-    const enrichable = imports.filter(i => !['pending', 'failed'].includes(i.status));
+    const { imports, classifying, classifyProgress, selectedIds, fastTrackTemplates, enrichSortBy, enrichFilterCat, searchQuery } = this.state;
+    let enrichable = imports.filter(i => !['pending', 'failed'].includes(i.status));
     const templateOptions: IDropdownOption[] = [{ key: '', text: '— No template —' }, ...fastTrackTemplates.map(t => ({ key: String(t.Id), text: t.Title }))];
     const selectedCount = selectedIds.size;
     const riskColor = (r: string) => r === 'Critical' ? '#dc2626' : r === 'High' ? '#d97706' : r === 'Medium' ? '#0d9488' : r === 'Low' ? '#059669' : '#94a3b8';
 
+    // Filter
+    if (enrichFilterCat !== 'All') enrichable = enrichable.filter(i => i.category === enrichFilterCat);
+    if (searchQuery.trim()) { const q = searchQuery.toLowerCase(); enrichable = enrichable.filter(i => i.title.toLowerCase().includes(q) || i.fileName.toLowerCase().includes(q)); }
+    // Sort
+    enrichable = [...enrichable].sort((a, b) => {
+      switch (enrichSortBy) {
+        case 'title': return a.title.localeCompare(b.title);
+        case 'category': return (a.category || '').localeCompare(b.category || '');
+        case 'risk': { const order = ['Critical', 'High', 'Medium', 'Low', 'Informational', '']; return order.indexOf(a.risk) - order.indexOf(b.risk); }
+        case 'status': return (a.status || '').localeCompare(b.status || '');
+        default: return 0;
+      }
+    });
+
+    // Fill-down helper
+    const fillDown = (field: 'category' | 'risk' | 'department' | 'readTimeframe', value: string): void => {
+      const updated = this.state.imports.map(i => selectedIds.has(i.id) ? { ...i, [field]: value, status: i.status === 'uploaded' ? 'enriched' as ImportStatus : i.status } : i);
+      this.setState({ imports: updated });
+      this.log(`Fill down: ${field} = "${value}" → ${selectedIds.size} files`, 'success');
+    };
+
     return (
       <>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
           <div>
             <h2 style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', margin: '0 0 4px' }}>Enrich Metadata</h2>
-            <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>Edit fields directly, use AI to auto-fill, or apply a Fast Track Template. All optional.</p>
-          </div>
-          <div style={{ display: 'flex', gap: 6 }}>
-            {selectedCount > 0 && !classifying && (
-              <>
-                <PrimaryButton text={`AI Classify (${selectedCount})`} iconProps={{ iconName: 'Processing' }}
-                  onClick={() => this.classifySelected()}
-                  styles={{ root: { background: '#7c3aed', borderColor: '#7c3aed', borderRadius: 4, fontSize: 12, height: 30 }, rootHovered: { background: '#6d28d9', borderColor: '#6d28d9' } }} />
-                <DefaultButton text={`Batch Template (${selectedCount})`} iconProps={{ iconName: 'Tag' }}
-                  onClick={() => this.setState({ showBatchPanel: true })}
-                  styles={{ root: { borderRadius: 4, fontSize: 12, height: 30 } }} />
-              </>
-            )}
+            <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>Edit directly, use AI, apply templates, or fill down for batches. All optional.</p>
           </div>
         </div>
 
-        {classifying && <ProgressIndicator label={`Classifying... ${classifyProgress}%`} percentComplete={classifyProgress / 100} style={{ marginBottom: 12 }} />}
+        {/* Toolbar */}
+        <div style={{ display: 'flex', gap: 6, marginBottom: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          <SearchBox placeholder="Search..." value={searchQuery} onChange={(_, v) => this.setState({ searchQuery: v || '' })} styles={{ root: { width: 180 } }} />
+          <Dropdown selectedKey={enrichFilterCat} options={[{ key: 'All', text: 'All Categories' }, ...CATEGORY_OPTIONS.filter(o => o.key)]}
+            onChange={(_, opt) => this.setState({ enrichFilterCat: String(opt?.key || 'All') })}
+            styles={{ root: { width: 130 }, title: { borderRadius: 4, height: 30, lineHeight: '28px', fontSize: 12 }, caretDownWrapper: { height: 30, lineHeight: '30px' } }} />
+          <Dropdown selectedKey={enrichSortBy} options={[{ key: 'title', text: 'Sort: Title' }, { key: 'category', text: 'Sort: Category' }, { key: 'risk', text: 'Sort: Risk' }, { key: 'status', text: 'Sort: Status' }]}
+            onChange={(_, opt) => this.setState({ enrichSortBy: String(opt?.key || 'title') })}
+            styles={{ root: { width: 120 }, title: { borderRadius: 4, height: 30, lineHeight: '28px', fontSize: 12 }, caretDownWrapper: { height: 30, lineHeight: '30px' } }} />
+          <div style={{ flex: 1 }} />
+          {selectedCount > 0 && !classifying && (
+            <>
+              <PrimaryButton text={`AI Classify (${selectedCount})`} iconProps={{ iconName: 'Processing' }}
+                onClick={() => this.classifySelected()}
+                styles={{ root: { background: '#7c3aed', borderColor: '#7c3aed', borderRadius: 4, fontSize: 12, height: 30 }, rootHovered: { background: '#6d28d9', borderColor: '#6d28d9' } }} />
+              <DefaultButton text={`Batch Assign (${selectedCount})`} iconProps={{ iconName: 'Tag' }}
+                onClick={() => this.setState({ showBatchPanel: true })}
+                styles={{ root: { borderRadius: 4, fontSize: 12, height: 30 } }} />
+              {/* Fill-down quick actions */}
+              <Dropdown placeholder="Fill Category ↓" options={CATEGORY_OPTIONS.filter(o => o.key)}
+                onChange={(_, opt) => { if (opt?.key) fillDown('category', String(opt.key)); }}
+                styles={{ root: { width: 130 }, title: { borderRadius: 4, height: 30, lineHeight: '28px', fontSize: 11, color: '#0d9488', borderColor: '#99f6e4' }, caretDownWrapper: { height: 30, lineHeight: '30px' } }} />
+              <Dropdown placeholder="Fill Risk ↓" options={RISK_OPTIONS.filter(o => o.key)}
+                onChange={(_, opt) => { if (opt?.key) fillDown('risk', String(opt.key)); }}
+                styles={{ root: { width: 110 }, title: { borderRadius: 4, height: 30, lineHeight: '28px', fontSize: 11, color: '#0d9488', borderColor: '#99f6e4' }, caretDownWrapper: { height: 30, lineHeight: '30px' } }} />
+            </>
+          )}
+          <span style={{ fontSize: 11, color: '#94a3b8' }}>{selectedCount > 0 ? `${selectedCount} sel` : ''} · {enrichable.length} files</span>
+        </div>
+
+        {classifying && <ProgressIndicator label={`Classifying... ${classifyProgress}%`} percentComplete={classifyProgress / 100} style={{ marginBottom: 10 }} />}
 
         {/* Editable enrichment table */}
         <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
@@ -724,9 +765,33 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
           )}
         </div>
 
-        <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
           <PrimaryButton text="Open Drafts & Pipeline" iconProps={{ iconName: 'ViewAll' }} href={`${siteUrl}/SitePages/PolicyAuthor.aspx`}
             styles={{ root: { background: '#0d9488', borderColor: '#0d9488', borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }} />
+          <DefaultButton text="Submit All for Review" iconProps={{ iconName: 'Send' }}
+            disabled={uploaded === 0}
+            onClick={async () => {
+              if (!window.confirm(`Are you sure you want to submit all ${uploaded} imported policies for review?\n\nThis will change their status from Draft to In Review and notify reviewers.`)) return;
+              let count = 0;
+              for (const item of imports.filter(i => i.spId && !['pending', 'failed'].includes(i.status))) {
+                try { await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES).items.getById(item.spId).update({ PolicyStatus: 'In Review' }); count++; } catch { /* */ }
+              }
+              this.log(`Submitted ${count} policies for review`, 'success');
+              this.setState({ successMessage: `${count} policies submitted for review.` });
+            }}
+            styles={{ root: { borderRadius: 4, color: '#2563eb', borderColor: '#93c5fd' }, rootHovered: { background: '#eff6ff' } }} />
+          <DefaultButton text="Publish All" iconProps={{ iconName: 'PublishContent' }}
+            disabled={uploaded === 0}
+            onClick={async () => {
+              if (!window.confirm(`Are you sure you want to publish all ${uploaded} imported policies?\n\nThis will make them immediately visible to their target audience. This action should only be taken after content has been reviewed.`)) return;
+              let count = 0;
+              for (const item of imports.filter(i => i.spId && !['pending', 'failed'].includes(i.status))) {
+                try { await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES).items.getById(item.spId).update({ PolicyStatus: 'Published', IsActive: true }); count++; } catch { /* */ }
+              }
+              this.log(`Published ${count} policies`, 'success');
+              this.setState({ successMessage: `${count} policies published.` });
+            }}
+            styles={{ root: { borderRadius: 4, color: '#059669', borderColor: '#bbf7d0' }, rootHovered: { background: '#f0fdf4' } }} />
           <DefaultButton text="New Import" iconProps={{ iconName: 'Add' }}
             onClick={() => {
               // Save current batch to history

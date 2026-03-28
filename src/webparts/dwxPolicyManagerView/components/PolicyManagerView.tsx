@@ -42,6 +42,7 @@ import { PolicyManagerRole, getHighestPolicyRole, hasMinimumRole } from '../../.
 import { StyledPanel } from '../../../components/StyledPanel';
 import { PolicyReportExportService } from '../../../services/PolicyReportExportService';
 import { ReportHtmlGenerator } from '../../../utils/reportHtmlGenerator';
+import { createDialogManager } from '../../../hooks/useDialog';
 import styles from './PolicyManagerView.module.scss';
 
 // ============================================================================
@@ -174,6 +175,7 @@ interface IPolicyManagerViewState {
 export default class PolicyManagerView extends React.Component<IPolicyManagerViewProps, IPolicyManagerViewState> {
   private policyService: PolicyService;
   private reportExportService: PolicyReportExportService;
+  private dialogManager = createDialogManager();
   private _isMounted = false;
 
   constructor(props: IPolicyManagerViewProps) {
@@ -1501,11 +1503,12 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
                   {/* Action buttons */}
                   {approval.Status === 'Pending' && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0, minWidth: 110 }}>
-                      <button onClick={() => { if (window.confirm('Approve this policy?')) this.updateApprovalStatus(approval.Id, 'Approved'); }}
-                        style={{ padding: '8px 16px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: '1px solid #059669', background: '#059669', color: '#fff', fontFamily: 'inherit' }}>Approve</button>
-                      <button onClick={() => { const r = window.prompt('Reason for returning:'); if (r?.trim()) this.updateApprovalStatus(approval.Id, 'Returned', r.trim()); }}
-                        style={{ padding: '8px 16px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: '1px solid #fbbf24', background: '#fff', color: '#d97706', fontFamily: 'inherit' }}>Return</button>
-                      <button style={{ padding: '8px 16px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: '1px solid #e2e8f0', background: '#fff', color: '#64748b', fontFamily: 'inherit' }}>View Policy</button>
+                      <button onClick={async () => { const ok = await this.dialogManager.showConfirm('Approve this policy?', { title: 'Approve', confirmText: 'Approve', cancelText: 'Cancel' }); if (ok) this.updateApprovalStatus(approval.Id, 'Approved'); }}
+                        style={{ padding: '8px 16px', borderRadius: 4, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: '1px solid #059669', background: '#059669', color: '#fff', fontFamily: 'inherit' }}>Approve</button>
+                      <button onClick={async () => { const r = await this.dialogManager.showPrompt('Reason for returning:', { title: 'Return Policy' }); if (r?.trim()) this.updateApprovalStatus(approval.Id, 'Returned', r.trim()); }}
+                        style={{ padding: '8px 16px', borderRadius: 4, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: '1px solid #fbbf24', background: '#fff', color: '#d97706', fontFamily: 'inherit' }}>Return</button>
+                      {/* STUB: View Policy button — needs onClick to navigate to PolicyDetails.aspx */}
+                      <button style={{ padding: '8px 16px', borderRadius: 4, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: '1px solid #e2e8f0', background: '#fff', color: '#64748b', fontFamily: 'inherit' }}>View Policy</button>
                     </div>
                   )}
                 </div>

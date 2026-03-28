@@ -2933,26 +2933,53 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
     });
   }
 
-  private handleCreateDelegation(): void {
+  private async handleCreateDelegation(): Promise<void> {
     const { delegationForm, delegations } = this.state;
-    const newDelegation: IDelegation = {
-      Id: delegations.length + 100,
-      DelegatedTo: delegationForm.delegateTo,
-      DelegatedToEmail: delegationForm.delegateToEmail,
-      DelegatedBy: 'Current User',
-      PolicyTitle: delegationForm.policyTitle,
-      TaskType: delegationForm.taskType,
-      Department: delegationForm.department,
-      AssignedDate: new Date().toISOString(),
-      DueDate: delegationForm.dueDate,
-      Status: 'Pending',
-      Notes: delegationForm.notes,
-      Priority: delegationForm.priority
-    };
-    this.setState({
-      delegations: [newDelegation, ...delegations]
-    });
-    this.dismissDelegationPanel();
+    try {
+      // Resolve delegate to SP user ID
+      let delegatedToId = 0;
+      try {
+        const ensured = await this.props.sp.web.ensureUser(delegationForm.delegateToEmail || delegationForm.delegateTo);
+        delegatedToId = ensured.data.Id;
+      } catch { /* fallback to 0 */ }
+      const delegatedById = this.props.context?.pageContext?.legacyPageContext?.userId || 0;
+
+      // Write to PM_ApprovalDelegations
+      const result = await this.props.sp.web.lists.getByTitle('PM_ApprovalDelegations').items.add({
+        Title: `${delegationForm.taskType} — ${delegationForm.policyTitle}`,
+        DelegatedById: delegatedById,
+        DelegatedToId: delegatedToId,
+        Reason: delegationForm.notes || delegationForm.policyTitle,
+        ProcessTypes: JSON.stringify([delegationForm.taskType]),
+        StartDate: new Date().toISOString(),
+        EndDate: delegationForm.dueDate || new Date(Date.now() + 7 * 86400000).toISOString(),
+        IsActive: true,
+        AutoDelegate: delegationForm.priority === 'High'
+      });
+
+      // Add to local state immediately
+      const newDelegation: IDelegation = {
+        Id: result.data?.Id || delegations.length + 100,
+        DelegatedTo: delegationForm.delegateTo,
+        DelegatedToEmail: delegationForm.delegateToEmail,
+        DelegatedBy: this.props.context?.pageContext?.user?.displayName || 'Current User',
+        PolicyTitle: delegationForm.policyTitle,
+        TaskType: delegationForm.taskType,
+        Department: delegationForm.department,
+        AssignedDate: new Date().toISOString(),
+        DueDate: delegationForm.dueDate,
+        Status: 'Pending',
+        Notes: delegationForm.notes,
+        Priority: delegationForm.priority
+      };
+      if (this._isMounted) {
+        this.setState({ delegations: [newDelegation, ...delegations] });
+      }
+      this.dismissDelegationPanel();
+    } catch (err) {
+      console.error('[PolicyAuthorView] Failed to create delegation:', err);
+      void this.dialogManager.showAlert('Failed to create delegation. Please try again.', { variant: 'error' });
+    }
   }
 
   // ==========================================================================

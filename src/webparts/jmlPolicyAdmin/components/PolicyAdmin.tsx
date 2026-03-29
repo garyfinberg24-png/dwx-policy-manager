@@ -2438,6 +2438,8 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                               titleText=""
                               personSelectionLimit={1}
                               showtooltip={false}
+                              ensureUser={true}
+                              webAbsoluteUrl={this.props.context?.pageContext?.web?.absoluteUrl}
                               principalTypes={[PrincipalType.User]}
                               resolveDelay={300}
                               placeholder="Search for a user to add..."
@@ -7900,6 +7902,8 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                   titleText=""
                   personSelectionLimit={1}
                   showtooltip={false}
+                  ensureUser={true}
+                  webAbsoluteUrl={this.props.context?.pageContext?.web?.absoluteUrl}
                   principalTypes={[PrincipalType.User]}
                   resolveDelay={300}
                   placeholder="Search for a user to add..."
@@ -8412,6 +8416,8 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                             titleText=""
                             personSelectionLimit={1}
                             showtooltip={false}
+                            ensureUser={true}
+                            webAbsoluteUrl={this.props.context?.pageContext?.web?.absoluteUrl}
                             principalTypes={[PrincipalType.User]}
                             resolveDelay={300}
                             placeholder="Search for a user to add..."

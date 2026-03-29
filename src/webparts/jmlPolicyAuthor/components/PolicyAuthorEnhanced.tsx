@@ -5592,18 +5592,19 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             <PrimaryButton
               text="Create Delegation"
               onClick={() => {
-                // Get form values and create delegation
+                // Read form values from state (PeoplePicker writes to state, not FormData)
                 const form = document.getElementById('delegationForm') as HTMLFormElement;
                 if (form) {
                   const formData = new FormData(form);
+                  const st = this.state as any;
                   this.handleCreateDelegation({
-                    Title: formData.get('title') as string,
-                    AssignedTo: formData.get('assignedTo') as string,
-                    AssignedToEmail: formData.get('assignedToEmail') as string,
-                    PolicyType: formData.get('policyType') as string,
-                    Urgency: formData.get('urgency') as 'Low' | 'Medium' | 'High' | 'Critical',
-                    DueDate: formData.get('dueDate') as string,
-                    Description: formData.get('description') as string
+                    Title: formData.get('title') as string || '',
+                    AssignedTo: st._delegationAssignedTo || '',
+                    AssignedToEmail: st._delegationAssignedToEmail || '',
+                    PolicyType: st._delegationPolicyType || formData.get('policyType') as string || '',
+                    Urgency: (st._delegationUrgency || formData.get('urgency') || 'Medium') as 'Low' | 'Medium' | 'High' | 'Critical',
+                    DueDate: formData.get('dueDate') as string || '',
+                    Description: formData.get('description') as string || ''
                   });
                 }
               }}

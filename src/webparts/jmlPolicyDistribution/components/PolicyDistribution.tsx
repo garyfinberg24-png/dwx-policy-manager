@@ -1353,14 +1353,16 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
                 personSelectionLimit={50}
                 groupName=""
                 showtooltip={true}
+                ensureUser={true}
+                webAbsoluteUrl={this.props.context?.pageContext?.web?.absoluteUrl}
                 defaultSelectedUsers={formTargetUsers ? formTargetUsers.split(',').map(u => u.trim()).filter(Boolean) : []}
                 onChange={(items: any[]) => {
                   const users = items.map(item => item.secondaryText || item.text || '').filter(Boolean);
                   this.setState({ formTargetUsers: users.join(', ') });
                 }}
                 principalTypes={[PrincipalType.User]}
-                resolveDelay={500}
-                placeholder="Search for users in Entra ID..."
+                resolveDelay={300}
+                placeholder="Search for users..."
               />
               <div style={{ fontSize: 12, color: '#605e5c', marginTop: 4 }}>Search and select individual users from your organisation directory</div>
             </div>
@@ -1371,14 +1373,16 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
                 personSelectionLimit={20}
                 groupName=""
                 showtooltip={true}
+                ensureUser={true}
+                webAbsoluteUrl={this.props.context?.pageContext?.web?.absoluteUrl}
                 defaultSelectedUsers={formTargetGroups ? formTargetGroups.split(',').map(g => g.trim()).filter(Boolean) : []}
                 onChange={(items: any[]) => {
                   const groups = items.map(item => item.text || '').filter(Boolean);
                   this.setState({ formTargetGroups: groups.join(', ') });
                 }}
                 principalTypes={[PrincipalType.SharePointGroup, PrincipalType.SecurityGroup, PrincipalType.DistributionList]}
-                resolveDelay={500}
-                placeholder="Search for groups in Entra ID..."
+                resolveDelay={300}
+                placeholder="Search for groups..."
               />
               <div style={{ fontSize: 12, color: '#605e5c', marginTop: 4 }}>Search and select security groups, distribution lists, or SharePoint groups</div>
             </div>

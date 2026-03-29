@@ -40,6 +40,7 @@ import { PageSubheader } from '../../../components/PageSubheader';
 import { RoleDetectionService } from '../../../services/RoleDetectionService';
 import { PolicyManagerRole, getHighestPolicyRole, hasMinimumRole } from '../../../services/PolicyRoleService';
 import { PM_LISTS } from '../../../constants/SharePointListNames';
+import { RetentionService } from '../../../services/RetentionService';
 import { StyledPanel } from '../../../components/StyledPanel';
 import styles from './PolicyAuthorView.module.scss';
 
@@ -164,6 +165,7 @@ interface IPolicyAuthorViewState {
   showDelegationPanel: boolean;
   delegationForm: IDelegationForm;
   detectedRole: PolicyManagerRole | null;
+  heldPolicyIds: Set<number>;
 }
 
 // ============================================================================
@@ -232,7 +234,8 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
         priority: 'Medium',
         notes: ''
       },
-      detectedRole: null
+      detectedRole: null,
+      heldPolicyIds: new Set<number>()
     };
   }
 
@@ -303,11 +306,32 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
           loading: false
         });
       }
+
+      // Load legal holds (non-blocking — after main data)
+      this.loadLegalHoldIds();
     } catch (err) {
       console.error('[PolicyAuthorView] loadData failed:', err);
       if (this._isMounted) {
         this.setState({ loading: false });
       }
+    }
+  }
+
+  private async loadLegalHoldIds(): Promise<void> {
+    try {
+      const retentionService = new RetentionService(this.props.sp);
+      const holds = await retentionService.getLegalHolds();
+      const activeIds = new Set<number>();
+      for (const h of holds) {
+        if (h.Status === 'Active' && h.IsActive) {
+          activeIds.add(h.PolicyId);
+        }
+      }
+      if (this._isMounted) {
+        this.setState({ heldPolicyIds: activeIds });
+      }
+    } catch {
+      // Non-critical — if legal holds fail to load, actions remain enabled
     }
   }
 
@@ -1102,13 +1126,22 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                     <div style={{ fontSize: 12, color: '#475569' }}>{policy.ComplianceRisk || '-'}</div>
                     <div style={{ fontSize: 12, color: '#94a3b8' }}>{modifiedStr}</div>
                     <div style={{ display: 'flex', gap: 2 }}>
+                      {/* Legal hold indicator */}
+                      {(() => { const isHeld = this.state.heldPolicyIds.has(policy.Id); return (<>
+                      {isHeld && (
+                        <span title="Policy is under legal hold" style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 6px', borderRadius: 4, background: '#fee2e2', color: '#dc2626', fontSize: 10, fontWeight: 700, marginRight: 2 }}>
+                          <svg viewBox="0 0 24 24" fill="none" width="10" height="10" style={{ marginRight: 3 }}><rect x="3" y="11" width="18" height="11" rx="2" stroke="currentColor" strokeWidth="2"/><path d="M7 11V7a5 5 0 0110 0v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+                          HELD
+                        </span>
+                      )}
                       {/* Edit — Draft, Rejected, Approved */}
                       {['Draft', 'Rejected', 'Approved'].includes(policy.PolicyStatus) && (
                         <IconButton
                           iconProps={{ iconName: 'Edit' }}
-                          title="Edit in Policy Builder"
-                          href={`${siteUrl}/SitePages/PolicyBuilder.aspx?editPolicyId=${policy.Id}`}
-                          styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: '#0d9488' } }}
+                          title={isHeld ? 'Policy is under legal hold' : 'Edit in Policy Builder'}
+                          href={isHeld ? undefined : `${siteUrl}/SitePages/PolicyBuilder.aspx?editPolicyId=${policy.Id}`}
+                          disabled={isHeld}
+                          styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: isHeld ? '#cbd5e1' : '#0d9488' } }}
                           ariaLabel={`Edit ${policy.Title}`}
                         />
                       )}
@@ -1155,9 +1188,10 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                       {['In Review', 'Pending Approval'].includes(policy.PolicyStatus) && (
                         <IconButton
                           iconProps={{ iconName: 'Undo' }}
-                          title="Withdraw to Draft"
+                          title={isHeld ? 'Policy is under legal hold' : 'Withdraw to Draft'}
                           onClick={() => this.handlePipelineWithdraw(policy.Id, policy.Title)}
-                          styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: '#d97706' } }}
+                          disabled={isHeld}
+                          styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: isHeld ? '#cbd5e1' : '#d97706' } }}
                           ariaLabel={`Withdraw ${policy.Title}`}
                         />
                       )}
@@ -1175,9 +1209,10 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                       {policy.PolicyStatus === 'Draft' && (
                         <IconButton
                           iconProps={{ iconName: 'Delete' }}
-                          title="Delete Draft"
+                          title={isHeld ? 'Policy is under legal hold' : 'Delete Draft'}
                           onClick={() => this.handlePipelineDelete(policy.Id, policy.Title)}
-                          styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: '#dc2626' } }}
+                          disabled={isHeld}
+                          styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: isHeld ? '#cbd5e1' : '#dc2626' } }}
                           ariaLabel={`Delete ${policy.Title}`}
                         />
                       )}
@@ -1185,9 +1220,10 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                       {['Approved', 'Published'].includes(policy.PolicyStatus) && (
                         <IconButton
                           iconProps={{ iconName: 'PageEdit' }}
-                          title="Revise Policy"
+                          title={isHeld ? 'Policy is under legal hold' : 'Revise Policy'}
                           onClick={() => this.handlePipelineRevise(policy.Id, policy.Title)}
-                          styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: '#2563eb' } }}
+                          disabled={isHeld}
+                          styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: isHeld ? '#cbd5e1' : '#2563eb' } }}
                           ariaLabel={`Revise ${policy.Title}`}
                         />
                       )}
@@ -1195,12 +1231,14 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                       {['Approved', 'Published'].includes(policy.PolicyStatus) && (
                         <IconButton
                           iconProps={{ iconName: 'Archive' }}
-                          title="Retire Policy"
+                          title={isHeld ? 'Policy is under legal hold' : 'Retire Policy'}
                           onClick={() => this.handlePipelineRetireEnhanced(policy.Id, policy.Title)}
-                          styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: '#94a3b8' } }}
+                          disabled={isHeld}
+                          styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: isHeld ? '#cbd5e1' : '#94a3b8' } }}
                           ariaLabel={`Retire ${policy.Title}`}
                         />
                       )}
+                      </>); })()}
                     </div>
                   </div>
                 );

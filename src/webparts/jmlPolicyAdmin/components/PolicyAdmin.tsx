@@ -43,6 +43,7 @@ import { SPService } from '../../../services/SPService';
 import { AdminConfigService } from '../../../services/AdminConfigService';
 import { UserManagementService, IEmployeePage, IRoleSummary } from '../../../services/UserManagementService';
 import { AudienceService } from '../../../services/AudienceService';
+import { RetentionService, ILegalHold } from '../../../services/RetentionService';
 import { IAudience, IAudienceCriteria, IAudienceFilter, AudienceFilterField, IAudienceEvalResult } from '../../../models/IAudience';
 import { ConfigKeys } from '../../../models/IJmlConfiguration';
 import { createDialogManager } from '../../../hooks/useDialog';
@@ -115,6 +116,15 @@ export interface IPolicyAdminState {
   policyCategories: IPolicyCategory[];
   editingCategory: IPolicyCategory | null;
   showCategoryPanel: boolean;
+  // Legal Holds
+  legalHolds: ILegalHold[];
+  legalHoldsLoading: boolean;
+  showPlaceHoldPanel: boolean;
+  holdPolicyId: string;
+  holdReason: string;
+  holdCaseRef: string;
+  holdExpiryDate: string;
+  publishedPolicies: Array<{ Id: number; Title: string }>;
 }
 
 // IEmailTemplate is now imported from IAdminConfig.ts as IEmailTemplateModel
@@ -168,6 +178,7 @@ const NAV_SECTIONS: INavSection[] = [
     category: 'SECURITY',
     items: [
       { key: 'audit', label: 'Audit Log', icon: 'ComplianceAudit', description: 'Event log with filters, change tracking, and CSV export' },
+      { key: 'legalHolds', label: 'Legal Holds', icon: 'LockSolid', description: 'Legal hold management and compliance locks' },
       { key: 'dlpRules', label: 'DLP Rules', icon: 'Shield', description: 'Data loss prevention rules (block, warn, log)' },
       { key: 'dataRetention', label: 'Data Retention', icon: 'History', description: 'Retention periods, auto-purge, and archival scheduling' },
       { key: 'systemInfo', label: 'System Info', icon: 'Info', description: 'Version, technology stack, and diagnostics' }
@@ -186,6 +197,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
   private adminConfigService: AdminConfigService;
   private userManagementService: UserManagementService;
   private audienceService: AudienceService;
+  private retentionService: RetentionService;
   private dialogManager = createDialogManager();
   private _isMounted = false;
   private _userSearchTimer: any = null;
@@ -253,7 +265,16 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       // Policy Categories — loaded from PM_PolicyCategories
       policyCategories: [],
       editingCategory: null,
-      showCategoryPanel: false
+      showCategoryPanel: false,
+      // Legal Holds
+      legalHolds: [],
+      legalHoldsLoading: false,
+      showPlaceHoldPanel: false,
+      holdPolicyId: '',
+      holdReason: '',
+      holdCaseRef: '',
+      holdExpiryDate: '',
+      publishedPolicies: []
     };
 
     this.policyService = new PolicyService(props.sp);
@@ -261,6 +282,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     this.adminConfigService = new AdminConfigService(props.sp);
     this.userManagementService = new UserManagementService(props.sp);
     this.audienceService = new AudienceService(props.sp);
+    this.retentionService = new RetentionService(props.sp);
   }
 
   private spService: SPService;
@@ -2610,6 +2632,233 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           )}
         </Stack>
       </div>
+    );
+  }
+
+  // ============================================================================
+  // RENDER: LEGAL HOLDS
+  // ============================================================================
+
+  private async loadLegalHolds(): Promise<void> {
+    if (!this._isMounted) return;
+    this.setState({ legalHoldsLoading: true } as any);
+    try {
+      const holds = await this.retentionService.getLegalHolds();
+      if (this._isMounted) {
+        this.setState({ legalHolds: holds, legalHoldsLoading: false } as any);
+      }
+    } catch {
+      if (this._isMounted) this.setState({ legalHoldsLoading: false } as any);
+    }
+  }
+
+  private async loadPublishedPoliciesForHold(): Promise<void> {
+    try {
+      const items = await this.props.sp.web.lists.getByTitle('PM_Policies')
+        .items.select('Id', 'Title', 'PolicyName')
+        .filter("PolicyStatus eq 'Published'")
+        .orderBy('Title')
+        .top(500)();
+      if (this._isMounted) {
+        this.setState({
+          publishedPolicies: items.map((p: any) => ({ Id: p.Id, Title: p.PolicyName || p.Title || `Policy #${p.Id}` }))
+        } as any);
+      }
+    } catch { /* non-critical */ }
+  }
+
+  private renderLegalHoldsContent(): JSX.Element {
+    const { legalHolds, legalHoldsLoading, showPlaceHoldPanel } = this.state;
+
+    // Load holds on first render of this section
+    if (!legalHoldsLoading && legalHolds.length === 0 && !this.state.showPlaceHoldPanel) {
+      // Trigger async load — non-blocking
+      this.loadLegalHolds();
+    }
+
+    const activeHolds = legalHolds.filter(h => h.Status === 'Active');
+    const releasedHolds = legalHolds.filter(h => h.Status === 'Released');
+    const expiredHolds = legalHolds.filter(h => h.Status === 'Expired');
+
+    const kpiStyle = (borderColor: string): React.CSSProperties => ({
+      flex: 1, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10,
+      borderTop: `3px solid ${borderColor}`, padding: '16px 20px', textAlign: 'center'
+    });
+
+    return (
+      <section>
+        {this.renderSectionIntro('Legal Holds', 'Manage legal holds on policies. Held policies cannot be edited, deleted, or retired until the hold is released.')}
+
+        {/* KPI Strip */}
+        <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
+          <div style={kpiStyle('#dc2626')}>
+            <div style={{ fontSize: 28, fontWeight: 700, color: '#dc2626' }}>{activeHolds.length}</div>
+            <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#94a3b8', fontWeight: 600, marginTop: 4 }}>Active Holds</div>
+          </div>
+          <div style={kpiStyle('#059669')}>
+            <div style={{ fontSize: 28, fontWeight: 700, color: '#059669' }}>{releasedHolds.length}</div>
+            <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#94a3b8', fontWeight: 600, marginTop: 4 }}>Released</div>
+          </div>
+          <div style={kpiStyle('#94a3b8')}>
+            <div style={{ fontSize: 28, fontWeight: 700, color: '#94a3b8' }}>{expiredHolds.length}</div>
+            <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#94a3b8', fontWeight: 600, marginTop: 4 }}>Expired</div>
+          </div>
+        </div>
+
+        {/* Toolbar */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <Text style={{ fontSize: 15, fontWeight: 600, color: '#0f172a' }}>Active Legal Holds</Text>
+          <PrimaryButton
+            text="Place Hold"
+            iconProps={{ iconName: 'LockSolid' }}
+            onClick={() => {
+              this.loadPublishedPoliciesForHold();
+              this.setState({ showPlaceHoldPanel: true, holdPolicyId: '', holdReason: '', holdCaseRef: '', holdExpiryDate: '' } as any);
+            }}
+            styles={{ root: { background: '#dc2626', borderColor: '#dc2626', borderRadius: 6 }, rootHovered: { background: '#b91c1c', borderColor: '#b91c1c' } }}
+          />
+        </div>
+
+        {legalHoldsLoading ? (
+          <Spinner size={SpinnerSize.medium} label="Loading legal holds..." />
+        ) : activeHolds.length === 0 ? (
+          <MessageBar messageBarType={MessageBarType.info}>No active legal holds.</MessageBar>
+        ) : (
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
+            {/* Table Header */}
+            <div style={{
+              display: 'grid', gridTemplateColumns: '1fr 1.5fr 140px 120px 130px 100px 100px',
+              padding: '10px 16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0',
+              fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, color: '#64748b'
+            }}>
+              <div>Policy</div>
+              <div>Reason</div>
+              <div>Placed By</div>
+              <div>Date</div>
+              <div>Case Ref</div>
+              <div>Status</div>
+              <div>Actions</div>
+            </div>
+            {/* Rows */}
+            {activeHolds.map(hold => (
+              <div key={hold.Id} style={{
+                display: 'grid', gridTemplateColumns: '1fr 1.5fr 140px 120px 130px 100px 100px',
+                padding: '12px 16px', borderBottom: '1px solid #f1f5f9', alignItems: 'center'
+              }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#0f172a' }}>{hold.PolicyTitle}</div>
+                <div style={{ fontSize: 12, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{hold.HoldReason}</div>
+                <div style={{ fontSize: 12, color: '#475569' }}>{hold.PlacedBy}</div>
+                <div style={{ fontSize: 12, color: '#94a3b8' }}>{hold.PlacedDate ? new Date(hold.PlacedDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}</div>
+                <div style={{ fontSize: 12, color: '#475569' }}>{hold.CaseReference || '-'}</div>
+                <div>
+                  <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 4, background: '#fee2e2', color: '#dc2626' }}>Active</span>
+                </div>
+                <div>
+                  <IconButton
+                    iconProps={{ iconName: 'Unlock' }}
+                    title="Release Hold"
+                    onClick={async () => {
+                      const reason = await this.dialogManager.showPrompt('Release reason:', { title: 'Release Legal Hold', confirmText: 'Release', cancelText: 'Cancel' });
+                      if (reason) {
+                        try {
+                          const currentUser = await this.props.sp.web.currentUser();
+                          await this.retentionService.releaseLegalHold(hold.Id!, currentUser.Title || 'Admin', reason);
+                          await this.loadLegalHolds();
+                          void this.dialogManager.showAlert('Legal hold released.', { variant: 'success' });
+                        } catch {
+                          void this.dialogManager.showAlert('Failed to release hold.', { variant: 'error' });
+                        }
+                      }
+                    }}
+                    styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: '#059669' } }}
+                    ariaLabel={`Release hold on ${hold.PolicyTitle}`}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Place Hold Panel */}
+        <StyledPanel
+          isOpen={showPlaceHoldPanel}
+          onDismiss={() => this.setState({ showPlaceHoldPanel: false } as any)}
+          headerText="Place Legal Hold"
+          type={PanelType.smallFixedFar}
+          onRenderFooterContent={() => (
+            <Stack horizontal tokens={{ childrenGap: 8 }} style={{ padding: '16px 0' }}>
+              <PrimaryButton
+                text="Place Hold"
+                disabled={!this.state.holdPolicyId || !this.state.holdReason}
+                onClick={async () => {
+                  try {
+                    const currentUser = await this.props.sp.web.currentUser();
+                    const policyId = parseInt(this.state.holdPolicyId, 10);
+                    const selectedPolicy = this.state.publishedPolicies.find(p => p.Id === policyId);
+                    await this.retentionService.placeLegalHold(
+                      policyId,
+                      this.state.holdReason,
+                      this.state.holdCaseRef,
+                      currentUser.Title || 'Admin',
+                      currentUser.Email || '',
+                      this.state.holdExpiryDate || undefined,
+                      selectedPolicy?.Title
+                    );
+                    this.setState({ showPlaceHoldPanel: false } as any);
+                    await this.loadLegalHolds();
+                    void this.dialogManager.showAlert('Legal hold placed successfully.', { variant: 'success' });
+                  } catch {
+                    void this.dialogManager.showAlert('Failed to place legal hold.', { variant: 'error' });
+                  }
+                }}
+                styles={{ root: { background: '#dc2626', borderColor: '#dc2626', borderRadius: 6 }, rootHovered: { background: '#b91c1c', borderColor: '#b91c1c' } }}
+              />
+              <DefaultButton text="Cancel" onClick={() => this.setState({ showPlaceHoldPanel: false } as any)} styles={{ root: { borderRadius: 6 } }} />
+            </Stack>
+          )}
+          isFooterAtBottom={true}
+        >
+          <Stack tokens={{ childrenGap: 16 }} style={{ paddingTop: 16 }}>
+            <Dropdown
+              label="Policy"
+              required
+              selectedKey={this.state.holdPolicyId}
+              options={[
+                { key: '', text: '— Select a published policy —' },
+                ...this.state.publishedPolicies.map(p => ({ key: String(p.Id), text: p.Title }))
+              ]}
+              onChange={(_, opt) => this.setState({ holdPolicyId: String(opt?.key || '') } as any)}
+              styles={{ title: { borderRadius: 6 }, dropdown: { borderRadius: 6 } }}
+            />
+            <TextField
+              label="Reason for Hold"
+              required
+              multiline
+              rows={4}
+              value={this.state.holdReason}
+              onChange={(_, v) => this.setState({ holdReason: v || '' } as any)}
+              styles={{ fieldGroup: { borderRadius: 6 } }}
+            />
+            <TextField
+              label="Case Reference"
+              placeholder="e.g. CASE-2026-001"
+              value={this.state.holdCaseRef}
+              onChange={(_, v) => this.setState({ holdCaseRef: v || '' } as any)}
+              styles={{ fieldGroup: { borderRadius: 6 } }}
+            />
+            <TextField
+              label="Expiry Date (optional)"
+              type="date"
+              value={this.state.holdExpiryDate}
+              onChange={(_, v) => this.setState({ holdExpiryDate: v || '' } as any)}
+              styles={{ fieldGroup: { borderRadius: 6 } }}
+            />
+            <MessageBar messageBarType={MessageBarType.severeWarning}>
+              Placing a legal hold will prevent this policy from being edited, deleted, retired, or archived until the hold is released.
+            </MessageBar>
+          </Stack>
+        </StyledPanel>
+      </section>
     );
   }
 
@@ -9946,6 +10195,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       case 'documentStorage': return this.renderDocumentStorageContent();
       case 'secureLibraries': return this.renderSecureLibrariesContent();
       // securityGroups consolidated into groupsPermissions
+      case 'legalHolds': return this.renderLegalHoldsContent();
       case 'dlpRules': return this.renderDLPRulesContent();
       case 'dataRetention': return this.renderDataRetentionContent();
       case 'systemInfo': return this.renderSystemInfoContent();

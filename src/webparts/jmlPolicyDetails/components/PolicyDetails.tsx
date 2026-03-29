@@ -46,6 +46,7 @@ import {
   IPolicyVersion
 } from '../../../models/IPolicy';
 import { PolicyDocumentComparisonService } from '../../../services/PolicyDocumentComparisonService';
+import { RetentionService } from '../../../services/RetentionService';
 import { StyledPanel } from '../../../components/StyledPanel';
 import styles from './PolicyDetails.module.scss';
 import { PM_LISTS } from '../../../constants/SharePointListNames';
@@ -155,6 +156,8 @@ export interface IPolicyDetailsState {
   showVersionComparisonPanel: boolean;
   versionComparisonHtml: string;
   versionComparisonLoading: boolean;
+  // Legal hold
+  _legalHoldActive: boolean;
 }
 
 // Mock quiz questions (will be replaced by QuizTaker integration)
@@ -272,7 +275,8 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
       policyVersions: [],
       showVersionComparisonPanel: false,
       versionComparisonHtml: '',
-      versionComparisonLoading: false
+      versionComparisonLoading: false,
+      _legalHoldActive: false
     };
     this.policyService = new PolicyService(props.sp);
     this.socialService = new PolicySocialService(props.sp);
@@ -288,6 +292,22 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
     await this.loadPolicyDetails();
     this.startReadTracking();
     document.addEventListener('fullscreenchange', this.handleFullscreenChange);
+    // Check legal hold status
+    this.checkLegalHold();
+  }
+
+  private async checkLegalHold(): Promise<void> {
+    try {
+      const policyId = this.getPolicyIdFromUrl();
+      if (!policyId) return;
+      const retentionService = new RetentionService(this.props.sp);
+      const isHeld = await retentionService.isPolicyOnHold(policyId);
+      if (this._isMounted) {
+        this.setState({ _legalHoldActive: isHeld });
+      }
+    } catch {
+      // Non-critical — if check fails, assume no hold
+    }
   }
 
   public componentWillUnmount(): void {
@@ -3686,6 +3706,20 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                   {policy.PublishedDate && <span style={{ fontSize: 11, color: '#94a3b8' }}>Published {new Date(policy.PublishedDate as any).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>}
                   {policy.EstimatedReadTimeMinutes && <span style={{ fontSize: 11, color: '#94a3b8' }}>&middot; {policy.EstimatedReadTimeMinutes} min read</span>}
                 </div>
+                {/* Legal Hold Banner */}
+                {this.state._legalHoldActive && (
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 8, marginTop: 10,
+                    background: '#dc2626', color: '#fff', padding: '8px 14px', borderRadius: 6,
+                    fontSize: 12, fontWeight: 600
+                  }}>
+                    <svg viewBox="0 0 24 24" fill="none" width="16" height="16" style={{ flexShrink: 0 }}>
+                      <rect x="3" y="11" width="18" height="11" rx="2" stroke="currentColor" strokeWidth="2"/>
+                      <path d="M7 11V7a5 5 0 0110 0v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                    </svg>
+                    LEGAL HOLD — This policy is under legal hold and cannot be modified or deleted
+                  </div>
+                )}
               </div>
               <button
                 onClick={() => { window.location.href = '/sites/PolicyManager/SitePages/PolicyHub.aspx'; }}

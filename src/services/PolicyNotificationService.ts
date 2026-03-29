@@ -13,6 +13,7 @@ import { logger } from './LoggingService';
 import { NotificationLists } from '../constants/SharePointListNames';
 import { DwxNotificationService, DwxNotificationType, DwxNotificationPriority, DwxNotificationCategory } from '@dwx/core';
 import { escapeHtml } from '../utils/sanitizeHtml';
+import { EmailTemplateBuilder } from '../utils/EmailTemplateBuilder';
 import { ValidationUtils } from '../utils/ValidationUtils';
 import { NotificationRouter } from './NotificationRouter';
 
@@ -158,19 +159,32 @@ export class PolicyNotificationService {
         body = this.replaceMergeTags(template.body, opts.mergeData);
       }
 
-      // Wrap body in email shell
+      // Wrap body in email shell using centralized EmailTemplateBuilder
       const siteUrl = this.sp.web.toUrl().replace('/_api/web', '');
       const isReviewEvent = ['review-required', 'approval-request', 'review-withdrawn'].includes(opts.eventName);
       const policyUrl = opts.mergeData.PolicyUrl || `${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${opts.policyId || 0}${isReviewEvent ? '&mode=review' : ''}`;
-      const htmlBody = this.buildEmailShell({
-        headerGradient: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
-        headerIcon: '&#x1F4CB;',
+      // Map eventName to EmailNotificationType; default to 'policy-published' if no match
+      const typeMap: Record<string, string> = {
+        'review-required': 'review-required', 'approval-request': 'approval-request',
+        'approval-approved': 'approval-approved', 'approval-rejected': 'approval-rejected',
+        'review-withdrawn': 'policy-updated', 'policy-published': 'policy-published',
+        'ack-required': 'ack-required', 'reminder-3day': 'reminder-3day',
+        'reminder-1day': 'reminder-1day', 'overdue': 'overdue',
+        'ack-complete': 'ack-complete', 'policy-expiring': 'policy-expiring',
+        'policy-retired': 'policy-retired', 'sla-breach': 'sla-breach', 'welcome': 'welcome'
+      };
+      const emailType = (typeMap[opts.eventName] || 'policy-published') as import('../utils/EmailTemplateBuilder').EmailNotificationType;
+      const htmlBody = EmailTemplateBuilder.build(emailType, {
+        recipientName: opts.recipientName || 'Team Member',
         headerTitle: subject,
-        content: body,
-        footerText: 'First Digital — DWx Policy Manager',
-        ctaUrl: policyUrl,
-        ctaLabel: 'View in Policy Manager',
-        ctaColor: '#0d9488'
+        bodyText: body,
+        rows: [
+          { label: 'Policy', value: escapeHtml(opts.mergeData.PolicyTitle || '') },
+          ...(opts.mergeData.PolicyNumber ? [{ label: 'Policy Number', value: escapeHtml(opts.mergeData.PolicyNumber) }] : []),
+          ...(opts.mergeData.Category ? [{ label: 'Category', value: escapeHtml(opts.mergeData.Category) }] : [])
+        ],
+        ctaText: 'View in Policy Manager',
+        ctaUrl: policyUrl
       });
 
       // Queue to PM_NotificationQueue (two-step write to guarantee QueueStatus)
@@ -716,336 +730,147 @@ export class PolicyNotificationService {
   }
 
   // ============================================================================
-  // EMAIL TEMPLATE BUILDERS — Forest Teal Brand Design System
+  // EMAIL TEMPLATE BUILDERS — Now using centralized EmailTemplateBuilder
+  // Private helpers (buildEmailShell, emailRow, emailTable, policyCard) removed;
+  // all email rendering delegated to src/utils/EmailTemplateBuilder.ts
   // ============================================================================
-
-  /**
-   * Wraps email content in a branded, responsive HTML shell.
-   * @param headerGradient CSS gradient for the header bar
-   * @param headerIcon Emoji icon for the header
-   * @param headerTitle Title text for the header
-   * @param bodyBg Background color for the content area
-   * @param content Inner HTML content
-   * @param footerText Footer disclaimer text
-   */
-  private buildEmailShell(opts: {
-    headerGradient: string; headerIcon: string; headerTitle: string;
-    bodyBg?: string; content: string; footerText: string;
-    ctaUrl: string; ctaLabel: string; ctaColor: string;
-  }): string {
-    const { headerGradient, headerTitle, content, ctaUrl, ctaLabel, ctaColor } = opts;
-    // Extract gradient colours from "linear-gradient(135deg, #xxx, #yyy)" format
-    const gradientMatch = headerGradient.match(/#[0-9a-fA-F]{6}/g) || ['#0d9488', '#0f766e'];
-    const gradStart = gradientMatch[0] || '#0d9488';
-    const gradEnd = gradientMatch[1] || gradientMatch[0] || '#0f766e';
-    const F = "'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif";
-
-    return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f1f5f9;">
-  <tr>
-    <td align="center" style="padding:32px 16px;">
-      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px; width:100%; border-radius:12px; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,0.08);">
-        <tr>
-          <td style="background:linear-gradient(135deg, ${gradStart} 0%, ${gradEnd} 100%); padding:0;">
-            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
-              <tr>
-                <td style="padding:20px 40px 18px 40px;">
-                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
-                    <tr>
-                      <td valign="middle" style="font-family:${F};">
-                        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="padding-bottom:10px;">
-                          <tr>
-                            <td style="font-size:11px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:rgba(255,255,255,0.6);">First Digital &bull; DWx Policy Manager</td>
-                          </tr>
-                        </table>
-                        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
-                          <tr>
-                            <td style="font-size:20px; font-weight:700; color:#ffffff; line-height:1.3; letter-spacing:-0.3px;">${headerTitle}</td>
-                            <td width="44" valign="middle" align="right">
-                              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
-                                <tr><td style="width:44px; height:44px; border-radius:50%; background-color:rgba(255,255,255,0.1); font-size:1px; line-height:1px;">&nbsp;</td></tr>
-                              </table>
-                            </td>
-                          </tr>
-                        </table>
-                      </td>
-                    </tr>
-                  </table>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-        <tr>
-          <td style="background-color:#ffffff; padding:28px 40px 24px 40px;">
-            ${content}
-            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
-              <tr><td style="height:28px; font-size:1px; line-height:1px;">&nbsp;</td></tr>
-            </table>
-            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
-              <tr>
-                <td style="background-color:${ctaColor}; border-radius:8px;">
-                  <a href="${ctaUrl}" target="_blank" style="display:inline-block; padding:14px 48px; font-family:${F}; font-size:14px; font-weight:600; color:#ffffff; text-decoration:none; letter-spacing:0.3px;">${ctaLabel}</a>
-                </td>
-              </tr>
-            </table>
-            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
-              <tr>
-                <td align="center" style="padding-top:12px; font-family:${F}; font-size:11px; color:#94a3b8;">
-                  Or copy this link: <a href="${ctaUrl}" style="color:#64748b; text-decoration:underline; word-break:break-all;">${ctaUrl}</a>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-        <tr>
-          <td style="background-color:#f8fafc; border-top:1px solid #e2e8f0; padding:20px 40px;">
-            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
-              <tr>
-                <td style="font-family:${F}; font-size:11px; color:#94a3b8; line-height:1.6;">First Digital &mdash; DWx Policy Manager<br><span style="color:#cbd5e1;">Policy Governance &amp; Compliance</span></td>
-                <td align="right" style="font-family:${F}; font-size:11px;"><a href="#unsubscribe" style="color:#94a3b8; text-decoration:underline;">Unsubscribe</a></td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-      </table>
-    </td>
-  </tr>
-</table>`;
-  }
-
-  /** Row counter for alternating backgrounds */
-  private _rowIndex = 0;
-
-  /** Builds a detail row for email tables (auto-escapes label and value) */
-  private emailRow(label: string, value: string, valueStyle?: string): string {
-    const bg = this._rowIndex % 2 === 0 ? '#f8fafc' : '#ffffff';
-    this._rowIndex++;
-    const F = "'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif";
-    return `<tr>
-      <td width="38%" style="background-color:${bg}; padding:12px 20px; font-family:${F}; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.8px; color:#64748b; border-bottom:1px solid #f1f5f9;">${escapeHtml(label)}</td>
-      <td width="62%" style="background-color:${bg}; padding:12px 20px; font-family:${F}; font-size:13px; font-weight:500; color:#334155; border-bottom:1px solid #f1f5f9;${valueStyle || ''}">${escapeHtml(value)}</td>
-    </tr>`;
-  }
-
-  /** Builds a detail table for email templates */
-  private emailTable(rows: string): string {
-    this._rowIndex = 0; // reset alternating rows
-    return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid #e2e8f0; border-radius:8px; overflow:hidden;">${rows}</table>`;
-  }
-
-  /** Builds a policy highlight card (auto-escapes text content) */
-  private policyCard(policyNumber: string, policyName: string, accent: string, detail: string): string {
-    const F = "'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif";
-    return `<div style="background:#f8fafc;padding:16px 20px;border-radius:8px;border-left:4px solid ${accent};margin:20px 0;font-family:${F};">
-      <p style="margin:0 0 4px;font-size:11px;color:#64748b;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;">${escapeHtml(policyNumber)}</p>
-      <p style="margin:0;font-size:15px;font-weight:600;color:#0f172a;">${escapeHtml(policyName)}</p>
-      <p style="margin:8px 0 0;color:${accent};font-weight:600;font-size:13px;">${escapeHtml(detail)}</p>
-    </div>`;
-  }
 
   private buildNewPolicyEmail(policy: IPolicy): string {
     const policyUrl = `${this.siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policy.Id}`;
-    const rows = this.emailRow('Policy Number', policy.PolicyNumber || 'N/A')
-      + this.emailRow('Policy Name', policy.PolicyName)
-      + this.emailRow('Category', policy.PolicyCategory || 'General')
-      + this.emailRow('Effective Date', policy.EffectiveDate ? new Date(policy.EffectiveDate).toLocaleDateString() : 'Immediate');
-    const summary = policy.Description
-      ? `<div style="background:#f0fdfa;padding:16px;border-radius:8px;margin:16px 0;border:1px solid #ccfbf1;">
-           <p style="margin:0 0 6px;font-weight:600;color:#0f766e;font-size:13px;">Summary</p>
-           <p style="margin:0;color:#334155;font-size:14px;line-height:1.6;">${escapeHtml(policy.Description)}</p>
-         </div>` : '';
-    return this.buildEmailShell({
-      headerGradient: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
-      headerIcon: '\u{1F4CB}', headerTitle: 'New Policy Published',
-      content: `<p style="margin:0 0 16px;color:#334155;font-size:15px;line-height:1.6;">A new policy has been published that requires your attention.</p>
-        ${this.emailTable(rows)}${summary}`,
-      footerText: 'This is an automated notification from the DWx Policy Management System.',
-      ctaUrl: policyUrl, ctaLabel: 'View Policy', ctaColor: '#0d9488',
+    return EmailTemplateBuilder.policyPublished({
+      recipientName: 'Team',
+      policyTitle: policy.PolicyName,
+      policyNumber: policy.PolicyNumber || 'N/A',
+      publishedBy: policy.PolicyOwner?.Title || 'Policy Manager',
+      category: policy.PolicyCategory || 'General',
+      department: (policy as any).Department || '',
+      riskLevel: policy.ComplianceRisk || 'Medium',
+      effectiveDate: policy.EffectiveDate ? new Date(policy.EffectiveDate).toLocaleDateString() : 'Immediate',
+      ctaUrl: policyUrl
     });
   }
 
   private buildPolicyUpdateEmail(policy: IPolicy, changeDescription: string): string {
     const policyUrl = `${this.siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policy.Id}`;
-    const rows = this.emailRow('Policy', `${policy.PolicyNumber} &mdash; ${policy.PolicyName}`)
-      + this.emailRow('New Version', `v${policy.VersionNumber || '1.0'}`, 'font-weight:600;color:#0d9488;');
-    return this.buildEmailShell({
-      headerGradient: 'linear-gradient(135deg, #d97706 0%, #b45309 100%)',
-      headerIcon: '\u{1F504}', headerTitle: 'Policy Updated',
-      content: `<p style="margin:0 0 16px;color:#334155;font-size:15px;line-height:1.6;">A policy you are required to acknowledge has been updated.</p>
-        ${this.emailTable(rows)}
-        <div style="background:#fef3c7;border-left:4px solid #d97706;padding:16px;border-radius:0 8px 8px 0;margin:20px 0;">
-          <p style="margin:0 0 6px;font-weight:700;color:#92400e;font-size:13px;">What Changed</p>
-          <p style="margin:0;color:#451a03;font-size:14px;line-height:1.5;">${escapeHtml(changeDescription || 'The policy has been revised. Please review the updated content.')}</p>
-        </div>
-        <p style="margin:16px 0 0;color:#dc2626;font-weight:600;font-size:14px;">\u26A0\uFE0F You may need to re-acknowledge this policy.</p>`,
-      footerText: 'This is an automated notification from the DWx Policy Management System.',
-      ctaUrl: policyUrl, ctaLabel: 'Review Updated Policy', ctaColor: '#d97706',
+    return EmailTemplateBuilder.policyUpdated({
+      recipientName: 'Team',
+      policyTitle: policy.PolicyName,
+      policyNumber: policy.PolicyNumber || 'N/A',
+      updatedBy: policy.PolicyOwner?.Title || 'Policy Manager',
+      previousVersion: `v${String(Math.max(1, parseFloat(policy.VersionNumber || '1') - 1)).replace(/\.0+$/, '')}.0`,
+      newVersion: `v${policy.VersionNumber || '1.0'}`,
+      keyChanges: changeDescription || 'The policy has been revised. Please review the updated content.',
+      ctaUrl: policyUrl
     });
   }
 
   private buildAcknowledgementRequiredEmail(policy: IPolicy, acknowledgement: IPolicyAcknowledgement): string {
     const policyUrl = `${this.siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policy.Id}`;
     const dueDate = acknowledgement.DueDate ? new Date(acknowledgement.DueDate).toLocaleDateString() : 'As soon as possible';
-    const rows = this.emailRow('Policy', `${policy.PolicyNumber} &mdash; ${policy.PolicyName}`)
-      + this.emailRow('Category', policy.PolicyCategory || 'General')
-      + this.emailRow('Due Date', dueDate, acknowledgement.DueDate ? 'color:#dc2626;font-weight:700;' : '');
-    return this.buildEmailShell({
-      headerGradient: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
-      headerIcon: '\u{1F4DD}', headerTitle: 'Action Required: Policy Acknowledgement',
-      content: `<p style="margin:0 0 16px;color:#334155;font-size:15px;line-height:1.6;">You are required to read and acknowledge the following policy:</p>
-        ${this.emailTable(rows)}`,
-      footerText: 'This is an automated notification from the DWx Policy Management System.<br>You will receive reminders if the policy is not acknowledged by the due date.',
-      ctaUrl: policyUrl, ctaLabel: 'Read & Acknowledge Policy', ctaColor: '#0d9488',
+    return EmailTemplateBuilder.ackRequired({
+      recipientName: 'Team Member',
+      policyTitle: policy.PolicyName,
+      policyNumber: policy.PolicyNumber || 'N/A',
+      assignedBy: policy.PolicyOwner?.Title || 'Policy Manager',
+      category: policy.PolicyCategory || 'General',
+      department: (policy as any).Department || '',
+      riskLevel: policy.ComplianceRisk || 'Medium',
+      dueDate,
+      quizRequired: !!(policy as any).RequiresQuiz,
+      ctaUrl: policyUrl
     });
   }
 
   private buildReminder3DayEmail(policy: IPolicy, acknowledgement: IPolicyAcknowledgement): string {
     const policyUrl = `${this.siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policy.Id}`;
     const dueDate = acknowledgement.DueDate ? new Date(acknowledgement.DueDate).toLocaleDateString() : 'Soon';
-    return this.buildEmailShell({
-      headerGradient: 'linear-gradient(135deg, #d97706 0%, #b45309 100%)',
-      headerIcon: '\u23F0', headerTitle: 'Reminder: 3 Days Remaining',
-      content: `<p style="margin:0 0 16px;color:#334155;font-size:15px;line-height:1.6;">This is a friendly reminder that you have <strong style="color:#d97706;">3 days</strong> remaining to acknowledge the following policy:</p>
-        ${this.policyCard(policy.PolicyNumber || '', policy.PolicyName, '#d97706', `Due: ${dueDate}`)}`,
-      footerText: 'This is reminder 1 of 2. You will receive a final reminder 1 day before the due date.',
-      ctaUrl: policyUrl, ctaLabel: 'Acknowledge Now', ctaColor: '#d97706',
+    return EmailTemplateBuilder.reminder3Day({
+      recipientName: 'Team Member',
+      policyTitle: policy.PolicyName,
+      policyNumber: policy.PolicyNumber || 'N/A',
+      category: policy.PolicyCategory || 'General',
+      dueDate,
+      ctaUrl: policyUrl
     });
   }
 
   private buildReminder1DayEmail(policy: IPolicy, acknowledgement: IPolicyAcknowledgement): string {
     const policyUrl = `${this.siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policy.Id}`;
     const dueDate = acknowledgement.DueDate ? new Date(acknowledgement.DueDate).toLocaleDateString() : 'Tomorrow';
-    return this.buildEmailShell({
-      headerGradient: 'linear-gradient(135deg, #dc2626 0%, #991b1b 100%)',
-      headerIcon: '\u{1F6A8}', headerTitle: 'Final Reminder: Due Tomorrow!',
-      content: `<p style="margin:0 0 16px;color:#dc2626;font-weight:600;font-size:16px;">This policy acknowledgement is due <strong>TOMORROW</strong>. Please take action today.</p>
-        ${this.policyCard(policy.PolicyNumber || '', policy.PolicyName, '#dc2626', `Due: ${dueDate}`)}`,
-      footerText: 'Failure to acknowledge by the due date may result in compliance escalation to your manager.',
-      ctaUrl: policyUrl, ctaLabel: 'Acknowledge Immediately', ctaColor: '#dc2626',
+    return EmailTemplateBuilder.reminder1Day({
+      recipientName: 'Team Member',
+      policyTitle: policy.PolicyName,
+      policyNumber: policy.PolicyNumber || 'N/A',
+      dueDate,
+      ctaUrl: policyUrl
     });
   }
 
   private buildOverdueEmail(policy: IPolicy, acknowledgement: IPolicyAcknowledgement, daysOverdue: number): string {
     const policyUrl = `${this.siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policy.Id}`;
     const wasDue = acknowledgement.DueDate ? new Date(acknowledgement.DueDate).toLocaleDateString() : 'N/A';
-    return this.buildEmailShell({
-      headerGradient: 'linear-gradient(135deg, #991b1b 0%, #7f1d1d 100%)',
-      headerIcon: '\u{1F534}', headerTitle: 'OVERDUE: Immediate Action Required',
-      bodyBg: '#fef2f2',
-      content: `<p style="margin:0 0 16px;color:#991b1b;font-weight:700;font-size:17px;">Your policy acknowledgement is <strong>${daysOverdue} day${daysOverdue > 1 ? 's' : ''} OVERDUE</strong>.</p>
-        ${this.policyCard(policy.PolicyNumber || '', policy.PolicyName, '#991b1b', `Was Due: ${wasDue}`)}
-        <div style="background:#fef3c7;padding:16px;border-radius:8px;margin:20px 0;border:1px solid #fde68a;">
-          <p style="margin:0;font-weight:700;color:#92400e;font-size:13px;">\u26A0\uFE0F Compliance Notice</p>
-          <p style="margin:8px 0 0;color:#451a03;font-size:14px;line-height:1.5;">This overdue acknowledgement has been flagged in the compliance system and your manager has been notified.</p>
-        </div>`,
-      footerText: 'If you have questions about this policy, please contact your manager or HR.',
-      ctaUrl: policyUrl, ctaLabel: 'Acknowledge Now', ctaColor: '#991b1b',
+    return EmailTemplateBuilder.overdue({
+      recipientName: 'Team Member',
+      policyTitle: policy.PolicyName,
+      policyNumber: policy.PolicyNumber || 'N/A',
+      dueDate: wasDue,
+      daysOverdue,
+      escalatedTo: 'Your Manager',
+      ctaUrl: policyUrl
     });
   }
 
   private buildAcknowledgementCompleteEmail(policy: IPolicy, acknowledgement: IPolicyAcknowledgement): string {
     const certificateUrl = `${this.siteUrl}/SitePages/PolicyCertificate.aspx?acknowledgementId=${acknowledgement.Id}`;
     const ackDate = acknowledgement.AcknowledgedDate ? new Date(acknowledgement.AcknowledgedDate).toLocaleDateString() : new Date().toLocaleDateString();
-    const rows = this.emailRow('Receipt Number', String(acknowledgement.Id))
-      + this.emailRow('Policy Version', `v${policy.VersionNumber || '1.0'}`)
-      + this.emailRow('Acknowledged', ackDate, 'color:#059669;font-weight:600;');
-    return this.buildEmailShell({
-      headerGradient: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
-      headerIcon: '\u2705', headerTitle: 'Policy Acknowledged Successfully',
-      bodyBg: '#f0fdf4',
-      content: `<p style="margin:0 0 16px;color:#334155;font-size:15px;line-height:1.6;">Thank you for acknowledging the following policy:</p>
-        ${this.policyCard(policy.PolicyNumber || '', policy.PolicyName, '#059669', `\u2713 Acknowledged: ${ackDate}`)}
-        ${this.emailTable(rows)}`,
-      footerText: 'Please retain this email as confirmation of your policy acknowledgement.',
-      ctaUrl: certificateUrl, ctaLabel: 'View Certificate', ctaColor: '#059669',
+    return EmailTemplateBuilder.ackComplete({
+      recipientName: 'Team Member',
+      policyTitle: policy.PolicyName,
+      policyNumber: policy.PolicyNumber || 'N/A',
+      acknowledgedDate: ackDate,
+      category: policy.PolicyCategory || 'General',
+      ctaUrl: certificateUrl
     });
   }
 
   private buildPolicyExpiringEmail(policy: IPolicy, daysUntilExpiry: number): string {
     const policyUrl = `${this.siteUrl}/SitePages/PolicyAdmin.aspx?policyId=${policy.Id}`;
-    const rows = this.emailRow('Policy', `${policy.PolicyNumber} &mdash; ${policy.PolicyName}`)
-      + this.emailRow('Expiry Date', policy.ExpiryDate ? new Date(policy.ExpiryDate).toLocaleDateString() : 'N/A', 'color:#d97706;font-weight:700;')
-      + this.emailRow('Owner', policy.PolicyOwner?.Title || 'Unassigned');
-    return this.buildEmailShell({
-      headerGradient: 'linear-gradient(135deg, #d97706 0%, #b45309 100%)',
-      headerIcon: '\u{1F4C5}', headerTitle: 'Policy Expiring Soon',
-      content: `<p style="margin:0 0 16px;color:#334155;font-size:15px;line-height:1.6;">The following policy will expire in <strong style="color:#d97706;">${daysUntilExpiry} days</strong>:</p>
-        ${this.emailTable(rows)}
-        <div style="background:#fef3c7;padding:16px;border-radius:8px;margin:20px 0;border:1px solid #fde68a;">
-          <p style="margin:0 0 8px;font-weight:700;color:#92400e;font-size:13px;">Action Required</p>
-          <ul style="margin:0;padding-left:20px;color:#451a03;font-size:14px;line-height:1.8;">
-            <li>Review the policy for accuracy and relevance</li>
-            <li>Update and re-publish if changes are needed</li>
-            <li>Extend the expiry date if the policy is still valid</li>
-            <li>Retire the policy if no longer applicable</li>
-          </ul>
-        </div>`,
-      footerText: 'This is an automated alert from the DWx Policy Management System.',
-      ctaUrl: policyUrl, ctaLabel: 'Manage Policy', ctaColor: '#d97706',
+    return EmailTemplateBuilder.policyExpiring({
+      recipientName: policy.PolicyOwner?.Title || 'Administrator',
+      policyTitle: policy.PolicyName,
+      policyNumber: policy.PolicyNumber || 'N/A',
+      category: policy.PolicyCategory || 'General',
+      currentVersion: `v${policy.VersionNumber || '1.0'}`,
+      expiryDate: policy.ExpiryDate ? new Date(policy.ExpiryDate).toLocaleDateString() : 'N/A',
+      daysUntilExpiry,
+      ctaUrl: policyUrl
     });
   }
 
   private buildPolicyApprovalEmail(policy: IPolicy, approverName: string): string {
     const policyUrl = `${this.siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policy.Id}&mode=review`;
-    const rows = this.emailRow('Policy', `${policy.PolicyNumber} &mdash; ${policy.PolicyName}`)
-      + this.emailRow('Approved By', approverName)
-      + this.emailRow('Published Date', new Date().toLocaleDateString());
-    return this.buildEmailShell({
-      headerGradient: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
-      headerIcon: '\u2705', headerTitle: 'Policy Approved',
-      bodyBg: '#f0fdf4',
-      content: `<p style="margin:0 0 16px;color:#334155;font-size:15px;line-height:1.6;">Great news! Your policy has been <strong style="color:#059669;">approved</strong> and is now published.</p>
-        ${this.emailTable(rows)}`,
-      footerText: 'This is an automated notification from the DWx Policy Management System.',
-      ctaUrl: policyUrl, ctaLabel: 'View Published Policy', ctaColor: '#059669',
+    return EmailTemplateBuilder.approvalApproved({
+      recipientName: 'Author',
+      policyTitle: policy.PolicyName,
+      policyNumber: policy.PolicyNumber || 'N/A',
+      approvedBy: approverName,
+      decisionDate: new Date().toLocaleDateString(),
+      comments: 'No comments',
+      ctaUrl: policyUrl
     });
   }
 
   private buildPolicyRejectionEmail(policy: IPolicy, approverName: string, reason: string): string {
     const policyUrl = `${this.siteUrl}/SitePages/PolicyBuilder.aspx?policyId=${policy.Id}`;
-
-    return `
-      <html>
-        <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #323130; max-width: 600px; margin: 0 auto;">
-          <div style="background: linear-gradient(135deg, #d13438 0%, #a80000 100%); padding: 24px; border-radius: 8px 8px 0 0;">
-            <h2 style="color: white; margin: 0;">⚠️ Policy Requires Revision</h2>
-          </div>
-
-          <div style="padding: 24px; background: #fde7e9; border-radius: 0 0 8px 8px;">
-            <p>Your policy submission requires revisions before it can be approved.</p>
-
-            <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background: white; border-radius: 8px;">
-              <tr>
-                <td style="padding: 12px 16px; background: #f3f2f1; font-weight: 600;">Policy:</td>
-                <td style="padding: 12px 16px;">${escapeHtml(policy.PolicyNumber || '')} - ${escapeHtml(policy.PolicyName)}</td>
-              </tr>
-              <tr>
-                <td style="padding: 12px 16px; background: #f3f2f1; font-weight: 600;">Reviewer:</td>
-                <td style="padding: 12px 16px;">${escapeHtml(approverName)}</td>
-              </tr>
-            </table>
-
-            <div style="background: white; padding: 16px; border-radius: 8px; border-left: 4px solid #d13438; margin: 20px 0;">
-              <strong>Feedback:</strong>
-              <p style="margin: 8px 0 0 0;">${escapeHtml(reason || 'Please contact the reviewer for specific feedback.')}</p>
-            </div>
-
-            <p style="text-align: center; margin: 24px 0;">
-              <a href="${policyUrl}"
-                 style="background: #0078d4; color: white; padding: 14px 32px;
-                        text-decoration: none; border-radius: 6px; display: inline-block;
-                        font-weight: 600;">
-                Edit Policy
-              </a>
-            </p>
-
-            <p style="color: #605e5c; font-size: 12px; margin-top: 30px; text-align: center;">
-              Please make the requested changes and resubmit for approval.
-            </p>
-          </div>
-        </body>
-      </html>
-    `;
+    return EmailTemplateBuilder.approvalRejected({
+      recipientName: 'Author',
+      policyTitle: policy.PolicyName,
+      policyNumber: policy.PolicyNumber || 'N/A',
+      rejectedBy: approverName,
+      decisionDate: new Date().toLocaleDateString(),
+      reason: reason || 'Please contact the reviewer for specific feedback.',
+      ctaUrl: policyUrl
+    });
   }
 
   // ============================================================================
@@ -1075,6 +900,27 @@ export class PolicyNotificationService {
 
       // Store notification in local list for audit trail
       await this.logNotification(notification);
+
+      // Queue email to PM_NotificationQueue so the Logic App can send it
+      if (notification.sendEmail && notification.recipientEmail) {
+        try {
+          await this.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
+            Title: notification.subject,
+            RecipientEmail: notification.recipientEmail,
+            RecipientName: notification.recipientName || '',
+            PolicyId: notification.policyId || 0,
+            PolicyTitle: notification.subject,
+            NotificationType: notification.notificationType,
+            Channel: 'Email',
+            Message: notification.body,
+            QueueStatus: 'Pending',
+            Priority: 'Normal'
+          });
+        } catch (emailQueueErr) {
+          // Email queue failure must not break in-app notifications
+          logger.warn('PolicyNotificationService', 'Failed to queue email to PM_NotificationQueue:', emailQueueErr);
+        }
+      }
 
       // Fire cross-app notification to DWx Hub (if available)
       if (notification.sendInApp && this.dwxNotifications) {

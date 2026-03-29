@@ -2639,6 +2639,25 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
           });
         } catch { /* best-effort */ }
 
+        // Write to PM_ApprovalHistory for approval audit trail (bridge until full ApprovalService wiring)
+        try {
+          const prevStatus = policy!.PolicyStatus || 'In Review';
+          const newStatus = reviewDecision === 'approve'
+            ? (updatedReviewers.every((r: any) => r.ReviewStatus === 'Approved') ? 'Approved' : 'In Review')
+            : 'Draft';
+          await this.props.sp.web.lists.getByTitle('PM_ApprovalHistory').items.add({
+            Title: `Review ${reviewDecision === 'approve' ? 'Approved' : reviewDecision === 'changes' ? 'ChangesRequested' : 'Rejected'} - Policy ${policy!.Id}`,
+            ApprovalId: 0,
+            ProcessID: String(policy!.Id),
+            Action: reviewDecision === 'approve' ? 'ReviewApproved' : reviewDecision === 'changes' ? 'ChangesRequested' : 'ReviewRejected',
+            PerformedById: currentUserId,
+            ActionDate: new Date().toISOString(),
+            Comments: reviewComments || '',
+            PreviousStatus: prevStatus,
+            NewStatus: newStatus
+          });
+        } catch { /* best-effort — PM_ApprovalHistory may not exist */ }
+
         // Notify policy author
         try {
           const authorEmail = (policy as any)._policyOwnerEmail || (policy as any).PolicyOwner || '';
@@ -2974,6 +2993,29 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
             PerformedByEmail: currentUserEmail, ActionDate: new Date().toISOString()
           });
         } catch { /* best-effort */ }
+
+        // Write to PM_ApprovalHistory for approval audit trail (bridge until full ApprovalService wiring)
+        try {
+          const prevStatus = policy!.PolicyStatus || 'Pending Approval';
+          const allItems = reviewerItems.map((r: any) => r.Id === myRecord?.Id ? { ...r, ReviewStatus: 'Approved' } : r);
+          const allApproversNowApproved = reviewDecision === 'approve' && allItems
+            .filter((r: any) => r.ReviewerType === 'Final Approver' || r.ReviewerType === 'Executive Approver')
+            .every((r: any) => r.ReviewStatus === 'Approved');
+          const newApprovalStatus = reviewDecision === 'approve'
+            ? (allApproversNowApproved ? 'Approved' : 'Pending Approval')
+            : 'Draft';
+          await this.props.sp.web.lists.getByTitle('PM_ApprovalHistory').items.add({
+            Title: `Approval ${reviewDecision === 'approve' ? 'Granted' : reviewDecision === 'return' ? 'Returned' : 'Rejected'} - Policy ${policy!.Id}`,
+            ApprovalId: 0,
+            ProcessID: String(policy!.Id),
+            Action: reviewDecision === 'approve' ? 'ApprovalGranted' : reviewDecision === 'return' ? 'ReturnedToAuthor' : 'ApprovalRejected',
+            PerformedById: currentUserId,
+            ActionDate: new Date().toISOString(),
+            Comments: reviewComments || '',
+            PreviousStatus: prevStatus,
+            NewStatus: newApprovalStatus
+          });
+        } catch { /* best-effort — PM_ApprovalHistory may not exist */ }
 
         // Notify author
         try {

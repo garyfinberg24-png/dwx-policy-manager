@@ -122,12 +122,10 @@ export interface IRolePermissionEntry {
 }
 
 /**
- * Filter nav items based on HIERARCHICAL role access.
- * Higher roles inherit all access from lower roles:
- *   Admin >= Manager >= Author >= User
- *
- * Each nav item has a minimum role requirement. If the user's role
- * meets or exceeds it, the item is visible.
+ * Filter nav items based on EXPLICIT permission table with hierarchy fallback.
+ * The explicit permission table (from getDefaultPermissions()) takes precedence.
+ * For nav keys not found in the permission table, falls back to the
+ * NAV_MINIMUM_ROLE hierarchy check.
  *
  * @param navItems - The nav items to filter
  * @param role - The user's highest PolicyManagerRole
@@ -138,7 +136,23 @@ export function filterNavForRole<T extends { key: string }>(
   role: PolicyManagerRole,
   _permissions?: IRolePermissionEntry[] | null
 ): T[] {
+  // Build a lookup from the explicit permission table
+  const permEntries = getDefaultPermissions();
+  const permMap = new Map<string, IRolePermissionEntry>();
+  for (const entry of permEntries) {
+    permMap.set(entry.key, entry);
+  }
+
+  const roleKey = role.toLowerCase(); // 'user' | 'author' | 'manager' | 'admin'
+
   return navItems.filter(item => {
+    // Check explicit permission table first
+    const perm = permMap.get(item.key);
+    if (perm) {
+      return perm[roleKey] === true;
+    }
+
+    // Fallback to hierarchy check for keys not in the permission table
     const minRole = NAV_MINIMUM_ROLE[item.key];
     if (minRole === undefined) return role === PolicyManagerRole.Admin;
     return hasMinimumRole(role, minRole);

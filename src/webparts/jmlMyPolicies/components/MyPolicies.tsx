@@ -1042,32 +1042,22 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
             )}
           </div>
 
-          {/* Secondary actions */}
+          {/* Secondary actions — commented out for future release
           {policy.status !== 'completed' && (
             <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-              <button type="button" style={{ flex: 1, padding: '8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', border: '1px solid #e2e8f0', fontFamily: 'inherit', textAlign: 'center', background: '#fff', color: '#64748b' }}
-                onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#0d9488'; e.currentTarget.style.color = '#0d9488'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#64748b'; }}
-                onClick={() => {
-                  const siteUrl = this.props.context?.pageContext?.web?.absoluteUrl || '/sites/PolicyManager';
-                  window.location.href = `${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policy.id}&mode=browse`;
-                }}>
+              <button type="button" onClick={() => { window.location.href = `${this.props.context?.pageContext?.web?.absoluteUrl || '/sites/PolicyManager'}/SitePages/PolicyDetails.aspx?policyId=${policy.id}&mode=browse`; }}
+                style={{ flex: 1, padding: '8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', border: '1px solid #e2e8f0', fontFamily: 'inherit', textAlign: 'center', background: '#fff', color: '#64748b' }}>
                 Mark as Read
               </button>
-              <button type="button"
-                title="Coming soon — snooze reminders will be available in a future update"
-                disabled
-                style={{ flex: 1, padding: '8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, cursor: 'not-allowed', border: '1px solid #e2e8f0', fontFamily: 'inherit', textAlign: 'center', background: '#f8fafc', color: '#94a3b8', opacity: 0.7 }}>
+              <button type="button" disabled style={{ flex: 1, padding: '8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, cursor: 'not-allowed', border: '1px solid #e2e8f0', fontFamily: 'inherit', textAlign: 'center', background: '#f8fafc', color: '#94a3b8', opacity: 0.7 }}>
                 Snooze Reminder
               </button>
-              <button type="button"
-                title="Coming soon — extension requests will be available in a future update"
-                disabled
-                style={{ flex: 1, padding: '8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, cursor: 'not-allowed', border: '1px solid #e2e8f0', fontFamily: 'inherit', textAlign: 'center', background: '#f8fafc', color: '#94a3b8', opacity: 0.7 }}>
+              <button type="button" disabled style={{ flex: 1, padding: '8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, cursor: 'not-allowed', border: '1px solid #e2e8f0', fontFamily: 'inherit', textAlign: 'center', background: '#f8fafc', color: '#94a3b8', opacity: 0.7 }}>
                 Request Extension
               </button>
             </div>
           )}
+          */}
         </div>
         )}
       </StyledPanel>

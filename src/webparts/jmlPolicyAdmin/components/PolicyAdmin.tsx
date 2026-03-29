@@ -3203,6 +3203,77 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             );
           })()}
 
+          {/* Breach History */}
+          {(() => {
+            const st = this.state as any;
+            const breaches: any[] = st._slaDashboard?.persistedBreaches || [];
+            const statusFilter = st._breachStatusFilter || 'All';
+            const filtered = statusFilter === 'All' ? breaches : breaches.filter((b: any) => b.BreachStatus === statusFilter);
+            const severityColor = (s: string) => s === 'Critical' ? '#dc2626' : s === 'High' ? '#d97706' : s === 'Medium' ? '#2563eb' : '#059669';
+            const statusBadge = (s: string) => s === 'Open' ? { bg: '#fef2f2', color: '#dc2626' } : s === 'Resolved' ? { bg: '#f0fdf4', color: '#059669' } : s === 'Waived' ? { bg: '#f1f5f9', color: '#64748b' } : { bg: '#fffbeb', color: '#d97706' };
+
+            return (
+              <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
+                <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <Text variant="mediumPlus" style={{ fontWeight: 700, color: '#0f172a', display: 'block' }}>SLA Breach History</Text>
+                    <Text variant="small" style={{ color: '#64748b' }}>Persisted breach records for compliance audit trail</Text>
+                  </div>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    {['All', 'Open', 'Resolved', 'Waived'].map(f => (
+                      <button key={f} onClick={() => this.setState({ _breachStatusFilter: f } as any)}
+                        style={{ padding: '4px 10px', fontSize: 11, fontWeight: statusFilter === f ? 700 : 500, border: `1px solid ${statusFilter === f ? '#0d9488' : '#e2e8f0'}`, borderRadius: 4, cursor: 'pointer', background: statusFilter === f ? '#f0fdfa' : '#fff', color: statusFilter === f ? '#0d9488' : '#64748b' }}>
+                        {f}{f === 'All' ? ` (${breaches.length})` : ` (${breaches.filter((b: any) => b.BreachStatus === f).length})`}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {filtered.length === 0 ? (
+                  <div style={{ padding: '32px 20px', textAlign: 'center', color: '#94a3b8' }}>
+                    <svg viewBox="0 0 24 24" fill="none" width="32" height="32" style={{ margin: '0 auto 8px', display: 'block' }}><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="#059669" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    <Text variant="medium" style={{ fontWeight: 600, color: '#059669', display: 'block' }}>
+                      {statusFilter === 'All' ? 'No SLA breaches recorded' : `No ${statusFilter.toLowerCase()} breaches`}
+                    </Text>
+                    <Text variant="small" style={{ color: '#94a3b8' }}>
+                      {statusFilter === 'All' ? 'Breaches are automatically detected and persisted when SLA targets are exceeded.' : 'Showing filtered results.'}
+                    </Text>
+                  </div>
+                ) : (
+                  <div>
+                    {/* Header */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px 80px 80px 80px 90px 100px', gap: 8, padding: '8px 20px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: '#94a3b8' }}>
+                      <span>Policy</span><span>SLA Type</span><span>Target</span><span>Overdue</span><span>Severity</span><span>Status</span><span>Detected</span>
+                    </div>
+                    {/* Rows */}
+                    {filtered.slice(0, 50).map((breach: any) => {
+                      const badge = statusBadge(breach.BreachStatus);
+                      return (
+                        <div key={breach.Id} style={{ display: 'grid', gridTemplateColumns: '1fr 100px 80px 80px 80px 90px 100px', gap: 8, padding: '10px 20px', borderBottom: '1px solid #f1f5f9', alignItems: 'center', fontSize: 13 }}>
+                          <div>
+                            <div style={{ fontWeight: 600, color: '#0f172a' }}>{breach.PolicyTitle || breach.Title}</div>
+                            <div style={{ fontSize: 11, color: '#94a3b8' }}>{breach.ResponsibleEmail || breach.ResponsibleName || ''}</div>
+                          </div>
+                          <span style={{ fontSize: 11, fontWeight: 600, color: '#475569' }}>{breach.SLAType}</span>
+                          <span style={{ fontSize: 11, color: '#64748b' }}>{breach.TargetDays}d</span>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: '#dc2626' }}>+{breach.DaysOverdue}d</span>
+                          <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4, color: severityColor(breach.Severity), background: breach.Severity === 'Critical' ? '#fef2f2' : breach.Severity === 'High' ? '#fffbeb' : '#eff6ff' }}>
+                            {breach.Severity}
+                          </span>
+                          <div>
+                            <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: badge.bg, color: badge.color }}>{breach.BreachStatus}</span>
+                          </div>
+                          <span style={{ fontSize: 11, color: '#94a3b8' }}>
+                            {breach.DetectedDate ? new Date(breach.DetectedDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : ''}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
           {/* SLA Cards Grid */}
           <div className={styles.adminCardGrid}>
             {slaConfigs.map(sla => {

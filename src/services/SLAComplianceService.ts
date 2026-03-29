@@ -59,9 +59,35 @@ export interface ISLABreachItem {
   policyName?: string;
 }
 
+export interface ISLAPersistedBreach {
+  Id?: number;
+  Title: string;
+  PolicyId: number;
+  PolicyTitle: string;
+  PolicyNumber: string;
+  SLAType: string;
+  TargetDays: number;
+  ActualDays: number;
+  DaysOverdue: number;
+  BreachedDate: string;
+  DetectedDate: string;
+  ResponsibleUserId: number;
+  ResponsibleEmail: string;
+  ResponsibleName: string;
+  BreachStatus: 'Open' | 'Acknowledged' | 'Resolved' | 'Waived';
+  ResolvedDate?: string;
+  ResolvedBy?: string;
+  Resolution?: string;
+  Severity: 'Critical' | 'High' | 'Medium' | 'Low';
+  EntityId: number;
+  EntityType: string;
+  ComplianceRelevant: boolean;
+}
+
 export interface ISLADashboard {
   metrics: ISLAMetricResult[];
   breaches: ISLABreachItem[];
+  persistedBreaches: ISLAPersistedBreach[];
   overallCompliancePercent: number;
   totalProcessed: number;
   totalBreaches: number;
@@ -181,9 +207,21 @@ export class SLAComplianceService {
       ? Math.round((totalMet / totalProcessed) * 100)
       : 100;
 
+    // Persist new breaches to PM_SLABreaches (non-blocking)
+    let persistedBreaches: ISLAPersistedBreach[] = [];
+    try {
+      if (allBreaches.length > 0) {
+        await this.persistBreaches(allBreaches, targets);
+      }
+      persistedBreaches = await this.getPersistedBreaches();
+    } catch (err) {
+      logger.warn('SLAComplianceService', 'Breach persistence failed (non-blocking):', err);
+    }
+
     return {
       metrics,
       breaches: allBreaches,
+      persistedBreaches,
       overallCompliancePercent,
       totalProcessed,
       totalBreaches: allBreaches.length,
@@ -534,6 +572,123 @@ export class SLAComplianceService {
     }
 
     return breaches;
+  }
+
+  // ─── Breach Persistence ──────────────────────────────────────
+
+  private static readonly SLA_BREACHES_LIST = 'PM_SLABreaches';
+
+  /**
+   * Persist newly detected breaches to PM_SLABreaches.
+   * Deduplicates: only writes breaches not already recorded (by EntityId + SLAType + Open status).
+   */
+  private async persistBreaches(breaches: ISLABreachItem[], targets: ISLATarget[]): Promise<void> {
+    // Load existing open breaches to deduplicate
+    let existingBreachKeys = new Set<string>();
+    try {
+      const existing = await this.sp.web.lists
+        .getByTitle(SLAComplianceService.SLA_BREACHES_LIST)
+        .items.filter("BreachStatus eq 'Open'")
+        .select('EntityId', 'SLAType')
+        .top(500)();
+      existingBreachKeys = new Set(existing.map((b: any) => `${b.EntityId}-${b.SLAType}`));
+    } catch { /* list may not exist yet */ }
+
+    const targetMap = new Map(targets.map(t => [t.processType, t]));
+    let persisted = 0;
+
+    for (const breach of breaches) {
+      const key = `${breach.id}-${breach.entityType}`;
+      if (existingBreachKeys.has(key)) continue; // already recorded
+
+      const target = targetMap.get(breach.entityType);
+      const severity = breach.daysOverdue > (target?.targetDays || 7) * 2 ? 'Critical'
+        : breach.daysOverdue > (target?.targetDays || 7) ? 'High'
+        : breach.daysOverdue > (target?.warningThresholdDays || 2) ? 'Medium' : 'Low';
+
+      try {
+        await this.sp.web.lists.getByTitle(SLAComplianceService.SLA_BREACHES_LIST).items.add({
+          Title: `${breach.entityType} SLA Breach — ${breach.policyName || breach.title}`,
+          PolicyId: breach.policyId || 0,
+          PolicyTitle: breach.policyName || breach.title || '',
+          SLAType: breach.entityType,
+          TargetDays: target?.targetDays || 0,
+          ActualDays: (target?.targetDays || 0) + breach.daysOverdue,
+          DaysOverdue: breach.daysOverdue,
+          BreachedDate: breach.targetDate.toISOString(),
+          DetectedDate: new Date().toISOString(),
+          ResponsibleEmail: breach.assignedTo || '',
+          ResponsibleName: breach.assignedTo || '',
+          BreachStatus: 'Open',
+          Severity: severity,
+          EntityId: breach.id,
+          EntityType: breach.entityType,
+          ComplianceRelevant: true
+        });
+        persisted++;
+      } catch (err) {
+        // Per-breach try/catch — continue on failure
+        logger.warn('SLAComplianceService', `Failed to persist breach ${key}:`, err);
+      }
+    }
+
+    if (persisted > 0) {
+      logger.info('SLAComplianceService', `Persisted ${persisted} new SLA breach(es)`);
+    }
+  }
+
+  /**
+   * Get all persisted breach records from PM_SLABreaches.
+   */
+  public async getPersistedBreaches(status?: string): Promise<ISLAPersistedBreach[]> {
+    try {
+      let query = this.sp.web.lists
+        .getByTitle(SLAComplianceService.SLA_BREACHES_LIST)
+        .items.select(
+          'Id', 'Title', 'PolicyId', 'PolicyTitle', 'PolicyNumber', 'SLAType',
+          'TargetDays', 'ActualDays', 'DaysOverdue', 'BreachedDate', 'DetectedDate',
+          'ResponsibleUserId', 'ResponsibleEmail', 'ResponsibleName',
+          'BreachStatus', 'ResolvedDate', 'ResolvedBy', 'Resolution',
+          'Severity', 'EntityId', 'EntityType', 'ComplianceRelevant'
+        )
+        .orderBy('DetectedDate', false)
+        .top(200);
+
+      if (status) {
+        query = query.filter(`BreachStatus eq '${status}'`) as any;
+      }
+
+      return await query();
+    } catch (err) {
+      logger.warn('SLAComplianceService', 'Failed to load persisted breaches (list may not exist):', err);
+      return [];
+    }
+  }
+
+  /**
+   * Resolve a breach — mark as Resolved with reason.
+   */
+  public async resolveBreach(breachId: number, resolvedBy: string, resolution: string): Promise<void> {
+    await this.sp.web.lists.getByTitle(SLAComplianceService.SLA_BREACHES_LIST)
+      .items.getById(breachId).update({
+        BreachStatus: 'Resolved',
+        ResolvedDate: new Date().toISOString(),
+        ResolvedBy: resolvedBy,
+        Resolution: resolution
+      });
+  }
+
+  /**
+   * Waive a breach — mark as Waived (acknowledged but not resolved).
+   */
+  public async waiveBreach(breachId: number, waivedBy: string, reason: string): Promise<void> {
+    await this.sp.web.lists.getByTitle(SLAComplianceService.SLA_BREACHES_LIST)
+      .items.getById(breachId).update({
+        BreachStatus: 'Waived',
+        ResolvedDate: new Date().toISOString(),
+        ResolvedBy: waivedBy,
+        Resolution: `Waived: ${reason}`
+      });
   }
 
   // ─── Helpers ──────────────────────────────────────────────────

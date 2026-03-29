@@ -342,6 +342,26 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
     const completed = new Set(this.state.completedSteps); completed.add(1);
     this.setState({ uploading: false, completedSteps: completed, wizardStep: 2 });
     this.log(`Upload complete: ${succeeded}/${toUpload.length}`, succeeded === toUpload.length ? 'success' : 'warning');
+
+    // Write bulk import audit trail to PM_PolicyAuditLog
+    try {
+      const currentUserEmail = this.props.context?.pageContext?.user?.email || '';
+      const summary = toUpload.map(i => ({
+        fileName: i.fileName,
+        category: i.category || 'Unclassified',
+        status: this.state.imports.find(x => x.id === i.id)?.status || 'unknown',
+      }));
+      await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_AUDIT_LOG).items.add({
+        Title: `Bulk Import \u2014 ${succeeded} policies`,
+        AuditAction: 'BulkImport',
+        ActionDescription: JSON.stringify({ fileCount: toUpload.length, succeeded, failed: toUpload.length - succeeded, files: summary }).substring(0, 4000),
+        PerformedByEmail: currentUserEmail,
+        ActionDate: new Date().toISOString(),
+        EntityType: 'Policy',
+      });
+    } catch {
+      // PM_PolicyAuditLog may not exist — non-blocking
+    }
   }
 
   // ============================================================================

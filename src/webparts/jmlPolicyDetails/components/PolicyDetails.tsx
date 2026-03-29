@@ -2570,8 +2570,33 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
         const currentUserId = this.props.context?.pageContext?.legacyPageContext?.userId || 0;
         const currentUserName = this.props.context?.pageContext?.user?.displayName || '';
 
-        // Find this reviewer's record
-        const myReview = reviewerItems.find((r: any) => r.Reviewer?.EMail === currentUserEmail || r.ReviewerId === currentUserId);
+        // Find this reviewer's record — also check if current user is acting as a delegate
+        let myReview = reviewerItems.find((r: any) => r.Reviewer?.EMail === currentUserEmail || r.ReviewerId === currentUserId);
+
+        // If not a direct reviewer, check PM_ApprovalDelegations for active delegation
+        if (!myReview) {
+          try {
+            const delegations: any[] = await this.props.sp.web.lists.getByTitle('PM_ApprovalDelegations')
+              .items.filter(`DelegatedToId eq ${currentUserId} and IsActive eq 1`)
+              .select('Id', 'DelegatedById', 'DelegatedBy/Id', 'DelegatedBy/EMail')
+              .expand('DelegatedBy')
+              .top(10)();
+            if (delegations.length > 0) {
+              // Find a reviewer record that matches any of the delegators
+              for (const del of delegations) {
+                const delegatorId = del.DelegatedById || del.DelegatedBy?.Id;
+                const delegatorEmail = del.DelegatedBy?.EMail;
+                const match = reviewerItems.find((r: any) =>
+                  (delegatorId && r.ReviewerId === delegatorId) ||
+                  (delegatorEmail && r.Reviewer?.EMail === delegatorEmail)
+                );
+                if (match) { myReview = match; break; }
+              }
+            }
+          } catch {
+            // PM_ApprovalDelegations may not exist or query failed — best-effort
+          }
+        }
 
         // Update reviewer status in PM_PolicyReviewers
         if (myReview) {

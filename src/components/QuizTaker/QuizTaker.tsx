@@ -77,6 +77,9 @@ export interface IQuizTakerState {
   startTime: Date;
   showSubmitConfirm: boolean;
   unansweredCount: number;
+  /** Inline per-question feedback review phase — shown after submit, before results screen */
+  showInlineReview: boolean;
+  gradedAnswers: IQuizAnswer[];
 }
 
 // ============================================================================
@@ -106,7 +109,9 @@ export class QuizTaker extends React.Component<IQuizTakerProps, IQuizTakerState>
       showResults: false,
       startTime: new Date(),
       showSubmitConfirm: false,
-      unansweredCount: 0
+      unansweredCount: 0,
+      showInlineReview: false,
+      gradedAnswers: []
     };
   }
 
@@ -228,6 +233,8 @@ export class QuizTaker extends React.Component<IQuizTakerProps, IQuizTakerState>
       result: null,
       error: null,
       showResults: false,
+      showInlineReview: false,
+      gradedAnswers: [],
       startTime: new Date()
     });
     await this.loadQuiz();
@@ -343,11 +350,19 @@ export class QuizTaker extends React.Component<IQuizTakerProps, IQuizTakerState>
       // Stop timer
       this.clearTimer();
 
+      // Show inline per-question review for 3 seconds before navigating to results
       this.setState({
         result,
-        showResults: true,
+        gradedAnswers,
+        showInlineReview: true,
         isSubmitting: false
       });
+
+      setTimeout(() => {
+        if (this._isMounted) {
+          this.setState({ showInlineReview: false, showResults: true });
+        }
+      }, 3000);
 
       if (this.props.onComplete) {
         this.props.onComplete(result);
@@ -1009,6 +1024,65 @@ export class QuizTaker extends React.Component<IQuizTakerProps, IQuizTakerState>
     );
   }
 
+  /** Inline per-question feedback shown for 3 seconds after submit, before the results screen */
+  private renderInlineReview(): JSX.Element {
+    const { questions, gradedAnswers } = this.state;
+
+    return (
+      <div style={{ padding: 24 }}>
+        <Stack tokens={{ childrenGap: 8 }} horizontalAlign="center" style={{ marginBottom: 20 }}>
+          <Spinner size={SpinnerSize.medium} />
+          <Text variant="mediumPlus" style={{ fontWeight: 600, color: '#0f172a' }}>
+            Reviewing your answers...
+          </Text>
+        </Stack>
+        <Stack tokens={{ childrenGap: 10 }}>
+          {questions.map((q, idx) => {
+            const graded = gradedAnswers.find(a => a.questionId === q.Id);
+            const isCorrect = graded?.isCorrect ?? false;
+            const isPartial = graded?.isPartiallyCorrect ?? false;
+
+            return (
+              <div key={q.Id} style={{
+                display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 14px',
+                background: isCorrect ? '#f0fdf4' : isPartial ? '#fffbeb' : '#fef2f2',
+                border: `1px solid ${isCorrect ? '#bbf7d0' : isPartial ? '#fde68a' : '#fecaca'}`,
+                borderRadius: 6,
+              }}>
+                <div style={{
+                  width: 22, height: 22, borderRadius: '50%', flexShrink: 0, marginTop: 1,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: isCorrect ? '#059669' : isPartial ? '#d97706' : '#dc2626', color: '#fff',
+                  fontSize: 12, fontWeight: 700,
+                }}>
+                  {isCorrect ? '\u2713' : '\u2717'}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <Text variant="small" style={{ fontWeight: 600, color: '#0f172a' }}>
+                    Q{idx + 1}. {q.QuestionText}
+                  </Text>
+                  {!isCorrect && q.CorrectAnswer && (
+                    <div style={{ fontSize: 11, color: '#64748b', marginTop: 3 }}>
+                      Correct answer: <strong>{q.CorrectAnswer}</strong>
+                    </div>
+                  )}
+                </div>
+                <div style={{
+                  fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5,
+                  padding: '2px 8px', borderRadius: 4, flexShrink: 0,
+                  background: isCorrect ? '#dcfce7' : isPartial ? '#fef3c7' : '#fee2e2',
+                  color: isCorrect ? '#16a34a' : isPartial ? '#d97706' : '#dc2626',
+                }}>
+                  {isCorrect ? 'Correct' : isPartial ? 'Partial' : 'Wrong'}
+                </div>
+              </div>
+            );
+          })}
+        </Stack>
+      </div>
+    );
+  }
+
   private renderResults(): JSX.Element {
     const { result, quiz, questions } = this.state;
 
@@ -1157,10 +1231,11 @@ export class QuizTaker extends React.Component<IQuizTakerProps, IQuizTakerState>
       isSubmitting,
       isLoading,
       showResults,
+      showInlineReview,
       answers
     } = this.state;
 
-    if (error && !showResults) {
+    if (error && !showResults && !showInlineReview) {
       return (
         <div className={styles.quizTaker}>
           <MessageBar messageBarType={MessageBarType.error}>
@@ -1177,6 +1252,14 @@ export class QuizTaker extends React.Component<IQuizTakerProps, IQuizTakerState>
           <Stack horizontalAlign="center" tokens={{ childrenGap: 16, padding: 48 }}>
             <Spinner size={SpinnerSize.large} label="Loading quiz..." />
           </Stack>
+        </div>
+      );
+    }
+
+    if (showInlineReview) {
+      return (
+        <div className={styles.quizTaker}>
+          {this.renderInlineReview()}
         </div>
       );
     }

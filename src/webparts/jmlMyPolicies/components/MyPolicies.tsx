@@ -405,7 +405,7 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
         padding: '16px 40px', position: 'relative', overflow: 'hidden', margin: '0 -24px'
       }}>
         <div style={{ position: 'absolute', right: -60, bottom: -60, width: 200, height: 200, background: 'rgba(255,255,255,0.03)', borderRadius: '50%' }} />
-        <div style={{ maxWidth: 1400, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', zIndex: 1 }}>
+        <div style={{ maxWidth: 1400, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'flex-end', gap: 24, position: 'relative', zIndex: 1 }}>
 
           {/* Left: Ring + Greeting */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -424,7 +424,7 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
             {/* Greeting */}
             <div>
               <h1 style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: '0 0 2px 0' }}>{greeting}, {userName}</h1>
-              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', margin: 0 }}>
+              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', margin: 0, alignSelf: 'flex-end' }}>
                 {kpi.pending > 0 || kpi.overdue > 0
                   ? `${kpi.pending} pending${kpi.overdue > 0 ? `, ${kpi.overdue} overdue` : ''}`
                   : 'Fully compliant'}
@@ -432,8 +432,42 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
             </div>
           </div>
 
+          {/* Center: Search input */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', alignSelf: 'flex-end', margin: 0 }}>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <div style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', display: 'flex', alignItems: 'center' }}>
+                <SearchIcon size={13} color="rgba(255,255,255,0.5)" />
+              </div>
+              <input
+                type="text"
+                placeholder="Search my policies..."
+                value={this.state.searchQuery}
+                onChange={(e) => this.setState({ searchQuery: e.target.value })}
+                style={{
+                  background: 'rgba(255,255,255,0.12)',
+                  border: '1px solid rgba(255,255,255,0.25)',
+                  borderRadius: 6,
+                  padding: '7px 12px 7px 30px',
+                  fontSize: 12,
+                  width: 280,
+                  outline: 'none',
+                  fontFamily: 'inherit',
+                  color: '#fff',
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
+                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.5)';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.12)';
+                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.25)';
+                }}
+              />
+            </div>
+          </div>
+
           {/* Right: KPI mini cards */}
-          <div style={{ display: 'flex', gap: 10 }}>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
             {[
               { label: 'Assigned', value: kpi.assigned, color: '#fff' },
               { label: 'Done', value: kpi.acknowledged, color: '#fff' },
@@ -473,35 +507,7 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
         background: '#fafafa',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-            <div style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', display: 'flex', alignItems: 'center' }}>
-              <SearchIcon size={13} color="#94a3b8" />
-            </div>
-            <input
-              type="text"
-              placeholder="Search my policies..."
-              value={searchQuery}
-              onChange={(e) => this.setState({ searchQuery: e.target.value })}
-              style={{
-                background: '#fff',
-                border: '1px solid #e2e8f0',
-                borderRadius: '6px',
-                padding: '7px 12px 7px 30px',
-                fontSize: '12px',
-                width: '240px',
-                outline: 'none',
-                fontFamily: 'inherit',
-              }}
-              onFocus={(e) => {
-                e.currentTarget.style.borderColor = '#0d9488';
-                e.currentTarget.style.boxShadow = '0 0 0 2px rgba(13,148,136,0.12)';
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.borderColor = '#e2e8f0';
-                e.currentTarget.style.boxShadow = 'none';
-              }}
-            />
-          </div>
+          {/* Search moved to hero banner center column */}
           <div style={{ display: 'flex', gap: '6px' }}>
             {tabs.map(tab => {
               const isActive = activeTab === tab.key;

@@ -5,6 +5,9 @@
  * Max items: 25 (most recently bookmarked first)
  * Deduplicates on toggle (add/remove).
  *
+ * NOTE: SP list persistence (PM_PolicyBookmarks) is planned for a future release.
+ * Currently uses localStorage only — bookmarks are per-browser, not per-user.
+ *
  * Fully typed — no @ts-nocheck.
  */
 

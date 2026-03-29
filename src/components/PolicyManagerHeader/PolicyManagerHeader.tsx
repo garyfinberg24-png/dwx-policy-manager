@@ -397,6 +397,12 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
   const [showBookmarksDropdown, setShowBookmarksDropdown] = React.useState(false);
   const [bookmarkedPolicies, setBookmarkedPolicies] = React.useState<IBookmarkEntry[]>([]);
 
+  // Local notification bell — reads from PM_Notifications
+  const [showNotifDropdown, setShowNotifDropdown] = React.useState(false);
+  const [localNotifications, setLocalNotifications] = React.useState<Array<{ Id: number; Title: string; Message: string; Type: string; ActionUrl: string; Created: string }>>([]);
+  const [localUnreadCount, setLocalUnreadCount] = React.useState(0);
+  const notifRef = React.useRef<HTMLDivElement>(null);
+
   React.useEffect(() => {
     setRecentlyViewedPolicies(RecentlyViewedService.getRecentlyViewed(5));
   }, []);
@@ -414,6 +420,34 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
     }
   }, [showBookmarksDropdown]);
 
+  // Load local notifications from PM_Notifications on mount and when dropdown opens
+  React.useEffect(() => {
+    if (!sp || !userEmail) return;
+    const loadNotifications = async () => {
+      try {
+        // Get unread count
+        const unreadItems: any[] = await sp.web.lists.getByTitle('PM_Notifications')
+          .items.filter(`RecipientEmail eq '${userEmail.replace(/'/g, "''")}' and IsRead eq 0`)
+          .select('Id')
+          .top(50)();
+        setLocalUnreadCount(unreadItems.length);
+
+        // Get 10 most recent for the dropdown
+        if (showNotifDropdown) {
+          const recent: any[] = await sp.web.lists.getByTitle('PM_Notifications')
+            .items.filter(`RecipientEmail eq '${userEmail.replace(/'/g, "''")}'`)
+            .select('Id', 'Title', 'Message', 'Type', 'ActionUrl', 'Created', 'IsRead')
+            .orderBy('Created', false)
+            .top(10)();
+          setLocalNotifications(recent);
+        }
+      } catch {
+        // PM_Notifications may not exist yet
+      }
+    };
+    loadNotifications();
+  }, [sp, userEmail, showNotifDropdown]);
+
   // Click-outside handler to close dropdowns
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -425,6 +459,9 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
       }
       if (bookmarksRef.current && !bookmarksRef.current.contains(event.target as Node)) {
         setShowBookmarksDropdown(false);
+      }
+      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+        setShowNotifDropdown(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -1074,12 +1111,105 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
             </button>
           )}
 
-          {/* Cross-App Notifications (DWx Hub) */}
-          {showNotifications && dwxNotificationService && (
-            <DwxNotificationBell
-              notificationService={dwxNotificationService}
-              pollInterval={60000}
-            />
+          {/* Local Notification Bell — reads from PM_Notifications */}
+          {showNotifications && sp && (
+            <div className={styles.dropdownContainer} ref={notifRef} style={{ position: 'relative' }}>
+              <button
+                type="button"
+                className={styles.actionButton}
+                onClick={() => setShowNotifDropdown(!showNotifDropdown)}
+                title="Notifications"
+                aria-label={`Notifications${localUnreadCount > 0 ? ` (${localUnreadCount} unread)` : ''}`}
+                style={{ position: 'relative' }}
+              >
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M18 8A6 6 0 106 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M13.73 21a2 2 0 01-3.46 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                {localUnreadCount > 0 && (
+                  <span style={{
+                    position: 'absolute', top: 0, right: 0,
+                    background: '#dc2626', color: '#fff', fontSize: 9, fontWeight: 700,
+                    minWidth: 16, height: 16, borderRadius: 8,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    padding: '0 4px', lineHeight: 1, border: '2px solid #0f766e',
+                  }}>
+                    {localUnreadCount > 9 ? '9+' : localUnreadCount}
+                  </span>
+                )}
+              </button>
+              {showNotifDropdown && (
+                <div className={styles.dropdownPanel} style={{ width: 340, right: 0, maxHeight: 420, overflowY: 'auto' }}>
+                  <div className={styles.dropdownArrow} />
+                  <div style={{ padding: '12px 16px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>Notifications</span>
+                    {localUnreadCount > 0 && (
+                      <span style={{ fontSize: 10, color: '#0d9488', fontWeight: 600, cursor: 'pointer' }}
+                        onClick={async () => {
+                          try {
+                            for (const n of localNotifications.filter((x: any) => !x.IsRead)) {
+                              await sp.web.lists.getByTitle('PM_Notifications').items.getById(n.Id).update({ IsRead: true });
+                            }
+                            setLocalUnreadCount(0);
+                            setLocalNotifications(localNotifications.map((n: any) => ({ ...n, IsRead: true })));
+                          } catch { /* best effort */ }
+                        }}
+                        role="button" tabIndex={0}
+                      >Mark all read</span>
+                    )}
+                  </div>
+                  {localNotifications.length === 0 ? (
+                    <div style={{ padding: '24px 16px', textAlign: 'center', color: '#94a3b8', fontSize: 12 }}>No notifications</div>
+                  ) : (
+                    localNotifications.map((n: any) => {
+                      const notifColor = getNotificationColor(n.Type || 'task');
+                      const timeAgo = n.Created ? (() => {
+                        const mins = Math.round((Date.now() - new Date(n.Created).getTime()) / 60000);
+                        if (mins < 60) return `${mins}m ago`;
+                        if (mins < 1440) return `${Math.round(mins / 60)}h ago`;
+                        return `${Math.round(mins / 1440)}d ago`;
+                      })() : '';
+                      return (
+                        <a
+                          key={n.Id}
+                          href={n.ActionUrl || '#'}
+                          style={{
+                            display: 'flex', gap: 10, padding: '10px 16px', textDecoration: 'none',
+                            borderBottom: '1px solid #f8fafc', cursor: 'pointer',
+                            background: n.IsRead ? 'transparent' : '#f0fdfa',
+                          }}
+                          onClick={() => {
+                            if (!n.IsRead) {
+                              try { sp.web.lists.getByTitle('PM_Notifications').items.getById(n.Id).update({ IsRead: true }); } catch { /* */ }
+                              setLocalUnreadCount(Math.max(0, localUnreadCount - 1));
+                            }
+                          }}
+                        >
+                          <div style={{
+                            width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                            background: `${notifColor}15`, color: notifColor,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 2,
+                          }}>
+                            <svg viewBox="0 0 24 24" fill="none" style={{ width: 14, height: 14 }}>
+                              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
+                              <path d="M12 8v4l3 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                            </svg>
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 12, fontWeight: n.IsRead ? 400 : 600, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{n.Title}</div>
+                            <div style={{ fontSize: 11, color: '#64748b', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{n.Message}</div>
+                            <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>{timeAgo}</div>
+                          </div>
+                          {!n.IsRead && (
+                            <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#0d9488', flexShrink: 0, marginTop: 8 }} />
+                          )}
+                        </a>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+            </div>
           )}
 
           {/* User Avatar with Profile Dropdown */}

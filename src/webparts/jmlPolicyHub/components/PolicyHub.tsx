@@ -739,13 +739,21 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
         results.totalCount = results.policies.length;
       }
 
-      // Secure Library filter — only show policies stored in the specific library
+      // Secure Library filter — only show policies stored in the specific library (from ?library= URL param)
       const secureLibFilter = (this as any)._secureLibraryFilter;
       if (secureLibFilter && results.policies) {
         results.policies = results.policies.filter((p: any) => {
           const docUrl = p.DocumentURL?.Url || p.DocumentURL || '';
           return docUrl.includes(secureLibFilter);
         });
+        results.totalCount = results.policies.length;
+      }
+
+      // Secure Policies facet filter — when active, only show policies with SecurityGroup visibility
+      if ((this.state as any)._secureFilterActive && results.policies) {
+        results.policies = results.policies.filter((p: any) =>
+          p.Visibility === 'SecurityGroup' || p.Visibility === 'Custom'
+        );
         results.totalCount = results.policies.length;
       }
 
@@ -2732,6 +2740,33 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
             onChange={(e, option) => this.handleFilterChange('selectedRisk', option?.key as string)}
             styles={{ root: { marginBottom: 0 }, title: { border: '1px solid #e2e8f0', borderRadius: 6, fontSize: 12 } }}
           />
+        </div>
+
+        {/* Secure Policies filter chip — toggles visibility filter for secure library policies */}
+        <div style={facetGroupStyle}>
+          <div style={facetTitleStyle}>Source</div>
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => {
+              const current = (this.state as any)._secureFilterActive;
+              this.setState({ _secureFilterActive: !current } as any, () => this.loadPolicies());
+            }}
+            onKeyDown={(e) => { if (e.key === 'Enter') { const current = (this.state as any)._secureFilterActive; this.setState({ _secureFilterActive: !current } as any, () => this.loadPolicies()); } }}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '5px 12px', borderRadius: 4, cursor: 'pointer', fontSize: 12,
+              border: `1px solid ${(this.state as any)._secureFilterActive ? '#0d9488' : '#e2e8f0'}`,
+              background: (this.state as any)._secureFilterActive ? '#f0fdfa' : '#fff',
+              color: (this.state as any)._secureFilterActive ? '#0d9488' : '#334155',
+              fontWeight: (this.state as any)._secureFilterActive ? 600 : 400,
+            }}
+          >
+            <svg viewBox="0 0 24 24" fill="none" style={{ width: 14, height: 14 }}>
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            Secure Policies
+          </div>
         </div>
 
         {searchResults.facets && this.renderDynamicFacets(this.convertFacetsToArray(searchResults.facets))}

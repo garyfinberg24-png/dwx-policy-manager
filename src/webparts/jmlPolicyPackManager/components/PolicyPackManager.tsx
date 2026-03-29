@@ -461,8 +461,8 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
           </div>
         </div>
 
-        {/* Pack Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        {/* Pack Grid — 3 per row */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
           {policyPacks.map((pack: IPolicyPack) => {
             const packType = pack.PackType || 'Custom';
             const strip = stripGradients[packType] || stripGradients['Custom'];
@@ -678,7 +678,7 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
                             }}
                           >
                             <Icon iconName={isSelected ? 'CheckboxComposite' : 'Checkbox'} style={{ color: isSelected ? '#0d9488' : '#8a8886', fontSize: 14 }} />
-                            <span style={{ flex: 1, color: '#323130' }}>{policy.PolicyNumber} - {policy.PolicyName}</span>
+                            <span style={{ flex: 1, color: '#323130' }}>{policy.PolicyNumber ? `${policy.PolicyNumber} - ` : ''}{policy.PolicyName || policy.Title || 'Untitled Policy'}</span>
                             {policy.Created && (
                               <span style={{ color: '#a0aec0', fontSize: 11 }}>
                                 {new Date(policy.Created).toLocaleDateString()}
@@ -738,7 +738,7 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
                             }}
                           >
                             <Icon iconName={isSelected ? 'CheckboxComposite' : 'Checkbox'} style={{ color: isSelected ? '#0d9488' : '#8a8886', fontSize: 14 }} />
-                            <span style={{ flex: 1, color: '#323130' }}>{policy.PolicyNumber} - {policy.PolicyName}</span>
+                            <span style={{ flex: 1, color: '#323130' }}>{policy.PolicyNumber ? `${policy.PolicyNumber} - ` : ''}{policy.PolicyName || policy.Title || 'Untitled Policy'}</span>
                             {policy.Category && (
                               <span style={{
                                 color: '#64748b', fontSize: 11, padding: '1px 6px',

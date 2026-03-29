@@ -679,7 +679,7 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
         reminderSchedule: formReminder,
         isActive: false,
         createdDate: new Date(),
-        createdBy: 'Current User',
+        createdBy: this.props.context?.pageContext?.user?.displayName || 'Current User',
       };
       this.setState({ campaigns: [...campaigns, newCampaign], showCreatePanel: false, successMessage: 'Campaign created successfully.' }, () => this.applyFilters());
     }

@@ -451,33 +451,6 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
     );
   }
 
-  private renderKpiStrip(): React.ReactNode {
-    const kpi = this.getKpiCounts();
-    const cards = [
-      { label: 'Assigned', value: kpi.assigned, color: '#2563eb' },
-      { label: 'Acknowledged', value: kpi.acknowledged, color: '#059669' },
-      { label: 'Pending', value: kpi.pending, color: '#d97706' },
-      { label: 'Overdue', value: kpi.overdue, color: '#dc2626' },
-    ];
-
-    return (
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '24px' }}>
-        {cards.map(card => (
-          <div key={card.label} style={{
-            background: '#fff',
-            border: '1px solid #e2e8f0',
-            borderRadius: '10px',
-            padding: '16px',
-            borderTop: `3px solid ${card.color}`,
-          }}>
-            <div style={{ fontSize: '28px', fontWeight: 700, lineHeight: 1.1, color: card.color }}>{card.value}</div>
-            <div style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px', color: '#94a3b8', fontWeight: 600, marginTop: '4px' }}>{card.label}</div>
-          </div>
-        ))}
-      </div>
-    );
-  }
-
   private renderToolbar(): React.ReactNode {
     const { activeTab, searchQuery, policies } = this.state;
     const kpi = this.getKpiCounts();

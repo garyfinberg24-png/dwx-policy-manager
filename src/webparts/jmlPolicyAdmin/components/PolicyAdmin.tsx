@@ -6711,7 +6711,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       { key: 'chains', title: 'PM_ApprovalChains', description: 'Approval chain instances', seedable: true },
       { key: 'templates', title: 'PM_PolicyTemplates', description: 'Policy templates library', seedable: false },
       { key: 'notifications', title: 'PM_Notifications', description: 'In-app notifications', seedable: true },
-      { key: 'emailQueue', title: 'PM_EmailQueue', description: 'Email delivery queue', seedable: false },
+      { key: 'emailQueue', title: 'PM_NotificationQueue', description: 'Email & notification delivery queue', seedable: false },
       { key: 'auditLog', title: 'PM_PolicyAuditLog', description: 'Audit trail', seedable: true },
       { key: 'config', title: 'PM_Configuration', description: 'Key-value configuration', seedable: true },
       { key: 'categories', title: 'PM_PolicyCategories', description: 'Policy categories', seedable: false },

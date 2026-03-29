@@ -7483,10 +7483,33 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       });
       const policiesByRisk = Array.from(riskMap.entries()).map(([risk, count]) => ({ risk, count }));
 
-      // TODO: Wire averageReadTime from PM_PolicyAnalytics list once available
-      // TODO: Wire acknowledgementRate from PM_PolicyAcknowledgements list once available
-      // TODO: Wire monthlyTrends from PM_PolicyAnalytics list aggregation once available
+      // Wire averageReadTime from policy ReadTimeframeDays
       const averageReadTime = policies.reduce((sum, p) => sum + (p.ReadTimeframeDays || 0), 0) / (totalPolicies || 1);
+
+      // Wire acknowledgementRate from PM_PolicyAcknowledgements
+      let acknowledgementRate = 0;
+      try {
+        const acks = await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_ACKNOWLEDGEMENTS)
+          .items.select('Id', 'AckStatus').top(2000)();
+        const totalAcks = acks.length;
+        const completedAcks = acks.filter((a: any) => a.AckStatus === 'Acknowledged' || a.AckStatus === 'Completed').length;
+        acknowledgementRate = totalAcks > 0 ? Math.round((completedAcks / totalAcks) * 100) : 0;
+      } catch { /* PM_PolicyAcknowledgements may not exist */ }
+
+      // Wire monthlyTrends from policy Created dates (last 6 months)
+      const monthlyTrends: Array<{ month: string; count: number }> = [];
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+      const monthMap = new Map<string, number>();
+      policies.forEach(p => {
+        const created = p.Created ? new Date(p.Created) : null;
+        if (created && created >= sixMonthsAgo) {
+          const key = `${created.getFullYear()}-${String(created.getMonth() + 1).padStart(2, '0')}`;
+          monthMap.set(key, (monthMap.get(key) || 0) + 1);
+        }
+      });
+      Array.from(monthMap.entries()).sort().forEach(([month, count]) => monthlyTrends.push({ month, count }));
+
       const analyticsData: IPolicyAnalytics = {
         totalPolicies,
         publishedPolicies,
@@ -7495,11 +7518,11 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         expiringSoon,
         averageReadTime: Math.round(averageReadTime),
         complianceRate: totalPolicies > 0 ? Math.round((publishedPolicies / totalPolicies) * 100) : 0,
-        acknowledgementRate: 0, // Requires PM_PolicyAcknowledgements query
+        acknowledgementRate,
         policiesByCategory,
         policiesByStatus,
         policiesByRisk,
-        monthlyTrends: [] // Requires PM_PolicyAnalytics time-series query
+        monthlyTrends
       };
 
       this.setState({ analyticsData, analyticsLoading: false });

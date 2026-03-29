@@ -1331,7 +1331,7 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
         )}
       </nav>
 
-      {/* Breadcrumbs Bar — HIDDEN for evaluation (uncomment to restore)
+      {/* Breadcrumbs Bar */}
       {breadcrumbs && breadcrumbs.length > 0 && (
         <div className={styles.breadcrumbBarOuter}>
           <div className={styles.breadcrumbBar}>
@@ -1351,7 +1351,6 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
           </div>
         </div>
       )}
-      */}
 
       {/* Page Header - Hidden by default */}
       {showPageHeader && pageTitle && (

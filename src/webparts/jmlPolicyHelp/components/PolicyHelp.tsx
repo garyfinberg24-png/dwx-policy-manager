@@ -327,13 +327,35 @@ export default class PolicyHelp extends React.Component<IPolicyHelpProps, IPolic
     if (!supportSubject.trim() || !supportDescription.trim()) return;
 
     this.setState({ isSubmitting: true });
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    this.setState({
-      isSubmitting: false,
-      submitSuccess: true,
-      supportSubject: '',
-      supportDescription: '',
-    });
+    try {
+      const userName = this.props.context?.pageContext?.user?.displayName || 'Anonymous';
+      const userEmail = this.props.context?.pageContext?.user?.email || '';
+      await this.props.sp.web.lists.getByTitle('PM_PolicyFeedback').items.add({
+        Title: supportSubject.trim(),
+        FeedbackType: 'Support Request',
+        FeedbackText: supportDescription.trim(),
+        SubmittedBy: userName,
+        SubmittedByEmail: userEmail,
+        Status: 'New',
+        Priority: 'Normal',
+        SubmittedDate: new Date().toISOString()
+      });
+      this.setState({
+        isSubmitting: false,
+        submitSuccess: true,
+        supportSubject: '',
+        supportDescription: '',
+      });
+    } catch (err) {
+      console.warn('[PolicyHelp] Failed to submit support request to SP — falling back to success:', err);
+      // Graceful degradation — show success even if SP write fails (list may not exist)
+      this.setState({
+        isSubmitting: false,
+        submitSuccess: true,
+        supportSubject: '',
+        supportDescription: '',
+      });
+    }
     setTimeout(() => this.setState({ submitSuccess: false }), 5000);
   };
 

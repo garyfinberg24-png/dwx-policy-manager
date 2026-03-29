@@ -1507,8 +1507,8 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
                         style={{ padding: '8px 16px', borderRadius: 4, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: '1px solid #059669', background: '#059669', color: '#fff', fontFamily: 'inherit' }}>Approve</button>
                       <button onClick={async () => { const r = await this.dialogManager.showPrompt('Reason for returning:', { title: 'Return Policy' }); if (r?.trim()) this.updateApprovalStatus(approval.Id, 'Returned', r.trim()); }}
                         style={{ padding: '8px 16px', borderRadius: 4, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: '1px solid #fbbf24', background: '#fff', color: '#d97706', fontFamily: 'inherit' }}>Return</button>
-                      {/* STUB: View Policy button — needs onClick to navigate to PolicyDetails.aspx */}
-                      <button style={{ padding: '8px 16px', borderRadius: 4, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: '1px solid #e2e8f0', background: '#fff', color: '#64748b', fontFamily: 'inherit' }}>View Policy</button>
+                      <button onClick={() => { window.location.href = `/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${approval.PolicyId}&mode=browse`; }}
+                        style={{ padding: '8px 16px', borderRadius: 4, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: '1px solid #e2e8f0', background: '#fff', color: '#64748b', fontFamily: 'inherit' }}>View Policy</button>
                     </div>
                   )}
                 </div>

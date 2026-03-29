@@ -177,7 +177,8 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
       selectedPolicyIds: pack.PolicyIds || [],
       isSequential: pack.IsSequential || false,
       sendWelcomeEmail: pack.SendWelcomeEmail ?? true,
-      sendTeamsNotification: pack.SendTeamsNotification ?? true
+      sendTeamsNotification: pack.SendTeamsNotification ?? true,
+      approverEmails: (pack as any).ApproverEmails ? String((pack as any).ApproverEmails).split(';').filter(Boolean) : []
     });
   };
 

@@ -69,6 +69,7 @@ export interface IPolicyPackManagerState {
   policySearchFilter: string;
   recentPoliciesExpanded: boolean;
   deliveryOptionsExpanded: boolean;
+  viewMode: 'list' | 'grid';
 }
 
 export default class PolicyPackManager extends React.Component<IPolicyPackManagerProps, IPolicyPackManagerState> {
@@ -105,7 +106,8 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
       deploymentResult: null,
       policySearchFilter: '',
       recentPoliciesExpanded: true,
-      deliveryOptionsExpanded: false
+      deliveryOptionsExpanded: false,
+      viewMode: 'list'
     };
     this.packService = new PolicyPackService(props.sp);
     this.policyService = new PolicyService(props.sp);
@@ -127,7 +129,8 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
       await this.packService.initialize();
       await this.policyService.initialize();
 
-      const packs = await this.packService.getPolicyPacks();
+      const allPacks = await this.packService.getPolicyPacks();
+      const packs = allPacks.filter(p => p.IsActive !== false);
       const allPolicies = await this.policyService.getAllPolicies();
       const policies = allPolicies.filter((p: IPolicy) =>
         p.PolicyStatus === PolicyStatus.Published ||
@@ -461,7 +464,55 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
           </div>
         </div>
 
-        {/* Pack Grid — 3 per row */}
+        {/* View toggle + count */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <span style={{ fontSize: 13, color: '#64748b' }}>{policyPacks.length} policy pack{policyPacks.length !== 1 ? 's' : ''}</span>
+          <div style={{ display: 'flex', gap: 4 }}>
+            <button onClick={() => this.setState({ viewMode: 'list' })} title="List View" style={{ width: 32, height: 32, borderRadius: 4, border: `1px solid ${this.state.viewMode === 'list' ? '#0d9488' : '#e2e8f0'}`, background: this.state.viewMode === 'list' ? '#f0fdfa' : '#fff', color: this.state.viewMode === 'list' ? '#0d9488' : '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
+            <button onClick={() => this.setState({ viewMode: 'grid' })} title="Grid View" style={{ width: 32, height: 32, borderRadius: 4, border: `1px solid ${this.state.viewMode === 'grid' ? '#0d9488' : '#e2e8f0'}`, background: this.state.viewMode === 'grid' ? '#f0fdfa' : '#fff', color: this.state.viewMode === 'grid' ? '#0d9488' : '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="2"/><rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="2"/><rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="2"/><rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="2"/></svg>
+            </button>
+          </div>
+        </div>
+
+        {/* List View (default) */}
+        {this.state.viewMode === 'list' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0, border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
+            {/* Header row */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px 100px 100px 160px', gap: 12, padding: '10px 20px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: '#94a3b8' }}>
+              <span>Pack Name</span><span>Type</span><span>Policies</span><span>Status</span><span>Actions</span>
+            </div>
+            {policyPacks.map((pack: IPolicyPack) => {
+              const packType = pack.PackType || 'Custom';
+              const badge = badgeColors[packType] || badgeColors['Custom'];
+              const policyCount = pack.PolicyIds ? pack.PolicyIds.length : 0;
+              return (
+                <div key={pack.Id} style={{ display: 'grid', gridTemplateColumns: '1fr 120px 100px 100px 160px', gap: 12, padding: '12px 20px', borderBottom: '1px solid #f1f5f9', alignItems: 'center', fontSize: 13, transition: 'background 0.15s' }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#fafafa'; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = '#fff'; }}
+                >
+                  <div>
+                    <div style={{ fontWeight: 600, color: '#0f172a' }}>{pack.PackName}</div>
+                    {pack.PackDescription && <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 400 }}>{pack.PackDescription}</div>}
+                  </div>
+                  <span style={{ fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: 0.5, background: badge.bg, color: badge.color, display: 'inline-block', width: 'fit-content' }}>{packType}</span>
+                  <span style={{ fontWeight: 600, color: '#0d9488' }}>{policyCount}</span>
+                  <span style={{ fontSize: 11, color: pack.IsActive === false ? '#dc2626' : '#059669', fontWeight: 500 }}>{pack.IsActive === false ? 'Inactive' : 'Active'}</span>
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                    <button onClick={() => this.handleAssignPack(pack)} style={{ padding: '4px 10px', borderRadius: 4, fontSize: 11, fontWeight: 600, cursor: 'pointer', border: '1px solid #e2e8f0', background: '#fff', color: '#334155', fontFamily: 'inherit' }}>Assign</button>
+                    <IconButton iconProps={{ iconName: 'Edit' }} title="Edit" onClick={() => this.handleEditPack(pack)} styles={{ root: { width: 28, height: 28 } }} />
+                    <IconButton iconProps={{ iconName: 'Delete' }} title="Delete" onClick={() => this.handleDeletePack(pack.Id)} styles={{ root: { width: 28, height: 28, color: '#dc2626' }, rootHovered: { color: '#dc2626' } }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Grid View */}
+        {this.state.viewMode === 'grid' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
           {policyPacks.map((pack: IPolicyPack) => {
             const packType = pack.PackType || 'Custom';
@@ -543,6 +594,7 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
             );
           })}
         </div>
+        )}
       </div>
     );
   }
@@ -775,7 +827,7 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
                       background: '#e6f7f5', border: '1px solid #0d9488', borderRadius: 12,
                       padding: '2px 8px 2px 10px', fontSize: 12, color: '#0f766e'
                     }}>
-                      <span>{policy.PolicyNumber}</span>
+                      <span>{policy.PolicyNumber || policy.PolicyName || policy.Title || `Policy #${id}`}</span>
                       <IconButton
                         iconProps={{ iconName: 'Cancel', style: { fontSize: 10 } }}
                         styles={{ root: { width: 18, height: 18, color: '#0f766e' }, rootHovered: { color: '#b91c1c', background: 'transparent' } }}

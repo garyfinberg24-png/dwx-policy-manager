@@ -2285,6 +2285,20 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
               {modifiedDate ? `Updated ${modifiedDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}
             </span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {/* Rating badge — placeholder until batch API is available */}
+              {(policy as any).AverageRating > 0 && (
+                <span style={{ fontSize: 10, color: '#d97706', display: 'flex', alignItems: 'center', gap: 3, fontWeight: 600 }}>
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="#d97706" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                  {Number((policy as any).AverageRating).toFixed(1)}
+                </span>
+              )}
+              {/* Comment count badge — placeholder until batch API is available */}
+              {(policy as any).CommentCount > 0 && (
+                <span style={{ fontSize: 10, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 3 }}>
+                  <svg viewBox="0 0 24 24" fill="none" width="12" height="12"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  {(policy as any).CommentCount}
+                </span>
+              )}
               <span style={{ fontSize: 10, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 4 }}>
                 <svg width="12" height="12" viewBox="0 0 20 20" fill="#94a3b8"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
                 {viewCount.toLocaleString()}

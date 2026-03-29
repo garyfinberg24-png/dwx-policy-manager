@@ -363,6 +363,8 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
 
       // Full load for assigned read mode (from My Policies)
       await this.socialService.initialize();
+      this._socialInitialized = true;
+      this._socialLoaded = true;
 
       const currentUser = await this.props.sp.web.currentUser();
       const dashboard = await this.policyService.getUserDashboard(currentUser.Id);
@@ -375,6 +377,10 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
       const ratings = await this.socialService.getPolicyRatings(policyId);
       const comments = await this.socialService.getPolicyComments(policyId);
       const isFollowing = await this.socialService.isFollowingPolicy(policyId);
+
+      // Determine user's existing rating
+      const myRating = ratings.find(r => r.UserId === currentUser.Id);
+      const userRating = myRating ? myRating.Rating : 0;
 
       // Look up live quiz for this policy (if any)
       let liveQuizId: number | null = null;
@@ -395,6 +401,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
         ratings,
         comments,
         isFollowing,
+        userRating,
         liveQuizId,
         currentUserId: currentUser.Id,
         loading: false
@@ -571,6 +578,15 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
     const { policy } = this.state;
     if (!policy) return;
     const url = window.location.href;
+    try {
+      await this.ensureSocialService();
+      await this.socialService.sharePolicy({
+        policyId: policy.Id,
+        shareMethod: 'Link'
+      });
+    } catch {
+      // Share tracking is best-effort — don't block the copy
+    }
     if (navigator.share) {
       try {
         await navigator.share({ title: policy.PolicyName, text: `Check out this policy: ${policy.PolicyNumber}`, url });
@@ -580,6 +596,300 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
       await this.dialogManager.showAlert('Link copied to clipboard!', { variant: 'success' });
     }
   };
+
+  private handleLikeComment = async (commentId: number): Promise<void> => {
+    const { policy } = this.state;
+    if (!policy) return;
+    try {
+      await this.ensureSocialService();
+      await this.socialService.likeComment(commentId);
+      const comments = await this.socialService.getPolicyComments(policy.Id);
+      if (this._isMounted) {
+        this.setState({ comments });
+      }
+    } catch (error) {
+      console.error('Failed to like comment:', error);
+    }
+  };
+
+  /**
+   * Ensure socialService is initialized (needed for browse mode lazy loading)
+   */
+  private _socialInitialized = false;
+  private async ensureSocialService(): Promise<void> {
+    if (this._socialInitialized) return;
+    try {
+      await this.socialService.initialize();
+      this._socialInitialized = true;
+    } catch (error) {
+      console.error('Failed to initialize social service:', error);
+    }
+  }
+
+  /**
+   * Load social data for browse mode (lazy, called once)
+   */
+  private _socialLoaded = false;
+  private async loadSocialData(): Promise<void> {
+    if (this._socialLoaded) return;
+    this._socialLoaded = true;
+    const { policyId } = this.state;
+    if (!policyId) return;
+    try {
+      await this.ensureSocialService();
+      const [ratings, comments, isFollowing] = await Promise.all([
+        this.socialService.getPolicyRatings(policyId).catch(() => [] as IPolicyRating[]),
+        this.socialService.getPolicyComments(policyId).catch(() => [] as IPolicyComment[]),
+        this.socialService.isFollowingPolicy(policyId).catch(() => false)
+      ]);
+      // Determine user's existing rating
+      let userRating = 0;
+      try {
+        const currentUser = await this.props.sp.web.currentUser();
+        const myRating = ratings.find(r => r.UserId === currentUser.Id);
+        if (myRating) userRating = myRating.Rating;
+        if (this._isMounted && !this.state.currentUserId) {
+          this.setState({ currentUserId: currentUser.Id });
+        }
+      } catch { /* ignore */ }
+      if (this._isMounted) {
+        this.setState({ ratings, comments, isFollowing, userRating });
+      }
+    } catch (error) {
+      console.error('Failed to load social data:', error);
+    }
+  }
+
+  /**
+   * Render social engagement section (ratings, comments, share, follow)
+   */
+  private renderSocialSection(): JSX.Element {
+    const { policy, ratings, comments, isFollowing, userRating, newComment, submittingComment, submittingRating } = this.state;
+    if (!policy) return <></>;
+
+    // Lazy-load social data if not yet loaded (browse mode)
+    if (!this._socialLoaded) {
+      this.loadSocialData();
+    }
+
+    // Calculate average rating
+    const avgRating = ratings.length > 0
+      ? ratings.reduce((sum, r) => sum + r.Rating, 0) / ratings.length
+      : 0;
+
+    // Comments collapsed state
+    const commentsExpanded = (this.state as any)._commentsExpanded !== false;
+
+    const starSvg = (index: number, filled: boolean, onClick?: () => void): JSX.Element => (
+      <svg
+        key={index}
+        viewBox="0 0 24 24"
+        width="24"
+        height="24"
+        fill={filled ? '#0d9488' : 'none'}
+        stroke={filled ? '#0d9488' : '#cbd5e1'}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        style={{ cursor: onClick ? 'pointer' : 'default', transition: 'fill 0.15s, stroke 0.15s' }}
+        onClick={onClick}
+        role={onClick ? 'button' : undefined}
+        tabIndex={onClick ? 0 : undefined}
+        aria-label={onClick ? `Rate ${index + 1} star${index > 0 ? 's' : ''}` : undefined}
+        onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') onClick(); } : undefined}
+      >
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+      </svg>
+    );
+
+    // Initials helper
+    const getInitials = (email: string, name?: string): string => {
+      if (name) {
+        const parts = name.split(' ').filter(Boolean);
+        if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+        if (parts.length === 1) return parts[0][0].toUpperCase();
+      }
+      return (email || '?')[0].toUpperCase();
+    };
+
+    const formatCommentDate = (date: string | Date): string => {
+      const d = new Date(date);
+      const now = new Date();
+      const diffMs = now.getTime() - d.getTime();
+      const diffMins = Math.floor(diffMs / 60000);
+      if (diffMins < 1) return 'Just now';
+      if (diffMins < 60) return `${diffMins}m ago`;
+      const diffHours = Math.floor(diffMins / 60);
+      if (diffHours < 24) return `${diffHours}h ago`;
+      const diffDays = Math.floor(diffHours / 24);
+      if (diffDays < 7) return `${diffDays}d ago`;
+      return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    };
+
+    // Only show top-level comments (no parentCommentId)
+    const topLevelComments = comments.filter(c => !c.ParentCommentId);
+
+    return (
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 40px 40px' }}>
+        {/* Rating Widget */}
+        <div style={{
+          background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '24px 32px', marginBottom: 16
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', margin: 0 }}>Rate this Policy</h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#64748b' }}>
+              <span style={{ fontWeight: 700, fontSize: 20, color: '#0f172a' }}>{avgRating > 0 ? avgRating.toFixed(1) : '--'}</span>
+              <div style={{ display: 'flex', gap: 2 }}>
+                {[0, 1, 2, 3, 4].map(i => starSvg(i, i < Math.round(avgRating)))}
+              </div>
+              <span>({ratings.length} rating{ratings.length !== 1 ? 's' : ''})</span>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <span style={{ fontSize: 13, color: '#64748b', fontWeight: 500 }}>Your rating:</span>
+            <div style={{ display: 'flex', gap: 4 }}>
+              {[1, 2, 3, 4, 5].map(star => starSvg(
+                star - 1,
+                star <= userRating,
+                () => this.handleRate(star)
+              ))}
+            </div>
+            {userRating > 0 && (
+              <button
+                onClick={this.handleSubmitRating}
+                disabled={submittingRating}
+                style={{
+                  padding: '6px 16px', borderRadius: 6, border: 'none', background: '#0d9488',
+                  color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit'
+                }}
+              >
+                {submittingRating ? 'Saving...' : 'Submit Rating'}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Comments Section */}
+        <div style={{
+          background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden'
+        }}>
+          {/* Collapsible header */}
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => this.setState({ _commentsExpanded: !commentsExpanded } as any)}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') this.setState({ _commentsExpanded: !commentsExpanded } as any); }}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '16px 32px', cursor: 'pointer', borderBottom: commentsExpanded ? '1px solid #e2e8f0' : 'none',
+              userSelect: 'none'
+            }}
+          >
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', margin: 0 }}>
+              Comments ({topLevelComments.length})
+            </h3>
+            <svg viewBox="0 0 24 24" fill="none" width="16" height="16" style={{ transform: commentsExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+              <path d="M6 9l6 6 6-6" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+
+          {commentsExpanded && (
+            <div style={{ padding: '16px 32px' }}>
+              {/* Comment list */}
+              {topLevelComments.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '24px 0', color: '#94a3b8', fontSize: 13 }}>
+                  No comments yet. Be the first to share your thoughts.
+                </div>
+              )}
+
+              {topLevelComments.map(comment => (
+                <div key={comment.Id} style={{
+                  display: 'flex', gap: 12, padding: '16px 0',
+                  borderBottom: '1px solid #f1f5f9'
+                }}>
+                  {/* Avatar */}
+                  <div style={{
+                    width: 36, height: 36, borderRadius: '50%', background: '#0d9488', flexShrink: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: '#fff', fontSize: 13, fontWeight: 700
+                  }}>
+                    {getInitials(comment.UserEmail || '', (comment as any).UserName)}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: '#0f172a' }}>
+                        {(comment as any).UserName || comment.UserEmail || 'User'}
+                      </span>
+                      <span style={{ fontSize: 11, color: '#94a3b8' }}>
+                        {formatCommentDate(comment.CommentDate)}
+                      </span>
+                      {comment.IsEdited && (
+                        <span style={{ fontSize: 10, color: '#94a3b8', fontStyle: 'italic' }}>(edited)</span>
+                      )}
+                    </div>
+                    <p style={{ fontSize: 13, color: '#334155', lineHeight: 1.6, margin: '0 0 8px' }}>
+                      {comment.CommentText}
+                    </p>
+                    <button
+                      onClick={() => this.handleLikeComment(comment.Id)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 4, padding: '4px 8px', borderRadius: 4,
+                        border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer',
+                        fontSize: 11, color: '#64748b', fontFamily: 'inherit'
+                      }}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" width="14" height="14">
+                        <path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14zM7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      {comment.LikeCount > 0 ? comment.LikeCount : 'Like'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              {/* Add comment input */}
+              <div style={{ display: 'flex', gap: 12, paddingTop: 16 }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: '50%', background: '#e2e8f0', flexShrink: 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: '#64748b', fontSize: 13, fontWeight: 700
+                }}>
+                  ?
+                </div>
+                <div style={{ flex: 1, display: 'flex', gap: 8 }}>
+                  <input
+                    type="text"
+                    placeholder="Add a comment..."
+                    value={newComment}
+                    onChange={(e) => this.setState({ newComment: (e.target as HTMLInputElement).value })}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && newComment.trim()) this.handleSubmitComment(); }}
+                    style={{
+                      flex: 1, padding: '8px 14px', borderRadius: 6, border: '1px solid #e2e8f0',
+                      fontSize: 13, fontFamily: 'inherit', outline: 'none'
+                    }}
+                  />
+                  <button
+                    onClick={this.handleSubmitComment}
+                    disabled={!newComment.trim() || submittingComment}
+                    style={{
+                      padding: '8px 16px', borderRadius: 6, border: 'none',
+                      background: newComment.trim() ? '#0d9488' : '#e2e8f0',
+                      color: newComment.trim() ? '#fff' : '#94a3b8',
+                      fontSize: 12, fontWeight: 600, cursor: newComment.trim() ? 'pointer' : 'default',
+                      fontFamily: 'inherit', whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {submittingComment ? 'Posting...' : 'Post'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   // ============================================
   // READ FLOW METHODS
@@ -1603,6 +1913,9 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
             </Stack>
           </div>
         )}
+
+        {/* Social Engagement Section — only in non-focused mode (already acknowledged) */}
+        {!isFocusedMode && this.renderSocialSection()}
 
         {/* Document Read Footer — anchored to bottom of browser, covers PM footer */}
         {!this.state.isFullscreen && !isFocusedMode && (hasConvertedHtml || hasDocuments) && (
@@ -3437,6 +3750,20 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                 <svg viewBox="0 0 24 24" fill={BookmarkService.isBookmarked(policy.Id) ? 'currentColor' : 'none'} width="12" height="12"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 {BookmarkService.isBookmarked(policy.Id) ? 'Bookmarked' : 'Bookmark'}
               </button>
+              <button
+                onClick={() => this.handleShare()}
+                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 4, fontSize: 11, fontWeight: 500, color: '#64748b', background: '#fff', border: '1px solid #e2e8f0', cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                <svg viewBox="0 0 24 24" fill="none" width="12" height="12"><circle cx="18" cy="5" r="3" stroke="currentColor" strokeWidth="2"/><circle cx="6" cy="12" r="3" stroke="currentColor" strokeWidth="2"/><circle cx="18" cy="19" r="3" stroke="currentColor" strokeWidth="2"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49" stroke="currentColor" strokeWidth="2"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49" stroke="currentColor" strokeWidth="2"/></svg>
+                Share
+              </button>
+              <button
+                onClick={() => this.handleFollow()}
+                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 4, fontSize: 11, fontWeight: 500, color: this.state.isFollowing ? '#dc2626' : '#64748b', background: '#fff', border: `1px solid ${this.state.isFollowing ? '#dc2626' : '#e2e8f0'}`, cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                <svg viewBox="0 0 24 24" fill={this.state.isFollowing ? 'currentColor' : 'none'} width="12" height="12"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                {this.state.isFollowing ? 'Following' : 'Follow'}
+              </button>
             </div>
           </div>
         </div>
@@ -3483,6 +3810,9 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
           </div>
           )}
         </div>
+
+        {/* Social Engagement Section */}
+        {this.renderSocialSection()}
 
         {/* Bottom bar */}
         <div style={{

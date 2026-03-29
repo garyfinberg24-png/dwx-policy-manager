@@ -577,7 +577,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
       const excludedStatuses = ['Archived', 'Retired', 'Expired'];
       let items: any[];
       try {
-        // Try with PolicyOwner field (may not exist on all sites)
+        // Try with PolicyOwner + CreationMethod fields
         items = await this.props.sp.web.lists
           .getByTitle(PM_LISTS.POLICIES)
           .items.select(
@@ -589,18 +589,32 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
           .orderBy('Modified', false)
           .top(500)();
       } catch {
-        // Fallback without PolicyOwner
-        console.warn('[PolicyAuthorView] PolicyOwner field not available, falling back');
-        items = await this.props.sp.web.lists
-          .getByTitle(PM_LISTS.POLICIES)
-          .items.select(
-            'Id', 'Title', 'PolicyNumber', 'PolicyCategory', 'PolicyStatus',
-            'ComplianceRisk', 'Author/Id', 'Author/Title',
-            'Modified', 'Created', 'VersionNumber', 'CreationMethod'
-          )
-          .expand('Author')
-          .orderBy('Modified', false)
-          .top(500)();
+        try {
+          // Fallback without PolicyOwner
+          items = await this.props.sp.web.lists
+            .getByTitle(PM_LISTS.POLICIES)
+            .items.select(
+              'Id', 'Title', 'PolicyNumber', 'PolicyCategory', 'PolicyStatus',
+              'ComplianceRisk', 'Author/Id', 'Author/Title',
+              'Modified', 'Created', 'VersionNumber', 'CreationMethod'
+            )
+            .expand('Author')
+            .orderBy('Modified', false)
+            .top(500)();
+        } catch {
+          // Fallback without CreationMethod (column may not be provisioned)
+          console.warn('[PolicyAuthorView] CreationMethod column not available, falling back');
+          items = await this.props.sp.web.lists
+            .getByTitle(PM_LISTS.POLICIES)
+            .items.select(
+              'Id', 'Title', 'PolicyNumber', 'PolicyCategory', 'PolicyStatus',
+              'ComplianceRisk', 'Author/Id', 'Author/Title',
+              'Modified', 'Created', 'VersionNumber'
+            )
+            .expand('Author')
+            .orderBy('Modified', false)
+            .top(500)();
+        }
       }
 
       return items

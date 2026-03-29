@@ -205,25 +205,158 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
     return meta;
   }
 
+  /**
+   * Extract text from uploaded file — improved extraction for AI classification.
+   * DOCX: Decompresses ZIP, parses word/document.xml for all text runs + headings
+   * PPTX: Decompresses ZIP, parses slide XML for all text
+   * PDF: Extracts text streams between BT/ET markers
+   * Plain text: Direct read
+   * Target: up to 8000 chars for richer LLM context
+   */
   private async extractTextFromFile(file: File): Promise<string> {
+    const MAX_CHARS = 8000;
     const ext = file.name.split('.').pop()?.toLowerCase() || '';
     try {
-      if (['txt', 'rtf', 'csv', 'md'].includes(ext)) return (await file.text()).substring(0, 5000);
-      if (['docx', 'doc', 'pptx', 'xlsx'].includes(ext)) {
-        const bytes = new Uint8Array(await file.arrayBuffer());
-        let str = ''; for (let i = 0; i < Math.min(bytes.length, 512000); i++) str += String.fromCharCode(bytes[i]);
-        const parts: string[] = []; const re = /<(?:w:|a:)?t[^>]*>([^<]+)<\/(?:w:|a:)?t>/g; let m: RegExpExecArray | null;
-        while ((m = re.exec(str)) !== null && parts.length < 800) { if (m[1].trim()) parts.push(m[1].trim()); }
-        if (parts.length > 5) return parts.join(' ').substring(0, 5000);
+      // Plain text formats — direct read
+      if (['txt', 'rtf', 'csv', 'md', 'html', 'htm'].includes(ext)) {
+        const text = await file.text();
+        // Strip HTML tags if present
+        const clean = text.replace(/<[^>]+>/g, ' ').replace(/\s{2,}/g, ' ').trim();
+        return clean.substring(0, MAX_CHARS);
       }
+
+      // Office XML formats (DOCX, PPTX, XLSX) — ZIP-based extraction
+      if (['docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls'].includes(ext)) {
+        const buffer = await file.arrayBuffer();
+        const bytes = new Uint8Array(buffer);
+
+        // Find ZIP local file headers and extract XML content
+        const xmlParts: string[] = [];
+        const textDecoder = new TextDecoder('utf-8', { fatal: false });
+
+        // Look for PK\x03\x04 ZIP signature and extract XML entries
+        for (let i = 0; i < bytes.length - 4; i++) {
+          if (bytes[i] === 0x50 && bytes[i + 1] === 0x4B && bytes[i + 2] === 0x03 && bytes[i + 3] === 0x04) {
+            // Parse local file header
+            const fnLen = bytes[i + 26] | (bytes[i + 27] << 8);
+            const extraLen = bytes[i + 28] | (bytes[i + 29] << 8);
+            const fnStart = i + 30;
+            const fn = textDecoder.decode(bytes.slice(fnStart, fnStart + fnLen));
+
+            // Only process content XML files
+            const isContent = fn === 'word/document.xml' || fn.startsWith('ppt/slides/slide') ||
+              fn.startsWith('xl/sharedStrings') || fn === 'xl/worksheets/sheet1.xml';
+            if (isContent) {
+              const dataStart = fnStart + fnLen + extraLen;
+              // Compression method: 0=stored, 8=deflate
+              const compMethod = bytes[i + 8] | (bytes[i + 9] << 8);
+              const compSize = bytes[i + 18] | (bytes[i + 19] << 8) | (bytes[i + 20] << 16) | (bytes[i + 21] << 24);
+
+              if (compMethod === 0 && compSize > 0) {
+                // Stored (uncompressed) — read directly
+                const xml = textDecoder.decode(bytes.slice(dataStart, dataStart + compSize));
+                xmlParts.push(xml);
+              } else if (compMethod === 8 && compSize > 0) {
+                // Deflate — try DecompressionStream if available
+                try {
+                  const compressed = bytes.slice(dataStart, dataStart + compSize);
+                  const ds = new (globalThis as any).DecompressionStream('raw');
+                  const writer = ds.writable.getWriter();
+                  writer.write(compressed);
+                  writer.close();
+                  const reader = ds.readable.getReader();
+                  const chunks: Uint8Array[] = [];
+                  let done = false;
+                  while (!done) {
+                    const result = await reader.read();
+                    if (result.value) chunks.push(result.value);
+                    done = result.done;
+                  }
+                  const totalLen = chunks.reduce((s, c) => s + c.length, 0);
+                  const merged = new Uint8Array(totalLen);
+                  let offset = 0;
+                  for (const c of chunks) { merged.set(c, offset); offset += c.length; }
+                  xmlParts.push(textDecoder.decode(merged));
+                } catch {
+                  // DecompressionStream not available — fall back to raw regex
+                  const rawSlice = textDecoder.decode(bytes.slice(dataStart, Math.min(dataStart + 500000, bytes.length)));
+                  xmlParts.push(rawSlice);
+                }
+              }
+            }
+          }
+        }
+
+        // Extract text from XML — get all text runs, headings, and paragraph content
+        const allXml = xmlParts.join('\n');
+        const textParts: string[] = [];
+
+        // Word: <w:t>, <w:t xml:space="preserve">
+        // PowerPoint: <a:t>
+        // Excel shared strings: <t>
+        const textRe = /<(?:w:|a:)?t[^>]*>([^<]+)<\/(?:w:|a:)?t>/g;
+        let match: RegExpExecArray | null;
+        while ((match = textRe.exec(allXml)) !== null && textParts.length < 2000) {
+          const text = match[1].trim();
+          if (text.length > 0) textParts.push(text);
+        }
+
+        // Also extract any text between paragraph markers that the <t> regex missed
+        const paraRe = />([^<]{10,})</g;
+        while ((match = paraRe.exec(allXml)) !== null && textParts.length < 2500) {
+          const text = match[1].trim().replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
+          if (text.length > 10 && !textParts.includes(text)) textParts.push(text);
+        }
+
+        if (textParts.length > 3) {
+          return textParts.join(' ').replace(/\s{2,}/g, ' ').substring(0, MAX_CHARS);
+        }
+      }
+
+      // PDF — extract text between BT/ET markers and parenthesized strings
       if (ext === 'pdf') {
-        const bytes = new Uint8Array(await file.arrayBuffer());
-        let t = ''; for (let i = 0; i < Math.min(bytes.length, 512000); i++) { const c = bytes[i]; t += (c >= 32 && c <= 126) || c === 10 || c === 13 ? String.fromCharCode(c) : ' '; }
-        const s = t.replace(/\s{3,}/g, ' ').split(/\s{2,}/).filter(s => s.length > 20);
-        if (s.length > 3) return s.join(' ').substring(0, 5000);
+        const buffer = await file.arrayBuffer();
+        const bytes = new Uint8Array(buffer);
+        const raw = new TextDecoder('latin1').decode(bytes.slice(0, Math.min(bytes.length, 1048576)));
+
+        // Method 1: Extract parenthesized strings from text objects (Tj, TJ operators)
+        const textParts: string[] = [];
+        const tjRe = /\(([^)]{2,})\)\s*Tj/g;
+        let match: RegExpExecArray | null;
+        while ((match = tjRe.exec(raw)) !== null && textParts.length < 2000) {
+          const t = match[1].replace(/\\([nrt\\()])/g, (_, c) => ({ n: '\n', r: '\r', t: '\t', '\\': '\\', '(': '(', ')': ')' }[c] || c));
+          if (t.trim().length > 1) textParts.push(t.trim());
+        }
+
+        // Method 2: TJ array operator
+        const tjArrayRe = /\[([^\]]*)\]\s*TJ/g;
+        while ((match = tjArrayRe.exec(raw)) !== null && textParts.length < 2500) {
+          const inner = match[1];
+          const strRe = /\(([^)]+)\)/g;
+          let sm: RegExpExecArray | null;
+          const words: string[] = [];
+          while ((sm = strRe.exec(inner)) !== null) { if (sm[1].trim()) words.push(sm[1].trim()); }
+          if (words.length > 0) textParts.push(words.join(''));
+        }
+
+        // Method 3: Fallback — printable ASCII sequences
+        if (textParts.length < 20) {
+          const ascii = raw.replace(/[^\x20-\x7E\n]/g, ' ').replace(/\s{3,}/g, ' ');
+          const sentences = ascii.split(/\s{2,}/).filter(s => s.length > 25 && /[a-zA-Z]{3,}/.test(s));
+          for (const s of sentences.slice(0, 500)) {
+            if (!textParts.includes(s)) textParts.push(s);
+          }
+        }
+
+        if (textParts.length > 3) {
+          return textParts.join(' ').replace(/\s{2,}/g, ' ').substring(0, MAX_CHARS);
+        }
       }
-    } catch { /* */ }
-    return `Document: ${file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ')}`;
+    } catch (err) {
+      console.warn('[BulkUpload] Text extraction failed:', err);
+    }
+    // Fallback: filename only
+    return `Document filename: ${file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ')}`;
   }
 
   // ============================================================================
@@ -386,15 +519,53 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
         let content = ''; if (item.file) { try { content = await this.extractTextFromFile(item.file); } catch { /* */ } }
         let suggestions: any = {};
         if (functionUrl) {
-          const ctx = content.length > 100 ? `\n\nDocument content:\n"""${content.substring(0, 3000)}"""` : '';
+          const contentSnippet = content.length > 100 ? content.substring(0, 8000) : '';
+          const classificationPrompt = `You are an expert policy analyst for a corporate Policy Management system. Analyze this document and extract structured metadata.
+
+DOCUMENT FILENAME: "${item.fileName}"
+${contentSnippet ? `\nDOCUMENT CONTENT (first ${contentSnippet.length} characters):\n"""\n${contentSnippet}\n"""` : '\n(No document content extracted — classify from filename only)'}
+
+TASK: Extract the following metadata by analyzing the document content. Use the content to make informed decisions — do not guess blindly from the filename alone.
+
+Think step by step:
+1. Read the document content carefully
+2. Identify the subject matter and regulatory context
+3. Determine the appropriate category and risk level based on content
+4. Extract key points and a concise summary
+
+REQUIRED OUTPUT (respond with ONLY this JSON object, no other text):
+{
+  "title": "Clean, professional policy title (e.g., 'Information Security Policy' not 'InfoSec_Policy_v2_FINAL')",
+  "category": "EXACTLY ONE OF: IT Security | HR | Compliance | Data Protection | Health & Safety | Finance | Legal | Operations | Governance | Other",
+  "risk": "EXACTLY ONE OF: Critical | High | Medium | Low | Informational",
+  "departments": "Comma-separated list of target departments (e.g., 'All Employees' or 'IT, Engineering' or 'Finance, Legal')",
+  "summary": "2-3 sentence summary of what this policy covers and why it matters",
+  "readTimeframe": "EXACTLY ONE OF: Immediate | Day 1 | Day 3 | Week 1 | Week 2 | Month 1",
+  "keyPoints": ["Key point 1", "Key point 2", "Key point 3"],
+  "regulatoryReferences": "Any regulatory frameworks mentioned (e.g., 'POPIA, GDPR' or 'ISO 27001' or 'None detected')",
+  "reviewFrequency": "EXACTLY ONE OF: Annual | Biannual | Quarterly | As Needed",
+  "requiresAcknowledgement": true or false (true if the policy requires staff to formally acknowledge they have read it)
+}
+
+CLASSIFICATION GUIDANCE:
+- Critical risk: Legal/regulatory obligations, data breaches, health/safety hazards
+- High risk: Security policies, financial controls, compliance requirements
+- Medium risk: Operational procedures, HR policies, general guidelines
+- Low risk: Best practices, recommendations, informational guides
+- Immediate/Day 1: Critical safety or compliance. Week 1: Standard policies. Month 1: Reference material.`;
+
           try {
             const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 45000);
             const resp = await fetch(functionUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ mode: 'author-assist', message: `Classify this policy document. Filename: "${item.fileName}"${ctx}\n\nExtract:\n1. Title (clean professional title)\n2. PolicyCategory (IT Security, HR, Compliance, Data Protection, Health & Safety, Finance, Legal, Operations, Governance, Other)\n3. ComplianceRisk (Critical, High, Medium, Low, Informational)\n4. Departments (comma-separated)\n5. Summary (1-2 sentences)\n6. ReadTimeframe (Immediate, Day 1, Day 3, Week 1, Week 2, Month 1)\n\nRespond ONLY with JSON: {title, category, risk, departments, summary, readTimeframe}`, history: [], context: [] }),
+              body: JSON.stringify({ mode: 'author-assist', message: classificationPrompt, history: [], context: [] }),
               signal: ctrl.signal });
             clearTimeout(t);
-            if (resp.ok) { const d = await resp.json(); const c = d?.response || d?.content || ''; try { const m = c.match(/\{[\s\S]*\}/); if (m) suggestions = JSON.parse(m[0]); } catch { /* */ } }
-          } catch { /* AI failed */ }
+            if (resp.ok) {
+              const d = await resp.json();
+              const raw = d?.response || d?.content || '';
+              try { const m = raw.match(/\{[\s\S]*\}/); if (m) suggestions = JSON.parse(m[0]); } catch { /* JSON parse failed */ }
+            }
+          } catch { /* AI call failed — will fall through to heuristic */ }
         }
         if (!suggestions.category) suggestions = this.heuristicClassify(item.fileName, item.title);
 
@@ -406,6 +577,10 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
           department: Array.isArray(suggestions.departments) ? suggestions.departments.join(', ') : (suggestions.departments || item.department || 'All Employees'),
           summary: suggestions.summary || item.summary || '',
           readTimeframe: suggestions.readTimeframe || item.readTimeframe || 'Week 1',
+          keyPoints: Array.isArray(suggestions.keyPoints) ? suggestions.keyPoints : [],
+          regulatoryReferences: suggestions.regulatoryReferences || '',
+          reviewFrequency: suggestions.reviewFrequency || 'Annual',
+          requiresAcknowledgement: suggestions.requiresAcknowledgement ?? true,
           file: undefined, // free memory
         });
 

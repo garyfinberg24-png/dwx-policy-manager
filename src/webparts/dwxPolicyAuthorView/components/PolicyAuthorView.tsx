@@ -2351,14 +2351,6 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
               />
             )}
             <DefaultButton
-              text="Create Policy from Request"
-              iconProps={{ iconName: 'PageAdd' }}
-              onClick={() => {
-                // Navigate to Policy Builder with pre-filled data
-                window.location.href = `PolicyBuilder.aspx?fromRequest=${request.Id}&title=${encodeURIComponent(request.Title)}&category=${encodeURIComponent(request.PolicyCategory)}`;
-              }}
-            />
-            <DefaultButton
               text="Close"
               onClick={() => this.setState({ showDetailPanel: false, selectedRequest: null })}
             />

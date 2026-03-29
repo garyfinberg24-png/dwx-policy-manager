@@ -582,7 +582,7 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
         { key: 'reviews', text: 'Reviews', icon: NavIcons.reviews, href: '/sites/PolicyManager/SitePages/PolicyManagerView.aspx?tab=reviews' },
         { key: 'reports', text: 'Reports', icon: NavIcons.analytics, href: '/sites/PolicyManager/SitePages/PolicyManagerView.aspx?tab=reports' },
         { key: 'analytics', text: 'Analytics', icon: NavIcons.analytics, href: '/sites/PolicyManager/SitePages/PolicyAnalytics.aspx' },
-        { key: 'request-policy', text: 'Request Policy', icon: NavIcons.create, href: '/sites/PolicyManager/SitePages/PolicyAuthor.aspx?tab=requests' },
+        { key: 'request-policy', text: 'Request Policy', icon: NavIcons.create, href: '#request-policy' },
       ]
     }
   ];
@@ -1230,8 +1230,14 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
                     {group.children.map((child) => (
                       <a
                         key={child.key}
-                        href={child.href}
-                        onClick={() => setOpenNavGroup(null)}
+                        href={child.key === 'request-policy' ? undefined : child.href}
+                        onClick={(e) => {
+                          setOpenNavGroup(null);
+                          if (child.key === 'request-policy') {
+                            e.preventDefault();
+                            setShowRequestWizard(true);
+                          }
+                        }}
                         style={{
                           display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px',
                           fontSize: 13, color: activeNavKey === child.key ? '#0d9488' : '#334155',

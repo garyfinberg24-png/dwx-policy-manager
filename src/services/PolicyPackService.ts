@@ -127,26 +127,20 @@ export class PolicyPackService {
    */
   public async getPolicyPacks(packType?: string): Promise<IPolicyPack[]> {
     try {
-      let packs: any[];
-      try {
-        // Try filtered query first
-        let query = this.sp.web.lists
-          .getByTitle(this.POLICY_PACKS_LIST)
-          .items.filter('IsActive eq true');
-        if (packType) {
-          query = query.filter(`PackType eq '${ValidationUtils.sanitizeForOData(packType)}'`);
-        }
-        packs = await query.top(1000)();
-      } catch {
-        // Fallback: load all items if IsActive column doesn't exist or filter fails
-        packs = await this.sp.web.lists
-          .getByTitle(this.POLICY_PACKS_LIST)
-          .items.top(1000)();
-      }
+      // Load all pack items — use minimal select to avoid column-not-found errors
+      const packs = await this.sp.web.lists
+        .getByTitle(this.POLICY_PACKS_LIST)
+        .items.select(
+          'Id', 'Title', 'PackName', 'PackDescription', 'PackType', 'PackCategory',
+          'PolicyIds', 'PolicyCount', 'IsActive', 'IsSequential', 'IsMandatory',
+          'SendWelcomeEmail', 'SendTeamsNotification', 'Created', 'Modified'
+        )
+        .top(1000)();
       return packs.map(p => this.mapPolicyPack(p));
     } catch (error) {
       logger.error('PolicyPackService', 'Failed to get policy packs:', error);
-      throw error;
+      // Return empty array instead of throwing — allows the UI to render empty state
+      return [];
     }
   }
 
@@ -1015,13 +1009,21 @@ export class PolicyPackService {
    * Map policy pack
    */
   private mapPolicyPack(item: any): IPolicyPack {
+    const safeParse = (val: any, fallback: any = []): any => {
+      if (!val) return fallback;
+      if (Array.isArray(val)) return val;
+      try { return JSON.parse(val); } catch { return fallback; }
+    };
     return {
       ...item,
-      PolicyIds: item.PolicyIds ? JSON.parse(item.PolicyIds) : [],
-      TargetDepartments: item.TargetDepartments ? JSON.parse(item.TargetDepartments) : [],
-      TargetRoles: item.TargetRoles ? JSON.parse(item.TargetRoles) : [],
-      TargetLocations: item.TargetLocations ? JSON.parse(item.TargetLocations) : [],
-      PolicySequence: item.PolicySequence ? JSON.parse(item.PolicySequence) : undefined
+      PackName: item.PackName || item.Title || '',
+      PackDescription: item.PackDescription || '',
+      PolicyIds: safeParse(item.PolicyIds),
+      PolicyCount: item.PolicyCount || 0,
+      TargetDepartments: safeParse(item.TargetDepartments),
+      TargetRoles: safeParse(item.TargetRoles),
+      TargetLocations: safeParse(item.TargetLocations),
+      PolicySequence: safeParse(item.PolicySequence, undefined)
     } as IPolicyPack;
   }
 }

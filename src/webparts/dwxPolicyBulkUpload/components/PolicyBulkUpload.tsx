@@ -968,14 +968,14 @@ CLASSIFICATION GUIDANCE:
 
         {/* Editable enrichment table */}
         <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '32px 1fr 120px 80px 100px 170px 70px 50px', padding: '8px 14px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, color: '#64748b' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '32px 1.5fr 140px 100px 130px 140px 60px 40px', padding: '8px 14px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, color: '#64748b', gap: 6 }}>
             <div><input type="checkbox" onChange={(e) => { if ((e.target as HTMLInputElement).checked) this.setState({ selectedIds: new Set(enrichable.map(i => i.id)) }); else this.setState({ selectedIds: new Set() }); }} /></div>
-            <div>Policy Title</div><div>Category</div><div>Risk</div><div>Department</div><div>Fast Track Template</div><div>Status</div><div></div>
+            <div>Policy Title</div><div>Category</div><div>Risk</div><div>Department</div><div>Template</div><div>Status</div><div></div>
           </div>
           {enrichable.map(item => {
             const isClassifying = item.status === 'classifying';
             return (
-              <div key={item.id} style={{ display: 'grid', gridTemplateColumns: '32px 1fr 120px 80px 100px 170px 70px 50px', padding: '8px 14px', borderBottom: '1px solid #f1f5f9', alignItems: 'center', background: isClassifying ? '#faf5ff' : selectedIds.has(item.id) ? '#f0fdfa' : '#fff', opacity: isClassifying ? 0.7 : 1 }}>
+              <div key={item.id} style={{ display: 'grid', gridTemplateColumns: '32px 1.5fr 140px 100px 130px 140px 60px 40px', padding: '8px 14px', borderBottom: '1px solid #f1f5f9', alignItems: 'center', background: isClassifying ? '#faf5ff' : selectedIds.has(item.id) ? '#f0fdfa' : '#fff', opacity: isClassifying ? 0.7 : 1, gap: 6 }}>
                 <div><input type="checkbox" checked={selectedIds.has(item.id)} disabled={isClassifying} onChange={() => { const n = new Set(selectedIds); if (n.has(item.id)) n.delete(item.id); else n.add(item.id); this.setState({ selectedIds: n }); }} /></div>
 
                 {/* Title — editable */}
@@ -999,11 +999,12 @@ CLASSIFICATION GUIDANCE:
                     styles={{ root: { minWidth: 0 }, title: { fontSize: 11, height: 26, lineHeight: '24px', borderRadius: 4, borderColor: '#e2e8f0', color: riskColor(item.risk) }, caretDownWrapper: { height: 26, lineHeight: '26px' } }} />
                 </div>
 
-                {/* Department — editable text */}
+                {/* Department — editable dropdown */}
                 <div>
-                  <input type="text" value={item.department} placeholder="All" disabled={isClassifying}
-                    onChange={(e) => this.updateItem(item.id, { department: (e.target as HTMLInputElement).value })}
-                    style={{ width: '100%', border: 'none', background: 'transparent', fontSize: 11, color: '#475569', outline: 'none', padding: '2px 0' }} />
+                  <Dropdown selectedKey={item.department || 'All Employees'} disabled={isClassifying}
+                    options={[{ key: 'All Employees', text: 'All Employees' }, { key: 'IT', text: 'IT' }, { key: 'HR', text: 'HR' }, { key: 'Finance', text: 'Finance' }, { key: 'Legal', text: 'Legal' }, { key: 'Operations', text: 'Operations' }, { key: 'Compliance', text: 'Compliance' }, { key: 'Executive', text: 'Executive' }, { key: 'Engineering', text: 'Engineering' }, { key: 'Sales', text: 'Sales' }]}
+                    onChange={(_, opt) => this.updateItem(item.id, { department: String(opt?.key || 'All Employees'), status: item.status === 'uploaded' ? 'enriched' : item.status })}
+                    styles={{ root: { minWidth: 0 }, title: { fontSize: 11, height: 26, lineHeight: '24px', borderRadius: 4, borderColor: '#e2e8f0' }, caretDownWrapper: { height: 26, lineHeight: '26px' } }} />
                 </div>
 
                 {/* Fast Track Template — dropdown */}

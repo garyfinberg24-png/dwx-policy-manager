@@ -889,7 +889,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
             ].map((kpi, i, arr) => (
               <React.Fragment key={kpi.label}>
                 <div
-                  onClick={() => this.setState({ pipelineFilter: kpi.filter })}
+                  onClick={() => this.setState({ pipelineFilter: kpi.filter, pipelineBulkOnly: false })}
                   style={{
                     flex: 1, background: pipelineFilter === kpi.filter ? '#f0fdfa' : '#fff',
                     borderLeft: `1px solid ${pipelineFilter === kpi.filter ? '#0d9488' : '#e2e8f0'}`,
@@ -924,7 +924,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
               {statusFilters.map(f => (
                 <button
                   key={f}
-                  onClick={() => this.setState({ pipelineFilter: f, selectedPipelineIds: new Set<number>() })}
+                  onClick={() => this.setState({ pipelineFilter: f, selectedPipelineIds: new Set<number>(), pipelineBulkOnly: false })}
                   style={{
                     padding: '5px 12px', fontSize: 12, fontWeight: pipelineFilter === f ? 700 : 500,
                     border: `1px solid ${pipelineFilter === f ? '#0d9488' : '#e2e8f0'}`,
@@ -937,7 +937,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
             </div>
             {/* Bulk Import filter toggle */}
             <button
-              onClick={() => this.setState(prev => ({ pipelineBulkOnly: !prev.pipelineBulkOnly }))}
+              onClick={() => this.setState(prev => ({ pipelineBulkOnly: !prev.pipelineBulkOnly, pipelineFilter: !prev.pipelineBulkOnly ? 'All' as PipelineStatusFilter : prev.pipelineFilter }))}
               style={{
                 padding: '5px 12px', fontSize: 12, fontWeight: this.state.pipelineBulkOnly ? 700 : 500,
                 border: `1px solid ${this.state.pipelineBulkOnly ? '#2563eb' : '#e2e8f0'}`,

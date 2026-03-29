@@ -440,7 +440,7 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
               { label: 'Pending', value: kpi.pending, color: '#fbbf24' },
               { label: 'Overdue', value: kpi.overdue, color: '#f87171' },
             ].map(k => (
-              <div key={k.label} style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '8px 14px', textAlign: 'center', minWidth: 70 }}>
+              <div key={k.label} style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 4, padding: '8px 14px', textAlign: 'center', minWidth: 70 }}>
                 <div style={{ fontSize: 18, fontWeight: 700, color: k.color, lineHeight: 1.1 }}>{k.value}</div>
                 <div style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: 0.8, color: 'rgba(255,255,255,0.6)', marginTop: 2 }}>{k.label}</div>
               </div>
@@ -1036,22 +1036,28 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
             )}
           </div>
 
-          {/* STUB: Secondary actions — not yet wired to backend. Logged for backlog review. */}
+          {/* Secondary actions */}
           {policy.status !== 'completed' && (
             <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
               <button type="button" style={{ flex: 1, padding: '8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', border: '1px solid #e2e8f0', fontFamily: 'inherit', textAlign: 'center', background: '#fff', color: '#64748b' }}
                 onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#0d9488'; e.currentTarget.style.color = '#0d9488'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#64748b'; }}>
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#64748b'; }}
+                onClick={() => {
+                  const siteUrl = this.props.context?.pageContext?.web?.absoluteUrl || '/sites/PolicyManager';
+                  window.location.href = `${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policy.id}&mode=browse`;
+                }}>
                 Mark as Read
               </button>
-              <button type="button" style={{ flex: 1, padding: '8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', border: '1px solid #e2e8f0', fontFamily: 'inherit', textAlign: 'center', background: '#fff', color: '#64748b' }}
-                onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#d97706'; e.currentTarget.style.color = '#d97706'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#64748b'; }}>
+              <button type="button"
+                title="Coming soon — snooze reminders will be available in a future update"
+                disabled
+                style={{ flex: 1, padding: '8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, cursor: 'not-allowed', border: '1px solid #e2e8f0', fontFamily: 'inherit', textAlign: 'center', background: '#f8fafc', color: '#94a3b8', opacity: 0.7 }}>
                 Snooze Reminder
               </button>
-              <button type="button" style={{ flex: 1, padding: '8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', border: '1px solid #e2e8f0', fontFamily: 'inherit', textAlign: 'center', background: '#fff', color: '#64748b' }}
-                onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#2563eb'; e.currentTarget.style.color = '#2563eb'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#64748b'; }}>
+              <button type="button"
+                title="Coming soon — extension requests will be available in a future update"
+                disabled
+                style={{ flex: 1, padding: '8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, cursor: 'not-allowed', border: '1px solid #e2e8f0', fontFamily: 'inherit', textAlign: 'center', background: '#f8fafc', color: '#94a3b8', opacity: 0.7 }}>
                 Request Extension
               </button>
             </div>

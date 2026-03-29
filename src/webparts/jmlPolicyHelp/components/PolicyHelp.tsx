@@ -701,7 +701,7 @@ export default class PolicyHelp extends React.Component<IPolicyHelpProps, IPolic
                       onKeyDown={(e) => { if (e.key === 'Enter') this.handleSearch(searchQuery); }}
                       placeholder="Search help articles, FAQs, and guides..."
                       style={{
-                        width: '100%', padding: '10px 18px 10px 44px', borderRadius: 8,
+                        width: '100%', padding: '10px 18px 10px 44px', borderRadius: 4,
                         border: '2px solid rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.15)',
                         fontSize: 13, color: '#fff', outline: 'none', fontFamily: 'inherit',
                       }}

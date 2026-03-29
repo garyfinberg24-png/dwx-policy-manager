@@ -1573,7 +1573,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                   This policy will be reviewed {policy.ReviewFrequency || 'annually'} or sooner if regulatory changes require updates. The next scheduled review is {policy.NextReviewDate ? new Date(policy.NextReviewDate).toLocaleDateString() : 'as per the annual review cycle'}.
                 </p>
 
-                <div style={{ marginTop: 32, padding: 16, background: '#f0fdfa', borderRadius: 6, borderLeft: '3px solid #0d9488' }}>
+                <div style={{ marginTop: 32, padding: 16, background: '#f0fdfa', borderRadius: 4, borderLeft: '3px solid #0d9488' }}>
                   <div style={{ fontSize: 12, color: '#0f766e', fontWeight: 600, fontFamily: 'system-ui, sans-serif' }}>
                     Document Classification: Internal | Owner: {policy.PolicyOwner || 'Policy Administrator'} | Category: {policy.PolicyCategory || 'General'}
                   </div>
@@ -1684,7 +1684,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
     };
 
     return (
-      <div style={{ marginTop: 16, border: '1px solid #e2e8f0', borderRadius: 8, overflow: 'hidden' }}>
+      <div style={{ marginTop: 16, border: '1px solid #e2e8f0', borderRadius: 4, overflow: 'hidden' }}>
         <Stack
           horizontal
           verticalAlign="center"
@@ -1832,19 +1832,19 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
 
             {/* Feedback banner (shown after confirm) */}
             {isCorrect && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 8, marginBottom: 20, background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#166534', fontSize: 13 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 4, marginBottom: 20, background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#166534', fontSize: 13 }}>
                 <span style={{ fontSize: 18 }}>✓</span>
                 <div><strong style={{ display: 'block', marginBottom: 2 }}>Correct!</strong><span style={{ fontSize: 12, opacity: 0.8 }}>{explanations[qi]}</span></div>
               </div>
             )}
             {isFirstWrongAttempt && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 8, marginBottom: 20, background: '#fef3c7', border: '1px solid #fbbf24', color: '#92400e', fontSize: 13 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 4, marginBottom: 20, background: '#fef3c7', border: '1px solid #fbbf24', color: '#92400e', fontSize: 13 }}>
                 <span style={{ fontSize: 18 }}>⚠</span>
                 <div><strong style={{ display: 'block', marginBottom: 2 }}>Not quite — try again!</strong><span style={{ fontSize: 12, opacity: 0.8 }}>You have one more attempt. Read the question carefully and select a different answer.</span></div>
               </div>
             )}
             {isIncorrect && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 8, marginBottom: 20, background: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b', fontSize: 13 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 4, marginBottom: 20, background: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b', fontSize: 13 }}>
                 <span style={{ fontSize: 18 }}>✗</span>
                 <div><strong style={{ display: 'block', marginBottom: 2 }}>Incorrect — the correct answer is shown below</strong><span style={{ fontSize: 12, opacity: 0.8 }}>{explanations[qi]}</span></div>
               </div>
@@ -1868,7 +1868,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                       display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', marginBottom: 8,
                       border: `2px solid ${isWrongSelection ? '#dc2626' : isCorrectOption ? '#059669' : isSelected ? '#0d9488' : '#e2e8f0'}`,
                       borderStyle: isCorrectOption && !isSelected ? 'dashed' : 'solid',
-                      borderRadius: 8, cursor: isConfirmed ? 'default' : 'pointer', transition: 'all 0.2s', fontSize: 14,
+                      borderRadius: 4, cursor: isConfirmed ? 'default' : 'pointer', transition: 'all 0.2s', fontSize: 14,
                       background: isWrongSelection ? '#fef2f2' : isCorrectOption ? '#f0fdf4' : isSelected ? '#f0fdfa' : '#fff',
                     }}
                   >
@@ -1893,7 +1893,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                 text="← Previous"
                 disabled={qi === 0}
                 onClick={() => this.setState({ currentQuizQuestion: qi - 1 })}
-                styles={{ root: { borderRadius: 6 } }}
+                styles={{ root: { borderRadius: 4 } }}
               />
               <span style={{ fontSize: 13, color: '#64748b' }}>Question {qi + 1} of {questions.length}</span>
               {!isConfirmed ? (
@@ -1901,23 +1901,23 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                   text={isFirstWrongAttempt ? 'Confirm 2nd Attempt →' : 'Confirm Answer →'}
                   disabled={quizAnswers[qi] < 0}
                   onClick={this.handleQuizConfirmAnswer}
-                  styles={{ root: { borderRadius: 6, background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e' } }}
+                  styles={{ root: { borderRadius: 4, background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e' } }}
                 />
               ) : qi < questions.length - 1 ? (
                 <PrimaryButton
                   text="Next Question →"
                   onClick={this.handleQuizNextAfterConfirm}
-                  styles={{ root: { borderRadius: 6, background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e' } }}
+                  styles={{ root: { borderRadius: 4, background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e' } }}
                 />
               ) : allConfirmed ? (
                 <PrimaryButton
                   text="View Results"
                   iconProps={{ iconName: 'Accept' }}
                   onClick={this.handleQuizSubmit}
-                  styles={{ root: { borderRadius: 6, background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e' } }}
+                  styles={{ root: { borderRadius: 4, background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e' } }}
                 />
               ) : (
-                <PrimaryButton text="Answer remaining questions" disabled styles={{ root: { borderRadius: 6 } }} />
+                <PrimaryButton text="Answer remaining questions" disabled styles={{ root: { borderRadius: 4 } }} />
               )}
             </div>
           </div>
@@ -1975,14 +1975,14 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                 <PrimaryButton
                   text="Proceed to Acknowledgement →"
                   onClick={() => this.setState({ currentFlowStep: 'acknowledge', showAcknowledgePanel: true })}
-                  styles={{ root: { borderRadius: 6, background: '#0d9488', borderColor: '#0d9488', padding: '12px 32px' }, rootHovered: { background: '#0f766e' } }}
+                  styles={{ root: { borderRadius: 4, background: '#0d9488', borderColor: '#0d9488', padding: '12px 32px' }, rootHovered: { background: '#0f766e' } }}
                 />
               ) : (
                 <DefaultButton
                   text="Retake Quiz"
                   iconProps={{ iconName: 'Refresh' }}
                   onClick={this.handleQuizRetake}
-                  styles={{ root: { borderRadius: 6 } }}
+                  styles={{ root: { borderRadius: 4 } }}
                 />
               )}
             </div>
@@ -2194,7 +2194,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                 style={{
                   padding: 16,
                   border: '1px solid #e2e8f0',
-                  borderRadius: 8,
+                  borderRadius: 4,
                   backgroundColor: version.IsCurrentVersion ? '#f0fdfa' : '#ffffff'
                 }}
               >
@@ -2270,7 +2270,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
           ) : (
             <div
               dangerouslySetInnerHTML={{ __html: sanitizeHtml(versionComparisonHtml || '') }}
-              style={{ border: '1px solid #e2e8f0', borderRadius: 8, overflow: 'auto' }}
+              style={{ border: '1px solid #e2e8f0', borderRadius: 4, overflow: 'auto' }}
             />
           )}
         </div>
@@ -2554,6 +2554,17 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
         void this.dialogManager.showAlert('Comments are required for Request Changes and Reject decisions.', { variant: 'warning' });
         return;
       }
+      // Warn if approving without completing at least 4 of 6 checklist items
+      if (reviewDecision === 'approve') {
+        const checkedCount = reviewChecklist.filter(Boolean).length;
+        if (checkedCount < 4) {
+          const proceed = await this.dialogManager.showConfirm(
+            `You have only completed ${checkedCount} of 6 review checklist items. It is recommended to complete at least 4 items before approving. Do you want to proceed anyway?`,
+            { title: 'Incomplete Review Checklist', confirmLabel: 'Proceed', cancelLabel: 'Go Back' }
+          );
+          if (!proceed) return;
+        }
+      }
       this.setState({ reviewSubmitting: true } as any);
       try {
         const currentUserId = this.props.context?.pageContext?.legacyPageContext?.userId || 0;
@@ -2745,7 +2756,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
             {/* Decision */}
             <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
               <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{ width: 28, height: 28, borderRadius: 6, background: '#f0fdfa', color: '#0d9488', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>&#x2714;</div>
+                <div style={{ width: 28, height: 28, borderRadius: 4, background: '#f0fdfa', color: '#0d9488', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>&#x2714;</div>
                 <Text style={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>Your Review Decision</Text>
               </div>
               <div style={{ padding: 20 }}>
@@ -2760,12 +2771,12 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                       onClick={() => this.setState({ reviewDecision: d.key } as any)}
                       onKeyDown={(e) => { if (e.key === 'Enter') this.setState({ reviewDecision: d.key } as any); }}
                       style={{
-                        display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', borderRadius: 8,
+                        display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', borderRadius: 4,
                         border: `2px solid ${reviewDecision === d.key ? '#0d9488' : '#e2e8f0'}`,
                         background: reviewDecision === d.key ? '#f0fdfa' : '#fff', cursor: 'pointer', transition: 'all 0.15s'
                       }}
                     >
-                      <div style={{ width: 36, height: 36, borderRadius: 8, background: d.bg, color: d.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }} dangerouslySetInnerHTML={{ __html: d.icon }} />
+                      <div style={{ width: 36, height: 36, borderRadius: 4, background: d.bg, color: d.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }} dangerouslySetInnerHTML={{ __html: d.icon }} />
                       <div>
                         <Text style={{ fontWeight: 600, fontSize: 13, color: '#0f172a', display: 'block' }}>{d.label}</Text>
                         <Text style={{ fontSize: 11, color: '#94a3b8' }}>{d.desc}</Text>
@@ -2787,7 +2798,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                   onClick={handleSubmitReview}
                   styles={{
                     root: {
-                      width: '100%', marginTop: 16, borderRadius: 6, height: 40,
+                      width: '100%', marginTop: 16, borderRadius: 4, height: 40,
                       background: reviewDecision === 'approve' ? '#0d9488' : reviewDecision === 'changes' ? '#d97706' : reviewDecision === 'reject' ? '#dc2626' : '#94a3b8',
                       borderColor: reviewDecision === 'approve' ? '#0d9488' : reviewDecision === 'changes' ? '#d97706' : reviewDecision === 'reject' ? '#dc2626' : '#94a3b8'
                     },
@@ -2803,7 +2814,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
             {/* Checklist */}
             <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
               <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{ width: 28, height: 28, borderRadius: 6, background: '#dbeafe', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>&#x2611;</div>
+                <div style={{ width: 28, height: 28, borderRadius: 4, background: '#dbeafe', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>&#x2611;</div>
                 <Text style={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>Review Checklist</Text>
               </div>
               <div style={{ padding: '12px 20px' }}>
@@ -2823,7 +2834,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
             {/* Review Chain */}
             <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
               <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{ width: 28, height: 28, borderRadius: 6, background: '#ede9fe', color: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>&#x1F465;</div>
+                <div style={{ width: 28, height: 28, borderRadius: 4, background: '#ede9fe', color: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>&#x1F465;</div>
                 <Text style={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>Review Chain</Text>
               </div>
               <div style={{ padding: '12px 20px' }}>
@@ -2852,12 +2863,12 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
             {reviewerItems.some((r: any) => r.ReviewComments) && (
               <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
                 <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ width: 28, height: 28, borderRadius: 6, background: '#fce7f3', color: '#db2777', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>&#x1F4AC;</div>
+                  <div style={{ width: 28, height: 28, borderRadius: 4, background: '#fce7f3', color: '#db2777', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>&#x1F4AC;</div>
                   <Text style={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>Review Comments</Text>
                 </div>
                 <div style={{ padding: 20 }}>
                   {reviewerItems.filter((r: any) => r.ReviewComments).map((r: any, i: number) => (
-                    <div key={i} style={{ padding: 12, background: '#f8fafc', borderRadius: 6, marginBottom: 8 }}>
+                    <div key={i} style={{ padding: 12, background: '#f8fafc', borderRadius: 4, marginBottom: 8 }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                         <span style={{ fontSize: 12, fontWeight: 600, color: '#0f172a' }}>{r.Reviewer?.Title || 'Reviewer'}</span>
                         <span style={{ fontSize: 10, color: '#94a3b8' }}>{r.ReviewedDate ? new Date(r.ReviewedDate).toLocaleDateString() : ''}</span>
@@ -3053,7 +3064,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
             {/* Decision */}
             <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
               <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 8, background: '#ecfdf5' }}>
-                <div style={{ width: 28, height: 28, borderRadius: 6, background: '#059669', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>&#x2714;</div>
+                <div style={{ width: 28, height: 28, borderRadius: 4, background: '#059669', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>&#x2714;</div>
                 <Text style={{ fontSize: 14, fontWeight: 600, color: '#064e3b' }}>Your Approval Decision</Text>
               </div>
               <div style={{ padding: 20 }}>
@@ -3068,12 +3079,12 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                       onClick={() => this.setState({ reviewDecision: d.key } as any)}
                       onKeyDown={(e) => { if (e.key === 'Enter') this.setState({ reviewDecision: d.key } as any); }}
                       style={{
-                        display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', borderRadius: 8,
+                        display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', borderRadius: 4,
                         border: `2px solid ${reviewDecision === d.key ? '#059669' : '#e2e8f0'}`,
                         background: reviewDecision === d.key ? '#ecfdf5' : '#fff', cursor: 'pointer', transition: 'all 0.15s'
                       }}
                     >
-                      <div style={{ width: 36, height: 36, borderRadius: 8, background: d.bg, color: d.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }} dangerouslySetInnerHTML={{ __html: d.icon }} />
+                      <div style={{ width: 36, height: 36, borderRadius: 4, background: d.bg, color: d.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }} dangerouslySetInnerHTML={{ __html: d.icon }} />
                       <div>
                         <Text style={{ fontWeight: 600, fontSize: 13, color: '#0f172a', display: 'block' }}>{d.label}</Text>
                         <Text style={{ fontSize: 11, color: '#94a3b8' }}>{d.desc}</Text>
@@ -3095,7 +3106,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                   onClick={handleSubmitApproval}
                   styles={{
                     root: {
-                      width: '100%', marginTop: 16, borderRadius: 6, height: 40,
+                      width: '100%', marginTop: 16, borderRadius: 4, height: 40,
                       background: reviewDecision === 'approve' ? '#059669' : reviewDecision === 'return' ? '#d97706' : reviewDecision === 'reject' ? '#dc2626' : '#94a3b8',
                       borderColor: reviewDecision === 'approve' ? '#059669' : reviewDecision === 'return' ? '#d97706' : reviewDecision === 'reject' ? '#dc2626' : '#94a3b8'
                     },
@@ -3111,7 +3122,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
             {/* Review Chain + Previous Decisions */}
             <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
               <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{ width: 28, height: 28, borderRadius: 6, background: '#ede9fe', color: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>&#x1F465;</div>
+                <div style={{ width: 28, height: 28, borderRadius: 4, background: '#ede9fe', color: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>&#x1F465;</div>
                 <Text style={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>Review & Approval Chain</Text>
               </div>
               <div style={{ padding: '12px 20px' }}>
@@ -3144,12 +3155,12 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
             {reviewerItems.some((r: any) => r.ReviewComments) && (
               <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
                 <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ width: 28, height: 28, borderRadius: 6, background: '#fce7f3', color: '#db2777', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>&#x1F4AC;</div>
+                  <div style={{ width: 28, height: 28, borderRadius: 4, background: '#fce7f3', color: '#db2777', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>&#x1F4AC;</div>
                   <Text style={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>Reviewer Comments</Text>
                 </div>
                 <div style={{ padding: 20 }}>
                   {reviewerItems.filter((r: any) => r.ReviewComments).map((r: any, i: number) => (
-                    <div key={i} style={{ padding: 12, background: '#f8fafc', borderRadius: 6, marginBottom: 8 }}>
+                    <div key={i} style={{ padding: 12, background: '#f8fafc', borderRadius: 4, marginBottom: 8 }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                         <div>
                           <span style={{ fontSize: 12, fontWeight: 600, color: '#0f172a' }}>{r.Reviewer?.Title || 'Reviewer'}</span>
@@ -3167,7 +3178,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
             {/* Policy Info */}
             <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
               <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{ width: 28, height: 28, borderRadius: 6, background: '#f1f5f9', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>&#x2139;</div>
+                <div style={{ width: 28, height: 28, borderRadius: 4, background: '#f1f5f9', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>&#x2139;</div>
                 <Text style={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>Policy Details</Text>
               </div>
               <div style={{ padding: '12px 20px' }}>
@@ -3299,7 +3310,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
               <button
                 onClick={() => { window.location.href = '/sites/PolicyManager/SitePages/PolicyHub.aspx'; }}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 6,
+                  display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 4,
                   fontSize: 13, fontWeight: 600, color: '#0d9488', background: '#fff', border: '1px solid #e2e8f0',
                   cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0
                 }}
@@ -3380,19 +3391,25 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
               background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10,
               padding: '48px 56px', minHeight: 400, lineHeight: 1.8, fontSize: 14, color: '#334155'
             }}>
-              {/* HTML content or fallback */}
+              {/* HTML content → non-PDF document URL (Office Online viewer) → fallback */}
               {hasContent ? (
                 <div dangerouslySetInnerHTML={{ __html: bodyHtml }} />
-              ) : documentUrl ? (
+              ) : documentUrl && viewerUrl ? (
                 <iframe
                   src={viewerUrl}
+                  style={{ width: '100%', minHeight: 700, border: 'none' }}
+                  title={policy.PolicyName}
+                />
+              ) : documentUrl ? (
+                <iframe
+                  src={this.getDocumentViewerUrl(documentUrl)}
                   style={{ width: '100%', minHeight: 700, border: 'none' }}
                   title={policy.PolicyName}
                 />
               ) : (
                 <div style={{ textAlign: 'center', padding: 40, color: '#94a3b8' }}>
                   <p style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>No document content available</p>
-                  <p style={{ fontSize: 13 }}>This policy has not been converted to HTML yet. Use the Admin Centre to run the document conversion.</p>
+                  <p style={{ fontSize: 13 }}>This policy does not have any content or an attached document. Use the Admin Centre to run the document conversion.</p>
                 </div>
               )}
             </div>
@@ -3415,7 +3432,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
             <button
               onClick={() => { window.location.href = '/sites/PolicyManager/SitePages/PolicyHub.aspx'; }}
               style={{
-                display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 6,
+                display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 4,
                 fontSize: 13, fontWeight: 600, color: '#0d9488', background: '#fff', border: '1px solid #e2e8f0',
                 cursor: 'pointer', fontFamily: 'inherit'
               }}
@@ -3484,7 +3501,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
             <a href="/sites/PolicyManager/SitePages/PolicyHub.aspx" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: '#fff' }}>
               <div style={{
                 width: 32, height: 32, background: 'rgba(255,255,255,0.15)',
-                borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center'
+                borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center'
               }}>
                 <svg viewBox="0 0 24 24" fill="none" style={{ width: 18, height: 18 }}>
                   <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -3547,7 +3564,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
             {currentFlowStep === 'reading' && (
               <div style={{
                 position: 'fixed', bottom: 24, right: 24, width: 300,
-                background: '#fff', borderRadius: 8, boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+                background: '#fff', borderRadius: 4, boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
                 border: '1px solid #e2e8f0', overflow: 'hidden', zIndex: 100
               }}>
                 <div style={{ background: 'linear-gradient(135deg, #0d9488, #0f766e)', padding: '14px 18px', color: '#fff' }}>

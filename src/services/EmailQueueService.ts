@@ -22,6 +22,7 @@ import '@pnp/sp/lists';
 import '@pnp/sp/items';
 
 import { logger } from './LoggingService';
+import { escapeHtml } from '../utils/sanitizeHtml';
 
 // ============================================================================
 // INTERFACES
@@ -565,8 +566,8 @@ export class EmailQueueService {
     <p style="font-size:15px;color:#334155;margin:0 0 16px;">You have been assigned a new task that requires your attention.</p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;border-left:4px solid #0d9488;">
     <tr><td style="padding:16px 20px;">
-      <div style="font-size:17px;font-weight:600;color:#0f172a;margin-bottom:6px;">${taskTitle}</div>
-      ${taskDescription ? `<div style="font-size:14px;color:#475569;margin-bottom:8px;">${taskDescription}</div>` : ''}
+      <div style="font-size:17px;font-weight:600;color:#0f172a;margin-bottom:6px;">${escapeHtml(taskTitle)}</div>
+      ${taskDescription ? `<div style="font-size:14px;color:#475569;margin-bottom:8px;">${escapeHtml(taskDescription)}</div>` : ''}
       <div style="font-size:13px;color:#64748b;">
         Process ID: <strong>#${processId}</strong>
         ${dueDate ? `<br>Due: <strong>${dueDate.toLocaleDateString()}</strong>` : ''}
@@ -596,7 +597,7 @@ export class EmailQueueService {
     <p style="font-size:15px;color:#334155;margin:0 0 16px;">Your approval is required for the following request.</p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;border-left:4px solid #d97706;">
     <tr><td style="padding:16px 20px;">
-      <div style="font-size:17px;font-weight:600;color:#0f172a;margin-bottom:6px;">${approvalTitle}</div>
+      <div style="font-size:17px;font-weight:600;color:#0f172a;margin-bottom:6px;">${escapeHtml(approvalTitle)}</div>
       <div style="font-size:13px;color:#64748b;">
         Process ID: <strong>#${processId}</strong>
         ${dueDate ? `<br>Please respond by: <strong>${dueDate.toLocaleDateString()}</strong>` : ''}
@@ -626,7 +627,7 @@ export class EmailQueueService {
     <p style="font-size:15px;color:#334155;margin:0 0 16px;">A workflow step has breached its SLA and requires <strong>immediate attention</strong>.</p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;border-left:4px solid #dc2626;">
     <tr><td style="padding:16px 20px;">
-      <div style="font-size:17px;font-weight:600;color:#991b1b;margin-bottom:6px;">${stepName}</div>
+      <div style="font-size:17px;font-weight:600;color:#991b1b;margin-bottom:6px;">${escapeHtml(stepName)}</div>
       <div style="font-size:14px;color:#7f1d1d;">
         <strong>${hoursOverdue} hours overdue</strong><br>
         <span style="color:#64748b;">Process ID: #${processId}</span>

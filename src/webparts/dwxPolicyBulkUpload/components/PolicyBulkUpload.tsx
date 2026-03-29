@@ -65,6 +65,16 @@ const MAX_FILE_SIZE = 25 * 1024 * 1024;
 const ALLOWED_EXTENSIONS = ['.docx', '.pdf', '.xlsx', '.pptx', '.doc', '.xls', '.ppt', '.rtf', '.txt'];
 const SESSION_KEY = 'pm_bulk_upload_state';
 
+/** Map of file extensions to expected MIME types for cross-validation */
+const EXPECTED_MIME_MAP: Record<string, string> = {
+  '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  '.pdf': 'application/pdf',
+  '.txt': 'text/plain',
+  '.html': 'text/html',
+};
+
 const CATEGORY_OPTIONS: IDropdownOption[] = [
   { key: '', text: '(select)' }, { key: 'IT Security', text: 'IT Security' }, { key: 'HR', text: 'Human Resources' },
   { key: 'Compliance', text: 'Compliance' }, { key: 'Data Protection', text: 'Data Protection' },
@@ -231,6 +241,12 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
     for (const file of files.slice(0, remaining)) {
       const ext = '.' + file.name.split('.').pop()?.toLowerCase();
       if (!ALLOWED_EXTENSIONS.includes(ext)) { this.log(`${file.name}: unsupported`, 'warning'); continue; }
+      // MIME type cross-validation: reject files where extension and MIME don't match
+      const expectedMime = EXPECTED_MIME_MAP[ext];
+      if (expectedMime && file.type && file.type !== expectedMime) {
+        this.log(`${file.name}: MIME type mismatch (expected ${expectedMime}, got ${file.type})`, 'warning');
+        continue;
+      }
       if (file.size > MAX_FILE_SIZE) { this.log(`${file.name}: too large`, 'warning'); continue; }
       if (imports.some(i => i.fileName === file.name)) { this.log(`${file.name}: duplicate`, 'warning'); continue; }
       const meta = await this.extractFileMetadata(file);
@@ -279,15 +295,40 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
         this.updateItem(item.id, { status: 'uploading' });
         const buf = await item.file.arrayBuffer();
         const safeName = item.fileName.replace(/[#%&*:<>?\/\\{|}~]/g, '_');
-        const endpoint = `${siteUrl}/_api/web/GetFolderByServerRelativePath(decodedurl='${folderUrl}')/Files/AddUsingPath(decodedurl='${encodeURIComponent(safeName)}',overwrite=true)`;
+        const title = item.title || item.fileName.replace(/\.[^.]+$/, '');
+
+        // 1. Create policy draft first so we have an spId for per-policy folder
+        const result = await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES).items.add({ Title: title, PolicyStatus: 'Draft' });
+        const spId = result?.data?.Id || result?.data?.id;
+
+        // 2. Try per-policy subfolder in PM_PolicySourceDocuments/{spId}, fall back to BulkImports/
+        let targetFolderUrl = folderUrl;
+        if (spId) {
+          const policyFolderUrl = `${siteRelUrl}/${PM_LISTS.POLICY_SOURCE_DOCUMENTS}/${spId}`;
+          try {
+            const xf = new XMLHttpRequest();
+            xf.open('POST', `${siteUrl}/_api/web/folders`, false);
+            xf.setRequestHeader('Accept', 'application/json; odata=verbose');
+            xf.setRequestHeader('Content-Type', 'application/json; odata=verbose');
+            xf.setRequestHeader('X-RequestDigest', digest);
+            xf.send(JSON.stringify({ '__metadata': { 'type': 'SP.Folder' }, 'ServerRelativeUrl': policyFolderUrl }));
+            if (xf.status >= 200 && xf.status < 400) {
+              targetFolderUrl = policyFolderUrl;
+            }
+          } catch {
+            // Folder creation failed — use BulkImports/ fallback
+          }
+        }
+
+        // 3. Upload file to the target folder
+        const endpoint = `${siteUrl}/_api/web/GetFolderByServerRelativePath(decodedurl='${targetFolderUrl}')/Files/AddUsingPath(decodedurl='${encodeURIComponent(safeName)}',overwrite=true)`;
         const docUrl: string = await new Promise((res, rej) => {
           const x = new XMLHttpRequest(); x.open('POST', endpoint, true);
           x.setRequestHeader('Accept', 'application/json; odata=verbose'); x.setRequestHeader('Content-Type', 'application/octet-stream'); x.setRequestHeader('X-RequestDigest', digest);
           x.responseType = 'json'; x.onload = () => x.status >= 200 && x.status < 300 ? res(x.response?.d?.ServerRelativeUrl || '') : rej(new Error(`${x.status}`)); x.onerror = () => rej(new Error('Network')); x.send(new Uint8Array(buf));
         });
-        const title = item.title || item.fileName.replace(/\.[^.]+$/, '');
-        const result = await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES).items.add({ Title: title, PolicyStatus: 'Draft' });
-        const spId = result?.data?.Id || result?.data?.id;
+
+        // 4. Update policy item with metadata and document URL
         if (spId) { try { const updateData: Record<string, unknown> = { PolicyName: title, CreationMethod: 'BulkImport' }; if (docUrl) updateData.DocumentURL = docUrl; await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES).items.getById(spId).update(updateData); } catch { /* CreationMethod column may not exist */ } }
         this.updateItem(item.id, { spId, documentUrl: docUrl, status: 'uploaded' });
         this.log(`Uploaded: ${item.fileName}`, 'success'); succeeded++;

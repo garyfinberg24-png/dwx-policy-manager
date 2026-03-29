@@ -3016,6 +3016,71 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
           });
         } catch { /* best-effort — PM_ApprovalHistory may not exist */ }
 
+        // Create/update workflow instance record for audit tracking
+        try {
+          // Check if the policy has a workflow template assigned
+          const policyItem: any = await this.props.sp.web.lists.getByTitle('PM_Policies')
+            .items.getById(policy!.Id)
+            .select('Id', 'Title', 'PolicyName', 'WorkflowTemplateId')();
+          const templateId = policyItem?.WorkflowTemplateId;
+
+          if (templateId) {
+            // Look up the template to get level count
+            let templateName = '';
+            let totalLevels = 1;
+            try {
+              const tmpl: any = await this.props.sp.web.lists.getByTitle('PM_WorkflowTemplates')
+                .items.getById(templateId)
+                .select('TemplateName', 'ApprovalLevels')();
+              templateName = tmpl?.TemplateName || '';
+              totalLevels = tmpl?.ApprovalLevels || 1;
+            } catch { /* template may not exist */ }
+
+            // Determine current level: count how many reviewers have approved
+            const approvedCount = updatedReviewers.filter((r: any) => r.ReviewStatus === 'Approved').length;
+            const currentLevel = Math.min(approvedCount + 1, totalLevels);
+            const isComplete = allApproved;
+            const isCancelled = reviewDecision === 'reject';
+
+            // Check for existing active instance for this policy
+            let existingInstance: any = null;
+            try {
+              const instances: any[] = await this.props.sp.web.lists.getByTitle('PM_WorkflowInstances')
+                .items.filter(`PolicyId eq ${policy!.Id} and WorkflowStatus eq 'Active'`)
+                .select('Id')
+                .top(1)();
+              if (instances.length > 0) existingInstance = instances[0];
+            } catch { /* list may not exist */ }
+
+            if (existingInstance) {
+              // Update existing instance
+              const updateData: Record<string, unknown> = {
+                CurrentLevel: currentLevel,
+                WorkflowStatus: isComplete ? 'Completed' : isCancelled ? 'Cancelled' : 'Active'
+              };
+              if (isComplete || isCancelled) updateData.CompletedDate = new Date().toISOString();
+              await this.props.sp.web.lists.getByTitle('PM_WorkflowInstances')
+                .items.getById(existingInstance.Id).update(updateData);
+            } else {
+              // Create new workflow instance
+              await this.props.sp.web.lists.getByTitle('PM_WorkflowInstances').items.add({
+                Title: `Workflow: ${policy!.PolicyName || policy!.Title}`,
+                PolicyId: policy!.Id,
+                PolicyTitle: policy!.PolicyName || policy!.Title || '',
+                TemplateId: templateId,
+                TemplateName: templateName,
+                CurrentLevel: currentLevel,
+                TotalLevels: totalLevels,
+                WorkflowStatus: isComplete ? 'Completed' : isCancelled ? 'Cancelled' : 'Active',
+                StartedDate: new Date().toISOString(),
+                CompletedDate: (isComplete || isCancelled) ? new Date().toISOString() : null,
+                StartedBy: currentUserName,
+                EscalationCount: 0
+              });
+            }
+          }
+        } catch { /* best-effort — PM_WorkflowInstances or PM_WorkflowTemplates may not exist */ }
+
         // Notify policy author
         try {
           const authorEmail = (policy as any)._policyOwnerEmail || (policy as any).PolicyOwner || '';

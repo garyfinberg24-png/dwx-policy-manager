@@ -1202,6 +1202,8 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       if (selectedTemplate?.Id) { optionalData.SourceTemplateId = selectedTemplate.Id; }
       const profileId = (this.state as any)._selectedProfileId;
       if (profileId) { optionalData.MetadataProfileId = profileId; }
+      const wfTemplateId = (this.state as any)._selectedWorkflowTemplateId;
+      if (wfTemplateId) { optionalData.WorkflowTemplateId = wfTemplateId; }
       optionalData.DistributionScope = targetAllEmployees ? 'AllEmployees' : 'Targeted';
       if (targetDepartments && targetDepartments.length > 0) { optionalData.TargetDepartments = targetDepartments.join(';'); }
       if (targetRoles && targetRoles.length > 0) { optionalData.TargetRoles = targetRoles.join(';'); }
@@ -7146,6 +7148,8 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     const { reviewers, approvers } = this.state;
     const st = this.state as any;
     const spGroups: any[] = st._reviewerGroups || [];
+    const workflowTemplates: any[] = st._workflowTemplates || [];
+    const selectedWorkflowTemplateId: number | null = st._selectedWorkflowTemplateId || null;
 
     // Lazy-load SP groups for reviewers/approvers
     if (!st._reviewerGroupsLoaded) {
@@ -7159,11 +7163,71 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         .catch(() => { /* graceful degradation */ });
     }
 
+    // Lazy-load workflow templates from PM_WorkflowTemplates
+    if (!st._workflowTemplatesLoaded) {
+      this.setState({ _workflowTemplatesLoaded: true } as any);
+      this.props.sp.web.lists.getByTitle('PM_WorkflowTemplates')
+        .items.filter('IsActive eq 1')
+        .select('Id', 'Title', 'TemplateName', 'Description', 'WorkflowType', 'ApprovalLevels', 'LevelDefinitions', 'EscalationEnabled', 'EscalationDays', 'IsDefault')
+        .top(20)()
+        .then((items: any[]) => {
+          const templates = items.map((item: any) => {
+            let levels: any[] = [];
+            try { levels = item.LevelDefinitions ? JSON.parse(item.LevelDefinitions) : []; } catch { levels = []; }
+            return { ...item, LevelDefinitions: levels };
+          });
+          this.setState({ _workflowTemplates: templates } as any);
+        })
+        .catch(() => { /* PM_WorkflowTemplates may not exist — graceful degradation */ });
+    }
+
+    // Find selected template details
+    const selectedTemplate = workflowTemplates.find((t: any) => t.Id === selectedWorkflowTemplateId);
+
     return (
       <div className={styles.section}>
         <Text variant="xLarge" className={styles.sectionTitle}>
           Reviewers and Approvers
         </Text>
+
+        {/* Workflow Template Selector */}
+        {workflowTemplates.length > 0 && (
+          <div style={{ marginBottom: 20, padding: 16, background: '#f0fdfa', borderRadius: 10, border: '1px solid #ccfbf1' }}>
+            <Dropdown
+              label="Workflow Template"
+              placeholder="Select a workflow template (optional)..."
+              selectedKey={selectedWorkflowTemplateId ? String(selectedWorkflowTemplateId) : undefined}
+              options={[
+                { key: '', text: '(No template — manual assignment)' },
+                ...workflowTemplates.map((t: any) => ({
+                  key: String(t.Id),
+                  text: `${t.TemplateName} — ${t.ApprovalLevels} level${t.ApprovalLevels > 1 ? 's' : ''} (${t.WorkflowType})`
+                }))
+              ]}
+              onChange={(_, opt) => {
+                const id = opt?.key ? Number(opt.key) : null;
+                this.setState({ _selectedWorkflowTemplateId: id || null } as any);
+              }}
+            />
+            {selectedTemplate && (
+              <div style={{ marginTop: 10 }}>
+                <Text style={{ fontSize: 12, color: '#475569' }}>{selectedTemplate.Description}</Text>
+                <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+                  {(selectedTemplate.LevelDefinitions || []).map((l: any, i: number) => (
+                    <span key={i} style={{ fontSize: 10, padding: '3px 10px', borderRadius: 10, background: '#fff', border: '1px solid #e2e8f0', color: '#0f172a', fontWeight: 500 }}>
+                      Level {l.level}: {l.name} ({l.approverType})
+                    </span>
+                  ))}
+                  {selectedTemplate.EscalationEnabled && (
+                    <span style={{ fontSize: 10, padding: '3px 10px', borderRadius: 10, background: '#fffbeb', border: '1px solid #fde68a', color: '#d97706', fontWeight: 500 }}>
+                      Escalation: {selectedTemplate.EscalationDays} days
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {spGroups.length > 0 && (
           <MessageBar messageBarType={MessageBarType.info} style={{ marginBottom: 12 }}>

@@ -78,6 +78,25 @@ interface INavSection {
   items: INavItem[];
 }
 
+interface IWorkflowLevelDef {
+  level: number;
+  name: string;
+  approverType: string; // 'Reviewer' | 'Final Approver' | 'Compliance' | 'Executive'
+}
+
+interface IWorkflowTemplateItem {
+  Id?: number;
+  TemplateName: string;
+  Description: string;
+  WorkflowType: string; // 'FastTrack' | 'Standard' | 'Regulatory' | 'Custom'
+  ApprovalLevels: number;
+  LevelDefinitions: IWorkflowLevelDef[];
+  EscalationEnabled: boolean;
+  EscalationDays: number;
+  IsActive: boolean;
+  IsDefault: boolean;
+}
+
 export interface IPolicyAdminState {
   loading: boolean;
   error: string | null;
@@ -125,6 +144,10 @@ export interface IPolicyAdminState {
   holdCaseRef: string;
   holdExpiryDate: string;
   publishedPolicies: Array<{ Id: number; Title: string }>;
+  // Workflow Templates
+  workflowTemplates: IWorkflowTemplateItem[];
+  editingWorkflowTemplate: IWorkflowTemplateItem | null;
+  showWorkflowTemplatePanel: boolean;
 }
 
 // IEmailTemplate is now imported from IAdminConfig.ts as IEmailTemplateModel
@@ -145,6 +168,7 @@ const NAV_SECTIONS: INavSection[] = [
     category: 'WORKFLOWS & COMPLIANCE',
     items: [
       { key: 'workflows', label: 'Approval Workflows', icon: 'Flow', description: 'Approval chains and routing rules' },
+      { key: 'workflowTemplates', label: 'Workflow Templates', icon: 'ProcessMetaTask', description: 'Reusable multi-level approval templates' },
       { key: 'compliance', label: 'Compliance Settings', icon: 'Shield', description: 'Acknowledgement, review, and risk defaults' },
       { key: 'sla', label: 'SLA Targets', icon: 'Timer', description: 'Target completion times and warning thresholds' },
       { key: 'emailTemplates', label: 'Email Templates', icon: 'MailOptions', description: 'Notification email designs and content' },
@@ -274,7 +298,11 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       holdReason: '',
       holdCaseRef: '',
       holdExpiryDate: '',
-      publishedPolicies: []
+      publishedPolicies: [],
+      // Workflow Templates
+      workflowTemplates: [],
+      editingWorkflowTemplate: null,
+      showWorkflowTemplatePanel: false
     };
 
     this.policyService = new PolicyService(props.sp);
@@ -1960,6 +1988,427 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             <Toggle label="Allow self-approval for policy owners" checked={this.state._approvalAllowSelf ?? false} onChange={(_, c) => this.setState({ _approvalAllowSelf: !!c } as any)} />
           </div>
         </Stack>
+      </div>
+    );
+  }
+
+  // ============================================================================
+  // WORKFLOW TEMPLATES
+  // ============================================================================
+
+  private async loadWorkflowTemplates(): Promise<void> {
+    try {
+      const items: any[] = await this.props.sp.web.lists
+        .getByTitle('PM_WorkflowTemplates')
+        .items.select('Id', 'Title', 'TemplateName', 'Description', 'WorkflowType', 'ApprovalLevels', 'LevelDefinitions', 'EscalationEnabled', 'EscalationDays', 'IsActive', 'IsDefault')
+        .top(50)();
+      const templates: IWorkflowTemplateItem[] = items.map((item: any) => {
+        let levels: IWorkflowLevelDef[] = [];
+        try { levels = item.LevelDefinitions ? JSON.parse(item.LevelDefinitions) : []; } catch { levels = []; }
+        return {
+          Id: item.Id,
+          TemplateName: item.TemplateName || item.Title || '',
+          Description: item.Description || '',
+          WorkflowType: item.WorkflowType || 'Custom',
+          ApprovalLevels: item.ApprovalLevels || 1,
+          LevelDefinitions: levels,
+          EscalationEnabled: !!item.EscalationEnabled,
+          EscalationDays: item.EscalationDays || 0,
+          IsActive: item.IsActive !== false,
+          IsDefault: !!item.IsDefault
+        };
+      });
+      if (this._isMounted) this.setState({ workflowTemplates: templates });
+    } catch {
+      // List may not be provisioned yet — show defaults
+      if (this._isMounted && this.state.workflowTemplates.length === 0) {
+        this.setState({
+          workflowTemplates: this.getDefaultWorkflowTemplates()
+        });
+      }
+    }
+  }
+
+  private getDefaultWorkflowTemplates(): IWorkflowTemplateItem[] {
+    return [
+      {
+        TemplateName: 'Fast Track',
+        Description: 'Single approver for low-risk policies',
+        WorkflowType: 'FastTrack',
+        ApprovalLevels: 1,
+        LevelDefinitions: [{ level: 1, name: 'Approver', approverType: 'Final Approver' }],
+        EscalationEnabled: false,
+        EscalationDays: 0,
+        IsActive: true,
+        IsDefault: false
+      },
+      {
+        TemplateName: 'Standard',
+        Description: 'Two-level review: Reviewer then Final Approver. Escalation after 5 days.',
+        WorkflowType: 'Standard',
+        ApprovalLevels: 2,
+        LevelDefinitions: [
+          { level: 1, name: 'Reviewer', approverType: 'Reviewer' },
+          { level: 2, name: 'Final Approver', approverType: 'Final Approver' }
+        ],
+        EscalationEnabled: true,
+        EscalationDays: 5,
+        IsActive: true,
+        IsDefault: true
+      },
+      {
+        TemplateName: 'Regulatory',
+        Description: 'Three-level review: Reviewer, Compliance, then Executive. Escalation after 3 days.',
+        WorkflowType: 'Regulatory',
+        ApprovalLevels: 3,
+        LevelDefinitions: [
+          { level: 1, name: 'Reviewer', approverType: 'Reviewer' },
+          { level: 2, name: 'Compliance', approverType: 'Compliance' },
+          { level: 3, name: 'Executive', approverType: 'Executive' }
+        ],
+        EscalationEnabled: true,
+        EscalationDays: 3,
+        IsActive: true,
+        IsDefault: false
+      }
+    ];
+  }
+
+  private async saveWorkflowTemplate(template: IWorkflowTemplateItem): Promise<void> {
+    this.setState({ saving: true });
+    try {
+      const spData: Record<string, unknown> = {
+        Title: template.TemplateName,
+        TemplateName: template.TemplateName,
+        Description: template.Description,
+        WorkflowType: template.WorkflowType,
+        ApprovalLevels: template.ApprovalLevels,
+        LevelDefinitions: JSON.stringify(template.LevelDefinitions),
+        EscalationEnabled: template.EscalationEnabled,
+        EscalationDays: template.EscalationDays,
+        IsActive: template.IsActive,
+        IsDefault: template.IsDefault,
+        CreatedByEmail: this.props.context?.pageContext?.user?.email || '',
+        TemplateCreatedDate: new Date().toISOString()
+      };
+
+      if (template.Id) {
+        await this.props.sp.web.lists.getByTitle('PM_WorkflowTemplates')
+          .items.getById(template.Id).update(spData);
+      } else {
+        await this.props.sp.web.lists.getByTitle('PM_WorkflowTemplates')
+          .items.add(spData);
+      }
+
+      void this.dialogManager.showAlert('Workflow template saved.', { title: 'Saved', variant: 'success' });
+      await this.loadWorkflowTemplates();
+    } catch (err) {
+      console.error('Failed to save workflow template:', err);
+      void this.dialogManager.showAlert('Failed to save workflow template. Ensure PM_WorkflowTemplates list is provisioned.', { title: 'Error' });
+    }
+    if (this._isMounted) this.setState({ saving: false, showWorkflowTemplatePanel: false, editingWorkflowTemplate: null });
+  }
+
+  private async deleteWorkflowTemplate(id: number): Promise<void> {
+    const confirmed = await this.dialogManager.showConfirm('Are you sure you want to delete this workflow template?', { title: 'Delete Template', confirmLabel: 'Delete', cancelLabel: 'Cancel' });
+    if (!confirmed) return;
+    try {
+      await this.props.sp.web.lists.getByTitle('PM_WorkflowTemplates').items.getById(id).delete();
+      void this.dialogManager.showAlert('Template deleted.', { title: 'Deleted', variant: 'success' });
+      await this.loadWorkflowTemplates();
+    } catch {
+      void this.dialogManager.showAlert('Failed to delete template.', { title: 'Error' });
+    }
+  }
+
+  private renderWorkflowTemplatesContent(): JSX.Element {
+    const { workflowTemplates, showWorkflowTemplatePanel, editingWorkflowTemplate, saving } = this.state;
+
+    // Load templates on first render of this section
+    if (workflowTemplates.length === 0 && !(this.state as any)._wfTemplatesLoadAttempted) {
+      this.setState({ _wfTemplatesLoadAttempted: true } as any);
+      this.loadWorkflowTemplates();
+    }
+
+    const typeColors: Record<string, string> = {
+      FastTrack: '#059669',
+      Standard: '#2563eb',
+      Regulatory: '#d97706',
+      Custom: '#7c3aed'
+    };
+
+    const typeIcons: Record<string, string> = {
+      FastTrack: 'M13 10V3L4 14h7v7l9-11h-7z',
+      Standard: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4',
+      Regulatory: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z',
+      Custom: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z'
+    };
+
+    const editing = editingWorkflowTemplate || {
+      TemplateName: '',
+      Description: '',
+      WorkflowType: 'Custom',
+      ApprovalLevels: 1,
+      LevelDefinitions: [{ level: 1, name: 'Approver', approverType: 'Final Approver' }],
+      EscalationEnabled: false,
+      EscalationDays: 0,
+      IsActive: true,
+      IsDefault: false
+    };
+
+    return (
+      <div className={styles.sectionContent}>
+        <Stack tokens={{ childrenGap: 24 }}>
+          {this.renderSectionIntro(
+            'Workflow Templates',
+            'Define reusable multi-level approval templates. Authors select a template when creating a policy, which pre-configures the number of approval levels and escalation rules.',
+            ['Fast Track: 1-level for low-risk policies', 'Standard: 2-level with reviewer + approver', 'Regulatory: 3-level with compliance gate']
+          )}
+
+          <Stack horizontal horizontalAlign="end">
+            <PrimaryButton
+              text="New Template"
+              iconProps={{ iconName: 'Add' }}
+              onClick={() => this.setState({
+                showWorkflowTemplatePanel: true,
+                editingWorkflowTemplate: null
+              })}
+            />
+          </Stack>
+
+          {/* Template Cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 16 }}>
+            {workflowTemplates.map((t, idx) => {
+              const color = typeColors[t.WorkflowType] || '#94a3b8';
+              const iconPath = typeIcons[t.WorkflowType] || typeIcons.Custom;
+              return (
+                <div key={t.Id || idx} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                  {/* Card header */}
+                  <div style={{ padding: '16px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: 8, background: `${color}14`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={iconPath} /></svg>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Text style={{ fontSize: 15, fontWeight: 600, color: '#0f172a' }}>{t.TemplateName}</Text>
+                        {t.IsDefault && <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', padding: '2px 6px', borderRadius: 4, background: '#f0fdfa', color: '#0d9488' }}>Default</span>}
+                        {!t.IsActive && <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', padding: '2px 6px', borderRadius: 4, background: '#fef2f2', color: '#dc2626' }}>Inactive</span>}
+                      </div>
+                      <Text style={{ fontSize: 12, color: '#64748b' }}>{t.Description}</Text>
+                    </div>
+                  </div>
+
+                  {/* Card body */}
+                  <div style={{ padding: '12px 20px', flex: 1 }}>
+                    <div style={{ display: 'flex', gap: 16, marginBottom: 12 }}>
+                      <div>
+                        <Text style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1, color: '#94a3b8' }}>Type</Text>
+                        <div><span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 4, background: `${color}14`, color }}>{t.WorkflowType}</span></div>
+                      </div>
+                      <div>
+                        <Text style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1, color: '#94a3b8' }}>Levels</Text>
+                        <Text style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>{t.ApprovalLevels}</Text>
+                      </div>
+                      <div>
+                        <Text style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1, color: '#94a3b8' }}>Escalation</Text>
+                        <Text style={{ fontSize: 13, fontWeight: 500, color: t.EscalationEnabled ? '#d97706' : '#94a3b8' }}>
+                          {t.EscalationEnabled ? `${t.EscalationDays}d` : 'Off'}
+                        </Text>
+                      </div>
+                    </div>
+                    {/* Level chips */}
+                    <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                      {t.LevelDefinitions.map((l, li) => (
+                        <span key={li} style={{ fontSize: 10, padding: '2px 8px', borderRadius: 10, background: '#f1f5f9', color: '#475569', fontWeight: 500 }}>
+                          L{l.level}: {l.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Card footer */}
+                  <div style={{ padding: '10px 20px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                    <IconButton
+                      iconProps={{ iconName: 'Edit' }}
+                      title="Edit template"
+                      ariaLabel="Edit template"
+                      onClick={() => this.setState({ showWorkflowTemplatePanel: true, editingWorkflowTemplate: { ...t, LevelDefinitions: [...t.LevelDefinitions] } })}
+                      styles={{ root: { color: '#0d9488' } }}
+                    />
+                    {t.Id && (
+                      <IconButton
+                        iconProps={{ iconName: 'Delete' }}
+                        title="Delete template"
+                        ariaLabel="Delete template"
+                        onClick={() => this.deleteWorkflowTemplate(t.Id!)}
+                        styles={{ root: { color: '#dc2626' } }}
+                      />
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {workflowTemplates.length === 0 && (
+            <MessageBar messageBarType={MessageBarType.info}>
+              No workflow templates found. Click "New Template" to create one, or provision the PM_WorkflowTemplates list and seed default templates.
+            </MessageBar>
+          )}
+        </Stack>
+
+        {/* Edit/Create Panel */}
+        <StyledPanel
+          isOpen={showWorkflowTemplatePanel}
+          onDismiss={() => this.setState({ showWorkflowTemplatePanel: false, editingWorkflowTemplate: null })}
+          headerText={editingWorkflowTemplate?.Id ? 'Edit Workflow Template' : 'New Workflow Template'}
+          type={PanelType.medium}
+        >
+          <Stack tokens={{ childrenGap: 16 }} style={{ padding: '20px 0' }}>
+            <TextField
+              label="Template Name"
+              required
+              value={editing.TemplateName}
+              onChange={(_, v) => {
+                const updated = { ...editing, TemplateName: v || '' };
+                this.setState({ editingWorkflowTemplate: updated as IWorkflowTemplateItem });
+              }}
+            />
+            <TextField
+              label="Description"
+              multiline
+              rows={3}
+              value={editing.Description}
+              onChange={(_, v) => {
+                const updated = { ...editing, Description: v || '' };
+                this.setState({ editingWorkflowTemplate: updated as IWorkflowTemplateItem });
+              }}
+            />
+            <Dropdown
+              label="Workflow Type"
+              selectedKey={editing.WorkflowType}
+              options={[
+                { key: 'FastTrack', text: 'Fast Track' },
+                { key: 'Standard', text: 'Standard' },
+                { key: 'Regulatory', text: 'Regulatory' },
+                { key: 'Custom', text: 'Custom' }
+              ]}
+              onChange={(_, opt) => {
+                if (!opt) return;
+                const updated = { ...editing, WorkflowType: opt.key as string };
+                this.setState({ editingWorkflowTemplate: updated as IWorkflowTemplateItem });
+              }}
+            />
+            <Dropdown
+              label="Number of Approval Levels"
+              selectedKey={String(editing.ApprovalLevels)}
+              options={[
+                { key: '1', text: '1 Level' },
+                { key: '2', text: '2 Levels' },
+                { key: '3', text: '3 Levels' },
+                { key: '4', text: '4 Levels' }
+              ]}
+              onChange={(_, opt) => {
+                if (!opt) return;
+                const count = Number(opt.key);
+                const defaultTypes = ['Reviewer', 'Final Approver', 'Compliance', 'Executive'];
+                const levels: IWorkflowLevelDef[] = [];
+                for (let i = 0; i < count; i++) {
+                  levels.push(
+                    editing.LevelDefinitions[i] || { level: i + 1, name: defaultTypes[i] || `Level ${i + 1}`, approverType: defaultTypes[i] || 'Reviewer' }
+                  );
+                }
+                const updated = { ...editing, ApprovalLevels: count, LevelDefinitions: levels };
+                this.setState({ editingWorkflowTemplate: updated as IWorkflowTemplateItem });
+              }}
+            />
+
+            {/* Level definitions */}
+            <Label>Level Definitions</Label>
+            {editing.LevelDefinitions.map((lvl, li) => (
+              <Stack key={li} horizontal tokens={{ childrenGap: 8 }} verticalAlign="end">
+                <Text style={{ fontSize: 13, fontWeight: 600, color: '#0d9488', minWidth: 24 }}>L{lvl.level}</Text>
+                <TextField
+                  label={li === 0 ? 'Name' : undefined}
+                  value={lvl.name}
+                  onChange={(_, v) => {
+                    const updated = { ...editing };
+                    updated.LevelDefinitions = [...editing.LevelDefinitions];
+                    updated.LevelDefinitions[li] = { ...lvl, name: v || '' };
+                    this.setState({ editingWorkflowTemplate: updated as IWorkflowTemplateItem });
+                  }}
+                  styles={{ root: { flex: 1 } }}
+                />
+                <Dropdown
+                  label={li === 0 ? 'Type' : undefined}
+                  selectedKey={lvl.approverType}
+                  options={[
+                    { key: 'Reviewer', text: 'Reviewer' },
+                    { key: 'Final Approver', text: 'Final Approver' },
+                    { key: 'Compliance', text: 'Compliance' },
+                    { key: 'Executive', text: 'Executive' }
+                  ]}
+                  onChange={(_, opt) => {
+                    if (!opt) return;
+                    const updated = { ...editing };
+                    updated.LevelDefinitions = [...editing.LevelDefinitions];
+                    updated.LevelDefinitions[li] = { ...lvl, approverType: opt.key as string };
+                    this.setState({ editingWorkflowTemplate: updated as IWorkflowTemplateItem });
+                  }}
+                  styles={{ root: { width: 160 } }}
+                />
+              </Stack>
+            ))}
+
+            <Separator />
+            <Toggle
+              label="Escalation Enabled"
+              checked={editing.EscalationEnabled}
+              onChange={(_, c) => {
+                const updated = { ...editing, EscalationEnabled: !!c };
+                this.setState({ editingWorkflowTemplate: updated as IWorkflowTemplateItem });
+              }}
+            />
+            {editing.EscalationEnabled && (
+              <TextField
+                label="Escalation After (Days)"
+                type="number"
+                value={String(editing.EscalationDays)}
+                onChange={(_, v) => {
+                  const updated = { ...editing, EscalationDays: Number(v) || 0 };
+                  this.setState({ editingWorkflowTemplate: updated as IWorkflowTemplateItem });
+                }}
+                min={1}
+                max={30}
+              />
+            )}
+            <Toggle
+              label="Active"
+              checked={editing.IsActive}
+              onChange={(_, c) => {
+                const updated = { ...editing, IsActive: !!c };
+                this.setState({ editingWorkflowTemplate: updated as IWorkflowTemplateItem });
+              }}
+            />
+            <Toggle
+              label="Default Template"
+              checked={editing.IsDefault}
+              onChange={(_, c) => {
+                const updated = { ...editing, IsDefault: !!c };
+                this.setState({ editingWorkflowTemplate: updated as IWorkflowTemplateItem });
+              }}
+            />
+
+            <Stack horizontal tokens={{ childrenGap: 8 }} horizontalAlign="end" style={{ marginTop: 16 }}>
+              <DefaultButton text="Cancel" onClick={() => this.setState({ showWorkflowTemplatePanel: false, editingWorkflowTemplate: null })} />
+              <PrimaryButton
+                text={saving ? 'Saving...' : 'Save Template'}
+                disabled={saving || !editing.TemplateName.trim()}
+                onClick={() => this.saveWorkflowTemplate(editing as IWorkflowTemplateItem)}
+              />
+            </Stack>
+          </Stack>
+        </StyledPanel>
       </div>
     );
   }
@@ -10174,6 +10623,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       case 'templates': return this.renderTemplatesContent();
       case 'metadata': return this.renderMetadataContent();
       case 'workflows': return this.renderWorkflowsContent();
+      case 'workflowTemplates': return this.renderWorkflowTemplatesContent();
       case 'compliance': return this.renderComplianceContent();
       case 'emailTemplates': return this.renderEmailTemplatesContent();
       case 'notifications': return this.renderNotificationsContent();

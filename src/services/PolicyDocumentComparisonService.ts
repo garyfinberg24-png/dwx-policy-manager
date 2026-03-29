@@ -12,7 +12,7 @@ import '@pnp/sp/files';
 import '@pnp/sp/folders';
 import { IPolicy } from '../models/IPolicy';
 import { logger } from './LoggingService';
-import { PolicyLists, ComparisonLists } from '../constants/SharePointListNames';
+import { PolicyLists } from '../constants/SharePointListNames';
 import { ValidationUtils } from '../utils/ValidationUtils';
 
 // ============================================================================
@@ -196,9 +196,9 @@ export class PolicyDocumentComparisonService {
   private readonly siteUrl: string;
 
   // List names
-  private readonly VERSIONS_LIST = ComparisonLists.VERSIONS;
+  private readonly VERSIONS_LIST = PolicyLists.POLICY_VERSIONS;
   private readonly POLICIES_LIST = PolicyLists.POLICIES;
-  private readonly COMPARISON_HISTORY_LIST = ComparisonLists.COMPARISON_HISTORY;
+  private readonly COMPARISON_HISTORY_LIST = 'PM_ComparisonHistory';
 
   constructor(sp: SPFI, siteUrl: string) {
     this.sp = sp;

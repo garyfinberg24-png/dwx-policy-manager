@@ -2277,6 +2277,12 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
             {isUpdated && (
               <span style={{ fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: 0.5, background: '#fef3c7', color: '#d97706' }}>Updated</span>
             )}
+            {((policy as any).Visibility === 'SecurityGroup' || (policy as any).Visibility === 'Custom') && (
+              <span style={{ fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: 0.5, background: '#fef2f2', color: '#dc2626', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                <svg viewBox="0 0 24 24" fill="none" width="10" height="10"><rect x="3" y="11" width="18" height="11" rx="2" stroke="currentColor" strokeWidth="2"/><path d="M7 11V7a5 5 0 0110 0v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+                Secure
+              </span>
+            )}
           </div>
 
           {/* Footer */}
@@ -2429,6 +2435,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
                     {policy.PolicyName}
                     {isNew && <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: 0.3, background: '#dbeafe', color: '#2563eb', marginLeft: 8 }}>New</span>}
                     {isUpdated && <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: 0.3, background: '#fef3c7', color: '#d97706', marginLeft: 8 }}>Updated</span>}
+                    {((policy as any).Visibility === 'SecurityGroup' || (policy as any).Visibility === 'Custom') && <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: 0.3, background: '#fef2f2', color: '#dc2626', marginLeft: 8, display: 'inline-flex', alignItems: 'center', gap: 2 }}><svg viewBox="0 0 24 24" fill="none" width="9" height="9"><rect x="3" y="11" width="18" height="11" rx="2" stroke="currentColor" strokeWidth="2"/><path d="M7 11V7a5 5 0 0110 0v4" stroke="currentColor" strokeWidth="2"/></svg>Secure</span>}
                   </div>
                   <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>
                     {policy.PolicyNumber}

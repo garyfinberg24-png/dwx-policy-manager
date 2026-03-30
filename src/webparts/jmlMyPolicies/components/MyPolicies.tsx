@@ -26,6 +26,7 @@ interface IAssignedPolicy {
   packName?: string;
   hasQuiz: boolean;
   acknowledgementDate?: Date;
+  isSecure?: boolean;
 }
 
 interface IMyPoliciesState {
@@ -266,6 +267,29 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
         acknowledgementDate: item.AcknowledgedDate ? new Date(item.AcknowledgedDate) : undefined
       };
     });
+
+    // Cross-reference with PM_Policies to identify secure policies
+    try {
+      const policyIds = policies.map(p => p.id).filter(Boolean);
+      if (policyIds.length > 0) {
+        const chunks = [];
+        for (let i = 0; i < policyIds.length; i += 20) chunks.push(policyIds.slice(i, i + 20));
+        const securePolicyIds = new Set<number>();
+        for (const chunk of chunks) {
+          try {
+            const filter = chunk.map(id => `Id eq ${id}`).join(' or ');
+            const policyItems = await sp.web.lists.getByTitle(PM_LISTS.POLICIES)
+              .items.filter(filter).select('Id', 'Visibility').top(chunk.length)();
+            for (const pi of policyItems) {
+              if (pi.Visibility === 'SecurityGroup' || pi.Visibility === 'Custom') {
+                securePolicyIds.add(pi.Id);
+              }
+            }
+          } catch { /* non-blocking */ }
+        }
+        policies.forEach(p => { if (securePolicyIds.has(p.id)) p.isSecure = true; });
+      }
+    } catch { /* visibility check non-blocking */ }
 
     const completed = policies.filter(p => p.status === 'completed').length;
     const total = policies.length;
@@ -638,6 +662,12 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
               background: riskBadge.bg,
               color: riskBadge.text,
             }}>{riskBadge.label}</span>
+          )}
+          {policy.isSecure && (
+            <span style={{ fontSize: '9px', fontWeight: 700, padding: '3px 8px', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.3px', background: '#fef2f2', color: '#dc2626', display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+              <svg viewBox="0 0 24 24" fill="none" width="9" height="9"><rect x="3" y="11" width="18" height="11" rx="2" stroke="currentColor" strokeWidth="2"/><path d="M7 11V7a5 5 0 0110 0v4" stroke="currentColor" strokeWidth="2"/></svg>
+              Secure
+            </span>
           )}
         </div>
 

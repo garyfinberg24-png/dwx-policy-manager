@@ -7459,9 +7459,24 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             />
           </div>
 
-          {/* Assigned reviewer slots */}
+          {/* Assigned reviewer slots — only show filled + 1 empty if < 3 */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
-            {[0, 1, 2].map(idx => renderSlot(idx, assignedReviewers[idx], '#2563eb', handleRemoveReviewer))}
+            {assignedReviewers.map((r, idx) => renderSlot(idx, r, '#2563eb', handleRemoveReviewer))}
+            {assignedReviewers.length < 3 && assignedReviewers.length > 0 && (
+              <div
+                role="button" tabIndex={0}
+                onClick={() => {/* dropdown above handles adding */}}
+                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', borderRadius: 8, border: '1px dashed #93c5fd', background: '#f8fafc', cursor: 'default', minHeight: 40 }}
+              >
+                <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#e2e8f0', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700 }}>{assignedReviewers.length + 1}</div>
+                <span style={{ fontSize: 12, color: '#94a3b8', fontStyle: 'italic' }}>Use the dropdown above to add reviewer {assignedReviewers.length + 1}</span>
+              </div>
+            )}
+            {assignedReviewers.length === 0 && (
+              <div style={{ padding: '10px 14px', borderRadius: 8, border: '1px dashed #cbd5e1', background: '#f8fafc', textAlign: 'center' }}>
+                <span style={{ fontSize: 12, color: '#94a3b8' }}>No reviewers assigned yet — select from the dropdown above</span>
+              </div>
+            )}
           </div>
 
           {/* Reviewer Override */}
@@ -7562,9 +7577,20 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             />
           </div>
 
-          {/* Assigned approver slots */}
+          {/* Assigned approver slots — only show filled + hint if < 3 */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
-            {[0, 1, 2].map(idx => renderSlot(idx, assignedApprovers[idx], '#d97706', handleRemoveApprover))}
+            {assignedApprovers.map((a, idx) => renderSlot(idx, a, '#d97706', handleRemoveApprover))}
+            {assignedApprovers.length < 3 && assignedApprovers.length > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', borderRadius: 8, border: '1px dashed #fcd34d', background: '#fefce8', minHeight: 40 }}>
+                <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#e2e8f0', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700 }}>{assignedApprovers.length + 1}</div>
+                <span style={{ fontSize: 12, color: '#94a3b8', fontStyle: 'italic' }}>Use the dropdown above to add approver {assignedApprovers.length + 1}</span>
+              </div>
+            )}
+            {assignedApprovers.length === 0 && (
+              <div style={{ padding: '10px 14px', borderRadius: 8, border: '1px dashed #cbd5e1', background: '#f8fafc', textAlign: 'center' }}>
+                <span style={{ fontSize: 12, color: '#94a3b8' }}>No approvers assigned yet — select from the dropdown above</span>
+              </div>
+            )}
           </div>
 
           {/* Approver Override */}

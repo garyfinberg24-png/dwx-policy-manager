@@ -159,7 +159,7 @@ resource logicApp 'Microsoft.Logic/workflows@2019-05-01' = {
             method: 'get'
             path: '/datasets/@{encodeURIComponent(encodeURIComponent(\'${sharePointSiteUrl}\'))}/tables/@{encodeURIComponent(encodeURIComponent(\'${emailQueueListName}\'))}/items'
             queries: {
-              '$filter': 'Status eq \'Pending\''
+              '$filter': 'QueueStatus eq \'Pending\''
               '$orderby': 'Priority desc, Created asc'
               '$top': batchSize
             }

@@ -852,6 +852,11 @@ export class PolicyService {
 
   /**
    * Publish policy and distribute to users
+   *
+   * NOTE: This method is NOT called from the UI. The Pipeline "Publish" button
+   * in PolicyAuthorView.tsx handles publishing inline with audience resolution
+   * via AudienceRuleService. This method is kept as a service-layer API for
+   * future use (e.g., scheduled publishing, API-triggered publishing).
    */
   public async publishPolicy(request: IPolicyPublishRequest): Promise<IPolicyDistribution> {
     try {

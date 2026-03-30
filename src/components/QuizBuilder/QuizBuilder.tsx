@@ -644,12 +644,16 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
 
       this.setState({ policies, questionBanks, loading: false });
 
-      // Load saved AI Function URL — try PM_Configuration first, then localStorage fallback
+      // Load saved AI Function URL — try quiz-specific key first, fall back to shared chat key
       if (!this.state.aiFunctionUrl) {
         let resolvedUrl = '';
         try {
           const spService = new SPService(this.props.sp);
-          resolvedUrl = await spService.getConfigValue(ConfigKeys.AI_FUNCTION_URL) || '';
+          // Try quiz-specific key first, fall back to shared chat key
+          resolvedUrl = await spService.getConfigValue('Integration.AI.Quiz.FunctionUrl') || '';
+          if (!resolvedUrl) {
+            resolvedUrl = await spService.getConfigValue(ConfigKeys.AI_FUNCTION_URL) || '';
+          }
         } catch {
           // PM_Configuration list may not exist — ignore
         }

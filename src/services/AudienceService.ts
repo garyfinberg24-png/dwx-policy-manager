@@ -274,6 +274,47 @@ export class AudienceService {
   }
 
   // ==========================================================================
+  // DELEGATION TO AudienceRuleService
+  // ==========================================================================
+
+  /**
+   * Resolve an audience by its SP list ID, returning matched users.
+   * Delegates to AudienceRuleService.resolveAudienceById() so callers only
+   * need to import AudienceService as a single entry point.
+   */
+  public async resolveAudience(audienceId: number): Promise<any[]> {
+    try {
+      // Lazy import to avoid circular dependency
+      const { AudienceRuleService } = await import('./AudienceRuleService');
+      const ruleService = new AudienceRuleService(this.sp);
+      return await ruleService.resolveAudienceById(audienceId);
+    } catch (err) {
+      logger.error('AudienceService', 'resolveAudience failed', err);
+      return [];
+    }
+  }
+
+  /**
+   * Evaluate raw audience rules against PM_UserProfiles and return matched users.
+   * Delegates to AudienceRuleService.evaluateRules() so callers only need
+   * AudienceService as a single entry point.
+   */
+  public async resolveAudienceByRules(
+    rules: Array<{ field: string; operator: string; value: string }>,
+    combinator: 'AND' | 'OR' = 'AND'
+  ): Promise<any[]> {
+    try {
+      // Lazy import to avoid circular dependency
+      const { AudienceRuleService } = await import('./AudienceRuleService');
+      const ruleService = new AudienceRuleService(this.sp);
+      return await ruleService.evaluateRules(rules, combinator);
+    } catch (err) {
+      logger.error('AudienceService', 'resolveAudienceByRules failed', err);
+      return [];
+    }
+  }
+
+  // ==========================================================================
   // JSON PARSING
   // ==========================================================================
 

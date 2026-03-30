@@ -185,11 +185,12 @@ resource logicApp 'Microsoft.Logic/workflows@2019-05-01' = {
                 method: 'post'
                 path: '/datasets/@{encodeURIComponent(encodeURIComponent(\'${sharePointSiteUrl}\'))}/tables/@{encodeURIComponent(encodeURIComponent(\'${notificationQueueListName}\'))}/items'
                 body: {
-                  Subject: 'Approval Overdue'
-                  To: '@{items(\'For_Each_Overdue_Approval\')?[\'ApproverEmail\']}'
+                  Title: 'Approval Overdue'
+                  RecipientEmail: '@{items(\'For_Each_Overdue_Approval\')?[\'ApproverEmail\']}'
                   Priority: 'Urgent'
-                  Body: 'The approval for "@{items(\'For_Each_Overdue_Approval\')?[\'Title\']}" was due on @{items(\'For_Each_Overdue_Approval\')?[\'DueDate\']} and has been escalated. Please review immediately.'
-                  Status: 'Queued'
+                  Message: 'The approval for "@{items(\'For_Each_Overdue_Approval\')?[\'Title\']}" was due on @{items(\'For_Each_Overdue_Approval\')?[\'DueDate\']} and has been escalated. Please review immediately.'
+                  QueueStatus: 'Pending'
+                  Channel: 'Email'
                   QueuedAt: '@{utcNow()}'
                 }
               }

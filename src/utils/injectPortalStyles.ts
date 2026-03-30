@@ -113,12 +113,29 @@ function applyStyles(element: HTMLElement, styles: Record<string, string>): void
 function stylePortalElement(element: HTMLElement): void {
   const role = element.getAttribute('role');
 
-  // Skip listbox/option inside Fluent UI v8 callouts — already styled by global-dropdown-fix.scss
-  if (role === 'listbox' || role === 'option') {
-    const inCallout = element.closest('.ms-Callout') || element.closest('.ms-Dropdown-callout');
-    if (inCallout) {
+  // Skip listbox/option/menu inside ANY Fluent UI v8 callout or layer.
+  // These controls are already styled by global-dropdown-fix.scss.
+  // Adding inline styles on top creates duplicate borders/shadows (double/triple panel bug).
+  if (role === 'listbox' || role === 'option' || role === 'menu' || role === 'menuitem') {
+    const inFluentLayer = element.closest('.ms-Callout') ||
+      element.closest('.ms-Dropdown-callout') ||
+      element.closest('.ms-ComboBox-callout') ||
+      element.closest('.ms-BasePicker') ||
+      element.closest('.ms-Suggestions') ||
+      element.closest('.ms-ContextualMenu') ||
+      element.closest('.ms-Layer-content');
+    if (inFluentLayer) {
       element.setAttribute('data-jml-styled', 'true');
       return; // Don't apply duplicate styles
+    }
+  }
+
+  // Skip dialog/alertdialog inside Fluent UI v8 dialog layers — let SCSS handle it
+  if (role === 'dialog' || role === 'alertdialog') {
+    const inFluentDialog = element.closest('.ms-Dialog') || element.closest('.ms-Modal');
+    if (inFluentDialog) {
+      element.setAttribute('data-jml-styled', 'true');
+      return;
     }
   }
 

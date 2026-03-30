@@ -1620,13 +1620,6 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                   styles={{ root: { height: 28, width: 28 }, icon: { fontSize: 14, color: '#0d9488' } }}
                 />
                 <IconButton
-                  iconProps={{ iconName: isFollowing ? 'FavoriteStarFill' : 'FavoriteStar' }}
-                  title={isFollowing ? 'Unfollow' : 'Follow'}
-                  ariaLabel={isFollowing ? 'Unfollow policy' : 'Follow policy'}
-                  onClick={(e) => { e.stopPropagation(); this.handleFollow(); }}
-                  styles={{ root: { height: 28, width: 28 }, icon: { fontSize: 14, color: isFollowing ? '#f59e0b' : '#94a3b8' } }}
-                />
-                <IconButton
                   iconProps={{ iconName: 'Share' }}
                   title="Share"
                   ariaLabel="Share policy"
@@ -3854,13 +3847,6 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
               >
                 <svg viewBox="0 0 24 24" fill="none" width="12" height="12"><circle cx="18" cy="5" r="3" stroke="currentColor" strokeWidth="2"/><circle cx="6" cy="12" r="3" stroke="currentColor" strokeWidth="2"/><circle cx="18" cy="19" r="3" stroke="currentColor" strokeWidth="2"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49" stroke="currentColor" strokeWidth="2"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49" stroke="currentColor" strokeWidth="2"/></svg>
                 Share
-              </button>
-              <button
-                onClick={() => this.handleFollow()}
-                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 4, fontSize: 11, fontWeight: 500, color: this.state.isFollowing ? '#dc2626' : '#64748b', background: '#fff', border: `1px solid ${this.state.isFollowing ? '#dc2626' : '#e2e8f0'}`, cursor: 'pointer', fontFamily: 'inherit' }}
-              >
-                <svg viewBox="0 0 24 24" fill={this.state.isFollowing ? 'currentColor' : 'none'} width="12" height="12"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                {this.state.isFollowing ? 'Following' : 'Follow'}
               </button>
             </div>
           </div>

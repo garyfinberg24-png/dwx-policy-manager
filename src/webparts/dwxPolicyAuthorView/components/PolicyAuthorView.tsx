@@ -1617,51 +1617,80 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
         const policyUrl = `${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policyId}`;
         const publisherName = this.props.context?.pageContext?.user?.displayName || 'An author';
 
-        // Read policy audience settings
+        // Read policy audience settings — try both old and new field names
         const policyItem = await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES)
           .items.getById(policyId)
-          .select('Visibility', 'Departments', 'IsMandatory', 'ReadTimeframe', 'RequiresAcknowledgement')();
+          .select('DistributionScope', 'TargetDepartments', 'TargetRoles', 'TargetLocations',
+                  'Visibility', 'Departments', 'IsMandatory', 'ReadTimeframe', 'ReadTimeframeDays',
+                  'RequiresAcknowledgement', 'PolicyCategory', 'ComplianceRisk', 'PolicyNumber',
+                  'AudienceId')();
 
-        const visibility = policyItem.Visibility || 'AllEmployees';
+        const visibility = policyItem.DistributionScope || policyItem.Visibility || 'AllEmployees';
         const requiresAck = policyItem.RequiresAcknowledgement !== false;
-        const departments = policyItem.Departments ? policyItem.Departments.split(';').map((d: string) => d.trim()).filter(Boolean) : [];
+        const departments = (policyItem.TargetDepartments || policyItem.Departments || '').split(/[;,]/).map((d: string) => d.trim()).filter(Boolean);
+        const targetRoles = (policyItem.TargetRoles || '').split(/[;,]/).map((r: string) => r.trim()).filter(Boolean);
+        const audienceId = policyItem.AudienceId || null;
+        const readDays = policyItem.ReadTimeframeDays || 30;
 
         // Resolve target users via AudienceRuleService
         let targetUsers: Array<{ Id: number; Email: string; Title: string }> = [];
-        if (visibility === 'AllEmployees') {
-          // All active users from PM_UserProfiles
-          try {
-            const { AudienceRuleService } = await import('../../../services/AudienceRuleService');
-            const audienceSvc = new AudienceRuleService(this.props.sp);
+        try {
+          const { AudienceRuleService } = await import('../../../services/AudienceRuleService');
+          const audienceSvc = new AudienceRuleService(this.props.sp);
+
+          if (audienceId) {
+            // Named audience from PM_Audiences — use its saved rules
+            const resolved = await audienceSvc.resolveAudienceById(audienceId);
+            targetUsers = resolved.map(u => ({ Id: u.Id, Email: u.Email, Title: u.Title }));
+          } else if (visibility === 'AllEmployees' || visibility === 'All Employees') {
             const users = await audienceSvc.evaluateRules([{ field: 'IsActive', operator: 'equals', value: 'true' }], 'AND');
             targetUsers = users.map(u => ({ Id: u.Id, Email: u.Email, Title: u.Title }));
-          } catch { /* audience resolution optional */ }
-        } else if (visibility === 'Department' && departments.length > 0) {
-          try {
-            const { AudienceRuleService } = await import('../../../services/AudienceRuleService');
-            const audienceSvc = new AudienceRuleService(this.props.sp);
+          } else if ((visibility === 'Department' || visibility === 'Department Only' || visibility === 'Targeted') && departments.length > 0) {
             const rules = departments.map((dept: string) => ({ field: 'Department', operator: 'equals', value: dept }));
             const users = await audienceSvc.evaluateRules(rules, 'OR');
             targetUsers = users.map(u => ({ Id: u.Id, Email: u.Email, Title: u.Title }));
-          } catch { /* audience resolution optional */ }
+          } else if ((visibility === 'Role-Based' || visibility === 'Role') && targetRoles.length > 0) {
+            const rules = targetRoles.map((role: string) => ({ field: 'PMRole', operator: 'contains', value: role }));
+            const users = await audienceSvc.evaluateRules(rules, 'OR');
+            targetUsers = users.map(u => ({ Id: u.Id, Email: u.Email, Title: u.Title }));
+          } else if (visibility === 'SecurityGroup' || visibility === 'Security Group') {
+            // SecurityGroup — fall back to all active users (proper SG resolution requires Graph API)
+            const users = await audienceSvc.evaluateRules([{ field: 'IsActive', operator: 'equals', value: 'true' }], 'AND');
+            targetUsers = users.map(u => ({ Id: u.Id, Email: u.Email, Title: u.Title }));
+          } else {
+            // Default — all active users
+            const users = await audienceSvc.evaluateRules([{ field: 'IsActive', operator: 'equals', value: 'true' }], 'AND');
+            targetUsers = users.map(u => ({ Id: u.Id, Email: u.Email, Title: u.Title }));
+          }
+        } catch (audienceErr) {
+          console.warn('[PolicyAuthorView] Audience resolution failed:', audienceErr);
         }
 
         // Create acknowledgement records for target users (if required)
         if (requiresAck && targetUsers.length > 0) {
           const dueDate = new Date();
-          dueDate.setDate(dueDate.getDate() + 30); // 30-day default deadline
+          dueDate.setDate(dueDate.getDate() + readDays);
           let ackCreated = 0;
           for (const user of targetUsers) {
             try {
+              // Check if ack already exists (avoid duplicates)
+              const existing = await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_ACKNOWLEDGEMENTS)
+                .items.filter(`PolicyId eq ${policyId} and AckUserId eq ${user.Id}`).select('Id').top(1)();
+              if (existing.length > 0) continue;
+
               await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_ACKNOWLEDGEMENTS).items.add({
                 Title: `Ack - ${title}`,
                 PolicyId: policyId,
                 PolicyName: title,
+                PolicyNumber: policyItem.PolicyNumber || '',
+                PolicyCategory: policyItem.PolicyCategory || '',
                 AckUserId: user.Id,
+                UserEmail: user.Email,
                 AckStatus: 'Pending',
                 AssignedDate: new Date().toISOString(),
                 DueDate: dueDate.toISOString(),
-                IsMandatory: policyItem.IsMandatory || false
+                IsMandatory: policyItem.IsMandatory || false,
+                ReadTimeframe: policyItem.ReadTimeframe || 'Week 1'
               });
               ackCreated++;
             } catch { /* per-user — continue on failure */ }

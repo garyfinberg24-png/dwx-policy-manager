@@ -1219,12 +1219,19 @@ export class PolicyService {
             .top(1)();
 
           if (existing.length === 0) {
+            // Resolve user email from SP user ID
+            let userEmail = '';
+            try {
+              const userInfo = await this.sp.web.siteUsers.getById(userId).select('Email')();
+              userEmail = userInfo?.Email || '';
+            } catch { /* email resolution best-effort */ }
+
             const ackData = {
               Title: `${policy.PolicyName} - User ${userId}`,
               PolicyId: policyId,
               PolicyVersionNumber: versionNumber,
               AckUserId: userId,
-              UserEmail: '', // TODO: Fetch from user profile
+              UserEmail: userEmail,
               AckStatus: AcknowledgementStatus.Sent,
               AssignedDate: new Date().toISOString(),
               DueDate: dueDate?.toISOString(),
@@ -1684,11 +1691,11 @@ export class PolicyService {
             try {
               const deptFilter = departments.map(d => `Department eq '${d}'`).join(' or ');
               const deptEmployees = await this.sp.web.lists
-                .getByTitle('PM_Employees')
+                .getByTitle('PM_UserProfiles')
                 .items
                 .filter(deptFilter)
-                .select('UserId')();
-              targetUsers = deptEmployees.map((e: Record<string, unknown>) => e.UserId as number).filter(Boolean);
+                .select('Id', 'Email')();
+              targetUsers = deptEmployees.map((e: Record<string, unknown>) => e.Id as number).filter(Boolean);
             } catch {
               targetUsers = userIds || [];
             }
@@ -1703,11 +1710,11 @@ export class PolicyService {
             try {
               const locFilter = locations.map(l => `Location eq '${l}'`).join(' or ');
               const locEmployees = await this.sp.web.lists
-                .getByTitle('PM_Employees')
+                .getByTitle('PM_UserProfiles')
                 .items
                 .filter(locFilter)
-                .select('UserId')();
-              targetUsers = locEmployees.map((e: Record<string, unknown>) => e.UserId as number).filter(Boolean);
+                .select('Id', 'Email')();
+              targetUsers = locEmployees.map((e: Record<string, unknown>) => e.Id as number).filter(Boolean);
             } catch {
               targetUsers = userIds || [];
             }
@@ -1722,11 +1729,11 @@ export class PolicyService {
             try {
               const roleFilter = roles.map(r => `JobTitle eq '${r}'`).join(' or ');
               const roleEmployees = await this.sp.web.lists
-                .getByTitle('PM_Employees')
+                .getByTitle('PM_UserProfiles')
                 .items
                 .filter(roleFilter)
-                .select('UserId')();
-              targetUsers = roleEmployees.map((e: Record<string, unknown>) => e.UserId as number).filter(Boolean);
+                .select('Id', 'Email')();
+              targetUsers = roleEmployees.map((e: Record<string, unknown>) => e.Id as number).filter(Boolean);
             } catch {
               targetUsers = userIds || [];
             }
@@ -1741,11 +1748,11 @@ export class PolicyService {
             const ninetyDaysAgo = new Date();
             ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
             const newHires = await this.sp.web.lists
-              .getByTitle('PM_Employees')
+              .getByTitle('PM_UserProfiles')
               .items
-              .filter(`HireDate ge datetime'${ninetyDaysAgo.toISOString()}'`)
-              .select('UserId')();
-            targetUsers = newHires.map((e: Record<string, unknown>) => e.UserId as number).filter(Boolean);
+              .filter(`StartDate ge datetime'${ninetyDaysAgo.toISOString()}'`)
+              .select('Id', 'Email')();
+            targetUsers = newHires.map((e: Record<string, unknown>) => e.Id as number).filter(Boolean);
           } catch {
             // Fall back to provided userIds if PM_Employees doesn't exist
             targetUsers = userIds || [];

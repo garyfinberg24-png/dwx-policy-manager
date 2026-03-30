@@ -1213,10 +1213,13 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       if (profileId) { optionalData.MetadataProfileId = profileId; }
       const wfTemplateId = (this.state as any)._selectedWorkflowTemplateId;
       if (wfTemplateId) { optionalData.WorkflowTemplateId = wfTemplateId; }
-      optionalData.DistributionScope = targetAllEmployees ? 'AllEmployees' : 'Targeted';
+      const distScope = (this.state as any)._distributionScope;
+      optionalData.DistributionScope = distScope || (targetAllEmployees ? 'All Employees' : 'Targeted');
       if (targetDepartments && targetDepartments.length > 0) { optionalData.TargetDepartments = targetDepartments.join(';'); }
       if (targetRoles && targetRoles.length > 0) { optionalData.TargetRoles = targetRoles.join(';'); }
       if (targetLocations && targetLocations.length > 0) { optionalData.TargetLocations = targetLocations.join(';'); }
+      const selectedAud = (this.state as any)._selectedAudienceId;
+      if (selectedAud) { optionalData.AudienceId = selectedAud; }
       if (includeContractors) { optionalData.IncludeContractors = true; }
       if (reviewFrequency) { optionalData.ReviewFrequency = reviewFrequency; }
       if (nextReviewDate) { optionalData.NextReviewDate = new Date(nextReviewDate).toISOString(); }

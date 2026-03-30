@@ -682,6 +682,44 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
         createdBy: this.props.context?.pageContext?.user?.displayName || 'Current User',
       };
       this.setState({ campaigns: [...campaigns, newCampaign], showCreatePanel: false, successMessage: 'Campaign created successfully.' }, () => this.applyFilters());
+
+      // Create acknowledgement records for resolved target users (non-blocking)
+      if (formContentType === 'Policy' && parseInt(formPolicyId) > 0 && targetUsers.length > 0) {
+        const policyId = parseInt(formPolicyId);
+        const dueDate = formDueDate ? formDueDate.toISOString() : new Date(Date.now() + 30 * 86400000).toISOString();
+        let ackCount = 0;
+        for (const userEmail of targetUsers) {
+          try {
+            // Resolve email to SP user ID
+            let userId = 0;
+            try {
+              const ensured = await this.props.sp.web.ensureUser(userEmail);
+              userId = ensured.data.Id;
+            } catch { continue; /* can't resolve — skip */ }
+
+            // Check for existing ack
+            const existing = await this.props.sp.web.lists.getByTitle('PM_PolicyAcknowledgements')
+              .items.filter(`PolicyId eq ${policyId} and AckUserId eq ${userId}`).select('Id').top(1)();
+            if (existing.length > 0) continue;
+
+            await this.props.sp.web.lists.getByTitle('PM_PolicyAcknowledgements').items.add({
+              Title: `Distribution - ${formCampaignName}`,
+              PolicyId: policyId,
+              PolicyName: selectedPolicyText,
+              AckUserId: userId,
+              UserEmail: userEmail,
+              AckStatus: 'Pending',
+              AssignedDate: new Date().toISOString(),
+              DueDate: dueDate,
+              DistributionId: newId
+            });
+            ackCount++;
+          } catch { /* per-user — continue */ }
+        }
+        if (ackCount > 0) {
+          console.log(`[PolicyDistribution] Created ${ackCount} acknowledgement records for campaign "${formCampaignName}"`);
+        }
+      }
     }
 
     setTimeout(() => this.setState({ successMessage: '' }), 3000);

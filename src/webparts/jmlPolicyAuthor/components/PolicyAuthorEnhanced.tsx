@@ -3000,30 +3000,74 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
     return (
       <div>
-        <Stack tokens={{ childrenGap: 16 }}>
-          {/* Audience search + info */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+        <Stack tokens={{ childrenGap: 12 }}>
+          {/* Distribution Scope + Target Audience overrides */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <Dropdown
+              label="Distribution Scope"
+              selectedKey={targetAllEmployees ? 'All Employees' : (st._distributionScope || 'Targeted')}
+              options={[
+                { key: 'All Employees', text: 'All Employees' },
+                { key: 'Targeted', text: 'Targeted (Departments)' },
+                { key: 'Role-Based', text: 'Role-Based (Audiences)' },
+                { key: 'Security Group', text: 'Security Group' }
+              ]}
+              onChange={(_, opt) => {
+                if (opt) {
+                  const isAll = opt.key === 'All Employees';
+                  this.setState({ targetAllEmployees: isAll, _distributionScope: opt.key as string, _selectedAudienceId: null } as any);
+                }
+              }}
+            />
+            {!targetAllEmployees && (st._distributionScope === 'Targeted' || (!st._distributionScope && !targetAllEmployees)) && (
+              <Dropdown
+                label="Target Departments"
+                multiSelect
+                selectedKeys={this.state.targetDepartments || []}
+                options={[
+                  { key: 'Human Resources', text: 'Human Resources' }, { key: 'IT', text: 'IT' },
+                  { key: 'Finance', text: 'Finance' }, { key: 'Operations', text: 'Operations' },
+                  { key: 'Legal', text: 'Legal' }, { key: 'Compliance', text: 'Compliance' },
+                  { key: 'Executive', text: 'Executive' }, { key: 'Sales', text: 'Sales' }
+                ]}
+                onChange={(_, option) => {
+                  if (option) {
+                    const current = this.state.targetDepartments || [];
+                    const updated = option.selected ? [...current, option.key as string] : current.filter((d: string) => d !== option.key);
+                    this.setState({ targetDepartments: updated });
+                  }
+                }}
+                placeholder="Select departments..."
+              />
+            )}
+            {targetAllEmployees && (
+              <TextField label="Target Audience" value="All Users" disabled styles={{ field: { color: '#94a3b8', background: '#f8fafc' } }} />
+            )}
+          </div>
+
+          {/* Audience search + count */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <SearchBox
               placeholder="Search audiences..."
               value={audienceSearchQuery}
               onChange={(_, v) => this.setState({ _audienceSearchQuery: v || '' } as any)}
-              styles={{ root: { width: 280 } }}
+              styles={{ root: { width: 220, borderRadius: 4 } }}
             />
-            {selectedAudienceId && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 14px', background: '#f0fdfa', border: '1px solid #99f6e4', borderRadius: 6 }}>
-                <Icon iconName="People" styles={{ root: { fontSize: 14, color: '#0d9488' } }} />
-                <Text style={{ fontSize: 13, fontWeight: 600, color: '#0d9488' }}>~{audiencePreviewCount} users</Text>
-              </div>
+            {selectedAudienceId && audiencePreviewCount > 0 && (
+              <span style={{ fontSize: 12, fontWeight: 600, color: '#0d9488', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <Icon iconName="People" styles={{ root: { fontSize: 12, color: '#0d9488' } }} />
+                ~{audiencePreviewCount} users
+              </span>
             )}
           </div>
 
-          {/* Audience cards grid */}
+          {/* Compact audience cards grid */}
           {audiences.length === 0 ? (
             <MessageBar messageBarType={MessageBarType.info}>
-              No audiences configured yet. Go to Admin Centre &gt; Audience Targeting to create audiences, or run the provisioning script <code>22-Audiences-List.ps1</code>.
+              No audiences configured. Go to Admin Centre &gt; Audience Targeting to create audiences.
             </MessageBar>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, maxHeight: 420, overflowY: 'auto', paddingRight: 4 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, maxHeight: 280, overflowY: 'auto', paddingRight: 4 }}>
               {filteredAudiences.map((audience: any) => {
                 const isSelected = selectedAudienceId === audience.Id;
                 const colors = catColors[audience.Category] || catColors.Custom;
@@ -3035,37 +3079,21 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                     onClick={() => selectAudience(audience)}
                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectAudience(audience); } }}
                     style={{
-                      padding: 16, border: `2px solid ${isSelected ? '#0d9488' : '#e2e8f0'}`,
-                      borderRadius: 8, cursor: 'pointer', transition: 'all 0.15s',
-                      background: isSelected ? '#f0fdfa' : '#fff'
+                      padding: '8px 10px', border: `1.5px solid ${isSelected ? '#0d9488' : '#e2e8f0'}`,
+                      borderRadius: 4, cursor: 'pointer', transition: 'all 0.15s',
+                      background: isSelected ? '#f0fdfa' : '#fff', display: 'flex', alignItems: 'center', gap: 8
                     }}
                     onMouseEnter={(e) => { if (!isSelected) (e.currentTarget as HTMLElement).style.borderColor = '#0d9488'; }}
                     onMouseLeave={(e) => { if (!isSelected) (e.currentTarget as HTMLElement).style.borderColor = '#e2e8f0'; }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                      <div style={{ width: 32, height: 32, borderRadius: 8, background: colors.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Icon iconName={iconName} styles={{ root: { fontSize: 16, color: colors.color } }} />
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <Text style={{ fontWeight: 600, fontSize: 13, color: '#0f172a', display: 'block' }}>{audience.Title}</Text>
-                        <span style={{ fontSize: 9, fontWeight: 600, padding: '1px 6px', borderRadius: 4, background: colors.bg, color: colors.color, textTransform: 'uppercase' }}>{audience.Category}</span>
-                      </div>
-                      {isSelected && <Icon iconName="CheckMark" styles={{ root: { fontSize: 16, color: '#0d9488' } }} />}
-                      {audience.IsSystem && <Icon iconName="Lock" styles={{ root: { fontSize: 10, color: '#94a3b8' } }} title="System audience" />}
+                    <div style={{ width: 24, height: 24, borderRadius: 4, background: colors.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Icon iconName={iconName} styles={{ root: { fontSize: 12, color: colors.color } }} />
                     </div>
-                    <Text style={{ fontSize: 11, color: '#64748b', lineHeight: '1.4' }}>{audience.Description || 'No description'}</Text>
-                    {audience.Rules && audience.Rules.length > 0 && (
-                      <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                        {audience.Rules.map((r: any, ri: number) => (
-                          <span key={ri} style={{ fontSize: 9, padding: '2px 6px', borderRadius: 3, background: '#f1f5f9', color: '#64748b' }}>
-                            {r.field} {r.operator} "{r.value}"
-                          </span>
-                        ))}
-                        {audience.Rules.length > 1 && (
-                          <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 3, background: '#fef3c7', color: '#d97706', fontWeight: 600 }}>{audience.Combinator}</span>
-                        )}
-                      </div>
-                    )}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <Text style={{ fontWeight: 600, fontSize: 12, color: '#0f172a', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{audience.Title}</Text>
+                      <Text style={{ fontSize: 10, color: '#94a3b8' }}>{audience.Description ? audience.Description.substring(0, 40) : audience.Category}</Text>
+                    </div>
+                    {isSelected && <Icon iconName="CheckMark" styles={{ root: { fontSize: 12, color: '#0d9488', flexShrink: 0 } }} />}
                   </div>
                 );
               })}

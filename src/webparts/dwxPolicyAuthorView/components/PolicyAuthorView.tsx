@@ -645,6 +645,9 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
         .filter((item: any) => {
           const status = item.PolicyStatus || 'Draft';
           if (excludedStatuses.includes(status)) return false;
+          // Published policies are organisational — show all regardless of authorship
+          if (status === 'Published') return true;
+          // Non-published: only show policies where current user is author or owner
           const authorId = item.Author?.Id || item.AuthorId || 0;
           const ownerId = item.PolicyOwner?.Id || item.PolicyOwnerId || 0;
           const isAuthor = authorId === currentUserId || ownerId === currentUserId;

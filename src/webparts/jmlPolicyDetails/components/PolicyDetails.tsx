@@ -1934,8 +1934,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
           </div>
         )}
 
-        {/* Social Engagement Section — only in non-focused mode (already acknowledged) */}
-        {!isFocusedMode && this.renderSocialSection()}
+        {/* Social Engagement Section removed — ratings/reviews are on the success screen after acknowledgement */}
 
         {/* Document Read Footer — anchored to bottom of browser, covers PM footer */}
         {!this.state.isFullscreen && !isFocusedMode && (hasConvertedHtml || hasDocuments) && (
@@ -3910,8 +3909,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
           )}
         </div>
 
-        {/* Social Engagement Section */}
-        {this.renderSocialSection()}
+        {/* Social Engagement Section removed — ratings/reviews are on the success screen after acknowledgement */}
 
         {/* Bottom bar */}
         <div style={{

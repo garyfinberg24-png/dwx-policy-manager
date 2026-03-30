@@ -616,7 +616,7 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
         { key: 'distribution', text: 'Distribution', icon: NavIcons.distribution, href: '/sites/PolicyManager/SitePages/PolicyDistribution.aspx' },
         { key: 'team-compliance', text: 'Team Compliance', icon: NavIcons.teamCompliance, href: '/sites/PolicyManager/SitePages/PolicyManagerView.aspx?tab=team-compliance' },
         { key: 'delegations', text: 'Delegations', icon: NavIcons.delegations, href: '/sites/PolicyManager/SitePages/PolicyManagerView.aspx?tab=delegations' },
-        { key: 'reviews', text: 'Reviews', icon: NavIcons.reviews, href: '/sites/PolicyManager/SitePages/PolicyManagerView.aspx?tab=reviews' },
+        { key: 'reviews', text: 'Review Cycles', icon: NavIcons.reviews, href: '/sites/PolicyManager/SitePages/PolicyManagerView.aspx?tab=reviews' },
         { key: 'reports', text: 'Reports', icon: NavIcons.analytics, href: '/sites/PolicyManager/SitePages/PolicyManagerView.aspx?tab=reports' },
         { key: 'analytics', text: 'Analytics', icon: NavIcons.analytics, href: '/sites/PolicyManager/SitePages/PolicyAnalytics.aspx' },
         { key: 'request-policy', text: 'Request Policy', icon: NavIcons.create, href: '#request-policy' },

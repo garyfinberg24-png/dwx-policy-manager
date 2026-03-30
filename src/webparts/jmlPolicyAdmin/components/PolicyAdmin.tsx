@@ -1923,31 +1923,101 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
 
               <Toggle label="Auto-Notify on Update" checked={(editingProfile as any).AutoNotifyOnUpdate !== false} onText="Yes" offText="No" onChange={(_, c) => this.setState({ _editingProfile: { ...editingProfile, AutoNotifyOnUpdate: !!c } } as any)} />
 
-              <Separator>Targeting</Separator>
+              <Separator>Target Audience</Separator>
 
-              <Dropdown
-                label="Target Departments"
-                multiSelect
-                selectedKeys={editingProfile.TargetDepartments ? editingProfile.TargetDepartments.split(',').map((d: string) => d.trim()).filter(Boolean) : []}
-                options={[
-                  { key: 'Human Resources', text: 'Human Resources' }, { key: 'IT', text: 'IT' },
-                  { key: 'Finance', text: 'Finance' }, { key: 'Operations', text: 'Operations' },
-                  { key: 'Sales', text: 'Sales' }, { key: 'Marketing', text: 'Marketing' },
-                  { key: 'Legal', text: 'Legal' }, { key: 'Executive', text: 'Executive' },
-                  { key: 'Compliance', text: 'Compliance' }, { key: 'Customer Service', text: 'Customer Service' },
-                  { key: 'All Departments', text: 'All Departments' }
-                ]}
-                onChange={(_, option) => {
-                  if (option) {
-                    const current = editingProfile.TargetDepartments ? editingProfile.TargetDepartments.split(',').map((d: string) => d.trim()).filter(Boolean) : [];
-                    const updated = option.selected
-                      ? [...current, option.key as string]
-                      : current.filter((d: string) => d !== option.key);
-                    this.setState({ _editingProfile: { ...editingProfile, TargetDepartments: updated.join(', ') } } as any);
+              {/* Cascading audience field based on Distribution Scope */}
+              {(() => {
+                const scope = (editingProfile as any).DistributionScope || 'All Employees';
+
+                if (scope === 'All Employees') {
+                  return (
+                    <TextField
+                      label="Target Audience"
+                      value="All Users"
+                      disabled
+                      styles={{ field: { color: '#94a3b8', background: '#f8fafc' } }}
+                    />
+                  );
+                }
+
+                if (scope === 'Department Only') {
+                  return (
+                    <Dropdown
+                      label="Target Departments"
+                      multiSelect
+                      selectedKeys={editingProfile.TargetDepartments ? editingProfile.TargetDepartments.split(',').map((d: string) => d.trim()).filter(Boolean) : []}
+                      options={[
+                        { key: 'Human Resources', text: 'Human Resources' }, { key: 'IT', text: 'IT' },
+                        { key: 'Finance', text: 'Finance' }, { key: 'Operations', text: 'Operations' },
+                        { key: 'Sales', text: 'Sales' }, { key: 'Marketing', text: 'Marketing' },
+                        { key: 'Legal', text: 'Legal' }, { key: 'Executive', text: 'Executive' },
+                        { key: 'Compliance', text: 'Compliance' }, { key: 'Customer Service', text: 'Customer Service' }
+                      ]}
+                      onChange={(_, option) => {
+                        if (option) {
+                          const current = editingProfile.TargetDepartments ? editingProfile.TargetDepartments.split(',').map((d: string) => d.trim()).filter(Boolean) : [];
+                          const updated = option.selected ? [...current, option.key as string] : current.filter((d: string) => d !== option.key);
+                          this.setState({ _editingProfile: { ...editingProfile, TargetDepartments: updated.join(', ') } } as any);
+                        }
+                      }}
+                      placeholder="Select target departments..."
+                    />
+                  );
+                }
+
+                if (scope === 'Role-Based') {
+                  // Load audiences from PM_Audiences (same data shown in Admin > Audience Targeting)
+                  const audiences: any[] = (this.state as any)._audiences || [];
+                  if (audiences.length === 0 && !(this.state as any)._templateAudiencesLoaded) {
+                    this.setState({ _templateAudiencesLoaded: true } as any);
+                    this.props.sp.web.lists.getByTitle('PM_Audiences')
+                      .items.select('Id', 'Title', 'AudienceName', 'IsActive').filter("IsActive eq 1").top(50)()
+                      .then((items: any[]) => { this.setState({ _audiences: items } as any); })
+                      .catch(() => { /* PM_Audiences may not exist */ });
                   }
-                }}
-                placeholder="Select departments..."
-              />
+                  return (
+                    <Dropdown
+                      label="Target Audience (from Audience Definitions)"
+                      multiSelect
+                      selectedKeys={editingProfile.TargetDepartments ? editingProfile.TargetDepartments.split(',').map((d: string) => d.trim()).filter(Boolean) : []}
+                      options={audiences.map((a: any) => ({ key: a.AudienceName || a.Title, text: a.AudienceName || a.Title }))}
+                      onChange={(_, option) => {
+                        if (option) {
+                          const current = editingProfile.TargetDepartments ? editingProfile.TargetDepartments.split(',').map((d: string) => d.trim()).filter(Boolean) : [];
+                          const updated = option.selected ? [...current, option.key as string] : current.filter((d: string) => d !== option.key);
+                          this.setState({ _editingProfile: { ...editingProfile, TargetDepartments: updated.join(', ') } } as any);
+                        }
+                      }}
+                      placeholder={audiences.length > 0 ? 'Select target audiences...' : 'Loading audiences...'}
+                    />
+                  );
+                }
+
+                if (scope === 'Security Group') {
+                  return (
+                    <div>
+                      <Label>Target Security Groups (from Entra ID)</Label>
+                      <PeoplePicker
+                        context={this.props.context as any}
+                        personSelectionLimit={10}
+                        principalTypes={[PrincipalType.SecurityGroup, PrincipalType.SharePointGroup, PrincipalType.DistributionList]}
+                        resolveDelay={300}
+                        ensureUser={true}
+                        webAbsoluteUrl={this.props.context?.pageContext?.web?.absoluteUrl}
+                        placeholder="Search Entra ID security groups..."
+                        defaultSelectedUsers={editingProfile.TargetDepartments ? editingProfile.TargetDepartments.split(',').map((d: string) => d.trim()).filter(Boolean) : []}
+                        onChange={(items: any[]) => {
+                          const groups = items.map(item => item.text || item.loginName || '').filter(Boolean);
+                          this.setState({ _editingProfile: { ...editingProfile, TargetDepartments: groups.join(', ') } } as any);
+                        }}
+                      />
+                      <Text variant="small" style={{ color: '#94a3b8', marginTop: 4, display: 'block' }}>Search and select security groups directly from Entra ID</Text>
+                    </div>
+                  );
+                }
+
+                return null;
+              })()}
             </Stack>
           )}
         </StyledPanel>

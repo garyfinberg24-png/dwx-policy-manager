@@ -160,7 +160,7 @@ const NAV_SECTIONS: INavSection[] = [
     items: [
       { key: 'categories', label: 'Categories', icon: 'BulletedList2', description: 'Manage policy categories' },
       { key: 'templates', label: 'Templates', icon: 'DocumentSet', description: 'Reusable policy templates with defaults' },
-      { key: 'metadata', label: 'Fast Track Templates', icon: 'LightningBolt', description: 'Pre-configured templates for fast policy creation' },
+      { key: 'metadata', label: 'Metadata Profiles', icon: 'Tag', description: 'Pre-configured metadata profiles for policy creation' },
       { key: 'naming', label: 'Naming Rules', icon: 'Rename', description: 'Auto-generated policy numbering conventions' }
     ]
   },
@@ -1738,7 +1738,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     return (
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 16 }}>
-          {this.renderSectionIntro('Fast Track Templates', 'Fast Track templates are pre-configured policy setups that allow authors to skip multiple wizard steps. Each template includes category, risk level, read timeframe, acknowledgement requirements, and preferred document type.', ['Create templates for common policy types: \'IT Security\', \'HR Policy\', \'Regulatory Compliance\'', 'Authors can override any setting in the Policy Builder'])}
+          {this.renderSectionIntro('Metadata Profiles', 'Metadata profiles are pre-configured policy metadata presets that streamline policy creation. Each profile includes category, risk level, read timeframe, acknowledgement requirements, and targeting settings.', ['Create profiles for common policy types: \'IT Security\', \'HR Policy\', \'Regulatory Compliance\'', 'Authors can use profiles in both Standard and Fast Track wizard modes'])}
           <Stack horizontal horizontalAlign="end" verticalAlign="center" style={{ marginBottom: 8 }}>
             <Text style={{ fontSize: 12, color: '#94a3b8', marginRight: 'auto' }}>{metadataProfiles.length} profiles</Text>
             <PrimaryButton text="New Profile" iconProps={{ iconName: 'Add' }} onClick={() => this.setState({ _editingProfile: { Id: 0, Title: '', ProfileName: '', Description: '', PolicyCategory: 'HR Policies', ComplianceRisk: 'Medium', ReadTimeframe: 'Week 1', RequiresAcknowledgement: true, RequiresQuiz: false, RequiresDigitalSignature: false, TargetDepartments: '', Classification: 'Internal', RegulatoryFramework: 'None', ReviewCycleMonths: 12, EstimatedReadTimeMinutes: 15, RetentionYears: 7, DistributionScope: 'All Employees', AutoNotifyOnUpdate: true }, _showProfilePanel: true } as any)} />
@@ -1783,7 +1783,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           isOpen={!!showProfilePanel}
           onDismiss={() => this.setState({ _showProfilePanel: false, _editingProfile: null } as any)}
           type={PanelType.medium}
-          headerText={editingProfile?.Id ? 'Edit Fast Track Template' : 'New Fast Track Template'}
+          headerText={editingProfile?.Id ? 'Edit Metadata Profile' : 'New Metadata Profile'}
           onRenderFooterContent={() => (
             <Stack horizontal tokens={{ childrenGap: 8 }}>
               <PrimaryButton text="Save" disabled={this.state.saving || !editingProfile?.ProfileName?.trim()} onClick={async () => {

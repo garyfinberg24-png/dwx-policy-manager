@@ -115,7 +115,7 @@ export interface IWizardStepConfig {
 export const WIZARD_STEPS: IWizardStepConfig[] = [
   { key: 'creation-method', title: 'Creation Method', description: 'Choose how to create your policy', icon: 'Add' },
   { key: 'basic-info', title: 'Basic Information', description: 'Policy name, category, and summary', icon: 'Info' },
-  { key: 'compliance', title: 'Compliance & Risk', description: 'Risk level, acknowledgement, and compliance settings', icon: 'Tag' },
+  { key: 'compliance', title: 'Metadata Profile', description: 'Apply a metadata profile or configure custom settings', icon: 'Tag' },
   { key: 'audience', title: 'Audience', description: 'Select a target audience for this policy', icon: 'People' },
   { key: 'dates', title: 'Effective Dates', description: 'When the policy is active', icon: 'Calendar' },
   { key: 'workflow', title: 'Review Workflow', description: 'Reviewers and approvers', icon: 'Flow' },

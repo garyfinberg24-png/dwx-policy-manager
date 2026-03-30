@@ -2660,7 +2660,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       requiresAcknowledgement, metadataProfiles
     } = this.state;
     const st = this.state as any;
-    const profileMode: 'existing' | 'create' = st._profileMode || 'existing';
+    const profileMode: 'existing' | 'create' | 'custom' = st._profileMode || 'existing';
     const newProfile: any = st._newProfileData || { ProfileName: '', PolicyCategory: '', ComplianceRisk: 'Medium', ReadTimeframe: 'Week 1', RequiresAcknowledgement: true, RequiresQuiz: false, TargetDepartments: '' };
     const savingProfile: boolean = st._savingNewProfile || false;
 
@@ -2710,7 +2710,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       }
     };
 
-    const modeCard = (mode: 'existing' | 'create', icon: string, title: string, desc: string): JSX.Element => {
+    const modeCard = (mode: 'existing' | 'create' | 'custom', icon: string, title: string, desc: string): JSX.Element => {
       const isActive = profileMode === mode;
       return (
         <div
@@ -2739,7 +2739,8 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             {/* Mode toggle */}
             <div role="radiogroup" aria-label="Profile mode" style={{ display: 'flex', gap: 12 }}>
               {modeCard('existing', 'Tag', 'Use Existing Profile', 'Select from saved metadata profiles')}
-              {modeCard('create', 'Add', 'Create New Profile', 'Define a new metadata profile')}
+              {modeCard('create', 'Add', 'Create Profile', 'Create and save a reusable profile')}
+              {modeCard('custom', 'Settings', 'Custom Settings', 'Configure metadata manually for this policy only')}
             </div>
 
             {/* USE EXISTING */}
@@ -2887,6 +2888,43 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                   <Text variant="small" style={{ color: '#94a3b8', fontStyle: 'italic' }}>
                     This profile will be saved to PM_PolicyMetadataProfiles and available for future policies.
                   </Text>
+                </Stack>
+              </div>
+            )}
+
+            {/* CUSTOM SETTINGS — configure directly on this policy, no saved profile */}
+            {profileMode === 'custom' && (
+              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 4, padding: 20 }}>
+                <Text style={{ fontWeight: 700, fontSize: 14, display: 'block', marginBottom: 4, color: '#0f172a' }}>Custom Metadata Settings</Text>
+                <Text style={{ fontSize: 12, color: '#64748b', display: 'block', marginBottom: 16 }}>These settings apply to this policy only and will not be saved as a reusable profile.</Text>
+                <Stack tokens={{ childrenGap: 12 }}>
+                  <Dropdown
+                    label="Compliance Risk"
+                    selectedKey={complianceRisk || 'Medium'}
+                    options={[
+                      { key: 'Critical', text: 'Critical' }, { key: 'High', text: 'High' }, { key: 'Medium', text: 'Medium' },
+                      { key: 'Low', text: 'Low' }, { key: 'Informational', text: 'Informational' }
+                    ]}
+                    onChange={(_, opt) => opt && this.setState({ complianceRisk: opt.key as string })}
+                  />
+                  <Dropdown
+                    label="Read Timeframe"
+                    selectedKey={readTimeframe || 'Week 1'}
+                    options={timeframeOptions}
+                    onChange={(_, opt) => opt && this.setState({ readTimeframe: opt.key as string, readTimeframeDays: ({ 'Immediate': 0, 'Day 1': 1, 'Day 3': 3, 'Week 1': 7, 'Week 2': 14, 'Month 1': 30, 'Month 3': 90, 'Month 6': 180 } as Record<string, number>)[opt.key as string] || 7 })}
+                  />
+                  <Toggle
+                    label="Requires Acknowledgement"
+                    checked={requiresAcknowledgement}
+                    onText="Yes" offText="No"
+                    onChange={(_, c) => this.setState({ requiresAcknowledgement: !!c })}
+                  />
+                  <Toggle
+                    label="Requires Quiz"
+                    checked={(this.state as any).requiresQuiz === true}
+                    onText="Yes" offText="No"
+                    onChange={(_, c) => this.setState({ requiresQuiz: !!c })}
+                  />
                 </Stack>
               </div>
             )}
@@ -3274,7 +3312,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         )
       },
       {
-        key: 'compliance', icon: 'Tag', title: 'Compliance & Metadata', step: 3,
+        key: 'compliance', icon: 'Tag', title: 'Metadata Profile', step: 3,
         content: (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
             <div style={{ display: 'flex', padding: '8px 0', fontSize: 13, borderBottom: '1px solid #f1f5f9', gap: 16 }}><span style={{ width: 180, minWidth: 180, color: '#64748b', fontWeight: 500, flexShrink: 0 }}>Risk Level</span><span style={{ color: '#0f172a', flex: 1 }}>{complianceRisk}</span></div>

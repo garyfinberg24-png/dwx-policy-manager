@@ -26,7 +26,7 @@ const BATCH_SIZE = 50; // Users processed per batch
 // --- SP List Names ---
 const QUEUE_LIST = 'PM_DistributionQueue';
 const ACK_LIST = 'PM_PolicyAcknowledgements';
-const EMAIL_QUEUE_LIST = 'PM_EmailQueue';
+const EMAIL_QUEUE_LIST = 'PM_NotificationQueue';
 const POLICIES_LIST = 'PM_Policies';
 
 interface QueueItem {
@@ -203,16 +203,26 @@ async function processDistributionQueue(timer: Timer, context: InvocationContext
             // Queue email notification (if enabled)
             if (job.SendNotifications) {
               try {
+                // Resolve user email from SP user ID
+                let userEmail = '';
+                try {
+                  const userInfo = await spGet(token, `web/siteusers/getbyid(${userId})?$select=Email,Title`);
+                  userEmail = userInfo?.Email || '';
+                } catch { /* user resolution best-effort */ }
+
+                if (userEmail) {
                 await spPost(token, `web/lists/getbytitle('${EMAIL_QUEUE_LIST}')/items`, {
-                  Title: `New Policy: ${job.PolicyName}`,
-                  RecipientId: userId,
-                  EmailSubject: `New Policy Requires Your Acknowledgement: ${job.PolicyName}`,
-                  EmailBody: buildNotificationEmail(job),
-                  EmailPriority: 'Normal',
-                  Status: 'Queued',
-                  RetryCount: 0,
-                  MaxRetries: 3
+                  Title: `New Policy Requires Your Acknowledgement: ${job.PolicyName}`,
+                  RecipientEmail: userEmail,
+                  Message: buildNotificationEmail(job),
+                  NotificationType: 'policy-published',
+                  Channel: 'Email',
+                  PolicyId: job.PolicyId,
+                  PolicyTitle: job.PolicyName,
+                  Priority: 'Normal',
+                  QueueStatus: 'Pending'
                 });
+                }
               } catch (emailErr) {
                 // Non-blocking — ack record is the important part
                 context.warn(`Email queue failed for user ${userId}: ${emailErr}`);

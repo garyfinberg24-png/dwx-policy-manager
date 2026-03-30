@@ -557,12 +557,12 @@ CLASSIFICATION GUIDANCE:
           try {
             const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 45000);
             const resp = await fetch(functionUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ mode: 'author-assist', message: classificationPrompt, history: [], context: [] }),
+              body: JSON.stringify({ mode: 'author-assist', message: classificationPrompt, conversationHistory: [], policyContext: [], userRole: 'Author' }),
               signal: ctrl.signal });
             clearTimeout(t);
             if (resp.ok) {
               const d = await resp.json();
-              const raw = d?.response || d?.content || '';
+              const raw = d?.message || d?.response || d?.content || '';
               try { const m = raw.match(/\{[\s\S]*\}/); if (m) suggestions = JSON.parse(m[0]); } catch { /* JSON parse failed */ }
             }
           } catch { /* AI call failed — will fall through to heuristic */ }

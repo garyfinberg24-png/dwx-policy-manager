@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Policy Builder - Step 6: Reviewers &amp; Approvers - Mockup</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f1f5f9; padding: 40px; color: #0f172a; }
+  .container { max-width: 800px; margin: 0 auto; background: #fff; border-radius: 10px; border: 1px solid #e2e8f0; overflow: hidden; }
+
+  /* Step header */
+  .step-header { padding: 24px 32px; border-bottom: 1px solid #e2e8f0; }
+  .step-header h2 { font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
+  .step-header p { font-size: 13px; color: #64748b; }
+  .step-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 4px; background: #f0fdfa; color: #0d9488; border: 1px solid #99f6e4; margin-top: 8px; }
+
+  /* Section */
+  .section { padding: 24px 32px; }
+  .section + .section { border-top: 1px solid #f1f5f9; }
+  .section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .section-header .icon { width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+  .section-header .icon.reviewer { background: #dbeafe; color: #2563eb; }
+  .section-header .icon.approver { background: #fef3c7; color: #d97706; }
+  .section-header h3 { font-size: 15px; font-weight: 700; color: #0f172a; }
+  .section-header .count { font-size: 11px; color: #94a3b8; font-weight: 500; }
+
+  /* Form row */
+  .form-row { display: grid; grid-template-columns: 1fr 120px; gap: 12px; margin-bottom: 12px; align-items: end; }
+  .form-row.full { grid-template-columns: 1fr; }
+  .form-row.three { grid-template-columns: 1fr 1fr 100px; }
+
+  label { display: block; font-size: 12px; font-weight: 600; color: #334155; margin-bottom: 4px; }
+  label .required { color: #dc2626; }
+
+  select, input[type="number"] {
+    width: 100%; height: 34px; border: 1px solid #e2e8f0; border-radius: 4px;
+    padding: 0 10px; font-size: 13px; color: #334155; background: #fff;
+    font-family: inherit;
+  }
+  select:focus, input:focus { outline: none; border-color: #0d9488; box-shadow: 0 0 0 1px #0d9488; }
+
+  /* Reviewer/Approver slot */
+  .slot { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; margin-bottom: 8px; }
+  .slot .number { width: 24px; height: 24px; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #64748b; flex-shrink: 0; }
+  .slot .number.active { background: #0d9488; color: #fff; }
+  .slot select { flex: 1; height: 30px; font-size: 12px; }
+  .slot .remove { width: 24px; height: 24px; border: none; background: none; cursor: pointer; color: #94a3b8; font-size: 14px; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
+  .slot .remove:hover { color: #dc2626; background: #fef2f2; }
+  .slot.filled { border-color: #99f6e4; background: #f0fdfa; }
+  .slot.filled .number { background: #0d9488; color: #fff; }
+
+  /* Override section */
+  .override { margin-top: 12px; padding: 12px 14px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 4px; }
+  .override-toggle { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .override-toggle input[type="checkbox"] { accent-color: #d97706; width: 16px; height: 16px; }
+  .override-toggle label { font-size: 12px; font-weight: 600; color: #92400e; cursor: pointer; margin: 0; }
+  .override-reason { margin-top: 10px; }
+  .override-reason textarea {
+    width: 100%; height: 60px; border: 1px solid #fde68a; border-radius: 4px;
+    padding: 8px 10px; font-size: 12px; color: #334155; font-family: inherit;
+    resize: vertical; background: #fff;
+  }
+  .override-reason .note { font-size: 10px; color: #92400e; margin-top: 4px; display: flex; align-items: center; gap: 4px; }
+
+  /* Add button */
+  .add-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border: 1px dashed #0d9488; background: transparent; color: #0d9488; font-size: 12px; font-weight: 600; border-radius: 4px; cursor: pointer; font-family: inherit; margin-top: 4px; }
+  .add-btn:hover { background: #f0fdfa; }
+  .add-btn:disabled { border-color: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
+
+  /* Workflow template info */
+  .workflow-info { padding: 12px 14px; background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 4px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+  .workflow-info .badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; background: #0d9488; color: #fff; text-transform: uppercase; }
+  .workflow-info .text { font-size: 12px; color: #0f766e; }
+
+  /* Separator */
+  .separator { height: 1px; background: #e2e8f0; margin: 20px 0; }
+
+  /* Legend */
+  .legend { display: flex; gap: 16px; padding: 16px 32px; background: #f8fafc; border-top: 1px solid #e2e8f0; font-size: 11px; color: #64748b; }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .legend-dot.reviewer { background: #2563eb; }
+  .legend-dot.approver { background: #d97706; }
+  .legend-dot.override { background: #dc2626; }
+
+  /* Notes */
+  .mockup-note { position: fixed; top: 10px; right: 10px; background: #fef3c7; border: 1px solid #fde68a; border-radius: 6px; padding: 12px 16px; font-size: 11px; color: #92400e; max-width: 300px; z-index: 100; }
+  .mockup-note strong { display: block; margin-bottom: 4px; }
+
+  /* Admin section preview */
+  .admin-preview { margin-top: 40px; background: #fff; border-radius: 10px; border: 1px solid #e2e8f0; overflow: hidden; }
+  .admin-header { padding: 16px 24px; background: linear-gradient(135deg, #0d9488, #0f766e); color: #fff; }
+  .admin-header h3 { font-size: 14px; font-weight: 700; }
+  .admin-header p { font-size: 11px; opacity: 0.8; }
+  .admin-group { padding: 16px 24px; }
+  .admin-group h4 { font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .admin-group-badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 4px; }
+  .admin-member { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border: 1px solid #f1f5f9; border-radius: 4px; margin-bottom: 6px; }
+  .admin-avatar { width: 28px; height: 28px; border-radius: 50%; background: #0d9488; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+  .admin-member-info { flex: 1; }
+  .admin-member-name { font-size: 13px; font-weight: 600; color: #0f172a; }
+  .admin-member-email { font-size: 11px; color: #94a3b8; }
+  .admin-member-remove { width: 24px; height: 24px; border: none; background: none; cursor: pointer; color: #94a3b8; border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<div class="mockup-note">
+  <strong>MOCKUP — Policy Builder Step 6</strong>
+  Reviewers &amp; Approvers step layout. The dropdown options come from Admin Centre groups (Reviewers, Approvers, Override Users).
+</div>
+
+<!-- ============================================================ -->
+<!-- POLICY BUILDER — STEP 6: REVIEWERS & APPROVERS               -->
+<!-- ============================================================ -->
+
+<div class="container">
+  <div class="step-header">
+    <h2>Reviewers &amp; Approvers</h2>
+    <p>Assign reviewers and approvers for this policy. They will be notified when the policy is submitted for review.</p>
+    <div class="step-badge">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/></svg>
+      Workflow Template: Standard (2-level)
+    </div>
+  </div>
+
+  <!-- Workflow template info bar -->
+  <div class="section" style="padding-bottom: 0;">
+    <div class="workflow-info">
+      <span class="badge">STANDARD</span>
+      <span class="text">This policy uses the <strong>Standard</strong> workflow template: 2 review levels with 5-day escalation. You can customise reviewers and approvers below.</span>
+    </div>
+  </div>
+
+  <!-- ── REVIEWERS SECTION ── -->
+  <div class="section">
+    <div class="section-header">
+      <div class="icon reviewer">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/></svg>
+      </div>
+      <div>
+        <h3>Reviewers</h3>
+        <span class="count">Select up to 3 reviewers from the configured Reviewers group</span>
+      </div>
+    </div>
+
+    <!-- Reviewer Dropdown + Count -->
+    <div class="form-row three">
+      <div>
+        <label>Select Reviewer <span class="required">*</span></label>
+        <select>
+          <option value="">-- Select from Reviewers group --</option>
+          <option>Sarah Johnson (Compliance Lead)</option>
+          <option>Michael Chen (IT Security Manager)</option>
+          <option>Emma Williams (HR Director)</option>
+          <option>David Brown (Legal Counsel)</option>
+          <option>Lisa Taylor (Operations Manager)</option>
+        </select>
+      </div>
+      <div>
+        <label>Review Level</label>
+        <select>
+          <option>Level 1 - Technical</option>
+          <option>Level 2 - Final</option>
+        </select>
+      </div>
+      <div>
+        <button class="add-btn" style="height: 34px; margin-top: 0;">+ Add</button>
+      </div>
+    </div>
+
+    <!-- Assigned Reviewers -->
+    <div class="slot filled">
+      <div class="number active">1</div>
+      <span style="flex: 1; font-size: 13px; font-weight: 600;">Sarah Johnson</span>
+      <span style="font-size: 10px; color: #2563eb; font-weight: 600; padding: 2px 8px; background: #dbeafe; border-radius: 4px;">Level 1 - Technical</span>
+      <span style="font-size: 11px; color: #94a3b8;">Compliance Lead</span>
+      <button class="remove" title="Remove">&times;</button>
+    </div>
+    <div class="slot filled">
+      <div class="number active">2</div>
+      <span style="flex: 1; font-size: 13px; font-weight: 600;">Michael Chen</span>
+      <span style="font-size: 10px; color: #2563eb; font-weight: 600; padding: 2px 8px; background: #dbeafe; border-radius: 4px;">Level 1 - Technical</span>
+      <span style="font-size: 11px; color: #94a3b8;">IT Security Manager</span>
+      <button class="remove" title="Remove">&times;</button>
+    </div>
+    <div class="slot" style="border-style: dashed; background: #fff;">
+      <div class="number">3</div>
+      <span style="flex: 1; font-size: 12px; color: #94a3b8; font-style: italic;">Optional — add a 3rd reviewer</span>
+    </div>
+
+    <!-- Override option -->
+    <div class="override">
+      <div class="override-toggle">
+        <input type="checkbox" id="reviewerOverride">
+        <label for="reviewerOverride">Override — assign a reviewer not in the Reviewers group</label>
+      </div>
+      <div class="override-reason" style="display: block;">
+        <label style="color: #92400e;">Override Reason <span class="required">*</span></label>
+        <textarea placeholder="Explain why you need to assign a reviewer outside the configured group. This will be recorded in the audit trail."></textarea>
+        <div class="note">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="2"/></svg>
+          This override will be logged in PM_PolicyAuditLog with ComplianceRelevant: true
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="separator" style="margin: 0;"></div>
+
+  <!-- ── APPROVERS SECTION ── -->
+  <div class="section">
+    <div class="section-header">
+      <div class="icon approver">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/></svg>
+      </div>
+      <div>
+        <h3>Approvers</h3>
+        <span class="count">Select up to 3 approvers from the configured Approvers group</span>
+      </div>
+    </div>
+
+    <!-- Approver Dropdown + Count -->
+    <div class="form-row three">
+      <div>
+        <label>Select Approver <span class="required">*</span></label>
+        <select>
+          <option value="">-- Select from Approvers group --</option>
+          <option>James Wilson (CEO)</option>
+          <option>Rachel Adams (CFO)</option>
+          <option>Tom Harris (CIO)</option>
+          <option>Karen White (CHRO)</option>
+          <option>Robert Lee (General Counsel)</option>
+        </select>
+      </div>
+      <div>
+        <label>Approval Level</label>
+        <select>
+          <option>Level 1 - Department</option>
+          <option>Level 2 - Executive</option>
+          <option>Level 3 - Legal</option>
+        </select>
+      </div>
+      <div>
+        <button class="add-btn" style="height: 34px; margin-top: 0;">+ Add</button>
+      </div>
+    </div>
+
+    <!-- Assigned Approvers -->
+    <div class="slot filled">
+      <div class="number active" style="background: #d97706;">1</div>
+      <span style="flex: 1; font-size: 13px; font-weight: 600;">James Wilson</span>
+      <span style="font-size: 10px; color: #d97706; font-weight: 600; padding: 2px 8px; background: #fef3c7; border-radius: 4px;">Level 2 - Executive</span>
+      <span style="font-size: 11px; color: #94a3b8;">CEO</span>
+      <button class="remove" title="Remove">&times;</button>
+    </div>
+    <div class="slot" style="border-style: dashed; background: #fff;">
+      <div class="number">2</div>
+      <span style="flex: 1; font-size: 12px; color: #94a3b8; font-style: italic;">Optional — add a 2nd approver</span>
+    </div>
+    <div class="slot" style="border-style: dashed; background: #fff;">
+      <div class="number">3</div>
+      <span style="flex: 1; font-size: 12px; color: #94a3b8; font-style: italic;">Optional — add a 3rd approver</span>
+    </div>
+
+    <!-- Override option -->
+    <div class="override">
+      <div class="override-toggle">
+        <input type="checkbox" id="approverOverride">
+        <label for="approverOverride">Override — assign an approver not in the Approvers group</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot reviewer"></div> Reviewer — reviews content accuracy &amp; compliance</div>
+    <div class="legend-item"><div class="legend-dot approver"></div> Approver — gives final sign-off for publication</div>
+    <div class="legend-item"><div class="legend-dot override"></div> Override — audited exception to configured groups</div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- ADMIN CENTRE — REVIEWERS & APPROVERS GROUPS                   -->
+<!-- ============================================================ -->
+
+<div class="admin-preview">
+  <div class="admin-header">
+    <h3>Admin Centre &gt; Reviewers &amp; Approvers</h3>
+    <p>Manage the groups of users available for policy review and approval workflows</p>
+  </div>
+
+  <!-- Reviewers Group -->
+  <div class="admin-group" style="border-bottom: 1px solid #f1f5f9;">
+    <h4>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" stroke="#2563eb" stroke-width="2"/><circle cx="12" cy="12" r="3" stroke="#2563eb" stroke-width="2"/></svg>
+      Reviewers Group
+      <span class="admin-group-badge" style="background: #dbeafe; color: #2563eb;">5 members</span>
+    </h4>
+    <div class="admin-member">
+      <div class="admin-avatar">SJ</div>
+      <div class="admin-member-info">
+        <div class="admin-member-name">Sarah Johnson</div>
+        <div class="admin-member-email">sarah.johnson@company.com &middot; Compliance Lead</div>
+      </div>
+      <button class="admin-member-remove" title="Remove">&times;</button>
+    </div>
+    <div class="admin-member">
+      <div class="admin-avatar" style="background: #2563eb;">MC</div>
+      <div class="admin-member-info">
+        <div class="admin-member-name">Michael Chen</div>
+        <div class="admin-member-email">michael.chen@company.com &middot; IT Security Manager</div>
+      </div>
+      <button class="admin-member-remove" title="Remove">&times;</button>
+    </div>
+    <div class="admin-member">
+      <div class="admin-avatar" style="background: #7c3aed;">EW</div>
+      <div class="admin-member-info">
+        <div class="admin-member-name">Emma Williams</div>
+        <div class="admin-member-email">emma.williams@company.com &middot; HR Director</div>
+      </div>
+      <button class="admin-member-remove" title="Remove">&times;</button>
+    </div>
+    <div style="margin-top: 8px; padding: 8px 12px; border: 1px dashed #e2e8f0; border-radius: 4px; text-align: center; color: #94a3b8; font-size: 12px; cursor: pointer;">
+      + Add Reviewer (PeoplePicker &rarr; Entra ID)
+    </div>
+  </div>
+
+  <!-- Approvers Group -->
+  <div class="admin-group" style="border-bottom: 1px solid #f1f5f9;">
+    <h4>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="10" stroke="#d97706" stroke-width="2"/></svg>
+      Approvers Group
+      <span class="admin-group-badge" style="background: #fef3c7; color: #d97706;">3 members</span>
+    </h4>
+    <div class="admin-member">
+      <div class="admin-avatar" style="background: #d97706;">JW</div>
+      <div class="admin-member-info">
+        <div class="admin-member-name">James Wilson</div>
+        <div class="admin-member-email">james.wilson@company.com &middot; CEO</div>
+      </div>
+      <button class="admin-member-remove" title="Remove">&times;</button>
+    </div>
+    <div class="admin-member">
+      <div class="admin-avatar" style="background: #ea580c;">RA</div>
+      <div class="admin-member-info">
+        <div class="admin-member-name">Rachel Adams</div>
+        <div class="admin-member-email">rachel.adams@company.com &middot; CFO</div>
+      </div>
+      <button class="admin-member-remove" title="Remove">&times;</button>
+    </div>
+    <div style="margin-top: 8px; padding: 8px 12px; border: 1px dashed #e2e8f0; border-radius: 4px; text-align: center; color: #94a3b8; font-size: 12px; cursor: pointer;">
+      + Add Approver (PeoplePicker &rarr; Entra ID)
+    </div>
+  </div>
+
+  <!-- Override Users Group -->
+  <div class="admin-group">
+    <h4>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="#dc2626" stroke-width="2"/></svg>
+      Override Users
+      <span class="admin-group-badge" style="background: #fef2f2; color: #dc2626;">2 members</span>
+    </h4>
+    <p style="font-size: 12px; color: #64748b; margin-bottom: 12px;">Users in this group are allowed to override the standard reviewer/approver assignments. All overrides are logged to the audit trail.</p>
+    <div class="admin-member">
+      <div class="admin-avatar" style="background: #dc2626;">GF</div>
+      <div class="admin-member-info">
+        <div class="admin-member-name">Gary Finberg</div>
+        <div class="admin-member-email">gf_admin@mf7m.onmicrosoft.com &middot; System Admin</div>
+      </div>
+      <button class="admin-member-remove" title="Remove">&times;</button>
+    </div>
+    <div style="margin-top: 8px; padding: 8px 12px; border: 1px dashed #e2e8f0; border-radius: 4px; text-align: center; color: #94a3b8; font-size: 12px; cursor: pointer;">
+      + Add Override User (PeoplePicker &rarr; Entra ID)
+    </div>
+  </div>
+</div>
+
+<p style="text-align: center; margin-top: 24px; font-size: 11px; color: #94a3b8;">
+  MOCKUP &mdash; Policy Manager &mdash; Reviewers &amp; Approvers Step Layout<br>
+  Open this file in a browser to preview the design before coding.
+</p>
+
+</body>
+</html>

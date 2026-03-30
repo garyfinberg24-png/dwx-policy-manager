@@ -3286,7 +3286,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
   private renderStep6_Workflow(): JSX.Element {
     return (
       <div>
-        {this.renderReviewers()}
+        {this.renderReviewersAndApprovers()}
       </div>
     );
   }
@@ -7219,23 +7219,58 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     );
   }
 
-  private renderReviewers(): JSX.Element {
+  private renderReviewersAndApprovers(): JSX.Element {
     const { reviewers, approvers } = this.state;
     const st = this.state as any;
-    const spGroups: any[] = st._reviewerGroups || [];
     const workflowTemplates: any[] = st._workflowTemplates || [];
     const selectedWorkflowTemplateId: number | null = st._selectedWorkflowTemplateId || null;
+    const configuredReviewers: Array<{ name: string; email: string }> = st._configuredReviewers || [];
+    const configuredApprovers: Array<{ name: string; email: string }> = st._configuredApprovers || [];
+    const reviewerOverrideEnabled: boolean = st._reviewerOverrideEnabled || false;
+    const approverOverrideEnabled: boolean = st._approverOverrideEnabled || false;
+    const reviewerOverrideReason: string = st._reviewerOverrideReason || '';
+    const approverOverrideReason: string = st._approverOverrideReason || '';
+    const selectedReviewerEmail: string = st._selectedReviewerEmail || '';
+    const selectedReviewerLevel: string = st._selectedReviewerLevel || 'Level 1 - Technical';
+    const selectedApproverEmail: string = st._selectedApproverEmail || '';
+    const selectedApproverLevel: string = st._selectedApproverLevel || 'Level 1 - Department';
+    const assignedReviewers: Array<{ email: string; name: string; level: string }> = st._assignedReviewers || [];
+    const assignedApprovers: Array<{ email: string; name: string; level: string }> = st._assignedApprovers || [];
 
-    // Lazy-load SP groups for reviewers/approvers
-    if (!st._reviewerGroupsLoaded) {
-      this.setState({ _reviewerGroupsLoaded: true } as any);
-      this.props.sp.web.siteGroups
-        .filter("substringof('PM_', Title) or substringof('Reviewer', Title) or substringof('Approver', Title)")
-        .select('Id', 'Title')()
-        .then((groups: any[]) => {
-          this.setState({ _reviewerGroups: groups } as any);
-        })
-        .catch(() => { /* graceful degradation */ });
+    // Lazy-load configured groups from PM_Configuration
+    if (!st._configuredGroupsLoaded) {
+      this.setState({ _configuredGroupsLoaded: true } as any);
+      if (!this.adminConfigService) {
+        try {
+          const { AdminConfigService } = require('../../../services/AdminConfigService');
+          this.adminConfigService = new AdminConfigService(this.props.sp);
+        } catch { /* graceful */ }
+      }
+      if (this.adminConfigService) {
+        this.adminConfigService.getConfigByCategory('Admin')
+          .then((config: Record<string, string>) => {
+            let rev: Array<{ name: string; email: string }> = [];
+            let app: Array<{ name: string; email: string }> = [];
+            try { rev = JSON.parse(config['Admin.ReviewerGroup.Members'] || '[]'); } catch { rev = []; }
+            try { app = JSON.parse(config['Admin.ApproverGroup.Members'] || '[]'); } catch { app = []; }
+            // Reconstruct assigned arrays from existing reviewers/approvers state
+            const assignedRev = reviewers.map((email: string) => {
+              const found = rev.find(r => r.email.toLowerCase() === (email || '').toLowerCase());
+              return { email, name: found ? found.name : email, level: 'Level 1 - Technical' };
+            });
+            const assignedApp = approvers.map((email: string) => {
+              const found = app.find(a => a.email.toLowerCase() === (email || '').toLowerCase());
+              return { email, name: found ? found.name : email, level: 'Level 1 - Department' };
+            });
+            this.setState({
+              _configuredReviewers: rev,
+              _configuredApprovers: app,
+              _assignedReviewers: assignedRev.length > 0 ? assignedRev : [],
+              _assignedApprovers: assignedApp.length > 0 ? assignedApp : []
+            } as any);
+          })
+          .catch(() => { /* graceful degradation */ });
+      }
     }
 
     // Lazy-load workflow templates from PM_WorkflowTemplates
@@ -7253,21 +7288,98 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
           });
           this.setState({ _workflowTemplates: templates } as any);
         })
-        .catch(() => { /* PM_WorkflowTemplates may not exist — graceful degradation */ });
+        .catch(() => { /* PM_WorkflowTemplates may not exist */ });
     }
 
-    // Find selected template details
     const selectedTemplate = workflowTemplates.find((t: any) => t.Id === selectedWorkflowTemplateId);
 
-    return (
-      <div className={styles.section}>
-        <Text variant="xLarge" className={styles.sectionTitle}>
-          Reviewers and Approvers
-        </Text>
+    const reviewerLevelOptions: IDropdownOption[] = [
+      { key: 'Level 1 - Technical', text: 'Level 1 - Technical' },
+      { key: 'Level 2 - Final', text: 'Level 2 - Final' }
+    ];
 
-        {/* Workflow Template Selector */}
+    const approverLevelOptions: IDropdownOption[] = [
+      { key: 'Level 1 - Department', text: 'Level 1 - Department' },
+      { key: 'Level 2 - Executive', text: 'Level 2 - Executive' },
+      { key: 'Level 3 - Legal', text: 'Level 3 - Legal' }
+    ];
+
+    const handleAddReviewer = (): void => {
+      if (!selectedReviewerEmail || assignedReviewers.length >= 3) return;
+      if (assignedReviewers.some(r => r.email.toLowerCase() === selectedReviewerEmail.toLowerCase())) return;
+      const found = configuredReviewers.find(r => r.email === selectedReviewerEmail);
+      const updated = [...assignedReviewers, { email: selectedReviewerEmail, name: found ? found.name : selectedReviewerEmail, level: selectedReviewerLevel }];
+      this.setState({
+        _assignedReviewers: updated,
+        _selectedReviewerEmail: '',
+        reviewers: updated.map(r => r.email)
+      } as any);
+    };
+
+    const handleRemoveReviewer = (email: string): void => {
+      const updated = assignedReviewers.filter(r => r.email !== email);
+      this.setState({ _assignedReviewers: updated, reviewers: updated.map(r => r.email) } as any);
+    };
+
+    const handleAddApprover = (): void => {
+      if (!selectedApproverEmail || assignedApprovers.length >= 3) return;
+      if (assignedApprovers.some(a => a.email.toLowerCase() === selectedApproverEmail.toLowerCase())) return;
+      const found = configuredApprovers.find(a => a.email === selectedApproverEmail);
+      const updated = [...assignedApprovers, { email: selectedApproverEmail, name: found ? found.name : selectedApproverEmail, level: selectedApproverLevel }];
+      this.setState({
+        _assignedApprovers: updated,
+        _selectedApproverEmail: '',
+        approvers: updated.map(a => a.email)
+      } as any);
+    };
+
+    const handleRemoveApprover = (email: string): void => {
+      const updated = assignedApprovers.filter(a => a.email !== email);
+      this.setState({ _assignedApprovers: updated, approvers: updated.map(a => a.email) } as any);
+    };
+
+    const renderSlot = (index: number, filled: { name: string; email: string; level: string } | undefined, color: string, onRemove: (email: string) => void): JSX.Element => (
+      <div key={index} style={{
+        display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 8,
+        border: filled ? `1px solid ${color}30` : '1px dashed #cbd5e1',
+        background: filled ? '#fff' : '#f8fafc', minHeight: 48
+      }}>
+        <div style={{
+          width: 28, height: 28, borderRadius: '50%',
+          background: filled ? color : '#e2e8f0', color: filled ? '#fff' : '#94a3b8',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 12, fontWeight: 700, flexShrink: 0
+        }}>
+          {index + 1}
+        </div>
+        {filled ? (
+          <>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 600, fontSize: 13, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{filled.name}</div>
+              <div style={{ fontSize: 11, color: '#64748b' }}>{filled.email}</div>
+            </div>
+            <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 8px', borderRadius: 4, background: `${color}15`, color, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+              {filled.level}
+            </span>
+            <IconButton
+              iconProps={{ iconName: 'Cancel' }}
+              title="Remove"
+              ariaLabel={`Remove ${filled.name}`}
+              onClick={() => onRemove(filled.email)}
+              styles={{ root: { height: 24, width: 24 }, icon: { fontSize: 11, color: '#dc2626' } }}
+            />
+          </>
+        ) : (
+          <span style={{ fontSize: 12, color: '#94a3b8', fontStyle: 'italic' }}>Optional</span>
+        )}
+      </div>
+    );
+
+    return (
+      <div>
+        {/* Workflow Template Info Bar */}
         {workflowTemplates.length > 0 && (
-          <div style={{ marginBottom: 20, padding: 16, background: '#f0fdfa', borderRadius: 10, border: '1px solid #ccfbf1' }}>
+          <div style={{ marginBottom: 20, padding: 14, background: '#f0fdfa', borderRadius: 10, border: '1px solid #ccfbf1' }}>
             <Dropdown
               label="Workflow Template"
               placeholder="Select a workflow template (optional)..."
@@ -7304,75 +7416,208 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
           </div>
         )}
 
-        {spGroups.length > 0 && (
-          <MessageBar messageBarType={MessageBarType.info} style={{ marginBottom: 12 }}>
-            Select from configured groups below, or search for individual users in the people pickers.
-          </MessageBar>
-        )}
+        {/* ── Reviewers Section ── */}
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+            <div style={{ width: 32, height: 32, borderRadius: 8, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M1 12s4-8 11-8 11 4 8 11 8 11-4 8-11-8-11" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 700, fontSize: 15, color: '#0f172a' }}>Reviewers</div>
+              <div style={{ fontSize: 12, color: '#64748b' }}>Select up to 3 reviewers from the configured group</div>
+            </div>
+          </div>
 
-        <Stack tokens={{ childrenGap: 16 }}>
-          {spGroups.length > 0 && (
-            <Dropdown
-              label="Add from configured group"
-              placeholder="Select a SharePoint group to add its members..."
-              options={spGroups.map((g: any) => ({ key: g.Title, text: g.Title }))}
-              onChange={async (_, opt) => {
-                if (!opt) return;
-                try {
-                  const members = await this.props.sp.web.siteGroups.getByName(opt.key as string).users();
-                  const emails = members.map((m: any) => m.Email).filter(Boolean);
-                  this.setState({
-                    reviewers: [...new Set([...reviewers, ...emails])],
-                  });
-                  void (this as any).dialogManager?.showAlert?.(`Added ${emails.length} members from ${opt.text}`, { title: 'Group Added', variant: 'success' });
-                } catch { /* ignore */ }
-              }}
-            />
-          )}
-          <div>
-            <Label>Technical Reviewers</Label>
-            <PeoplePicker
-              context={this.props.context as any}
-              personSelectionLimit={PEOPLE_PICKER.MAX_REVIEWERS}
-              groupName=""
-              showtooltip={true}
-              showHiddenInUI={false}
-              ensureUser={true}
-              defaultSelectedUsers={reviewers}
-              onChange={(items: any[]) => {
-                const users = items.map(item => item.secondaryText || item.loginName || item.text || '').filter(Boolean);
-                console.log('[PolicyBuilder] Reviewers selected:', users);
-                this.setState({ reviewers: users });
-              }}
-              principalTypes={[PrincipalType.User]}
-              resolveDelay={300}
-              placeholder="Search for reviewers..."
-              webAbsoluteUrl={this.props.context.pageContext.web.absoluteUrl}
+          {/* Reviewer dropdown + level + add */}
+          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', marginBottom: 12, flexWrap: 'wrap' }}>
+            <div style={{ flex: 2, minWidth: 180 }}>
+              <Dropdown
+                label="Reviewer"
+                placeholder={configuredReviewers.length === 0 ? 'No reviewers configured in Admin' : 'Select a reviewer...'}
+                selectedKey={selectedReviewerEmail || undefined}
+                disabled={configuredReviewers.length === 0 || assignedReviewers.length >= 3}
+                options={configuredReviewers.filter(r => !assignedReviewers.some(a => a.email === r.email)).map(r => ({ key: r.email, text: r.name }))}
+                onChange={(_, opt) => this.setState({ _selectedReviewerEmail: opt?.key as string || '' } as any)}
+              />
+            </div>
+            <div style={{ flex: 1, minWidth: 150 }}>
+              <Dropdown
+                label="Review Level"
+                selectedKey={selectedReviewerLevel}
+                options={reviewerLevelOptions}
+                onChange={(_, opt) => this.setState({ _selectedReviewerLevel: opt?.key as string || 'Level 1 - Technical' } as any)}
+              />
+            </div>
+            <PrimaryButton
+              text="+ Add"
+              disabled={!selectedReviewerEmail || assignedReviewers.length >= 3}
+              onClick={handleAddReviewer}
+              styles={{ root: { background: '#2563eb', borderColor: '#2563eb', borderRadius: 6, minWidth: 70 }, rootHovered: { background: '#1d4ed8', borderColor: '#1d4ed8' } }}
             />
           </div>
 
-          <div>
-            <Label>Final Approvers</Label>
-            <PeoplePicker
-              context={this.props.context as any}
-              personSelectionLimit={PEOPLE_PICKER.MAX_APPROVERS}
-              groupName=""
-              showtooltip={true}
-              showHiddenInUI={false}
-              ensureUser={true}
-              defaultSelectedUsers={approvers}
-              onChange={(items: any[]) => {
-                const users = items.map(item => item.secondaryText || item.loginName || item.text || '').filter(Boolean);
-                console.log('[PolicyBuilder] Approvers selected:', users);
-                this.setState({ approvers: users });
-              }}
-              principalTypes={[PrincipalType.User]}
-              resolveDelay={300}
-              placeholder="Search for approvers..."
-              webAbsoluteUrl={this.props.context.pageContext.web.absoluteUrl}
+          {/* Assigned reviewer slots */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
+            {[0, 1, 2].map(idx => renderSlot(idx, assignedReviewers[idx], '#2563eb', handleRemoveReviewer))}
+          </div>
+
+          {/* Reviewer Override */}
+          <div style={{ border: '1px solid #e2e8f0', borderRadius: 8, padding: 14, background: '#fafafa' }}>
+            <Checkbox
+              label="Override — assign a reviewer not in the Reviewers group"
+              checked={reviewerOverrideEnabled}
+              onChange={(_, checked) => this.setState({ _reviewerOverrideEnabled: !!checked } as any)}
+              styles={{ label: { fontSize: 13, fontWeight: 500, color: '#475569' } }}
+            />
+            {reviewerOverrideEnabled && (
+              <div style={{ marginTop: 12, paddingLeft: 26 }}>
+                <div style={{ marginBottom: 8 }}>
+                  <Label style={{ fontSize: 12 }}>Search for any user</Label>
+                  <PeoplePicker
+                    context={this.props.context as any}
+                    titleText=""
+                    personSelectionLimit={1}
+                    showtooltip={false}
+                    ensureUser={true}
+                    webAbsoluteUrl={this.props.context.pageContext.web.absoluteUrl}
+                    principalTypes={[PrincipalType.User]}
+                    resolveDelay={300}
+                    placeholder="Search Entra ID for any user..."
+                    onChange={(items: any[]) => {
+                      if (items && items.length > 0) {
+                        const person = items[0];
+                        const email = person.secondaryText || person.loginName || '';
+                        const name = person.text || email;
+                        if (email && assignedReviewers.length < 3 && !assignedReviewers.some(r => r.email.toLowerCase() === email.toLowerCase())) {
+                          const updated = [...assignedReviewers, { email, name, level: selectedReviewerLevel }];
+                          this.setState({ _assignedReviewers: updated, reviewers: updated.map(r => r.email) } as any);
+                        }
+                      }
+                    }}
+                  />
+                </div>
+                <TextField
+                  label="Override Reason *"
+                  required
+                  multiline
+                  rows={2}
+                  placeholder="Explain why a non-standard reviewer is being assigned..."
+                  value={reviewerOverrideReason}
+                  onChange={(_, v) => this.setState({ _reviewerOverrideReason: v || '' } as any)}
+                />
+                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 6, fontStyle: 'italic' }}>
+                  This override will be logged in PM_PolicyAuditLog
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Separator */}
+        <div style={{ height: 1, background: '#e2e8f0', margin: '4px 0 24px 0' }} />
+
+        {/* ── Approvers Section ── */}
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+            <div style={{ width: 32, height: 32, borderRadius: 8, background: '#fffbeb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 12l2 2 4-4" />
+                <circle cx="12" cy="12" r="10" />
+              </svg>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 700, fontSize: 15, color: '#0f172a' }}>Approvers</div>
+              <div style={{ fontSize: 12, color: '#64748b' }}>Select up to 3 approvers from the configured group</div>
+            </div>
+          </div>
+
+          {/* Approver dropdown + level + add */}
+          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', marginBottom: 12, flexWrap: 'wrap' }}>
+            <div style={{ flex: 2, minWidth: 180 }}>
+              <Dropdown
+                label="Approver"
+                placeholder={configuredApprovers.length === 0 ? 'No approvers configured in Admin' : 'Select an approver...'}
+                selectedKey={selectedApproverEmail || undefined}
+                disabled={configuredApprovers.length === 0 || assignedApprovers.length >= 3}
+                options={configuredApprovers.filter(a => !assignedApprovers.some(x => x.email === a.email)).map(a => ({ key: a.email, text: a.name }))}
+                onChange={(_, opt) => this.setState({ _selectedApproverEmail: opt?.key as string || '' } as any)}
+              />
+            </div>
+            <div style={{ flex: 1, minWidth: 150 }}>
+              <Dropdown
+                label="Approval Level"
+                selectedKey={selectedApproverLevel}
+                options={approverLevelOptions}
+                onChange={(_, opt) => this.setState({ _selectedApproverLevel: opt?.key as string || 'Level 1 - Department' } as any)}
+              />
+            </div>
+            <PrimaryButton
+              text="+ Add"
+              disabled={!selectedApproverEmail || assignedApprovers.length >= 3}
+              onClick={handleAddApprover}
+              styles={{ root: { background: '#d97706', borderColor: '#d97706', borderRadius: 6, minWidth: 70 }, rootHovered: { background: '#b45309', borderColor: '#b45309' } }}
             />
           </div>
-        </Stack>
+
+          {/* Assigned approver slots */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
+            {[0, 1, 2].map(idx => renderSlot(idx, assignedApprovers[idx], '#d97706', handleRemoveApprover))}
+          </div>
+
+          {/* Approver Override */}
+          <div style={{ border: '1px solid #e2e8f0', borderRadius: 8, padding: 14, background: '#fafafa' }}>
+            <Checkbox
+              label="Override — assign an approver not in the Approvers group"
+              checked={approverOverrideEnabled}
+              onChange={(_, checked) => this.setState({ _approverOverrideEnabled: !!checked } as any)}
+              styles={{ label: { fontSize: 13, fontWeight: 500, color: '#475569' } }}
+            />
+            {approverOverrideEnabled && (
+              <div style={{ marginTop: 12, paddingLeft: 26 }}>
+                <div style={{ marginBottom: 8 }}>
+                  <Label style={{ fontSize: 12 }}>Search for any user</Label>
+                  <PeoplePicker
+                    context={this.props.context as any}
+                    titleText=""
+                    personSelectionLimit={1}
+                    showtooltip={false}
+                    ensureUser={true}
+                    webAbsoluteUrl={this.props.context.pageContext.web.absoluteUrl}
+                    principalTypes={[PrincipalType.User]}
+                    resolveDelay={300}
+                    placeholder="Search Entra ID for any user..."
+                    onChange={(items: any[]) => {
+                      if (items && items.length > 0) {
+                        const person = items[0];
+                        const email = person.secondaryText || person.loginName || '';
+                        const name = person.text || email;
+                        if (email && assignedApprovers.length < 3 && !assignedApprovers.some(a => a.email.toLowerCase() === email.toLowerCase())) {
+                          const updated = [...assignedApprovers, { email, name, level: selectedApproverLevel }];
+                          this.setState({ _assignedApprovers: updated, approvers: updated.map(a => a.email) } as any);
+                        }
+                      }
+                    }}
+                  />
+                </div>
+                <TextField
+                  label="Override Reason *"
+                  required
+                  multiline
+                  rows={2}
+                  placeholder="Explain why a non-standard approver is being assigned..."
+                  value={approverOverrideReason}
+                  onChange={(_, v) => this.setState({ _approverOverrideReason: v || '' } as any)}
+                />
+                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 6, fontStyle: 'italic' }}>
+                  This override will be logged in PM_PolicyAuditLog
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     );
   }

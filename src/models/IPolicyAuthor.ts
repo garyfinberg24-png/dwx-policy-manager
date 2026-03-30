@@ -118,7 +118,7 @@ export const WIZARD_STEPS: IWizardStepConfig[] = [
   { key: 'compliance', title: 'Metadata Profile', description: 'Apply a metadata profile or configure custom settings', icon: 'Tag' },
   { key: 'audience', title: 'Audience', description: 'Select a target audience for this policy', icon: 'People' },
   { key: 'dates', title: 'Effective Dates', description: 'When the policy is active', icon: 'Calendar' },
-  { key: 'workflow', title: 'Review Workflow', description: 'Reviewers and approvers', icon: 'Flow' },
+  { key: 'workflow', title: 'Reviewers & Approvers', description: 'Assign reviewers and approvers for this policy', icon: 'Flow' },
   { key: 'content', title: 'Policy Content', description: 'Write or edit policy content', icon: 'Edit' },
   { key: 'review', title: 'Review & Submit', description: 'Final review before submission', icon: 'CheckMark' }
 ];

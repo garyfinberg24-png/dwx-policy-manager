@@ -176,6 +176,12 @@ const NAV_SECTIONS: INavSection[] = [
     ]
   },
   {
+    category: 'REVIEWERS & APPROVERS',
+    items: [
+      { key: 'reviewersApprovers', label: 'Reviewers & Approvers', icon: 'PeopleTeam', description: 'Manage reviewer, approver, and override user groups' }
+    ]
+  },
+  {
     category: 'USERS & ACCESS',
     items: [
       { key: 'usersRoles', label: 'Users & Roles', icon: 'PlayerSettings', description: 'User management and Entra ID sync' },
@@ -2819,6 +2825,239 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                 onClick={() => { this.setState({ activeSection: 'emailTemplates' }); window.scrollTo(0, 0); }} styles={{ root: { borderRadius: 4 } }} />
             </Stack>
           </div>
+        </Stack>
+      </div>
+    );
+  }
+
+  private renderReviewersApproversContent(): JSX.Element {
+    const st = this.state as any;
+    const reviewerMembers: Array<{ name: string; email: string }> = st._raReviewerMembers || [];
+    const approverMembers: Array<{ name: string; email: string }> = st._raApproverMembers || [];
+    const overrideMembers: Array<{ name: string; email: string }> = st._raOverrideMembers || [];
+    const raLoaded: boolean = st._raLoaded || false;
+    const raLoading: boolean = st._raLoading || false;
+    const raMsg: string = st._raMsg || '';
+    const raError: string = st._raError || '';
+
+    // Lazy-load on first render
+    if (!raLoaded && !raLoading) {
+      this.setState({ _raLoaded: true, _raLoading: true } as any);
+      this.adminConfigService.getConfigByCategory('Admin')
+        .then((config: Record<string, string>) => {
+          let rev: Array<{ name: string; email: string }> = [];
+          let app: Array<{ name: string; email: string }> = [];
+          let ovr: Array<{ name: string; email: string }> = [];
+          try { rev = JSON.parse(config['Admin.ReviewerGroup.Members'] || '[]'); } catch { rev = []; }
+          try { app = JSON.parse(config['Admin.ApproverGroup.Members'] || '[]'); } catch { app = []; }
+          try { ovr = JSON.parse(config['Admin.OverrideUsers.Members'] || '[]'); } catch { ovr = []; }
+          this.setState({ _raReviewerMembers: rev, _raApproverMembers: app, _raOverrideMembers: ovr, _raLoading: false } as any);
+        })
+        .catch(() => { this.setState({ _raLoading: false, _raError: 'Failed to load group members' } as any); });
+    }
+
+    const saveGroup = async (configKey: string, members: Array<{ name: string; email: string }>, stateKey: string): Promise<void> => {
+      try {
+        this.setState({ saving: true });
+        await this.adminConfigService.saveConfigByCategory('Admin', { [configKey]: JSON.stringify(members) });
+        this.setState({ [stateKey]: members, saving: false, _raMsg: 'Saved successfully' } as any);
+        setTimeout(() => { if ((this as any)._isMounted !== false) this.setState({ _raMsg: '' } as any); }, 3000);
+      } catch (err: any) {
+        this.setState({ saving: false, _raError: err.message || 'Failed to save' } as any);
+      }
+    };
+
+    const handleAddMember = (groupKey: 'reviewer' | 'approver' | 'override', items: any[]): void => {
+      if (!items || items.length === 0) return;
+      const person = items[0];
+      const name = person.text || '';
+      const email = person.secondaryText || person.loginName || '';
+      if (!email) return;
+
+      let currentMembers: Array<{ name: string; email: string }>;
+      let configKey: string;
+      let stateKey: string;
+      if (groupKey === 'reviewer') {
+        currentMembers = [...reviewerMembers];
+        configKey = 'Admin.ReviewerGroup.Members';
+        stateKey = '_raReviewerMembers';
+      } else if (groupKey === 'approver') {
+        currentMembers = [...approverMembers];
+        configKey = 'Admin.ApproverGroup.Members';
+        stateKey = '_raApproverMembers';
+      } else {
+        currentMembers = [...overrideMembers];
+        configKey = 'Admin.OverrideUsers.Members';
+        stateKey = '_raOverrideMembers';
+      }
+
+      if (currentMembers.some(m => m.email.toLowerCase() === email.toLowerCase())) return;
+      const updated = [...currentMembers, { name, email }];
+      this.setState({ [stateKey]: updated } as any);
+      saveGroup(configKey, updated, stateKey);
+    };
+
+    const handleRemoveMember = (groupKey: 'reviewer' | 'approver' | 'override', email: string): void => {
+      let currentMembers: Array<{ name: string; email: string }>;
+      let configKey: string;
+      let stateKey: string;
+      if (groupKey === 'reviewer') {
+        currentMembers = [...reviewerMembers];
+        configKey = 'Admin.ReviewerGroup.Members';
+        stateKey = '_raReviewerMembers';
+      } else if (groupKey === 'approver') {
+        currentMembers = [...approverMembers];
+        configKey = 'Admin.ApproverGroup.Members';
+        stateKey = '_raApproverMembers';
+      } else {
+        currentMembers = [...overrideMembers];
+        configKey = 'Admin.OverrideUsers.Members';
+        stateKey = '_raOverrideMembers';
+      }
+      const updated = currentMembers.filter(m => m.email.toLowerCase() !== email.toLowerCase());
+      this.setState({ [stateKey]: updated } as any);
+      saveGroup(configKey, updated, stateKey);
+    };
+
+    const getInitials = (name: string): string => {
+      const parts = name.trim().split(/\s+/);
+      if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+      return (name[0] || '?').toUpperCase();
+    };
+
+    const renderGroupCard = (
+      title: string,
+      description: string,
+      iconPath: string,
+      color: string,
+      lightBg: string,
+      members: Array<{ name: string; email: string }>,
+      groupKey: 'reviewer' | 'approver' | 'override'
+    ): JSX.Element => (
+      <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
+        {/* Card header */}
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 8, background: lightBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d={iconPath} />
+            </svg>
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 700, fontSize: 15, color: '#0f172a' }}>{title}</div>
+            {description && <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>{description}</div>}
+          </div>
+          <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 12, background: lightBg, color }}>
+            {members.length} {members.length === 1 ? 'member' : 'members'}
+          </span>
+        </div>
+
+        {/* Members list */}
+        <div style={{ padding: '12px 20px' }}>
+          {members.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '20px 0', color: '#94a3b8', fontSize: 13 }}>
+              No members added yet. Use the search below to add users.
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
+              {members.map((member, idx) => (
+                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 6, background: '#f8fafc' }}>
+                  <div style={{
+                    width: 32, height: 32, borderRadius: '50%', background: color, color: '#fff',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 12, fontWeight: 700, flexShrink: 0
+                  }}>
+                    {getInitials(member.name)}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, fontSize: 13, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{member.name}</div>
+                    <div style={{ fontSize: 11, color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{member.email}</div>
+                  </div>
+                  <IconButton
+                    iconProps={{ iconName: 'Cancel' }}
+                    title="Remove member"
+                    ariaLabel={`Remove ${member.name}`}
+                    onClick={() => handleRemoveMember(groupKey, member.email)}
+                    styles={{ root: { height: 28, width: 28 }, icon: { fontSize: 12, color: '#dc2626' } }}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Add member PeoplePicker */}
+          <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 12 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>
+              Add {title.replace(' Group', '').replace(' Users', '')}
+            </div>
+            <PeoplePicker
+              context={this.props.context as any}
+              titleText=""
+              personSelectionLimit={1}
+              showtooltip={false}
+              ensureUser={true}
+              webAbsoluteUrl={this.props.context?.pageContext?.web?.absoluteUrl}
+              principalTypes={[PrincipalType.User]}
+              resolveDelay={300}
+              placeholder={`Search for a user to add as ${groupKey}...`}
+              onChange={(items: any[]) => handleAddMember(groupKey, items)}
+            />
+          </div>
+        </div>
+      </div>
+    );
+
+    return (
+      <div className={styles.sectionContent}>
+        <Stack tokens={{ childrenGap: 16 }}>
+          <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
+            <div>
+              <Text variant="xLarge" style={{ ...TextStyles.bold, color: Colors.textDark, display: 'block' }}>Reviewers & Approvers</Text>
+              <Text variant="small" style={TextStyles.secondary}>Manage the reviewer, approver, and override user groups for policy workflows.</Text>
+            </div>
+          </Stack>
+
+          {raMsg && (
+            <MessageBar messageBarType={MessageBarType.success} onDismiss={() => this.setState({ _raMsg: '' } as any)}>{raMsg}</MessageBar>
+          )}
+          {raError && (
+            <MessageBar messageBarType={MessageBarType.error} onDismiss={() => this.setState({ _raError: '' } as any)}>{raError}</MessageBar>
+          )}
+
+          {raLoading ? (
+            <Spinner label="Loading group members..." />
+          ) : (
+            <Stack tokens={{ childrenGap: 16 }}>
+              {renderGroupCard(
+                'Reviewers Group',
+                '',
+                'M1 12s4-8 11-8 11 4 8 11 8 11-4 8-11-8-11M12 5a3 3 0 1 0 0 6 3 3 0 0 0 0-6',
+                '#2563eb',
+                '#eff6ff',
+                reviewerMembers,
+                'reviewer'
+              )}
+
+              {renderGroupCard(
+                'Approvers Group',
+                '',
+                'M9 12l2 2 4-4M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20',
+                '#d97706',
+                '#fffbeb',
+                approverMembers,
+                'approver'
+              )}
+
+              {renderGroupCard(
+                'Override Users',
+                'Users in this group can override standard reviewer/approver assignments. All overrides are logged.',
+                'M12 9v2m0 4h.01M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20',
+                '#dc2626',
+                '#fef2f2',
+                overrideMembers,
+                'override'
+              )}
+            </Stack>
+          )}
         </Stack>
       </div>
     );
@@ -10727,6 +10966,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       case 'emailTemplates': return this.renderEmailTemplatesContent();
       case 'notifications': return this.renderNotificationsContent();
       case 'groupsPermissions': return this.renderGroupsPermissionsContent();
+      case 'reviewersApprovers': return this.renderReviewersApproversContent();
       case 'usersRoles': return this.renderUsersRolesContent();
       case 'audiences': return this.renderAudiencesContent();
       case 'audit': return this.renderAuditContent();

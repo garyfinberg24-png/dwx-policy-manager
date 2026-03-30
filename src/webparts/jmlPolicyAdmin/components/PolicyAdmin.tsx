@@ -6407,6 +6407,22 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           _locations: locs,
           _audiencesLoading: false,
         } as any);
+
+        // Auto-evaluate live member counts for each audience (background, non-blocking)
+        for (const aud of auds) {
+          if (aud.Criteria && aud.Criteria.filters && aud.Criteria.filters.length > 0) {
+            this.audienceService.evaluateAndSave(aud.Id, aud.Criteria).then((result: any) => {
+              if (this._isMounted && result.count !== aud.MemberCount) {
+                // Update the audience in state with the live count
+                this.setState((prevState: any) => ({
+                  _audiences: (prevState._audiences || []).map((a: any) =>
+                    a.Id === aud.Id ? { ...a, MemberCount: result.count } : a
+                  )
+                }));
+              }
+            }).catch(() => { /* evaluation best-effort */ });
+          }
+        }
       });
     }
 

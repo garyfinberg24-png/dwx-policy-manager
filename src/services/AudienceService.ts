@@ -46,7 +46,7 @@ export class AudienceService {
         Id: item.Id,
         Title: item.Title,
         Description: item.Description || '',
-        Criteria: this.parseCriteria(item.Rules || item.Criteria),
+        Criteria: this.parseCriteria(item.Rules || item.Criteria, item.Combinator),
         MemberCount: item.MemberCount || 0,
         IsActive: item.IsActive !== false,
         LastEvaluated: item.LastEvaluated || undefined,
@@ -70,7 +70,7 @@ export class AudienceService {
         Id: item.Id,
         Title: item.Title,
         Description: item.Description || '',
-        Criteria: this.parseCriteria(item.Rules || item.Criteria),
+        Criteria: this.parseCriteria(item.Rules || item.Criteria, item.Combinator),
         MemberCount: item.MemberCount || 0,
         IsActive: item.IsActive !== false,
         LastEvaluated: item.LastEvaluated || undefined,
@@ -145,9 +145,9 @@ export class AudienceService {
       // Get count
       let countQuery = this.sp.web.lists.getByTitle(this.EMPLOYEES_LIST).items
         .select('Id')
-        .filter("Status eq 'Active'");
+        .filter("IsActive eq 1");
       if (filterStr) {
-        countQuery = countQuery.filter(`${filterStr} and Status eq 'Active'`);
+        countQuery = countQuery.filter(`${filterStr} and IsActive eq 1`);
       }
       const allIds = await countQuery.top(5000)();
       const count = allIds.length;
@@ -157,9 +157,9 @@ export class AudienceService {
         .select('Title', 'Email', 'Department', 'JobTitle')
         .orderBy('Title', true);
       if (filterStr) {
-        previewQuery = previewQuery.filter(`${filterStr} and Status eq 'Active'`);
+        previewQuery = previewQuery.filter(`${filterStr} and IsActive eq 1`);
       } else {
-        previewQuery = previewQuery.filter("Status eq 'Active'");
+        previewQuery = previewQuery.filter("IsActive eq 1");
       }
       const preview = await previewQuery.top(10)();
 
@@ -231,6 +231,8 @@ export class AudienceService {
     switch (filter.operator) {
       case 'equals': {
         const val = this.sanitizeValue(String(filter.value));
+        // Boolean fields need unquoted values
+        if (val === 'true' || val === 'false') return `${field} eq ${val === 'true' ? 1 : 0}`;
         return `${field} eq '${val}'`;
       }
       case 'contains': {
@@ -278,15 +280,24 @@ export class AudienceService {
   /**
    * Safely parse criteria JSON from SP Note field
    */
-  private parseCriteria(json: string | null | undefined): IAudienceCriteria {
+  private parseCriteria(json: string | null | undefined, combinator?: string): IAudienceCriteria {
     if (!json) {
       return { filters: [], operator: 'AND' };
     }
     try {
       const parsed = JSON.parse(json);
+      // Handle both formats:
+      // Format A (legacy): { filters: [...], operator: 'AND' }
+      // Format B (current): [{"field":"...", "operator":"...", "value":"..."}]
+      if (Array.isArray(parsed)) {
+        return {
+          filters: parsed,
+          operator: combinator === 'OR' ? 'OR' : 'AND',
+        };
+      }
       return {
         filters: Array.isArray(parsed.filters) ? parsed.filters : [],
-        operator: parsed.operator === 'OR' ? 'OR' : 'AND',
+        operator: parsed.operator === 'OR' ? 'OR' : combinator === 'OR' ? 'OR' : 'AND',
       };
     } catch {
       logger.error('AudienceService', 'Failed to parse criteria JSON');

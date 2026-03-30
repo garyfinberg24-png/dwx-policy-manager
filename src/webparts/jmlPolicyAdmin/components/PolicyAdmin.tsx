@@ -1967,37 +1967,56 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
 
                 if (scope === 'Role-Based') {
                   // Load audiences from PM_Audiences (same data shown in Admin > Audience Targeting)
-                  const audiences: any[] = (this.state as any)._audiences || [];
+                  const audiences: any[] = (this.state as any)._templateAudiences || [];
                   if (audiences.length === 0 && !(this.state as any)._templateAudiencesLoaded) {
                     this.setState({ _templateAudiencesLoaded: true } as any);
                     this.props.sp.web.lists.getByTitle('PM_Audiences')
-                      .items.select('Id', 'Title', 'AudienceName', 'IsActive').filter("IsActive eq 1").top(50)()
-                      .then((items: any[]) => { this.setState({ _audiences: items } as any); })
-                      .catch(() => { /* PM_Audiences may not exist */ });
+                      .items.select('Id', 'Title', 'AudienceName', 'Description', 'IsActive').top(50)()
+                      .then((items: any[]) => {
+                        const active = items.filter((a: any) => a.IsActive !== false && a.IsActive !== 'false');
+                        this.setState({ _templateAudiences: active } as any);
+                      })
+                      .catch(() => {
+                        // PM_Audiences may not exist — show fallback options
+                        this.setState({ _templateAudiences: [
+                          { Title: 'All Authors', AudienceName: 'All Authors' },
+                          { Title: 'All Managers', AudienceName: 'All Managers' },
+                          { Title: 'All Employees', AudienceName: 'All Employees' },
+                          { Title: 'Compliance Team', AudienceName: 'Compliance Team' },
+                          { Title: 'Executive Team', AudienceName: 'Executive Team' }
+                        ] } as any);
+                      });
                   }
                   return (
                     <Dropdown
                       label="Target Audience (from Audience Definitions)"
                       multiSelect
                       selectedKeys={editingProfile.TargetDepartments ? editingProfile.TargetDepartments.split(',').map((d: string) => d.trim()).filter(Boolean) : []}
-                      options={audiences.map((a: any) => ({ key: a.AudienceName || a.Title, text: a.AudienceName || a.Title }))}
+                      options={audiences.length > 0
+                        ? audiences.map((a: any) => ({ key: a.AudienceName || a.Title, text: `${a.AudienceName || a.Title}${a.Description ? ` — ${a.Description}` : ''}` }))
+                        : [{ key: '_loading', text: 'Loading audiences...', disabled: true }]
+                      }
                       onChange={(_, option) => {
-                        if (option) {
+                        if (option && option.key !== '_loading') {
                           const current = editingProfile.TargetDepartments ? editingProfile.TargetDepartments.split(',').map((d: string) => d.trim()).filter(Boolean) : [];
                           const updated = option.selected ? [...current, option.key as string] : current.filter((d: string) => d !== option.key);
                           this.setState({ _editingProfile: { ...editingProfile, TargetDepartments: updated.join(', ') } } as any);
                         }
                       }}
-                      placeholder={audiences.length > 0 ? 'Select target audiences...' : 'Loading audiences...'}
+                      placeholder="Select target audiences..."
                     />
                   );
                 }
 
                 if (scope === 'Security Group') {
+                  // Store selected groups in a separate state field to avoid PeoplePicker re-mount
+                  const selectedGroups: string[] = (this.state as any)._selectedSecurityGroups ||
+                    (editingProfile.TargetDepartments ? editingProfile.TargetDepartments.split(',').map((d: string) => d.trim()).filter(Boolean) : []);
                   return (
                     <div>
                       <Label>Target Security Groups (from Entra ID)</Label>
                       <PeoplePicker
+                        key="security-group-picker"
                         context={this.props.context as any}
                         personSelectionLimit={10}
                         principalTypes={[PrincipalType.SecurityGroup, PrincipalType.SharePointGroup, PrincipalType.DistributionList]}
@@ -2005,12 +2024,22 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                         ensureUser={true}
                         webAbsoluteUrl={this.props.context?.pageContext?.web?.absoluteUrl}
                         placeholder="Search Entra ID security groups..."
-                        defaultSelectedUsers={editingProfile.TargetDepartments ? editingProfile.TargetDepartments.split(',').map((d: string) => d.trim()).filter(Boolean) : []}
+                        defaultSelectedUsers={selectedGroups}
                         onChange={(items: any[]) => {
                           const groups = items.map(item => item.text || item.loginName || '').filter(Boolean);
-                          this.setState({ _editingProfile: { ...editingProfile, TargetDepartments: groups.join(', ') } } as any);
+                          // Store in separate state key to avoid re-rendering the PeoplePicker
+                          (this.state as any)._selectedSecurityGroups = groups;
+                          // Also update editingProfile for save — use direct mutation to avoid re-render
+                          (editingProfile as any).TargetDepartments = groups.join(', ');
                         }}
                       />
+                      {selectedGroups.length > 0 && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 8 }}>
+                          {selectedGroups.map(g => (
+                            <span key={g} style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 4, background: '#f0fdfa', color: '#0d9488', border: '1px solid #99f6e4' }}>{g}</span>
+                          ))}
+                        </div>
+                      )}
                       <Text variant="small" style={{ color: '#94a3b8', marginTop: 4, display: 'block' }}>Search and select security groups directly from Entra ID</Text>
                     </div>
                   );

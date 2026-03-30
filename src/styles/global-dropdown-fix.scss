@@ -22,7 +22,7 @@
 :global {
   .ms-Dropdown-title {
     border: 1px solid #d1d5db !important;
-    border-radius: 6px !important;
+    border-radius: 4px !important;
     padding: 7px 12px !important;
     font-size: 13px !important;
     color: #0f172a !important;
@@ -64,16 +64,24 @@
     padding-bottom: 4px !important;
   }
 
-  /* Dropdown callout (the popup panel) */
-  .ms-Dropdown-callout,
-  .ms-Callout-main,
-  [role="listbox"] {
+  /* Dropdown callout (the popup panel) — style ONLY the outer container */
+  .ms-Dropdown-callout {
     background-color: #ffffff !important;
     border: 1px solid #d1d5db !important;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04) !important;
-    border-radius: 6px !important;
+    border-radius: 4px !important;
     margin-top: 2px !important;
     overflow: hidden !important;
+  }
+
+  /* Inner wrappers — remove duplicate borders/shadows to prevent triple-panel */
+  .ms-Dropdown-callout .ms-Callout-main,
+  .ms-Dropdown-callout [role="listbox"] {
+    background-color: #ffffff !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
   }
 
   /* Dropdown options */
@@ -636,7 +644,7 @@
   /* TextField input border */
   .ms-TextField-fieldGroup {
     border: 1px solid #d1d5db !important;
-    border-radius: 6px !important;
+    border-radius: 4px !important;
     min-height: 36px !important;
     transition: border-color 0.15s !important;
   }
@@ -674,7 +682,7 @@
   /* SearchBox styling */
   .ms-SearchBox {
     border: 1px solid #d1d5db !important;
-    border-radius: 6px !important;
+    border-radius: 4px !important;
     height: 36px !important;
     transition: border-color 0.15s !important;
   }
@@ -713,7 +721,7 @@
   /* DatePicker styling */
   .ms-DatePicker .ms-TextField-fieldGroup {
     border: 1px solid #d1d5db !important;
-    border-radius: 6px !important;
+    border-radius: 4px !important;
   }
 
   /* Toggle styling */
@@ -729,7 +737,7 @@
   /* PeoplePicker styling */
   .ms-BasePicker-text {
     border: 1px solid #d1d5db !important;
-    border-radius: 6px !important;
+    border-radius: 4px !important;
     min-height: 36px !important;
   }
 

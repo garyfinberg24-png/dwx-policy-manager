@@ -22,7 +22,7 @@ const portalStyles: Record<string, Record<string, string>> = {
     backgroundColor: '#ffffff',
     border: '1px solid #d1d5db',
     boxShadow: '0 4px 16px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04)',
-    borderRadius: '6px',
+    borderRadius: '4px',
     padding: '4px 0',
     overflow: 'hidden',
     fontFamily: FLUENT_FONT_FAMILY
@@ -112,6 +112,15 @@ function applyStyles(element: HTMLElement, styles: Record<string, string>): void
  */
 function stylePortalElement(element: HTMLElement): void {
   const role = element.getAttribute('role');
+
+  // Skip listbox/option inside Fluent UI v8 callouts — already styled by global-dropdown-fix.scss
+  if (role === 'listbox' || role === 'option') {
+    const inCallout = element.closest('.ms-Callout') || element.closest('.ms-Dropdown-callout');
+    if (inCallout) {
+      element.setAttribute('data-jml-styled', 'true');
+      return; // Don't apply duplicate styles
+    }
+  }
 
   if (role && portalStyles[`[role="${role}"]`]) {
     applyStyles(element, portalStyles[`[role="${role}"]`]);

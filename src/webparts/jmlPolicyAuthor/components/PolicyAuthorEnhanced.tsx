@@ -916,15 +916,24 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
   }
 
   private handleApplyMetadataProfile = (profile: IPolicyMetadataProfile): void => {
+    const profileDepts = (profile as any).TargetDepartments;
+    const depts = profileDepts
+      ? String(profileDepts).split(/[,;]/).map((d: string) => d.trim()).filter(Boolean)
+      : [];
+    const isAllEmployees = !profileDepts || profileDepts === 'All Employees' || depts.length === 0;
+
     this.setState({
       selectedProfile: profile,
+      _selectedProfileId: profile.Id,
       policyCategory: profile.PolicyCategory,
       complianceRisk: profile.ComplianceRisk,
       readTimeframe: profile.ReadTimeframe,
       requiresAcknowledgement: profile.RequiresAcknowledgement,
       requiresQuiz: profile.RequiresQuiz,
+      targetAllEmployees: isAllEmployees,
+      targetDepartments: depts,
       showMetadataPanel: false
-    });
+    } as any);
 
     void this.dialogManager.showAlert('Metadata profile applied!', { variant: 'success' });
   };

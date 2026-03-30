@@ -178,7 +178,7 @@ const NAV_SECTIONS: INavSection[] = [
   {
     category: 'REVIEWERS & APPROVERS',
     items: [
-      { key: 'reviewersApprovers', label: 'Reviewers & Approvers', icon: 'PeopleTeam', description: 'Manage reviewer, approver, and override user groups' }
+      { key: 'reviewersApprovers', label: 'Reviewers & Approvers', icon: 'People', description: 'Manage reviewer, approver, and override user groups' }
     ]
   },
   {

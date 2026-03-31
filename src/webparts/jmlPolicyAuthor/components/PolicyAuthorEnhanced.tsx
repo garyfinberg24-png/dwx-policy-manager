@@ -916,11 +916,13 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
   }
 
   private handleApplyMetadataProfile = (profile: IPolicyMetadataProfile): void => {
-    const profileDepts = (profile as any).TargetDepartments;
+    const p = profile as any;
+    const scope = p.DistributionScope || '';
+    const isAllEmployees = scope === 'All Employees' || (!scope && !p.TargetDepartments);
+    const profileDepts = p.TargetDepartments;
     const depts = profileDepts
       ? String(profileDepts).split(/[,;]/).map((d: string) => d.trim()).filter(Boolean)
       : [];
-    const isAllEmployees = !profileDepts || profileDepts === 'All Employees' || depts.length === 0;
 
     this.setState({
       selectedProfile: profile,
@@ -931,7 +933,9 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       requiresAcknowledgement: profile.RequiresAcknowledgement,
       requiresQuiz: profile.RequiresQuiz,
       targetAllEmployees: isAllEmployees,
-      targetDepartments: depts,
+      targetDepartments: isAllEmployees ? [] : depts,
+      _distributionScope: scope || (isAllEmployees ? 'All Employees' : 'Targeted'),
+      reviewFrequency: p.ReviewCycleMonths ? (p.ReviewCycleMonths <= 3 ? 'Quarterly' : p.ReviewCycleMonths <= 6 ? 'BiAnnual' : 'Annual') : undefined,
       showMetadataPanel: false
     } as any);
 

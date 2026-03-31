@@ -644,9 +644,13 @@ export class AdminConfigService {
       const items = await this.sp.web.lists
         .getByTitle(this.METADATA_PROFILES_LIST)
         .items.select(
-          'Id', 'Title', 'ProfileName', 'PolicyCategory', 'ComplianceRisk',
-          'ReadTimeframe', 'RequiresAcknowledgement', 'RequiresQuiz',
-          'TargetDepartments', 'TargetRoles', 'IsActive', 'Description'
+          'Id', 'Title', 'ProfileName', 'Description', 'PolicyCategory', 'ComplianceRisk',
+          'ReadTimeframe', 'RequiresAcknowledgement', 'RequiresQuiz', 'RequiresDigitalSignature',
+          'TargetDepartments', 'TargetRoles', 'IsActive',
+          'DistributionScope', 'TemplateType', 'DocumentTemplateId',
+          'Classification', 'RegulatoryFramework', 'ReviewCycleMonths',
+          'EstimatedReadTimeMinutes', 'RetentionYears', 'AutoNotifyOnUpdate',
+          'TargetAudiences', 'TargetSecurityGroups'
         )
         .orderBy('Title')
         .top(200)();

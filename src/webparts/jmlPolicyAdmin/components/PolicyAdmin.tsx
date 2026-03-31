@@ -1807,7 +1807,29 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                 }
                 this.setState({ saving: true });
                 try {
-                  const data = { Title: editingProfile.ProfileName, ProfileName: editingProfile.ProfileName, PolicyCategory: editingProfile.PolicyCategory, ComplianceRisk: editingProfile.ComplianceRisk, ReadTimeframe: editingProfile.ReadTimeframe, RequiresAcknowledgement: editingProfile.RequiresAcknowledgement, RequiresQuiz: editingProfile.RequiresQuiz, TargetDepartments: editingProfile.TargetDepartments };
+                  const data: Record<string, unknown> = {
+                    Title: editingProfile.ProfileName,
+                    ProfileName: editingProfile.ProfileName,
+                    Description: (editingProfile as any).Description || '',
+                    PolicyCategory: editingProfile.PolicyCategory,
+                    ComplianceRisk: editingProfile.ComplianceRisk,
+                    ReadTimeframe: editingProfile.ReadTimeframe,
+                    RequiresAcknowledgement: editingProfile.RequiresAcknowledgement,
+                    RequiresQuiz: editingProfile.RequiresQuiz,
+                    RequiresDigitalSignature: (editingProfile as any).RequiresDigitalSignature || false,
+                    TargetDepartments: editingProfile.TargetDepartments || '',
+                    DistributionScope: (editingProfile as any).DistributionScope || 'All Employees',
+                    TemplateType: (editingProfile as any).TemplateType || '',
+                    DocumentTemplateId: (editingProfile as any).DocumentTemplateId || '',
+                    Classification: (editingProfile as any).Classification || 'Internal',
+                    RegulatoryFramework: (editingProfile as any).RegulatoryFramework || 'None',
+                    ReviewCycleMonths: (editingProfile as any).ReviewCycleMonths || 12,
+                    EstimatedReadTimeMinutes: (editingProfile as any).EstimatedReadTimeMinutes || 0,
+                    RetentionYears: (editingProfile as any).RetentionYears || 7,
+                    AutoNotifyOnUpdate: (editingProfile as any).AutoNotifyOnUpdate !== false,
+                    TargetAudiences: (editingProfile as any).TargetAudiences || '',
+                    TargetSecurityGroups: (editingProfile as any).TargetSecurityGroups || ''
+                  };
                   if (editingProfile.Id) {
                     await this.adminConfigService.updateMetadataProfile(editingProfile.Id, data);
                     this.setState({ metadataProfiles: metadataProfiles.map(p => p.Id === editingProfile.Id ? { ...p, ...editingProfile } : p) });

@@ -74,14 +74,27 @@
     overflow: hidden !important;
   }
 
-  /* Inner wrappers — remove duplicate borders/shadows to prevent triple-panel */
+  /* Inner wrappers — remove duplicate borders/shadows to prevent double-panel */
   .ms-Dropdown-callout .ms-Callout-main,
-  .ms-Dropdown-callout [role="listbox"] {
+  .ms-Dropdown-callout .ms-Callout-beak,
+  .ms-Dropdown-callout [role="listbox"],
+  .ms-Callout-main {
     background-color: #ffffff !important;
     border: none !important;
     box-shadow: none !important;
     border-radius: 0 !important;
     margin: 0 !important;
+  }
+
+  /* Ensure only the outermost callout has border — not nested elements */
+  .ms-Callout {
+    border: none !important;
+    box-shadow: none !important;
+  }
+  .ms-Dropdown-callout.ms-Callout {
+    border: 1px solid #d1d5db !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04) !important;
+    border-radius: 4px !important;
   }
 
   /* Dropdown options */

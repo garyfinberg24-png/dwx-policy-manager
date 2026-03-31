@@ -1792,7 +1792,8 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         <StyledPanel
           isOpen={!!showProfilePanel}
           onDismiss={() => this.setState({ _showProfilePanel: false, _editingProfile: null } as any)}
-          type={PanelType.medium}
+          type={PanelType.custom}
+          customWidth="480px"
           headerText={editingProfile?.Id ? 'Edit Metadata Profile' : 'New Metadata Profile'}
           onRenderFooterContent={() => (
             <Stack horizontal tokens={{ childrenGap: 8 }}>

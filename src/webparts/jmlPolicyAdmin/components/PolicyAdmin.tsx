@@ -1239,14 +1239,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               {/* Common fields */}
               <TextField label="Template Name" required value={editingTemplate.TemplateName || ''} onChange={(_, v) => this.setState({ _editingTemplate: { ...editingTemplate, TemplateName: v || '' } } as any)} />
 
-              <Stack horizontal tokens={{ childrenGap: 12 }}>
-                <Stack.Item grow={1}>
-                  <Dropdown label="Category" required selectedKey={editingTemplate.TemplateCategory || ''} options={this.state.policyCategories.filter((c: any) => c.IsActive).map((c: any) => ({ key: c.CategoryName, text: c.CategoryName }))} onChange={(_, opt) => opt && this.setState({ _editingTemplate: { ...editingTemplate, TemplateCategory: opt.key as string } } as any)} placeholder="Select a category" />
-                </Stack.Item>
-                <Stack.Item grow={1}>
-                  <Dropdown label="Template Type" selectedKey={editingTemplate.TemplateType || 'richtext'} options={Object.entries(templateTypes).map(([key, meta]) => ({ key, text: meta.label, data: { icon: meta.icon } }))} onChange={(_, opt) => opt && this.setState({ _editingTemplate: { ...editingTemplate, TemplateType: opt.key as string } } as any)} />
-                </Stack.Item>
-              </Stack>
+              <Dropdown label="Template Type" selectedKey={editingTemplate.TemplateType || 'richtext'} options={Object.entries(templateTypes).map(([key, meta]) => ({ key, text: meta.label, data: { icon: meta.icon } }))} onChange={(_, opt) => opt && this.setState({ _editingTemplate: { ...editingTemplate, TemplateType: opt.key as string } } as any)} />
 
               <TextField label="Description" multiline rows={2} value={editingTemplate.TemplateDescription || ''} onChange={(_, v) => this.setState({ _editingTemplate: { ...editingTemplate, TemplateDescription: v || '' } } as any)} />
 
@@ -1459,33 +1452,8 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                 </Stack>
               )}
 
-              <Separator>Policy Defaults</Separator>
-              <Text variant="small" style={{ ...TextStyles.secondary, marginBottom: 8, display: 'block' }}>
-                These defaults are applied when an author selects this template in the Policy Builder wizard.
-              </Text>
-
-              <Stack horizontal tokens={{ childrenGap: 12 }}>
-                <Stack.Item grow={1}>
-                  <Dropdown label="Default Compliance Risk" selectedKey={editingTemplate.ComplianceRisk || 'Medium'} options={[
-                    { key: 'Critical', text: 'Critical' }, { key: 'High', text: 'High' },
-                    { key: 'Medium', text: 'Medium' }, { key: 'Low', text: 'Low' }, { key: 'Informational', text: 'Informational' }
-                  ]} onChange={(_, opt) => opt && this.setState({ _editingTemplate: { ...editingTemplate, ComplianceRisk: opt.key as string } } as any)} />
-                </Stack.Item>
-                <Stack.Item grow={1}>
-                  <Dropdown label="Suggested Read Timeframe" selectedKey={editingTemplate.SuggestedReadTimeframe || 'Week1'} options={[
-                    { key: 'Immediate', text: 'Immediate' }, { key: 'Day1', text: 'Day 1' }, { key: 'Day3', text: '3 Days' },
-                    { key: 'Week1', text: '1 Week' }, { key: 'Week2', text: '2 Weeks' }, { key: 'Month1', text: '1 Month' }
-                  ]} onChange={(_, opt) => opt && this.setState({ _editingTemplate: { ...editingTemplate, SuggestedReadTimeframe: opt.key as string } } as any)} />
-                </Stack.Item>
-              </Stack>
-
-              <Stack horizontal tokens={{ childrenGap: 24 }}>
-                <Toggle label="Requires Acknowledgement" checked={editingTemplate.RequiresAcknowledgement !== false} onText="Yes" offText="No" onChange={(_, c) => this.setState({ _editingTemplate: { ...editingTemplate, RequiresAcknowledgement: !!c } } as any)} />
-                <Toggle label="Requires Quiz" checked={editingTemplate.RequiresQuiz === true} onText="Yes" offText="No" onChange={(_, c) => this.setState({ _editingTemplate: { ...editingTemplate, RequiresQuiz: !!c } } as any)} />
-                <Toggle label="Active" checked={editingTemplate.IsActive !== false} onText="Active" offText="Inactive" onChange={(_, c) => this.setState({ _editingTemplate: { ...editingTemplate, IsActive: !!c } } as any)} />
-              </Stack>
-
-              <TextField label="Key Points (semicolon-separated)" value={editingTemplate.KeyPointsTemplate || ''} onChange={(_, v) => this.setState({ _editingTemplate: { ...editingTemplate, KeyPointsTemplate: v || '' } } as any)} placeholder="e.g., Data classification;Access control;Incident reporting" description="Key points authors can use as a starting point" />
+              <Separator>Settings</Separator>
+              <Toggle label="Active" checked={editingTemplate.IsActive !== false} onText="Active" offText="Inactive" onChange={(_, c) => this.setState({ _editingTemplate: { ...editingTemplate, IsActive: !!c } } as any)} />
             </Stack>
           )}
         </StyledPanel>

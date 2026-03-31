@@ -1875,13 +1875,16 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                     { key: '', text: '(Blank — no template)' },
                     ...((this.state as any).templates || [])
                       .filter((t: any) => {
+                        const tType = (t.TemplateType || t.PolicyTemplateType || '').toLowerCase();
+                        // If template has no type, show it for all document types
+                        if (!tType) return true;
                         const typeMap: Record<string, string[]> = {
-                          word: ['word', 'corporate', 'regulatory', 'Standard', 'General'],
+                          word: ['word', 'corporate', 'regulatory', 'standard', 'general', 'richtext'],
                           excel: ['excel'],
                           powerpoint: ['powerpoint'],
                           html: ['html', 'richtext', 'blank']
                         };
-                        return (typeMap[(editingProfile as any).TemplateType] || []).some((m: string) => m.toLowerCase() === (t.TemplateType || '').toLowerCase());
+                        return (typeMap[(editingProfile as any).TemplateType] || []).some((m: string) => tType.includes(m));
                       })
                       .map((t: any) => ({ key: String(t.Id), text: t.TemplateName || t.Title }))
                   ]}

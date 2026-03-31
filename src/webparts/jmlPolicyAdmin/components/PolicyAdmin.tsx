@@ -1617,9 +1617,13 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
 
     this.setState({ saving: true });
     try {
+      // Only write fields that exist on PM_PolicyTemplates
+      // Known columns: Title, TemplateType, TemplateCategory, TemplateDescription,
+      // TemplateContent, HTMLTemplate, DocumentTemplateURL, IsActive, UsageCount,
+      // ComplianceRisk, SuggestedReadTimeframe, RequiresAcknowledgement, RequiresQuiz,
+      // KeyPointsTemplate, Tags, RegulatoryFramework, RegulatoryReferences
       const data: Record<string, unknown> = {
-        Title: editingTemplate.TemplateName,
-        TemplateName: editingTemplate.TemplateName,
+        Title: editingTemplate.TemplateName || editingTemplate.Title,
         TemplateType: editingTemplate.TemplateType || 'richtext',
         TemplateDescription: editingTemplate.TemplateDescription || '',
         HTMLTemplate: editingTemplate.HTMLTemplate || editingTemplate.TemplateContent || '',

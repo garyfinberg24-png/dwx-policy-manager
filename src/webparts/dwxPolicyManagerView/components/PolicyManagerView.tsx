@@ -66,6 +66,7 @@ interface ITeamMember {
 
 interface IManagerApproval {
   Id: number;
+  PolicyId: number;
   PolicyTitle: string;
   Version: string;
   SubmittedBy: string;
@@ -166,6 +167,11 @@ interface IPolicyManagerViewState {
   scheduleRecipients: string;
   scheduleEnabled: boolean;
   scheduleSaving: boolean;
+  // Report builder state
+  builderDateStart: string;
+  builderDateEnd: string;
+  builderDepartments: string[];
+  builderFormat: string;
 }
 
 // ============================================================================
@@ -235,7 +241,11 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
       scheduleFormat: 'PDF',
       scheduleRecipients: '',
       scheduleEnabled: true,
-      scheduleSaving: false
+      scheduleSaving: false,
+      builderDateStart: '',
+      builderDateEnd: '',
+      builderDepartments: [],
+      builderFormat: 'csv'
     };
   }
 
@@ -267,34 +277,32 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
   // ==========================================================================
 
   private async loadAllData(): Promise<void> {
-    try {
-      const [approvals, delegations, teamMembers, reviews, activities, recentExecutions, scheduledReportsData] = await Promise.all([
-        this.loadLiveApprovals(),
-        this.loadLiveDelegations(),
-        this.loadTeamCompliance(),
-        this.loadLiveReviews(),
-        this.loadLiveActivities(),
-        this.loadReportExecutions(),
-        this.loadScheduledReports()
-      ]);
+    // Each load wrapped in try/catch so partial failures don't block the whole dashboard
+    const safeLoad = async <T,>(fn: () => Promise<T>, fallback: T, label: string): Promise<T> => {
+      try { return await fn(); } catch (err) { logger.warn('PolicyManagerView', `Failed to load ${label}:`, err); return fallback; }
+    };
 
-      if (this._isMounted) {
-        this.setState({
-          approvals,
-          delegations,
-          teamMembers,
-          reviews,
-          activities,
-          recentExecutions,
-          scheduledReportsData,
-          loading: false
-        });
-      }
-    } catch (err) {
-      logger.error('PolicyManagerView', 'Failed to load dashboard data:', err);
-      if (this._isMounted) {
-        this.setState({ loading: false });
-      }
+    const [approvals, delegations, teamMembers, reviews, activities, recentExecutions, scheduledReportsData] = await Promise.all([
+      safeLoad(() => this.loadLiveApprovals(), [], 'approvals'),
+      safeLoad(() => this.loadLiveDelegations(), [], 'delegations'),
+      safeLoad(() => this.loadTeamCompliance(), [], 'team compliance'),
+      safeLoad(() => this.loadLiveReviews(), [], 'reviews'),
+      safeLoad(() => this.loadLiveActivities(), [], 'activities'),
+      safeLoad(() => this.loadReportExecutions(), [], 'report executions'),
+      safeLoad(() => this.loadScheduledReports(), [], 'scheduled reports')
+    ]);
+
+    if (this._isMounted) {
+      this.setState({
+        approvals,
+        delegations,
+        teamMembers,
+        reviews,
+        activities,
+        recentExecutions,
+        scheduledReportsData,
+        loading: false
+      });
     }
   }
 
@@ -327,7 +335,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
           .select(
             'Id', 'PolicyName', 'PolicyNumber', 'PolicyCategory', 'PolicyDescription',
             'PolicyStatus', 'ComplianceRisk', 'SubmittedForReviewDate', 'Department',
-            'Author/Title', 'Author/EMail'
+            'VersionNumber', 'Author/Title', 'Author/EMail'
           )
           .expand('Author')
           .top(50)();
@@ -350,8 +358,9 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
 
         return {
           Id: item.Id,
+          PolicyId: item.ProcessID || matchedPolicy?.Id || item.Id,
           PolicyTitle: matchedPolicy?.PolicyName || `Policy #${item.ProcessID || item.Id}`,
-          Version: '1.0',
+          Version: matchedPolicy?.VersionNumber || '1.0',
           SubmittedBy: item.ApproverName || item.Approver?.Title || item.SubmittedBy || 'Unknown',
           SubmittedByEmail: item.ApproverEmail || item.Approver?.EMail || '',
           Department: matchedPolicy?.Department || '',
@@ -381,8 +390,9 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
 
           return {
             Id: item.Id + 100000, // offset to avoid ID collisions with PM_Approvals
+            PolicyId: item.Id,
             PolicyTitle: item.PolicyName || item.Title || 'Untitled Policy',
-            Version: '1.0',
+            Version: item.VersionNumber || '1.0',
             SubmittedBy: item.Author?.Title || 'Unknown',
             SubmittedByEmail: item.Author?.EMail || '',
             Department: item.Department || '',
@@ -1537,7 +1547,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
                         style={{ padding: '8px 16px', borderRadius: 4, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: '1px solid #059669', background: '#059669', color: '#fff', fontFamily: 'inherit' }}>Approve</button>
                       <button onClick={async () => { const r = await this.dialogManager.showPrompt('Reason for returning:', { title: 'Return Policy' }); if (r?.trim()) this.updateApprovalStatus(approval.Id, 'Returned', r.trim()); }}
                         style={{ padding: '8px 16px', borderRadius: 4, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: '1px solid #fbbf24', background: '#fff', color: '#d97706', fontFamily: 'inherit' }}>Return</button>
-                      <button onClick={() => { window.location.href = `/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${approval.PolicyId}&mode=browse`; }}
+                      <button onClick={() => { window.location.href = `/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${approval.PolicyId || approval.Id}&mode=browse`; }}
                         style={{ padding: '8px 16px', borderRadius: 4, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: '1px solid #e2e8f0', background: '#fff', color: '#64748b', fontFamily: 'inherit' }}>View Policy</button>
                     </div>
                   )}
@@ -1954,7 +1964,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
                   <td>
                     <Stack horizontal tokens={{ childrenGap: 6 }}>
                       <IconButton iconProps={{ iconName: 'Edit' }} title="Edit schedule" onClick={() => this.openSchedulePanel(sr.key, sr.name, sr.id, sr)} styles={{ root: { height: 28, width: 28 } }} />
-                      <IconButton iconProps={{ iconName: 'Delete' }} title="Delete schedule" onClick={() => { if (confirm(`Delete schedule for ${sr.name}?`)) this.handleDeleteSchedule(sr.id); }} styles={{ root: { height: 28, width: 28, color: '#d13438' } }} />
+                      <IconButton iconProps={{ iconName: 'Delete' }} title="Delete schedule" onClick={async () => { const ok = await this.dialogManager?.showConfirm?.(`Delete schedule for "${sr.name}"?`, { title: 'Delete Schedule' }); if (ok) this.handleDeleteSchedule(sr.id); }} styles={{ root: { height: 28, width: 28, color: '#d13438' } }} />
                     </Stack>
                   </td>
                 </tr>
@@ -2029,10 +2039,10 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
             <Text variant="medium" style={{ fontWeight: 600, display: 'block', marginBottom: 16 }}>Report Parameters</Text>
             <Stack horizontal tokens={{ childrenGap: 16 }} style={{ marginBottom: 16 }}>
               <DatePicker label="Date Range Start" placeholder="Select start date" style={{ flex: 1 }}
-                value={(this.state as any).builderDateStart || new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1)}
+                value={this.state.builderDateStart || new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1)}
                 onSelectDate={(date) => this.setState({ builderDateStart: date } as any)} />
               <DatePicker label="Date Range End" placeholder="Select end date" style={{ flex: 1 }}
-                value={(this.state as any).builderDateEnd || new Date()}
+                value={this.state.builderDateEnd || new Date()}
                 onSelectDate={(date) => this.setState({ builderDateEnd: date } as any)} />
             </Stack>
 
@@ -2055,7 +2065,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
                 styles={{ root: { flex: 1 } }}
                 onChange={(_, option) => {
                   if (!option) return;
-                  const current: string[] = (this.state as any).builderDepartments || [];
+                  const current: string[] = this.state.builderDepartments || [];
                   const updated = option.selected
                     ? [...current, option.key as string]
                     : current.filter((k: string) => k !== option.key);
@@ -2070,7 +2080,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
                   { key: 'excel', text: 'Excel (.xlsx)' },
                   { key: 'csv', text: 'CSV' }
                 ]}
-                selectedKey={(this.state as any).builderFormat || 'csv'}
+                selectedKey={this.state.builderFormat || 'csv'}
                 styles={{ root: { flex: 1 } }}
                 onChange={(_, option) => { if (option) this.setState({ builderFormat: option.key } as any); }}
               />
@@ -2101,7 +2111,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
                 iconProps={{ iconName: 'Play' }}
                 disabled={this.state.reportGenerating}
                 styles={{ root: { background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
-                onClick={() => this.handleGenerateReport(selectedReport.key, (this.state as any).builderFormat || 'csv')} />
+                onClick={() => this.handleGenerateReport(selectedReport.key, this.state.builderFormat || 'csv')} />
               <DefaultButton text="Schedule" iconProps={{ iconName: 'ScheduleEventAction' }}
                 onClick={() => this.openSchedulePanel(selectedReport.key, selectedReport.title)} />
               <DefaultButton text="Email Report" iconProps={{ iconName: 'Mail' }}
@@ -2395,7 +2405,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
                   <td>
                     <Stack horizontal tokens={{ childrenGap: 8 }}>
                       <a href="#" onClick={(e) => { e.preventDefault(); this.openSchedulePanel(sr.key, sr.name, sr.id, sr); }} style={{ color: '#0d9488', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Edit</a>
-                      <a href="#" onClick={(e) => { e.preventDefault(); if (confirm(`Delete schedule for ${sr.name}?`)) this.handleDeleteSchedule(sr.id); }} style={{ color: '#d13438', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Delete</a>
+                      <a href="#" onClick={async (e) => { e.preventDefault(); const ok = await this.dialogManager?.showConfirm?.(`Delete schedule for "${sr.name}"?`, { title: 'Delete Schedule' }); if (ok) this.handleDeleteSchedule(sr.id); }} style={{ color: '#d13438', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Delete</a>
                     </Stack>
                   </td>
                 </tr>
@@ -2698,19 +2708,42 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
     this.setState({ approvals: this.state.approvals.map(a => a.Id === id ? { ...a, Status: status } : a) });
 
     try {
+      // Find the approval to get PolicyId for the real policy
+      const approval = this.state.approvals.find(a => a.Id === id);
+      const realPolicyId = approval?.PolicyId || (id >= 100000 ? id - 100000 : id);
+
       if (status === 'Approved') {
-        await this.policyService.approvePolicy(id, 'Approved via Manager Dashboard');
-        logger.info('PolicyManagerView', `Policy ${id} approved`);
+        await this.policyService.approvePolicy(realPolicyId, 'Approved via Manager Dashboard');
+        logger.info('PolicyManagerView', `Policy ${realPolicyId} approved`);
       } else {
-        // Both 'Rejected' and 'Returned' go through rejectPolicy for proper audit trail
         const reason = rejectionReason || (status === 'Returned' ? 'Returned for revision by manager' : 'Rejected by manager');
-        await this.policyService.rejectPolicy(id, reason);
-        logger.info('PolicyManagerView', `Policy ${id} returned/rejected: ${reason}`);
+        await this.policyService.rejectPolicy(realPolicyId, reason);
+        logger.info('PolicyManagerView', `Policy ${realPolicyId} returned/rejected: ${reason}`);
       }
+
+      // Write audit trail entry
+      try {
+        const currentUser = await this.props.sp.web.currentUser();
+        await this.props.sp.web.lists.getByTitle('PM_PolicyAuditLog').items.add({
+          Title: approval?.PolicyTitle || `Policy #${realPolicyId}`,
+          AuditAction: status === 'Approved' ? 'PolicyApproved' : status === 'Returned' ? 'PolicyReturned' : 'PolicyRejected',
+          ActionDescription: status === 'Approved' ? 'Approved via Manager Dashboard' : (rejectionReason || `${status} via Manager Dashboard`),
+          PerformedBy: currentUser.Title,
+          PerformedDate: new Date().toISOString(),
+          ResourceId: realPolicyId,
+          ResourceType: 'Policy'
+        });
+      } catch { /* audit logging non-blocking */ }
+
+      void this.dialogManager?.showAlert?.(
+        status === 'Approved' ? `"${approval?.PolicyTitle}" has been approved.` : `"${approval?.PolicyTitle}" has been returned.`,
+        { variant: status === 'Approved' ? 'success' : 'warning' }
+      );
     } catch (err) {
       logger.error('PolicyManagerView', `Failed to update policy ${id} status:`, err);
       // Revert local state on failure
       this.setState({ approvals: this.state.approvals.map(a => a.Id === id ? { ...a, Status: 'Pending' } : a) });
+      void this.dialogManager?.showAlert?.('Failed to update policy status. Please try again.', { variant: 'error' });
     }
   }
 
@@ -2731,10 +2764,19 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
       const currentUser = this.props.context.pageContext.user;
       // Resolve delegate user to get SP user ID
       let delegatedToId = 0;
+      let delegatedToName = delegationForm.delegateTo;
       try {
         const ensured = await this.props.sp.web.ensureUser(delegationForm.delegateToEmail || delegationForm.delegateTo);
         delegatedToId = ensured.data.Id;
-      } catch { /* fallback to 0 */ }
+        delegatedToName = ensured.data.Title || delegatedToName;
+      } catch {
+        void this.dialogManager?.showAlert?.('Could not resolve the delegate user. Please check the email address.', { variant: 'error' });
+        return;
+      }
+      if (delegatedToId === 0) {
+        void this.dialogManager?.showAlert?.('Could not resolve the delegate user. Please check the email address.', { variant: 'error' });
+        return;
+      }
       const delegatedById = this.props.context?.pageContext?.legacyPageContext?.userId || 0;
 
       await this.props.sp.web.lists.getByTitle('PM_ApprovalDelegations').items.add({
@@ -2749,12 +2791,26 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
         AutoDelegate: delegationForm.priority === 'High'
       });
 
+      // Log to audit trail
+      try {
+        await this.props.sp.web.lists.getByTitle('PM_PolicyAuditLog').items.add({
+          Title: delegationForm.policyTitle || 'Delegation',
+          AuditAction: 'DelegationCreated',
+          ActionDescription: `${delegationForm.taskType} delegated to ${delegatedToName}`,
+          PerformedBy: currentUser.displayName,
+          PerformedDate: new Date().toISOString(),
+          ResourceType: 'Delegation'
+        });
+      } catch { /* audit logging non-blocking */ }
+
       // Reload live data from SP
       const delegations = await this.loadLiveDelegations();
       if (this._isMounted) { this.setState({ delegations }); }
       this.dismissDelegationPanel();
+      void this.dialogManager?.showAlert?.(`Delegation created successfully. ${delegatedToName} has been assigned.`, { variant: 'success' });
     } catch (err) {
       logger.error('PolicyManagerView', 'Failed to create delegation:', err);
+      void this.dialogManager?.showAlert?.('Failed to create delegation. Please try again.', { variant: 'error' });
     }
   }
 

@@ -1121,8 +1121,37 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
             <Text style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>Team compliance overview and pending actions</Text>
           </div>
           <Stack horizontal tokens={{ childrenGap: 8 }}>
-            <DefaultButton text="Export Report" iconProps={{ iconName: 'Download' }} styles={{ root: { borderRadius: 6 } }} />
-            <DefaultButton text="Send Reminders" iconProps={{ iconName: 'Mail' }} styles={{ root: { borderRadius: 6 } }} />
+            <DefaultButton text="Export Report" iconProps={{ iconName: 'Download' }} styles={{ root: { borderRadius: 4 } }}
+              onClick={() => this.handleGenerateReport('dept-compliance', 'csv')} />
+            <DefaultButton text="Send Reminders" iconProps={{ iconName: 'Mail' }} styles={{ root: { borderRadius: 4 } }}
+              onClick={async () => {
+                try {
+                  const overdueMembers = this.state.teamMembers.filter((m: any) => m.PoliciesOverdue > 0);
+                  if (overdueMembers.length === 0) {
+                    void this.dialogManager?.showAlert?.('No overdue acknowledgements found.', { variant: 'info' });
+                    return;
+                  }
+                  const confirmed = await this.dialogManager?.showConfirm?.(`Send reminders to ${overdueMembers.length} team member(s) with overdue acknowledgements?`);
+                  if (!confirmed) return;
+                  let failCount = 0;
+                  for (const member of overdueMembers) {
+                    try {
+                      await this.props.sp.web.lists.getByTitle('PM_Notifications').items.add({
+                        Title: `Overdue policy reminder for ${member.Name}`,
+                        Type: 'PolicyAcknowledgment',
+                        Message: `You have ${member.PoliciesOverdue} overdue policy acknowledgement(s). Please complete them as soon as possible.`,
+                        RecipientId: member.Id || 0,
+                        IsRead: false,
+                        Priority: 'High'
+                      });
+                    } catch { failCount++; }
+                  }
+                  void this.dialogManager?.showAlert?.(failCount === 0
+                    ? `Reminders sent to ${overdueMembers.length} team member(s).`
+                    : `Sent ${overdueMembers.length - failCount}/${overdueMembers.length} reminders (${failCount} failed).`,
+                    { variant: failCount === 0 ? 'success' : 'warning' });
+                } catch { void this.dialogManager?.showAlert?.('Failed to send reminders. Please try again.', { variant: 'error' }); }
+              }} />
           </Stack>
         </div>
 
@@ -1264,7 +1293,8 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
             <Text style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>Track policy acknowledgement and compliance status for all team members</Text>
           </div>
           <Stack horizontal tokens={{ childrenGap: 8 }}>
-            <DefaultButton text="Export Report" iconProps={{ iconName: 'Download' }} styles={{ root: { borderRadius: 6 } }} />
+            <DefaultButton text="Export Report" iconProps={{ iconName: 'Download' }} styles={{ root: { borderRadius: 4 } }}
+              onClick={() => this.handleGenerateReport('ack-status', 'csv')} />
           </Stack>
         </div>
 
@@ -1629,9 +1659,13 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
 
     return (
       <div style={{ padding: '24px 40px', maxWidth: 1400, margin: '0 auto' }}>
-        <div style={{ marginBottom: 24 }}>
-          <Text style={{ fontSize: 26, fontWeight: 700, color: '#0f172a', display: 'block', letterSpacing: -0.5 }}>Review Cycles</Text>
-          <Text style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>Manage scheduled policy reviews and ensure timely completion</Text>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+          <div>
+            <Text style={{ fontSize: 26, fontWeight: 700, color: '#0f172a', display: 'block', letterSpacing: -0.5 }}>Review Cycles</Text>
+            <Text style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>Manage scheduled policy reviews and ensure timely completion</Text>
+          </div>
+          <DefaultButton text="Export Schedule" iconProps={{ iconName: 'Download' }} styles={{ root: { borderRadius: 4 } }}
+            onClick={() => this.handleGenerateReport('review-schedule', 'csv')} />
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
@@ -1669,8 +1703,8 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
         ) : (
           <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
             {/* Table Header */}
-            <div style={{ display: 'grid', gridTemplateColumns: '3fr 1.5fr 1fr 1.2fr 1.2fr 1.5fr 110px', padding: '12px 20px', background: '#f8fafc', borderBottom: '2px solid #e2e8f0', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.8, color: '#64748b' }}>
-              <div>Policy</div><div>Category</div><div>Cycle</div><div>Last Review</div><div>Next Due</div><div>Reviewer</div><div>Action</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '3fr 1.5fr 1fr 1.2fr 1.2fr 1.5fr 140px', padding: '12px 20px', background: '#f8fafc', borderBottom: '2px solid #e2e8f0', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.8, color: '#64748b' }}>
+              <div>Policy</div><div>Category</div><div>Cycle</div><div>Last Review</div><div>Next Due</div><div>Reviewer</div><div>Actions</div>
             </div>
             {/* Rows */}
             {filtered.map((r, i) => {
@@ -1680,7 +1714,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
               const initials = r.AssignedReviewer.split(' ').map((n: string) => n[0]).join('').slice(0, 2);
               const dateColor = r.Status === 'Overdue' ? '#dc2626' : r.Status === 'Due' ? '#d97706' : r.Status === 'Completed' ? '#059669' : '#64748b';
               return (
-                <div key={r.Id} style={{ display: 'grid', gridTemplateColumns: '3fr 1.5fr 1fr 1.2fr 1.2fr 1.5fr 110px', padding: '14px 20px', borderBottom: '1px solid #f1f5f9', alignItems: 'center', background: r.Status === 'Completed' ? '#f0fdf4' : i % 2 === 1 ? '#fafafa' : '#fff' }}>
+                <div key={r.Id} style={{ display: 'grid', gridTemplateColumns: '3fr 1.5fr 1fr 1.2fr 1.2fr 1.5fr 140px', padding: '14px 20px', borderBottom: '1px solid #f1f5f9', alignItems: 'center', background: r.Status === 'Completed' ? '#f0fdf4' : i % 2 === 1 ? '#fafafa' : '#fff' }}>
                   <div><div style={{ fontSize: 13, fontWeight: 600, color: '#0f172a' }}>{r.PolicyTitle}</div><div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>{r.PolicyNumber}</div></div>
                   <div><span style={{ fontSize: 9, fontWeight: 600, padding: '3px 8px', borderRadius: 4, background: cb.bg, color: cb.color }}>{r.Category}</span></div>
                   <div style={{ fontSize: 12, color: '#64748b' }}>{cycleLabel}</div>
@@ -1690,11 +1724,48 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
                     <div style={{ width: 28, height: 28, borderRadius: '50%', background: ss.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 700 }}>{initials}</div>
                     <span style={{ fontSize: 12, fontWeight: 500 }}>{r.AssignedReviewer}</span>
                   </div>
-                  <div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                     {(r.Status === 'Due' || r.Status === 'Overdue') ? (
-                      <button onClick={() => { window.location.href = `/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${r.Id}&mode=browse`; }} style={{ padding: '5px 12px', borderRadius: 4, fontSize: 11, fontWeight: 600, cursor: 'pointer', border: '1px solid #0d9488', background: '#0d9488', color: '#fff', fontFamily: 'inherit' }}>Start Review</button>
+                      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                        <button onClick={() => { window.location.href = `/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${r.Id}&mode=browse`; }} style={{ padding: '5px 10px', borderRadius: 4, fontSize: 11, fontWeight: 600, cursor: 'pointer', border: '1px solid #0d9488', background: '#0d9488', color: '#fff', fontFamily: 'inherit' }}>Review</button>
+                        <button onClick={async () => {
+                          try {
+                            const newReviewer = await this.dialogManager?.showPrompt?.(`Reassign reviewer for "${r.PolicyTitle}".\nEnter new reviewer email:`);
+                            if (!newReviewer?.trim()) return;
+                            const user = await this.props.sp.web.ensureUser(newReviewer.trim());
+                            await this.props.sp.web.lists.getByTitle('PM_Policies').items.getById(r.Id).update({ PolicyOwnerId: user.data.Id });
+                            await this.props.sp.web.lists.getByTitle('PM_PolicyAuditLog').items.add({
+                              Title: r.PolicyTitle,
+                              AuditAction: 'ReviewerReassigned',
+                              ActionDescription: `Review reassigned from ${r.AssignedReviewer} to ${user.data.Title}`,
+                              PerformedBy: (await this.props.sp.web.currentUser()).Title,
+                              PerformedDate: new Date().toISOString(),
+                              ResourceId: r.Id,
+                              ResourceType: 'Policy'
+                            });
+                            void this.dialogManager?.showAlert?.(`Review reassigned to ${user.data.Title}.`, { variant: 'success' });
+                            const reviews = await this.loadLiveReviews();
+                            if (this._isMounted) this.setState({ reviews });
+                          } catch (err) { void this.dialogManager?.showAlert?.('Failed to reassign. Check the email address.', { variant: 'error' }); }
+                        }} style={{ padding: '5px 10px', borderRadius: 4, fontSize: 11, fontWeight: 600, cursor: 'pointer', border: '1px solid #e2e8f0', background: '#fff', color: '#64748b', fontFamily: 'inherit' }}>Reassign</button>
+                      </div>
                     ) : r.Status === 'Upcoming' ? (
-                      <button style={{ padding: '5px 12px', borderRadius: 4, fontSize: 11, fontWeight: 600, cursor: 'pointer', border: '1px solid #e2e8f0', background: '#fff', color: '#64748b', fontFamily: 'inherit' }}>Schedule</button>
+                      <button onClick={async () => {
+                        try {
+                          const confirmed = await this.dialogManager?.showConfirm?.(`Schedule review for "${r.PolicyTitle}" (due ${new Date(r.NextReviewDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })})?`);
+                          if (!confirmed) return;
+                          await this.props.sp.web.lists.getByTitle('PM_PolicyAuditLog').items.add({
+                            Title: r.PolicyTitle,
+                            AuditAction: 'ReviewScheduled',
+                            ActionDescription: `Review scheduled for ${new Date(r.NextReviewDate).toLocaleDateString('en-GB')}`,
+                            PerformedBy: (await this.props.sp.web.currentUser()).Title,
+                            PerformedDate: new Date().toISOString(),
+                            ResourceId: r.Id,
+                            ResourceType: 'Policy'
+                          });
+                          void this.dialogManager?.showAlert?.(`Review scheduled for "${r.PolicyTitle}".`, { variant: 'success' });
+                        } catch { void this.dialogManager?.showAlert?.('Failed to schedule review.', { variant: 'error' }); }
+                      }} style={{ padding: '5px 12px', borderRadius: 4, fontSize: 11, fontWeight: 600, cursor: 'pointer', border: '1px solid #e2e8f0', background: '#fff', color: '#64748b', fontFamily: 'inherit' }}>Schedule</button>
                     ) : (
                       <span style={{ fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, background: ss.bg, color: ss.color, textTransform: 'uppercase' }}>{r.Status}</span>
                     )}

@@ -1461,26 +1461,7 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
         )}
       </nav>
 
-      {/* Breadcrumbs Bar */}
-      {breadcrumbs && breadcrumbs.length > 0 && (
-        <div className={styles.breadcrumbBarOuter}>
-          <div className={styles.breadcrumbBar}>
-            {breadcrumbs.map((crumb, index) => {
-              const link = crumb.href || crumb.url;
-              return (
-                <span key={index} className={styles.breadcrumbItem}>
-                  {index > 0 && <span className={styles.breadcrumbSeparator}>/</span>}
-                  {link ? (
-                    <a href={link} className={styles.breadcrumbLink}>{crumb.text}</a>
-                  ) : (
-                    <span className={styles.breadcrumbCurrent}>{crumb.text}</span>
-                  )}
-                </span>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      {/* Breadcrumbs Bar — hidden per user request; keep code for future re-enable */}
 
       {/* Page Header - Hidden by default */}
       {showPageHeader && pageTitle && (

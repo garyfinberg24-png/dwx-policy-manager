@@ -158,60 +158,64 @@ const NAV_SECTIONS: INavSection[] = [
   {
     category: 'POLICY STRUCTURE',
     items: [
-      { key: 'categories', label: 'Categories', icon: 'BulletedList2', description: 'Manage policy categories' },
+      { key: 'categories', label: 'Categories', icon: 'BulletedList2', description: 'Manage policy categories and sub-categories' },
       { key: 'templates', label: 'Templates', icon: 'DocumentSet', description: 'Reusable policy templates with defaults' },
       { key: 'metadata', label: 'Metadata Profiles', icon: 'Tag', description: 'Pre-configured metadata profiles for policy creation' },
       { key: 'naming', label: 'Naming Rules', icon: 'Rename', description: 'Auto-generated policy numbering conventions' }
     ]
   },
   {
-    category: 'WORKFLOWS & COMPLIANCE',
+    category: 'WORKFLOWS & APPROVALS',
     items: [
       { key: 'workflows', label: 'Approval Workflows', icon: 'Flow', description: 'Approval chains and routing rules' },
       { key: 'workflowTemplates', label: 'Workflow Templates', icon: 'ProcessMetaTask', description: 'Reusable multi-level approval templates' },
-      { key: 'compliance', label: 'Compliance Settings', icon: 'Shield', description: 'Acknowledgement, review, and risk defaults' },
+      { key: 'reviewersApprovers', label: 'Reviewers & Approvers', icon: 'People', description: 'Manage reviewer, approver, and override user groups' },
       { key: 'sla', label: 'SLA Targets', icon: 'Timer', description: 'Target completion times and warning thresholds' },
-      { key: 'emailTemplates', label: 'Email Templates', icon: 'MailOptions', description: 'Notification email designs and content' },
-      { key: 'notifications', label: 'Notifications', icon: 'Mail', description: 'Notification rules and delivery settings' }
+      { key: 'compliance', label: 'Compliance Settings', icon: 'Shield', description: 'Acknowledgement, review, and risk defaults' }
     ]
   },
   {
-    category: 'REVIEWERS & APPROVERS',
+    category: 'NOTIFICATIONS',
     items: [
-      { key: 'reviewersApprovers', label: 'Reviewers & Approvers', icon: 'People', description: 'Manage reviewer, approver, and override user groups' }
+      { key: 'emailTemplates', label: 'Email Templates', icon: 'MailOptions', description: 'Notification email designs and content' },
+      { key: 'notifications', label: 'Notification Rules', icon: 'Mail', description: 'Notification events, channels, and delivery settings' }
     ]
   },
   {
     category: 'USERS & ACCESS',
     items: [
       { key: 'usersRoles', label: 'Users & Roles', icon: 'PlayerSettings', description: 'User management and Entra ID sync' },
-      { key: 'rolePermissions', label: 'Role Permissions', icon: 'Permissions', description: 'Feature access per role (explicit, no inheritance)' },
+      { key: 'rolePermissions', label: 'Feature Permissions', icon: 'Permissions', description: 'Feature access per role (explicit, no inheritance)' },
       { key: 'groupsPermissions', label: 'Groups & Permissions', icon: 'SecurityGroup', description: 'Role groups, workflow groups, and secure library groups' },
-      { key: 'audiences', label: 'Audience Targeting', icon: 'Group', description: 'Target audiences for policy distribution' }
+      { key: 'audiences', label: 'Audience Targeting', icon: 'Group', description: 'Target audiences for policy distribution' },
+      { key: 'secureLibraries', label: 'Secure Libraries', icon: 'LockSolid', description: 'Restricted policy libraries with custom security groups' }
+    ]
+  },
+  {
+    category: 'CONTENT & STORAGE',
+    items: [
+      { key: 'documentStorage', label: 'Document Libraries', icon: 'DocLibrary', description: 'Configure document libraries and folder structure' },
+      { key: 'lifecycle', label: 'Data Lifecycle', icon: 'History', description: 'Retention, archival, and cleanup rules' },
+      { key: 'legalHolds', label: 'Legal Holds', icon: 'LockSolid', description: 'Legal hold management and compliance locks' },
+      { key: 'export', label: 'Data Export', icon: 'Download', description: 'Export policy data and reports' }
     ]
   },
   {
     category: 'SYSTEM',
     items: [
-      { key: 'documentStorage', label: 'Document Libraries', icon: 'DocLibrary', description: 'Configure document libraries and folder structure' },
-      { key: 'secureLibraries', label: 'Secure Libraries', icon: 'LockSolid', description: 'Restricted policy libraries with custom security groups' },
-      { key: 'provisioning', label: 'Provisioning', icon: 'Database', description: 'SharePoint lists, seed data, and system setup' },
-      { key: 'navigation', label: 'Navigation', icon: 'Nav2DMapView', description: 'Toggle app navigation items' },
-      { key: 'aiAssistant', label: 'AI Settings', icon: 'Robot', description: 'AI chat, document conversion, and integration URLs' },
-      { key: 'lifecycle', label: 'Data Management', icon: 'History', description: 'Archival, retention, and cleanup rules' },
       { key: 'settings', label: 'General Settings', icon: 'Settings', description: 'Display, feature toggles, and app config' },
+      { key: 'navigation', label: 'App Navigation', icon: 'Nav2DMapView', description: 'Toggle app navigation items and features' },
+      { key: 'aiAssistant', label: 'AI Settings', icon: 'Robot', description: 'AI chat, document conversion, and integration URLs' },
       { key: 'customTheme', label: 'Custom Theme', icon: 'Color', description: 'Brand colors, logo, fonts, and preset themes' },
-      { key: 'export', label: 'Data Export', icon: 'Download', description: 'Export policy data and reports' }
+      { key: 'provisioning', label: 'Provisioning', icon: 'Database', description: 'SharePoint lists, seed data, and system setup' },
+      { key: 'systemInfo', label: 'System Info', icon: 'Info', description: 'Version, technology stack, and diagnostics' }
     ]
   },
   {
-    category: 'SECURITY',
+    category: 'AUDIT & SECURITY',
     items: [
       { key: 'audit', label: 'Audit Log', icon: 'ComplianceAudit', description: 'Event log with filters, change tracking, and CSV export' },
-      { key: 'legalHolds', label: 'Legal Holds', icon: 'LockSolid', description: 'Legal hold management and compliance locks' },
-      { key: 'dlpRules', label: 'DLP Rules', icon: 'Shield', description: 'Data loss prevention rules (block, warn, log)' },
-      { key: 'dataRetention', label: 'Data Retention', icon: 'History', description: 'Retention periods, auto-purge, and archival scheduling' },
-      { key: 'systemInfo', label: 'System Info', icon: 'Info', description: 'Version, technology stack, and diagnostics' }
+      { key: 'dlpRules', label: 'DLP Rules', icon: 'Shield', description: 'Data loss prevention rules (block, warn, log)' }
     ]
   },
   {
@@ -11002,7 +11006,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       // securityGroups consolidated into groupsPermissions
       case 'legalHolds': return this.renderLegalHoldsContent();
       case 'dlpRules': return this.renderDLPRulesContent();
-      case 'dataRetention': return this.renderDataRetentionContent();
+      case 'dataRetention': return this.renderDataRetentionContent(); // legacy — merged into Data Lifecycle
       case 'systemInfo': return this.renderSystemInfoContent();
       case 'productShowcase': return this.renderProductShowcaseContent();
       default: return this.renderTemplatesContent();

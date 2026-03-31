@@ -1601,11 +1601,6 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       void this.dialogManager.showAlert('Template name is required.', { title: 'Validation' });
       return;
     }
-    if (!editingTemplate.TemplateCategory?.trim()) {
-      void this.dialogManager.showAlert('Please select a category.', { title: 'Validation' });
-      return;
-    }
-
     // Validate corporate/regulatory sections
     if (editingTemplate.TemplateType === 'corporate' || editingTemplate.TemplateType === 'regulatory') {
       try {
@@ -1618,11 +1613,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       } catch { /* invalid JSON will be caught on save */ }
     }
 
-    // Validate document URL for doc templates
-    if (['word', 'excel', 'powerpoint'].includes(editingTemplate.TemplateType) && !editingTemplate.DocumentTemplateURL?.trim()) {
-      void this.dialogManager.showAlert('Document template URL is required for document-based templates.', { title: 'Validation' });
-      return;
-    }
+    // Document URL is optional — template can be created first, file uploaded later
 
     this.setState({ saving: true });
     try {
@@ -1630,18 +1621,11 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         Title: editingTemplate.TemplateName,
         TemplateName: editingTemplate.TemplateName,
         TemplateType: editingTemplate.TemplateType || 'richtext',
-        TemplateCategory: editingTemplate.TemplateCategory,
         TemplateDescription: editingTemplate.TemplateDescription || '',
         HTMLTemplate: editingTemplate.HTMLTemplate || editingTemplate.TemplateContent || '',
         TemplateContent: editingTemplate.TemplateContent || editingTemplate.HTMLTemplate || '',
         DocumentTemplateURL: editingTemplate.DocumentTemplateURL || '',
-        ComplianceRisk: editingTemplate.ComplianceRisk || 'Medium',
-        SuggestedReadTimeframe: editingTemplate.SuggestedReadTimeframe || 'Week1',
-        RequiresAcknowledgement: editingTemplate.RequiresAcknowledgement ?? true,
-        RequiresQuiz: editingTemplate.RequiresQuiz ?? false,
-        KeyPointsTemplate: editingTemplate.KeyPointsTemplate || '',
-        RegulatoryReferences: editingTemplate.RegulatoryReferences || '',
-        IsActive: editingTemplate.IsActive
+        IsActive: editingTemplate.IsActive !== false
       };
       // Store sections as JSON in TemplateContent for corporate/regulatory
       if (editingTemplate.TemplateType === 'corporate' || editingTemplate.TemplateType === 'regulatory') {

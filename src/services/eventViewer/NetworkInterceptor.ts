@@ -103,11 +103,16 @@ export class NetworkInterceptor {
 
       const startTime = Date.now();
 
+      // Capture request body and headers for inspection
+      const reqBody = interceptor._truncateBody(init?.body);
+      const reqHeaders = interceptor._extractHeaders(init?.headers);
+
       return originalFetch(input, init).then(
         (response: Response) => {
           try {
             const duration = Date.now() - startTime;
-            interceptor._captureNetworkEvent(url, method, response.status, duration, response);
+            const resHeaders = interceptor._extractResponseHeaders(response.headers);
+            interceptor._captureNetworkEvent(url, method, response.status, duration, response, undefined, reqBody, reqHeaders, resHeaders);
           } catch (_) {
             // Never break fetch on capture failure
           }
@@ -202,7 +207,10 @@ export class NetworkInterceptor {
     status: number,
     duration: number,
     response?: Response,
-    xhr?: XMLHttpRequest
+    xhr?: XMLHttpRequest,
+    reqBody?: string,
+    reqHeaders?: Record<string, string>,
+    resHeaders?: Record<string, string>
   ): void {
     const spListName = this._extractSpListName(url);
     const isAsset = ASSET_EXTENSIONS.test(url);
@@ -239,6 +247,9 @@ export class NetworkInterceptor {
       responseSize: responseSize,
       spListName: spListName,
       isAssetRequest: isAsset,
+      requestBody: reqBody,
+      requestHeaders: reqHeaders || (xhr ? this._extractXhrResponseHeaders(xhr) : undefined),
+      responseHeaders: resHeaders || (xhr ? this._extractXhrResponseHeaders(xhr) : undefined),
     };
 
     this._eventBuffer.push(event);
@@ -386,6 +397,82 @@ export class NetworkInterceptor {
       case 502: return 'Bad Gateway';
       case 503: return 'Service Unavailable';
       default: return '';
+    }
+  }
+
+  // ==========================================================================
+  // REQUEST/RESPONSE INSPECTION HELPERS
+  // ==========================================================================
+
+  private static readonly MAX_BODY_SIZE = 4096; // 4KB truncation limit
+
+  /** Truncate request body to safe size for memory */
+  private _truncateBody(body: RequestInit['body']): string | undefined {
+    if (!body) return undefined;
+    try {
+      let text: string;
+      if (typeof body === 'string') {
+        text = body;
+      } else if (body instanceof URLSearchParams) {
+        text = body.toString();
+      } else {
+        // FormData, Blob, ArrayBuffer — skip (too large / binary)
+        return '[Binary or FormData body]';
+      }
+      if (text.length > NetworkInterceptor.MAX_BODY_SIZE) {
+        return text.substring(0, NetworkInterceptor.MAX_BODY_SIZE) + '... [truncated]';
+      }
+      return text;
+    } catch (_) {
+      return undefined;
+    }
+  }
+
+  /** Extract headers from RequestInit.headers */
+  private _extractHeaders(headers?: HeadersInit): Record<string, string> | undefined {
+    if (!headers) return undefined;
+    try {
+      const result: Record<string, string> = {};
+      if (headers instanceof Headers) {
+        headers.forEach((value, key) => { result[key] = value; });
+      } else if (Array.isArray(headers)) {
+        for (const [key, value] of headers) { result[key] = value; }
+      } else {
+        for (const key of Object.keys(headers)) { result[key] = (headers as Record<string, string>)[key]; }
+      }
+      return Object.keys(result).length > 0 ? result : undefined;
+    } catch (_) {
+      return undefined;
+    }
+  }
+
+  /** Extract response headers from fetch Response */
+  private _extractResponseHeaders(headers: Headers): Record<string, string> | undefined {
+    try {
+      const result: Record<string, string> = {};
+      headers.forEach((value, key) => { result[key] = value; });
+      return Object.keys(result).length > 0 ? result : undefined;
+    } catch (_) {
+      return undefined;
+    }
+  }
+
+  /** Extract response headers from XHR */
+  private _extractXhrResponseHeaders(xhr: XMLHttpRequest): Record<string, string> | undefined {
+    try {
+      const raw = xhr.getAllResponseHeaders();
+      if (!raw) return undefined;
+      const result: Record<string, string> = {};
+      const lines = raw.trim().split(/[\r\n]+/);
+      for (let i = 0; i < lines.length; i++) {
+        const parts = lines[i].split(': ');
+        if (parts.length >= 2) {
+          result[parts[0]] = parts.slice(1).join(': ');
+        }
+      }
+      return Object.keys(result).length > 0 ? result : undefined;
+    } catch (_) {
+      return undefined;
     }
   }
 }

@@ -1244,6 +1244,13 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
 
               <TextField label="Description" multiline rows={2} value={editingTemplate.TemplateDescription || ''} onChange={(_, v) => this.setState({ _editingTemplate: { ...editingTemplate, TemplateDescription: v || '' } } as any)} />
 
+              <Dropdown label="Category" selectedKey={editingTemplate.TemplateCategory || 'General'} options={[
+                { key: 'General', text: 'General' }, { key: 'HR', text: 'HR' }, { key: 'IT', text: 'IT' },
+                { key: 'Finance', text: 'Finance' }, { key: 'Legal', text: 'Legal' }, { key: 'Operations', text: 'Operations' },
+                { key: 'Compliance', text: 'Compliance' }, { key: 'Health & Safety', text: 'Health & Safety' },
+                { key: 'Data Privacy', text: 'Data Privacy' }, { key: 'Security', text: 'Security' }, { key: 'Quality', text: 'Quality' }
+              ]} onChange={(_, opt) => opt && this.setState({ _editingTemplate: { ...editingTemplate, TemplateCategory: opt.key as string } } as any)} />
+
               <Separator />
 
               {/* Type-specific content */}
@@ -1626,6 +1633,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       const data: Record<string, unknown> = {
         Title: editingTemplate.TemplateName || editingTemplate.Title,
         TemplateType: editingTemplate.TemplateType || 'richtext',
+        TemplateCategory: editingTemplate.TemplateCategory || 'General',
         TemplateDescription: editingTemplate.TemplateDescription || '',
         HTMLTemplate: editingTemplate.HTMLTemplate || editingTemplate.TemplateContent || '',
         TemplateContent: editingTemplate.TemplateContent || editingTemplate.HTMLTemplate || '',
@@ -1670,7 +1678,12 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       }
       this.setState({ _showTemplatePanel: false, _editingTemplate: null, saving: false } as any);
       void this.dialogManager.showAlert('Template saved successfully.', { title: 'Saved', variant: 'success' });
-    } catch { this.setState({ saving: false }); void this.dialogManager.showAlert('Failed to save template.', { title: 'Error' }); }
+    } catch (err: any) {
+      console.error('Template save failed:', err?.message || err, err?.data || '');
+      this.setState({ saving: false });
+      const detail = err?.data?.responseBody?.['odata.error']?.message?.value || err?.message || 'Unknown error';
+      void this.dialogManager.showAlert(`Failed to save template: ${detail}`, { title: 'Error' });
+    }
   }
 
   private async _duplicateTemplate(template: any): Promise<void> {

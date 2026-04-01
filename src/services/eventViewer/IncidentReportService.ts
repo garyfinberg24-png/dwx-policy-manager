@@ -9,7 +9,6 @@ import {
   INetworkEvent,
   IEventBufferStats,
   EventSeverity,
-  EventChannel,
   IServiceHealth,
 } from '../../models/IEventViewer';
 

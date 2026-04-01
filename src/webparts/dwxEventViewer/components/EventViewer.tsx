@@ -5,10 +5,16 @@ import { JmlAppLayout } from '../../../components/JmlAppLayout/JmlAppLayout';
 import { ErrorBoundary } from '../../../components/ErrorBoundary/ErrorBoundary';
 import { RoleDetectionService } from '../../../services/RoleDetectionService';
 import { PolicyManagerRole, getHighestPolicyRole, hasMinimumRole } from '../../../services/PolicyRoleService';
-import { Spinner, SpinnerSize, MessageBar, MessageBarType } from '@fluentui/react';
+import { Spinner, SpinnerSize, MessageBar, MessageBarType, PanelType } from '@fluentui/react';
+import { StyledPanel } from '../../../components/StyledPanel/StyledPanel';
+import { IncidentReportService } from '../../../services/eventViewer/IncidentReportService';
+import { DiagnosticSnapshotService } from '../../../services/eventViewer/DiagnosticSnapshotService';
+import { WatchRuleService, IWatchRuleAlert } from '../../../services/eventViewer/WatchRuleService';
+import { BundleSizeService, IBundleSizeSummary } from '../../../services/eventViewer/BundleSizeService';
 import { EventBuffer } from '../../../services/eventViewer/EventBuffer';
 import { ConsoleInterceptor } from '../../../services/eventViewer/ConsoleInterceptor';
 import { NetworkInterceptor } from '../../../services/eventViewer/NetworkInterceptor';
+import { BreadcrumbInterceptor } from '../../../services/eventViewer/BreadcrumbInterceptor';
 import { EventViewerService } from '../../../services/eventViewer/EventViewerService';
 import { LoggingService } from '../../../services/LoggingService';
 import { IEventEntry, IEventBufferStats, EventSeverity, EventChannel } from '../../../models/IEventViewer';
@@ -39,6 +45,14 @@ interface IEventViewerState {
   config: IEventViewerConfig;
   disabled: boolean;
   perfSubTab: 'optimizer' | 'advisor';
+  // Incident report panel
+  showIncidentPanel: boolean;
+  incidentTitle: string;
+  incidentDescription: string;
+  incidentPriority: 'critical' | 'high' | 'medium' | 'low';
+  incidentNotes: string;
+  // Watch rule alerts
+  activeAlerts: IWatchRuleAlert[];
 }
 
 // ============================================================================
@@ -90,6 +104,7 @@ export default class EventViewer extends React.Component<IEventViewerProps, IEve
   private _eventBuffer: EventBuffer;
   private _eventViewerService: EventViewerService | null = null;
   private _unsubscribe: (() => void) | null = null;
+  private _watchRuleService: WatchRuleService = new WatchRuleService();
 
   constructor(props: IEventViewerProps) {
     super(props);
@@ -104,6 +119,12 @@ export default class EventViewer extends React.Component<IEventViewerProps, IEve
       config: { ...DEFAULT_EVENT_VIEWER_CONFIG },
       disabled: false,
       perfSubTab: 'optimizer',
+      showIncidentPanel: false,
+      incidentTitle: '',
+      incidentDescription: '',
+      incidentPriority: 'medium',
+      incidentNotes: '',
+      activeAlerts: [],
     };
   }
 
@@ -114,6 +135,7 @@ export default class EventViewer extends React.Component<IEventViewerProps, IEve
     // Install interceptors
     ConsoleInterceptor.getInstance().install();
     NetworkInterceptor.getInstance().install();
+    BreadcrumbInterceptor.getInstance().install();
 
     // Set up persistence — auto-persist Error/Critical events to PM_EventLog
     try {
@@ -145,12 +167,14 @@ export default class EventViewer extends React.Component<IEventViewerProps, IEve
       });
     };
 
-    // Subscribe to EventBuffer for live updates
+    // Subscribe to EventBuffer for live updates + watch rule evaluation
     this._unsubscribe = this._eventBuffer.subscribe((_event: IEventEntry) => {
       if (!this._isMounted || !this.state.liveMode) return;
+      const alerts = this._watchRuleService.evaluate(this._eventBuffer);
       this.setState({
         events: this._eventBuffer.getAll(),
         stats: this._eventBuffer.getStats(),
+        activeAlerts: alerts.length > 0 ? [...this.state.activeAlerts, ...alerts].slice(-10) : this.state.activeAlerts,
       });
     });
 
@@ -167,6 +191,7 @@ export default class EventViewer extends React.Component<IEventViewerProps, IEve
     // Uninstall interceptors and persistence
     ConsoleInterceptor.getInstance().uninstall();
     NetworkInterceptor.getInstance().uninstall();
+    BreadcrumbInterceptor.getInstance().uninstall();
     LoggingService.onEnqueue = undefined;
     this._eventBuffer.clearPersistCallback();
 
@@ -371,9 +396,11 @@ export default class EventViewer extends React.Component<IEventViewerProps, IEve
     return (
       <div className={styles.eventViewer}>
         {this._renderHeader()}
+        {this._renderAlertBanner()}
         <div className={styles.contentArea}>
           {this._renderActiveTab()}
         </div>
+        {this._renderIncidentPanel()}
       </div>
     );
   }
@@ -441,6 +468,35 @@ export default class EventViewer extends React.Component<IEventViewerProps, IEve
             >
               Clear Session
             </button>
+
+            <button
+              className={styles.headerBtn}
+              onClick={() => DiagnosticSnapshotService.download(this._eventBuffer)}
+              title="Download shareable diagnostic snapshot"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+              Snapshot
+            </button>
+
+            {this.state.detectedRole === PolicyManagerRole.Admin && (
+              <>
+                <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.2)', margin: '0 4px' }} />
+                <button
+                  className={`${styles.headerBtn} ${styles.headerBtnPrimary}`}
+                  onClick={() => this.setState({ showIncidentPanel: true })}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>
+                  </svg>
+                  Report Incident
+                </button>
+              </>
+            )}
           </div>
         </div>
 
@@ -579,6 +635,9 @@ export default class EventViewer extends React.Component<IEventViewerProps, IEve
             ) : (
               <AIPerformanceAdvisorTab eventBuffer={this._eventBuffer} aiFunctionUrl={aiUrl} sp={this.props.sp} />
             )}
+
+            {/* Bundle Size Analyser */}
+            {this._renderBundleSizeAnalyser()}
           </div>
         );
       }
@@ -637,6 +696,311 @@ export default class EventViewer extends React.Component<IEventViewerProps, IEve
           </div>
         </div>
       </div>
+    );
+  }
+
+  // ==========================================================================
+  // BUNDLE SIZE ANALYSER
+  // ==========================================================================
+
+  private _renderBundleSizeAnalyser(): JSX.Element {
+    const summary = BundleSizeService.analyse();
+    const { webpartBreakdown, totalTransferKB, totalDecodedKB, scriptCount, styleCount } = summary;
+
+    return (
+      <div style={{ marginTop: 32 }}>
+        <div style={{ borderLeft: '3px solid #7c3aed', paddingLeft: 12, marginBottom: 16, fontSize: 15, fontWeight: 600, color: '#1e293b' }}>
+          Bundle Size Analysis
+          <span style={{ color: '#94a3b8', fontSize: 12, fontWeight: 400, marginLeft: 8 }}>Loaded resources</span>
+        </div>
+
+        {/* KPIs */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 16 }}>
+          {[
+            { label: 'Transfer', value: `${totalTransferKB}KB`, color: '#7c3aed' },
+            { label: 'Decoded', value: `${totalDecodedKB}KB`, color: '#2563eb' },
+            { label: 'Scripts', value: scriptCount, color: '#d97706' },
+            { label: 'Styles', value: styleCount, color: '#059669' },
+          ].map(kpi => (
+            <div key={kpi.label} style={{
+              background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8,
+              padding: '12px 16px', borderTop: `3px solid ${kpi.color}`, textAlign: 'center',
+            }}>
+              <div style={{ fontSize: 18, fontWeight: 700, color: kpi.color }}>{kpi.value}</div>
+              <div style={{ fontSize: 10, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5 }}>{kpi.label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Webpart breakdown */}
+        {webpartBreakdown.length > 0 && (
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, overflow: 'hidden' }}>
+            <div style={{
+              display: 'grid', gridTemplateColumns: '1fr 100px 80px 1fr',
+              padding: '10px 14px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0',
+              fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5, color: '#64748b', fontWeight: 600,
+            }}>
+              <div>Webpart / Bundle</div><div>Size</div><div>Files</div><div>Bar</div>
+            </div>
+            {webpartBreakdown.map((wp, i) => {
+              const maxSize = webpartBreakdown[0]?.sizeKB || 1;
+              const barWidth = Math.max(4, (wp.sizeKB / maxSize) * 100);
+              return (
+                <div key={i} style={{
+                  display: 'grid', gridTemplateColumns: '1fr 100px 80px 1fr',
+                  padding: '7px 14px', borderBottom: '1px solid #f1f5f9', alignItems: 'center', fontSize: 12,
+                }}>
+                  <div style={{ fontWeight: 600, color: '#0f172a' }}>{wp.name}</div>
+                  <div style={{ fontFamily: 'monospace', color: wp.sizeKB > 500 ? '#dc2626' : '#64748b' }}>{wp.sizeKB}KB</div>
+                  <div style={{ color: '#64748b' }}>{wp.fileCount}</div>
+                  <div>
+                    <div style={{
+                      height: 8, borderRadius: 4, background: wp.sizeKB > 500 ? '#dc2626' : wp.sizeKB > 200 ? '#d97706' : '#0d9488',
+                      width: `${barWidth}%`, transition: 'width 0.3s',
+                    }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ==========================================================================
+  // WATCH RULE ALERT BANNER
+  // ==========================================================================
+
+  private _renderAlertBanner(): JSX.Element | null {
+    const { activeAlerts } = this.state;
+    if (activeAlerts.length === 0) return null;
+
+    return (
+      <div style={{ padding: '0 32px' }}>
+        {activeAlerts.slice(-3).map((alert, i) => {
+          const bgColor = alert.severity === 'critical' ? '#fef2f2' : alert.severity === 'warning' ? '#fffbeb' : '#f0f9ff';
+          const borderColor = alert.severity === 'critical' ? '#fecaca' : alert.severity === 'warning' ? '#fde68a' : '#bae6fd';
+          const textColor = alert.severity === 'critical' ? '#991b1b' : alert.severity === 'warning' ? '#92400e' : '#075985';
+
+          return (
+            <div key={`${alert.ruleId}-${i}`} style={{
+              display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', marginBottom: 4,
+              background: bgColor, border: `1px solid ${borderColor}`, borderRadius: 6, fontSize: 12,
+            }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={textColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+              <span style={{ fontWeight: 600, color: textColor }}>{alert.ruleName}:</span>
+              <span style={{ color: textColor, flex: 1 }}>{alert.message}</span>
+              <button
+                onClick={() => {
+                  this.setState({ activeAlerts: this.state.activeAlerts.filter((_, idx) => idx !== this.state.activeAlerts.indexOf(alert)) });
+                }}
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer', color: textColor,
+                  fontSize: 16, lineHeight: 1, padding: '0 4px',
+                }}
+              >
+                ×
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  // ==========================================================================
+  // INCIDENT REPORT PANEL
+  // ==========================================================================
+
+  private _dismissIncidentPanel = (): void => {
+    this.setState({
+      showIncidentPanel: false,
+      incidentTitle: '',
+      incidentDescription: '',
+      incidentPriority: 'medium',
+      incidentNotes: '',
+    });
+  };
+
+  private _generateIncidentReport = (): void => {
+    const { incidentTitle, incidentDescription, incidentPriority, incidentNotes } = this.state;
+    if (!incidentTitle.trim()) return;
+
+    const report = IncidentReportService.buildFromBuffer(
+      this._eventBuffer,
+      incidentTitle.trim(),
+      incidentDescription.trim(),
+      incidentPriority,
+      incidentNotes.trim()
+    );
+    IncidentReportService.download(report);
+    this._dismissIncidentPanel();
+  };
+
+  private _renderIncidentPanel(): JSX.Element | null {
+    const { showIncidentPanel, incidentTitle, incidentDescription, incidentPriority, incidentNotes, stats } = this.state;
+    if (!showIncidentPanel) return null;
+
+    const priorityOptions: Array<{ key: string; label: string; color: string }> = [
+      { key: 'critical', label: 'Critical', color: '#7f1d1d' },
+      { key: 'high', label: 'High', color: '#dc2626' },
+      { key: 'medium', label: 'Medium', color: '#d97706' },
+      { key: 'low', label: 'Low', color: '#2563eb' },
+    ];
+
+    const fieldLabel: React.CSSProperties = { fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 4, display: 'block' };
+    const fieldInput: React.CSSProperties = {
+      width: '100%', padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: 4,
+      fontSize: 13, fontFamily: "'Segoe UI', sans-serif", color: '#334155', outline: 'none',
+      transition: 'border-color 0.15s',
+    };
+
+    return (
+      <StyledPanel
+        isOpen={true}
+        onDismiss={this._dismissIncidentPanel}
+        type={PanelType.medium}
+        headerText="Report Incident"
+      >
+        <div style={{ padding: '4px 0' }}>
+          {/* Buffer summary bar */}
+          <div style={{
+            display: 'flex', gap: 12, padding: '12px 16px', marginBottom: 20,
+            background: 'linear-gradient(135deg, #f0fdfa, #ecfdf5)', border: '1px solid #99f6e4', borderRadius: 8,
+          }}>
+            {[
+              { label: 'Events', value: stats?.totalCount || 0, color: '#0d9488' },
+              { label: 'Errors', value: stats?.errorCount || 0, color: '#dc2626' },
+              { label: 'Warnings', value: stats?.warningCount || 0, color: '#d97706' },
+              { label: 'Network', value: stats?.networkCount || 0, color: '#2563eb' },
+            ].map(kpi => (
+              <div key={kpi.label} style={{ flex: 1, textAlign: 'center' }}>
+                <div style={{ fontSize: 20, fontWeight: 700, color: kpi.color }}>{kpi.value}</div>
+                <div style={{ fontSize: 10, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5 }}>{kpi.label}</div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ fontSize: 12, color: '#64748b', marginBottom: 20 }}>
+            This will generate a self-contained HTML report with all captured events, network requests, and session diagnostics from the current buffer.
+          </div>
+
+          {/* Title */}
+          <div style={{ marginBottom: 16 }}>
+            <label style={fieldLabel}>Incident Title <span style={{ color: '#dc2626' }}>*</span></label>
+            <input
+              type="text"
+              style={fieldInput}
+              placeholder="e.g., Policy publish failing with 403 errors"
+              value={incidentTitle}
+              onChange={(e) => this.setState({ incidentTitle: e.target.value })}
+              onFocus={(e) => { e.target.style.borderColor = '#0d9488'; }}
+              onBlur={(e) => { e.target.style.borderColor = '#e2e8f0'; }}
+            />
+          </div>
+
+          {/* Description */}
+          <div style={{ marginBottom: 16 }}>
+            <label style={fieldLabel}>Description</label>
+            <textarea
+              style={{ ...fieldInput, resize: 'vertical', minHeight: 60 }}
+              placeholder="What happened? What were you doing when the issue occurred?"
+              value={incidentDescription}
+              onChange={(e) => this.setState({ incidentDescription: e.target.value })}
+              onFocus={(e) => { e.target.style.borderColor = '#0d9488'; }}
+              onBlur={(e) => { e.target.style.borderColor = '#e2e8f0'; }}
+              rows={3}
+            />
+          </div>
+
+          {/* Priority */}
+          <div style={{ marginBottom: 16 }}>
+            <label style={fieldLabel}>Priority</label>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {priorityOptions.map(opt => {
+                const isSelected = incidentPriority === opt.key;
+                return (
+                  <button
+                    key={opt.key}
+                    onClick={() => this.setState({ incidentPriority: opt.key as any })}
+                    style={{
+                      flex: 1, padding: '8px 0', borderRadius: 4, cursor: 'pointer',
+                      fontSize: 12, fontWeight: 600, transition: 'all 0.15s',
+                      border: isSelected ? `2px solid ${opt.color}` : '1px solid #e2e8f0',
+                      background: isSelected ? `${opt.color}10` : '#fff',
+                      color: isSelected ? opt.color : '#64748b',
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Investigation Notes */}
+          <div style={{ marginBottom: 24 }}>
+            <label style={fieldLabel}>Investigation Notes</label>
+            <textarea
+              style={{ ...fieldInput, resize: 'vertical', minHeight: 80 }}
+              placeholder="Steps already tried, suspected root cause, affected users..."
+              value={incidentNotes}
+              onChange={(e) => this.setState({ incidentNotes: e.target.value })}
+              onFocus={(e) => { e.target.style.borderColor = '#0d9488'; }}
+              onBlur={(e) => { e.target.style.borderColor = '#e2e8f0'; }}
+              rows={4}
+            />
+          </div>
+
+          {/* Session info */}
+          <div style={{
+            padding: '10px 14px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 6, marginBottom: 24,
+            fontSize: 11, color: '#64748b', lineHeight: 1.8,
+          }}>
+            <div><strong>Session:</strong> {this._eventBuffer.sessionId}</div>
+            <div><strong>Page:</strong> {typeof window !== 'undefined' ? window.location.pathname : ''}</div>
+            <div><strong>Browser:</strong> {typeof navigator !== 'undefined' ? navigator.userAgent.split(' ').pop() || '' : ''}</div>
+            <div><strong>Timestamp:</strong> {new Date().toLocaleString()}</div>
+          </div>
+
+          {/* Actions */}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              onClick={this._generateIncidentReport}
+              disabled={!incidentTitle.trim()}
+              style={{
+                flex: 1, padding: '10px 16px', borderRadius: 4, cursor: incidentTitle.trim() ? 'pointer' : 'not-allowed',
+                background: incidentTitle.trim() ? 'linear-gradient(135deg, #0d9488, #0f766e)' : '#e2e8f0',
+                color: incidentTitle.trim() ? '#fff' : '#94a3b8',
+                border: 'none', fontSize: 13, fontWeight: 600,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                transition: 'opacity 0.15s',
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              Generate &amp; Download Report
+            </button>
+            <button
+              onClick={this._dismissIncidentPanel}
+              style={{
+                padding: '10px 20px', borderRadius: 4, cursor: 'pointer',
+                background: '#fff', color: '#64748b', border: '1px solid #e2e8f0',
+                fontSize: 13, fontWeight: 500, transition: 'all 0.15s',
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </StyledPanel>
     );
   }
 }

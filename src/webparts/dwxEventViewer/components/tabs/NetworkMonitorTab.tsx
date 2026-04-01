@@ -19,6 +19,7 @@ interface INetworkMonitorTabProps {
 interface INetworkMonitorTabState {
   networkEvents: INetworkEvent[];
   showAssets: boolean;
+  selectedEvent: INetworkEvent | null;
 }
 
 interface IListBreakdown {
@@ -42,6 +43,7 @@ export class NetworkMonitorTab extends React.Component<INetworkMonitorTabProps, 
     this.state = {
       networkEvents: props.eventBuffer.getNetworkEvents(),
       showAssets: false,
+      selectedEvent: null,
     };
   }
 
@@ -230,13 +232,21 @@ export class NetworkMonitorTab extends React.Component<INetworkMonitorTabProps, 
                 : event.httpStatus >= 500 ? '#dc2626'
                 : event.httpStatus >= 400 ? '#d97706'
                 : '#059669';
+              const isSelected = this.state.selectedEvent?.id === event.id;
 
               return (
-                <div key={event.id || i} style={{
-                  display: 'grid', gridTemplateColumns: '1fr 70px 1fr 80px 55px',
-                  gap: 12, padding: '8px 14px', alignItems: 'center',
-                  borderBottom: '1px solid #f1f5f9', fontSize: 13,
-                }}>
+                <div key={event.id || i}
+                  onClick={() => this.setState({ selectedEvent: isSelected ? null : event })}
+                  style={{
+                    display: 'grid', gridTemplateColumns: '1fr 70px 1fr 80px 55px',
+                    gap: 12, padding: '8px 14px', alignItems: 'center',
+                    borderBottom: '1px solid #f1f5f9', fontSize: 13,
+                    cursor: 'pointer', transition: 'background 0.1s',
+                    background: isSelected ? '#f0fdfa' : 'transparent',
+                  }}
+                  onMouseEnter={(e) => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = '#f8fafc'; }}
+                  onMouseLeave={(e) => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+                >
                   <div style={{
                     fontFamily: "'Cascadia Code', 'Fira Code', monospace",
                     fontSize: 12, color: '#475569',
@@ -284,8 +294,119 @@ export class NetworkMonitorTab extends React.Component<INetworkMonitorTabProps, 
             })
           )}
         </div>
+        {/* Request/Response Inspector */}
+        {this.state.selectedEvent && this._renderInspector(this.state.selectedEvent)}
       </div>
     );
+  }
+
+  // ==========================================================================
+  // REQUEST/RESPONSE INSPECTOR
+  // ==========================================================================
+
+  private _renderInspector(event: INetworkEvent): JSX.Element {
+    const codeStyle: React.CSSProperties = {
+      fontFamily: "'Cascadia Code', 'Fira Code', monospace",
+      fontSize: 11, lineHeight: 1.6, padding: '12px 16px',
+      background: '#1e293b', color: '#e2e8f0', borderRadius: 6,
+      whiteSpace: 'pre-wrap', wordBreak: 'break-all', maxHeight: 300,
+      overflow: 'auto', margin: '8px 0',
+    };
+
+    const sectionHeader: React.CSSProperties = {
+      fontSize: 11, fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: 0.5,
+      color: '#64748b', marginTop: 16, marginBottom: 4,
+    };
+
+    return (
+      <div style={{
+        marginTop: 16, background: '#fff', border: '1px solid #0d9488', borderRadius: 10,
+        padding: 20, borderTop: '3px solid #0d9488',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>
+            Request Inspector
+          </div>
+          <button
+            onClick={() => this.setState({ selectedEvent: null })}
+            style={{
+              background: 'none', border: '1px solid #e2e8f0', borderRadius: 4,
+              padding: '4px 10px', fontSize: 11, cursor: 'pointer', color: '#64748b',
+            }}
+          >
+            Close
+          </button>
+        </div>
+
+        {/* Request summary */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 12, fontSize: 12 }}>
+          <div><span style={{ color: '#94a3b8' }}>Method:</span> <strong>{event.httpMethod}</strong></div>
+          <div><span style={{ color: '#94a3b8' }}>Status:</span> <strong style={{ color: (event.httpStatus || 0) >= 400 ? '#dc2626' : '#059669' }}>{event.httpStatus || '—'}</strong></div>
+          <div><span style={{ color: '#94a3b8' }}>Duration:</span> <strong>{event.duration !== undefined ? `${event.duration}ms` : '—'}</strong></div>
+          <div><span style={{ color: '#94a3b8' }}>Size:</span> <strong>{event.responseSize ? `${(event.responseSize / 1024).toFixed(1)}KB` : '—'}</strong></div>
+        </div>
+
+        {/* Full URL */}
+        <div style={sectionHeader}>URL</div>
+        <div style={{ ...codeStyle, color: '#93c5fd' }}>{event.requestUrl}</div>
+
+        {/* Request Headers */}
+        {event.requestHeaders && Object.keys(event.requestHeaders).length > 0 && (
+          <>
+            <div style={sectionHeader}>Request Headers</div>
+            <div style={codeStyle}>
+              {Object.entries(event.requestHeaders).map(([k, v]) => `${k}: ${v}`).join('\n')}
+            </div>
+          </>
+        )}
+
+        {/* Request Body */}
+        {event.requestBody && (
+          <>
+            <div style={sectionHeader}>Request Body</div>
+            <div style={codeStyle}>{this._formatJson(event.requestBody)}</div>
+          </>
+        )}
+
+        {/* Response Headers */}
+        {event.responseHeaders && Object.keys(event.responseHeaders).length > 0 && (
+          <>
+            <div style={sectionHeader}>Response Headers</div>
+            <div style={codeStyle}>
+              {Object.entries(event.responseHeaders).map(([k, v]) => `${k}: ${v}`).join('\n')}
+            </div>
+          </>
+        )}
+
+        {/* Response Body Preview */}
+        {event.responseBodyPreview && (
+          <>
+            <div style={sectionHeader}>Response Body (Preview)</div>
+            <div style={codeStyle}>{this._formatJson(event.responseBodyPreview)}</div>
+          </>
+        )}
+
+        {/* SP List info */}
+        {event.spListName && (
+          <div style={{ marginTop: 12, fontSize: 12, color: '#64748b' }}>
+            <span style={{ fontWeight: 600 }}>SP List:</span>{' '}
+            <span style={{ fontFamily: "'Cascadia Code', monospace", background: '#f1f5f9', padding: '1px 6px', borderRadius: 3 }}>
+              {event.spListName}
+            </span>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  /** Try to pretty-print JSON, fall back to raw string */
+  private _formatJson(text: string): string {
+    try {
+      const parsed = JSON.parse(text);
+      return JSON.stringify(parsed, null, 2);
+    } catch (_) {
+      return text;
+    }
   }
 
   private _truncateUrl(url: string): string {

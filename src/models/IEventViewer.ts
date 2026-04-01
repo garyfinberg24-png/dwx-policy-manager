@@ -91,6 +91,8 @@ export interface IEventEntry {
   autoPersist?: boolean;
   /** Console sub-origin for Console channel events */
   consoleOrigin?: ConsoleOrigin;
+  /** Correlation ID — links related events across services (e.g. a publish flow) */
+  correlationId?: string;
 }
 
 /**
@@ -111,6 +113,14 @@ export interface INetworkEvent extends IEventEntry {
   spListName?: string;
   /** Whether this is a CDN/static asset request */
   isAssetRequest?: boolean;
+  /** Request body (truncated to 4KB for memory safety) */
+  requestBody?: string;
+  /** Response body preview (truncated to 4KB) */
+  responseBodyPreview?: string;
+  /** Request headers */
+  requestHeaders?: Record<string, string>;
+  /** Response headers */
+  responseHeaders?: Record<string, string>;
 }
 
 // ============================================================================
@@ -299,6 +309,23 @@ export interface ISessionInfo {
   appVersion: string;
   appInsightsConnected: boolean;
   spSiteUrl: string;
+}
+
+/**
+ * UI breadcrumb — captures user interactions (clicks, navigation)
+ * for error replay context
+ */
+export interface IUIBreadcrumb {
+  /** Timestamp of the interaction */
+  timestamp: string;
+  /** Type of interaction */
+  type: 'click' | 'navigation' | 'input' | 'scroll' | 'custom';
+  /** Human-readable description */
+  description: string;
+  /** DOM selector or target identifier */
+  target?: string;
+  /** Page URL at time of interaction */
+  pageUrl?: string;
 }
 
 // ============================================================================

@@ -816,7 +816,51 @@ The QuizBuilder's "AI Generate" panel calls the Azure Function with:
 
 ---
 
-## Session State (Last Updated: 29 Mar 2026 — Session 20 Complete)
+## Session State (Last Updated: 1 Apr 2026 — Session 21 Complete)
+
+### Recently Completed (Session 21 — 31 Mar / 1 Apr 2026)
+
+#### DWx Event Viewer — Full Implementation (37 new files, 7,016 lines, 12,965 insertions)
+
+**New Webpart: dwxEventViewer (16th webpart)**
+- 7 views across 6 tabs: Event Stream, Network Monitor, Investigation Board, System Health, AI Triage, Performance (Optimizer + AI Advisor sub-tabs)
+- Ring buffer (1000/500/500) with pub-sub for real-time event capture
+- ConsoleInterceptor: monkey-patches console.log/warn/error/debug
+- NetworkInterceptor: wraps fetch + XMLHttpRequest with timing + SP list name extraction
+- EventClassifier: 30+ event codes (APP/NET/CON/SEC/SYS/DLQ) with RegExp patterns
+- EventViewerService: CRUD against PM_EventLog with auto-persist Error/Critical events
+- EventTriageService: GPT-4o via event-triage Azure Function mode
+- PerformanceAnalyser: score calculation (0-100), issue detection, optimization sliders
+- IncidentReportService: packages diagnostics into self-contained HTML report (started)
+- Admin config: 9 EventViewer + 5 Performance keys in PM_Configuration
+- Role gating: Admin=full, Manager=read-only (Stream+Health), Author/User=denied
+- LoggingService.onEnqueue hook: 3-line static callback, zero overhead when not active
+- Provisioning: 28-EventLog-List.ps1 (20 columns, 4 indexes)
+- Azure Function: event-triage mode deployed to dwx-pm-chat-func-prod + max_completion_tokens fix
+
+**Tester Bug Fixes (8 items resolved):**
+- My Policies: search placeholder white + VALIGN middle, sort Overdue>Pending>Completed
+- My Policies: 9-column grid (Icon, Name, Policy#, Ver, Due Date, Category, Status, Due In, Eye icon)
+- My Policies: Completed filter shows Acknowledged only
+- Author Dashboard: action buttons state-enabled (always visible, disabled when invalid)
+- Author Dashboard: workflow dots colour-coded by KPI card colours
+- Create Policy: Department field removed from Step 2
+- Create Policy: metadata profile values restored on draft edit
+- Policy Hub: Department refiner removed
+
+**Event Viewer Feature Backlog (planned for next session):**
+- Health Check Runner, SP List Schema Validator, Config Audit
+- Request/Response Inspector, Correlation Chains, Error Replay Breadcrumbs
+- Smart Watch Rules, Shareable Diagnostic Snapshot, Trend Dashboard
+- Incident Report (IncidentReportService started, UI not wired yet)
+- Session Comparison, SLA Monitor, Bundle Size Analyser
+
+**Build:** Zero errors, 16 webpart manifests, 9.5MB sppkg
+**Commit:** `fea2861` — pushed to both ADO and GitHub
+
+### Rollback Checkpoints (Updated)
+- Session 21 start: commit `49718d4`
+- Session 21 end: commit `fea2861`
 
 ### Production Readiness Rules (MANDATORY)
 

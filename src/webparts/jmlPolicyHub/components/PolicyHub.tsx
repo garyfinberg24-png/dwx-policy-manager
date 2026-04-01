@@ -1840,15 +1840,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
           )}
         </div>
 
-        {/* Department */}
-        <div style={groupStyle}>
-          <div style={titleStyle}>Department</div>
-          {['All Employees', 'Finance', 'Operations', 'IT', 'Legal', 'HR'].map(d =>
-            renderFacetItem(d, departmentCounts[d] || 0, selectedDepartment === d, () =>
-              this.handleFilterChange('selectedDepartment', selectedDepartment === d ? '' : d)
-            )
-          )}
-        </div>
+        {/* Department refiner removed — per tester feedback */}
       </div>
     );
   }

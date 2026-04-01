@@ -208,6 +208,7 @@ const NAV_SECTIONS: INavSection[] = [
       { key: 'aiAssistant', label: 'AI Settings', icon: 'Robot', description: 'AI chat, document conversion, and integration URLs' },
       { key: 'customTheme', label: 'Custom Theme', icon: 'Color', description: 'Brand colors, logo, fonts, and preset themes' },
       { key: 'provisioning', label: 'Provisioning', icon: 'Database', description: 'SharePoint lists, seed data, and system setup' },
+      { key: 'eventViewer', label: 'Event Viewer', icon: 'EventDate', description: 'Diagnostic event capture, buffer sizes, AI triage, and retention' },
       { key: 'systemInfo', label: 'System Info', icon: 'Info', description: 'Version, technology stack, and diagnostics' }
     ]
   },
@@ -9930,6 +9931,179 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
   }
 
   // ============================================================================
+  // RENDER: EVENT VIEWER CONFIG
+  // ============================================================================
+
+  private renderEventViewerConfigContent(): JSX.Element {
+    const st = this.state as any;
+    const evEnabled = st._evEnabled ?? true;
+    const evAppBufferSize = st._evAppBufferSize ?? '1000';
+    const evConsoleBufferSize = st._evConsoleBufferSize ?? '500';
+    const evNetworkBufferSize = st._evNetworkBufferSize ?? '500';
+    const evAutoPersistThreshold = st._evAutoPersistThreshold ?? 'Error';
+    const evAiTriageEnabled = st._evAiTriageEnabled ?? false;
+    const evAiFunctionUrl = st._evAiFunctionUrl ?? '';
+    const evRetentionDays = st._evRetentionDays ?? '90';
+    const evHideCdn = st._evHideCdn ?? true;
+
+    return (
+      <div>
+        {this.renderSectionIntro('Event Viewer', 'Configure the DWx Event Viewer diagnostic tool — buffer sizes, auto-persistence, AI triage, and data retention.', [
+          'Event Viewer is available to Admins (full access) and Managers (read-only)',
+          'Error and Critical events are auto-persisted to PM_EventLog',
+          'Events older than the retention period are automatically cleaned up',
+        ])}
+
+        {/* Open Event Viewer button */}
+        <div style={{
+          background: 'linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%)',
+          border: '1px solid #a7f3d0',
+          borderRadius: 10,
+          padding: '18px 24px',
+          marginBottom: 20,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}>
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0d9488" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="3" width="20" height="14" rx="2"/>
+                <line x1="8" y1="21" x2="16" y2="21"/>
+                <line x1="12" y1="17" x2="12" y2="21"/>
+                <polyline points="7 8 10 11 7 14"/>
+                <line x1="13" y1="14" x2="17" y2="14"/>
+              </svg>
+              DWx Event Viewer
+            </div>
+            <div style={{ fontSize: 13, color: '#64748b' }}>
+              Real-time diagnostics, network monitoring, AI-powered triage, and troubleshooting
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              window.location.href = '/sites/PolicyManager/SitePages/EventViewer.aspx';
+            }}
+            style={{
+              padding: '10px 24px',
+              background: 'linear-gradient(135deg, #0d9488, #0f766e)',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 6,
+              fontSize: 13,
+              fontWeight: 600,
+              fontFamily: 'inherit',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+              <polyline points="15 3 21 3 21 9"/>
+              <line x1="10" y1="14" x2="21" y2="3"/>
+            </svg>
+            Open Event Viewer
+          </button>
+        </div>
+
+        <Stack tokens={{ childrenGap: 16 }}>
+          {/* Enable/Disable */}
+          <Toggle
+            label="Enable Event Viewer"
+            checked={evEnabled}
+            onChange={(_, checked) => this.setState({ _evEnabled: !!checked } as any)}
+            onText="Enabled — Event Viewer page accessible"
+            offText="Disabled — Event Viewer shows disabled message"
+          />
+
+          {/* Buffer Sizes */}
+          <div style={{ borderLeft: '3px solid #0d9488', paddingLeft: 12, marginBottom: 4, marginTop: 8, fontSize: 14, fontWeight: 600, color: '#1e293b' }}>
+            Ring Buffer Sizes
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+            <TextField
+              label="Application Events"
+              type="number"
+              value={evAppBufferSize}
+              onChange={(_, val) => this.setState({ _evAppBufferSize: val || '1000' } as any)}
+              description="Default: 1000"
+            />
+            <TextField
+              label="Console Events"
+              type="number"
+              value={evConsoleBufferSize}
+              onChange={(_, val) => this.setState({ _evConsoleBufferSize: val || '500' } as any)}
+              description="Default: 500"
+            />
+            <TextField
+              label="Network Requests"
+              type="number"
+              value={evNetworkBufferSize}
+              onChange={(_, val) => this.setState({ _evNetworkBufferSize: val || '500' } as any)}
+              description="Default: 500"
+            />
+          </div>
+
+          {/* Auto-Persist Threshold */}
+          <Dropdown
+            label="Auto-Persist Severity Threshold"
+            selectedKey={evAutoPersistThreshold}
+            options={[
+              { key: 'Critical', text: 'Critical only' },
+              { key: 'Error', text: 'Error and above (recommended)' },
+              { key: 'Warning', text: 'Warning and above' },
+            ]}
+            onChange={(_, opt) => { if (opt) this.setState({ _evAutoPersistThreshold: opt.key as string } as any); }}
+          />
+
+          {/* Retention */}
+          <TextField
+            label="Event Retention (days)"
+            type="number"
+            value={evRetentionDays}
+            onChange={(_, val) => this.setState({ _evRetentionDays: val || '90' } as any)}
+            description="Events older than this are deleted on Event Viewer load. Default: 90 days."
+            styles={{ root: { maxWidth: 200 } }}
+          />
+
+          {/* CDN Toggle */}
+          <Toggle
+            label="Hide CDN/Asset Requests by Default"
+            checked={evHideCdn}
+            onChange={(_, checked) => this.setState({ _evHideCdn: !!checked } as any)}
+            onText="Hidden — toggle visible in Network Monitor"
+            offText="Shown — all requests visible by default"
+          />
+
+          {/* AI Triage Section */}
+          <div style={{ borderLeft: '3px solid #7c3aed', paddingLeft: 12, marginBottom: 4, marginTop: 8, fontSize: 14, fontWeight: 600, color: '#1e293b' }}>
+            AI Triage (GPT-4o)
+          </div>
+
+          <Toggle
+            label="Enable AI Triage"
+            checked={evAiTriageEnabled}
+            onChange={(_, checked) => this.setState({ _evAiTriageEnabled: !!checked } as any)}
+            onText="Enabled — AI Triage tab visible in Event Viewer"
+            offText="Disabled — AI Triage tab hidden"
+          />
+
+          <TextField
+            label="AI Triage Function URL"
+            placeholder="https://dwx-pm-chat-func-prod.azurewebsites.net/api/policyChatCompletion?code=..."
+            value={evAiFunctionUrl}
+            onChange={(_, val) => this.setState({ _evAiFunctionUrl: val || '' } as any)}
+            description="Same Azure Function as AI Chat — uses event-triage mode"
+          />
+        </Stack>
+      </div>
+    );
+  }
+
+  // ============================================================================
   // RENDER: SYSTEM INFO (ABOUT)
   // ============================================================================
 
@@ -10990,6 +11164,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       case 'dlpRules': return this.renderDLPRulesContent();
       case 'dataRetention': return this.renderDataRetentionContent(); // legacy — merged into Data Lifecycle
       case 'systemInfo': return this.renderSystemInfoContent();
+      case 'eventViewer': return this.renderEventViewerConfigContent();
       case 'productShowcase': return this.renderProductShowcaseContent();
       default: return this.renderTemplatesContent();
     }
@@ -11046,7 +11221,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     const activeItem = this.getActiveNavItem();
     // Sections with their OWN save buttons (workflows, compliance, notifications) are excluded
     // Only show generic save bar for AI Assistant (all other sections have their own save or auto-save)
-    const showSaveButton = this.state.activeSection === 'aiAssistant';
+    const showSaveButton = this.state.activeSection === 'aiAssistant' || this.state.activeSection === 'eventViewer';
 
     return (
       <ErrorBoundary fallbackMessage="An error occurred in Admin Centre. Please try again.">
@@ -11119,7 +11294,34 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                           }
                           return;
                         }
-                        // Only AI Settings uses this generic save bar
+                        // Event Viewer section
+                        if (this.state.activeSection === 'eventViewer') {
+                          try {
+                            this.setState({ saving: true } as any);
+                            const st = this.state as any;
+                            await this.adminConfigService.saveConfigByCategory('EventViewer', {
+                              'Admin.EventViewer.Enabled': String(st._evEnabled ?? true),
+                              'Admin.EventViewer.AppBufferSize': String(st._evAppBufferSize ?? 1000),
+                              'Admin.EventViewer.ConsoleBufferSize': String(st._evConsoleBufferSize ?? 500),
+                              'Admin.EventViewer.NetworkBufferSize': String(st._evNetworkBufferSize ?? 500),
+                              'Admin.EventViewer.AutoPersistThreshold': st._evAutoPersistThreshold ?? 'Error',
+                              'Admin.EventViewer.AITriageEnabled': String(st._evAiTriageEnabled ?? false),
+                              'Admin.EventViewer.AIFunctionUrl': st._evAiFunctionUrl ?? '',
+                              'Admin.EventViewer.RetentionDays': String(st._evRetentionDays ?? 90),
+                              'Admin.EventViewer.HideCDNByDefault': String(st._evHideCdn ?? true),
+                            });
+                            if (st._evAiFunctionUrl) {
+                              localStorage.setItem('PM_AI_EventTriageFunctionUrl', st._evAiFunctionUrl);
+                            }
+                            void this.dialogManager.showAlert('Event Viewer settings saved.', { title: 'Settings Saved', variant: 'success' });
+                          } catch (err: any) {
+                            void this.dialogManager.showAlert('Failed to save: ' + (err.message || 'Unknown error'), { title: 'Save Failed', variant: 'error' });
+                          } finally {
+                            this.setState({ saving: false } as any);
+                          }
+                          return;
+                        }
+                        // Only AI Settings / Event Viewer use this generic save bar
                       }}
                     />
                   </div>

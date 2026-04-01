@@ -324,7 +324,8 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
         filtered = filtered.filter(p => p.status === 'overdue');
         break;
       case 'completed':
-        filtered = filtered.filter(p => p.status === 'completed');
+        // Only show acknowledged policies in Completed filter
+        filtered = filtered.filter(p => p.status === 'completed' && p.acknowledgementDate);
         break;
     }
 
@@ -336,6 +337,18 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
         p.department.toLowerCase().includes(q)
       );
     }
+
+    // Default sort: Overdue first, then Pending/Due, then Completed
+    const statusOrder: Record<string, number> = { 'overdue': 0, 'unread': 1, 'in-progress': 2, 'completed': 3 };
+    filtered.sort((a, b) => {
+      const orderA = statusOrder[a.status] ?? 2;
+      const orderB = statusOrder[b.status] ?? 2;
+      if (orderA !== orderB) return orderA - orderB;
+      // Within same status group, sort by due date ascending (soonest first)
+      const dateA = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
+      const dateB = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
+      return dateA - dateB;
+    });
 
     return filtered;
   }
@@ -429,7 +442,7 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
         padding: '16px 40px', position: 'relative', overflow: 'hidden', margin: '0 -24px'
       }}>
         <div style={{ position: 'absolute', right: -60, bottom: -60, width: 200, height: 200, background: 'rgba(255,255,255,0.03)', borderRadius: '50%' }} />
-        <div style={{ maxWidth: 1400, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'flex-end', gap: 24, position: 'relative', zIndex: 1 }}>
+        <div style={{ maxWidth: 1400, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 24, position: 'relative', zIndex: 1 }}>
 
           {/* Left: Ring + Greeting */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -457,12 +470,14 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
           </div>
 
           {/* Center: Search input */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', alignSelf: 'flex-end', margin: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <div style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', display: 'flex', alignItems: 'center' }}>
-                <SearchIcon size={13} color="rgba(255,255,255,0.5)" />
+                <SearchIcon size={13} color="rgba(255,255,255,0.6)" />
               </div>
+              <style>{`.pm-hero-search::placeholder { color: rgba(255,255,255,0.6) !important; }`}</style>
               <input
+                className="pm-hero-search"
                 type="text"
                 placeholder="Search my policies..."
                 value={this.state.searchQuery}
@@ -593,120 +608,110 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
         tabIndex={0}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.selectPolicy(policy.id); } }}
         style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '14px',
-          padding: isSelected || isOverdueRow ? '14px 20px 14px 17px' : '14px 20px',
+          display: 'grid',
+          gridTemplateColumns: '44px minmax(180px, 1fr) 90px 48px 100px 100px 140px 100px 36px',
+          gap: 12,
+          padding: isSelected || isOverdueRow ? '10px 20px 10px 17px' : '10px 20px',
           borderBottom: '1px solid #f1f5f9',
           cursor: 'pointer',
           transition: 'all 0.1s',
           background: isSelected ? '#f0fdfa' : 'transparent',
           borderLeft: isSelected ? '3px solid #0d9488' : isOverdueRow ? '3px solid #dc2626' : '3px solid transparent',
+          alignItems: 'center',
         }}
         onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = '#f0fdfa'; }}
         onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
       >
-        {/* Policy icon circle */}
+        {/* Status icon */}
         <div style={{
-          width: '40px',
-          height: '40px',
-          borderRadius: '8px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-          background: iconColors.bg,
-          color: iconColors.color,
+          width: 36, height: 36, borderRadius: 8,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: iconColors.bg, color: iconColors.color,
         }}>
           {policy.status === 'completed' ? (
-            <CheckIcon size={20} color={iconColors.color} />
+            <CheckIcon size={18} color={iconColors.color} />
           ) : policy.status === 'overdue' ? (
-            <ExclamationIcon size={20} color={iconColors.color} />
+            <ExclamationIcon size={18} color={iconColors.color} />
           ) : (
-            <WarningIcon size={20} color={iconColors.color} />
+            <WarningIcon size={18} color={iconColors.color} />
           )}
         </div>
 
-        {/* Content */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {policy.title}
-          </div>
-          <div style={{ display: 'flex', gap: '12px', marginTop: '3px', fontSize: '11px', color: '#94a3b8' }}>
-            <span>POL-{policy.id.toString().padStart(3, '0')}</span>
-            <span>{policy.category}</span>
-            <span>v{policy.version}</span>
-          </div>
+        {/* Policy Name */}
+        <div style={{ fontSize: 13, fontWeight: 600, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>
+          {policy.title}
         </div>
 
-        {/* Badges */}
-        <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+        {/* Policy # */}
+        <div style={{ fontFamily: "'Cascadia Code', 'Fira Code', 'Consolas', monospace", fontSize: 11, color: '#0d9488', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          POL-{policy.id.toString().padStart(3, '0')}
+        </div>
+
+        {/* Version */}
+        <div style={{ fontSize: 11, color: '#94a3b8', whiteSpace: 'nowrap' }}>
+          v{policy.version}
+        </div>
+
+        {/* Due Date */}
+        <div style={{ fontSize: 12, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {policy.dueDate ? formatDate(policy.dueDate) : '—'}
+        </div>
+
+        {/* Category */}
+        <div style={{ fontSize: 12, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {policy.category || '—'}
+        </div>
+
+        {/* Status badges */}
+        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
           <span style={{
-            fontSize: '9px',
-            fontWeight: 700,
-            padding: '3px 8px',
-            borderRadius: '4px',
-            textTransform: 'uppercase',
-            letterSpacing: '0.3px',
-            background: statusBadge.bg,
-            color: statusBadge.text,
+            fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4,
+            textTransform: 'uppercase' as const, letterSpacing: 0.3,
+            background: statusBadge.bg, color: statusBadge.text, whiteSpace: 'nowrap',
           }}>{getStatusLabel(policy.status)}</span>
           {policy.priority === 'high' && (
             <span style={{
-              fontSize: '9px',
-              fontWeight: 700,
-              padding: '3px 8px',
-              borderRadius: '4px',
-              textTransform: 'uppercase',
-              letterSpacing: '0.3px',
-              background: riskBadge.bg,
-              color: riskBadge.text,
+              fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4,
+              textTransform: 'uppercase' as const, letterSpacing: 0.3,
+              background: riskBadge.bg, color: riskBadge.text, whiteSpace: 'nowrap',
             }}>{riskBadge.label}</span>
           )}
           {policy.isSecure && (
-            <span style={{ fontSize: '9px', fontWeight: 700, padding: '3px 8px', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.3px', background: '#fef2f2', color: '#dc2626', display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+            <span style={{ fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, textTransform: 'uppercase' as const, letterSpacing: 0.3, background: '#fef2f2', color: '#dc2626', display: 'inline-flex', alignItems: 'center', gap: 2, whiteSpace: 'nowrap' }}>
               <svg viewBox="0 0 24 24" fill="none" width="9" height="9"><rect x="3" y="11" width="18" height="11" rx="2" stroke="currentColor" strokeWidth="2"/><path d="M7 11V7a5 5 0 0110 0v4" stroke="currentColor" strokeWidth="2"/></svg>
               Secure
             </span>
           )}
         </div>
 
-        {/* Due date */}
+        {/* Due In */}
         <div style={{
-          fontSize: '11px',
-          color: dueInfo.color,
-          textAlign: 'right',
-          minWidth: '90px',
-          flexShrink: 0,
+          fontSize: 11, color: dueInfo.color,
           fontWeight: dueInfo.bold ? 600 : 400,
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
         }}>
           {dueInfo.text}
         </div>
 
-        {/* View button */}
+        {/* Eye icon — Read Policy */}
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); this.selectPolicy(policy.id); }}
           style={{
-            width: '32px',
-            height: '32px',
-            borderRadius: '6px',
+            width: 32, height: 32, borderRadius: 6,
             border: `1px solid ${isSelected ? '#0d9488' : '#e2e8f0'}`,
             background: isSelected ? '#f0fdfa' : '#fff',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: isSelected ? '#0d9488' : '#94a3b8',
-            flexShrink: 0,
-            transition: 'all 0.15s',
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: isSelected ? '#0d9488' : '#94a3b8', transition: 'all 0.15s',
           }}
           onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#0d9488'; e.currentTarget.style.color = '#0d9488'; e.currentTarget.style.background = '#f0fdfa'; }}
           onMouseLeave={(e) => { if (!isSelected) { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.background = '#fff'; } }}
-          title="View details"
-          aria-label={`View details for ${policy.title}`}
+          title="Read policy"
+          aria-label={`Read ${policy.title}`}
         >
-          <ChevronRightIcon size={14} />
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+          </svg>
         </button>
       </div>
     );
@@ -725,6 +730,31 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
         overflow: 'hidden',
       }}>
         {this.renderToolbar()}
+        {/* Column header */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '44px minmax(180px, 1fr) 90px 48px 100px 100px 140px 100px 36px',
+          gap: 12,
+          padding: '8px 20px',
+          background: '#f8fafc',
+          borderBottom: '1px solid #e2e8f0',
+          fontSize: 10,
+          textTransform: 'uppercase' as const,
+          letterSpacing: 0.5,
+          color: '#64748b',
+          fontWeight: 600,
+          alignItems: 'center',
+        }}>
+          <div></div>
+          <div>Policy Name</div>
+          <div>Policy #</div>
+          <div>Ver</div>
+          <div>Due Date</div>
+          <div>Category</div>
+          <div>Status</div>
+          <div>Due In</div>
+          <div></div>
+        </div>
         <div>
           {policies.map(policy => this.renderPolicyRow(policy))}
         </div>

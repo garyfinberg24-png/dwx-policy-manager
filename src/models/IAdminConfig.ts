@@ -314,4 +314,22 @@ export class AdminConfigKeys {
   static readonly SECURITY_SENSITIVE_ACCESS_ALERTS = 'Admin.Security.SensitiveAccessAlerts';
   static readonly SECURITY_BULK_EXPORT_NOTIFY = 'Admin.Security.BulkExportNotifications';
   static readonly SECURITY_FAILED_LOGIN_LOCKOUT = 'Admin.Security.FailedLoginLockout';
+
+  // Event Viewer Settings
+  static readonly EVENTVIEWER_ENABLED = 'Admin.EventViewer.Enabled';
+  static readonly EVENTVIEWER_APP_BUFFER_SIZE = 'Admin.EventViewer.AppBufferSize';
+  static readonly EVENTVIEWER_CONSOLE_BUFFER_SIZE = 'Admin.EventViewer.ConsoleBufferSize';
+  static readonly EVENTVIEWER_NETWORK_BUFFER_SIZE = 'Admin.EventViewer.NetworkBufferSize';
+  static readonly EVENTVIEWER_AUTO_PERSIST_THRESHOLD = 'Admin.EventViewer.AutoPersistThreshold';
+  static readonly EVENTVIEWER_AI_TRIAGE_ENABLED = 'Admin.EventViewer.AITriageEnabled';
+  static readonly EVENTVIEWER_AI_FUNCTION_URL = 'Admin.EventViewer.AIFunctionUrl';
+  static readonly EVENTVIEWER_RETENTION_DAYS = 'Admin.EventViewer.RetentionDays';
+  static readonly EVENTVIEWER_HIDE_CDN_DEFAULT = 'Admin.EventViewer.HideCDNByDefault';
+
+  // Performance Optimizer Settings (written by Event Viewer sliders)
+  static readonly PERF_CACHE_TTL = 'Perf.CacheTTL';
+  static readonly PERF_REQUEST_DEDUP = 'Perf.RequestDedup';
+  static readonly PERF_LEAN_QUERIES = 'Perf.LeanQueries';
+  static readonly PERF_DEFAULT_TOP_LIMIT = 'Perf.DefaultTopLimit';
+  static readonly PERF_MAX_CONCURRENT = 'Perf.MaxConcurrent';
 }

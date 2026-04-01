@@ -693,14 +693,22 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         loading: false
       } as any); }
 
-      // Auto-detect metadata profile if MetadataProfileId not available
-      if (!(policy as any).MetadataProfileId && this.state.metadataProfiles?.length > 0) {
+      // Restore the full metadata profile object so the UI shows "Applied: [name]"
+      if ((policy as any).MetadataProfileId && this.state.metadataProfiles?.length > 0) {
+        const savedProfile = this.state.metadataProfiles.find((p: any) =>
+          p.Id === (policy as any).MetadataProfileId
+        );
+        if (savedProfile && this._isMounted) {
+          this.setState({ selectedProfile: savedProfile } as any);
+        }
+      } else if (this.state.metadataProfiles?.length > 0) {
+        // Auto-detect metadata profile if MetadataProfileId not available
         const match = this.state.metadataProfiles.find((p: any) =>
           p.ComplianceRisk === policy.ComplianceRisk &&
           p.PolicyCategory === policy.PolicyCategory
         );
         if (match && this._isMounted) {
-          this.setState({ _selectedProfileId: match.Id } as any);
+          this.setState({ _selectedProfileId: match.Id, selectedProfile: match } as any);
         }
       }
 
@@ -7011,7 +7019,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
           errorMessage={this.state.stepErrors.get(1)?.includes('Policy name is required') && !policyName.trim() ? 'Policy name is required' : undefined}
           styles={{ root: { marginBottom: 16 } }}
         />
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+        <div style={{ marginBottom: 16 }}>
           <Dropdown
             label="Category"
             required
@@ -7019,22 +7027,6 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             options={categoryOptions}
             onChange={(_, option) => this.setState({ policyCategory: option?.key as string })}
             errorMessage={this.state.stepErrors.get(1)?.includes('Policy category is required') && !policyCategory ? 'Please select a category' : undefined}
-          />
-          <Dropdown
-            label="Department"
-            selectedKey={(this.state as any).targetDepartments?.[0] || ''}
-            options={[
-              { key: '', text: '— Select department —' },
-              { key: 'Human Resources', text: 'Human Resources' },
-              { key: 'IT', text: 'IT' },
-              { key: 'Finance', text: 'Finance' },
-              { key: 'Operations', text: 'Operations' },
-              { key: 'Sales', text: 'Sales' },
-              { key: 'Marketing', text: 'Marketing' },
-              { key: 'Legal', text: 'Legal' },
-              { key: 'All Departments', text: 'All Departments' }
-            ]}
-            onChange={(_, option) => option && this.setState({ targetDepartments: option.key ? [option.key as string] : [] } as any)}
           />
         </div>
         <TextField

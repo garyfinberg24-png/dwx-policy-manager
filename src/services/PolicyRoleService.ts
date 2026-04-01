@@ -185,6 +185,7 @@ const NAV_MINIMUM_ROLE: Record<string, PolicyManagerRole> = {
   'reports':       PolicyManagerRole.Manager,
   'executive':     PolicyManagerRole.Manager,
   'admin':         PolicyManagerRole.Admin,
+  'eventviewer':   PolicyManagerRole.Admin,
 };
 
 /**

@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DWx Event Viewer — Performance Optimizer Tab Mockup</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-weight: 400;
+    color: #334155;
+    background: #f1f5f9;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  /* ── Page context header (simulates Event Viewer header) ── */
+  .ev-header {
+    background: linear-gradient(135deg, #0d9488, #0f766e);
+    color: #fff;
+    padding: 20px 32px 0;
+  }
+  .ev-header-top {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+  .ev-header-icon {
+    width: 36px; height: 36px;
+    background: rgba(255,255,255,.18);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ev-header-icon svg { width: 20px; height: 20px; stroke: #fff; fill: none; stroke-width: 1.8; }
+  .ev-header h1 { font-size: 20px; font-weight: 600; letter-spacing: -0.3px; }
+  .ev-header .subtitle { font-size: 12px; opacity: 0.75; margin-top: 1px; }
+
+  /* Tab bar */
+  .tab-bar { display: flex; gap: 2px; }
+  .tab-btn {
+    background: rgba(255,255,255,.10);
+    border: none; color: rgba(255,255,255,.7);
+    padding: 10px 18px; font-size: 13px; font-weight: 500;
+    cursor: pointer; white-space: nowrap;
+    border-radius: 6px 6px 0 0;
+    font-family: inherit;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .tab-btn:hover { background: rgba(255,255,255,.20); color: #fff; }
+  .tab-btn.active { background: #f1f5f9; color: #0f766e; font-weight: 600; }
+  .tab-btn.perf { border-left: 2px solid rgba(255,255,255,.15); margin-left: 4px; }
+  .tab-btn svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ── Content ── */
+  .content { max-width: 1600px; margin: 0 auto; padding: 24px 32px 80px; }
+
+  /* ══════════════════════════════════════════════
+     PERFORMANCE SCORE CARD
+     ══════════════════════════════════════════════ */
+  .score-section {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 24px;
+    margin-bottom: 28px;
+  }
+
+  /* Circular gauge */
+  .gauge-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 28px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .gauge-container {
+    position: relative;
+    width: 160px; height: 160px;
+    margin-bottom: 16px;
+  }
+  .gauge-bg {
+    fill: none;
+    stroke: #e2e8f0;
+    stroke-width: 12;
+  }
+  .gauge-fill {
+    fill: none;
+    stroke-width: 12;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 1s ease;
+  }
+  .gauge-fill.good { stroke: #059669; }
+  .gauge-fill.ok { stroke: #d97706; }
+  .gauge-fill.bad { stroke: #dc2626; }
+  .gauge-value {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 42px;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1;
+  }
+  .gauge-value span { font-size: 16px; font-weight: 400; color: #94a3b8; }
+  .gauge-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
+    margin-bottom: 4px;
+  }
+  .gauge-sublabel {
+    font-size: 12px;
+    color: #64748b;
+  }
+
+  /* Sub-scores grid */
+  .sub-scores {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 14px;
+  }
+  .sub-score-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .sub-score-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .sub-score-card.green::before { background: #059669; }
+  .sub-score-card.amber::before { background: #d97706; }
+  .sub-score-card.red::before { background: #dc2626; }
+  .sub-score-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #64748b;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .sub-score-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.1;
+    margin-bottom: 4px;
+  }
+  .sub-score-detail {
+    font-size: 11px;
+    color: #94a3b8;
+  }
+  .sub-score-bar {
+    height: 4px;
+    background: #e2e8f0;
+    border-radius: 2px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+  .sub-score-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.6s ease;
+  }
+
+  /* ══════════════════════════════════════════════
+     OPTIMIZATION CARDS
+     ══════════════════════════════════════════════ */
+  .section-header {
+    border-left: 3px solid #0d9488;
+    padding-left: 12px;
+    margin-bottom: 16px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #1e293b;
+  }
+  .section-header small { color: #94a3b8; font-size: 12px; font-weight: 400; margin-left: 8px; }
+
+  .opt-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .opt-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .opt-card:hover { border-color: #0d9488; box-shadow: 0 4px 16px rgba(13,148,136,.08); }
+
+  .opt-card-header {
+    padding: 16px 20px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .opt-card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .opt-card-desc {
+    font-size: 12px;
+    color: #64748b;
+    line-height: 1.5;
+  }
+
+  .opt-severity {
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .opt-severity.high { background: #fee2e2; color: #b91c1c; }
+  .opt-severity.medium { background: #fef3c7; color: #b45309; }
+  .opt-severity.low { background: #dbeafe; color: #1d4ed8; }
+
+  .opt-card-body { padding: 16px 20px; }
+
+  /* Impact bar */
+  .impact-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+    font-size: 12px;
+  }
+  .impact-label { color: #64748b; font-weight: 500; width: 60px; flex-shrink: 0; }
+  .impact-bar {
+    flex: 1;
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .impact-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+  }
+  .impact-bar-fill.high { background: #dc2626; }
+  .impact-bar-fill.medium { background: #d97706; }
+  .impact-bar-fill.low { background: #2563eb; }
+  .impact-value { font-weight: 600; color: #0f172a; width: 40px; text-align: right; flex-shrink: 0; }
+
+  /* Slider control */
+  .slider-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 8px;
+  }
+  .slider-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #334155;
+    width: 160px;
+    flex-shrink: 0;
+  }
+  .slider-input {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 3px;
+    outline: none;
+    cursor: pointer;
+  }
+  .slider-input::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: #0d9488;
+    cursor: pointer;
+    box-shadow: 0 1px 4px rgba(0,0,0,.15);
+  }
+  .slider-value {
+    font-family: 'Cascadia Code', 'Fira Code', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 2px 10px;
+    border-radius: 4px;
+    min-width: 60px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  /* Toggle */
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .toggle-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #334155;
+    flex: 1;
+  }
+  .toggle-track {
+    width: 40px; height: 22px;
+    border-radius: 11px;
+    position: relative;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background .2s;
+  }
+  .toggle-track.off { background: #cbd5e1; }
+  .toggle-track.on { background: #0d9488; }
+  .toggle-knob {
+    width: 18px; height: 18px;
+    background: #fff;
+    border-radius: 50%;
+    position: absolute;
+    top: 2px;
+    transition: left .2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,.15);
+  }
+  .toggle-track.off .toggle-knob { left: 2px; }
+  .toggle-track.on .toggle-knob { left: 20px; }
+  .toggle-status {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    width: 60px;
+    flex-shrink: 0;
+  }
+  .toggle-status.on { color: #059669; }
+  .toggle-status.off { color: #94a3b8; }
+
+  /* Apply button */
+  .opt-card-footer {
+    padding: 12px 20px;
+    border-top: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f8fafc;
+  }
+  .opt-prediction {
+    font-size: 12px;
+    color: #059669;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .opt-prediction svg { width: 14px; height: 14px; stroke: #059669; fill: none; stroke-width: 2; }
+  .opt-apply-btn {
+    padding: 7px 18px;
+    background: #0d9488;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background .15s;
+  }
+  .opt-apply-btn:hover { background: #0f766e; }
+  .opt-apply-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
+  .opt-apply-btn.applied {
+    background: #059669;
+    pointer-events: none;
+  }
+
+  /* ══════════════════════════════════════════════
+     AI OPTIMIZE SECTION
+     ══════════════════════════════════════════════ */
+  .ai-optimize-card {
+    background: #fff;
+    border: 2px solid #ddd6fe;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 28px;
+  }
+  .ai-optimize-header {
+    background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 50%, #4c1d95 100%);
+    padding: 24px 28px;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .ai-optimize-header h2 {
+    font-size: 18px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 4px;
+  }
+  .ai-optimize-header h2 svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+  .ai-optimize-header p { font-size: 13px; opacity: 0.8; margin: 0; }
+  .ai-optimize-btn {
+    padding: 10px 24px;
+    background: #fff;
+    color: #6d28d9;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    transition: background .15s;
+    white-space: nowrap;
+  }
+  .ai-optimize-btn:hover { background: #f5f3ff; }
+  .ai-optimize-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+  .ai-optimize-body { padding: 24px 28px; }
+
+  /* AI Recommendation card */
+  .ai-rec {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .ai-rec:last-child { margin-bottom: 0; }
+  .ai-rec-header {
+    padding: 14px 18px;
+    background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #ddd6fe;
+  }
+  .ai-rec-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #4c1d95;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .ai-rec-title svg { width: 16px; height: 16px; stroke: #7c3aed; fill: none; stroke-width: 2; }
+  .ai-rec-impact {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 12px;
+  }
+  .ai-rec-impact.high { background: #dcfce7; color: #059669; }
+  .ai-rec-impact.medium { background: #fef3c7; color: #b45309; }
+
+  .ai-rec-body { padding: 14px 18px; }
+  .ai-rec-text { font-size: 13px; color: #334155; line-height: 1.6; margin-bottom: 12px; }
+  .ai-rec-code {
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-family: 'Cascadia Code', 'Fira Code', monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    margin-bottom: 12px;
+    overflow-x: auto;
+  }
+  .ai-rec-code .add { color: #34d399; }
+  .ai-rec-code .remove { color: #f87171; text-decoration: line-through; opacity: 0.7; }
+  .ai-rec-code .comment { color: #64748b; }
+
+  .ai-rec-footer {
+    padding: 10px 18px;
+    border-top: 1px solid #f1f5f9;
+    background: #f8fafc;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .ai-rec-prediction {
+    font-size: 12px;
+    color: #059669;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .ai-rec-prediction svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
+  .ai-rec-actions { display: flex; gap: 8px; }
+  .ai-rec-apply {
+    padding: 6px 16px;
+    background: linear-gradient(135deg, #7c3aed, #6d28d9);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .ai-rec-apply:hover { background: linear-gradient(135deg, #6d28d9, #5b21b6); }
+  .ai-rec-apply svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; }
+  .ai-rec-dismiss {
+    padding: 6px 14px;
+    background: #fff;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  /* ══════════════════════════════════════════════
+     BEFORE / AFTER COMPARISON
+     ══════════════════════════════════════════════ */
+  .comparison-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin-bottom: 28px;
+  }
+  .comparison-grid {
+    display: grid;
+    grid-template-columns: 1fr 40px 1fr;
+    gap: 0;
+    align-items: center;
+  }
+  .comparison-col {
+    padding: 16px;
+    border-radius: 8px;
+  }
+  .comparison-col.before { background: #fef2f2; border: 1px solid #fecaca; }
+  .comparison-col.after { background: #f0fdf4; border: 1px solid #bbf7d0; }
+  .comparison-arrow {
+    text-align: center;
+    color: #94a3b8;
+  }
+  .comparison-arrow svg { width: 24px; height: 24px; stroke: #0d9488; fill: none; stroke-width: 2; }
+  .comparison-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+  }
+  .comparison-col.before .comparison-title { color: #b91c1c; }
+  .comparison-col.after .comparison-title { color: #059669; }
+  .comparison-stat {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(0,0,0,.05);
+    font-size: 13px;
+  }
+  .comparison-stat:last-child { border-bottom: none; }
+  .comparison-stat-label { color: #64748b; }
+  .comparison-stat-value { font-weight: 600; color: #0f172a; }
+  .comparison-stat-value.improved { color: #059669; }
+  .comparison-stat-value.worse { color: #dc2626; }
+
+  /* ══════════════════════════════════════════════
+     OPTIMIZE ALL BUTTON
+     ══════════════════════════════════════════════ */
+  .optimize-all-bar {
+    background: linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%);
+    border: 1px solid #a7f3d0;
+    border-radius: 10px;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+  }
+  .optimize-all-text { font-size: 14px; color: #0f172a; font-weight: 500; }
+  .optimize-all-text strong { color: #059669; }
+  .optimize-all-btn {
+    padding: 10px 28px;
+    background: linear-gradient(135deg, #059669, #047857);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 2px 8px rgba(5,150,105,.25);
+    transition: all .15s;
+  }
+  .optimize-all-btn:hover { background: linear-gradient(135deg, #047857, #065f46); transform: translateY(-1px); }
+  .optimize-all-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+  /* ══════════════════════════════════════════════
+     DESIGN NOTES
+     ══════════════════════════════════════════════ */
+  .design-notes {
+    background: #faf5ff;
+    border: 1px dashed #c084fc;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 32px 0;
+    font-size: 13px;
+    color: #6b21a8;
+  }
+  .design-notes h4 { font-size: 14px; font-weight: 600; margin-bottom: 8px; color: #7c3aed; }
+  .design-notes ul { margin-left: 18px; margin-top: 6px; }
+  .design-notes li { margin-bottom: 4px; }
+  .design-notes code { background: #ede9fe; padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+
+  @media (max-width: 1200px) {
+    .score-section { grid-template-columns: 1fr; }
+    .sub-scores { grid-template-columns: repeat(3, 1fr); }
+    .opt-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SIMULATED EVENT VIEWER HEADER
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="ev-header">
+  <div class="ev-header-top">
+    <div class="ev-header-icon">
+      <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><polyline points="7 8 10 11 7 14"/><line x1="13" y1="14" x2="17" y2="14"/></svg>
+    </div>
+    <div>
+      <h1>Event Viewer</h1>
+      <div class="subtitle">DWx Policy Manager &mdash; Diagnostics & Troubleshooting</div>
+    </div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn">
+      <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      Event Stream
+    </button>
+    <button class="tab-btn">
+      <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      Network Monitor
+    </button>
+    <button class="tab-btn">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+      Investigation Board
+    </button>
+    <button class="tab-btn">
+      <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      System Health
+    </button>
+    <button class="tab-btn">
+      <svg viewBox="0 0 24 24"><path d="M12 2a4 4 0 014 4v1a1 1 0 001 1h1a4 4 0 010 8h-1a1 1 0 00-1 1v1a4 4 0 01-8 0v-1a1 1 0 00-1-1H6a4 4 0 010-8h1a1 1 0 001-1V6a4 4 0 014-4z"/><circle cx="12" cy="12" r="2"/></svg>
+      AI Triage
+    </button>
+    <button class="tab-btn perf active">
+      <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      Performance
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PERFORMANCE TAB CONTENT
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="content">
+
+  <!-- ── Section 1: Performance Score Card ── -->
+  <div class="score-section">
+    <!-- Circular gauge -->
+    <div class="gauge-card">
+      <div class="gauge-container">
+        <svg viewBox="0 0 120 120" width="160" height="160">
+          <!-- Background circle -->
+          <circle class="gauge-bg" cx="60" cy="60" r="50" transform="rotate(-90 60 60)" stroke-dasharray="314" stroke-dashoffset="0" />
+          <!-- Score fill (72/100 = 226 offset from 314) -->
+          <circle class="gauge-fill ok" cx="60" cy="60" r="50" transform="rotate(-90 60 60)" stroke-dasharray="314" stroke-dashoffset="88" />
+        </svg>
+        <div class="gauge-value">72<span>/100</span></div>
+      </div>
+      <div class="gauge-label">Performance Score</div>
+      <div class="gauge-sublabel">4 optimizations available</div>
+    </div>
+
+    <!-- Sub-scores -->
+    <div class="sub-scores">
+      <div class="sub-score-card green">
+        <div class="sub-score-label">API Latency</div>
+        <div class="sub-score-value">85</div>
+        <div class="sub-score-detail">Avg 342ms</div>
+        <div class="sub-score-bar"><div class="sub-score-bar-fill" style="width:85%;background:#059669;"></div></div>
+      </div>
+      <div class="sub-score-card red">
+        <div class="sub-score-label">Throttling</div>
+        <div class="sub-score-value">45</div>
+        <div class="sub-score-detail">3x 429 errors</div>
+        <div class="sub-score-bar"><div class="sub-score-bar-fill" style="width:45%;background:#dc2626;"></div></div>
+      </div>
+      <div class="sub-score-card green">
+        <div class="sub-score-label">Error Rate</div>
+        <div class="sub-score-value">92</div>
+        <div class="sub-score-detail">3.5% failure</div>
+        <div class="sub-score-bar"><div class="sub-score-bar-fill" style="width:92%;background:#059669;"></div></div>
+      </div>
+      <div class="sub-score-card amber">
+        <div class="sub-score-label">Payload</div>
+        <div class="sub-score-value">65</div>
+        <div class="sub-score-detail">2x select(*)</div>
+        <div class="sub-score-bar"><div class="sub-score-bar-fill" style="width:65%;background:#d97706;"></div></div>
+      </div>
+      <div class="sub-score-card amber">
+        <div class="sub-score-label">Request Vol.</div>
+        <div class="sub-score-value">68</div>
+        <div class="sub-score-detail">24 req / 3 min</div>
+        <div class="sub-score-bar"><div class="sub-score-bar-fill" style="width:68%;background:#d97706;"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Optimize All Bar ── -->
+  <div class="optimize-all-bar">
+    <div class="optimize-all-text">
+      <strong>4 optimizations</strong> detected that could improve your score from <strong>72</strong> to an estimated <strong>89</strong>
+    </div>
+    <button class="optimize-all-btn">
+      <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      Optimize All
+    </button>
+  </div>
+
+  <!-- ── Section 2: Detected Issues with Optimization Controls ── -->
+  <div class="section-header">Detected Issues <small>Sorted by impact</small></div>
+
+  <div class="opt-grid">
+
+    <!-- Issue 1: Excessive queries -->
+    <div class="opt-card">
+      <div class="opt-card-header">
+        <div>
+          <div class="opt-card-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            Excessive API Calls to PM_Policies
+          </div>
+          <div class="opt-card-desc">24 requests to PM_Policies in 3 minutes. Multiple components independently query the same list, causing 429 throttling.</div>
+        </div>
+        <span class="opt-severity high">High</span>
+      </div>
+      <div class="opt-card-body">
+        <div class="impact-row">
+          <span class="impact-label">Impact</span>
+          <div class="impact-bar"><div class="impact-bar-fill high" style="width:85%;"></div></div>
+          <span class="impact-value">85%</span>
+        </div>
+        <div class="slider-row">
+          <span class="slider-label">Cache TTL (seconds)</span>
+          <input type="range" class="slider-input" min="0" max="120" value="30" oninput="this.nextElementSibling.textContent=this.value+'s'">
+          <span class="slider-value">30s</span>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">Request deduplication</span>
+          <div class="toggle-track on"><div class="toggle-knob"></div></div>
+          <span class="toggle-status on">Enabled</span>
+        </div>
+      </div>
+      <div class="opt-card-footer">
+        <div class="opt-prediction">
+          <svg viewBox="0 0 24 24"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/></svg>
+          Est. -60% requests, eliminates 429s
+        </div>
+        <button class="opt-apply-btn">
+          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          Apply
+        </button>
+      </div>
+    </div>
+
+    <!-- Issue 2: Large payloads -->
+    <div class="opt-card">
+      <div class="opt-card-header">
+        <div>
+          <div class="opt-card-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            Oversized Payloads (select * detected)
+          </div>
+          <div class="opt-card-desc">2 queries using select('*') returning all columns. PM_PolicyAuditLog returns 3,847 items with unnecessary fields.</div>
+        </div>
+        <span class="opt-severity medium">Medium</span>
+      </div>
+      <div class="opt-card-body">
+        <div class="impact-row">
+          <span class="impact-label">Impact</span>
+          <div class="impact-bar"><div class="impact-bar-fill medium" style="width:55%;"></div></div>
+          <span class="impact-value">55%</span>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">Lean query mode (specific columns only)</span>
+          <div class="toggle-track on"><div class="toggle-knob"></div></div>
+          <span class="toggle-status on">Enabled</span>
+        </div>
+        <div class="slider-row">
+          <span class="slider-label">Default $top limit</span>
+          <input type="range" class="slider-input" min="25" max="500" value="100" step="25" oninput="this.nextElementSibling.textContent=this.value">
+          <span class="slider-value">100</span>
+        </div>
+      </div>
+      <div class="opt-card-footer">
+        <div class="opt-prediction">
+          <svg viewBox="0 0 24 24"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/></svg>
+          Est. -40% payload size, -120ms latency
+        </div>
+        <button class="opt-apply-btn">
+          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          Apply
+        </button>
+      </div>
+    </div>
+
+    <!-- Issue 3: No concurrent request limit -->
+    <div class="opt-card">
+      <div class="opt-card-header">
+        <div>
+          <div class="opt-card-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            No Concurrent Request Limit
+          </div>
+          <div class="opt-card-desc">Up to 8 simultaneous SP API calls detected. SharePoint throttles at 6+ concurrent requests from a single session.</div>
+        </div>
+        <span class="opt-severity medium">Medium</span>
+      </div>
+      <div class="opt-card-body">
+        <div class="impact-row">
+          <span class="impact-label">Impact</span>
+          <div class="impact-bar"><div class="impact-bar-fill medium" style="width:50%;"></div></div>
+          <span class="impact-value">50%</span>
+        </div>
+        <div class="slider-row">
+          <span class="slider-label">Max concurrent requests</span>
+          <input type="range" class="slider-input" min="1" max="10" value="4" oninput="this.nextElementSibling.textContent=this.value">
+          <span class="slider-value">4</span>
+        </div>
+      </div>
+      <div class="opt-card-footer">
+        <div class="opt-prediction">
+          <svg viewBox="0 0 24 24"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/></svg>
+          Est. eliminates concurrent throttling
+        </div>
+        <button class="opt-apply-btn">
+          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          Apply
+        </button>
+      </div>
+    </div>
+
+    <!-- Issue 4: Slow query (already applied) -->
+    <div class="opt-card" style="opacity: 0.75;">
+      <div class="opt-card-header">
+        <div>
+          <div class="opt-card-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            Slow Query on PM_Approvals
+          </div>
+          <div class="opt-card-desc">Average 1,240ms latency. Query lacks $filter — loading all items then filtering client-side.</div>
+        </div>
+        <span class="opt-severity low">Low</span>
+      </div>
+      <div class="opt-card-body">
+        <div class="impact-row">
+          <span class="impact-label">Impact</span>
+          <div class="impact-bar"><div class="impact-bar-fill low" style="width:30%;"></div></div>
+          <span class="impact-value">30%</span>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">Server-side filtering</span>
+          <div class="toggle-track on"><div class="toggle-knob"></div></div>
+          <span class="toggle-status on">Enabled</span>
+        </div>
+      </div>
+      <div class="opt-card-footer">
+        <div class="opt-prediction" style="color:#059669;">
+          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          Applied — est. -800ms latency
+        </div>
+        <button class="opt-apply-btn applied">
+          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          Applied
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Before/After Comparison ── -->
+  <div class="section-header">Before / After Projection <small>Based on selected optimizations</small></div>
+  <div class="comparison-card">
+    <div class="comparison-grid">
+      <div class="comparison-col before">
+        <div class="comparison-title">Current</div>
+        <div class="comparison-stat">
+          <span class="comparison-stat-label">Avg Latency</span>
+          <span class="comparison-stat-value">342ms</span>
+        </div>
+        <div class="comparison-stat">
+          <span class="comparison-stat-label">P95 Latency</span>
+          <span class="comparison-stat-value">2,847ms</span>
+        </div>
+        <div class="comparison-stat">
+          <span class="comparison-stat-label">Requests / min</span>
+          <span class="comparison-stat-value">21</span>
+        </div>
+        <div class="comparison-stat">
+          <span class="comparison-stat-label">429 Throttled</span>
+          <span class="comparison-stat-value worse">3</span>
+        </div>
+        <div class="comparison-stat">
+          <span class="comparison-stat-label">Payload Size (avg)</span>
+          <span class="comparison-stat-value">48KB</span>
+        </div>
+        <div class="comparison-stat">
+          <span class="comparison-stat-label">Score</span>
+          <span class="comparison-stat-value worse">72</span>
+        </div>
+      </div>
+      <div class="comparison-arrow">
+        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </div>
+      <div class="comparison-col after">
+        <div class="comparison-title">Projected</div>
+        <div class="comparison-stat">
+          <span class="comparison-stat-label">Avg Latency</span>
+          <span class="comparison-stat-value improved">~180ms</span>
+        </div>
+        <div class="comparison-stat">
+          <span class="comparison-stat-label">P95 Latency</span>
+          <span class="comparison-stat-value improved">~1,200ms</span>
+        </div>
+        <div class="comparison-stat">
+          <span class="comparison-stat-label">Requests / min</span>
+          <span class="comparison-stat-value improved">~8</span>
+        </div>
+        <div class="comparison-stat">
+          <span class="comparison-stat-label">429 Throttled</span>
+          <span class="comparison-stat-value improved">0</span>
+        </div>
+        <div class="comparison-stat">
+          <span class="comparison-stat-label">Payload Size (avg)</span>
+          <span class="comparison-stat-value improved">~28KB</span>
+        </div>
+        <div class="comparison-stat">
+          <span class="comparison-stat-label">Score</span>
+          <span class="comparison-stat-value improved">~89</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Section 3: AI Optimize ── -->
+  <div class="ai-optimize-card">
+    <div class="ai-optimize-header">
+      <div>
+        <h2>
+          <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          AI Performance Advisor
+        </h2>
+        <p>GPT-4o analyses your network patterns and recommends code-level and configuration optimizations.</p>
+      </div>
+      <button class="ai-optimize-btn">
+        <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        Analyse & Recommend
+      </button>
+    </div>
+    <div class="ai-optimize-body">
+
+      <!-- AI Recommendation 1 -->
+      <div class="ai-rec">
+        <div class="ai-rec-header">
+          <div class="ai-rec-title">
+            <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            Add Request Deduplication Cache to PolicyService
+          </div>
+          <span class="ai-rec-impact high">High Impact</span>
+        </div>
+        <div class="ai-rec-body">
+          <div class="ai-rec-text">
+            <strong>Analysis:</strong> PolicyHub, PolicyAdmin, and PolicyAnalytics each call <code style="background:#f1f5f9;padding:1px 5px;border-radius:3px;font-size:12px;">PolicyService.getPolicies()</code> independently in <code style="background:#f1f5f9;padding:1px 5px;border-radius:3px;font-size:12px;">componentDidMount()</code>. When navigating quickly, parallel fetches exhaust the request budget. A shared in-flight cache would coalesce these into a single API call.
+          </div>
+          <div class="ai-rec-code"><span class="comment">// PolicyService.ts — add request deduplication</span>
+<span class="add">+ private _pending: Map&lt;string, Promise&lt;any&gt;&gt; = new Map();</span>
+<span class="add">+</span>
+<span class="add">+ private async cachedQuery&lt;T&gt;(key: string, fn: () =&gt; Promise&lt;T&gt;): Promise&lt;T&gt; {</span>
+<span class="add">+   if (this._pending.has(key)) return this._pending.get(key);</span>
+<span class="add">+   const p = fn().finally(() =&gt; this._pending.delete(key));</span>
+<span class="add">+   this._pending.set(key, p);</span>
+<span class="add">+   return p;</span>
+<span class="add">+ }</span></div>
+        </div>
+        <div class="ai-rec-footer">
+          <div class="ai-rec-prediction">
+            <svg viewBox="0 0 24 24"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/></svg>
+            Est. -60% duplicate requests, eliminates 429 throttling
+          </div>
+          <div class="ai-rec-actions">
+            <button class="ai-rec-dismiss">Dismiss</button>
+            <button class="ai-rec-apply">
+              <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              Apply Config
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Recommendation 2 -->
+      <div class="ai-rec">
+        <div class="ai-rec-header">
+          <div class="ai-rec-title">
+            <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            Implement Retry-After Header Handling
+          </div>
+          <span class="ai-rec-impact medium">Medium Impact</span>
+        </div>
+        <div class="ai-rec-body">
+          <div class="ai-rec-text">
+            <strong>Analysis:</strong> When SharePoint returns 429, it includes a <code style="background:#f1f5f9;padding:1px 5px;border-radius:3px;font-size:12px;">Retry-After</code> header (typically 120s). The current retry utility uses fixed exponential backoff which may retry too soon, causing cascading throttling. Reading the header value ensures compliance with SP's backoff guidance.
+          </div>
+          <div class="ai-rec-code"><span class="comment">// retryUtils.ts — respect Retry-After header</span>
+<span class="add">+ const retryAfter = response.headers.get('Retry-After');</span>
+<span class="add">+ const delayMs = retryAfter</span>
+<span class="add">+   ? parseInt(retryAfter, 10) * 1000</span>
+<span class="add">+   : initialDelayMs * Math.pow(backoff, attempt);</span></div>
+        </div>
+        <div class="ai-rec-footer">
+          <div class="ai-rec-prediction">
+            <svg viewBox="0 0 24 24"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/></svg>
+            Prevents cascading 429 failures
+          </div>
+          <div class="ai-rec-actions">
+            <button class="ai-rec-dismiss">Dismiss</button>
+            <button class="ai-rec-apply">
+              <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              Apply Config
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Recommendation 3 -->
+      <div class="ai-rec">
+        <div class="ai-rec-header">
+          <div class="ai-rec-title">
+            <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            Add SP List Index for PM_Approvals
+          </div>
+          <span class="ai-rec-impact medium">Medium Impact</span>
+        </div>
+        <div class="ai-rec-body">
+          <div class="ai-rec-text">
+            <strong>Analysis:</strong> PM_Approvals queries averaging 1,240ms suggest a missing list index. The most common OData filter is <code style="background:#f1f5f9;padding:1px 5px;border-radius:3px;font-size:12px;">$filter=Status eq 'Pending' and AssignedToId eq X</code>. Adding a compound index on <code style="background:#f1f5f9;padding:1px 5px;border-radius:3px;font-size:12px;">Status</code> + <code style="background:#f1f5f9;padding:1px 5px;border-radius:3px;font-size:12px;">AssignedToId</code> should reduce this to ~200ms.
+          </div>
+          <div class="ai-rec-code"><span class="comment"># PowerShell — add index to PM_Approvals</span>
+<span class="add">Set-PnPField -List "PM_Approvals" -Identity "Status" `</span>
+<span class="add">  -Values @{Indexed=$true}</span>
+<span class="add">Set-PnPField -List "PM_Approvals" -Identity "AssignedToId" `</span>
+<span class="add">  -Values @{Indexed=$true}</span></div>
+        </div>
+        <div class="ai-rec-footer">
+          <div class="ai-rec-prediction">
+            <svg viewBox="0 0 24 24"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/></svg>
+            Est. -80% query time on PM_Approvals (1,240ms &rarr; ~200ms)
+          </div>
+          <div class="ai-rec-actions">
+            <button class="ai-rec-dismiss">Dismiss</button>
+            <button class="ai-rec-apply">
+              <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              Copy Script
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     DESIGN NOTES
+     ═══════════════════════════════════════════════════════════════ -->
+<div style="max-width:1600px;margin:0 auto;padding:0 32px 60px;">
+  <div class="design-notes">
+    <h4>Design Notes — For Review</h4>
+    <ul>
+      <li><strong>Section 1 — Performance Score Card:</strong> Circular gauge (0-100) with 5 sub-scores (API Latency, Throttling, Error Rate, Payload, Request Volume). Each sub-score has a progress bar. Scores are calculated from real-time network events captured by the NetworkInterceptor.</li>
+      <li><strong>Optimize All Bar:</strong> Green gradient banner showing the total optimizations available and the projected score improvement. Single "Optimize All" button applies all recommended settings at once to <code>PM_Configuration</code>.</li>
+      <li><strong>Section 2 — Optimization Cards:</strong> Each detected issue gets a card with: issue description, impact bar (0-100%), one or more tuneable controls (slider for numeric values, toggle for on/off features), and an "Apply" button that saves the setting. Cards sorted by impact descending. Applied cards fade to 75% opacity.</li>
+      <li><strong>Tuneable Parameters:</strong>
+        <ul>
+          <li><strong>Cache TTL (0-120s):</strong> How long to cache SP query results client-side before re-fetching</li>
+          <li><strong>Request Deduplication (toggle):</strong> Coalesce in-flight duplicate requests into a single API call</li>
+          <li><strong>Lean Query Mode (toggle):</strong> Force specific column selects instead of select('*')</li>
+          <li><strong>Default $top Limit (25-500):</strong> Max items per SP query page</li>
+          <li><strong>Max Concurrent Requests (1-10):</strong> Throttle outgoing API calls to prevent SP rate limiting</li>
+          <li><strong>Server-side Filtering (toggle):</strong> Use OData $filter instead of client-side Array.filter()</li>
+        </ul>
+      </li>
+      <li><strong>Before/After Comparison:</strong> Side-by-side cards showing current metrics vs projected metrics after applying selected optimizations. Green = improved, red = degraded. Updates dynamically as sliders change.</li>
+      <li><strong>Section 3 — AI Performance Advisor:</strong> GPT-4o analyses all network events and recommends code-level changes with diffs. Each recommendation has an "Apply Config" button (saves the tuneable setting) or "Copy Script" (for infrastructure changes like SP indexes). Uses the same <code>event-triage</code> Azure Function mode with a performance-specific prompt.</li>
+      <li><strong>Config persistence:</strong> All slider/toggle values save to <code>PM_Configuration</code> via <code>AdminConfigService.saveConfigByCategory('Performance', ...)</code>. Services read these on init and adjust behaviour accordingly.</li>
+      <li><strong>What "Apply" actually does:</strong> Saves a config key (e.g. <code>Perf.CacheTTL=30</code>) to PM_Configuration. Services like PolicyService read this on initialisation and adjust their query behaviour (add caching, reduce $top, enable dedup). The Event Viewer does NOT modify source code — it adjusts runtime configuration that services honour.</li>
+    </ul>
+  </div>
+</div>
+
+</body>
+</html>

@@ -39,6 +39,9 @@ export class LoggingService {
   private isProduction: boolean = false;
   private isDevelopment: boolean = true;
 
+  /** Optional tap for EventBuffer — set by EventViewer on mount, cleared on unmount */
+  public static onEnqueue?: (name: string, baseType: string, baseData: Record<string, unknown>) => void;
+
   // Application Insights state
   private instrumentationKey: string = '';
   private ingestionEndpoint: string = '';
@@ -375,6 +378,11 @@ export class LoggingService {
     };
 
     this.pendingEnvelopes.push(envelope);
+
+    // Notify EventBuffer tap (if Event Viewer is active)
+    if (LoggingService.onEnqueue) {
+      try { LoggingService.onEnqueue(name, baseType, safeBaseData); } catch (_) { /* never break logging */ }
+    }
 
     // Auto-flush when batch reaches 25 items
     if (this.pendingEnvelopes.length >= 25) {

@@ -121,6 +121,14 @@
           "manifest": "./src/webparts/dwxPolicyBulkUpload/DwxPolicyBulkUploadWebPart.manifest.json"
         }
       ]
+    },
+    "dwx-event-viewer-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/dwxEventViewer/DwxEventViewerWebPart.js",
+          "manifest": "./src/webparts/dwxEventViewer/DwxEventViewerWebPart.manifest.json"
+        }
+      ]
     }
   },
   "externals": {},
@@ -140,6 +148,7 @@
     "DwxPolicyManagerViewWebPartStrings": "lib/webparts/dwxPolicyManagerView/loc/{locale}.js",
     "DwxPolicyAuthorReportsWebPartStrings": "lib/webparts/dwxPolicyAuthorReports/loc/{locale}.js",
     "DwxPolicyBulkUploadWebPartStrings": "lib/webparts/dwxPolicyBulkUpload/loc/{locale}.js",
+    "DwxEventViewerWebPartStrings": "lib/webparts/dwxEventViewer/loc/{locale}.js",
     "ControlStrings": "node_modules/@pnp/spfx-controls-react/lib/loc/{locale}.js"
   }
 }

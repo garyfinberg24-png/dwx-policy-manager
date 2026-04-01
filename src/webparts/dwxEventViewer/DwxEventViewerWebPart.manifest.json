@@ -1,0 +1,35 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx/client-side-web-part-manifest.schema.json",
+  "id": "730cd062-3c26-44bb-96d5-8c8d67981b8c",
+  "alias": "DwxEventViewerWebPart",
+  "componentType": "WebPart",
+  "version": "*",
+  "manifestVersion": 2,
+  "requiresCustomScript": false,
+  "supportedHosts": [
+    "SharePointWebPart",
+    "SharePointFullPage",
+    "TeamsPersonalApp",
+    "TeamsTab"
+  ],
+  "supportsThemeVariants": true,
+  "supportsFullBleed": true,
+  "preconfiguredEntries": [
+    {
+      "groupId": "e4b0a295-44e2-4fa4-8f15-4eac5edf4275",
+      "group": {
+        "default": "DWx Policy Manager"
+      },
+      "title": {
+        "default": "DWx Event Viewer"
+      },
+      "description": {
+        "default": "Diagnostics & troubleshooting tool for DWx Policy Manager"
+      },
+      "officeFabricIconFontName": "EventDate",
+      "properties": {
+        "title": "Event Viewer"
+      }
+    }
+  ]
+}

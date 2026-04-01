@@ -7,7 +7,7 @@
 
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
 import { ChatRequest, ChatResponse, LIMITS } from '../types/chatTypes';
-import { getSystemPrompt, buildPolicyContextMessage } from '../prompts/systemPrompts';
+import { getSystemPrompt, buildPolicyContextMessage, buildEventContextMessage } from '../prompts/systemPrompts';
 
 // ── Rate limiting (in-memory, per Function instance) ──
 
@@ -50,8 +50,8 @@ function validateRequest(body: ChatRequest): ValidationError | null {
   if (body.message.length > LIMITS.MAX_MESSAGE_LENGTH) {
     return { status: 400, message: `Message exceeds ${LIMITS.MAX_MESSAGE_LENGTH} characters` };
   }
-  if (!['policy-qa', 'author-assist', 'general-help'].includes(body.mode)) {
-    return { status: 400, message: 'Invalid "mode". Must be: policy-qa, author-assist, or general-help' };
+  if (!['policy-qa', 'author-assist', 'general-help', 'event-triage'].includes(body.mode)) {
+    return { status: 400, message: 'Invalid "mode". Must be: policy-qa, author-assist, general-help, or event-triage' };
   }
   if (!['User', 'Author', 'Manager', 'Admin'].includes(body.userRole)) {
     return { status: 400, message: 'Invalid "userRole". Must be: User, Author, Manager, or Admin' };
@@ -114,8 +114,14 @@ async function policyChatCompletion(
     ];
 
     // Inject policy context (for policy-qa and author-assist modes)
-    if (body.mode !== 'general-help' && body.policyContext?.policies) {
+    if (body.mode !== 'general-help' && body.mode !== 'event-triage' && body.policyContext?.policies) {
       const contextMsg = buildPolicyContextMessage(body.policyContext.policies);
+      messages.push({ role: 'system', content: contextMsg });
+    }
+
+    // Inject event context (for event-triage mode)
+    if (body.mode === 'event-triage' && body.eventContext) {
+      const contextMsg = buildEventContextMessage(body.eventContext);
       messages.push({ role: 'system', content: contextMsg });
     }
 
@@ -155,7 +161,7 @@ async function policyChatCompletion(
         body: JSON.stringify({
           messages,
           temperature: 0.7,
-          max_tokens: maxTokens,
+          max_completion_tokens: maxTokens,
           top_p: 0.95,
         }),
       });

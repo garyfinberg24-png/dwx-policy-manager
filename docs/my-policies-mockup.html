@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Policies — Updated Layout Mockup</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', -apple-system, sans-serif; color: #334155; background: #f1f5f9; line-height: 1.5; }
+
+  /* ── App Header (simulated) ── */
+  .app-header { background: linear-gradient(135deg, #0d9488, #0f766e); padding: 12px 32px; display: flex; align-items: center; justify-content: space-between; }
+  .app-header-left { display: flex; align-items: center; gap: 12px; color: #fff; }
+  .app-header-left svg { width: 32px; height: 32px; stroke: #fff; fill: none; stroke-width: 1.5; }
+  .app-header-left h1 { font-size: 16px; font-weight: 600; }
+  .app-header-left .sub { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.7; }
+
+  /* ── Nav Bar (simulated) ── */
+  .nav-bar { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 0 32px; display: flex; gap: 0; }
+  .nav-item { padding: 12px 20px; font-size: 13px; color: #64748b; font-weight: 500; cursor: pointer; border-bottom: 2px solid transparent; }
+  .nav-item:hover { color: #0d9488; }
+  .nav-item.active { color: #0d9488; border-bottom-color: #0d9488; font-weight: 600; }
+
+  /* ── Hero Banner ── */
+  .hero {
+    background: linear-gradient(135deg, #0d9488 0%, #0f766e 60%, #115e59 100%);
+    padding: 24px 32px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    right: -60px; bottom: -60px;
+    width: 200px; height: 200px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 50%;
+  }
+  .hero-grid {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 24px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Left: Ring + Greeting */
+  .hero-left { display: flex; align-items: center; gap: 16px; }
+  .compliance-ring { text-align: center; }
+  .compliance-ring .label { font-size: 8px; text-transform: uppercase; letter-spacing: 0.5px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+  .hero-greeting h2 { font-size: 20px; font-weight: 700; color: #fff; margin: 0 0 2px; }
+  .hero-greeting p { font-size: 12px; color: rgba(255,255,255,0.7); margin: 0; }
+
+  /* Center: Search */
+  .hero-search-wrap { display: flex; align-items: center; justify-content: center; }
+  .hero-search-inner { position: relative; display: flex; align-items: center; }
+  .hero-search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; }
+  .hero-search-icon svg { width: 13px; height: 13px; stroke: rgba(255,255,255,0.6); fill: none; stroke-width: 2; }
+  .hero-search {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 6px;
+    padding: 7px 12px 7px 30px;
+    font-size: 12px;
+    width: 280px;
+    outline: none;
+    font-family: inherit;
+    color: #fff;
+  }
+  .hero-search::placeholder { color: rgba(255,255,255,0.6); }
+  .hero-search:focus { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+
+  /* Right: KPI cards */
+  .hero-kpis { display: flex; gap: 10px; justify-content: flex-end; }
+  .hero-kpi {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 8px;
+    padding: 8px 14px;
+    text-align: center;
+    min-width: 60px;
+  }
+  .hero-kpi-value { font-size: 18px; font-weight: 700; color: #fff; line-height: 1.2; }
+  .hero-kpi-value.warning { color: #fbbf24; }
+  .hero-kpi-value.danger { color: #f87171; }
+  .hero-kpi-label { font-size: 8px; text-transform: uppercase; letter-spacing: 0.5px; color: rgba(255,255,255,0.6); margin-top: 2px; }
+
+  /* ── Content Area ── */
+  .content { max-width: 1400px; margin: 0 auto; padding: 20px 32px 80px; }
+
+  /* ── Filter Tabs ── */
+  .filter-tabs { display: flex; gap: 6px; margin-bottom: 16px; align-items: center; }
+  .filter-tab {
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    color: #64748b;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: inherit;
+  }
+  .filter-tab:hover { border-color: #0d9488; color: #0d9488; }
+  .filter-tab.active { background: #0d9488; color: #fff; border-color: #0d9488; }
+  .filter-tab .badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 0 6px;
+    border-radius: 8px;
+    background: rgba(0,0,0,0.08);
+    min-width: 18px;
+    text-align: center;
+  }
+  .filter-tab.active .badge { background: rgba(255,255,255,0.25); }
+  .filter-tab.overdue { border-color: #fca5a5; color: #dc2626; }
+  .filter-tab.overdue .badge { background: #dc2626; color: #fff; }
+  .filter-count { margin-left: auto; font-size: 12px; color: #94a3b8; }
+
+  /* ── Policy List ── */
+  .policy-list {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  /* Column Header */
+  .list-header {
+    display: grid;
+    grid-template-columns: 44px minmax(180px, 1fr) 90px 48px 100px 100px 140px 100px 36px;
+    gap: 12px;
+    padding: 8px 20px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
+    font-weight: 600;
+    align-items: center;
+  }
+
+  /* Policy Row */
+  .policy-row {
+    display: grid;
+    grid-template-columns: 44px minmax(180px, 1fr) 90px 48px 100px 100px 140px 100px 36px;
+    gap: 12px;
+    padding: 10px 20px;
+    border-bottom: 1px solid #f1f5f9;
+    align-items: center;
+    cursor: pointer;
+    transition: background 0.1s;
+    border-left: 3px solid transparent;
+  }
+  .policy-row:hover { background: #f0fdfa; }
+  .policy-row.overdue { border-left-color: #dc2626; }
+  .policy-row.selected { background: #f0fdfa; border-left-color: #0d9488; }
+  .policy-row:last-child { border-bottom: none; }
+
+  /* Icon circle */
+  .policy-icon {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .policy-icon svg { width: 20px; height: 20px; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .policy-icon.pending { background: #fef3c7; }
+  .policy-icon.pending svg { stroke: #d97706; }
+  .policy-icon.overdue { background: #fee2e2; }
+  .policy-icon.overdue svg { stroke: #dc2626; }
+  .policy-icon.done { background: #dcfce7; }
+  .policy-icon.done svg { stroke: #059669; }
+
+  /* Policy name */
+  .policy-name { font-size: 13px; font-weight: 600; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* Policy number column */
+  .col-polnum {
+    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    font-size: 11px;
+    color: #0d9488;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Version column */
+  .col-version {
+    font-size: 11px;
+    color: #94a3b8;
+    white-space: nowrap;
+  }
+
+  /* Date column */
+  .col-date {
+    font-size: 12px;
+    color: #475569;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Category column */
+  .col-category {
+    font-size: 12px;
+    color: #475569;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Badges */
+  .badge-row { display: flex; gap: 4px; flex-wrap: wrap; }
+  .status-badge {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  .status-badge.pending { background: #fef3c7; color: #b45309; }
+  .status-badge.overdue { background: #fee2e2; color: #b91c1c; }
+  .status-badge.acknowledged { background: #dcfce7; color: #059669; }
+  .status-badge.critical { background: #fee2e2; color: #dc2626; }
+
+  /* Due in column */
+  .col-due { font-size: 11px; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .col-due.warn { color: #d97706; }
+  .col-due.danger { color: #dc2626; font-weight: 600; }
+  .col-due.muted { color: #94a3b8; }
+
+  /* View button */
+  .view-btn {
+    width: 32px; height: 32px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+    transition: all 0.15s;
+  }
+  .view-btn:hover { border-color: #0d9488; color: #0d9488; background: #f0fdfa; }
+  .view-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ── Design Notes ── */
+  .design-notes {
+    background: #faf5ff;
+    border: 1px dashed #c084fc;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 32px 0;
+    font-size: 13px;
+    color: #6b21a8;
+  }
+  .design-notes h4 { font-size: 14px; font-weight: 600; margin-bottom: 8px; color: #7c3aed; }
+  .design-notes ul { margin-left: 18px; margin-top: 6px; }
+  .design-notes li { margin-bottom: 4px; }
+  .design-notes code { background: #ede9fe; padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+
+  /* ── Annotations ── */
+  .annotation {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .annotation.new { background: #dcfce7; color: #059669; }
+  .annotation.changed { background: #fef3c7; color: #b45309; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     APP HEADER (simulated)
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="app-header">
+  <div class="app-header-left">
+    <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke-linejoin="round"/><polyline points="9 12 11 14 15 10"/></svg>
+    <div>
+      <h1>Policy Manager</h1>
+      <div class="sub">Policy Governance & Compliance</div>
+    </div>
+  </div>
+</div>
+
+<!-- Nav -->
+<div class="nav-bar">
+  <div class="nav-item active">My Policies</div>
+  <div class="nav-item">Policy Hub</div>
+  <div class="nav-item">Author</div>
+  <div class="nav-item">Manager</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     HERO BANNER
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="hero">
+  <div class="hero-grid">
+    <!-- Left: Ring + Greeting -->
+    <div class="hero-left">
+      <div class="compliance-ring">
+        <div style="position:relative;width:56px;height:56px;">
+          <svg viewBox="0 0 40 40" width="56" height="56">
+            <circle cx="20" cy="20" r="17" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="4"/>
+            <circle cx="20" cy="20" r="17" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"
+              stroke-dasharray="106.8" stroke-dashoffset="80.1" transform="rotate(-90 20 20)"/>
+          </svg>
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:14px;font-weight:700;color:#fff;">25%</div>
+        </div>
+        <div class="label">Compliance</div>
+      </div>
+      <div class="hero-greeting">
+        <h2>Good afternoon, Gulzar</h2>
+        <p>5 pending, 1 overdue</p>
+      </div>
+    </div>
+
+    <!-- Center: Search (VALIGN middle, white placeholder) -->
+    <div class="hero-search-wrap">
+      <div class="hero-search-inner">
+        <div class="hero-search-icon">
+          <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </div>
+        <input class="hero-search" type="text" placeholder="Search my policies..."/>
+      </div>
+    </div>
+
+    <!-- Right: KPI mini cards -->
+    <div class="hero-kpis">
+      <div class="hero-kpi">
+        <div class="hero-kpi-value">8</div>
+        <div class="hero-kpi-label">Assigned</div>
+      </div>
+      <div class="hero-kpi">
+        <div class="hero-kpi-value">2</div>
+        <div class="hero-kpi-label">Done</div>
+      </div>
+      <div class="hero-kpi">
+        <div class="hero-kpi-value warning">5</div>
+        <div class="hero-kpi-label">Pending</div>
+      </div>
+      <div class="hero-kpi">
+        <div class="hero-kpi-value danger">1</div>
+        <div class="hero-kpi-label">Overdue</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     CONTENT
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="content">
+
+  <!-- Filter Tabs -->
+  <div class="filter-tabs">
+    <button class="filter-tab active">All</button>
+    <button class="filter-tab">Pending <span class="badge">5</span></button>
+    <button class="filter-tab overdue">Overdue <span class="badge">1</span></button>
+    <button class="filter-tab">Completed</button>
+    <span class="filter-count">8 policies</span>
+  </div>
+
+  <!-- Policy List -->
+  <div class="policy-list">
+    <!-- Column Header -->
+    <div class="list-header">
+      <div></div>
+      <div>Policy Name</div>
+      <div>Policy #</div>
+      <div>Ver</div>
+      <div>Due Date</div>
+      <div>Category</div>
+      <div>Status</div>
+      <div>Due In</div>
+      <div></div>
+    </div>
+
+    <!-- Row 1: Overdue -->
+    <div class="policy-row overdue">
+      <div class="policy-icon overdue">
+        <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+      <div class="policy-name">Data Privacy & Protection Policy</div>
+      <div class="col-polnum">POL-003</div>
+      <div class="col-version">v1.5</div>
+      <div class="col-date">28 Mar 2026</div>
+      <div class="col-category">Compliance</div>
+      <div class="badge-row">
+        <span class="status-badge overdue">Overdue</span>
+        <span class="status-badge critical">Critical</span>
+      </div>
+      <div class="col-due danger">1 day ago</div>
+      <button class="view-btn" title="Read policy">
+        <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
+
+    <!-- Row 2: Pending, Critical -->
+    <div class="policy-row">
+      <div class="policy-icon pending">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <div class="policy-name">Information Security Policy</div>
+      <div class="col-polnum">POL-001</div>
+      <div class="col-version">v3.2</div>
+      <div class="col-date">2 Apr 2026</div>
+      <div class="col-category">IT Security</div>
+      <div class="badge-row">
+        <span class="status-badge pending">Pending</span>
+        <span class="status-badge critical">Critical</span>
+      </div>
+      <div class="col-due warn">Due in 2 days</div>
+      <button class="view-btn" title="Read policy">
+        <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
+
+    <!-- Row 3: Pending -->
+    <div class="policy-row">
+      <div class="policy-icon pending">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <div class="policy-name">Code of Conduct</div>
+      <div class="col-polnum">POL-002</div>
+      <div class="col-version">v2.0</div>
+      <div class="col-date">5 Apr 2026</div>
+      <div class="col-category">HR</div>
+      <div class="badge-row">
+        <span class="status-badge pending">Pending</span>
+      </div>
+      <div class="col-due muted">Due in 5 days</div>
+      <button class="view-btn" title="Read policy">
+        <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
+
+    <!-- Row 4: Pending -->
+    <div class="policy-row">
+      <div class="policy-icon pending">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <div class="policy-name">Anti-Bribery & Corruption Policy</div>
+      <div class="col-polnum">POL-004</div>
+      <div class="col-version">v1.2</div>
+      <div class="col-date">11 Apr 2026</div>
+      <div class="col-category">Compliance</div>
+      <div class="badge-row">
+        <span class="status-badge pending">Pending</span>
+      </div>
+      <div class="col-due muted">Due 11 Apr</div>
+      <button class="view-btn" title="Read policy">
+        <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
+
+    <!-- Row 5: Pending -->
+    <div class="policy-row">
+      <div class="policy-icon pending">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <div class="policy-name">Employee Travel Policy</div>
+      <div class="col-polnum">POL-007</div>
+      <div class="col-version">v1.0</div>
+      <div class="col-date">15 Apr 2026</div>
+      <div class="col-category">Operations</div>
+      <div class="badge-row">
+        <span class="status-badge pending">Pending</span>
+      </div>
+      <div class="col-due muted">Due 15 Apr</div>
+      <button class="view-btn" title="Read policy">
+        <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
+
+    <!-- Row 6: Pending -->
+    <div class="policy-row">
+      <div class="policy-icon pending">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <div class="policy-name">Remote Working Guidelines</div>
+      <div class="col-polnum">POL-008</div>
+      <div class="col-version">v2.1</div>
+      <div class="col-date">20 Apr 2026</div>
+      <div class="col-category">HR</div>
+      <div class="badge-row">
+        <span class="status-badge pending">Pending</span>
+      </div>
+      <div class="col-due muted">Due 20 Apr</div>
+      <button class="view-btn" title="Read policy">
+        <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
+
+    <!-- Row 7: Acknowledged -->
+    <div class="policy-row">
+      <div class="policy-icon done">
+        <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </div>
+      <div class="policy-name">Acceptable Use Policy</div>
+      <div class="col-polnum">POL-005</div>
+      <div class="col-version">v1.8</div>
+      <div class="col-date">27 Mar 2026</div>
+      <div class="col-category">IT Security</div>
+      <div class="badge-row">
+        <span class="status-badge acknowledged">Acknowledged</span>
+      </div>
+      <div class="col-due muted">27 Mar 2026</div>
+      <button class="view-btn" title="Read policy">
+        <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
+
+    <!-- Row 8: Acknowledged -->
+    <div class="policy-row">
+      <div class="policy-icon done">
+        <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </div>
+      <div class="policy-name">Work From Home Policy</div>
+      <div class="col-polnum">POL-006</div>
+      <div class="col-version">v2.1</div>
+      <div class="col-date">15 Feb 2026</div>
+      <div class="col-category">HR</div>
+      <div class="badge-row">
+        <span class="status-badge acknowledged">Acknowledged</span>
+      </div>
+      <div class="col-due muted">15 Feb 2026</div>
+      <button class="view-btn" title="Read policy">
+        <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     DESIGN NOTES
+     ═══════════════════════════════════════════════════════════════ -->
+<div style="max-width:1400px;margin:0 auto;padding:0 32px 60px;">
+  <div class="design-notes">
+    <h4>Design Notes — Changes from Current</h4>
+    <ul>
+      <li><strong>Hero search placeholder</strong> <span class="annotation changed">Changed</span> — Placeholder text now <code>rgba(255,255,255,0.6)</code> for readability on teal. Search icon also brightened to match.</li>
+      <li><strong>Hero vertical alignment</strong> <span class="annotation changed">Changed</span> — All 3 columns (ring+greeting, search, KPIs) now <code>align-items: center</code> instead of <code>flex-end</code>. Search bar centred vertically with the greeting text.</li>
+      <li><strong>Policy # column</strong> <span class="annotation new">New</span> — Policy number in teal monospace (e.g. POL-003). Previously inline in subtitle.</li>
+      <li><strong>Version column</strong> <span class="annotation new">New</span> — Version number (e.g. v1.5). Previously inline in subtitle.</li>
+      <li><strong>Due Date column</strong> <span class="annotation new">New</span> — Due date formatted as "2 Apr 2026". Previously only in detail panel.</li>
+      <li><strong>Category column</strong> <span class="annotation new">New</span> — Category (IT Security, HR, etc.). Previously inline in subtitle.</li>
+      <li><strong>Column header row</strong> <span class="annotation new">New</span> — Grey header with all 9 columns aligned to the data grid.</li>
+      <li><strong>Eye icon</strong> <span class="annotation changed">Changed</span> — Replaced chevron with eye icon for "Read Policy". Communicates "click to view/read" more clearly than a directional arrow.</li>
+      <li><strong>Sort order</strong> <span class="annotation changed">Changed</span> — Default sort: Overdue first (red border), then Pending/Due (by soonest due date), then Completed. Previously unsorted.</li>
+      <li><strong>Completed filter</strong> <span class="annotation changed">Changed</span> — Now only shows policies with <code>status === 'completed' && acknowledgementDate</code>. Previously showed all "completed" regardless of acknowledgement.</li>
+      <li><strong>Grid layout</strong> <span class="annotation changed">Changed</span> — 9-column CSS Grid: <code>44px 1fr 90px 50px 90px 90px auto 100px 36px</code>. All data perfectly aligned between header and rows.</li>
+      <li><strong>Policy name simplified</strong> <span class="annotation changed">Changed</span> — Policy name is now a single line (no subtitle). Policy #, version, category all have their own columns.</li>
+    </ul>
+  </div>
+</div>
+
+</body>
+</html>

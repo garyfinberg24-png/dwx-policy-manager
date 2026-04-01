@@ -1,0 +1,207 @@
+/* DWx Event Viewer — Component Styles */
+
+.eventViewer {
+  min-height: 100vh;
+  background: #f1f5f9;
+}
+
+/* ── Tab Bar ── */
+.tabBar {
+  display: flex;
+  gap: 2px;
+  background: transparent;
+  padding: 0;
+}
+
+.tabButton {
+  background: rgba(255, 255, 255, 0.10);
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  border-radius: 6px 6px 0 0;
+  transition: background 0.15s, color 0.15s;
+  font-family: 'Segoe UI', -apple-system, sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.20);
+    color: #fff;
+  }
+}
+
+.tabButtonActive {
+  background: #f1f5f9;
+  color: #0f766e;
+  font-weight: 600;
+}
+
+.tabBadge {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.tabButtonActive .tabBadge {
+  background: #0d9488;
+  color: #fff;
+}
+
+.tabAi {
+  border-left: 2px solid rgba(255, 255, 255, 0.15);
+  margin-left: 4px;
+}
+
+.tabAiBadge {
+  background: rgba(124, 58, 237, 0.4);
+}
+
+/* ── Content Area ── */
+.contentArea {
+  max-width: 1600px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 24px 32px 80px;
+  box-sizing: border-box;
+}
+
+/* ── Header Bar ── */
+.headerBar {
+  background: linear-gradient(135deg, #0d9488, #0f766e);
+  color: #fff;
+  padding: 20px 32px 0;
+}
+
+.headerTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.headerIcon {
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.headerTitle {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  margin: 0;
+}
+
+.headerSubtitle {
+  font-size: 12px;
+  opacity: 0.75;
+  margin-top: 1px;
+}
+
+.headerActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* ── Header Buttons ── */
+.headerBtn {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #fff;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 4px;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.15s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.25);
+  }
+}
+
+.headerBtnPrimary {
+  background: rgba(255, 255, 255, 0.92);
+  color: #0f766e;
+  border-color: transparent;
+  font-weight: 600;
+
+  &:hover {
+    background: #fff;
+  }
+}
+
+/* ── Live indicator ── */
+.liveIndicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.liveDot {
+  width: 8px;
+  height: 8px;
+  background: #34d399;
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+/* ── Access Denied ── */
+.accessDenied {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 40px;
+  text-align: center;
+}
+
+.accessDeniedTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 8px;
+}
+
+.accessDeniedText {
+  font-size: 14px;
+  color: #64748b;
+  max-width: 400px;
+}
+
+/* ── Placeholder tab content ── */
+.tabPlaceholder {
+  padding: 60px 40px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 14px;
+}

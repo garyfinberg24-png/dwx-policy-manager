@@ -132,6 +132,8 @@ export const AdminLists = {
   CONFIGURATION: 'PM_Configuration',
   /** User profiles — synced from Entra ID, used for audience targeting */
   USER_PROFILES: 'PM_UserProfiles',
+  /** Event Viewer diagnostic log — persisted Error/Critical events + manual saves */
+  EVENT_LOG: 'PM_EventLog',
 } as const;
 
 // ============================================================================

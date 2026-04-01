@@ -2,7 +2,7 @@
 // DWx Policy Manager — AI Chat System Prompts
 // ============================================================================
 
-import { ChatMode, PolicyContext } from '../types/chatTypes';
+import { ChatMode, PolicyContext, EventTriageContext } from '../types/chatTypes';
 
 const SITE_URL = 'https://mf7m.sharepoint.com/sites/PolicyManager/SitePages';
 
@@ -17,6 +17,8 @@ export function getSystemPrompt(mode: ChatMode): string {
       return AUTHOR_ASSIST_PROMPT;
     case 'general-help':
       return GENERAL_HELP_PROMPT;
+    case 'event-triage':
+      return EVENT_TRIAGE_PROMPT;
     default:
       return POLICY_QA_PROMPT;
   }
@@ -139,3 +141,110 @@ Respond with a JSON object:
 - "message": Your response in markdown
 - "citations": [] (empty for help mode)
 - "suggestedActions": Navigation links to relevant pages, e.g. {"type": "navigate", "label": "Go to Policy Hub", "url": "${SITE_URL}/PolicyHub.aspx"}`;
+
+// ============================================================================
+// EVENT TRIAGE MODE — Diagnostic event analysis
+// ============================================================================
+
+const EVENT_TRIAGE_PROMPT = `You are the DWx Event Viewer AI Triage Assistant, an expert diagnostics engine for the DWx Policy Manager SPFx application (React 17, TypeScript, SharePoint Online, PnP/SP).
+
+YOUR ROLE:
+You analyse application events, errors, network failures, and performance issues to identify root causes, detect patterns, and suggest code-level fixes.
+
+CAPABILITIES:
+1. ROOT CAUSE ANALYSIS — Identify why errors occur from stack traces, error messages, and event patterns
+2. PATTERN DETECTION — Spot recurring errors, throttling patterns, cascading failures
+3. PERFORMANCE ANALYSIS — Identify slow queries, N+1 patterns, throttling (429s)
+4. CODE-LEVEL FIXES — Suggest specific TypeScript/React fixes with file paths and line numbers when available
+5. SEVERITY ASSESSMENT — Rate issues as Critical/High/Medium/Low with confidence scores (0-100)
+
+ANALYSIS RULES:
+- Analyse ONLY the events provided in context. Never fabricate events or data.
+- When stack traces reference specific files (e.g. PolicyAnalytics.tsx:2847), include the file reference in your fix suggestion.
+- Group related events by root cause — multiple errors may share one underlying issue.
+- Distinguish code bugs (fixable) from infrastructure issues (external) from configuration issues (admin action).
+- For SharePoint 429 errors, always consider request deduplication and batch query patterns.
+- For "Cannot read properties of undefined", check state initialisation in class component constructors.
+- For _isMounted guard warnings, verify the async callback is checking the guard.
+- Confidence scoring: Stack traces with line numbers = high (85-95%). Network errors = medium (65-80%). Generic errors = lower (50-70%).
+
+CODEBASE CONTEXT:
+- SPFx 1.20, React 17 class components, TypeScript 4.7, Fluent UI v8
+- Services use pattern: new ServiceName(props.sp) with PnP/SP SPFI instance
+- All SP lists prefixed PM_ (e.g. PM_Policies, PM_PolicyAuditLog)
+- LoggingService singleton routes all telemetry via logger.info/warn/error
+- ErrorBoundary wraps all 16 webparts, logs to App Insights
+- _isMounted guard pattern on all class components with async operations
+- Per-recipient try/catch for notification delivery (never use Promise.allSettled — ES2017 target)
+
+RESPONSE FORMAT:
+Respond with a JSON object:
+- "message": Your analysis in markdown. Use headers (##), bullet points, and code blocks.
+- "citations": [] (empty for triage mode)
+- "suggestedActions": Array of suggested follow-up actions, e.g. {"type": "search", "label": "Show all 429 errors", "url": ""}
+
+For session-level analysis, structure your response as:
+## Session Health Summary
+Brief overview paragraph.
+
+## Root Causes Found
+### 1. [Title] — [Severity]
+**What happened:** ...
+**Why:** ...
+**Suggested fix:** (include code block if applicable)
+**Confidence:** X%
+
+### 2. [Title] — [Severity]
+...
+
+## Recommendations
+Prioritised action items.`;
+
+/**
+ * Build a context message from event data for triage mode.
+ */
+export function buildEventContextMessage(context: EventTriageContext): string {
+  if (!context || !context.events || context.events.length === 0) {
+    return 'No events were provided for analysis. Ask the user to capture some events in the Event Viewer first.';
+  }
+
+  const lines: string[] = ['EVENT DATA FOR ANALYSIS:'];
+
+  // Session info
+  if (context.sessionInfo) {
+    lines.push(`\nSession: ${context.sessionInfo.sessionId} | App: v${context.sessionInfo.appVersion} | Browser: ${context.sessionInfo.browser}`);
+  }
+
+  // Network stats summary
+  if (context.networkStats) {
+    const ns = context.networkStats;
+    lines.push(`Network: ${ns.totalRequests} requests, ${ns.avgLatency}ms avg latency, ${ns.errorRate}% error rate, ${ns.throttledCount} throttled`);
+  }
+
+  // Events (compact format to fit context window)
+  lines.push(`\nEvents (${context.events.length} total):`);
+  const events = context.events.slice(0, 50); // Cap at 50 to stay within token limits
+  for (const evt of events) {
+    const parts: string[] = [
+      evt.timestamp,
+      ['Verbose', 'Info', 'Warning', 'Error', 'Critical'][evt.severity] || 'Unknown',
+      evt.channel,
+      evt.eventCode || '-',
+      evt.source,
+      evt.message.substring(0, 200),
+    ];
+    lines.push(`  ${parts.join(' | ')}`);
+    if (evt.stackTrace) {
+      lines.push(`    Stack: ${evt.stackTrace.substring(0, 300)}`);
+    }
+    if (evt.httpMethod) {
+      lines.push(`    HTTP: ${evt.httpMethod} ${evt.requestUrl || ''} → ${evt.httpStatus || '?'} (${evt.duration || '?'}ms)`);
+    }
+  }
+
+  if (context.events.length > 50) {
+    lines.push(`  ... and ${context.events.length - 50} more events (truncated)`);
+  }
+
+  return lines.join('\n');
+}

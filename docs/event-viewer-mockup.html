@@ -1,0 +1,3006 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DWx Event Viewer — UI Mockup</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-weight: 400;
+    color: #334155;
+    background: #f1f5f9;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  /* ══════════════════════════════════════════════
+     HEADER
+     ══════════════════════════════════════════════ */
+  .page-header {
+    background: linear-gradient(135deg, #0d9488, #0f766e);
+    color: #fff;
+    padding: 20px 32px 0;
+  }
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .header-icon {
+    width: 36px;
+    height: 36px;
+    background: rgba(255,255,255,.18);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .header-icon svg { width: 20px; height: 20px; stroke: #fff; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .page-header h1 { font-size: 20px; font-weight: 600; letter-spacing: -0.3px; }
+  .page-header .subtitle { font-size: 12px; opacity: 0.75; margin-top: 1px; }
+
+  .header-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .header-btn {
+    background: rgba(255,255,255,.15);
+    border: 1px solid rgba(255,255,255,.25);
+    color: #fff;
+    padding: 7px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 4px;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background .15s;
+  }
+  .header-btn:hover { background: rgba(255,255,255,.25); }
+  .header-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .header-btn.primary { background: rgba(255,255,255,.92); color: #0f766e; border-color: transparent; font-weight: 600; }
+  .header-btn.primary:hover { background: #fff; }
+
+  .live-dot {
+    width: 8px; height: 8px;
+    background: #34d399;
+    border-radius: 50%;
+    animation: pulse 2s ease-in-out infinite;
+    margin-right: 2px;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  /* ── Tabs ── */
+  .tab-bar {
+    display: flex;
+    gap: 2px;
+    overflow-x: auto;
+  }
+  .tab-btn {
+    background: rgba(255,255,255,.10);
+    border: none;
+    color: rgba(255,255,255,.7);
+    padding: 10px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    border-radius: 6px 6px 0 0;
+    transition: background .15s, color .15s;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .tab-btn:hover { background: rgba(255,255,255,.20); color: #fff; }
+  .tab-btn.active { background: #f1f5f9; color: #0f766e; font-weight: 600; }
+  .tab-btn svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .tab-badge {
+    background: rgba(255,255,255,.2);
+    padding: 1px 7px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .tab-btn.active .tab-badge { background: #0d9488; color: #fff; }
+
+  /* ══════════════════════════════════════════════
+     CONTENT AREA
+     ══════════════════════════════════════════════ */
+  .content { max-width: 1600px; margin: 0 auto; padding: 24px 32px 80px; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* ══════════════════════════════════════════════
+     KPI SUMMARY BAR
+     ══════════════════════════════════════════════ */
+  .kpi-bar {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .kpi-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 14px 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .kpi-card.teal::before { background: #0d9488; }
+  .kpi-card.blue::before { background: #2563eb; }
+  .kpi-card.amber::before { background: #d97706; }
+  .kpi-card.red::before { background: #dc2626; }
+  .kpi-card.purple::before { background: #7c3aed; }
+  .kpi-card.green::before { background: #059669; }
+  .kpi-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #64748b;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .kpi-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.1;
+  }
+  .kpi-sub {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 4px;
+  }
+  .kpi-trend {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-top: 4px;
+  }
+  .kpi-trend.up { color: #dc2626; }
+  .kpi-trend.down { color: #059669; }
+  .kpi-trend svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2.5; }
+
+  /* ══════════════════════════════════════════════
+     FILTER / TOOLBAR
+     ══════════════════════════════════════════════ */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .toolbar-group {
+    display: flex;
+    gap: 1px;
+    background: #e2e8f0;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .filter-pill {
+    background: #fff;
+    border: none;
+    padding: 7px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #64748b;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all .15s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .filter-pill:hover { background: #f0fdfa; color: #0d9488; }
+  .filter-pill.active { background: #0d9488; color: #fff; }
+  .filter-pill .count {
+    font-size: 10px;
+    font-weight: 700;
+    background: rgba(0,0,0,.08);
+    padding: 1px 5px;
+    border-radius: 8px;
+  }
+  .filter-pill.active .count { background: rgba(255,255,255,.25); }
+
+  .search-box {
+    flex: 1;
+    min-width: 220px;
+    position: relative;
+  }
+  .search-box input {
+    width: 100%;
+    padding: 8px 12px 8px 34px;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: inherit;
+    background: #fff;
+    color: #334155;
+    outline: none;
+    transition: border-color .15s;
+  }
+  .search-box input:focus { border-color: #0d9488; box-shadow: 0 0 0 2px rgba(13,148,136,.12); }
+  .search-box input::placeholder { color: #94a3b8; }
+  .search-box svg {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 15px; height: 15px;
+    stroke: #94a3b8;
+    fill: none;
+    stroke-width: 2;
+  }
+
+  .time-select {
+    padding: 7px 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: inherit;
+    color: #334155;
+    background: #fff;
+    cursor: pointer;
+    outline: none;
+  }
+  .time-select:focus { border-color: #0d9488; }
+
+  .toolbar-divider {
+    width: 1px;
+    height: 28px;
+    background: #e2e8f0;
+  }
+
+  .auto-refresh {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #64748b;
+    cursor: pointer;
+  }
+  .toggle-track {
+    width: 32px; height: 18px;
+    background: #cbd5e1;
+    border-radius: 9px;
+    position: relative;
+    transition: background .2s;
+  }
+  .toggle-track.on { background: #0d9488; }
+  .toggle-knob {
+    width: 14px; height: 14px;
+    background: #fff;
+    border-radius: 50%;
+    position: absolute;
+    top: 2px; left: 2px;
+    transition: left .2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,.15);
+  }
+  .toggle-track.on .toggle-knob { left: 16px; }
+
+  /* ══════════════════════════════════════════════
+     EVENT LOG TABLE
+     ══════════════════════════════════════════════ */
+  .event-table-wrap {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .event-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .event-table thead th {
+    background: #f8fafc;
+    text-align: left;
+    padding: 10px 14px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
+    font-weight: 600;
+    border-bottom: 1px solid #e2e8f0;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+  }
+  .event-table thead th:hover { color: #0d9488; }
+  .event-table thead th svg {
+    width: 12px; height: 12px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+    vertical-align: -2px;
+    margin-left: 4px;
+  }
+  .event-table tbody tr {
+    border-bottom: 1px solid #f1f5f9;
+    cursor: pointer;
+    transition: background .1s;
+  }
+  .event-table tbody tr:hover { background: #f0fdfa; }
+  .event-table tbody tr.selected { background: #e6f7f5; border-left: 3px solid #0d9488; }
+  .event-table tbody tr.severity-error { border-left: 3px solid #dc2626; }
+  .event-table tbody tr.severity-critical { border-left: 3px solid #7f1d1d; background: #fef2f2; }
+  .event-table tbody tr.severity-warning { border-left: 3px solid #d97706; }
+  .event-table td {
+    padding: 10px 14px;
+    vertical-align: middle;
+    max-width: 0;
+  }
+  .event-table .col-time { width: 140px; white-space: nowrap; font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace; font-size: 12px; color: #64748b; }
+  .event-table .col-severity { width: 90px; }
+  .event-table .col-channel { width: 110px; }
+  .event-table .col-code { width: 90px; font-family: monospace; font-size: 12px; }
+  .event-table .col-source { width: 160px; }
+  .event-table .col-message { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .event-table .col-duration { width: 80px; text-align: right; font-family: monospace; font-size: 12px; }
+  .event-table .col-status { width: 40px; text-align: center; }
+
+  /* Severity badges */
+  .severity-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .severity-badge.verbose { background: #f1f5f9; color: #94a3b8; }
+  .severity-badge.info { background: #f0f9ff; color: #2563eb; }
+  .severity-badge.warning { background: #fffbeb; color: #d97706; }
+  .severity-badge.error { background: #fef2f2; color: #dc2626; }
+  .severity-badge.critical { background: #7f1d1d; color: #fff; }
+  .severity-badge svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* Channel badges */
+  .channel-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .channel-badge.app { background: #ede9fe; color: #7c3aed; }
+  .channel-badge.console { background: #e0f2fe; color: #0284c7; }
+  .channel-badge.network { background: #fef3c7; color: #b45309; }
+  .channel-badge.audit { background: #d1fae5; color: #047857; }
+  .channel-badge.dlq { background: #fee2e2; color: #b91c1c; }
+
+  /* Source tag */
+  .source-tag {
+    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    font-size: 12px;
+    color: #475569;
+    background: #f1f5f9;
+    padding: 1px 6px;
+    border-radius: 3px;
+  }
+
+  /* Duration bar */
+  .duration-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .duration-bar .bar {
+    height: 4px;
+    border-radius: 2px;
+    background: #0d9488;
+    min-width: 2px;
+  }
+  .duration-bar .bar.slow { background: #d97706; }
+  .duration-bar .bar.very-slow { background: #dc2626; }
+  .duration-bar span { font-family: monospace; font-size: 11px; color: #64748b; white-space: nowrap; }
+
+  /* Status indicators */
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .status-dot.ok { background: #22c55e; }
+  .status-dot.warn { background: #f59e0b; }
+  .status-dot.fail { background: #ef4444; }
+
+  /* ══════════════════════════════════════════════
+     TABLE FOOTER / PAGINATION
+     ══════════════════════════════════════════════ */
+  .table-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-top: 1px solid #e2e8f0;
+    background: #f8fafc;
+    font-size: 12px;
+    color: #64748b;
+  }
+  .page-info { font-weight: 500; }
+  .pagination {
+    display: flex;
+    gap: 4px;
+  }
+  .page-btn {
+    padding: 4px 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    background: #fff;
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    color: #334155;
+  }
+  .page-btn:hover { border-color: #0d9488; color: #0d9488; }
+  .page-btn.active { background: #0d9488; color: #fff; border-color: #0d9488; }
+
+  /* ══════════════════════════════════════════════
+     DETAIL PANEL (slide-in from right)
+     ══════════════════════════════════════════════ */
+  .detail-panel-overlay {
+    position: fixed;
+    top: 0; right: 0; bottom: 0;
+    width: 520px;
+    background: #fff;
+    box-shadow: -8px 0 32px rgba(0,0,0,.12);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid #e2e8f0;
+  }
+  .detail-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+  .detail-header h2 { font-size: 16px; font-weight: 600; color: #0f172a; margin-bottom: 4px; }
+  .detail-header .detail-meta { font-size: 12px; color: #64748b; }
+  .detail-close {
+    width: 32px; height: 32px;
+    border: none;
+    background: #f1f5f9;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    flex-shrink: 0;
+  }
+  .detail-close:hover { background: #e2e8f0; color: #0f172a; }
+  .detail-close svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+  .detail-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 24px;
+  }
+  .detail-section {
+    margin-bottom: 20px;
+  }
+  .detail-section-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #64748b;
+    font-weight: 700;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 6px 12px;
+    font-size: 13px;
+  }
+  .detail-label { color: #64748b; font-weight: 500; }
+  .detail-value { color: #0f172a; word-break: break-all; }
+
+  .stack-trace {
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 14px 16px;
+    border-radius: 6px;
+    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    overflow-x: auto;
+    white-space: pre;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  .stack-trace .error-line { color: #f87171; }
+  .stack-trace .file-ref { color: #67e8f9; }
+  .stack-trace .at-keyword { color: #94a3b8; }
+
+  .detail-actions {
+    padding: 16px 24px;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    gap: 8px;
+  }
+  .action-btn {
+    padding: 8px 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    background: #fff;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: #334155;
+    transition: all .15s;
+  }
+  .action-btn:hover { border-color: #0d9488; color: #0d9488; }
+  .action-btn.primary { background: #0d9488; color: #fff; border-color: #0d9488; }
+  .action-btn.primary:hover { background: #0f766e; }
+  .action-btn.danger { color: #dc2626; border-color: #fecaca; }
+  .action-btn.danger:hover { background: #fef2f2; }
+  .action-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ══════════════════════════════════════════════
+     NETWORK MONITOR TAB
+     ══════════════════════════════════════════════ */
+  .network-timeline {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .timeline-row {
+    display: grid;
+    grid-template-columns: 200px 80px 1fr 80px 60px;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 13px;
+  }
+  .timeline-row:last-child { border-bottom: none; }
+  .timeline-row .url {
+    font-family: 'Cascadia Code', 'Fira Code', monospace;
+    font-size: 12px;
+    color: #475569;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .method-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 3px;
+    text-align: center;
+    text-transform: uppercase;
+  }
+  .method-badge.get { background: #dbeafe; color: #1d4ed8; }
+  .method-badge.post { background: #d1fae5; color: #047857; }
+  .method-badge.patch { background: #fef3c7; color: #b45309; }
+  .method-badge.delete { background: #fee2e2; color: #b91c1c; }
+
+  .waterfall-bar {
+    height: 12px;
+    border-radius: 2px;
+    position: relative;
+    min-width: 4px;
+  }
+  .waterfall-bar.fast { background: #0d9488; }
+  .waterfall-bar.medium { background: #d97706; }
+  .waterfall-bar.slow { background: #dc2626; }
+
+  .status-code {
+    font-family: monospace;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+    padding: 2px 6px;
+    border-radius: 3px;
+  }
+  .status-code.s2xx { background: #d1fae5; color: #047857; }
+  .status-code.s3xx { background: #dbeafe; color: #1d4ed8; }
+  .status-code.s4xx { background: #fef3c7; color: #b45309; }
+  .status-code.s5xx { background: #fee2e2; color: #b91c1c; }
+
+  .timeline-header {
+    display: grid;
+    grid-template-columns: 200px 80px 1fr 80px 60px;
+    gap: 12px;
+    padding: 0 0 8px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #94a3b8;
+    font-weight: 600;
+    border-bottom: 2px solid #e2e8f0;
+    margin-bottom: 4px;
+  }
+
+  /* ══════════════════════════════════════════════
+     INVESTIGATION BOARD TAB
+     ══════════════════════════════════════════════ */
+  .investigation-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  .investigation-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 20px;
+    transition: all .15s;
+  }
+  .investigation-card:hover { border-color: #0d9488; box-shadow: 0 4px 16px rgba(13,148,136,.08); }
+  .investigation-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .event-code-large {
+    font-family: 'Cascadia Code', 'Fira Code', monospace;
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 3px 10px;
+    border-radius: 4px;
+  }
+  .occurrence-count {
+    font-size: 24px;
+    font-weight: 700;
+    color: #dc2626;
+  }
+  .occurrence-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    color: #94a3b8;
+    letter-spacing: 0.5px;
+  }
+  .investigation-message {
+    font-size: 14px;
+    color: #334155;
+    margin-bottom: 12px;
+    line-height: 1.5;
+  }
+  .investigation-meta {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 12px;
+  }
+  .investigation-meta span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .investigation-meta svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+  .classify-dropdown {
+    padding: 5px 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: inherit;
+    color: #334155;
+    background: #fff;
+    cursor: pointer;
+  }
+
+  .sparkline {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 24px;
+  }
+  .sparkline .bar {
+    width: 4px;
+    background: #0d9488;
+    border-radius: 1px;
+    min-height: 2px;
+  }
+
+  /* ══════════════════════════════════════════════
+     SYSTEM HEALTH TAB
+     ══════════════════════════════════════════════ */
+  .health-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .health-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 18px 20px;
+  }
+  .health-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .health-service-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
+  }
+  .health-indicator {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+  }
+  .health-indicator.healthy { background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,.4); }
+  .health-indicator.degraded { background: #f59e0b; box-shadow: 0 0 6px rgba(245,158,11,.4); }
+  .health-indicator.unhealthy { background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,.4); }
+
+  .health-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    font-size: 12px;
+  }
+  .health-stat-label { color: #94a3b8; }
+  .health-stat-value { color: #0f172a; font-weight: 600; text-align: right; }
+
+  .health-last-error {
+    margin-top: 10px;
+    padding: 8px 10px;
+    background: #fef2f2;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #991b1b;
+    border-left: 3px solid #dc2626;
+  }
+
+  /* DLQ Summary */
+  .dlq-summary {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .dlq-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .dlq-header h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .dlq-header h3 svg { width: 18px; height: 18px; stroke: #dc2626; fill: none; stroke-width: 2; }
+  .dlq-stats {
+    display: flex;
+    gap: 24px;
+  }
+  .dlq-stat {
+    text-align: center;
+  }
+  .dlq-stat-value { font-size: 22px; font-weight: 700; color: #0f172a; }
+  .dlq-stat-label { font-size: 10px; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.5px; }
+  .dlq-stat.pending .dlq-stat-value { color: #d97706; }
+  .dlq-stat.failed .dlq-stat-value { color: #dc2626; }
+  .dlq-stat.resolved .dlq-stat-value { color: #059669; }
+
+  .dlq-item-row {
+    display: grid;
+    grid-template-columns: 100px 1fr 80px 80px 100px;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 13px;
+    align-items: center;
+  }
+  .dlq-item-row:last-child { border-bottom: none; }
+
+  /* Session info */
+  .session-card {
+    background: linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%);
+    border: 1px solid #a7f3d0;
+    border-radius: 10px;
+    padding: 18px 20px;
+  }
+  .session-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    font-size: 13px;
+  }
+  .session-item-label { font-size: 11px; color: #64748b; font-weight: 500; margin-bottom: 2px; }
+  .session-item-value { color: #0f172a; font-weight: 600; font-size: 13px; }
+  .session-item-value.mono { font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 12px; }
+
+  /* ══════════════════════════════════════════════
+     SECTION HEADERS
+     ══════════════════════════════════════════════ */
+  .section-header {
+    border-left: 3px solid #0d9488;
+    padding-left: 12px;
+    margin-bottom: 16px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #1e293b;
+  }
+  .section-header small { color: #94a3b8; font-size: 12px; font-weight: 400; margin-left: 8px; }
+
+  /* ══════════════════════════════════════════════
+     RESPONSIVE
+     ══════════════════════════════════════════════ */
+  @media (max-width: 1200px) {
+    .kpi-bar { grid-template-columns: repeat(3, 1fr); }
+    .health-grid { grid-template-columns: repeat(2, 1fr); }
+    .investigation-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ══════════════════════════════════════════════
+     AI TRIAGE TAB
+     ══════════════════════════════════════════════ */
+  .ai-gradient { background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 50%, #4c1d95 100%); }
+
+  .ai-hero {
+    background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 50%, #4c1d95 100%);
+    border-radius: 12px;
+    padding: 28px 32px;
+    color: #fff;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .ai-hero-left { flex: 1; }
+  .ai-hero h2 { font-size: 20px; font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 10px; }
+  .ai-hero h2 svg { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+  .ai-hero p { font-size: 13px; opacity: 0.8; max-width: 500px; }
+  .ai-hero-actions { display: flex; gap: 10px; align-items: center; }
+  .ai-hero-btn {
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    transition: all .15s;
+    border: none;
+  }
+  .ai-hero-btn.white { background: #fff; color: #6d28d9; }
+  .ai-hero-btn.white:hover { background: #f5f3ff; }
+  .ai-hero-btn.ghost { background: rgba(255,255,255,.15); color: #fff; border: 1px solid rgba(255,255,255,.3); }
+  .ai-hero-btn.ghost:hover { background: rgba(255,255,255,.25); }
+  .ai-hero-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* AI Analysis Card */
+  .ai-analysis-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .ai-card-header {
+    background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .ai-card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #4c1d95;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .ai-card-title svg { width: 18px; height: 18px; stroke: #7c3aed; fill: none; stroke-width: 2; }
+  .ai-card-body { padding: 20px; }
+  .ai-card-timestamp { font-size: 11px; color: #94a3b8; }
+
+  /* AI severity assessment */
+  .ai-severity-meter {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    border-radius: 8px;
+  }
+  .ai-severity-meter.critical { background: linear-gradient(135deg, #fef2f2, #fee2e2); border: 1px solid #fecaca; }
+  .ai-severity-meter.high { background: linear-gradient(135deg, #fff7ed, #ffedd5); border: 1px solid #fed7aa; }
+  .ai-severity-meter.medium { background: linear-gradient(135deg, #fffbeb, #fef3c7); border: 1px solid #fde68a; }
+  .ai-severity-meter.low { background: linear-gradient(135deg, #f0fdf4, #dcfce7); border: 1px solid #bbf7d0; }
+  .ai-severity-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .ai-severity-icon.critical { background: #dc2626; }
+  .ai-severity-icon.high { background: #ea580c; }
+  .ai-severity-icon.medium { background: #d97706; }
+  .ai-severity-icon.low { background: #16a34a; }
+  .ai-severity-icon svg { width: 20px; height: 20px; stroke: #fff; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+  .ai-severity-text h4 { font-size: 14px; font-weight: 600; color: #0f172a; margin-bottom: 2px; }
+  .ai-severity-text p { font-size: 12px; color: #64748b; }
+
+  /* AI explanation blocks */
+  .ai-explanation {
+    font-size: 13px;
+    line-height: 1.7;
+    color: #334155;
+    margin-bottom: 16px;
+  }
+  .ai-explanation strong { color: #0f172a; }
+
+  .ai-steps {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .ai-step {
+    display: flex;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .ai-step:last-child { border-bottom: none; }
+  .ai-step-number {
+    width: 28px; height: 28px;
+    background: #7c3aed;
+    color: #fff;
+    border-radius: 50%;
+    font-size: 13px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .ai-step-content { flex: 1; }
+  .ai-step-title { font-size: 13px; font-weight: 600; color: #0f172a; margin-bottom: 2px; }
+  .ai-step-desc { font-size: 12px; color: #64748b; line-height: 1.5; }
+  .ai-step-code {
+    margin-top: 6px;
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Fira Code', monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    overflow-x: auto;
+  }
+  .ai-step-code .highlight { color: #34d399; }
+  .ai-step-code .comment { color: #64748b; }
+
+  /* AI confidence */
+  .ai-confidence {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: #f5f3ff;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #4c1d95;
+  }
+  .ai-confidence-bar {
+    flex: 1;
+    height: 6px;
+    background: #e9d5ff;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .ai-confidence-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #7c3aed, #a78bfa);
+    border-radius: 3px;
+  }
+
+  /* AI insights grid */
+  .ai-insights-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .ai-insight-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 18px 20px;
+    border-top: 3px solid #7c3aed;
+  }
+  .ai-insight-card.warning { border-top-color: #d97706; }
+  .ai-insight-card.danger { border-top-color: #dc2626; }
+  .ai-insight-card.success { border-top-color: #059669; }
+  .ai-insight-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #64748b; font-weight: 600; margin-bottom: 6px; }
+  .ai-insight-value { font-size: 22px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
+  .ai-insight-desc { font-size: 12px; color: #94a3b8; }
+
+  /* AI summary in event stream */
+  .ai-session-summary {
+    background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+    border: 1px solid #ddd6fe;
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+  }
+  .ai-summary-icon {
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, #7c3aed, #6d28d9);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .ai-summary-icon svg { width: 22px; height: 22px; stroke: #fff; fill: none; stroke-width: 1.8; }
+  .ai-summary-content { flex: 1; }
+  .ai-summary-title { font-size: 14px; font-weight: 600; color: #4c1d95; margin-bottom: 6px; }
+  .ai-summary-text { font-size: 13px; color: #475569; line-height: 1.6; }
+  .ai-summary-tags { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+  .ai-tag {
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .ai-tag.purple { background: #ede9fe; color: #6d28d9; }
+  .ai-tag.red { background: #fee2e2; color: #b91c1c; }
+  .ai-tag.amber { background: #fef3c7; color: #b45309; }
+  .ai-tag.blue { background: #dbeafe; color: #1d4ed8; }
+
+  /* AI detail panel section */
+  .ai-panel-section {
+    background: linear-gradient(135deg, #f5f3ff 0%, #faf5ff 100%);
+    border: 1px solid #ddd6fe;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .ai-panel-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #6d28d9;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .ai-panel-header svg { width: 16px; height: 16px; stroke: #7c3aed; fill: none; stroke-width: 2; }
+  .ai-panel-text { font-size: 13px; line-height: 1.6; color: #334155; }
+  .ai-panel-text ul { margin: 8px 0 0 16px; }
+  .ai-panel-text li { margin-bottom: 4px; }
+  .ai-panel-fix {
+    margin-top: 10px;
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-family: 'Cascadia Code', 'Fira Code', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    overflow-x: auto;
+  }
+  .ai-panel-fix .fix-add { color: #34d399; }
+  .ai-panel-fix .fix-remove { color: #f87171; text-decoration: line-through; opacity: 0.7; }
+  .ai-panel-fix .fix-comment { color: #64748b; }
+
+  .ai-triage-btn {
+    padding: 7px 14px;
+    background: linear-gradient(135deg, #7c3aed, #6d28d9);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all .15s;
+  }
+  .ai-triage-btn:hover { background: linear-gradient(135deg, #6d28d9, #5b21b6); }
+  .ai-triage-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
+  .ai-triage-btn.loading { opacity: .7; pointer-events: none; }
+
+  /* AI thinking animation */
+  .ai-thinking {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 16px;
+    background: #f5f3ff;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #6d28d9;
+  }
+  .ai-thinking-dots {
+    display: flex;
+    gap: 4px;
+  }
+  .ai-thinking-dots span {
+    width: 6px; height: 6px;
+    background: #7c3aed;
+    border-radius: 50%;
+    animation: ai-dot 1.4s ease-in-out infinite;
+  }
+  .ai-thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .ai-thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes ai-dot {
+    0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+    40% { opacity: 1; transform: scale(1.2); }
+  }
+
+  /* Pattern timeline */
+  .pattern-timeline {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin: 10px 0;
+  }
+  .pattern-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    position: relative;
+    cursor: pointer;
+  }
+  .pattern-dot.error { background: #dc2626; }
+  .pattern-dot.warning { background: #d97706; }
+  .pattern-dot.info { background: #2563eb; }
+  .pattern-dot.ok { background: #22c55e; }
+  .pattern-line { width: 16px; height: 2px; background: #e2e8f0; }
+
+  /* ══════════════════════════════════════════════
+     ANNOTATIONS (mockup only)
+     ══════════════════════════════════════════════ */
+  .mockup-note {
+    position: relative;
+    display: inline-block;
+  }
+  .annotation {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 20px; height: 20px;
+    background: #7c3aed;
+    color: #fff;
+    border-radius: 50%;
+    font-size: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+  }
+  .design-notes {
+    background: #faf5ff;
+    border: 1px dashed #c084fc;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 32px 0;
+    font-size: 13px;
+    color: #6b21a8;
+  }
+  .design-notes h4 { font-size: 14px; font-weight: 600; margin-bottom: 8px; color: #7c3aed; }
+  .design-notes ul { margin-left: 18px; margin-top: 6px; }
+  .design-notes li { margin-bottom: 4px; }
+  .design-notes code { background: #ede9fe; padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     HEADER
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="page-header">
+  <div class="header-top">
+    <div class="header-left">
+      <div class="header-icon">
+        <!-- Terminal/monitor icon -->
+        <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><polyline points="7 8 10 11 7 14"/><line x1="13" y1="14" x2="17" y2="14"/></svg>
+      </div>
+      <div>
+        <h1>Event Viewer</h1>
+        <div class="subtitle">DWx Policy Manager &mdash; Diagnostics & Troubleshooting</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <div class="auto-refresh" title="Auto-refresh every 5 seconds">
+        <div class="live-dot"></div>
+        <span>Live</span>
+        <div class="toggle-track on"><div class="toggle-knob"></div></div>
+      </div>
+      <div style="width:1px;height:24px;background:rgba(255,255,255,.2);margin:0 4px;"></div>
+      <button class="header-btn">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export
+      </button>
+      <button class="header-btn">
+        <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+        Clear Session
+      </button>
+      <button class="header-btn primary">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Search All Events
+      </button>
+    </div>
+  </div>
+
+  <!-- Tab Navigation -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('stream')">
+      <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      Event Stream
+      <span class="tab-badge">247</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('network')">
+      <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      Network Monitor
+      <span class="tab-badge">86</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('investigate')">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+      Investigation Board
+      <span class="tab-badge">12</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('health')">
+      <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      System Health
+    </button>
+    <button class="tab-btn" onclick="switchTab('ai')" style="border-left:2px solid rgba(255,255,255,.15);margin-left:4px;">
+      <svg viewBox="0 0 24 24"><path d="M12 2a4 4 0 014 4v1a1 1 0 001 1h1a4 4 0 010 8h-1a1 1 0 00-1 1v1a4 4 0 01-8 0v-1a1 1 0 00-1-1H6a4 4 0 010-8h1a1 1 0 001-1V6a4 4 0 014-4z"/><circle cx="12" cy="12" r="2"/></svg>
+      AI Triage
+      <span class="tab-badge" style="background:rgba(124,58,237,.4);">GPT-4o</span>
+    </button>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     TAB 1 — EVENT STREAM
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="content">
+<div class="tab-content active" id="tab-stream">
+
+  <!-- KPI Summary -->
+  <div class="kpi-bar">
+    <div class="kpi-card teal">
+      <div class="kpi-label">Total Events</div>
+      <div class="kpi-value">247</div>
+      <div class="kpi-sub">This session</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="kpi-label">Errors</div>
+      <div class="kpi-value">8</div>
+      <div class="kpi-trend up">
+        <svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>
+        +3 from last session
+      </div>
+    </div>
+    <div class="kpi-card amber">
+      <div class="kpi-label">Warnings</div>
+      <div class="kpi-value">23</div>
+      <div class="kpi-trend down">
+        <svg viewBox="0 0 24 24"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/></svg>
+        -5 from last session
+      </div>
+    </div>
+    <div class="kpi-card purple">
+      <div class="kpi-label">DLQ Pending</div>
+      <div class="kpi-value">3</div>
+      <div class="kpi-sub">2 notification, 1 sync</div>
+    </div>
+    <div class="kpi-card blue">
+      <div class="kpi-label">Avg API Latency</div>
+      <div class="kpi-value">342<span style="font-size:14px;font-weight:400;">ms</span></div>
+      <div class="kpi-sub">86 requests</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-label">Success Rate</div>
+      <div class="kpi-value">96.5<span style="font-size:14px;font-weight:400;">%</span></div>
+      <div class="kpi-sub">3 failed requests</div>
+    </div>
+  </div>
+
+  <!-- AI Session Summary (inline in Event Stream) -->
+  <div class="ai-session-summary">
+    <div class="ai-summary-icon">
+      <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 014 4v1a1 1 0 001 1h1a4 4 0 010 8h-1a1 1 0 00-1 1v1a4 4 0 01-8 0v-1a1 1 0 00-1-1H6a4 4 0 010-8h1a1 1 0 001-1V6a4 4 0 014-4z"/><circle cx="12" cy="12" r="2"/></svg>
+    </div>
+    <div class="ai-summary-content">
+      <div class="ai-summary-title">AI Session Summary</div>
+      <div class="ai-summary-text">
+        <strong>3 root causes identified</strong> across 8 errors. The primary issue is a <strong>null array crash in PolicyAnalytics</strong> (7 occurrences, Critical). SharePoint throttling detected on PM_Policies (3x 429). Two notification deliveries failed and are in the DLQ — likely an infrastructure issue with the Logic App.
+      </div>
+      <div class="ai-summary-tags">
+        <span class="ai-tag red">1 Critical — Code Bug</span>
+        <span class="ai-tag amber">1 High — API Throttling</span>
+        <span class="ai-tag blue">1 Medium — Infrastructure</span>
+        <span class="ai-tag purple">2 Auto-Fixable</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter Toolbar -->
+  <div class="toolbar">
+    <!-- Channel Filters -->
+    <div class="toolbar-group">
+      <button class="filter-pill active">All <span class="count">247</span></button>
+      <button class="filter-pill">Application <span class="count">94</span></button>
+      <button class="filter-pill">Console <span class="count">51</span></button>
+      <button class="filter-pill">Network <span class="count">86</span></button>
+      <button class="filter-pill">Audit <span class="count">13</span></button>
+      <button class="filter-pill">DLQ <span class="count">3</span></button>
+    </div>
+
+    <div class="toolbar-divider"></div>
+
+    <!-- Severity Filters -->
+    <div class="toolbar-group">
+      <button class="filter-pill active">All</button>
+      <button class="filter-pill">
+        <span style="width:8px;height:8px;border-radius:50%;background:#94a3b8;display:inline-block;"></span>
+        Verbose
+      </button>
+      <button class="filter-pill">
+        <span style="width:8px;height:8px;border-radius:50%;background:#2563eb;display:inline-block;"></span>
+        Info
+      </button>
+      <button class="filter-pill">
+        <span style="width:8px;height:8px;border-radius:50%;background:#d97706;display:inline-block;"></span>
+        Warn <span class="count">23</span>
+      </button>
+      <button class="filter-pill" style="background:#fef2f2;color:#dc2626;font-weight:600;">
+        <span style="width:8px;height:8px;border-radius:50%;background:#dc2626;display:inline-block;"></span>
+        Error <span class="count" style="background:rgba(220,38,38,.12);">8</span>
+      </button>
+      <button class="filter-pill">
+        <span style="width:8px;height:8px;border-radius:50%;background:#7f1d1d;display:inline-block;"></span>
+        Critical
+      </button>
+    </div>
+
+    <div class="toolbar-divider"></div>
+
+    <select class="time-select">
+      <option>Last 5 minutes</option>
+      <option>Last 15 minutes</option>
+      <option selected>This session</option>
+      <option>Last hour</option>
+      <option>Last 24 hours (persisted)</option>
+      <option>Last 7 days (persisted)</option>
+      <option>Custom range...</option>
+    </select>
+
+    <div class="search-box">
+      <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Search events by message, source, code, or URL..." />
+    </div>
+  </div>
+
+  <!-- Event Log Table -->
+  <div class="event-table-wrap">
+    <table class="event-table">
+      <thead>
+        <tr>
+          <th class="col-time">
+            Timestamp
+            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </th>
+          <th class="col-severity">Severity</th>
+          <th class="col-channel">Channel</th>
+          <th class="col-code">Code</th>
+          <th class="col-source">Source</th>
+          <th class="col-message">Message</th>
+          <th class="col-duration">Duration</th>
+          <th class="col-status"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="severity-critical">
+          <td class="col-time">14:32:18.294</td>
+          <td class="col-severity"><span class="severity-badge critical">
+            <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            Critical</span></td>
+          <td class="col-channel"><span class="channel-badge app">Application</span></td>
+          <td class="col-code">APP-001</td>
+          <td><span class="source-tag">ErrorBoundary</span></td>
+          <td class="col-message">Unhandled render error in PolicyAnalytics — Cannot read properties of undefined (reading 'map')</td>
+          <td class="col-duration"></td>
+          <td class="col-status"><span class="status-dot fail"></span></td>
+        </tr>
+        <tr class="severity-error">
+          <td class="col-time">14:31:45.102</td>
+          <td class="col-severity"><span class="severity-badge error">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            Error</span></td>
+          <td class="col-channel"><span class="channel-badge network">Network</span></td>
+          <td class="col-code">NET-010</td>
+          <td><span class="source-tag">PolicyService</span></td>
+          <td class="col-message">429 Too Many Requests — GET /_api/web/lists/getByTitle('PM_Policies')/items?$top=100</td>
+          <td class="col-duration">
+            <div class="duration-bar">
+              <div class="bar very-slow" style="width:60px;"></div>
+              <span>5,230ms</span>
+            </div>
+          </td>
+          <td class="col-status"><span class="status-dot fail"></span></td>
+        </tr>
+        <tr class="severity-error">
+          <td class="col-time">14:31:12.887</td>
+          <td class="col-severity"><span class="severity-badge error">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            Error</span></td>
+          <td class="col-channel"><span class="channel-badge dlq">DLQ</span></td>
+          <td class="col-code">DLQ-001</td>
+          <td><span class="source-tag">NotificationRouter</span></td>
+          <td class="col-message">Notification delivery failed after 3 retries — recipient user@company.com — TypeError: Failed to fetch</td>
+          <td class="col-duration"></td>
+          <td class="col-status"><span class="status-dot fail"></span></td>
+        </tr>
+        <tr class="severity-warning">
+          <td class="col-time">14:30:58.441</td>
+          <td class="col-severity"><span class="severity-badge warning">
+            <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            Warning</span></td>
+          <td class="col-channel"><span class="channel-badge app">Application</span></td>
+          <td class="col-code">APP-020</td>
+          <td><span class="source-tag">PolicyHub</span></td>
+          <td class="col-message">setState called after unmount — category filter update discarded (_isMounted guard caught)</td>
+          <td class="col-duration"></td>
+          <td class="col-status"><span class="status-dot warn"></span></td>
+        </tr>
+        <tr class="severity-warning">
+          <td class="col-time">14:30:41.209</td>
+          <td class="col-severity"><span class="severity-badge warning">
+            <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            Warning</span></td>
+          <td class="col-channel"><span class="channel-badge network">Network</span></td>
+          <td class="col-code">NET-001</td>
+          <td><span class="source-tag">ApprovalService</span></td>
+          <td class="col-message">Slow request — GET /_api/web/lists/getByTitle('PM_Approvals')/items took 2,847ms (threshold: 2,000ms)</td>
+          <td class="col-duration">
+            <div class="duration-bar">
+              <div class="bar slow" style="width:45px;"></div>
+              <span>2,847ms</span>
+            </div>
+          </td>
+          <td class="col-status"><span class="status-dot warn"></span></td>
+        </tr>
+        <tr>
+          <td class="col-time">14:30:22.118</td>
+          <td class="col-severity"><span class="severity-badge info">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            Info</span></td>
+          <td class="col-channel"><span class="channel-badge audit">Audit</span></td>
+          <td class="col-code">AUD-001</td>
+          <td><span class="source-tag">PolicyAuditService</span></td>
+          <td class="col-message">Policy published — "Information Security Policy v3.0" (POL-2026-0042) by gary@firsttech.digital</td>
+          <td class="col-duration"></td>
+          <td class="col-status"><span class="status-dot ok"></span></td>
+        </tr>
+        <tr>
+          <td class="col-time">14:30:18.773</td>
+          <td class="col-severity"><span class="severity-badge info">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            Info</span></td>
+          <td class="col-channel"><span class="channel-badge network">Network</span></td>
+          <td class="col-code">NET-000</td>
+          <td><span class="source-tag">PolicyService</span></td>
+          <td class="col-message">POST /_api/web/lists/getByTitle('PM_Policies')/items — Policy created successfully</td>
+          <td class="col-duration">
+            <div class="duration-bar">
+              <div class="bar fast" style="width:15px;"></div>
+              <span>342ms</span>
+            </div>
+          </td>
+          <td class="col-status"><span class="status-dot ok"></span></td>
+        </tr>
+        <tr>
+          <td class="col-time">14:29:55.001</td>
+          <td class="col-severity"><span class="severity-badge info">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            Info</span></td>
+          <td class="col-channel"><span class="channel-badge console">Console</span></td>
+          <td class="col-code">&mdash;</td>
+          <td><span class="source-tag">SPFx</span></td>
+          <td class="col-message">[SPLoaderUtils] Resolved manifest for jmlPolicyAdmin (12538121-8a6b-4e41-8bc7-17f252d5c36e)</td>
+          <td class="col-duration"></td>
+          <td class="col-status"><span class="status-dot ok"></span></td>
+        </tr>
+        <tr>
+          <td class="col-time">14:29:48.662</td>
+          <td class="col-severity"><span class="severity-badge verbose">Verbose</span></td>
+          <td class="col-channel"><span class="channel-badge app">Application</span></td>
+          <td class="col-code">&mdash;</td>
+          <td><span class="source-tag">RoleDetectionSvc</span></td>
+          <td class="col-message">Role resolved: Admin (user is member of PM_Admins group)</td>
+          <td class="col-duration"></td>
+          <td class="col-status"><span class="status-dot ok"></span></td>
+        </tr>
+        <tr>
+          <td class="col-time">14:29:44.330</td>
+          <td class="col-severity"><span class="severity-badge verbose">Verbose</span></td>
+          <td class="col-channel"><span class="channel-badge network">Network</span></td>
+          <td class="col-code">NET-000</td>
+          <td><span class="source-tag">PnP/SP</span></td>
+          <td class="col-message">GET /_api/web/currentuser — Current user context loaded</td>
+          <td class="col-duration">
+            <div class="duration-bar">
+              <div class="bar fast" style="width:8px;"></div>
+              <span>89ms</span>
+            </div>
+          </td>
+          <td class="col-status"><span class="status-dot ok"></span></td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="table-footer">
+      <div class="page-info">Showing 1-10 of 247 events</div>
+      <div class="pagination">
+        <button class="page-btn active">1</button>
+        <button class="page-btn">2</button>
+        <button class="page-btn">3</button>
+        <button class="page-btn">...</button>
+        <button class="page-btn">25</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /tab-stream -->
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     TAB 2 — NETWORK MONITOR
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="tab-content" id="tab-network">
+
+  <!-- Network KPIs -->
+  <div class="kpi-bar" style="grid-template-columns: repeat(5, 1fr);">
+    <div class="kpi-card teal">
+      <div class="kpi-label">Total Requests</div>
+      <div class="kpi-value">86</div>
+      <div class="kpi-sub">This session</div>
+    </div>
+    <div class="kpi-card blue">
+      <div class="kpi-label">Avg Latency</div>
+      <div class="kpi-value">342<span style="font-size:14px;">ms</span></div>
+      <div class="kpi-sub">P95: 1,240ms</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="kpi-label">Failed</div>
+      <div class="kpi-value">3</div>
+      <div class="kpi-sub">1x 429, 1x 500, 1x timeout</div>
+    </div>
+    <div class="kpi-card amber">
+      <div class="kpi-label">Slow (&gt;2s)</div>
+      <div class="kpi-value">5</div>
+      <div class="kpi-sub">Threshold: 2,000ms</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-label">Throttled (429)</div>
+      <div class="kpi-value">1</div>
+      <div class="kpi-sub">SP API rate limit</div>
+    </div>
+  </div>
+
+  <!-- SP List Breakdown -->
+  <div class="section-header">SharePoint API Breakdown <small>Grouped by list</small></div>
+  <div class="network-timeline" style="margin-bottom: 24px;">
+    <div class="timeline-header">
+      <div>SP List / Endpoint</div>
+      <div>Requests</div>
+      <div>Latency Distribution</div>
+      <div>Avg</div>
+      <div>Errors</div>
+    </div>
+    <div class="timeline-row">
+      <div class="url">PM_Policies</div>
+      <div style="font-weight:600;color:#0f172a;">24</div>
+      <div>
+        <div style="display:flex;gap:2px;align-items:flex-end;">
+          <div class="waterfall-bar fast" style="width:30%;height:12px;"></div>
+          <div class="waterfall-bar fast" style="width:15%;height:12px;"></div>
+          <div class="waterfall-bar medium" style="width:8%;height:12px;"></div>
+          <div class="waterfall-bar slow" style="width:4%;height:12px;"></div>
+        </div>
+      </div>
+      <div style="font-family:monospace;font-size:12px;text-align:right;">412ms</div>
+      <div style="text-align:center;"><span style="color:#dc2626;font-weight:600;">1</span></div>
+    </div>
+    <div class="timeline-row">
+      <div class="url">PM_PolicyAcknowledgements</div>
+      <div style="font-weight:600;color:#0f172a;">18</div>
+      <div>
+        <div style="display:flex;gap:2px;align-items:flex-end;">
+          <div class="waterfall-bar fast" style="width:40%;height:12px;"></div>
+          <div class="waterfall-bar fast" style="width:20%;height:12px;"></div>
+        </div>
+      </div>
+      <div style="font-family:monospace;font-size:12px;text-align:right;">287ms</div>
+      <div style="text-align:center;">0</div>
+    </div>
+    <div class="timeline-row">
+      <div class="url">PM_Approvals</div>
+      <div style="font-weight:600;color:#0f172a;">12</div>
+      <div>
+        <div style="display:flex;gap:2px;align-items:flex-end;">
+          <div class="waterfall-bar fast" style="width:20%;height:12px;"></div>
+          <div class="waterfall-bar medium" style="width:25%;height:12px;"></div>
+          <div class="waterfall-bar slow" style="width:10%;height:12px;"></div>
+        </div>
+      </div>
+      <div style="font-family:monospace;font-size:12px;text-align:right;">1,240ms</div>
+      <div style="text-align:center;"><span style="color:#dc2626;font-weight:600;">1</span></div>
+    </div>
+    <div class="timeline-row">
+      <div class="url">PM_PolicyAuditLog</div>
+      <div style="font-weight:600;color:#0f172a;">8</div>
+      <div>
+        <div style="display:flex;gap:2px;align-items:flex-end;">
+          <div class="waterfall-bar fast" style="width:35%;height:12px;"></div>
+        </div>
+      </div>
+      <div style="font-family:monospace;font-size:12px;text-align:right;">198ms</div>
+      <div style="text-align:center;">0</div>
+    </div>
+    <div class="timeline-row">
+      <div class="url">Azure OpenAI (Chat)</div>
+      <div style="font-weight:600;color:#0f172a;">2</div>
+      <div>
+        <div style="display:flex;gap:2px;align-items:flex-end;">
+          <div class="waterfall-bar medium" style="width:50%;height:12px;"></div>
+          <div class="waterfall-bar slow" style="width:30%;height:12px;"></div>
+        </div>
+      </div>
+      <div style="font-family:monospace;font-size:12px;text-align:right;">3,420ms</div>
+      <div style="text-align:center;">0</div>
+    </div>
+  </div>
+
+  <!-- Recent Requests Waterfall -->
+  <div class="section-header">Request Waterfall <small>Most recent 10</small></div>
+  <div class="network-timeline">
+    <div class="timeline-header">
+      <div>URL</div>
+      <div>Method</div>
+      <div>Waterfall</div>
+      <div>Duration</div>
+      <div>Status</div>
+    </div>
+    <div class="timeline-row">
+      <div class="url">/_api/web/lists/getByTitle('PM_Policies')/items?$top=100</div>
+      <div><span class="method-badge get">GET</span></div>
+      <div><div class="waterfall-bar slow" style="width:80%;"></div></div>
+      <div style="font-family:monospace;font-size:12px;text-align:right;color:#dc2626;font-weight:600;">5,230ms</div>
+      <div><span class="status-code s4xx">429</span></div>
+    </div>
+    <div class="timeline-row">
+      <div class="url">/_api/web/lists/getByTitle('PM_Approvals')/items?$filter=...</div>
+      <div><span class="method-badge get">GET</span></div>
+      <div><div class="waterfall-bar medium" style="width:45%;"></div></div>
+      <div style="font-family:monospace;font-size:12px;text-align:right;color:#d97706;">2,847ms</div>
+      <div><span class="status-code s2xx">200</span></div>
+    </div>
+    <div class="timeline-row">
+      <div class="url">/api/policyChatCompletion?code=***</div>
+      <div><span class="method-badge post">POST</span></div>
+      <div><div class="waterfall-bar medium" style="width:55%;"></div></div>
+      <div style="font-family:monospace;font-size:12px;text-align:right;">3,420ms</div>
+      <div><span class="status-code s2xx">200</span></div>
+    </div>
+    <div class="timeline-row">
+      <div class="url">/_api/web/lists/getByTitle('PM_Policies')/items</div>
+      <div><span class="method-badge post">POST</span></div>
+      <div><div class="waterfall-bar fast" style="width:12%;"></div></div>
+      <div style="font-family:monospace;font-size:12px;text-align:right;">342ms</div>
+      <div><span class="status-code s2xx">201</span></div>
+    </div>
+    <div class="timeline-row">
+      <div class="url">/_api/web/lists/getByTitle('PM_PolicyAuditLog')/items</div>
+      <div><span class="method-badge post">POST</span></div>
+      <div><div class="waterfall-bar fast" style="width:8%;"></div></div>
+      <div style="font-family:monospace;font-size:12px;text-align:right;">198ms</div>
+      <div><span class="status-code s2xx">201</span></div>
+    </div>
+    <div class="timeline-row">
+      <div class="url">/_api/web/currentuser</div>
+      <div><span class="method-badge get">GET</span></div>
+      <div><div class="waterfall-bar fast" style="width:4%;"></div></div>
+      <div style="font-family:monospace;font-size:12px;text-align:right;">89ms</div>
+      <div><span class="status-code s2xx">200</span></div>
+    </div>
+  </div>
+
+</div><!-- /tab-network -->
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     TAB 3 — INVESTIGATION BOARD
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="tab-content" id="tab-investigate">
+
+  <div class="toolbar" style="margin-bottom: 20px;">
+    <div class="toolbar-group">
+      <button class="filter-pill active">All Issues <span class="count">12</span></button>
+      <button class="filter-pill">Unclassified <span class="count">4</span></button>
+      <button class="filter-pill">Bug <span class="count">3</span></button>
+      <button class="filter-pill">Performance <span class="count">3</span></button>
+      <button class="filter-pill">External <span class="count">2</span></button>
+    </div>
+    <div class="search-box" style="max-width:300px;">
+      <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Search issues..." />
+    </div>
+  </div>
+
+  <div class="investigation-grid">
+
+    <!-- Issue 1 — Critical -->
+    <div class="investigation-card" style="border-left: 3px solid #7f1d1d;">
+      <div class="investigation-card-header">
+        <div>
+          <span class="event-code-large">APP-001</span>
+          <span class="severity-badge critical" style="margin-left: 8px;">Critical</span>
+        </div>
+        <div style="text-align:right;">
+          <div class="occurrence-count">7</div>
+          <div class="occurrence-label">occurrences</div>
+        </div>
+      </div>
+      <div class="investigation-message">
+        ErrorBoundary caught render error in <strong>PolicyAnalytics</strong> — Cannot read properties of undefined (reading 'map')
+      </div>
+      <div class="investigation-meta">
+        <span>
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          First: 14:12:03
+        </span>
+        <span>
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Last: 14:32:18
+        </span>
+        <span>
+          <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          3 users affected
+        </span>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div class="sparkline">
+          <div class="bar" style="height:4px;background:#dc2626;"></div>
+          <div class="bar" style="height:8px;background:#dc2626;"></div>
+          <div class="bar" style="height:2px;background:#dc2626;"></div>
+          <div class="bar" style="height:12px;background:#dc2626;"></div>
+          <div class="bar" style="height:6px;background:#dc2626;"></div>
+          <div class="bar" style="height:18px;background:#dc2626;"></div>
+          <div class="bar" style="height:24px;background:#dc2626;"></div>
+        </div>
+        <select class="classify-dropdown">
+          <option value="">Classify...</option>
+          <option value="bug" selected>Bug</option>
+          <option value="performance">Performance</option>
+          <option value="security">Security</option>
+          <option value="config">Configuration</option>
+          <option value="external">External</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Issue 2 — Throttling -->
+    <div class="investigation-card" style="border-left: 3px solid #dc2626;">
+      <div class="investigation-card-header">
+        <div>
+          <span class="event-code-large">NET-010</span>
+          <span class="severity-badge error" style="margin-left: 8px;">Error</span>
+        </div>
+        <div style="text-align:right;">
+          <div class="occurrence-count">3</div>
+          <div class="occurrence-label">occurrences</div>
+        </div>
+      </div>
+      <div class="investigation-message">
+        SharePoint API throttling (429) on <strong>PM_Policies</strong> — requests exceeding rate limit
+      </div>
+      <div class="investigation-meta">
+        <span>
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          First: 14:28:11
+        </span>
+        <span>
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Last: 14:31:45
+        </span>
+        <span>
+          <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          Avg latency: 4,800ms
+        </span>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div class="sparkline">
+          <div class="bar" style="height:2px;background:#d97706;"></div>
+          <div class="bar" style="height:2px;background:#d97706;"></div>
+          <div class="bar" style="height:14px;background:#dc2626;"></div>
+          <div class="bar" style="height:6px;background:#dc2626;"></div>
+          <div class="bar" style="height:22px;background:#dc2626;"></div>
+        </div>
+        <select class="classify-dropdown">
+          <option value="">Classify...</option>
+          <option value="performance" selected>Performance</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Issue 3 — DLQ failures -->
+    <div class="investigation-card" style="border-left: 3px solid #dc2626;">
+      <div class="investigation-card-header">
+        <div>
+          <span class="event-code-large">DLQ-001</span>
+          <span class="severity-badge error" style="margin-left: 8px;">Error</span>
+        </div>
+        <div style="text-align:right;">
+          <div class="occurrence-count">2</div>
+          <div class="occurrence-label">occurrences</div>
+        </div>
+      </div>
+      <div class="investigation-message">
+        Notification delivery permanently failed — items moved to Dead Letter Queue after 3 retry attempts
+      </div>
+      <div class="investigation-meta">
+        <span>
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          First: 14:25:44
+        </span>
+        <span>
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Last: 14:31:12
+        </span>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div class="sparkline">
+          <div class="bar" style="height:10px;background:#dc2626;"></div>
+          <div class="bar" style="height:2px;"></div>
+          <div class="bar" style="height:2px;"></div>
+          <div class="bar" style="height:16px;background:#dc2626;"></div>
+        </div>
+        <select class="classify-dropdown">
+          <option value="">Classify...</option>
+          <option value="external" selected>External</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Issue 4 — Slow queries -->
+    <div class="investigation-card" style="border-left: 3px solid #d97706;">
+      <div class="investigation-card-header">
+        <div>
+          <span class="event-code-large">NET-001</span>
+          <span class="severity-badge warning" style="margin-left: 8px;">Warning</span>
+        </div>
+        <div style="text-align:right;">
+          <div class="occurrence-count">5</div>
+          <div class="occurrence-label">occurrences</div>
+        </div>
+      </div>
+      <div class="investigation-message">
+        Slow SP API requests (&gt;2s) on <strong>PM_Approvals</strong> — possible missing index or unbounded query
+      </div>
+      <div class="investigation-meta">
+        <span>
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          First: 14:15:30
+        </span>
+        <span>
+          <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          Avg: 2,847ms
+        </span>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div class="sparkline">
+          <div class="bar" style="height:12px;background:#d97706;"></div>
+          <div class="bar" style="height:8px;background:#d97706;"></div>
+          <div class="bar" style="height:16px;background:#d97706;"></div>
+          <div class="bar" style="height:6px;background:#d97706;"></div>
+          <div class="bar" style="height:20px;background:#d97706;"></div>
+        </div>
+        <select class="classify-dropdown">
+          <option value="">Classify...</option>
+          <option value="performance" selected>Performance</option>
+        </select>
+      </div>
+    </div>
+
+  </div>
+
+</div><!-- /tab-investigate -->
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     TAB 4 — SYSTEM HEALTH
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="tab-content" id="tab-health">
+
+  <!-- Session Info -->
+  <div class="session-card" style="margin-bottom: 24px;">
+    <div class="section-header" style="border-color: #059669; margin-bottom: 14px;">Session Information</div>
+    <div class="session-grid">
+      <div>
+        <div class="session-item-label">Session ID</div>
+        <div class="session-item-value mono">sess_a3f8e2c1</div>
+      </div>
+      <div>
+        <div class="session-item-label">User</div>
+        <div class="session-item-value">gary@firsttech.digital (Admin)</div>
+      </div>
+      <div>
+        <div class="session-item-label">Browser</div>
+        <div class="session-item-value">Edge 124.0 / Windows 11</div>
+      </div>
+      <div>
+        <div class="session-item-label">Session Started</div>
+        <div class="session-item-value">14:28:30 (4 min ago)</div>
+      </div>
+      <div>
+        <div class="session-item-label">Current Page</div>
+        <div class="session-item-value mono">EventViewer.aspx</div>
+      </div>
+      <div>
+        <div class="session-item-label">App Version</div>
+        <div class="session-item-value">1.2.5</div>
+      </div>
+      <div>
+        <div class="session-item-label">App Insights</div>
+        <div class="session-item-value" style="color:#059669;">Connected</div>
+      </div>
+      <div>
+        <div class="session-item-label">SP Site</div>
+        <div class="session-item-value mono" style="font-size:11px;">mf7m.sharepoint.com/sites/PolicyManager</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Service Health Cards -->
+  <div class="section-header">Service Health <small>Last 5 minutes</small></div>
+  <div class="health-grid">
+    <div class="health-card">
+      <div class="health-card-header">
+        <div class="health-service-name">PolicyService</div>
+        <div class="health-indicator healthy"></div>
+      </div>
+      <div class="health-stats">
+        <div class="health-stat-label">Requests</div>
+        <div class="health-stat-value">24</div>
+        <div class="health-stat-label">Errors</div>
+        <div class="health-stat-value" style="color:#dc2626;">1</div>
+        <div class="health-stat-label">Avg latency</div>
+        <div class="health-stat-value">412ms</div>
+        <div class="health-stat-label">Success rate</div>
+        <div class="health-stat-value" style="color:#059669;">95.8%</div>
+      </div>
+    </div>
+
+    <div class="health-card">
+      <div class="health-card-header">
+        <div class="health-service-name">ApprovalService</div>
+        <div class="health-indicator degraded"></div>
+      </div>
+      <div class="health-stats">
+        <div class="health-stat-label">Requests</div>
+        <div class="health-stat-value">12</div>
+        <div class="health-stat-label">Errors</div>
+        <div class="health-stat-value" style="color:#dc2626;">1</div>
+        <div class="health-stat-label">Avg latency</div>
+        <div class="health-stat-value" style="color:#d97706;">1,240ms</div>
+        <div class="health-stat-label">Success rate</div>
+        <div class="health-stat-value">91.7%</div>
+      </div>
+      <div class="health-last-error">Last error: 429 Too Many Requests — 2 min ago</div>
+    </div>
+
+    <div class="health-card">
+      <div class="health-card-header">
+        <div class="health-service-name">NotificationRouter</div>
+        <div class="health-indicator unhealthy"></div>
+      </div>
+      <div class="health-stats">
+        <div class="health-stat-label">Requests</div>
+        <div class="health-stat-value">8</div>
+        <div class="health-stat-label">Errors</div>
+        <div class="health-stat-value" style="color:#dc2626;">3</div>
+        <div class="health-stat-label">DLQ items</div>
+        <div class="health-stat-value" style="color:#dc2626;">2</div>
+        <div class="health-stat-label">Success rate</div>
+        <div class="health-stat-value" style="color:#dc2626;">62.5%</div>
+      </div>
+      <div class="health-last-error">Last error: Failed to fetch — network timeout — 1 min ago</div>
+    </div>
+
+    <div class="health-card">
+      <div class="health-card-header">
+        <div class="health-service-name">PolicyAuditService</div>
+        <div class="health-indicator healthy"></div>
+      </div>
+      <div class="health-stats">
+        <div class="health-stat-label">Requests</div>
+        <div class="health-stat-value">13</div>
+        <div class="health-stat-label">Errors</div>
+        <div class="health-stat-value">0</div>
+        <div class="health-stat-label">Avg latency</div>
+        <div class="health-stat-value">198ms</div>
+        <div class="health-stat-label">Success rate</div>
+        <div class="health-stat-value" style="color:#059669;">100%</div>
+      </div>
+    </div>
+
+    <div class="health-card">
+      <div class="health-card-header">
+        <div class="health-service-name">PolicyChatService</div>
+        <div class="health-indicator healthy"></div>
+      </div>
+      <div class="health-stats">
+        <div class="health-stat-label">Requests</div>
+        <div class="health-stat-value">2</div>
+        <div class="health-stat-label">Errors</div>
+        <div class="health-stat-value">0</div>
+        <div class="health-stat-label">Avg latency</div>
+        <div class="health-stat-value" style="color:#d97706;">3,420ms</div>
+        <div class="health-stat-label">Success rate</div>
+        <div class="health-stat-value" style="color:#059669;">100%</div>
+      </div>
+    </div>
+
+    <div class="health-card">
+      <div class="health-card-header">
+        <div class="health-service-name">AdminConfigService</div>
+        <div class="health-indicator healthy"></div>
+      </div>
+      <div class="health-stats">
+        <div class="health-stat-label">Requests</div>
+        <div class="health-stat-value">7</div>
+        <div class="health-stat-label">Errors</div>
+        <div class="health-stat-value">0</div>
+        <div class="health-stat-label">Avg latency</div>
+        <div class="health-stat-value">156ms</div>
+        <div class="health-stat-label">Success rate</div>
+        <div class="health-stat-value" style="color:#059669;">100%</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DLQ Summary -->
+  <div class="section-header">Dead Letter Queue <small>Failed operations awaiting resolution</small></div>
+  <div class="dlq-summary">
+    <div class="dlq-header">
+      <div class="dlq-stats">
+        <div class="dlq-stat pending">
+          <div class="dlq-stat-value">3</div>
+          <div class="dlq-stat-label">Pending</div>
+        </div>
+        <div class="dlq-stat" style="opacity:.6;">
+          <div class="dlq-stat-value">0</div>
+          <div class="dlq-stat-label">Processing</div>
+        </div>
+        <div class="dlq-stat resolved">
+          <div class="dlq-stat-value">12</div>
+          <div class="dlq-stat-label">Resolved</div>
+        </div>
+        <div class="dlq-stat failed">
+          <div class="dlq-stat-value">1</div>
+          <div class="dlq-stat-label">Abandoned</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="action-btn primary">
+          <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+          Retry All Pending
+        </button>
+        <button class="action-btn">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export
+        </button>
+      </div>
+    </div>
+
+    <!-- DLQ Items -->
+    <div style="margin-top:12px; border-top: 1px solid #e2e8f0; padding-top: 12px;">
+      <div class="dlq-item-row" style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#94a3b8;font-weight:600;border-bottom:2px solid #e2e8f0;padding-bottom:6px;">
+        <div>Type</div>
+        <div>Payload / Error</div>
+        <div>Attempts</div>
+        <div>Created</div>
+        <div>Actions</div>
+      </div>
+      <div class="dlq-item-row">
+        <div><span class="channel-badge dlq" style="font-size:10px;">Notification</span></div>
+        <div style="font-size:12px;color:#334155;">Email to user@company.com — TypeError: Failed to fetch</div>
+        <div style="font-family:monospace;font-size:12px;text-align:center;">3/3</div>
+        <div style="font-size:12px;color:#64748b;">14:31:12</div>
+        <div style="display:flex;gap:4px;">
+          <button class="action-btn" style="padding:4px 8px;font-size:11px;">Retry</button>
+          <button class="action-btn danger" style="padding:4px 8px;font-size:11px;">Abandon</button>
+        </div>
+      </div>
+      <div class="dlq-item-row">
+        <div><span class="channel-badge dlq" style="font-size:10px;">Notification</span></div>
+        <div style="font-size:12px;color:#334155;">Teams card to manager@company.com — 403 Forbidden</div>
+        <div style="font-family:monospace;font-size:12px;text-align:center;">3/3</div>
+        <div style="font-size:12px;color:#64748b;">14:25:44</div>
+        <div style="display:flex;gap:4px;">
+          <button class="action-btn" style="padding:4px 8px;font-size:11px;">Retry</button>
+          <button class="action-btn danger" style="padding:4px 8px;font-size:11px;">Abandon</button>
+        </div>
+      </div>
+      <div class="dlq-item-row">
+        <div><span class="channel-badge app" style="font-size:10px;">Sync</span></div>
+        <div style="font-size:12px;color:#334155;">Approval chain sync for POL-2026-0038 — SP list column mismatch</div>
+        <div style="font-family:monospace;font-size:12px;text-align:center;">3/3</div>
+        <div style="font-size:12px;color:#64748b;">14:20:33</div>
+        <div style="display:flex;gap:4px;">
+          <button class="action-btn" style="padding:4px 8px;font-size:11px;">Retry</button>
+          <button class="action-btn danger" style="padding:4px 8px;font-size:11px;">Abandon</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SP List Health -->
+  <div class="section-header">SharePoint List Health <small>From provisioning checker</small></div>
+  <div class="event-table-wrap" style="margin-bottom: 24px;">
+    <table class="event-table">
+      <thead>
+        <tr>
+          <th style="width:40px;"></th>
+          <th>List Name</th>
+          <th style="width:100px;">Items</th>
+          <th style="width:120px;">Last Modified</th>
+          <th style="width:100px;">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="status-dot ok"></span></td>
+          <td><span class="source-tag">PM_Policies</span></td>
+          <td style="font-family:monospace;">142</td>
+          <td style="font-size:12px;color:#64748b;">2 min ago</td>
+          <td><span class="severity-badge info" style="font-size:10px;">Healthy</span></td>
+        </tr>
+        <tr>
+          <td><span class="status-dot ok"></span></td>
+          <td><span class="source-tag">PM_PolicyAuditLog</span></td>
+          <td style="font-family:monospace;">3,847</td>
+          <td style="font-size:12px;color:#64748b;">1 min ago</td>
+          <td><span class="severity-badge info" style="font-size:10px;">Healthy</span></td>
+        </tr>
+        <tr>
+          <td><span class="status-dot ok"></span></td>
+          <td><span class="source-tag">PM_PolicyAcknowledgements</span></td>
+          <td style="font-family:monospace;">1,204</td>
+          <td style="font-size:12px;color:#64748b;">5 min ago</td>
+          <td><span class="severity-badge info" style="font-size:10px;">Healthy</span></td>
+        </tr>
+        <tr>
+          <td><span class="status-dot warn"></span></td>
+          <td><span class="source-tag">PM_DeadLetterQueue</span></td>
+          <td style="font-family:monospace;">16</td>
+          <td style="font-size:12px;color:#64748b;">1 min ago</td>
+          <td><span class="severity-badge warning" style="font-size:10px;">3 Pending</span></td>
+        </tr>
+        <tr>
+          <td><span class="status-dot ok"></span></td>
+          <td><span class="source-tag">PM_NotificationQueue</span></td>
+          <td style="font-family:monospace;">89</td>
+          <td style="font-size:12px;color:#64748b;">3 min ago</td>
+          <td><span class="severity-badge info" style="font-size:10px;">Healthy</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div><!-- /tab-health -->
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     TAB 5 — AI TRIAGE
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="tab-content" id="tab-ai">
+
+  <!-- AI Hero Banner -->
+  <div class="ai-hero">
+    <div class="ai-hero-left">
+      <h2>
+        <svg viewBox="0 0 24 24"><path d="M12 2a4 4 0 014 4v1a1 1 0 001 1h1a4 4 0 010 8h-1a1 1 0 00-1 1v1a4 4 0 01-8 0v-1a1 1 0 00-1-1H6a4 4 0 010-8h1a1 1 0 001-1V6a4 4 0 014-4z"/><circle cx="12" cy="12" r="2"/></svg>
+        AI Triage &amp; Troubleshooting
+      </h2>
+      <p>GPT-4o analyses your session events, identifies root causes, detects patterns, and suggests fixes with code-level guidance.</p>
+    </div>
+    <div class="ai-hero-actions">
+      <button class="ai-hero-btn white">
+        <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        Analyse Session
+      </button>
+      <button class="ai-hero-btn ghost">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Ask a Question
+      </button>
+    </div>
+  </div>
+
+  <!-- AI Insight KPIs -->
+  <div class="ai-insights-grid">
+    <div class="ai-insight-card danger">
+      <div class="ai-insight-label">Root Causes Found</div>
+      <div class="ai-insight-value">3</div>
+      <div class="ai-insight-desc">Distinct issues identified across 8 errors</div>
+    </div>
+    <div class="ai-insight-card warning">
+      <div class="ai-insight-label">Performance Hotspots</div>
+      <div class="ai-insight-value">2</div>
+      <div class="ai-insight-desc">PM_Approvals slow queries, AI chat latency</div>
+    </div>
+    <div class="ai-insight-card success">
+      <div class="ai-insight-label">Auto-Fixable</div>
+      <div class="ai-insight-value">2 / 3</div>
+      <div class="ai-insight-desc">AI can suggest code fixes for 2 root causes</div>
+    </div>
+  </div>
+
+  <!-- AI Analysis: Root Cause #1 -->
+  <div class="ai-analysis-card">
+    <div class="ai-card-header">
+      <div class="ai-card-title">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+        Root Cause #1 — Null Array in PolicyAnalytics Compliance Tab
+      </div>
+      <div class="ai-card-timestamp">Analysed 4s ago</div>
+    </div>
+    <div class="ai-card-body">
+      <!-- Severity meter -->
+      <div class="ai-severity-meter critical">
+        <div class="ai-severity-icon critical">
+          <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <div class="ai-severity-text">
+          <h4>Critical — User-Facing Crash</h4>
+          <p>ErrorBoundary triggered 7 times. Users see fallback UI. Component unrecoverable without page reload.</p>
+        </div>
+      </div>
+
+      <!-- What happened -->
+      <div class="ai-explanation">
+        <strong>What happened:</strong> The <code style="background:#f1f5f9;padding:1px 5px;border-radius:3px;font-size:12px;">renderComplianceTab()</code> method in <code style="background:#f1f5f9;padding:1px 5px;border-radius:3px;font-size:12px;">PolicyAnalytics.tsx:2847</code> calls <code style="background:#f1f5f9;padding:1px 5px;border-radius:3px;font-size:12px;">.map()</code> on <code style="background:#f1f5f9;padding:1px 5px;border-radius:3px;font-size:12px;">this.state.complianceViolations</code> before the async data load completes. The initial state sets this to <code style="background:#f1f5f9;padding:1px 5px;border-radius:3px;font-size:12px;">undefined</code> instead of <code style="background:#f1f5f9;padding:1px 5px;border-radius:3px;font-size:12px;">[]</code>.
+      </div>
+
+      <!-- Why it happened -->
+      <div class="ai-explanation">
+        <strong>Why it happened:</strong> Race condition — the compliance tab renders before <code style="background:#f1f5f9;padding:1px 5px;border-radius:3px;font-size:12px;">loadComplianceData()</code> resolves. The state initializer in the constructor sets <code style="background:#f1f5f9;padding:1px 5px;border-radius:3px;font-size:12px;">complianceViolations</code> as undefined (omitted from initial state), not as an empty array.
+      </div>
+
+      <!-- Pattern detected -->
+      <div style="margin-bottom:16px;">
+        <strong style="font-size:13px;color:#0f172a;">Pattern detected:</strong>
+        <div class="pattern-timeline">
+          <div class="pattern-dot ok" title="Page load"></div>
+          <div class="pattern-line"></div>
+          <div class="pattern-dot info" title="Tab switch to Compliance"></div>
+          <div class="pattern-line"></div>
+          <div class="pattern-dot error" title="Crash: .map() on undefined"></div>
+          <div class="pattern-line"></div>
+          <div class="pattern-dot error" title="ErrorBoundary catches"></div>
+          <div class="pattern-line"></div>
+          <div class="pattern-dot warning" title="User clicks retry"></div>
+          <div class="pattern-line"></div>
+          <div class="pattern-dot error" title="Same crash (data still loading)"></div>
+          <div class="pattern-line"></div>
+          <div class="pattern-dot ok" title="Eventually loads"></div>
+        </div>
+        <div style="font-size:11px;color:#94a3b8;">Page load → Tab switch → Crash → ErrorBoundary → Retry → Crash again → Eventually resolves</div>
+      </div>
+
+      <!-- Suggested fix -->
+      <div style="margin-bottom:12px;">
+        <strong style="font-size:13px;color:#0f172a;">Suggested fix:</strong>
+      </div>
+      <ol class="ai-steps">
+        <li class="ai-step">
+          <div class="ai-step-number">1</div>
+          <div class="ai-step-content">
+            <div class="ai-step-title">Initialise complianceViolations as empty array in constructor</div>
+            <div class="ai-step-desc">In PolicyAnalytics.tsx constructor, add <code>complianceViolations: []</code> to the initial state object.</div>
+            <div class="ai-step-code"><span class="comment">// PolicyAnalytics.tsx — constructor, line ~180</span>
+this.state = {
+  ...
+<span class="fix-remove">  // complianceViolations not set (becomes undefined)</span>
+<span class="fix-add">  complianceViolations: [],  // Prevent .map() on undefined</span>
+  ...
+};</div>
+          </div>
+        </li>
+        <li class="ai-step">
+          <div class="ai-step-number">2</div>
+          <div class="ai-step-content">
+            <div class="ai-step-title">Add defensive guard in renderComplianceTab</div>
+            <div class="ai-step-desc">Even with the init fix, add a null guard for defence in depth. This pattern is used in other tabs already.</div>
+            <div class="ai-step-code"><span class="comment">// PolicyAnalytics.tsx:2847</span>
+<span class="fix-remove">const violations = this.state.complianceViolations.map(v => ...</span>
+<span class="fix-add">const violations = (this.state.complianceViolations || []).map(v => ...</span></div>
+          </div>
+        </li>
+      </ol>
+
+      <!-- Confidence -->
+      <div class="ai-confidence">
+        <span style="font-weight:600;">Confidence:</span>
+        <div class="ai-confidence-bar">
+          <div class="ai-confidence-fill" style="width:92%;"></div>
+        </div>
+        <span style="font-weight:700;">92%</span>
+        <span style="color:#94a3b8;">— Stack trace directly points to the cause</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Analysis: Root Cause #2 -->
+  <div class="ai-analysis-card">
+    <div class="ai-card-header">
+      <div class="ai-card-title">
+        <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        Root Cause #2 — SharePoint API Throttling on PM_Policies
+      </div>
+      <div class="ai-card-timestamp">Analysed 4s ago</div>
+    </div>
+    <div class="ai-card-body">
+      <div class="ai-severity-meter high">
+        <div class="ai-severity-icon high">
+          <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+        <div class="ai-severity-text">
+          <h4>High — Service Degradation</h4>
+          <p>3 requests throttled (429). Indicates burst of API calls exceeding SharePoint rate limits.</p>
+        </div>
+      </div>
+
+      <div class="ai-explanation">
+        <strong>What happened:</strong> 24 requests to PM_Policies within 3 minutes triggered SharePoint's rate limiter. The throttled requests returned 429 with <code style="background:#f1f5f9;padding:1px 5px;border-radius:3px;font-size:12px;">Retry-After: 120</code> headers. Network monitor shows requests are unbatched — multiple components independently query the same list.
+      </div>
+
+      <div class="ai-explanation">
+        <strong>Root cause:</strong> <code style="background:#f1f5f9;padding:1px 5px;border-radius:3px;font-size:12px;">PolicyHub</code>, <code style="background:#f1f5f9;padding:1px 5px;border-radius:3px;font-size:12px;">PolicyAdmin</code>, and <code style="background:#f1f5f9;padding:1px 5px;border-radius:3px;font-size:12px;">PolicyAnalytics</code> each call <code style="background:#f1f5f9;padding:1px 5px;border-radius:3px;font-size:12px;">PolicyService.getPolicies()</code> independently in <code style="background:#f1f5f9;padding:1px 5px;border-radius:3px;font-size:12px;">componentDidMount()</code>. When navigating quickly between pages, parallel fetches exhaust the request budget.
+      </div>
+
+      <ol class="ai-steps">
+        <li class="ai-step">
+          <div class="ai-step-number">1</div>
+          <div class="ai-step-content">
+            <div class="ai-step-title">Add request deduplication to PolicyService</div>
+            <div class="ai-step-desc">Cache in-flight requests so multiple callers share the same promise. This is a common pattern for preventing duplicate concurrent API calls.</div>
+            <div class="ai-step-code"><span class="comment">// PolicyService.ts — add request cache</span>
+<span class="fix-add">private _pendingRequests: Map&lt;string, Promise&lt;any&gt;&gt; = new Map();</span>
+
+<span class="fix-add">private async cachedQuery&lt;T&gt;(key: string, fn: () => Promise&lt;T&gt;): Promise&lt;T&gt; {</span>
+<span class="fix-add">  if (this._pendingRequests.has(key)) return this._pendingRequests.get(key);</span>
+<span class="fix-add">  const promise = fn().finally(() => this._pendingRequests.delete(key));</span>
+<span class="fix-add">  this._pendingRequests.set(key, promise);</span>
+<span class="fix-add">  return promise;</span>
+<span class="fix-add">}</span></div>
+          </div>
+        </li>
+        <li class="ai-step">
+          <div class="ai-step-number">2</div>
+          <div class="ai-step-content">
+            <div class="ai-step-title">Implement Retry-After header handling</div>
+            <div class="ai-step-desc">When a 429 is received, read the Retry-After header and delay before retrying. Add to the existing retryWithDLQ pattern.</div>
+          </div>
+        </li>
+      </ol>
+
+      <div class="ai-confidence">
+        <span style="font-weight:600;">Confidence:</span>
+        <div class="ai-confidence-bar">
+          <div class="ai-confidence-fill" style="width:78%;"></div>
+        </div>
+        <span style="font-weight:700;">78%</span>
+        <span style="color:#94a3b8;">— Based on request timing correlation</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Analysis: Root Cause #3 -->
+  <div class="ai-analysis-card">
+    <div class="ai-card-header">
+      <div class="ai-card-title">
+        <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22 6 12 13 2 6"/></svg>
+        Root Cause #3 — Notification Delivery Failures (DLQ)
+      </div>
+      <div class="ai-card-timestamp">Analysed 4s ago</div>
+    </div>
+    <div class="ai-card-body">
+      <div class="ai-severity-meter medium">
+        <div class="ai-severity-icon medium">
+          <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <div class="ai-severity-text">
+          <h4>Medium — Background Process Failure</h4>
+          <p>2 notifications stuck in DLQ. Not user-facing but recipients won't get their alerts.</p>
+        </div>
+      </div>
+
+      <div class="ai-explanation">
+        <strong>What happened:</strong> Two notification delivery attempts failed with <code style="background:#f1f5f9;padding:1px 5px;border-radius:3px;font-size:12px;">TypeError: Failed to fetch</code> and one with <code style="background:#f1f5f9;padding:1px 5px;border-radius:3px;font-size:12px;">403 Forbidden</code>. Both exhausted 3 retries and were moved to the Dead Letter Queue.
+      </div>
+
+      <div class="ai-explanation">
+        <strong>Likely cause:</strong> The <code style="background:#f1f5f9;padding:1px 5px;border-radius:3px;font-size:12px;">Failed to fetch</code> errors suggest a <strong>network connectivity issue</strong> or <strong>CORS rejection</strong> when calling the email queue endpoint. The 403 is likely a <strong>permissions issue</strong> on the Teams webhook — the service account may lack send permissions for the target channel. Both are external/infrastructure issues, not code bugs.
+      </div>
+
+      <div class="ai-explanation">
+        <strong>Recommended action:</strong> Check Logic App status in Azure Portal (<code style="background:#f1f5f9;padding:1px 5px;border-radius:3px;font-size:12px;">dwx-pm-email-sender-prod</code>) and verify Teams webhook URL is still valid. Then use the DLQ "Retry" button to reprocess after the infrastructure issue is resolved.
+      </div>
+
+      <div class="ai-confidence">
+        <span style="font-weight:600;">Confidence:</span>
+        <div class="ai-confidence-bar">
+          <div class="ai-confidence-fill" style="width:65%;"></div>
+        </div>
+        <span style="font-weight:700;">65%</span>
+        <span style="color:#94a3b8;">— External failure, limited diagnostic data</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       AI ROOT CAUSE ANALYSIS REPORT
+       ═══════════════════════════════════════════════ -->
+  <div class="ai-analysis-card" style="border:2px solid #ddd6fe;">
+    <div class="ai-card-header" style="background:linear-gradient(135deg, #4c1d95 0%, #6d28d9 100%);border-bottom:none;">
+      <div class="ai-card-title" style="color:#fff;">
+        <svg viewBox="0 0 24 24" style="stroke:#fff;"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Root Cause Analysis Report
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="ai-hero-btn ghost" style="padding:6px 12px;font-size:11px;">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export PDF
+        </button>
+        <button class="ai-hero-btn ghost" style="padding:6px 12px;font-size:11px;">
+          <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          Copy
+        </button>
+        <button class="ai-hero-btn ghost" style="padding:6px 12px;font-size:11px;">
+          <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22 6 12 13 2 6"/></svg>
+          Email Report
+        </button>
+      </div>
+    </div>
+    <div class="ai-card-body" style="padding:0;">
+
+      <!-- Report Header -->
+      <div style="padding:24px 24px 0; border-bottom: 1px solid #e2e8f0; margin-bottom: 0;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
+          <div>
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:#7c3aed;font-weight:700;margin-bottom:4px;">DWx Policy Manager</div>
+            <div style="font-size:20px;font-weight:700;color:#0f172a;">Root Cause Analysis Report</div>
+            <div style="font-size:12px;color:#64748b;margin-top:4px;">Generated by AI Triage &bull; GPT-4o &bull; 31 March 2026, 14:33 UTC</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#64748b;font-weight:600;">Session</div>
+            <div style="font-family:monospace;font-size:13px;color:#0f172a;font-weight:600;">sess_a3f8e2c1</div>
+            <div style="font-size:11px;color:#94a3b8;margin-top:2px;">Duration: 4m 22s</div>
+          </div>
+        </div>
+
+        <!-- Executive Summary KPIs -->
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;padding-bottom:20px;">
+          <div style="text-align:center;">
+            <div style="font-size:28px;font-weight:700;color:#dc2626;">3</div>
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#64748b;font-weight:600;">Root Causes</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:28px;font-weight:700;color:#0f172a;">247</div>
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#64748b;font-weight:600;">Total Events</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:28px;font-weight:700;color:#d97706;">8</div>
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#64748b;font-weight:600;">Errors</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:28px;font-weight:700;color:#059669;">2</div>
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#64748b;font-weight:600;">Auto-Fixable</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:28px;font-weight:700;color:#7c3aed;">81%</div>
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#64748b;font-weight:600;">Avg Confidence</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Executive Summary -->
+      <div style="padding:20px 24px;border-bottom:1px solid #e2e8f0;">
+        <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">Executive Summary</div>
+        <div style="font-size:13px;line-height:1.8;color:#334155;">
+          During this 4-minute session, the application experienced <strong>3 distinct root causes</strong> resulting in 8 error-level events and 23 warnings. The most impactful issue is a <strong style="color:#dc2626;">Critical null reference crash</strong> in the PolicyAnalytics compliance tab, which triggered the ErrorBoundary 7 times and rendered the tab unusable. Additionally, <strong style="color:#d97706;">SharePoint API throttling</strong> caused 3 failed requests to PM_Policies, and <strong style="color:#2563eb;">2 notification deliveries</strong> permanently failed due to infrastructure connectivity issues. Two of the three root causes have auto-fixable code changes. The third requires infrastructure investigation.
+        </div>
+      </div>
+
+      <!-- Finding #1 -->
+      <div style="padding:20px 24px;border-bottom:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+          <div style="width:32px;height:32px;background:#dc2626;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;flex-shrink:0;">1</div>
+          <div>
+            <div style="font-size:14px;font-weight:600;color:#0f172a;">Null Array Reference in PolicyAnalytics Compliance Tab</div>
+            <div style="display:flex;gap:8px;margin-top:3px;">
+              <span class="severity-badge critical">Critical</span>
+              <span class="channel-badge app" style="font-size:10px;">Application</span>
+              <span style="font-size:11px;color:#64748b;">7 occurrences &bull; 3 users affected</span>
+            </div>
+          </div>
+        </div>
+        <table style="width:100%;font-size:12px;border-collapse:collapse;margin-bottom:12px;">
+          <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:6px 0;color:#64748b;width:140px;font-weight:500;">Impact</td>
+            <td style="padding:6px 0;color:#0f172a;">PolicyAnalytics compliance tab completely unusable — ErrorBoundary fallback shown</td>
+          </tr>
+          <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:6px 0;color:#64748b;font-weight:500;">Component</td>
+            <td style="padding:6px 0;"><span class="source-tag">PolicyAnalytics.tsx:2847</span></td>
+          </tr>
+          <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:6px 0;color:#64748b;font-weight:500;">Error Type</td>
+            <td style="padding:6px 0;"><code style="background:#fef2f2;padding:1px 5px;border-radius:3px;font-size:11px;color:#991b1b;">TypeError: Cannot read properties of undefined (reading 'map')</code></td>
+          </tr>
+          <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:6px 0;color:#64748b;font-weight:500;">Root Cause</td>
+            <td style="padding:6px 0;color:#0f172a;"><code>complianceViolations</code> omitted from initial state (becomes <code>undefined</code>). Render calls <code>.map()</code> before async load completes.</td>
+          </tr>
+          <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:6px 0;color:#64748b;font-weight:500;">Trigger Sequence</td>
+            <td style="padding:6px 0;color:#0f172a;">Navigate to Analytics → Switch to Compliance tab → Crash on first render</td>
+          </tr>
+          <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:6px 0;color:#64748b;font-weight:500;">Classification</td>
+            <td style="padding:6px 0;"><span class="ai-tag red" style="font-size:10px;">Code Bug</span> <span class="ai-tag purple" style="font-size:10px;">Auto-Fixable</span></td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0;color:#64748b;font-weight:500;">Confidence</td>
+            <td style="padding:6px 0;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div style="width:100px;height:5px;background:#e9d5ff;border-radius:3px;overflow:hidden;"><div style="width:92%;height:100%;background:#7c3aed;border-radius:3px;"></div></div>
+                <span style="font-weight:700;color:#6d28d9;font-size:12px;">92%</span>
+              </div>
+            </td>
+          </tr>
+        </table>
+        <div style="font-size:12px;font-weight:600;color:#0f172a;margin-bottom:6px;">Recommended Fix:</div>
+        <div class="ai-panel-fix" style="font-size:11px;"><span class="fix-comment">// PolicyAnalytics.tsx — constructor (~line 180)</span>
+<span class="fix-add">+ complianceViolations: [],  // Initialise as empty array</span>
+
+<span class="fix-comment">// PolicyAnalytics.tsx:2847 — defensive guard</span>
+<span class="fix-remove">- const rows = this.state.complianceViolations.map(v =&gt; ...</span>
+<span class="fix-add">+ const rows = (this.state.complianceViolations || []).map(v =&gt; ...</span></div>
+        <div style="margin-top:8px;padding:8px 12px;background:#f0fdf4;border-radius:4px;border-left:3px solid #059669;font-size:12px;color:#065f46;">
+          <strong>Preventive:</strong> Audit all array state properties in PolicyAnalytics for consistent initialisation. Same pattern likely exists in <code>slaMetrics</code>, <code>auditEntries</code>, and <code>overdueAcks</code>.
+        </div>
+      </div>
+
+      <!-- Finding #2 -->
+      <div style="padding:20px 24px;border-bottom:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+          <div style="width:32px;height:32px;background:#ea580c;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;flex-shrink:0;">2</div>
+          <div>
+            <div style="font-size:14px;font-weight:600;color:#0f172a;">SharePoint API Throttling on PM_Policies</div>
+            <div style="display:flex;gap:8px;margin-top:3px;">
+              <span class="severity-badge error">High</span>
+              <span class="channel-badge network" style="font-size:10px;">Network</span>
+              <span style="font-size:11px;color:#64748b;">3 throttled requests &bull; 429 Too Many Requests</span>
+            </div>
+          </div>
+        </div>
+        <table style="width:100%;font-size:12px;border-collapse:collapse;margin-bottom:12px;">
+          <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:6px 0;color:#64748b;width:140px;font-weight:500;">Impact</td>
+            <td style="padding:6px 0;color:#0f172a;">Delayed data loading (5.2s), degraded user experience across policy views</td>
+          </tr>
+          <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:6px 0;color:#64748b;font-weight:500;">Root Cause</td>
+            <td style="padding:6px 0;color:#0f172a;">Multiple components call <code>PolicyService.getPolicies()</code> independently — 24 requests in 3 min exceeds SP rate limit</td>
+          </tr>
+          <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:6px 0;color:#64748b;font-weight:500;">Classification</td>
+            <td style="padding:6px 0;"><span class="ai-tag amber" style="font-size:10px;">Performance</span> <span class="ai-tag purple" style="font-size:10px;">Auto-Fixable</span></td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0;color:#64748b;font-weight:500;">Confidence</td>
+            <td style="padding:6px 0;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div style="width:100px;height:5px;background:#e9d5ff;border-radius:3px;overflow:hidden;"><div style="width:78%;height:100%;background:#7c3aed;border-radius:3px;"></div></div>
+                <span style="font-weight:700;color:#6d28d9;font-size:12px;">78%</span>
+              </div>
+            </td>
+          </tr>
+        </table>
+        <div style="font-size:12px;font-weight:600;color:#0f172a;margin-bottom:6px;">Recommended Fix:</div>
+        <div style="font-size:12px;color:#334155;line-height:1.6;">
+          Add request deduplication cache to <code>PolicyService</code> — coalesce concurrent identical requests into a single API call. Additionally, implement <code>Retry-After</code> header handling in the retry utility to respect SharePoint's backoff guidance.
+        </div>
+      </div>
+
+      <!-- Finding #3 -->
+      <div style="padding:20px 24px;border-bottom:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+          <div style="width:32px;height:32px;background:#d97706;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;flex-shrink:0;">3</div>
+          <div>
+            <div style="font-size:14px;font-weight:600;color:#0f172a;">Notification Delivery Failures (Dead Letter Queue)</div>
+            <div style="display:flex;gap:8px;margin-top:3px;">
+              <span class="severity-badge warning">Medium</span>
+              <span class="channel-badge dlq" style="font-size:10px;">DLQ</span>
+              <span style="font-size:11px;color:#64748b;">2 items &bull; 3 retry attempts exhausted</span>
+            </div>
+          </div>
+        </div>
+        <table style="width:100%;font-size:12px;border-collapse:collapse;margin-bottom:12px;">
+          <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:6px 0;color:#64748b;width:140px;font-weight:500;">Impact</td>
+            <td style="padding:6px 0;color:#0f172a;">2 users will not receive policy notification emails/Teams messages</td>
+          </tr>
+          <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:6px 0;color:#64748b;font-weight:500;">Root Cause</td>
+            <td style="padding:6px 0;color:#0f172a;">Network connectivity failure (<code>Failed to fetch</code>) + Teams webhook permission issue (<code>403 Forbidden</code>)</td>
+          </tr>
+          <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:6px 0;color:#64748b;font-weight:500;">Classification</td>
+            <td style="padding:6px 0;"><span class="ai-tag blue" style="font-size:10px;">Infrastructure</span></td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0;color:#64748b;font-weight:500;">Confidence</td>
+            <td style="padding:6px 0;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div style="width:100px;height:5px;background:#e9d5ff;border-radius:3px;overflow:hidden;"><div style="width:65%;height:100%;background:#7c3aed;border-radius:3px;"></div></div>
+                <span style="font-weight:700;color:#6d28d9;font-size:12px;">65%</span>
+              </div>
+            </td>
+          </tr>
+        </table>
+        <div style="font-size:12px;font-weight:600;color:#0f172a;margin-bottom:6px;">Recommended Actions:</div>
+        <div style="font-size:12px;color:#334155;line-height:1.6;">
+          1. Check Logic App run history in Azure Portal (<code>dwx-pm-email-sender-prod</code>)<br/>
+          2. Verify Teams webhook URL is still valid and service account has send permissions<br/>
+          3. After resolving infrastructure issue, use DLQ "Retry All Pending" button on System Health tab
+        </div>
+      </div>
+
+      <!-- Report Footer -->
+      <div style="padding:16px 24px;background:#f8fafc;display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-size:11px;color:#94a3b8;">
+          Generated by DWx Event Viewer AI Triage &bull; Model: GPT-4o &bull; Session: sess_a3f8e2c1
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <span style="font-size:11px;color:#64748b;">Overall Confidence:</span>
+          <div style="width:60px;height:5px;background:#e9d5ff;border-radius:3px;overflow:hidden;"><div style="width:81%;height:100%;background:#7c3aed;border-radius:3px;"></div></div>
+          <span style="font-weight:700;color:#6d28d9;font-size:12px;">81%</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Ask AI Section -->
+  <div class="ai-analysis-card">
+    <div class="ai-card-header" style="background:linear-gradient(135deg, #f5f3ff 0%, #faf5ff 100%);">
+      <div class="ai-card-title">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Ask AI About Events
+      </div>
+    </div>
+    <div class="ai-card-body">
+      <div style="display:flex;gap:10px;margin-bottom:16px;">
+        <input type="text" placeholder="Ask about your events, e.g. 'Why are approval queries so slow?' or 'Show me all errors related to notifications'" style="flex:1;padding:10px 14px;border:1px solid #ddd6fe;border-radius:6px;font-size:13px;font-family:inherit;color:#334155;outline:none;background:#faf5ff;" />
+        <button class="ai-triage-btn">
+          <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          Ask
+        </button>
+      </div>
+
+      <!-- Suggested questions -->
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;font-weight:600;margin-bottom:8px;">Suggested questions</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        <button style="padding:5px 12px;border:1px solid #ddd6fe;border-radius:16px;background:#faf5ff;font-size:12px;color:#6d28d9;cursor:pointer;font-family:inherit;">Why is PM_Approvals slow?</button>
+        <button style="padding:5px 12px;border:1px solid #ddd6fe;border-radius:16px;background:#faf5ff;font-size:12px;color:#6d28d9;cursor:pointer;font-family:inherit;">What caused the ErrorBoundary crash?</button>
+        <button style="padding:5px 12px;border:1px solid #ddd6fe;border-radius:16px;background:#faf5ff;font-size:12px;color:#6d28d9;cursor:pointer;font-family:inherit;">Are there any security concerns?</button>
+        <button style="padding:5px 12px;border:1px solid #ddd6fe;border-radius:16px;background:#faf5ff;font-size:12px;color:#6d28d9;cursor:pointer;font-family:inherit;">Summarise this session's health</button>
+        <button style="padding:5px 12px;border:1px solid #ddd6fe;border-radius:16px;background:#faf5ff;font-size:12px;color:#6d28d9;cursor:pointer;font-family:inherit;">How do I fix the DLQ items?</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /tab-ai -->
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     EVENT DETAIL PANEL (always visible for mockup)
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="detail-panel-overlay">
+  <div class="detail-header">
+    <div>
+      <h2>APP-001 &mdash; Unhandled Render Error</h2>
+      <div class="detail-meta">
+        <span class="severity-badge critical" style="margin-right:8px;">Critical</span>
+        <span class="channel-badge app">Application</span>
+        &nbsp;&bull;&nbsp; 14:32:18.294
+      </div>
+    </div>
+    <button class="detail-close">
+      <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+
+  <div class="detail-body">
+    <!-- Event Details -->
+    <div class="detail-section">
+      <div class="detail-section-title">Event Details</div>
+      <div class="detail-grid">
+        <div class="detail-label">Event Code</div>
+        <div class="detail-value"><span class="event-code-large" style="font-size:13px;">APP-001</span></div>
+        <div class="detail-label">Severity</div>
+        <div class="detail-value"><span class="severity-badge critical">Critical</span></div>
+        <div class="detail-label">Channel</div>
+        <div class="detail-value"><span class="channel-badge app">Application</span></div>
+        <div class="detail-label">Source</div>
+        <div class="detail-value"><span class="source-tag">ErrorBoundary</span></div>
+        <div class="detail-label">Component</div>
+        <div class="detail-value">PolicyAnalytics</div>
+        <div class="detail-label">Timestamp</div>
+        <div class="detail-value" style="font-family:monospace;font-size:12px;">2026-03-31T14:32:18.294Z</div>
+        <div class="detail-label">Session ID</div>
+        <div class="detail-value" style="font-family:monospace;font-size:12px;">sess_a3f8e2c1</div>
+        <div class="detail-label">User</div>
+        <div class="detail-value">[REDACTED_EMAIL]</div>
+        <div class="detail-label">Page</div>
+        <div class="detail-value" style="font-size:12px;">/sites/PolicyManager/SitePages/PolicyAnalytics.aspx</div>
+        <div class="detail-label">Occurrences</div>
+        <div class="detail-value" style="color:#dc2626;font-weight:600;">7 times this session</div>
+      </div>
+    </div>
+
+    <!-- Error Message -->
+    <div class="detail-section">
+      <div class="detail-section-title">Error Message</div>
+      <div style="background:#fef2f2;padding:12px 14px;border-radius:6px;font-size:13px;color:#991b1b;border-left:3px solid #dc2626;">
+        TypeError: Cannot read properties of undefined (reading 'map')
+      </div>
+    </div>
+
+    <!-- Stack Trace -->
+    <div class="detail-section">
+      <div class="detail-section-title">Stack Trace</div>
+      <div class="stack-trace"><span class="error-line">TypeError: Cannot read properties of undefined (reading 'map')</span>
+<span class="at-keyword">    at</span> PolicyAnalytics.renderComplianceTab <span class="file-ref">(PolicyAnalytics.tsx:2847:42)</span>
+<span class="at-keyword">    at</span> PolicyAnalytics.renderActiveContent <span class="file-ref">(PolicyAnalytics.tsx:3102:18)</span>
+<span class="at-keyword">    at</span> PolicyAnalytics.render <span class="file-ref">(PolicyAnalytics.tsx:3240:12)</span>
+<span class="at-keyword">    at</span> finishClassComponent <span class="file-ref">(react-dom.development.js:17485:31)</span>
+<span class="at-keyword">    at</span> updateClassComponent <span class="file-ref">(react-dom.development.js:17435:24)</span></div>
+    </div>
+
+    <!-- Metadata -->
+    <div class="detail-section">
+      <div class="detail-section-title">Metadata</div>
+      <div class="stack-trace" style="max-height:120px;">{
+  "componentStack": "ErrorBoundary > PolicyAnalytics",
+  "fallbackMessage": "An error occurred in PolicyAnalytics.",
+  "appVersion": "1.2.5",
+  "userRole": "Admin",
+  "activeTab": "compliance"
+}</div>
+    </div>
+
+    <!-- Investigation -->
+    <div class="detail-section">
+      <div class="detail-section-title">Investigation</div>
+      <div class="detail-grid">
+        <div class="detail-label">Classification</div>
+        <div class="detail-value">
+          <select class="classify-dropdown" style="width:100%;">
+            <option value="bug" selected>Bug</option>
+            <option value="performance">Performance</option>
+            <option value="security">Security</option>
+            <option value="config">Configuration</option>
+            <option value="external">External</option>
+            <option value="unknown">Unknown</option>
+          </select>
+        </div>
+        <div class="detail-label">Investigated</div>
+        <div class="detail-value">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+            <input type="checkbox" /> Mark as investigated
+          </label>
+        </div>
+      </div>
+      <div style="margin-top:10px;">
+        <div class="detail-label" style="margin-bottom:4px;">Notes</div>
+        <textarea style="width:100%;padding:8px 10px;border:1px solid #e2e8f0;border-radius:4px;font-size:12px;font-family:inherit;resize:vertical;min-height:60px;color:#334155;" placeholder="Add investigation notes...">complianceViolations array is undefined when compliance data hasn't loaded yet. Need null check at line 2847.</textarea>
+      </div>
+    </div>
+
+    <!-- AI Analysis (in detail panel) -->
+    <div class="detail-section">
+      <div class="ai-panel-section">
+        <div class="ai-panel-header">
+          <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 014 4v1a1 1 0 001 1h1a4 4 0 010 8h-1a1 1 0 00-1 1v1a4 4 0 01-8 0v-1a1 1 0 00-1-1H6a4 4 0 010-8h1a1 1 0 001-1V6a4 4 0 014-4z"/><circle cx="12" cy="12" r="2"/></svg>
+          AI Analysis
+          <span style="margin-left:auto;font-size:10px;font-weight:400;color:#94a3b8;text-transform:none;letter-spacing:0;">GPT-4o &bull; 92% confidence</span>
+        </div>
+        <div class="ai-panel-text">
+          <strong style="color:#991b1b;">Root cause:</strong> <code style="background:#fee2e2;padding:1px 5px;border-radius:3px;font-size:11px;color:#991b1b;">complianceViolations</code> is <code style="background:#fee2e2;padding:1px 5px;border-radius:3px;font-size:11px;color:#991b1b;">undefined</code> in initial state. The <code style="background:#f1f5f9;padding:1px 5px;border-radius:3px;font-size:11px;">.map()</code> call at line 2847 crashes before async data resolves.
+          <ul>
+            <li>Occurs on <strong>tab switch to Compliance</strong> before data loads</li>
+            <li><strong>7 occurrences</strong> — users repeatedly hitting Retry (which re-renders before data ready)</li>
+            <li>Same pattern exists in 3 other tabs — preventive fix recommended</li>
+          </ul>
+        </div>
+        <div style="font-size:12px;font-weight:600;color:#0f172a;margin:10px 0 6px;">Suggested fix:</div>
+        <div class="ai-panel-fix"><span class="fix-comment">// PolicyAnalytics.tsx:2847 — add null guard</span>
+<span class="fix-remove">- const rows = this.state.complianceViolations.map(v =&gt; ...</span>
+<span class="fix-add">+ const rows = (this.state.complianceViolations || []).map(v =&gt; ...</span>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px;">
+          <button class="ai-triage-btn" style="font-size:11px;padding:5px 12px;">
+            <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+            Re-analyse
+          </button>
+          <button class="action-btn" style="font-size:11px;padding:5px 12px;">
+            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            Copy Fix
+          </button>
+          <button class="action-btn" style="font-size:11px;padding:5px 12px;">
+            Find Similar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="detail-actions">
+    <button class="action-btn primary">
+      <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+      Save to SP List
+    </button>
+    <button class="action-btn">
+      <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+      Copy to Clipboard
+    </button>
+    <button class="action-btn">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Export JSON
+    </button>
+    <button class="ai-triage-btn" style="margin-left:auto;">
+      <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 014 4v1a1 1 0 001 1h1a4 4 0 010 8h-1a1 1 0 00-1 1v1a4 4 0 01-8 0v-1a1 1 0 00-1-1H6a4 4 0 010-8h1a1 1 0 001-1V6a4 4 0 014-4z"/><circle cx="12" cy="12" r="2"/></svg>
+      AI Triage
+    </button>
+  </div>
+</div>
+
+</div><!-- /content -->
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     DESIGN NOTES (for review — not part of final UI)
+     ═══════════════════════════════════════════════════════════════ -->
+<div style="max-width:1600px;margin:0 auto;padding:0 32px 60px;">
+
+  <div class="design-notes">
+    <h4>Design Notes — For Review</h4>
+    <ul>
+      <li><strong>Tab 1 — Event Stream:</strong> Primary view. Windows Event Viewer-style grid with channel/severity filtering, search, and time range. Click any row to open the detail panel (shown on right). KPI bar gives instant health snapshot.</li>
+      <li><strong>Tab 2 — Network Monitor:</strong> SP List breakdown shows which lists are hit most and slowest. Request waterfall shows recent API calls with timing bars. Colour-coded: green &lt;500ms, amber &lt;2s, red &gt;2s.</li>
+      <li><strong>Tab 3 — Investigation Board:</strong> Groups recurring errors by event code. Shows occurrence count, trend sparkline, first/last seen, and classification dropdown. Helps identify patterns vs one-off issues.</li>
+      <li><strong>Tab 4 — System Health:</strong> Dashboard view. Service health cards (green/amber/red indicators), DLQ management with retry/abandon actions, SP list health from provisioning checker, and session context.</li>
+      <li><strong>Detail Panel:</strong> StyledPanel-style slide-in from right (520px). Shows full event details, stack trace with syntax highlighting, metadata JSON, and investigation tools (classify, notes, save to SP).</li>
+      <li><strong>Colour system:</strong> Follows existing Forest Teal design system. Severity uses existing palette: grey=verbose, blue=info, amber=warning, red=error, dark red=critical.</li>
+      <li><strong>Live mode:</strong> Green pulse dot + toggle in header. When ON, auto-refreshes in-memory events every 5s. When OFF, data is static snapshot.</li>
+      <li><strong>Data flow:</strong> In-memory ring buffers feed the Event Stream (ephemeral). "Save to SP List" persists important events to <code>PM_EventLog</code>. Audit + DLQ tabs read from existing SP lists (persistent).</li>
+      <li><strong>Access:</strong> Admin-only page. Linked from Admin nav dropdown (alongside other admin tools).</li>
+      <li><strong>Tab 5 — AI Triage (NEW):</strong> GPT-4o analyses all session events to identify root causes, performance hotspots, and suggest code-level fixes. Three AI features:
+        <ul>
+          <li><strong>Session Analysis:</strong> "Analyse Session" sends all captured events to GPT-4o. Returns root cause cards with severity assessment, pattern detection timeline, and step-by-step fix suggestions with code diffs.</li>
+          <li><strong>Per-Event AI:</strong> "AI Triage" button in detail panel sends a single event (with stack trace, metadata, surrounding context) for targeted analysis. Returns inline root cause + suggested fix directly in the panel.</li>
+          <li><strong>Ask AI:</strong> Free-text question box with suggested prompts. Ask "Why is PM_Approvals slow?" or "Are there any security concerns?" and get answers grounded in your actual session data.</li>
+        </ul>
+      </li>
+      <li><strong>AI Infrastructure:</strong> Reuses existing <code>dwx-pm-chat-func-prod</code> Azure Function with a new <code>event-triage</code> mode (4th system prompt). Sends structured event data as context (same RAG pattern as policy chat). Confidence scores based on data completeness — stack traces get high confidence, network errors get medium.</li>
+      <li><strong>AI in detail panel:</strong> Purple gradient section shows AI analysis inline — root cause, bullet points, and a code diff block with green (add) / red (remove) syntax. "Re-analyse", "Copy Fix", and "Find Similar" buttons. Analysis runs automatically when panel opens for Error/Critical events.</li>
+    </ul>
+  </div>
+
+</div>
+
+
+<script>
+function switchTab(tabId) {
+  // Hide all tabs
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
+  // Show selected
+  document.getElementById('tab-' + tabId).classList.add('active');
+
+  // Mark button active (find by matching onclick)
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    if (b.getAttribute('onclick') === "switchTab('" + tabId + "')") {
+      b.classList.add('active');
+    }
+  });
+
+  // Show detail panel only on event stream tab
+  const panel = document.querySelector('.detail-panel-overlay');
+  panel.style.display = (tabId === 'stream') ? 'flex' : 'none';
+}
+
+// Close detail panel
+document.querySelector('.detail-close').addEventListener('click', function() {
+  document.querySelector('.detail-panel-overlay').style.display = 'none';
+});
+</script>
+
+</body>
+</html>

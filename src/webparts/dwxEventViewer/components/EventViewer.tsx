@@ -54,6 +54,10 @@ interface IEventViewerState {
   incidentNotes: string;
   // Watch rule alerts
   activeAlerts: IWatchRuleAlert[];
+  // Vertical nav
+  navDarkMode: boolean;
+  navCollapsed: boolean;
+  pageFilter: string;
 }
 
 // ============================================================================
@@ -131,6 +135,9 @@ export default class EventViewer extends React.Component<IEventViewerProps, IEve
       incidentPriority: 'medium',
       incidentNotes: '',
       activeAlerts: [],
+      navDarkMode: typeof localStorage !== 'undefined' && localStorage.getItem('pm_ev_dark_mode') === 'true',
+      navCollapsed: false,
+      pageFilter: '',
     };
   }
 
@@ -399,20 +406,185 @@ export default class EventViewer extends React.Component<IEventViewerProps, IEve
       );
     }
 
+    const activeTabDef = EVENT_VIEWER_TABS.find(t => t.key === this.state.activeTab);
+
     return (
       <div className={styles.eventViewer}>
-        {this._renderHeader()}
-        {this._renderAlertBanner()}
-        <div className={styles.contentArea}>
-          {this._renderActiveTab()}
+        {/* Left vertical nav */}
+        {this._renderVerticalNav()}
+
+        {/* Main content */}
+        <div className={styles.mainContent}>
+          {/* Content header */}
+          <div className={styles.contentHeader}>
+            <div>
+              <div className={styles.contentTitle}>{activeTabDef?.label || 'Event Viewer'}</div>
+              <div className={styles.contentSubtitle}>DWx Policy Manager — Diagnostics & Troubleshooting</div>
+            </div>
+            <div className={styles.headerActions}>
+              <div
+                className={styles.liveIndicator}
+                onClick={this._toggleLiveMode}
+                style={{ cursor: 'pointer', padding: '5px 12px', borderRadius: 20, background: this.state.liveMode ? '#f0fdf4' : '#f8fafc', border: `1px solid ${this.state.liveMode ? '#86efac' : '#e2e8f0'}` }}
+                role="button" tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') this._toggleLiveMode(); }}
+              >
+                {this.state.liveMode && <div className={styles.liveDot} />}
+                <span style={{ fontWeight: 600, color: this.state.liveMode ? '#059669' : '#94a3b8' }}>{this.state.liveMode ? 'Live' : 'Paused'}</span>
+              </div>
+              <button className={styles.headerBtn} style={{ background: '#fff', color: '#334155', border: '1px solid #e2e8f0' }} onClick={() => exportEventsCsv(this._eventBuffer.getAll())}>Export CSV</button>
+              <button className={styles.headerBtn} style={{ background: '#fff', color: '#334155', border: '1px solid #e2e8f0' }} onClick={() => DiagnosticSnapshotService.download(this._eventBuffer)}>Snapshot</button>
+              {this.state.detectedRole === PolicyManagerRole.Admin && (
+                <button className={`${styles.headerBtn} ${styles.headerBtnPrimary}`} style={{ background: '#0d9488', color: '#fff', borderColor: '#0d9488' }} onClick={() => this.setState({ showIncidentPanel: true })}>Report Incident</button>
+              )}
+            </div>
+          </div>
+
+          {/* Alert banner */}
+          {this._renderAlertBanner()}
+
+          {/* Tab content */}
+          <div className={styles.contentArea}>
+            {this._renderActiveTab()}
+          </div>
         </div>
+
+        {/* Incident panel */}
         {this._renderIncidentPanel()}
       </div>
     );
   }
 
   // ==========================================================================
-  // HEADER WITH TABS
+  // VERTICAL NAV PANEL
+  // ==========================================================================
+
+  private _toggleDarkMode = (): void => {
+    const newVal = !this.state.navDarkMode;
+    this.setState({ navDarkMode: newVal });
+    if (typeof localStorage !== 'undefined') localStorage.setItem('pm_ev_dark_mode', String(newVal));
+  };
+
+  private _toggleNavCollapse = (): void => {
+    this.setState(prev => ({ navCollapsed: !prev.navCollapsed }));
+  };
+
+  private _renderVerticalNav(): JSX.Element {
+    const { activeTab, stats, navDarkMode, navCollapsed } = this.state;
+    const visibleTabs = this._getVisibleTabs();
+
+    const themeClass = navDarkMode ? styles.navThemeDark : styles.navThemeTeal;
+    const panelClass = `${styles.navPanel} ${themeClass} ${navCollapsed ? styles.navPanelCollapsed : ''}`;
+
+    const NAV_SECTIONS: Array<{ title: string; tabs: typeof EVENT_VIEWER_TABS[number]['key'][] }> = [
+      { title: 'Monitoring', tabs: ['stream', 'network', 'health'] },
+      { title: 'Analysis', tabs: ['investigate', 'ai', 'performance'] },
+      { title: 'Tools', tabs: ['troubleshooter'] },
+    ];
+
+    const badgeFor = (key: string): JSX.Element | null => {
+      if (key === 'stream' && stats?.totalCount) return <span className={`${styles.navBadge} ${styles.navBadgeTeal}`}>{stats.totalCount}</span>;
+      if (key === 'network' && stats?.networkCount) return <span className={`${styles.navBadge} ${styles.navBadgeTeal}`}>{stats.networkCount}</span>;
+      if (key === 'investigate' && stats?.errorCount) return <span className={`${styles.navBadge} ${styles.navBadgeRed}`}>{stats.errorCount}</span>;
+      if (key === 'ai') return <span className={`${styles.navBadge} ${styles.navBadgePurple}`}>GPT-4o</span>;
+      return null;
+    };
+
+    const visibleKeys = visibleTabs.map(t => t.key);
+
+    return (
+      <nav className={panelClass}>
+        {/* Header */}
+        <div className={styles.navHeader}>
+          <div className={styles.navHeaderIcon}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5eead4" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/>
+              <line x1="12" y1="17" x2="12" y2="21"/><polyline points="7 8 10 11 7 14"/><line x1="13" y1="14" x2="17" y2="14"/>
+            </svg>
+          </div>
+          <div>
+            <div className={styles.navHeaderText}>Event Viewer</div>
+            <div className={styles.navHeaderSub}>DWx Diagnostics</div>
+          </div>
+        </div>
+
+        {/* Page selector */}
+        <div className={styles.pageSelectorWrap}>
+          <select
+            className={styles.pageSelector}
+            value={this.state.pageFilter}
+            onChange={(e) => this.setState({ pageFilter: e.target.value })}
+          >
+            <option value="">All Pages</option>
+            <option value="PolicyHub">Policy Hub</option>
+            <option value="MyPolicies">My Policies</option>
+            <option value="PolicyAdmin">Admin Centre</option>
+            <option value="PolicyBuilder">Policy Builder</option>
+            <option value="PolicyDetails">Policy Details</option>
+            <option value="EventViewer">Event Viewer</option>
+          </select>
+        </div>
+
+        {/* Nav sections */}
+        {NAV_SECTIONS.map(section => {
+          const sectionTabs = section.tabs.filter(k => visibleKeys.indexOf(k) !== -1);
+          if (sectionTabs.length === 0) return null;
+          return (
+            <div key={section.title} className={styles.navSection}>
+              <div className={styles.navSectionTitle}>{section.title}</div>
+              {sectionTabs.map(tabKey => {
+                const tabDef = EVENT_VIEWER_TABS.find(t => t.key === tabKey);
+                if (!tabDef) return null;
+                const isActive = activeTab === tabKey;
+                return (
+                  <button
+                    key={tabKey}
+                    className={`${styles.navItem} ${isActive ? styles.navItemActive : ''}`}
+                    onClick={() => this._onTabClick(tabKey)}
+                  >
+                    <div className={styles.navIcon}>{TabIcons[tabKey]}</div>
+                    <span className={styles.navLabel}>{tabDef.label}</span>
+                    {badgeFor(tabKey)}
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })}
+
+        {/* Spacer */}
+        <div style={{ flex: 1 }} />
+
+        {/* Dark mode toggle */}
+        <button className={styles.darkModeToggle} onClick={this._toggleDarkMode} title={navDarkMode ? 'Switch to Forest Teal' : 'Switch to Dark Slate'}>
+          <div className={styles.toggleIcon}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+            </svg>
+          </div>
+          <div className={styles.toggleTrack}><div className={styles.toggleThumb} /></div>
+          <span className={`${styles.darkModeLabel} ${styles.navLabel}`}>Dark Mode</span>
+        </button>
+
+        {/* Session footer */}
+        <div className={styles.navFooter}>
+          <div className={styles.navFooterDot} />
+          <span className={styles.navFooterText}>Live · {this._eventBuffer.sessionId.substring(0, 12)}</span>
+        </div>
+
+        {/* Collapse toggle */}
+        <button className={styles.navCollapseBtn} onClick={this._toggleNavCollapse} title={navCollapsed ? 'Expand navigation' : 'Collapse navigation'}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+            style={{ transform: navCollapsed ? 'rotate(180deg)' : '', transition: 'transform 0.2s' }}>
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+        </button>
+      </nav>
+    );
+  }
+
+  // ==========================================================================
+  // HEADER WITH TABS (legacy — kept for reference, no longer rendered)
   // ==========================================================================
 
   private _renderHeader(): JSX.Element {

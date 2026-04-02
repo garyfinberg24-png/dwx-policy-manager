@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DWx Event Viewer — Vertical Nav Mockup (with App Header)</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #f1f5f9; color: #0f172a; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+
+    /* ════════════════════════════════════════ */
+    /* PM APP HEADER                            */
+    /* ════════════════════════════════════════ */
+    .app-header {
+      background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+      padding: 0 24px;
+      display: flex; align-items: center; height: 48px; flex-shrink: 0;
+      z-index: 100;
+    }
+    .app-logo { display: flex; align-items: center; gap: 10px; margin-right: 32px; }
+    .app-logo-icon {
+      width: 30px; height: 30px; border-radius: 6px; background: rgba(255,255,255,0.15);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .app-logo-text { color: #fff; font-size: 15px; font-weight: 700; }
+    .app-logo-sub { color: rgba(255,255,255,0.6); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
+
+    /* App nav */
+    .app-nav { display: flex; align-items: center; gap: 2px; flex: 1; }
+    .app-nav-item {
+      padding: 6px 14px; border-radius: 4px; font-size: 13px; font-weight: 500;
+      color: rgba(255,255,255,0.8); cursor: pointer; text-decoration: none;
+      display: flex; align-items: center; gap: 6px; transition: all 0.12s;
+    }
+    .app-nav-item:hover { background: rgba(255,255,255,0.12); color: #fff; }
+    .app-nav-item.active { background: rgba(255,255,255,0.18); color: #fff; font-weight: 600; }
+    .app-nav-item svg { width: 14px; height: 14px; }
+
+    /* Header actions */
+    .header-actions { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+    .header-icon-btn {
+      width: 34px; height: 34px; border-radius: 4px; border: none;
+      background: transparent; color: rgba(255,255,255,0.7); cursor: pointer;
+      display: flex; align-items: center; justify-content: center; transition: all 0.12s;
+    }
+    .header-icon-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+    .header-search {
+      padding: 6px 12px 6px 30px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.1); color: #fff; font-size: 12px; font-family: inherit;
+      width: 200px;
+      background-image: url("data:image/svg+xml,%3Csvg width='14' height='14' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='11' cy='11' r='8' stroke='rgba(255,255,255,0.5)' stroke-width='2'/%3E%3Cpath d='M21 21l-4.35-4.35' stroke='rgba(255,255,255,0.5)' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: 8px center;
+    }
+    .header-search::placeholder { color: rgba(255,255,255,0.4); }
+    .header-search:focus { outline: none; border-color: rgba(255,255,255,0.4); background-color: rgba(255,255,255,0.15); }
+    .header-avatar {
+      width: 30px; height: 30px; border-radius: 50%; background: rgba(255,255,255,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: #fff; cursor: pointer;
+    }
+
+    /* ════════════════════════════════════════ */
+    /* BREADCRUMB BAR                           */
+    /* ════════════════════════════════════════ */
+    .breadcrumb-bar {
+      background: #fff; border-bottom: 1px solid #e2e8f0; padding: 8px 24px;
+      font-size: 12px; color: #64748b; display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+    }
+    .breadcrumb-bar a { color: #0d9488; text-decoration: none; }
+    .breadcrumb-bar a:hover { text-decoration: underline; }
+    .breadcrumb-sep { color: #cbd5e1; }
+    .breadcrumb-current { color: #0f172a; font-weight: 600; }
+
+    /* ════════════════════════════════════════ */
+    /* DARK MODE TOGGLE                         */
+    /* ════════════════════════════════════════ */
+    .dark-mode-toggle {
+      margin: 8px 12px; padding: 6px 10px;
+      display: flex; align-items: center; gap: 8px;
+      border-radius: 6px; cursor: pointer; user-select: none;
+      transition: background 0.15s;
+    }
+    .theme-forest-teal .dark-mode-toggle { background: rgba(255,255,255,0.06); }
+    .theme-forest-teal .dark-mode-toggle:hover { background: rgba(255,255,255,0.12); }
+    .theme-dark-slate .dark-mode-toggle { background: rgba(255,255,255,0.04); }
+    .theme-dark-slate .dark-mode-toggle:hover { background: rgba(255,255,255,0.08); }
+
+    .toggle-track {
+      width: 32px; height: 18px; border-radius: 9px; position: relative;
+      transition: background 0.2s; flex-shrink: 0;
+    }
+    .theme-forest-teal .toggle-track { background: rgba(255,255,255,0.2); }
+    .theme-dark-slate .toggle-track { background: #0d9488; }
+    .toggle-thumb {
+      width: 14px; height: 14px; border-radius: 50%; background: #fff;
+      position: absolute; top: 2px; transition: left 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    .theme-forest-teal .toggle-thumb { left: 2px; }
+    .theme-dark-slate .toggle-thumb { left: 16px; }
+    .toggle-label { font-size: 11px; transition: color 0.2s; }
+    .theme-forest-teal .toggle-label { color: rgba(255,255,255,0.5); }
+    .theme-dark-slate .toggle-label { color: #64748b; }
+    .toggle-icon { display: flex; align-items: center; transition: color 0.2s; }
+    .theme-forest-teal .toggle-icon { color: rgba(255,255,255,0.4); }
+    .theme-dark-slate .toggle-icon { color: #94a3b8; }
+
+    /* ════════════════════════════════════════ */
+    /* MAIN LAYOUT                              */
+    /* ════════════════════════════════════════ */
+    .main-layout { display: flex; flex: 1; overflow: hidden; }
+
+    /* ════════════════════════════════════════ */
+    /* LEFT VERTICAL NAV                        */
+    /* ════════════════════════════════════════ */
+    .nav-panel {
+      width: 220px;
+      display: flex; flex-direction: column; flex-shrink: 0;
+      overflow: hidden; transition: width 0.2s ease, background 0.3s;
+      border-right: 1px solid rgba(0,0,0,0.06);
+    }
+    .nav-panel.collapsed { width: 56px; }
+    .nav-panel.collapsed .nav-label,
+    .nav-panel.collapsed .nav-header-text,
+    .nav-panel.collapsed .nav-badge,
+    .nav-panel.collapsed .nav-section-title,
+    .nav-panel.collapsed .nav-footer-text,
+    .nav-panel.collapsed .page-selector-wrap { display: none; }
+    .nav-panel.collapsed .nav-item { justify-content: center; padding: 10px 0; }
+    .nav-panel.collapsed .nav-icon { margin: 0; }
+    .nav-panel.collapsed .nav-header { justify-content: center; }
+    .nav-panel.collapsed .nav-header > div:last-child { display: none; }
+
+    /* Theme: Dark Slate (default) */
+    .theme-dark-slate .nav-panel { background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%); }
+    .theme-dark-slate .nav-section-title { color: #475569; }
+    .theme-dark-slate .nav-item { color: #94a3b8; }
+    .theme-dark-slate .nav-item:hover { background: rgba(255,255,255,0.06); color: #e2e8f0; }
+    .theme-dark-slate .nav-item.active { background: rgba(13,148,136,0.15); color: #5eead4; }
+    .theme-dark-slate .nav-item.active::before { background: #0d9488; }
+    .theme-dark-slate .nav-header-text { color: #fff; }
+    .theme-dark-slate .nav-header-sub { color: #64748b; }
+    .theme-dark-slate .nav-footer-text { color: #64748b; }
+    .theme-dark-slate .nav-footer { border-top: 1px solid rgba(255,255,255,0.06); }
+    .theme-dark-slate .nav-collapse-btn { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.06); color: #64748b; }
+    .theme-dark-slate .nav-collapse-btn:hover { background: rgba(255,255,255,0.08); color: #94a3b8; }
+    .theme-dark-slate .page-selector { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1); color: #94a3b8; }
+    .theme-dark-slate .nav-header-icon { background: rgba(13,148,136,0.2); }
+    .theme-dark-slate .nav-panel { border-right-color: rgba(255,255,255,0.04); }
+
+    /* Theme: Forest Teal */
+    .theme-forest-teal .nav-panel { background: linear-gradient(180deg, #0f766e 0%, #115e59 100%); }
+    .theme-forest-teal .nav-section-title { color: rgba(255,255,255,0.35); }
+    .theme-forest-teal .nav-item { color: rgba(255,255,255,0.65); }
+    .theme-forest-teal .nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
+    .theme-forest-teal .nav-item.active { background: rgba(255,255,255,0.15); color: #fff; }
+    .theme-forest-teal .nav-item.active::before { background: #fff; }
+    .theme-forest-teal .nav-header-text { color: #fff; }
+    .theme-forest-teal .nav-header-sub { color: rgba(255,255,255,0.5); }
+    .theme-forest-teal .nav-footer-text { color: rgba(255,255,255,0.4); }
+    .theme-forest-teal .nav-footer { border-top: 1px solid rgba(255,255,255,0.1); }
+    .theme-forest-teal .nav-collapse-btn { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1); color: rgba(255,255,255,0.5); }
+    .theme-forest-teal .nav-collapse-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+    .theme-forest-teal .page-selector { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.15); color: rgba(255,255,255,0.7); }
+    .theme-forest-teal .nav-header-icon { background: rgba(255,255,255,0.15); }
+    .theme-forest-teal .nav-badge-teal { background: rgba(255,255,255,0.15); color: #fff; }
+    .theme-forest-teal .nav-badge-red { background: rgba(220,38,38,0.25); color: #fca5a5; }
+    .theme-forest-teal .nav-badge-amber { background: rgba(217,119,6,0.25); color: #fcd34d; }
+    .theme-forest-teal .nav-badge-purple { background: rgba(255,255,255,0.15); color: #e9d5ff; }
+    .theme-forest-teal .nav-panel { border-right-color: rgba(0,0,0,0.08); }
+
+    /* Theme: Light Cloud */
+    .theme-light-cloud .nav-panel { background: #fff; border-right: 1px solid #e2e8f0; }
+    .theme-light-cloud .nav-section-title { color: #94a3b8; }
+    .theme-light-cloud .nav-item { color: #64748b; }
+    .theme-light-cloud .nav-item:hover { background: #f8fafc; color: #334155; }
+    .theme-light-cloud .nav-item.active { background: #f0fdfa; color: #0d9488; }
+    .theme-light-cloud .nav-item.active::before { background: #0d9488; }
+    .theme-light-cloud .nav-header-text { color: #0f172a; }
+    .theme-light-cloud .nav-header-sub { color: #94a3b8; }
+    .theme-light-cloud .nav-footer-text { color: #94a3b8; }
+    .theme-light-cloud .nav-footer { border-top: 1px solid #e2e8f0; }
+    .theme-light-cloud .nav-collapse-btn { background: #f8fafc; border-color: #e2e8f0; color: #94a3b8; }
+    .theme-light-cloud .nav-collapse-btn:hover { background: #f1f5f9; color: #64748b; }
+    .theme-light-cloud .page-selector { background: #f8fafc; border-color: #e2e8f0; color: #475569; }
+    .theme-light-cloud .nav-header-icon { background: #f0fdfa; }
+    .theme-light-cloud .nav-badge-teal { background: #ccfbf1; color: #0d9488; }
+    .theme-light-cloud .nav-badge-red { background: #fee2e2; color: #dc2626; }
+    .theme-light-cloud .nav-badge-amber { background: #fef3c7; color: #d97706; }
+    .theme-light-cloud .nav-badge-purple { background: #f3e8ff; color: #7c3aed; }
+    .theme-light-cloud .nav-footer-dot.green { box-shadow: none; }
+
+    /* Theme: Soft Slate */
+    .theme-soft-slate .nav-panel { background: #f1f5f9; border-right: 1px solid #e2e8f0; }
+    .theme-soft-slate .nav-section-title { color: #94a3b8; }
+    .theme-soft-slate .nav-item { color: #475569; }
+    .theme-soft-slate .nav-item:hover { background: #e2e8f0; color: #0f172a; }
+    .theme-soft-slate .nav-item.active { background: #ccfbf1; color: #0f766e; }
+    .theme-soft-slate .nav-item.active::before { background: #0d9488; }
+    .theme-soft-slate .nav-header-text { color: #0f172a; }
+    .theme-soft-slate .nav-header-sub { color: #94a3b8; }
+    .theme-soft-slate .nav-footer-text { color: #94a3b8; }
+    .theme-soft-slate .nav-footer { border-top: 1px solid #e2e8f0; }
+    .theme-soft-slate .nav-collapse-btn { background: #e2e8f0; border-color: #cbd5e1; color: #64748b; }
+    .theme-soft-slate .nav-collapse-btn:hover { background: #cbd5e1; color: #334155; }
+    .theme-soft-slate .page-selector { background: #fff; border-color: #cbd5e1; color: #475569; }
+    .theme-soft-slate .nav-header-icon { background: #ccfbf1; }
+    .theme-soft-slate .nav-badge-teal { background: #ccfbf1; color: #0d9488; }
+    .theme-soft-slate .nav-badge-red { background: #fee2e2; color: #dc2626; }
+    .theme-soft-slate .nav-badge-amber { background: #fef3c7; color: #d97706; }
+    .theme-soft-slate .nav-badge-purple { background: #f3e8ff; color: #7c3aed; }
+    .theme-soft-slate .nav-footer-dot.green { box-shadow: none; }
+
+    /* ═══ Nav shared styles ═══ */
+    .nav-header {
+      padding: 14px 16px 10px; border-bottom: 1px solid rgba(128,128,128,0.1);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .nav-header-icon {
+      width: 28px; height: 28px; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .nav-header-text { font-size: 14px; font-weight: 700; }
+    .nav-header-sub { font-size: 10px; margin-top: 1px; }
+    .nav-section { padding: 10px 0 2px; }
+    .nav-section-title { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; padding: 0 16px 6px; user-select: none; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 16px; margin: 1px 8px; border-radius: 6px;
+      cursor: pointer; transition: all 0.12s;
+      font-size: 13px; font-weight: 500; position: relative;
+      text-decoration: none; user-select: none;
+    }
+    .nav-item.active::before {
+      content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+      width: 3px; height: 20px; border-radius: 0 3px 3px 0;
+    }
+    .nav-icon { width: 18px; height: 18px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+    .nav-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .nav-badge { margin-left: auto; font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 10px; min-width: 20px; text-align: center; }
+    .page-selector-wrap { padding: 6px 12px; }
+    .page-selector {
+      padding: 6px 10px; border-radius: 6px; font-size: 11px; font-family: inherit;
+      width: 100%; cursor: pointer; appearance: none; -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2364748b' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 8px center; padding-right: 24px;
+    }
+    .page-selector:focus { border-color: #0d9488; outline: none; }
+    .nav-footer { padding: 10px 16px; display: flex; align-items: center; gap: 8px; }
+    .nav-footer-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .nav-footer-dot.green { background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.4); }
+    .nav-footer-text { font-size: 11px; }
+    .nav-collapse-btn {
+      margin: auto 8px 10px; padding: 8px; border-radius: 6px;
+      border: 1px solid; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+
+    /* ════════════════════════════════════════ */
+    /* CONTENT AREA                             */
+    /* ════════════════════════════════════════ */
+    .content-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .content-header {
+      padding: 14px 24px; background: #fff; border-bottom: 1px solid #e2e8f0;
+      display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+    }
+    .content-title { font-size: 18px; font-weight: 700; color: #0f172a; }
+    .content-subtitle { font-size: 12px; color: #64748b; margin-top: 2px; }
+    .content-actions { display: flex; gap: 8px; }
+    .action-btn {
+      padding: 7px 14px; border-radius: 4px; font-size: 12px; font-weight: 500;
+      cursor: pointer; display: flex; align-items: center; gap: 6px; font-family: inherit;
+      transition: all 0.15s;
+    }
+    .action-btn-outline { background: #fff; color: #334155; border: 1px solid #e2e8f0; }
+    .action-btn-outline:hover { background: #f8fafc; border-color: #0d9488; color: #0d9488; }
+    .action-btn-primary { background: #0d9488; color: #fff; border: 1px solid #0d9488; font-weight: 600; }
+    .action-btn-primary:hover { background: #0f766e; }
+    .live-badge { display: flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 20px; background: #f0fdf4; border: 1px solid #86efac; font-size: 12px; color: #059669; font-weight: 600; }
+    .live-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    .content-scroll { flex: 1; overflow-y: auto; padding: 20px 24px; background: #f1f5f9; }
+
+    /* KPI + Table (reused from before) */
+    .kpi-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 20px; }
+    .kpi-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px; border-top: 3px solid; }
+    .kpi-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #64748b; font-weight: 600; margin-bottom: 4px; }
+    .kpi-value { font-size: 26px; font-weight: 700; color: #0f172a; line-height: 1.1; }
+    .kpi-suffix { font-size: 13px; font-weight: 400; }
+
+    .alert-banner { display: flex; align-items: center; gap: 10px; padding: 8px 14px; margin-bottom: 12px; border-radius: 6px; font-size: 12px; background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
+    .alert-dismiss { background: none; border: none; cursor: pointer; color: inherit; font-size: 16px; margin-left: auto; }
+
+    .toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+    .toolbar select, .toolbar input { padding: 7px 12px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px; font-family: inherit; color: #334155; background: #fff; }
+    .toolbar select { min-width: 130px; appearance: none; -webkit-appearance: none; padding-right: 26px;
+      background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2394a3b8' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 8px center; }
+    .toolbar input { flex: 1; max-width: 280px; padding-left: 30px;
+      background-image: url("data:image/svg+xml,%3Csvg width='14' height='14' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='11' cy='11' r='8' stroke='%2394a3b8' stroke-width='2'/%3E%3Cpath d='M21 21l-4.35-4.35' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: 8px center; }
+    .toolbar select:focus, .toolbar input:focus { border-color: #0d9488; outline: none; box-shadow: 0 0 0 1px #0d9488; }
+    .group-chips { display: flex; gap: 4px; margin-left: auto; }
+    .group-chip { padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; border: 1px solid #e2e8f0; background: #fff; color: #64748b; cursor: pointer; font-family: inherit; }
+    .group-chip.active { border-color: #0d9488; background: #f0fdfa; color: #0d9488; }
+
+    .data-table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; }
+    .data-table th { text-align: left; padding: 10px 14px; background: #f8fafc; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; font-weight: 600; border-bottom: 1px solid #e2e8f0; cursor: pointer; user-select: none; position: relative; }
+    .data-table th:hover { color: #0d9488; }
+    .data-table th .rh { position: absolute; right: 0; top: 0; bottom: 0; width: 3px; cursor: col-resize; }
+    .data-table th .rh:hover { background: #0d9488; }
+    .data-table td { padding: 9px 14px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+    .data-table tr:hover td { background: #f0fdfa; }
+    .data-table tr { cursor: pointer; }
+    .data-table tr.err { border-left: 3px solid #dc2626; }
+    .data-table tr.warn { border-left: 3px solid #d97706; }
+    .data-table tr.crit { background: #fef2f2; border-left: 3px solid #7f1d1d; }
+    .mono { font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace; font-size: 11px; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; text-transform: uppercase; }
+    .b-verbose { background: #f1f5f9; color: #94a3b8; } .b-info { background: #dbeafe; color: #2563eb; }
+    .b-warn { background: #fef3c7; color: #d97706; } .b-err { background: #fee2e2; color: #dc2626; }
+    .b-crit { background: #fce7f3; color: #be185d; }
+    .b-net { background: #d1fae5; color: #059669; } .b-con { background: #e0e7ff; color: #4f46e5; } .b-app { background: #ccfbf1; color: #0d9488; }
+    .src { font-family: 'Cascadia Code', monospace; font-size: 11px; background: #f1f5f9; padding: 1px 6px; border-radius: 3px; }
+    .dur { display: flex; align-items: center; gap: 6px; justify-content: flex-end; }
+    .dur-bar { height: 4px; border-radius: 2px; }
+    .dur-text { font-family: monospace; font-size: 11px; color: #64748b; white-space: nowrap; }
+    .table-foot { display: flex; justify-content: space-between; padding: 10px 14px; background: #f8fafc; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b; }
+  </style>
+</head>
+<body class="theme-forest-teal">
+
+<!-- ════════════════════════════════════════ -->
+<!-- PM APP HEADER                            -->
+<!-- ════════════════════════════════════════ -->
+<header class="app-header">
+  <div class="app-logo">
+    <div class="app-logo-icon">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        <polyline points="9 12 11 14 15 10"/>
+      </svg>
+    </div>
+    <div>
+      <div class="app-logo-text">Policy Manager</div>
+      <div class="app-logo-sub">Policy Governance & Compliance</div>
+    </div>
+  </div>
+
+  <div class="app-nav">
+    <a class="app-nav-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      My Policies
+    </a>
+    <a class="app-nav-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      Policy Hub
+    </a>
+    <a class="app-nav-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+      Author ▾
+    </a>
+    <a class="app-nav-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      Manager ▾
+    </a>
+  </div>
+
+  <div class="header-actions">
+    <input type="text" class="header-search" placeholder="Search policies..." />
+    <button class="header-icon-btn" title="Bookmarks">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+    </button>
+    <button class="header-icon-btn" title="Chat">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+    </button>
+    <button class="header-icon-btn" title="Help">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    </button>
+    <button class="header-icon-btn" title="Notifications">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+    </button>
+    <div class="header-avatar">GF</div>
+  </div>
+</header>
+
+<!-- Breadcrumb -->
+<div class="breadcrumb-bar">
+  <a href="#">Policy Manager</a>
+  <span class="breadcrumb-sep">/</span>
+  <span class="breadcrumb-current">Event Viewer</span>
+</div>
+
+<!-- ════════════════════════════════════════ -->
+<!-- MAIN LAYOUT: NAV + CONTENT               -->
+<!-- ════════════════════════════════════════ -->
+<div class="main-layout">
+
+  <!-- LEFT NAV -->
+  <nav class="nav-panel" id="navPanel">
+    <div class="nav-header">
+      <div class="nav-header-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5eead4" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/>
+          <line x1="12" y1="17" x2="12" y2="21"/><polyline points="7 8 10 11 7 14"/><line x1="13" y1="14" x2="17" y2="14"/>
+        </svg>
+      </div>
+      <div>
+        <div class="nav-header-text">Event Viewer</div>
+        <div class="nav-header-sub">DWx Diagnostics</div>
+      </div>
+    </div>
+
+    <div class="page-selector-wrap">
+      <select class="page-selector">
+        <option>All Pages</option>
+        <option>Policy Hub</option>
+        <option>My Policies</option>
+        <option>Admin Centre</option>
+        <option>Policy Builder</option>
+        <option>Policy Details</option>
+        <option selected>Event Viewer</option>
+      </select>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-title">Monitoring</div>
+      <div class="nav-item active" onclick="switchTab('Event Stream',this)"><div class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1"/><circle cx="3" cy="12" r="1"/><circle cx="3" cy="18" r="1"/></svg></div><span class="nav-label">Event Stream</span><span class="nav-badge nav-badge-teal">47</span></div>
+      <div class="nav-item" onclick="switchTab('Network Monitor',this)"><div class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div><span class="nav-label">Network Monitor</span><span class="nav-badge nav-badge-teal">32</span></div>
+      <div class="nav-item" onclick="switchTab('System Health',this)"><div class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div><span class="nav-label">System Health</span></div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-title">Analysis</div>
+      <div class="nav-item" onclick="switchTab('Investigation Board',this)"><div class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></div><span class="nav-label">Investigation Board</span><span class="nav-badge nav-badge-red">3</span></div>
+      <div class="nav-item" onclick="switchTab('AI Triage',this)"><div class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2a4 4 0 014 4v1a1 1 0 001 1h1a4 4 0 010 8h-1a1 1 0 00-1 1v1a4 4 0 01-8 0v-1a1 1 0 00-1-1H6a4 4 0 010-8h1a1 1 0 001-1V6a4 4 0 014-4z"/><circle cx="12" cy="12" r="2"/></svg></div><span class="nav-label">AI Triage</span><span class="nav-badge nav-badge-purple">GPT-4o</span></div>
+      <div class="nav-item" onclick="switchTab('Performance',this)"><div class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div><span class="nav-label">Performance</span></div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-title">Tools</div>
+      <div class="nav-item" onclick="switchTab('Troubleshooter',this)"><div class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></div><span class="nav-label">Troubleshooter</span></div>
+      <div class="nav-item" onclick="switchTab('Trend Dashboard',this)"><div class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><span class="nav-label">Trend Dashboard</span></div>
+      <div class="nav-item" onclick="switchTab('SLA Monitor',this)"><div class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><span class="nav-label">SLA Monitor</span><span class="nav-badge nav-badge-amber">1</span></div>
+    </div>
+
+    <div style="flex:1"></div>
+
+    <!-- Dark mode toggle -->
+    <div class="dark-mode-toggle" onclick="toggleDarkMode()" id="darkModeToggle" title="Toggle dark mode">
+      <div class="toggle-icon">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+        </svg>
+      </div>
+      <div class="toggle-track"><div class="toggle-thumb"></div></div>
+      <span class="toggle-label nav-label">Dark Mode</span>
+    </div>
+
+    <div class="nav-footer">
+      <div class="nav-footer-dot green"></div>
+      <span class="nav-footer-text">Live · sess_abc123</span>
+    </div>
+    <button class="nav-collapse-btn" onclick="toggleNav()" id="collapseBtn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="collapseIcon"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+  </nav>
+
+  <!-- CONTENT -->
+  <div class="content-area">
+    <div class="content-header">
+      <div>
+        <div class="content-title" id="topTitle">Event Stream</div>
+        <div class="content-subtitle">Real-time event log with severity, channel, and source filtering</div>
+      </div>
+      <div class="content-actions">
+        <div class="live-badge"><div class="live-dot"></div> Live</div>
+        <button class="action-btn action-btn-outline">Export CSV</button>
+        <button class="action-btn action-btn-outline">Snapshot</button>
+        <button class="action-btn action-btn-primary">Report Incident</button>
+      </div>
+    </div>
+
+    <div class="content-scroll">
+      <div class="alert-banner">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <strong>Slow Requests:</strong> 4 requests exceeding 3s in the last 2 minutes
+        <button class="alert-dismiss" onclick="this.parentElement.style.display='none'">&times;</button>
+      </div>
+
+      <div class="kpi-row">
+        <div class="kpi-card" style="border-top-color:#0d9488"><div class="kpi-label">Total Events</div><div class="kpi-value">47</div></div>
+        <div class="kpi-card" style="border-top-color:#dc2626"><div class="kpi-label">Errors</div><div class="kpi-value">3</div></div>
+        <div class="kpi-card" style="border-top-color:#d97706"><div class="kpi-label">Warnings</div><div class="kpi-value">5</div></div>
+        <div class="kpi-card" style="border-top-color:#7c3aed"><div class="kpi-label">DLQ Pending</div><div class="kpi-value">—</div></div>
+        <div class="kpi-card" style="border-top-color:#2563eb"><div class="kpi-label">Avg Latency</div><div class="kpi-value">284<span class="kpi-suffix">ms</span></div></div>
+        <div class="kpi-card" style="border-top-color:#059669"><div class="kpi-label">Success Rate</div><div class="kpi-value">96.2<span class="kpi-suffix">%</span></div></div>
+      </div>
+
+      <div class="toolbar">
+        <select><option>All Channels</option><option>Application</option><option>Console</option><option>Network</option></select>
+        <select><option>All Severities</option><option>Critical</option><option>Error</option><option>Warning</option><option>Info</option></select>
+        <input type="text" placeholder="Search events..." />
+        <div class="group-chips">
+          <span style="font-size:11px;color:#64748b;font-weight:600;padding:4px 0">Group:</span>
+          <button class="group-chip active" onclick="document.querySelectorAll('.group-chip').forEach(c=>c.classList.remove('active'));this.classList.add('active')">None</button>
+          <button class="group-chip" onclick="document.querySelectorAll('.group-chip').forEach(c=>c.classList.remove('active'));this.classList.add('active')">Severity</button>
+          <button class="group-chip" onclick="document.querySelectorAll('.group-chip').forEach(c=>c.classList.remove('active'));this.classList.add('active')">Channel</button>
+          <button class="group-chip" onclick="document.querySelectorAll('.group-chip').forEach(c=>c.classList.remove('active'));this.classList.add('active')">Source</button>
+        </div>
+      </div>
+
+      <table class="data-table">
+        <thead><tr>
+          <th>Timestamp ↓<div class="rh"></div></th><th>Severity<div class="rh"></div></th><th>Channel<div class="rh"></div></th><th>Code<div class="rh"></div></th><th>Source<div class="rh"></div></th><th>Message<div class="rh"></div></th><th style="text-align:right">Duration</th>
+        </tr></thead>
+        <tbody>
+          <tr class="crit"><td class="mono" style="color:#64748b">09:44:53.180</td><td><span class="badge b-crit">CRITICAL</span></td><td><span class="badge b-app">Application</span></td><td class="mono">APP-003</td><td><span class="src">PolicyService</span></td><td style="color:#991b1b">Failed to save policy: 403 Forbidden</td><td></td></tr>
+          <tr class="err"><td class="mono" style="color:#64748b">09:44:52.901</td><td><span class="badge b-err">ERROR</span></td><td><span class="badge b-net">Network</span></td><td class="mono">NET-012</td><td><span class="src">PM_Policies</span></td><td>POST /_api/web/lists/getByTitle('PM_Policies')/items — 403</td><td><div class="dur"><div class="dur-bar" style="width:40px;background:#dc2626"></div><span class="dur-text" style="color:#dc2626;font-weight:600">1,240ms</span></div></td></tr>
+          <tr class="warn"><td class="mono" style="color:#64748b">09:44:50.445</td><td><span class="badge b-warn">WARNING</span></td><td><span class="badge b-net">Network</span></td><td class="mono">NET-011</td><td><span class="src">PM_Configuration</span></td><td>GET .../PM_Configuration/items — slow response</td><td><div class="dur"><div class="dur-bar" style="width:80px;background:#d97706"></div><span class="dur-text">3,120ms</span></div></td></tr>
+          <tr><td class="mono" style="color:#64748b">09:44:48.220</td><td><span class="badge b-verbose">VERBOSE</span></td><td><span class="badge b-net">Network</span></td><td class="mono">NET-000</td><td><span class="src">PM_Notifications</span></td><td>GET .../PM_Notifications/items?$top=20</td><td><div class="dur"><div class="dur-bar" style="width:10px;background:#0d9488"></div><span class="dur-text">185ms</span></div></td></tr>
+          <tr><td class="mono" style="color:#64748b">09:44:47.812</td><td><span class="badge b-verbose">VERBOSE</span></td><td><span class="badge b-net">Network</span></td><td class="mono">NET-000</td><td><span class="src">PM_EventLog</span></td><td>POST .../PM_EventLog/items</td><td><div class="dur"><div class="dur-bar" style="width:14px;background:#0d9488"></div><span class="dur-text">240ms</span></div></td></tr>
+          <tr><td class="mono" style="color:#64748b">09:44:46.105</td><td><span class="badge b-info">INFO</span></td><td><span class="badge b-app">Application</span></td><td class="mono">APP-001</td><td><span class="src">AdminConfigService</span></td><td>Configuration loaded: 34 keys from PM_Configuration</td><td></td></tr>
+          <tr class="warn"><td class="mono" style="color:#64748b">09:44:44.801</td><td><span class="badge b-warn">WARNING</span></td><td><span class="badge b-con">Console</span></td><td class="mono">CON-002</td><td><span class="src">console.warn</span></td><td>Deprecation: DwxHubService.isAvailable()</td><td></td></tr>
+          <tr><td class="mono" style="color:#64748b">09:44:43.290</td><td><span class="badge b-verbose">VERBOSE</span></td><td><span class="badge b-net">Network</span></td><td class="mono">NET-000</td><td><span class="src">PM_Policies</span></td><td>GET .../PM_Policies/items?$top=50&$select=Id,Title...</td><td><div class="dur"><div class="dur-bar" style="width:28px;background:#0d9488"></div><span class="dur-text">520ms</span></div></td></tr>
+        </tbody>
+      </table>
+      <div class="table-foot"><span>Showing 8 of 47 events</span><span>Session: sess_abc123</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- Theme switcher removed — dark mode toggle is in the nav panel -->
+
+<script>
+  function switchTab(name, el) {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('topTitle').textContent = name;
+  }
+
+  let collapsed = false;
+  function toggleNav() {
+    collapsed = !collapsed;
+    document.getElementById('navPanel').classList.toggle('collapsed', collapsed);
+    document.getElementById('collapseIcon').style.transform = collapsed ? 'rotate(180deg)' : '';
+  }
+
+  let darkMode = false;
+  function toggleDarkMode() {
+    darkMode = !darkMode;
+    document.body.className = darkMode ? 'theme-dark-slate' : 'theme-forest-teal';
+  }
+</script>
+
+</body>
+</html>

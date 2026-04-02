@@ -1032,11 +1032,16 @@ export class PolicyApprovalWorkflowService {
     // Get approver details
     const approver = await this.sp.web.siteUsers.getById(approval.ApproverId)();
 
-    // Send email notification
-    await this.sp.utility.sendEmail({
-      To: [approver.Email],
-      Subject: `⚠️ Escalation: Policy Approval Overdue - ${approval.StageName}`,
-      Body: this.buildEscalationEmailBody(approval, rule)
+    // Queue email via PM_NotificationQueue (Logic App sends)
+    await this.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
+      Title: `Escalation: Policy Approval Overdue - ${approval.StageName}`,
+      To: approver.Email,
+      Subject: `Escalation: Policy Approval Overdue - ${approval.StageName}`,
+      Message: this.buildEscalationEmailBody(approval, rule),
+      QueueStatus: 'Pending',
+      Priority: 'High',
+      NotificationType: 'Escalation',
+      Channel: 'Email',
     });
 
     // Update notification count
@@ -1060,10 +1065,15 @@ export class PolicyApprovalWorkflowService {
     for (const targetId of targetIds) {
       const target = await this.sp.web.siteUsers.getById(targetId)();
 
-      await this.sp.utility.sendEmail({
-        To: [target.Email],
-        Subject: `🔔 Manager Alert: Policy Approval Escalation`,
-        Body: this.buildManagerEscalationEmailBody(approval, rule)
+      await this.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
+        Title: 'Manager Alert: Policy Approval Escalation',
+        To: target.Email,
+        Subject: 'Manager Alert: Policy Approval Escalation',
+        Message: this.buildManagerEscalationEmailBody(approval, rule),
+        QueueStatus: 'Pending',
+        Priority: 'High',
+        NotificationType: 'Escalation',
+        Channel: 'Email',
       });
     }
   }
@@ -1087,11 +1097,16 @@ export class PolicyApprovalWorkflowService {
         Comments: `Reassigned from user ${approval.ApproverId} due to escalation`
       });
 
-    // Notify new approver
-    await this.sp.utility.sendEmail({
-      To: [newApprover.Email],
-      Subject: `📋 Policy Approval Reassigned to You`,
-      Body: this.buildReassignmentEmailBody(approval, newApprover)
+    // Notify new approver via queue
+    await this.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
+      Title: 'Policy Approval Reassigned to You',
+      To: newApprover.Email,
+      Subject: 'Policy Approval Reassigned to You',
+      Message: this.buildReassignmentEmailBody(approval, newApprover),
+      QueueStatus: 'Pending',
+      Priority: 'High',
+      NotificationType: 'Reassignment',
+      Channel: 'Email',
     });
   }
 
@@ -1376,11 +1391,16 @@ export class PolicyApprovalWorkflowService {
       for (const approverId of stage.approverIds) {
         const approver = await this.sp.web.siteUsers.getById(approverId)();
 
-        // Send email
-        await this.sp.utility.sendEmail({
-          To: [approver.Email],
-          Subject: `📋 Policy Approval Required: ${policy.PolicyNumber} - ${stage.stageName}`,
-          Body: this.buildApprovalRequestEmailBody(policy, stage, approver)
+        // Queue email via PM_NotificationQueue (Logic App sends)
+        await this.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
+          Title: `Policy Approval Required: ${policy.PolicyNumber} - ${stage.stageName}`,
+          To: approver.Email,
+          Subject: `Policy Approval Required: ${policy.PolicyNumber} - ${stage.stageName}`,
+          Message: this.buildApprovalRequestEmailBody(policy, stage, approver),
+          QueueStatus: 'Pending',
+          Priority: 'High',
+          NotificationType: 'ApprovalRequest',
+          Channel: 'Email',
         });
       }
 

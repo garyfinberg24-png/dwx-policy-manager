@@ -215,15 +215,19 @@ export class ApprovalNotificationService {
         return;
       }
 
-      // Send email if enabled in preferences
+      // Queue email via PM_NotificationQueue (picked up by Logic App)
       if (notification.sendEmail && deliverySettings.channels.includes(NotificationChannel.Email)) {
-        const emailProps = {
-          To: [user.Email],
+        await this.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
+          Title: notification.subject,
+          To: user.Email,
           Subject: notification.subject,
-          Body: notification.body
-        };
-        await this.sp.utility.sendEmail(emailProps);
-        logger.debug('ApprovalNotificationService', 'Email sent successfully', { to: user.Email, subject: notification.subject });
+          Message: notification.body,
+          QueueStatus: 'Pending',
+          Priority: 'High',
+          NotificationType: notification.notificationType,
+          Channel: 'Email',
+        });
+        logger.debug('ApprovalNotificationService', 'Email queued to PM_NotificationQueue', { to: user.Email, subject: notification.subject });
       }
 
       // Send in-app notification if enabled

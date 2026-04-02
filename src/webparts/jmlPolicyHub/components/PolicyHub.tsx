@@ -3342,15 +3342,13 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
               {/* Featured Policies */}
               {this.renderFeaturedPolicies()}
 
-              {/* 2-Column Layout: Facets + Results */}
-              <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', gap: 24 }}>
-                {/* Left: Facet Sidebar */}
-                {this.renderFacetSidebar()}
+              {/* Filter Toolbar + Results (full width — sidebar removed) */}
+              <div>
+                {/* Consolidated filter dropdowns + sort + active filters */}
+                {this.renderConsolidatedToolbar()}
 
-                {/* Right: Results */}
+                {/* Results */}
                 <div>
-                  {/* Results Header */}
-                  {this.renderResultsHeader()}
 
                   {/* Policy Cards or List */}
                   {viewMode === 'grid' ? (

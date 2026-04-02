@@ -623,13 +623,33 @@ export class PolicyService {
       });
 
       // Send notifications to reviewers (non-blocking)
-      if (this.notificationService && reviewerIds.length > 0) {
+      // Always attempt — even with empty reviewerIds, the notification service
+      // will still queue an in-app notification for the policy owner
+      if (this.notificationService) {
         try {
-          await this.notificationService.sendSubmittedForReviewNotification(
-            policy,
-            reviewerIds,
-            this.currentUserName || this.currentUserEmail || 'Unknown'
-          );
+          if (reviewerIds.length > 0) {
+            await this.notificationService.sendSubmittedForReviewNotification(
+              policy,
+              reviewerIds,
+              this.currentUserName || this.currentUserEmail || 'Unknown'
+            );
+          } else {
+            // No reviewers assigned — still queue a notification to the policy owner
+            // so the submission is tracked in the notification system
+            logger.warn('PolicyService', `submitForReview: no reviewer IDs provided for policy ${policyId} — email notifications skipped`);
+            try {
+              await this.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
+                Title: `Policy Submitted: ${policyTitle}`,
+                To: this.currentUserEmail || '',
+                Subject: `Your policy "${policyTitle}" has been submitted for review`,
+                Message: `<p>Your policy <strong>${policyTitle}</strong> has been submitted for review.</p><p>Reviewers will be notified once assigned.</p>`,
+                QueueStatus: 'Pending',
+                Priority: 'Normal',
+                NotificationType: 'SubmittedForReview',
+                Channel: 'Email',
+              });
+            } catch { /* notification queue write is best-effort */ }
+          }
         } catch (notifyErr) {
           logger.warn('PolicyService', 'Failed to send review notifications (non-critical):', notifyErr);
         }

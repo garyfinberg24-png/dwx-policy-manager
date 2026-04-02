@@ -1437,12 +1437,34 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       const reviewerIds: number[] = [];
       for (const person of allReviewerPersonas) {
         try {
-          const email = (person as any).secondaryText || (person as any).loginName || '';
-          if (email) {
+          // Try multiple persona property shapes — PeoplePicker objects vary
+          const email = (person as any).secondaryText
+            || (person as any).loginName
+            || (person as any).email
+            || (person as any).mail
+            || (person as any).Email
+            || (person as any).id  // sometimes UPN is in id
+            || '';
+          if (email && email.indexOf('@') !== -1) {
             const ensured = await this.props.sp.web.ensureUser(email);
             reviewerIds.push(ensured.data.Id);
           }
         } catch { /* skip unresolvable users */ }
+      }
+
+      // Fallback: if no reviewer IDs resolved from PeoplePicker, check PM_PolicyReviewers
+      if (reviewerIds.length === 0 && policyId) {
+        try {
+          const reviewerItems = await this.props.sp.web.lists
+            .getByTitle('PM_PolicyReviewers')
+            .items.filter(`PolicyId eq ${policyId}`)
+            .select('ReviewerId').top(50)();
+          for (const r of reviewerItems) {
+            if (r.ReviewerId && reviewerIds.indexOf(r.ReviewerId) === -1) {
+              reviewerIds.push(r.ReviewerId);
+            }
+          }
+        } catch { /* reviewer list may not exist */ }
       }
 
       // Use PolicyService.submitForReview() which handles:

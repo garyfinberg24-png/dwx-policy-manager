@@ -1,6 +1,9 @@
 // @ts-nocheck
 import * as React from 'react';
-import { Toggle } from '@fluentui/react';
+import {
+  Toggle, DetailsList, IColumn, SelectionMode, DetailsListLayoutMode,
+  ConstrainMode, ColumnActionsMode, PanelType,
+} from '@fluentui/react';
 import { EventBuffer } from '../../../../services/eventViewer/EventBuffer';
 import { INetworkEvent, IEventBufferStats } from '../../../../models/IEventViewer';
 import { SeverityBadge } from '../common/SeverityBadge';
@@ -20,6 +23,8 @@ interface INetworkMonitorTabState {
   networkEvents: INetworkEvent[];
   showAssets: boolean;
   selectedEvent: INetworkEvent | null;
+  sortColumn: string;
+  sortDescending: boolean;
 }
 
 interface IListBreakdown {
@@ -44,6 +49,8 @@ export class NetworkMonitorTab extends React.Component<INetworkMonitorTabProps, 
       networkEvents: props.eventBuffer.getNetworkEvents(),
       showAssets: false,
       selectedEvent: null,
+      sortColumn: 'timestamp',
+      sortDescending: true,
     };
   }
 
@@ -200,104 +207,126 @@ export class NetworkMonitorTab extends React.Component<INetworkMonitorTabProps, 
           </div>
         )}
 
-        {/* Request Waterfall */}
+        {/* Request Waterfall (DetailsList — sortable, resizable, clickable) */}
         <div style={{ borderLeft: '3px solid #0d9488', paddingLeft: 12, fontSize: 15, fontWeight: 600, color: '#1e293b', marginBottom: 16 }}>
           Request Waterfall
-          <span style={{ color: '#94a3b8', fontSize: 12, fontWeight: 400, marginLeft: 8 }}>Most recent {Math.min(events.length, 20)}</span>
+          <span style={{ color: '#94a3b8', fontSize: 12, fontWeight: 400, marginLeft: 8 }}>{events.length} requests</span>
         </div>
 
         <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
-          {/* Header */}
-          <div style={{
-            display: 'grid', gridTemplateColumns: '1fr 70px 1fr 80px 55px',
-            gap: 12, padding: '10px 14px', background: '#f8fafc',
-            borderBottom: '1px solid #e2e8f0', fontSize: 10,
-            textTransform: 'uppercase', letterSpacing: 0.5, color: '#94a3b8', fontWeight: 600,
-          }}>
-            <div>URL</div>
-            <div>Method</div>
-            <div>Waterfall</div>
-            <div>Duration</div>
-            <div>Status</div>
-          </div>
-
-          {events.length === 0 ? (
+          <DetailsList
+            items={this._getSortedNetworkEvents(events)}
+            columns={this._getNetworkColumns()}
+            selectionMode={SelectionMode.none}
+            layoutMode={DetailsListLayoutMode.justified}
+            constrainMode={ConstrainMode.unconstrained}
+            compact={true}
+            onItemInvoked={(item: INetworkEvent) => this.setState({ selectedEvent: item })}
+            styles={{
+              root: { fontSize: 13 },
+              headerWrapper: { selectors: { '.ms-DetailsHeader': { paddingTop: 0, background: '#f8fafc', borderBottom: '1px solid #e2e8f0' } } },
+            }}
+          />
+          {events.length === 0 && (
             <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8', fontSize: 14 }}>
               No network requests captured yet.
             </div>
-          ) : (
-            events.slice(0, 20).map((event, i) => {
-              const methodColors = MethodColors[event.httpMethod] || MethodColors['GET'];
-              const statusClass = !event.httpStatus ? '#94a3b8'
-                : event.httpStatus >= 500 ? '#dc2626'
-                : event.httpStatus >= 400 ? '#d97706'
-                : '#059669';
-              const isSelected = this.state.selectedEvent?.id === event.id;
-
-              return (
-                <div key={event.id || i}
-                  onClick={() => this.setState({ selectedEvent: isSelected ? null : event })}
-                  style={{
-                    display: 'grid', gridTemplateColumns: '1fr 70px 1fr 80px 55px',
-                    gap: 12, padding: '8px 14px', alignItems: 'center',
-                    borderBottom: '1px solid #f1f5f9', fontSize: 13,
-                    cursor: 'pointer', transition: 'background 0.1s',
-                    background: isSelected ? '#f0fdfa' : 'transparent',
-                  }}
-                  onMouseEnter={(e) => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = '#f8fafc'; }}
-                  onMouseLeave={(e) => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
-                >
-                  <div style={{
-                    fontFamily: "'Cascadia Code', 'Fira Code', monospace",
-                    fontSize: 12, color: '#475569',
-                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                  }}>
-                    {this._truncateUrl(event.requestUrl)}
-                  </div>
-                  <div>
-                    <span style={{
-                      fontSize: 10, fontWeight: 700, padding: '2px 6px',
-                      borderRadius: 3, textTransform: 'uppercase',
-                      background: methodColors.bg, color: methodColors.text,
-                    }}>
-                      {event.httpMethod}
-                    </span>
-                  </div>
-                  <div>
-                    {event.duration !== undefined && <WaterfallBar duration={event.duration} />}
-                  </div>
-                  <div style={{
-                    fontFamily: 'monospace', fontSize: 12, textAlign: 'right',
-                    color: (event.duration || 0) > SLOW_REQUEST_THRESHOLD_MS ? '#dc2626' : '#64748b',
-                    fontWeight: (event.duration || 0) > SLOW_REQUEST_THRESHOLD_MS ? 600 : 400,
-                  }}>
-                    {event.duration !== undefined
-                      ? event.duration >= 1000 ? `${(event.duration / 1000).toFixed(1)}s` : `${event.duration}ms`
-                      : '—'
-                    }
-                  </div>
-                  <div>
-                    {event.httpStatus ? (
-                      <span style={{
-                        fontFamily: 'monospace', fontSize: 12, fontWeight: 600,
-                        padding: '2px 6px', borderRadius: 3, textAlign: 'center',
-                        display: 'inline-block',
-                        background: event.httpStatus >= 400 ? '#fee2e2' : '#d1fae5',
-                        color: statusClass,
-                      }}>
-                        {event.httpStatus}
-                      </span>
-                    ) : '—'}
-                  </div>
-                </div>
-              );
-            })
           )}
         </div>
         {/* Request/Response Inspector */}
         {this.state.selectedEvent && this._renderInspector(this.state.selectedEvent)}
       </div>
     );
+  }
+
+  // ==========================================================================
+  // NETWORK DETAILSLIST COLUMNS
+  // ==========================================================================
+
+  private _onNetworkColumnClick = (columnKey: string): void => {
+    const { sortColumn, sortDescending } = this.state;
+    if (sortColumn === columnKey) {
+      this.setState({ sortDescending: !sortDescending });
+    } else {
+      this.setState({ sortColumn: columnKey, sortDescending: true });
+    }
+  };
+
+  private _getSortedNetworkEvents(events: INetworkEvent[]): INetworkEvent[] {
+    const { sortColumn, sortDescending } = this.state;
+    const sorted = events.slice();
+    sorted.sort((a, b) => {
+      let va: any; let vb: any;
+      switch (sortColumn) {
+        case 'timestamp': va = a.timestamp; vb = b.timestamp; break;
+        case 'httpMethod': va = a.httpMethod; vb = b.httpMethod; break;
+        case 'requestUrl': va = a.requestUrl; vb = b.requestUrl; break;
+        case 'duration': va = a.duration || 0; vb = b.duration || 0; break;
+        case 'httpStatus': va = a.httpStatus || 0; vb = b.httpStatus || 0; break;
+        case 'spListName': va = a.spListName || ''; vb = b.spListName || ''; break;
+        default: va = a.timestamp; vb = b.timestamp;
+      }
+      const cmp = va < vb ? -1 : va > vb ? 1 : 0;
+      return sortDescending ? -cmp : cmp;
+    });
+    return sorted;
+  }
+
+  private _getNetworkColumns(): IColumn[] {
+    const { sortColumn, sortDescending } = this.state;
+
+    const makeCol = (key: string, name: string, minW: number, maxW: number): IColumn => ({
+      key, name, fieldName: key, minWidth: minW, maxWidth: maxW,
+      isResizable: true,
+      isSorted: sortColumn === key,
+      isSortedDescending: sortColumn === key ? sortDescending : undefined,
+      columnActionsMode: ColumnActionsMode.clickable,
+      onColumnClick: () => this._onNetworkColumnClick(key),
+    });
+
+    return [
+      {
+        ...makeCol('requestUrl', 'URL', 200, 500),
+        onRender: (item: INetworkEvent) => (
+          <span style={{ fontFamily: "'Cascadia Code', monospace", fontSize: 12, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
+            {this._truncateUrl(item.requestUrl)}
+          </span>
+        ),
+      },
+      {
+        ...makeCol('httpMethod', 'Method', 55, 70),
+        onRender: (item: INetworkEvent) => {
+          const mc = MethodColors[item.httpMethod] || MethodColors['GET'];
+          return (
+            <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 3, textTransform: 'uppercase', background: mc.bg, color: mc.text }}>
+              {item.httpMethod}
+            </span>
+          );
+        },
+      },
+      {
+        ...makeCol('spListName', 'SP List', 80, 140),
+        onRender: (item: INetworkEvent) => item.spListName ? (
+          <span style={{ fontFamily: "'Cascadia Code', monospace", fontSize: 11, background: '#f1f5f9', padding: '1px 6px', borderRadius: 3 }}>{item.spListName}</span>
+        ) : <span style={{ color: '#cbd5e1' }}>—</span>,
+      },
+      {
+        ...makeCol('duration', 'Duration', 70, 100),
+        onRender: (item: INetworkEvent) => item.duration !== undefined ? <WaterfallBar duration={item.duration} /> : <span style={{ color: '#cbd5e1' }}>—</span>,
+      },
+      {
+        ...makeCol('httpStatus', 'Status', 50, 65),
+        onRender: (item: INetworkEvent) => item.httpStatus ? (
+          <span style={{
+            fontFamily: 'monospace', fontSize: 12, fontWeight: 600, padding: '2px 6px', borderRadius: 3,
+            background: item.httpStatus >= 400 ? '#fee2e2' : '#d1fae5',
+            color: item.httpStatus >= 500 ? '#dc2626' : item.httpStatus >= 400 ? '#d97706' : '#059669',
+          }}>
+            {item.httpStatus}
+          </span>
+        ) : <span style={{ color: '#cbd5e1' }}>—</span>,
+      },
+    ];
   }
 
   // ==========================================================================

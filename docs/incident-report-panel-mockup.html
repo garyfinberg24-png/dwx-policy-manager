@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Report Incident Panel — PM Standard Style</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #f5f5f5; color: #0f172a; }
+
+    .page-bg { background: #f1f5f9; min-height: 800px; display: flex; justify-content: flex-end; position: relative; }
+    .page-content { flex: 1; padding: 40px; opacity: 0.4; }
+    .page-content h2 { color: #334155; margin-bottom: 8px; }
+    .page-content p { color: #94a3b8; font-size: 14px; }
+    .panel-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 10; }
+
+    /* ── Panel ── */
+    .panel {
+      position: absolute; top: 0; right: 0; bottom: 0; width: 480px;
+      background: #fff; z-index: 20; display: flex; flex-direction: column;
+      box-shadow: -8px 0 32px rgba(0,0,0,0.15);
+    }
+
+    /* ── PM Standard Panel Header ── */
+    .panel-header {
+      background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%);
+      border-bottom: 1px solid #99f6e4;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .panel-header-text { font-size: 18px; font-weight: 700; color: #0f766e; }
+    .panel-close {
+      width: 32px; height: 32px; border-radius: 4px; border: none; background: transparent;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      color: #0f766e; font-size: 18px;
+    }
+    .panel-close:hover { background: rgba(13,148,136,0.1); }
+
+    /* ── Panel body ── */
+    .panel-body { flex: 1; overflow-y: auto; padding: 20px 24px; }
+
+    /* ── KPI summary bar ── */
+    .kpi-bar {
+      display: flex; gap: 12px; padding: 12px 16px; margin-bottom: 20px;
+      background: linear-gradient(135deg, #f0fdfa, #ecfdf5);
+      border: 1px solid #99f6e4; border-radius: 8px;
+    }
+    .kpi-item { flex: 1; text-align: center; }
+    .kpi-value { font-size: 20px; font-weight: 700; }
+    .kpi-label { font-size: 10px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* ── Form ── */
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px; }
+    .form-label .req { color: #dc2626; }
+    .form-input, .form-textarea {
+      width: 100%; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 4px;
+      font-size: 13px; font-family: inherit; color: #334155; outline: none;
+    }
+    .form-input:focus, .form-textarea:focus { border-color: #0d9488; box-shadow: 0 0 0 1px #0d9488; }
+    .form-textarea { resize: vertical; min-height: 60px; }
+
+    .desc-text { font-size: 12px; color: #64748b; margin-bottom: 20px; }
+
+    /* ── Priority pills ── */
+    .priority-row { display: flex; gap: 8px; }
+    .priority-btn {
+      flex: 1; padding: 8px 0; border-radius: 4px; cursor: pointer;
+      font-size: 12px; font-weight: 600; text-align: center;
+      border: 1px solid #e2e8f0; background: #fff; color: #64748b;
+      transition: all 0.15s;
+    }
+    .priority-btn.selected-critical { border: 2px solid #7f1d1d; background: rgba(127,29,29,0.06); color: #7f1d1d; }
+    .priority-btn.selected-high { border: 2px solid #dc2626; background: rgba(220,38,38,0.06); color: #dc2626; }
+    .priority-btn.selected-medium { border: 2px solid #d97706; background: rgba(217,119,6,0.06); color: #d97706; }
+    .priority-btn.selected-low { border: 2px solid #2563eb; background: rgba(37,99,235,0.06); color: #2563eb; }
+
+    /* ── Session info ── */
+    .session-info {
+      padding: 10px 14px; background: #f8fafc; border: 1px solid #e2e8f0;
+      border-radius: 6px; margin-bottom: 24px;
+      font-size: 11px; color: #64748b; line-height: 1.8;
+    }
+    .session-info strong { color: #475569; }
+
+    /* ── Actions ── */
+    .actions { display: flex; gap: 8px; }
+    .btn-generate {
+      flex: 1; padding: 10px 16px; border-radius: 4px; cursor: pointer;
+      background: linear-gradient(135deg, #0d9488, #0f766e); color: #fff;
+      border: none; font-size: 13px; font-weight: 600;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-generate:hover { opacity: 0.9; }
+    .btn-cancel {
+      padding: 10px 20px; border-radius: 4px; cursor: pointer;
+      background: #fff; color: #64748b; border: 1px solid #e2e8f0;
+      font-size: 13px; font-weight: 500;
+    }
+    .btn-cancel:hover { background: #f8fafc; }
+  </style>
+</head>
+<body>
+
+<div class="page-bg">
+  <div class="page-content">
+    <h2>Event Viewer</h2>
+    <p>Content behind the panel is dimmed</p>
+  </div>
+  <div class="panel-overlay"></div>
+
+  <div class="panel">
+    <!-- ── PM Standard Panel Header ── -->
+    <div class="panel-header">
+      <div class="panel-header-text">Report Incident</div>
+      <button class="panel-close">&times;</button>
+    </div>
+
+    <!-- ── Panel Body ── -->
+    <div class="panel-body">
+
+      <!-- KPI Summary Bar -->
+      <div class="kpi-bar">
+        <div class="kpi-item">
+          <div class="kpi-value" style="color: #0d9488;">93</div>
+          <div class="kpi-label">Events</div>
+        </div>
+        <div class="kpi-item">
+          <div class="kpi-value" style="color: #dc2626;">2</div>
+          <div class="kpi-label">Errors</div>
+        </div>
+        <div class="kpi-item">
+          <div class="kpi-value" style="color: #d97706;">6</div>
+          <div class="kpi-label">Warnings</div>
+        </div>
+        <div class="kpi-item">
+          <div class="kpi-value" style="color: #2563eb;">88</div>
+          <div class="kpi-label">Network</div>
+        </div>
+      </div>
+
+      <div class="desc-text">
+        This will generate a self-contained HTML report with all captured events,
+        network requests, and session diagnostics from the current buffer.
+      </div>
+
+      <!-- Incident Title -->
+      <div class="form-group">
+        <label class="form-label">Incident Title <span class="req">*</span></label>
+        <input type="text" class="form-input" placeholder="e.g., Policy publish failing with 403 errors" />
+      </div>
+
+      <!-- Description -->
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea class="form-textarea" rows="3" placeholder="What happened? What were you doing when the issue occurred?"></textarea>
+      </div>
+
+      <!-- Priority -->
+      <div class="form-group">
+        <label class="form-label">Priority</label>
+        <div class="priority-row">
+          <div class="priority-btn selected-critical">Critical</div>
+          <div class="priority-btn">High</div>
+          <div class="priority-btn">Medium</div>
+          <div class="priority-btn">Low</div>
+        </div>
+      </div>
+
+      <!-- Investigation Notes -->
+      <div class="form-group">
+        <label class="form-label">Investigation Notes</label>
+        <textarea class="form-textarea" rows="4" placeholder="Steps already tried, suspected root cause, affected users..."></textarea>
+      </div>
+
+      <!-- Session Info -->
+      <div class="session-info">
+        <div><strong>Session:</strong> sess_mng|wmnl_|cpo</div>
+        <div><strong>Page:</strong> /sites/PolicyManager/SitePages/EventViewer.aspx</div>
+        <div><strong>Browser:</strong> Edg/146.0.0.0</div>
+        <div><strong>Timestamp:</strong> 2026/04/02, 00:21:42</div>
+      </div>
+
+      <!-- Actions -->
+      <div class="actions">
+        <button class="btn-generate">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Generate &amp; Download Report
+        </button>
+        <button class="btn-cancel">Cancel</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

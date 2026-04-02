@@ -1,6 +1,10 @@
 // @ts-nocheck
 import * as React from 'react';
-import { SearchBox, Panel, PanelType, TextField, Dropdown, IDropdownOption } from '@fluentui/react';
+import {
+  SearchBox, Panel, PanelType, TextField, Dropdown, IDropdownOption,
+  DetailsList, IColumn, SelectionMode, DetailsListLayoutMode, IGroup,
+  ConstrainMode, ColumnActionsMode,
+} from '@fluentui/react';
 import { EventBuffer } from '../../../../services/eventViewer/EventBuffer';
 import { EventViewerService } from '../../../../services/eventViewer/EventViewerService';
 import {
@@ -35,6 +39,9 @@ interface IEventStreamTabState {
   selectedEvent: IEventEntry | null;
   showDetailPanel: boolean;
   investigationNotes: string;
+  sortColumn: string;
+  sortDescending: boolean;
+  groupByColumn: string;
 }
 
 // ============================================================================
@@ -88,6 +95,9 @@ export class EventStreamTab extends React.Component<IEventStreamTabProps, IEvent
       selectedEvent: null,
       showDetailPanel: false,
       investigationNotes: '',
+      sortColumn: 'timestamp',
+      sortDescending: true,
+      groupByColumn: '',
     };
   }
 
@@ -276,137 +286,229 @@ export class EventStreamTab extends React.Component<IEventStreamTabProps, IEvent
   }
 
   // ==========================================================================
-  // EVENT TABLE
+  // EVENT TABLE (DetailsList — sortable, resizable, groupable)
   // ==========================================================================
 
+  private _getColumns(): IColumn[] {
+    const { sortColumn, sortDescending } = this.state;
+
+    const makeCol = (key: string, name: string, minWidth: number, maxWidth: number, isResizable: boolean = true): IColumn => ({
+      key,
+      name,
+      fieldName: key,
+      minWidth,
+      maxWidth,
+      isResizable,
+      isSorted: sortColumn === key,
+      isSortedDescending: sortColumn === key ? sortDescending : undefined,
+      columnActionsMode: ColumnActionsMode.clickable,
+      onColumnClick: () => this._onColumnClick(key),
+    });
+
+    return [
+      {
+        ...makeCol('timestamp', 'Timestamp', 100, 140),
+        onRender: (item: IEventEntry) => {
+          const ts = new Date(item.timestamp);
+          return (
+            <span style={{ fontFamily: "'Cascadia Code', monospace", fontSize: 12, color: '#64748b' }}>
+              {`${ts.getHours().toString().padStart(2, '0')}:${ts.getMinutes().toString().padStart(2, '0')}:${ts.getSeconds().toString().padStart(2, '0')}.${ts.getMilliseconds().toString().padStart(3, '0')}`}
+            </span>
+          );
+        },
+      },
+      {
+        ...makeCol('severity', 'Severity', 70, 90),
+        onRender: (item: IEventEntry) => <SeverityBadge severity={item.severity} compact />,
+      },
+      {
+        ...makeCol('channel', 'Channel', 80, 100),
+        onRender: (item: IEventEntry) => <ChannelBadge channel={item.channel} />,
+      },
+      {
+        ...makeCol('eventCode', 'Code', 60, 90),
+        onRender: (item: IEventEntry) => (
+          <span style={{ fontFamily: 'monospace', fontSize: 12, color: item.eventCode ? '#475569' : '#cbd5e1' }}>
+            {item.eventCode || '—'}
+          </span>
+        ),
+      },
+      {
+        ...makeCol('source', 'Source', 100, 160),
+        onRender: (item: IEventEntry) => (
+          <span style={{
+            fontFamily: "'Cascadia Code', monospace", fontSize: 12, color: '#475569',
+            background: '#f1f5f9', padding: '1px 6px', borderRadius: 3,
+            display: 'inline-block', maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }}>
+            {item.source}
+          </span>
+        ),
+      },
+      {
+        ...makeCol('message', 'Message', 200, 600),
+        onRender: (item: IEventEntry) => (
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#334155', display: 'block' }}>
+            {item.message}
+          </span>
+        ),
+      },
+      {
+        ...makeCol('duration', 'Duration', 70, 100),
+        onRender: (item: IEventEntry) => {
+          const netEvent = item as INetworkEvent;
+          return netEvent.duration !== undefined ? <WaterfallBar duration={netEvent.duration} /> : <span style={{ color: '#cbd5e1' }}>—</span>;
+        },
+      },
+    ];
+  }
+
+  private _onColumnClick = (columnKey: string): void => {
+    const { sortColumn, sortDescending } = this.state;
+    if (sortColumn === columnKey) {
+      this.setState({ sortDescending: !sortDescending });
+    } else {
+      this.setState({ sortColumn: columnKey, sortDescending: true });
+    }
+  };
+
+  private _getSortedEvents(events: IEventEntry[]): IEventEntry[] {
+    const { sortColumn, sortDescending } = this.state;
+    const sorted = events.slice();
+
+    sorted.sort((a, b) => {
+      let valA: any; let valB: any;
+      switch (sortColumn) {
+        case 'timestamp': valA = a.timestamp; valB = b.timestamp; break;
+        case 'severity': valA = a.severity; valB = b.severity; break;
+        case 'channel': valA = a.channel || ''; valB = b.channel || ''; break;
+        case 'eventCode': valA = a.eventCode || ''; valB = b.eventCode || ''; break;
+        case 'source': valA = a.source; valB = b.source; break;
+        case 'message': valA = a.message; valB = b.message; break;
+        case 'duration': valA = (a as INetworkEvent).duration || 0; valB = (b as INetworkEvent).duration || 0; break;
+        default: valA = a.timestamp; valB = b.timestamp;
+      }
+      const cmp = valA < valB ? -1 : valA > valB ? 1 : 0;
+      return sortDescending ? -cmp : cmp;
+    });
+
+    return sorted;
+  }
+
+  private _getGroups(events: IEventEntry[]): IGroup[] | undefined {
+    const { groupByColumn } = this.state;
+    if (!groupByColumn) return undefined;
+
+    const groupMap: Record<string, number[]> = {};
+    for (let i = 0; i < events.length; i++) {
+      let key: string;
+      switch (groupByColumn) {
+        case 'severity': key = SEVERITY_NAMES[events[i].severity] || 'Unknown'; break;
+        case 'channel': key = events[i].channel || 'Unknown'; break;
+        case 'source': key = events[i].source || 'Unknown'; break;
+        case 'eventCode': key = events[i].eventCode || 'No Code'; break;
+        default: return undefined;
+      }
+      if (!groupMap[key]) groupMap[key] = [];
+      groupMap[key].push(i);
+    }
+
+    const groups: IGroup[] = [];
+    let startIndex = 0;
+    const keys = Object.keys(groupMap).sort();
+    for (const key of keys) {
+      groups.push({
+        key,
+        name: `${groupByColumn}: ${key} (${groupMap[key].length})`,
+        startIndex,
+        count: groupMap[key].length,
+      });
+      startIndex += groupMap[key].length;
+    }
+
+    return groups.length > 0 ? groups : undefined;
+  }
+
   private _renderEventTable(events: IEventEntry[]): JSX.Element {
-    const displayEvents = events.slice(0, 100);
+    const sorted = this._getSortedEvents(events);
+    const displayEvents = sorted.slice(0, 200);
+
+    // If grouping, re-sort by group key first
+    let groupedEvents = displayEvents;
+    let groups: IGroup[] | undefined;
+    if (this.state.groupByColumn) {
+      const { groupByColumn } = this.state;
+      groupedEvents = displayEvents.slice().sort((a, b) => {
+        let va: string; let vb: string;
+        switch (groupByColumn) {
+          case 'severity': va = SEVERITY_NAMES[a.severity] || ''; vb = SEVERITY_NAMES[b.severity] || ''; break;
+          case 'channel': va = a.channel || ''; vb = b.channel || ''; break;
+          case 'source': va = a.source; vb = b.source; break;
+          case 'eventCode': va = a.eventCode || ''; vb = b.eventCode || ''; break;
+          default: va = ''; vb = '';
+        }
+        return va.localeCompare(vb);
+      });
+      groups = this._getGroups(groupedEvents);
+    }
 
     return (
       <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
-        {/* Header */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '130px 90px 100px 80px 140px 1fr 90px',
-          gap: 0,
-          padding: '10px 14px',
-          background: '#f8fafc',
-          borderBottom: '1px solid #e2e8f0',
-          fontSize: 11,
-          textTransform: 'uppercase',
-          letterSpacing: 0.5,
-          color: '#64748b',
-          fontWeight: 600,
-        }}>
-          <div>Timestamp</div>
-          <div>Severity</div>
-          <div>Channel</div>
-          <div>Code</div>
-          <div>Source</div>
-          <div>Message</div>
-          <div style={{ textAlign: 'right' }}>Duration</div>
+        {/* Group-by toolbar */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', borderBottom: '1px solid #f1f5f9', fontSize: 12, color: '#64748b' }}>
+          <span style={{ fontWeight: 600 }}>Group by:</span>
+          {['', 'severity', 'channel', 'source', 'eventCode'].map(col => (
+            <button
+              key={col || 'none'}
+              onClick={() => this.setState({ groupByColumn: col })}
+              style={{
+                padding: '3px 10px', borderRadius: 4, fontSize: 11, fontWeight: 600,
+                border: this.state.groupByColumn === col ? '1px solid #0d9488' : '1px solid #e2e8f0',
+                background: this.state.groupByColumn === col ? '#f0fdfa' : '#fff',
+                color: this.state.groupByColumn === col ? '#0d9488' : '#64748b',
+                cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              {col || 'None'}
+            </button>
+          ))}
         </div>
 
-        {/* Rows */}
-        {displayEvents.length === 0 ? (
-          <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8', fontSize: 14 }}>
-            No events captured yet. Navigate the app to generate events.
-          </div>
-        ) : (
-          displayEvents.map((event, i) => {
-            const borderColor = ROW_BORDER_COLORS[event.severity];
-            const netEvent = event as INetworkEvent;
-            const ts = new Date(event.timestamp);
-            const timeStr = `${ts.getHours().toString().padStart(2, '0')}:${ts.getMinutes().toString().padStart(2, '0')}:${ts.getSeconds().toString().padStart(2, '0')}.${ts.getMilliseconds().toString().padStart(3, '0')}`;
-            const isCritical = event.severity === EventSeverity.Critical;
-
+        <DetailsList
+          items={groupedEvents}
+          columns={this._getColumns()}
+          groups={groups}
+          selectionMode={SelectionMode.none}
+          layoutMode={DetailsListLayoutMode.justified}
+          constrainMode={ConstrainMode.unconstrained}
+          compact={true}
+          onItemInvoked={(item: IEventEntry) => this._openDetail(item)}
+          onRenderRow={(props, defaultRender) => {
+            if (!props || !defaultRender) return null;
+            const item = props.item as IEventEntry;
+            const borderColor = ROW_BORDER_COLORS[item.severity];
+            const isCritical = item.severity === EventSeverity.Critical;
             return (
-              <div
-                key={event.id || i}
-                onClick={() => this._openDetail(event)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => { if (e.key === 'Enter') this._openDetail(event); }}
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '130px 90px 100px 80px 140px 1fr 90px',
-                  gap: 0,
-                  padding: '10px 14px',
-                  borderBottom: '1px solid #f1f5f9',
-                  cursor: 'pointer',
-                  transition: 'background 0.1s',
-                  borderLeft: borderColor ? `3px solid ${borderColor}` : '3px solid transparent',
-                  background: isCritical ? '#fef2f2' : undefined,
-                  fontSize: 13,
-                  alignItems: 'center',
-                }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = isCritical ? '#fee2e2' : '#f0fdfa'; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = isCritical ? '#fef2f2' : ''; }}
-              >
-                <div style={{
-                  fontFamily: "'Cascadia Code', 'Fira Code', 'Consolas', monospace",
-                  fontSize: 12,
-                  color: '#64748b',
-                  whiteSpace: 'nowrap',
-                }}>
-                  {timeStr}
-                </div>
-                <div><SeverityBadge severity={event.severity} compact /></div>
-                <div><ChannelBadge channel={event.channel} /></div>
-                <div style={{
-                  fontFamily: 'monospace',
-                  fontSize: 12,
-                  color: event.eventCode ? '#475569' : '#cbd5e1',
-                }}>
-                  {event.eventCode || '—'}
-                </div>
-                <div>
-                  <span style={{
-                    fontFamily: "'Cascadia Code', 'Fira Code', 'Consolas', monospace",
-                    fontSize: 12,
-                    color: '#475569',
-                    background: '#f1f5f9',
-                    padding: '1px 6px',
-                    borderRadius: 3,
-                    display: 'inline-block',
-                    maxWidth: 130,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}>
-                    {event.source}
-                  </span>
-                </div>
-                <div style={{
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                  color: '#334155',
-                }}>
-                  {event.message}
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  {netEvent.duration !== undefined && (
-                    <WaterfallBar duration={netEvent.duration} />
-                  )}
-                </div>
+              <div style={{
+                borderLeft: borderColor ? `3px solid ${borderColor}` : '3px solid transparent',
+                background: isCritical ? '#fef2f2' : undefined,
+              }}>
+                {defaultRender(props)}
               </div>
             );
-          })
-        )}
+          }}
+          styles={{
+            root: { fontSize: 13 },
+            headerWrapper: { selectors: { '.ms-DetailsHeader': { paddingTop: 0, background: '#f8fafc', borderBottom: '1px solid #e2e8f0' } } },
+          }}
+        />
 
         {/* Footer */}
         <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '12px 16px',
-          borderTop: '1px solid #e2e8f0',
-          background: '#f8fafc',
-          fontSize: 12,
-          color: '#64748b',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '12px 16px', borderTop: '1px solid #e2e8f0', background: '#f8fafc', fontSize: 12, color: '#64748b',
         }}>
-          <span>Showing {Math.min(displayEvents.length, 100)} of {events.length} events</span>
+          <span>Showing {displayEvents.length} of {events.length} events</span>
           <span>Session: {this.props.eventBuffer.sessionId}</span>
         </div>
       </div>

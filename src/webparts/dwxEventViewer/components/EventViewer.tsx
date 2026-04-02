@@ -864,7 +864,35 @@ export default class EventViewer extends React.Component<IEventViewerProps, IEve
         isOpen={true}
         onDismiss={this._dismissIncidentPanel}
         type={PanelType.medium}
-        headerText="Report Incident"
+        hasCloseButton={false}
+        onRenderNavigation={() => (
+          <div style={{
+            background: 'linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%)',
+            borderBottom: '1px solid #99f6e4',
+            padding: '16px 24px',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          }}>
+            <div style={{ fontSize: 18, fontWeight: 700, color: '#0f766e' }}>Report Incident</div>
+            <button
+              onClick={this._dismissIncidentPanel}
+              style={{
+                width: 32, height: 32, borderRadius: 4, border: 'none', background: 'transparent',
+                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: '#0f766e', fontSize: 18,
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(13,148,136,0.1)'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+              aria-label="Close panel"
+            >
+              ×
+            </button>
+          </div>
+        )}
+        styles={{
+          navigation: { padding: 0, margin: 0, height: 'auto', background: 'transparent', borderBottom: 'none' },
+          commands: { padding: 0, margin: 0, background: 'transparent' },
+          header: { display: 'none' },
+        }}
       >
         <div style={{ padding: '4px 0' }}>
           {/* Buffer summary bar */}

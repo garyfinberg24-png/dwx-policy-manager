@@ -92,6 +92,7 @@ export const EVENT_VIEWER_TABS = [
   { key: 'health', label: 'System Health' },
   { key: 'ai', label: 'AI Triage' },
   { key: 'performance', label: 'Performance' },
+  { key: 'troubleshooter', label: 'Troubleshooter' },
 ] as const;
 
 export type EventViewerTabKey = typeof EVENT_VIEWER_TABS[number]['key'];

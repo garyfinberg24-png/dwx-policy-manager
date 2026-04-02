@@ -32,6 +32,8 @@ interface IInvestigationBoardTabState {
   filterClassification: string;
   searchText: string;
   expandedCode: string | null;
+  expandedChainId: string | null;
+  chainTypeFilter: string;
 }
 
 const CLASSIFICATION_OPTIONS: IDropdownOption[] = [
@@ -66,6 +68,8 @@ export class InvestigationBoardTab extends React.Component<IInvestigationBoardTa
       filterClassification: 'all',
       searchText: '',
       expandedCode: null,
+      expandedChainId: null,
+      chainTypeFilter: 'all',
     };
   }
 
@@ -330,87 +334,216 @@ export class InvestigationBoardTab extends React.Component<IInvestigationBoardTa
     if (chains.length === 0) return <div />;
 
     const CHAIN_TYPE_COLORS: Record<string, string> = {
-      'policy-save': '#0d9488',
-      'approval-flow': '#7c3aed',
-      'notification-send': '#2563eb',
-      'quiz-generate': '#d97706',
-      'data-load': '#64748b',
-      'error-cascade': '#dc2626',
-      'unknown': '#94a3b8',
+      'policy-save': '#0d9488', 'approval-flow': '#7c3aed', 'notification-send': '#2563eb',
+      'quiz-generate': '#d97706', 'data-load': '#64748b', 'error-cascade': '#dc2626', 'unknown': '#94a3b8',
     };
+
+    const { expandedChainId, chainTypeFilter } = this.state;
+
+    // Filter chains by type
+    const filteredChains = chainTypeFilter === 'all'
+      ? chains
+      : chains.filter(c => c.type === chainTypeFilter);
+
+    // Collect unique chain types for filter chips
+    const chainTypes = Array.from(new Set(chains.map(c => c.type)));
 
     return (
       <div style={{ marginTop: 32 }}>
-        <div style={{ borderLeft: '3px solid #7c3aed', paddingLeft: 12, marginBottom: 16, fontSize: 15, fontWeight: 600, color: '#1e293b' }}>
-          Correlation Chains
-          <span style={{ color: '#94a3b8', fontSize: 12, fontWeight: 400, marginLeft: 8 }}>{chains.length} detected</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <div style={{ borderLeft: '3px solid #7c3aed', paddingLeft: 12, fontSize: 15, fontWeight: 600, color: '#1e293b' }}>
+            Correlation Chains
+            <span style={{ color: '#94a3b8', fontSize: 12, fontWeight: 400, marginLeft: 8 }}>{filteredChains.length} of {chains.length}</span>
+          </div>
+        </div>
+
+        {/* Type filter chips */}
+        <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
+          {['all', ...chainTypes].map(type => (
+            <button
+              key={type}
+              onClick={() => this.setState({ chainTypeFilter: type })}
+              style={{
+                padding: '4px 12px', borderRadius: 4, fontSize: 11, fontWeight: 600,
+                border: chainTypeFilter === type ? `1px solid ${CHAIN_TYPE_COLORS[type] || '#7c3aed'}` : '1px solid #e2e8f0',
+                background: chainTypeFilter === type ? `${CHAIN_TYPE_COLORS[type] || '#7c3aed'}10` : '#fff',
+                color: chainTypeFilter === type ? (CHAIN_TYPE_COLORS[type] || '#7c3aed') : '#64748b',
+                cursor: 'pointer', fontFamily: 'inherit', textTransform: 'capitalize',
+              }}
+            >
+              {type === 'all' ? 'All' : type.replace('-', ' ')}
+            </button>
+          ))}
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {chains.slice(0, 10).map(chain => (
-            <div key={chain.id} style={{
-              background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8,
-              borderLeft: `4px solid ${CHAIN_TYPE_COLORS[chain.type] || '#94a3b8'}`,
-              padding: '14px 18px',
-            }}>
-              {/* Chain header */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                <span style={{
-                  fontSize: 10, fontWeight: 700, textTransform: 'uppercase', padding: '2px 8px',
-                  borderRadius: 3, color: '#fff',
-                  background: CHAIN_TYPE_COLORS[chain.type] || '#94a3b8',
-                }}>
-                  {chain.label}
-                </span>
-                <span style={{ fontSize: 12, color: '#64748b' }}>
-                  {chain.events.length} events · {chain.durationMs}ms
-                </span>
-                {chain.primaryTarget && (
-                  <span style={{
-                    fontSize: 10, fontFamily: "'Cascadia Code', monospace",
-                    background: '#f1f5f9', padding: '1px 6px', borderRadius: 3, color: '#475569',
-                  }}>
-                    {chain.primaryTarget}
-                  </span>
-                )}
-                {chain.hasErrors && (
-                  <span style={{ fontSize: 10, fontWeight: 700, color: '#dc2626', padding: '2px 6px', background: '#fee2e2', borderRadius: 3 }}>
-                    HAS ERRORS
-                  </span>
-                )}
-              </div>
+          {filteredChains.slice(0, 20).map(chain => {
+            const isExpanded = expandedChainId === chain.id;
+            const chainColor = CHAIN_TYPE_COLORS[chain.type] || '#94a3b8';
 
-              {/* Chain flow — horizontal timeline */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, overflow: 'hidden' }}>
-                {chain.events.slice(0, 8).map((evt, i) => {
-                  const sevColor = evt.severity >= EventSeverity.Error ? '#dc2626'
-                    : evt.severity === EventSeverity.Warning ? '#d97706'
-                    : '#0d9488';
-                  return (
-                    <React.Fragment key={evt.id}>
-                      {i > 0 && (
-                        <svg width="16" height="10" viewBox="0 0 16 10" style={{ flexShrink: 0 }}>
-                          <line x1="0" y1="5" x2="12" y2="5" stroke="#cbd5e1" strokeWidth="1.5"/>
-                          <polyline points="10,2 14,5 10,8" fill="none" stroke="#cbd5e1" strokeWidth="1.5"/>
-                        </svg>
-                      )}
-                      <div style={{
-                        flexShrink: 0, padding: '4px 8px', borderRadius: 4, fontSize: 10,
-                        background: `${sevColor}10`, border: `1px solid ${sevColor}30`,
-                        color: sevColor, fontWeight: 500, maxWidth: 140,
-                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                      }} title={evt.message}>
-                        {evt.source}
+            return (
+              <div key={chain.id} style={{
+                background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8,
+                borderLeft: `4px solid ${chainColor}`, overflow: 'hidden',
+              }}>
+                {/* Chain header — clickable to expand */}
+                <div
+                  onClick={() => this.setState({ expandedChainId: isExpanded ? null : chain.id })}
+                  style={{
+                    padding: '14px 18px', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    transition: 'background 0.1s',
+                  }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#f8fafc'; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = ''; }}
+                >
+                  {/* Expand chevron */}
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                    style={{ transform: isExpanded ? 'rotate(90deg)' : 'rotate(0)', transition: 'transform 0.15s', flexShrink: 0 }}>
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, textTransform: 'uppercase', padding: '2px 8px',
+                    borderRadius: 3, color: '#fff', background: chainColor, flexShrink: 0,
+                  }}>
+                    {chain.label}
+                  </span>
+                  <span style={{ fontSize: 12, color: '#64748b' }}>
+                    {chain.events.length} events · {chain.durationMs}ms
+                  </span>
+                  {chain.primaryTarget && (
+                    <span style={{ fontSize: 10, fontFamily: "'Cascadia Code', monospace", background: '#f1f5f9', padding: '1px 6px', borderRadius: 3, color: '#475569' }}>
+                      {chain.primaryTarget}
+                    </span>
+                  )}
+                  {chain.hasErrors && (
+                    <span style={{ fontSize: 10, fontWeight: 700, color: '#dc2626', padding: '2px 6px', background: '#fee2e2', borderRadius: 3 }}>
+                      HAS ERRORS
+                    </span>
+                  )}
+
+                  {/* Compact flow preview (when collapsed) */}
+                  {!isExpanded && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginLeft: 'auto', overflow: 'hidden' }}>
+                      {chain.events.slice(0, 6).map((evt, i) => {
+                        const sc = evt.severity >= EventSeverity.Error ? '#dc2626' : evt.severity === EventSeverity.Warning ? '#d97706' : '#0d9488';
+                        return (
+                          <React.Fragment key={evt.id}>
+                            {i > 0 && <span style={{ color: '#cbd5e1', fontSize: 10 }}>→</span>}
+                            <span style={{ fontSize: 9, padding: '1px 5px', borderRadius: 3, background: `${sc}10`, color: sc, whiteSpace: 'nowrap' }}>
+                              {evt.source.length > 12 ? evt.source.substring(0, 12) + '…' : evt.source}
+                            </span>
+                          </React.Fragment>
+                        );
+                      })}
+                      {chain.events.length > 6 && <span style={{ fontSize: 9, color: '#94a3b8' }}>+{chain.events.length - 6}</span>}
+                    </div>
+                  )}
+                </div>
+
+                {/* Expanded timeline */}
+                {isExpanded && (
+                  <div style={{ padding: '0 18px 18px', borderTop: '1px solid #f1f5f9' }}>
+                    {/* Duration bar */}
+                    <div style={{ padding: '12px 0 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <span style={{ fontSize: 11, color: '#64748b', fontWeight: 600 }}>Total: {chain.durationMs}ms</span>
+                      <div style={{ flex: 1, height: 6, background: '#e2e8f0', borderRadius: 3, overflow: 'hidden' }}>
+                        <div style={{ height: '100%', background: chain.hasErrors ? '#dc2626' : chainColor, borderRadius: 3, width: '100%' }} />
                       </div>
-                    </React.Fragment>
-                  );
-                })}
-                {chain.events.length > 8 && (
-                  <span style={{ fontSize: 10, color: '#94a3b8', marginLeft: 4 }}>+{chain.events.length - 8}</span>
+                    </div>
+
+                    {/* Vertical timeline */}
+                    {chain.events.map((evt, i) => {
+                      const sevColor = evt.severity >= EventSeverity.Error ? '#dc2626'
+                        : evt.severity === EventSeverity.Warning ? '#d97706' : '#0d9488';
+                      const netEvt = evt as any;
+                      const ts = new Date(evt.timestamp);
+                      const timeStr = `${ts.getHours().toString().padStart(2, '0')}:${ts.getMinutes().toString().padStart(2, '0')}:${ts.getSeconds().toString().padStart(2, '0')}.${ts.getMilliseconds().toString().padStart(3, '0')}`;
+
+                      // Calculate gap from previous event
+                      let gapMs = 0;
+                      if (i > 0) {
+                        gapMs = new Date(evt.timestamp).getTime() - new Date(chain.events[i - 1].timestamp).getTime();
+                      }
+
+                      return (
+                        <div key={evt.id}>
+                          {/* Gap indicator */}
+                          {i > 0 && gapMs > 0 && (
+                            <div style={{ display: 'flex', alignItems: 'center', padding: '2px 0 2px 15px' }}>
+                              <div style={{ width: 1, height: 16, background: '#e2e8f0', marginRight: 12 }} />
+                              <span style={{
+                                fontSize: 9, color: gapMs > 1000 ? '#d97706' : '#94a3b8',
+                                fontFamily: 'monospace', fontWeight: gapMs > 1000 ? 600 : 400,
+                              }}>
+                                +{gapMs}ms
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Event node */}
+                          <div
+                            style={{
+                              display: 'flex', alignItems: 'flex-start', gap: 12, padding: '6px 0',
+                              cursor: 'pointer', borderRadius: 4, transition: 'background 0.1s',
+                            }}
+                            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#f8fafc'; }}
+                            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = ''; }}
+                          >
+                            {/* Timeline dot + line */}
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 32, flexShrink: 0 }}>
+                              <div style={{
+                                width: 10, height: 10, borderRadius: '50%',
+                                background: sevColor, border: `2px solid ${sevColor}40`,
+                                flexShrink: 0,
+                              }} />
+                              {i < chain.events.length - 1 && (
+                                <div style={{ width: 1, flex: 1, minHeight: 20, background: '#e2e8f0' }} />
+                              )}
+                            </div>
+
+                            {/* Event content */}
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                                <span style={{ fontFamily: 'monospace', fontSize: 11, color: '#94a3b8' }}>{timeStr}</span>
+                                <span style={{
+                                  fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 3,
+                                  background: `${sevColor}15`, color: sevColor,
+                                }}>
+                                  {evt.source}
+                                </span>
+                                {netEvt.httpMethod && (
+                                  <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 3, background: '#f1f5f9', color: '#475569' }}>
+                                    {netEvt.httpMethod} {netEvt.httpStatus || ''}
+                                  </span>
+                                )}
+                                {netEvt.duration !== undefined && (
+                                  <span style={{
+                                    fontSize: 10, fontFamily: 'monospace',
+                                    color: netEvt.duration > 2000 ? '#dc2626' : '#64748b',
+                                    fontWeight: netEvt.duration > 2000 ? 600 : 400,
+                                  }}>
+                                    {netEvt.duration}ms
+                                  </span>
+                                )}
+                              </div>
+                              <div style={{
+                                fontSize: 12, color: evt.severity >= EventSeverity.Error ? '#991b1b' : '#475569',
+                                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                              }}>
+                                {evt.message}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     );

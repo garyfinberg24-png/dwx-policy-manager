@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Policy Hub — Filter Dropdowns Mockup</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #f1f5f9; color: #0f172a; }
+
+    .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+
+    .mockup-title {
+      background: #1e293b; color: #fff; padding: 16px 32px; font-size: 14px; font-weight: 600;
+      margin-bottom: 0;
+    }
+    .mockup-title span { color: #5eead4; margin-right: 8px; }
+    .mockup-note {
+      background: #fef3c7; padding: 12px 32px; font-size: 13px; color: #92400e; border-bottom: 1px solid #fde68a;
+      margin-bottom: 24px;
+    }
+
+    /* ── Filter Toolbar ── */
+    .filter-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .filter-count {
+      font-size: 14px;
+      color: #64748b;
+      margin-right: auto;
+    }
+    .filter-count strong { color: #0f172a; }
+
+    .filter-dropdown {
+      padding: 7px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      font-size: 13px;
+      color: #334155;
+      background: #fff;
+      font-family: inherit;
+      min-width: 160px;
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2394a3b8' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      padding-right: 30px;
+    }
+    .filter-dropdown:focus {
+      border-color: #0d9488;
+      box-shadow: 0 0 0 1px #0d9488;
+      outline: none;
+    }
+
+    .sort-dropdown {
+      padding: 7px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      font-size: 13px;
+      color: #334155;
+      background: #fff;
+      font-family: inherit;
+      min-width: 160px;
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2394a3b8' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      padding-right: 30px;
+    }
+
+    .view-toggle {
+      display: flex;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .view-btn {
+      padding: 7px 12px;
+      background: #fff;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      color: #94a3b8;
+    }
+    .view-btn.active {
+      background: #0d9488;
+      color: #fff;
+    }
+
+    /* ── Active filter chips ── */
+    .active-filters {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    .filter-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      background: #f0fdfa;
+      border: 1px solid #99f6e4;
+      border-radius: 12px;
+      font-size: 12px;
+      color: #0f766e;
+      font-weight: 500;
+    }
+    .filter-chip-x {
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      border: none;
+      background: #ccfbf1;
+      color: #0f766e;
+      cursor: pointer;
+      font-size: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .clear-all {
+      font-size: 12px;
+      color: #94a3b8;
+      cursor: pointer;
+      border: none;
+      background: none;
+      text-decoration: underline;
+    }
+
+    /* ── Policy Table ── */
+    .policy-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      overflow: hidden;
+      font-size: 13px;
+    }
+    .policy-table th {
+      text-align: left;
+      padding: 12px 16px;
+      background: #f8fafc;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #64748b;
+      font-weight: 600;
+      border-bottom: 1px solid #e2e8f0;
+      cursor: pointer;
+      user-select: none;
+    }
+    .policy-table th:hover { color: #0d9488; }
+    .policy-table th .sort-icon { margin-left: 4px; color: #94a3b8; }
+    .policy-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid #f1f5f9;
+      color: #334155;
+    }
+    .policy-table tr:hover td { background: #f0fdfa; }
+
+    .policy-name { font-weight: 600; color: #0f172a; }
+    .policy-number { font-size: 11px; color: #94a3b8; display: block; margin-top: 2px; }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .badge-category { background: #dbeafe; color: #1d4ed8; }
+    .badge-risk-high { background: #fee2e2; color: #dc2626; }
+    .badge-risk-medium { background: #fef3c7; color: #d97706; }
+    .badge-risk-critical { background: #f3e8ff; color: #7c3aed; }
+    .badge-status-published { background: #d1fae5; color: #059669; }
+    .badge-updated { background: #dbeafe; color: #2563eb; font-size: 9px; margin-left: 6px; }
+
+    .action-btn {
+      width: 28px; height: 28px; border-radius: 4px; border: none;
+      background: transparent; cursor: pointer; color: #94a3b8;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .action-btn:hover { background: #f0fdfa; color: #0d9488; }
+
+    /* ── Annotation ── */
+    .annotation {
+      position: relative;
+      display: inline-block;
+    }
+    .annotation-arrow {
+      position: absolute;
+      background: #dc2626;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+
+    /* ── Before/After comparison ── */
+    .comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 32px; }
+    .comparison-panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; }
+    .comparison-header { padding: 12px 16px; font-size: 14px; font-weight: 700; }
+    .comparison-header.before { background: #fee2e2; color: #991b1b; }
+    .comparison-header.after { background: #d1fae5; color: #047857; }
+  </style>
+</head>
+<body>
+
+<!-- Title bar -->
+<div class="mockup-title">
+  <span>MOCKUP</span> Policy Hub — Sidebar filters → Inline filter dropdowns
+</div>
+<div class="mockup-note">
+  <strong>Change:</strong> Remove the Category and Risk Level sidebar filter panels.
+  Replace with dropdown selectors positioned above the table, alongside the Sort dropdown.
+  Active filters shown as removable chips below the toolbar.
+</div>
+
+<!-- ── PROPOSED LAYOUT ── -->
+<div class="container">
+
+  <!-- Filter toolbar (replaces sidebar) -->
+  <div class="filter-toolbar">
+    <span class="filter-count">Showing <strong>20</strong> policies</span>
+
+    <select class="filter-dropdown">
+      <option>All Categories</option>
+      <option>HR Policies</option>
+      <option selected>IT &amp; Security</option>
+      <option>Health &amp; Safety</option>
+      <option>Compliance</option>
+      <option>Financial</option>
+      <option>Operational</option>
+      <option>Legal</option>
+      <option>Environmental</option>
+    </select>
+
+    <select class="filter-dropdown">
+      <option>All Risk Levels</option>
+      <option>Critical</option>
+      <option selected>High</option>
+      <option>Medium</option>
+      <option>Low</option>
+      <option>Informational</option>
+    </select>
+
+    <select class="filter-dropdown">
+      <option selected>All Statuses</option>
+      <option>Published</option>
+      <option>Draft</option>
+      <option>In Review</option>
+      <option>Archived</option>
+    </select>
+
+    <select class="sort-dropdown">
+      <option selected>Sort: Most Recent</option>
+      <option>Sort: A–Z</option>
+      <option>Sort: Z–A</option>
+      <option>Sort: Risk (High → Low)</option>
+      <option>Sort: Acknowledgement %</option>
+    </select>
+
+    <div class="view-toggle">
+      <button class="view-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      </button>
+      <button class="view-btn active">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Active filter chips -->
+  <div class="active-filters">
+    <div class="filter-chip">
+      IT &amp; Security
+      <button class="filter-chip-x">&times;</button>
+    </div>
+    <div class="filter-chip">
+      Risk: High
+      <button class="filter-chip-x">&times;</button>
+    </div>
+    <button class="clear-all">Clear all</button>
+  </div>
+
+  <!-- Policy table (full width — no sidebar) -->
+  <table class="policy-table">
+    <thead>
+      <tr>
+        <th>Policy <span class="sort-icon">↕</span></th>
+        <th>Category <span class="sort-icon">↕</span></th>
+        <th>Version</th>
+        <th>Risk <span class="sort-icon">↕</span></th>
+        <th>Status</th>
+        <th>Modified <span class="sort-icon">↓</span></th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>
+          <span class="policy-name">Bring Your Own Device (BYOD) Policy</span>
+          <span class="badge badge-updated">UPDATED</span>
+          <span class="policy-number">POL-IT-005</span>
+        </td>
+        <td><span class="badge badge-category">IT &amp; SECURITY</span></td>
+        <td>V1.0</td>
+        <td><span class="badge badge-risk-high">HIGH</span></td>
+        <td><span class="badge badge-status-published">PUBLISHED</span></td>
+        <td>21 Mar 2026</td>
+        <td>
+          <button class="action-btn" title="View">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+          <button class="action-btn" title="Bookmark">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+          </button>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <span class="policy-name">Data Backup and Recovery Policy</span>
+          <span class="badge badge-updated">UPDATED</span>
+          <span class="policy-number">POL-IT-004</span>
+        </td>
+        <td><span class="badge badge-category">IT &amp; SECURITY</span></td>
+        <td>V1.0</td>
+        <td><span class="badge badge-risk-high">HIGH</span></td>
+        <td><span class="badge badge-status-published">PUBLISHED</span></td>
+        <td>21 Mar 2026</td>
+        <td>
+          <button class="action-btn" title="View">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+          <button class="action-btn" title="Bookmark">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+          </button>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <span class="policy-name">Password and Authentication Policy</span>
+          <span class="policy-number">POL-IT-003</span>
+        </td>
+        <td><span class="badge badge-category">IT &amp; SECURITY</span></td>
+        <td>V1.0</td>
+        <td><span class="badge badge-risk-high">HIGH</span></td>
+        <td><span class="badge badge-status-published">PUBLISHED</span></td>
+        <td>18 Mar 2026</td>
+        <td>
+          <button class="action-btn" title="View">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+          <button class="action-btn" title="Bookmark">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+          </button>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <span class="policy-name">Network Security and Access Control</span>
+          <span class="policy-number">POL-IT-002</span>
+        </td>
+        <td><span class="badge badge-category">IT &amp; SECURITY</span></td>
+        <td>V2.0</td>
+        <td><span class="badge badge-risk-critical">CRITICAL</span></td>
+        <td><span class="badge badge-status-published">PUBLISHED</span></td>
+        <td>15 Mar 2026</td>
+        <td>
+          <button class="action-btn" title="View">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+          <button class="action-btn" title="Bookmark">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+          </button>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <span class="policy-name">Incident Response Procedure</span>
+          <span class="policy-number">POL-IT-001</span>
+        </td>
+        <td><span class="badge badge-category">IT &amp; SECURITY</span></td>
+        <td>V1.0</td>
+        <td><span class="badge badge-risk-medium">MEDIUM</span></td>
+        <td><span class="badge badge-status-published">PUBLISHED</span></td>
+        <td>10 Mar 2026</td>
+        <td>
+          <button class="action-btn" title="View">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+          <button class="action-btn" title="Bookmark">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+          </button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Design spec -->
+  <div style="margin-top: 32px; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 24px;">
+    <h3 style="font-size: 15px; color: #0f766e; margin-bottom: 12px;">Design Specification</h3>
+    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+      <tr style="border-bottom: 1px solid #f1f5f9;">
+        <td style="padding: 8px 12px; color: #64748b; font-weight: 600; width: 200px;">Sidebar</td>
+        <td style="padding: 8px 12px;"><strong style="color: #dc2626;">REMOVED</strong> — Category and Risk Level checkbox panels deleted</td>
+      </tr>
+      <tr style="border-bottom: 1px solid #f1f5f9;">
+        <td style="padding: 8px 12px; color: #64748b; font-weight: 600;">New Dropdowns</td>
+        <td style="padding: 8px 12px;">3 dropdown filters: <code style="background: #f1f5f9; padding: 1px 6px; border-radius: 3px;">Category</code>, <code style="background: #f1f5f9; padding: 1px 6px; border-radius: 3px;">Risk Level</code>, <code style="background: #f1f5f9; padding: 1px 6px; border-radius: 3px;">Status</code></td>
+      </tr>
+      <tr style="border-bottom: 1px solid #f1f5f9;">
+        <td style="padding: 8px 12px; color: #64748b; font-weight: 600;">Filter Chips</td>
+        <td style="padding: 8px 12px;">Active filters shown as teal chips below toolbar with × to remove + "Clear all" link</td>
+      </tr>
+      <tr style="border-bottom: 1px solid #f1f5f9;">
+        <td style="padding: 8px 12px; color: #64748b; font-weight: 600;">Dropdown Style</td>
+        <td style="padding: 8px 12px;">border-radius: 4px, border: 1px solid #d1d5db, focus: #0d9488 ring, custom chevron SVG</td>
+      </tr>
+      <tr style="border-bottom: 1px solid #f1f5f9;">
+        <td style="padding: 8px 12px; color: #64748b; font-weight: 600;">Layout</td>
+        <td style="padding: 8px 12px;">Table now full-width (no 240px sidebar). Filter toolbar spans full width above table.</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px 12px; color: #64748b; font-weight: 600;">Sort Dropdown</td>
+        <td style="padding: 8px 12px;">Retained, positioned after filter dropdowns. Options: Most Recent, A-Z, Z-A, Risk, Ack %</td>
+      </tr>
+    </table>
+  </div>
+
+</div>
+
+</body>
+</html>

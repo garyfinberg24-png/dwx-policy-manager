@@ -1899,7 +1899,60 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
   }
 
   /**
-   * Render consolidated toolbar — Variation 2: Two Rows in One Panel
+   * Inline filter bar — Category + Risk Level dropdowns alongside Sort + View toggle.
+   * Single row, full width. Replaces the old sidebar + results header.
+   */
+  private renderInlineFilterBar(): JSX.Element {
+    const { selectedCategory, selectedRisk, searchResults, sortOption, viewMode } = this.state;
+    const totalCount = searchResults?.totalCount || 0;
+
+    const categoryOptions: IDropdownOption[] = [
+      { key: '', text: 'All Categories' },
+      ...Object.values(PolicyCategory).map(cat => ({ key: cat, text: cat }))
+    ];
+
+    const riskOptions: IDropdownOption[] = [
+      { key: '', text: 'All Risk Levels' },
+      ...Object.values(ComplianceRisk).map(risk => ({ key: risk, text: risk }))
+    ];
+
+    const sortOptions: IDropdownOption[] = [
+      { key: 'most-recent', text: 'Sort: Most Recent' },
+      { key: 'name-asc', text: 'Sort: A-Z' },
+      { key: 'name-desc', text: 'Sort: Z-A' },
+      { key: 'risk', text: 'Sort: Risk Level' },
+      { key: 'most-read', text: 'Sort: Most Viewed' }
+    ];
+
+    const dropdownStyles = { root: { minWidth: 150 }, dropdown: { border: '1px solid #e2e8f0', borderRadius: 4 }, title: { fontSize: 13, fontFamily: 'inherit', color: '#334155', borderColor: '#e2e8f0' } };
+
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
+        <div style={{ fontSize: 13, color: '#64748b' }}>
+          Showing <strong style={{ color: '#0f172a' }}>{totalCount}</strong> policies
+        </div>
+
+        <Dropdown options={categoryOptions} selectedKey={selectedCategory} onChange={(_, opt) => this.handleFilterChange('selectedCategory', opt?.key as string)} styles={dropdownStyles} aria-label="Filter by category" />
+        <Dropdown options={riskOptions} selectedKey={selectedRisk} onChange={(_, opt) => this.handleFilterChange('selectedRisk', opt?.key as string)} styles={dropdownStyles} aria-label="Filter by risk level" />
+
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+          <Dropdown options={sortOptions} selectedKey={sortOption || 'most-recent'} onChange={(_, opt) => this.setState({ sortOption: opt?.key as string, currentPage: 1 }, () => this.loadPolicies())} styles={{ root: { minWidth: 160 }, dropdown: { border: '1px solid #e2e8f0', borderRadius: 4 }, title: { fontSize: 13, fontFamily: 'inherit', color: '#334155', borderColor: '#e2e8f0' } }} />
+
+          <div style={{ display: 'flex', border: '1px solid #e2e8f0', borderRadius: 6, overflow: 'hidden' }}>
+            <button onClick={() => this.setState({ viewMode: 'grid' })} style={{ padding: '6px 10px', fontSize: 12, cursor: 'pointer', border: 'none', fontFamily: 'inherit', background: viewMode === 'grid' ? '#0d9488' : '#fff', color: viewMode === 'grid' ? '#fff' : '#94a3b8' }} aria-label="Grid view">
+              <svg viewBox="0 0 24 24" fill="none" width="14" height="14"><rect x="3" y="3" width="7" height="7" stroke="currentColor" strokeWidth="2" rx="1" /><rect x="14" y="3" width="7" height="7" stroke="currentColor" strokeWidth="2" rx="1" /><rect x="3" y="14" width="7" height="7" stroke="currentColor" strokeWidth="2" rx="1" /><rect x="14" y="14" width="7" height="7" stroke="currentColor" strokeWidth="2" rx="1" /></svg>
+            </button>
+            <button onClick={() => this.setState({ viewMode: 'list' })} style={{ padding: '6px 10px', fontSize: 12, cursor: 'pointer', border: 'none', fontFamily: 'inherit', background: viewMode === 'list' ? '#0d9488' : '#fff', color: viewMode === 'list' ? '#fff' : '#94a3b8' }} aria-label="List view">
+              <svg viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /**
+   * Render consolidated toolbar — Variation 2: Two Rows in One Panel (LEGACY — no longer used in browse view)
    * Row 1: Filter dropdowns
    * Row 2: Results count | Sort | Active filters | Export/Print icons
    */
@@ -3344,8 +3397,8 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
 
               {/* Filter Toolbar + Results (full width — sidebar removed) */}
               <div>
-                {/* Consolidated filter dropdowns + sort + active filters */}
-                {this.renderConsolidatedToolbar()}
+                {/* Inline filters: Category + Risk + count + sort + view toggle */}
+                {this.renderInlineFilterBar()}
 
                 {/* Results */}
                 <div>

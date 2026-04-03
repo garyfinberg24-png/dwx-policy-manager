@@ -637,6 +637,8 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         readTimeframeDays: policy.ReadTimeframeDays || 7,
         requiresAcknowledgement: policy.RequiresAcknowledgement,
         requiresQuiz: policy.RequiresQuiz || false,
+        // Auto-switch to custom profile mode when draft has metadata values
+        _profileMode: (policy.ComplianceRisk || policy.ReadTimeframe) ? 'custom' : 'existing',
         selectedQuizId: policy.LinkedQuizId || null,
         effectiveDate: (typeof policy.EffectiveDate === 'string' ? policy.EffectiveDate : policy.EffectiveDate?.toISOString() || '').split('T')[0],
         expiryDate: policy.ExpiryDate ? (typeof policy.ExpiryDate === 'string' ? policy.ExpiryDate : policy.ExpiryDate.toISOString()).split('T')[0] : '',

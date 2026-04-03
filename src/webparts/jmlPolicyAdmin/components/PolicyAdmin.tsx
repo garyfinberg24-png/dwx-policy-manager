@@ -1624,23 +1624,24 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     // Document URL is optional — template can be created first, file uploaded later
 
     this.setState({ saving: true });
-    try {
-      // Only write fields that exist on PM_PolicyTemplates
-      // Known columns: Title, TemplateType, TemplateCategory, TemplateDescription,
-      // TemplateContent, HTMLTemplate, DocumentTemplateURL, IsActive, UsageCount,
-      // ComplianceRisk, SuggestedReadTimeframe, RequiresAcknowledgement, RequiresQuiz,
-      // KeyPointsTemplate, Tags, RegulatoryFramework, RegulatoryReferences
-      const data: Record<string, unknown> = {
+
+    // Build data outside try/catch so the retry in catch can access it
+    const docUrl = editingTemplate.DocumentTemplateURL || '';
+    // DocumentTemplateURL may be type URL (object) or Note (string) depending on
+    // which provisioning script created it. Try object format first; the catch
+    // handler retries with string format if PrimitiveValue/StartObject error occurs.
+    const data: Record<string, unknown> = {
         Title: editingTemplate.TemplateName || editingTemplate.Title,
         TemplateType: editingTemplate.TemplateType || 'richtext',
         TemplateCategory: editingTemplate.TemplateCategory || 'General',
         TemplateDescription: editingTemplate.TemplateDescription || '',
         HTMLTemplate: editingTemplate.HTMLTemplate || editingTemplate.TemplateContent || '',
         TemplateContent: editingTemplate.TemplateContent || editingTemplate.HTMLTemplate || '',
-        DocumentTemplateURL: editingTemplate.DocumentTemplateURL || '',
+        DocumentTemplateURL: docUrl ? { Url: docUrl, Description: editingTemplate.TemplateName || 'Template file' } : null,
         IsActive: editingTemplate.IsActive !== false
       };
-      // Store sections as JSON in TemplateContent for corporate/regulatory
+    // Store sections as JSON in TemplateContent for corporate/regulatory
+    try {
       if (editingTemplate.TemplateType === 'corporate' || editingTemplate.TemplateType === 'regulatory') {
         data.TemplateContent = editingTemplate.Sections || '[]';
         data.HTMLTemplate = editingTemplate.Sections || '[]';
@@ -1679,6 +1680,25 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       this.setState({ _showTemplatePanel: false, _editingTemplate: null, saving: false } as any);
       void this.dialogManager.showAlert('Template saved successfully.', { title: 'Saved', variant: 'success' });
     } catch (err: any) {
+      const errMsg = err?.data?.responseBody?.['odata.error']?.message?.value || err?.message || '';
+      // Retry with string format if URL field type mismatch (PrimitiveValue/StartObject error)
+      if (errMsg.indexOf('PrimitiveValue') !== -1 || errMsg.indexOf('StartObject') !== -1) {
+        try {
+          console.warn('Template save: retrying with string DocumentTemplateURL (field is Note type, not URL)');
+          data.DocumentTemplateURL = docUrl || '';
+          if (editingTemplate.Id) {
+            await this.adminConfigService.updateTemplate(editingTemplate.Id, data);
+          } else {
+            const result = await this.adminConfigService.createTemplate(data);
+            this.setState({ templates: [...templates, { ...editingTemplate, Id: result.Id }] });
+          }
+          this.setState({ _showTemplatePanel: false, _editingTemplate: null, saving: false } as any);
+          void this.dialogManager.showAlert('Template saved successfully.', { title: 'Saved', variant: 'success' });
+          return;
+        } catch (retryErr: any) {
+          console.error('Template save retry also failed:', retryErr?.message || retryErr);
+        }
+      }
       console.error('Template save failed:', err?.message || err, err?.data || '');
       this.setState({ saving: false });
       const detail = err?.data?.responseBody?.['odata.error']?.message?.value || err?.message || 'Unknown error';

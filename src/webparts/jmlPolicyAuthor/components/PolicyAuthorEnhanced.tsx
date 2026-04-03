@@ -648,6 +648,8 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         targetRoles: policy.TargetRoles ? (policy.TargetRoles as string).split(';').filter(Boolean) : [],
         targetLocations: policy.TargetLocations ? (policy.TargetLocations as string).split(';').filter(Boolean) : [],
         includeContractors: !!(policy as any).IncludeContractors,
+        _targetSecurityGroups: (policy as any).TargetSecurityGroups || '',
+        _distributionScope: policy.DistributionScope || (policy.DistributionScope === 'AllEmployees' ? 'All Employees' : 'Targeted'),
         // Load review fields (Fix 2 counterpart)
         reviewFrequency: (policy as any).ReviewFrequency || 'Annual',
         nextReviewDate: policy.NextReviewDate ? (typeof policy.NextReviewDate === 'string' ? policy.NextReviewDate : policy.NextReviewDate.toISOString()).split('T')[0] : '',
@@ -1232,6 +1234,8 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       if (targetDepartments && targetDepartments.length > 0) { optionalData.TargetDepartments = targetDepartments.join(';'); }
       if (targetRoles && targetRoles.length > 0) { optionalData.TargetRoles = targetRoles.join(';'); }
       if (targetLocations && targetLocations.length > 0) { optionalData.TargetLocations = targetLocations.join(';'); }
+      const secGroups = (this.state as any)._targetSecurityGroups;
+      if (secGroups) { optionalData.TargetSecurityGroups = secGroups; }
       const selectedAud = (this.state as any)._selectedAudienceId;
       if (selectedAud) { optionalData.AudienceId = selectedAud; }
       if (includeContractors) { optionalData.IncludeContractors = true; }
@@ -3081,6 +3085,38 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             )}
             {targetAllEmployees && (
               <TextField label="Target Audience" value="All Users" disabled styles={{ field: { color: '#94a3b8', background: '#f8fafc' } }} />
+            )}
+            {st._distributionScope === 'Role-Based' && (
+              <Dropdown
+                label="Target Roles"
+                multiSelect
+                selectedKeys={this.state.targetRoles || []}
+                options={[
+                  { key: 'User', text: 'All Users' },
+                  { key: 'Author', text: 'Authors' },
+                  { key: 'Manager', text: 'Managers' },
+                  { key: 'Admin', text: 'Administrators' },
+                  { key: 'New Hire', text: 'New Hires' },
+                  { key: 'Contractor', text: 'Contractors' },
+                ]}
+                onChange={(_, option) => {
+                  if (option) {
+                    const current = this.state.targetRoles || [];
+                    const updated = option.selected ? [...current, option.key as string] : current.filter((r: string) => r !== option.key);
+                    this.setState({ targetRoles: updated });
+                  }
+                }}
+                placeholder="Select target roles..."
+              />
+            )}
+            {st._distributionScope === 'Security Group' && (
+              <TextField
+                label="Security Group Names"
+                value={(this.state as any)._targetSecurityGroups || ''}
+                onChange={(_, v) => this.setState({ _targetSecurityGroups: v || '' } as any)}
+                placeholder="e.g. PM-IT-Security; PM-Compliance-Team"
+                description="Enter SharePoint security group names, separated by semicolons"
+              />
             )}
           </div>
 

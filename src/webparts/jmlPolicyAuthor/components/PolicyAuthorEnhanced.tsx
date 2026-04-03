@@ -3082,58 +3082,11 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             )}
           </div>
 
-          {/* Audience search + count */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <SearchBox
-              placeholder="Search audiences..."
-              value={audienceSearchQuery}
-              onChange={(_, v) => this.setState({ _audienceSearchQuery: v || '' } as any)}
-              styles={{ root: { width: 220, borderRadius: 4 } }}
-            />
-            {selectedAudienceId && audiencePreviewCount > 0 && (
-              <span style={{ fontSize: 12, fontWeight: 600, color: '#0d9488', display: 'flex', alignItems: 'center', gap: 4 }}>
-                <Icon iconName="People" styles={{ root: { fontSize: 12, color: '#0d9488' } }} />
-                ~{audiencePreviewCount} users
-              </span>
-            )}
-          </div>
-
-          {/* Compact audience cards grid */}
-          {audiences.length === 0 ? (
-            <MessageBar messageBarType={MessageBarType.info}>
-              No audiences configured. Go to Admin Centre &gt; Audience Targeting to create audiences.
-            </MessageBar>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, maxHeight: 280, overflowY: 'auto', paddingRight: 4 }}>
-              {filteredAudiences.map((audience: any) => {
-                const isSelected = selectedAudienceId === audience.Id;
-                const colors = catColors[audience.Category] || catColors.Custom;
-                const iconName = catIcons[audience.Category] || 'TargetSolid';
-                return (
-                  <div
-                    key={audience.Id}
-                    role="button" tabIndex={0}
-                    onClick={() => selectAudience(audience)}
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectAudience(audience); } }}
-                    style={{
-                      padding: '8px 10px', border: `1.5px solid ${isSelected ? '#0d9488' : '#e2e8f0'}`,
-                      borderRadius: 4, cursor: 'pointer', transition: 'all 0.15s',
-                      background: isSelected ? '#f0fdfa' : '#fff', display: 'flex', alignItems: 'center', gap: 8
-                    }}
-                    onMouseEnter={(e) => { if (!isSelected) (e.currentTarget as HTMLElement).style.borderColor = '#0d9488'; }}
-                    onMouseLeave={(e) => { if (!isSelected) (e.currentTarget as HTMLElement).style.borderColor = '#e2e8f0'; }}
-                  >
-                    <div style={{ width: 24, height: 24, borderRadius: 4, background: colors.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <Icon iconName={iconName} styles={{ root: { fontSize: 12, color: colors.color } }} />
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <Text style={{ fontWeight: 600, fontSize: 12, color: '#0f172a', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{audience.Title}</Text>
-                      <Text style={{ fontSize: 10, color: '#94a3b8' }}>{audience.Description ? audience.Description.substring(0, 40) : audience.Category}</Text>
-                    </div>
-                    {isSelected && <Icon iconName="CheckMark" styles={{ root: { fontSize: 12, color: '#0d9488', flexShrink: 0 } }} />}
-                  </div>
-                );
-              })}
+          {/* Audience count (search + tiles removed per tester feedback) */}
+          {selectedAudienceId && audiencePreviewCount > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: '#0d9488' }}>
+              <Icon iconName="People" styles={{ root: { fontSize: 12, color: '#0d9488' } }} />
+              ~{audiencePreviewCount} users match
             </div>
           )}
 
@@ -8279,11 +8232,14 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <DefaultButton
-              text="Save Draft"
+              text={saving ? 'Saving...' : 'Save Draft'}
+              iconProps={saving ? undefined : { iconName: 'Save' }}
               onClick={() => { this.handleSaveDraft(); }}
               disabled={saving}
-              styles={{ root: { borderRadius: 4, background: '#f0fdfa', color: '#0d9488', border: '1px solid #99f6e4', minWidth: 90 }, rootHovered: { background: '#ccfbf1' } }}
-            />
+              styles={{ root: { borderRadius: 4, background: '#f0fdfa', color: '#0d9488', border: '1px solid #99f6e4', minWidth: 100 }, rootHovered: { background: '#ccfbf1' } }}
+            >
+              {saving && <Spinner size={SpinnerSize.xSmall} styles={{ root: { marginRight: 6 } }} />}
+            </DefaultButton>
             {currentStep < activeSteps.length - 1 ? (
               <PrimaryButton
                 onClick={this.handleNextStep}
@@ -8294,15 +8250,6 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
               </PrimaryButton>
             ) : (
               <>
-                {(this.state as any)._wizardMode !== 'fast-track' && (
-                  <DefaultButton
-                    text="Save as Template"
-                    iconProps={{ iconName: 'SaveTemplate' }}
-                    onClick={() => { this.handleSaveAsFastTrackTemplate(); }}
-                    disabled={saving}
-                    styles={{ root: { borderRadius: 4, border: '1px solid #e2e8f0', color: '#7c3aed', minWidth: 120 }, rootHovered: { borderColor: '#7c3aed', background: '#f5f3ff' } }}
-                  />
-                )}
                 <PrimaryButton
                   text="Submit for Review"
                   iconProps={{ iconName: 'Send' }}

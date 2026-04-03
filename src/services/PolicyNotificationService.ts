@@ -160,9 +160,8 @@ export class PolicyNotificationService {
       }
 
       // Wrap body in email shell using centralized EmailTemplateBuilder
-      const siteUrl = this.sp.web.toUrl().replace('/_api/web', '');
       const isReviewEvent = ['review-required', 'approval-request', 'review-withdrawn'].includes(opts.eventName);
-      const policyUrl = opts.mergeData.PolicyUrl || `${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${opts.policyId || 0}${isReviewEvent ? '&mode=review' : ''}`;
+      const policyUrl = opts.mergeData.PolicyUrl || `${this.siteUrl}/SitePages/PolicyDetails.aspx?policyId=${opts.policyId || 0}${isReviewEvent ? '&mode=review' : ''}`;
       // Map eventName to EmailNotificationType; default to 'policy-published' if no match
       const typeMap: Record<string, string> = {
         'review-required': 'review-required', 'approval-request': 'approval-request',
@@ -173,6 +172,9 @@ export class PolicyNotificationService {
         'ack-complete': 'ack-complete', 'policy-expiring': 'policy-expiring',
         'policy-retired': 'policy-retired', 'sla-breach': 'sla-breach', 'welcome': 'welcome'
       };
+      // Strip any leading greeting from body — EmailTemplateBuilder adds its own "Hi {name},"
+      body = body.replace(/^(\s*<p>\s*)?Hi\s+[^,<]+,?\s*(<\/p>\s*)?/i, '').trim();
+
       const emailType = (typeMap[opts.eventName] || 'policy-published') as import('../utils/EmailTemplateBuilder').EmailNotificationType;
       const htmlBody = EmailTemplateBuilder.build(emailType, {
         recipientName: opts.recipientName || 'Team Member',
@@ -490,8 +492,7 @@ export class PolicyNotificationService {
     reviewerIds: number[],
     submitterName: string
   ): Promise<void> {
-    const siteUrl = this.sp.web.toUrl().replace('/_api/web', '');
-    const policyUrl = `${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policy.Id}&mode=review`;
+    const policyUrl = `${this.siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policy.Id}&mode=review`;
 
     // Send email + in-app notification to each reviewer
     let failCount = 0;

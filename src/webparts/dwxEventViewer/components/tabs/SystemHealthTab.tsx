@@ -19,6 +19,7 @@ import { SchemaValidatorService, ISchemaValidationSummary, ISchemaValidationResu
 import { ConfigAuditService, IConfigAuditSummary, IConfigEntry } from '../../../../services/eventViewer/ConfigAuditService';
 import { TrendDashboardService, ITrendSummary } from '../../../../services/eventViewer/TrendDashboardService';
 import { SLAMonitorService, ISLAMonitorSummary } from '../../../../services/eventViewer/SLAMonitorService';
+import { DistributionQueueViewService, IQueueSummary } from '../../../../services/DistributionQueueViewService';
 
 // ============================================================================
 // TYPES
@@ -51,6 +52,9 @@ interface ISystemHealthTabState {
   trendLoading: boolean;
   // SLA Monitor
   slaSummary: ISLAMonitorSummary | null;
+  // Distribution Queue
+  distQueueSummary: IQueueSummary | null;
+  distQueueLoading: boolean;
 }
 
 interface IListHealthItem {
@@ -98,6 +102,8 @@ export class SystemHealthTab extends React.Component<ISystemHealthTabProps, ISys
       trendSummary: null,
       trendLoading: false,
       slaSummary: null,
+      distQueueSummary: null,
+      distQueueLoading: false,
     };
   }
 
@@ -282,6 +288,22 @@ export class SystemHealthTab extends React.Component<ISystemHealthTabProps, ISys
   private _computeSLA = (): void => {
     const summary = SLAMonitorService.compute(this.props.eventBuffer);
     this.setState({ slaSummary: summary });
+  };
+
+  // ==========================================================================
+  // DISTRIBUTION QUEUE
+  // ==========================================================================
+
+  private _loadDistQueue = async (): Promise<void> => {
+    if (this.state.distQueueLoading) return;
+    this.setState({ distQueueLoading: true });
+    try {
+      const svc = new DistributionQueueViewService(this.props.sp);
+      const summary = await svc.loadQueueData();
+      if (this._isMounted) this.setState({ distQueueSummary: summary, distQueueLoading: false });
+    } catch {
+      if (this._isMounted) this.setState({ distQueueLoading: false });
+    }
   };
 
   // ==========================================================================
@@ -604,6 +626,31 @@ export class SystemHealthTab extends React.Component<ISystemHealthTabProps, ISys
             </button>
           </div>
           {this._renderSLAMonitor()}
+        </div>
+
+        {/* ============================================================ */}
+        {/* DISTRIBUTION QUEUE */}
+        {/* ============================================================ */}
+        <div style={{ marginTop: 32 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <div style={{ borderLeft: '3px solid #7c3aed', paddingLeft: 12, fontSize: 15, fontWeight: 600, color: '#1e293b' }}>
+              Distribution & Email Queue
+              <span style={{ color: '#94a3b8', fontSize: 12, fontWeight: 400, marginLeft: 8 }}>Pipeline status</span>
+            </div>
+            <button
+              onClick={this._loadDistQueue}
+              disabled={this.state.distQueueLoading}
+              style={{
+                padding: '7px 16px', background: '#7c3aed', color: '#fff',
+                border: 'none', borderRadius: 4, fontSize: 12, fontWeight: 600,
+                fontFamily: 'inherit', cursor: this.state.distQueueLoading ? 'not-allowed' : 'pointer',
+                opacity: this.state.distQueueLoading ? 0.7 : 1,
+              }}
+            >
+              {this.state.distQueueLoading ? 'Loading...' : 'Load Queue'}
+            </button>
+          </div>
+          {this._renderDistQueueResults()}
         </div>
       </div>
     );
@@ -1226,6 +1273,101 @@ export class SystemHealthTab extends React.Component<ISystemHealthTabProps, ISys
             ))}
           </div>
         )}
+      </div>
+    );
+  }
+
+  // ==========================================================================
+  // DISTRIBUTION QUEUE RESULTS
+  // ==========================================================================
+
+  private _renderDistQueueResults(): JSX.Element {
+    const { distQueueSummary, distQueueLoading } = this.state;
+
+    if (!distQueueSummary && !distQueueLoading) {
+      return (
+        <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8', fontSize: 14, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10 }}>
+          Click "Load Queue" to view distribution jobs and email delivery status.
+        </div>
+      );
+    }
+
+    if (distQueueLoading) {
+      return <div style={{ padding: 40, textAlign: 'center', background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10 }}><Spinner size={SpinnerSize.medium} label="Loading queue..." /></div>;
+    }
+
+    if (!distQueueSummary) return <div />;
+
+    const { stats, distributionJobs, notificationItems } = distQueueSummary;
+
+    const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
+      Queued: { bg: '#dbeafe', color: '#2563eb' }, Processing: { bg: '#fef3c7', color: '#d97706' },
+      Completed: { bg: '#d1fae5', color: '#059669' }, Sent: { bg: '#d1fae5', color: '#059669' },
+      Pending: { bg: '#dbeafe', color: '#2563eb' }, Failed: { bg: '#fee2e2', color: '#dc2626' },
+      Retry: { bg: '#fef3c7', color: '#d97706' },
+    };
+
+    return (
+      <div>
+        {/* KPIs */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 16 }}>
+          {[
+            { label: 'Dist. Jobs', value: stats.totalJobs, sub: `${stats.activeJobs} active`, color: '#7c3aed' },
+            { label: 'Completed', value: stats.completedJobs, color: '#059669' },
+            { label: 'Emails Pending', value: stats.pendingEmails, color: '#2563eb' },
+            { label: 'Emails Failed', value: stats.failedEmails, color: stats.failedEmails > 0 ? '#dc2626' : '#94a3b8' },
+          ].map((kpi, i) => (
+            <div key={i} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, padding: '12px 16px', borderTop: `3px solid ${kpi.color}`, textAlign: 'center' }}>
+              <div style={{ fontSize: 20, fontWeight: 700, color: kpi.color }}>{kpi.value}</div>
+              <div style={{ fontSize: 10, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5 }}>{kpi.label}</div>
+              {(kpi as any).sub && <div style={{ fontSize: 10, color: '#94a3b8' }}>{(kpi as any).sub}</div>}
+            </div>
+          ))}
+        </div>
+
+        {/* Jobs */}
+        {distributionJobs.length > 0 && (
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: '#64748b', marginBottom: 6 }}>Distribution Jobs</div>
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, overflow: 'hidden' }}>
+              {distributionJobs.slice(0, 10).map((job, i) => {
+                const c = STATUS_COLORS[job.Status] || STATUS_COLORS.Queued;
+                return (
+                  <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 80px 60px 60px 120px', padding: '8px 14px', borderBottom: '1px solid #f1f5f9', alignItems: 'center', fontSize: 12 }}>
+                    <div style={{ fontWeight: 500, color: '#0f172a' }}>{job.PolicyName}</div>
+                    <div><span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', padding: '2px 8px', borderRadius: 4, background: c.bg, color: c.color }}>{job.Status}</span></div>
+                    <div style={{ color: '#64748b' }}>{job.TargetCount}</div>
+                    <div style={{ color: '#64748b' }}>{job.ProcessedCount}</div>
+                    <div style={{ fontSize: 11, color: '#94a3b8' }}>{job.QueuedDate ? new Date(job.QueuedDate).toLocaleString() : ''}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Recent emails */}
+        <div style={{ fontSize: 12, fontWeight: 600, color: '#64748b', marginBottom: 6 }}>
+          Email Queue — {stats.sentEmails} sent · {stats.pendingEmails} pending · {stats.failedEmails} failed
+        </div>
+        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, overflow: 'hidden' }}>
+          {notificationItems.length === 0 ? (
+            <div style={{ padding: 20, textAlign: 'center', color: '#94a3b8', fontSize: 13 }}>No items in notification queue.</div>
+          ) : (
+            notificationItems.slice(0, 15).map((item, i) => {
+              const s = item.QueueStatus || item.Status || 'Pending';
+              const c = STATUS_COLORS[s] || STATUS_COLORS.Pending;
+              return (
+                <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 100px 70px 120px', padding: '6px 14px', borderBottom: '1px solid #f1f5f9', alignItems: 'center', fontSize: 12 }}>
+                  <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.To || item.RecipientEmail || '—'}</div>
+                  <div><span style={{ fontSize: 9, fontFamily: "'Cascadia Code', monospace", background: '#f1f5f9', padding: '1px 5px', borderRadius: 3 }}>{item.NotificationType || '—'}</span></div>
+                  <div><span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', padding: '2px 6px', borderRadius: 4, background: c.bg, color: c.color }}>{s}</span></div>
+                  <div style={{ fontSize: 11, color: '#94a3b8' }}>{item.Created ? new Date(item.Created).toLocaleString() : ''}</div>
+                </div>
+              );
+            })
+          )}
+        </div>
       </div>
     );
   }

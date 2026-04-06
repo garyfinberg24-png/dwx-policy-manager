@@ -24,6 +24,8 @@ import {
 import { StyledPanel } from '../../../components/StyledPanel';
 import { PeoplePicker, PrincipalType } from "@pnp/spfx-controls-react/lib/PeoplePicker";
 import { PolicyDistributionService, ISPDistributionItem } from '../../../services/PolicyDistributionService';
+import { DistributionQueueViewService, IQueueSummary } from '../../../services/DistributionQueueViewService';
+import { DetailsList, SelectionMode, DetailsListLayoutMode, ConstrainMode } from '@fluentui/react';
 
 // ============================================================================
 // INTERFACES
@@ -103,6 +105,9 @@ interface IPolicyDistributionState {
   // Messages
   successMessage: string;
   errorMessage: string;
+  // Distribution queue view
+  queueSummary: IQueueSummary | null;
+  queueLoading: boolean;
 }
 
 // ============================================================================
@@ -340,6 +345,8 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
       metricsLoading: false,
       successMessage: '',
       errorMessage: '',
+      queueSummary: null,
+      queueLoading: false,
     };
   }
 
@@ -1559,6 +1566,7 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
               {this.renderKPIs()}
               {this.renderToolbar()}
               {this.renderCampaignTable()}
+              {this.renderDistributionQueue()}
             </>
           )}
 
@@ -1566,6 +1574,149 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
         </div>
       </JmlAppLayout>
       </ErrorBoundary>
+    );
+  }
+
+  // ==========================================================================
+  // DISTRIBUTION QUEUE VIEW
+  // ==========================================================================
+
+  private _loadQueue = async (): Promise<void> => {
+    if (this.state.queueLoading) return;
+    this.setState({ queueLoading: true });
+    try {
+      const svc = new DistributionQueueViewService(this.props.sp);
+      const summary = await svc.loadQueueData();
+      this.setState({ queueSummary: summary, queueLoading: false });
+    } catch {
+      this.setState({ queueLoading: false });
+    }
+  };
+
+  private renderDistributionQueue(): React.ReactElement {
+    const { queueSummary, queueLoading } = this.state;
+
+    const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
+      Queued: { bg: '#dbeafe', color: '#2563eb' },
+      Processing: { bg: '#fef3c7', color: '#d97706' },
+      Completed: { bg: '#d1fae5', color: '#059669' },
+      Sent: { bg: '#d1fae5', color: '#059669' },
+      Pending: { bg: '#dbeafe', color: '#2563eb' },
+      Failed: { bg: '#fee2e2', color: '#dc2626' },
+      Retry: { bg: '#fef3c7', color: '#d97706' },
+    };
+
+    return (
+      <div style={{ marginTop: 32 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <div style={{ borderLeft: '3px solid #7c3aed', paddingLeft: 12, fontSize: 16, fontWeight: 600, color: '#1e293b' }}>
+            Distribution & Email Queue
+            <span style={{ color: '#94a3b8', fontSize: 12, fontWeight: 400, marginLeft: 8 }}>Pipeline status</span>
+          </div>
+          <button
+            onClick={this._loadQueue}
+            disabled={queueLoading}
+            style={{
+              padding: '7px 16px', background: '#7c3aed', color: '#fff',
+              border: 'none', borderRadius: 4, fontSize: 12, fontWeight: 600,
+              fontFamily: 'inherit', cursor: queueLoading ? 'not-allowed' : 'pointer',
+              opacity: queueLoading ? 0.7 : 1,
+            }}
+          >
+            {queueLoading ? 'Loading...' : 'Load Queue Status'}
+          </button>
+        </div>
+
+        {!queueSummary && !queueLoading && (
+          <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8', fontSize: 14, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10 }}>
+            Click "Load Queue Status" to view distribution jobs and email queue.
+          </div>
+        )}
+
+        {queueLoading && (
+          <div style={{ padding: 40, textAlign: 'center', background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10 }}>
+            <Spinner size={SpinnerSize.medium} label="Loading queue data..." />
+          </div>
+        )}
+
+        {queueSummary && (
+          <>
+            {/* KPI summary */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
+              {[
+                { label: 'Distribution Jobs', value: queueSummary.stats.totalJobs, sub: `${queueSummary.stats.activeJobs} active`, color: '#7c3aed' },
+                { label: 'Completed', value: queueSummary.stats.completedJobs, color: '#059669' },
+                { label: 'Emails Pending', value: queueSummary.stats.pendingEmails, color: '#2563eb' },
+                { label: 'Emails Failed', value: queueSummary.stats.failedEmails, color: queueSummary.stats.failedEmails > 0 ? '#dc2626' : '#94a3b8' },
+              ].map((kpi, i) => (
+                <div key={i} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '14px 16px', borderTop: `3px solid ${kpi.color}` }}>
+                  <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#64748b', fontWeight: 600, marginBottom: 4 }}>{kpi.label}</div>
+                  <div style={{ fontSize: 24, fontWeight: 700, color: '#0f172a' }}>{kpi.value}</div>
+                  {(kpi as any).sub && <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>{(kpi as any).sub}</div>}
+                </div>
+              ))}
+            </div>
+
+            {/* Distribution Jobs Table */}
+            {queueSummary.distributionJobs.length > 0 && (
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: '#1e293b', marginBottom: 10 }}>Distribution Jobs (PM_DistributionQueue)</div>
+                <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, overflow: 'hidden' }}>
+                  <DetailsList
+                    items={queueSummary.distributionJobs}
+                    selectionMode={SelectionMode.none}
+                    layoutMode={DetailsListLayoutMode.justified}
+                    constrainMode={ConstrainMode.unconstrained}
+                    compact={true}
+                    columns={[
+                      { key: 'PolicyName', name: 'Policy', fieldName: 'PolicyName', minWidth: 150, maxWidth: 250, isResizable: true },
+                      { key: 'JobType', name: 'Type', fieldName: 'JobType', minWidth: 60, maxWidth: 80, isResizable: true },
+                      { key: 'Status', name: 'Status', fieldName: 'Status', minWidth: 80, maxWidth: 100, isResizable: true, onRender: (item: any) => { const c = STATUS_COLORS[item.Status] || STATUS_COLORS.Queued; return <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', padding: '2px 8px', borderRadius: 4, background: c.bg, color: c.color }}>{item.Status}</span>; } },
+                      { key: 'TargetCount', name: 'Target', fieldName: 'TargetCount', minWidth: 60, maxWidth: 70, isResizable: true },
+                      { key: 'ProcessedCount', name: 'Processed', fieldName: 'ProcessedCount', minWidth: 60, maxWidth: 80, isResizable: true },
+                      { key: 'QueuedBy', name: 'Queued By', fieldName: 'QueuedBy', minWidth: 80, maxWidth: 120, isResizable: true },
+                      { key: 'QueuedDate', name: 'Queued', fieldName: 'QueuedDate', minWidth: 120, maxWidth: 160, isResizable: true, onRender: (item: any) => <span style={{ fontSize: 12, color: '#64748b' }}>{item.QueuedDate ? new Date(item.QueuedDate).toLocaleString() : '—'}</span> },
+                    ]}
+                    styles={{ root: { fontSize: 13 } }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Notification Queue Table */}
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: '#1e293b', marginBottom: 10 }}>
+                Email Queue (PM_NotificationQueue)
+                <span style={{ color: '#94a3b8', fontSize: 12, fontWeight: 400, marginLeft: 8 }}>
+                  {queueSummary.stats.sentEmails} sent · {queueSummary.stats.pendingEmails} pending · {queueSummary.stats.failedEmails} failed
+                </span>
+              </div>
+              <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, overflow: 'hidden' }}>
+                <DetailsList
+                  items={queueSummary.notificationItems}
+                  selectionMode={SelectionMode.none}
+                  layoutMode={DetailsListLayoutMode.justified}
+                  constrainMode={ConstrainMode.unconstrained}
+                  compact={true}
+                  columns={[
+                    { key: 'To', name: 'Recipient', fieldName: 'To', minWidth: 150, maxWidth: 220, isResizable: true, onRender: (item: any) => <span style={{ fontSize: 12 }}>{item.To || item.RecipientEmail || '—'}</span> },
+                    { key: 'Subject', name: 'Subject', fieldName: 'Subject', minWidth: 180, maxWidth: 300, isResizable: true, onRender: (item: any) => <span style={{ fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>{item.Subject || item.Title || '—'}</span> },
+                    { key: 'NotificationType', name: 'Type', fieldName: 'NotificationType', minWidth: 100, maxWidth: 130, isResizable: true, onRender: (item: any) => <span style={{ fontSize: 10, fontFamily: "'Cascadia Code', monospace", background: '#f1f5f9', padding: '1px 6px', borderRadius: 3 }}>{item.NotificationType || '—'}</span> },
+                    { key: 'QueueStatus', name: 'Status', fieldName: 'QueueStatus', minWidth: 70, maxWidth: 90, isResizable: true, onRender: (item: any) => { const s = item.QueueStatus || item.Status || 'Pending'; const c = STATUS_COLORS[s] || STATUS_COLORS.Pending; return <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', padding: '2px 8px', borderRadius: 4, background: c.bg, color: c.color }}>{s}</span>; } },
+                    { key: 'Priority', name: 'Priority', fieldName: 'Priority', minWidth: 60, maxWidth: 80, isResizable: true },
+                    { key: 'Created', name: 'Queued', fieldName: 'Created', minWidth: 120, maxWidth: 160, isResizable: true, onRender: (item: any) => <span style={{ fontSize: 12, color: '#64748b' }}>{item.Created ? new Date(item.Created).toLocaleString() : '—'}</span> },
+                    { key: 'LastError', name: 'Error', fieldName: 'LastError', minWidth: 100, maxWidth: 200, isResizable: true, onRender: (item: any) => item.LastError ? <span style={{ fontSize: 11, color: '#dc2626' }}>{item.LastError.substring(0, 60)}</span> : <span style={{ color: '#cbd5e1' }}>—</span> },
+                  ]}
+                  styles={{ root: { fontSize: 13 } }}
+                />
+              </div>
+              <div style={{ fontSize: 11, color: '#94a3b8', textAlign: 'right', marginTop: 6 }}>
+                Last loaded: {queueSummary.loadedAt ? new Date(queueSummary.loadedAt).toLocaleTimeString() : '—'}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
     );
   }
 }

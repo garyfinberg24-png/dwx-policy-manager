@@ -160,8 +160,10 @@ export class PolicyNotificationService {
       }
 
       // Wrap body in email shell using centralized EmailTemplateBuilder
+      // mode=review for reviewer emails, no mode for ack emails (default = ack flow)
       const isReviewEvent = ['review-required', 'approval-request', 'review-withdrawn'].includes(opts.eventName);
-      const policyUrl = opts.mergeData.PolicyUrl || `${this.siteUrl}/SitePages/PolicyDetails.aspx?policyId=${opts.policyId || 0}${isReviewEvent ? '&mode=review' : ''}`;
+      const modeParam = isReviewEvent ? '&mode=review' : '';
+      const policyUrl = opts.mergeData.PolicyUrl || `${this.siteUrl}/SitePages/PolicyDetails.aspx?policyId=${opts.policyId || 0}${modeParam}`;
       // Map eventName to EmailNotificationType; default to 'policy-published' if no match
       const typeMap: Record<string, string> = {
         'review-required': 'review-required', 'approval-request': 'approval-request',

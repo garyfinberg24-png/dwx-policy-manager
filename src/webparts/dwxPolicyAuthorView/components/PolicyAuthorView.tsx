@@ -1575,153 +1575,59 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
   }
 
   private async handlePipelinePublish(policyId: number, title: string): Promise<void> {
-    const confirmed = await this.dialogManager.showConfirm(`Publish "${title}"? This will make it available to the target audience and notify relevant users.`, { title: 'Publish Policy', confirmText: 'Publish', cancelText: 'Cancel' });
+    const confirmed = await this.dialogManager.showConfirm(
+      `Publish "${title}"? This will make it available to the target audience, create acknowledgement records, and send notification emails.`,
+      { title: 'Publish Policy', confirmText: 'Publish', cancelText: 'Cancel' }
+    );
     if (!confirmed) return;
+
     try {
-      await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES)
-        .items.getById(policyId).update({ PolicyStatus: 'Published', IsActive: true });
+      // Read policy audience settings to build publish request
+      const policyItem = await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES)
+        .items.getById(policyId)
+        .select('DistributionScope', 'TargetDepartments', 'TargetRoles', 'TargetLocations',
+                'ReadTimeframeDays', 'ReviewFrequency')();
 
-      // Audit log
-      try {
-        await this.props.sp.web.lists.getByTitle('PM_PolicyAuditLog').items.add({
-          Title: `Published - Policy ${policyId}`,
-          PolicyId: policyId,
-          EntityType: 'Policy',
-          EntityId: policyId,
-          AuditAction: 'Published',
-          ActionDescription: `Policy "${title}" published`,
-          PerformedByEmail: this.props.context?.pageContext?.user?.email || '',
-          ActionDate: new Date().toISOString()
-        });
-      } catch { /* best-effort */ }
+      const scope = policyItem.DistributionScope || 'All Employees';
+      const departments = (policyItem.TargetDepartments || '').split(/[;,]/).map((d: string) => d.trim()).filter(Boolean);
+      const roles = (policyItem.TargetRoles || '').split(/[;,]/).map((r: string) => r.trim()).filter(Boolean);
+      const locations = (policyItem.TargetLocations || '').split(/[;,]/).map((l: string) => l.trim()).filter(Boolean);
+      const readDays = policyItem.ReadTimeframeDays || 30;
+      const dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + readDays);
 
-      // Read policy details for audience + reminder scheduling
-      const siteUrl = this.props.context?.pageContext?.web?.absoluteUrl || '/sites/PolicyManager';
-      const policyUrl = `${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policyId}`;
-      const publisherName = this.props.context?.pageContext?.user?.displayName || 'An author';
-      let policyItem: any = null;
+      // Map UI scope values to DistributionScope enum
+      const scopeMap: Record<string, string> = {
+        'All Employees': 'All Employees', 'AllEmployees': 'All Employees',
+        'Targeted': 'Department', 'Targeted (Departments)': 'Department', 'Department': 'Department',
+        'Role-Based': 'Role', 'Role-Based (Audiences)': 'Role', 'Role': 'Role',
+        'Security Group': 'Custom', 'SecurityGroup': 'Custom', 'Custom': 'Custom',
+      };
+      const distributionScope = scopeMap[scope] || 'All Employees';
 
-      // Resolve audience and create acknowledgement records + notifications
-      try {
-        // Read policy audience settings — try both old and new field names
-        policyItem = await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES)
-          .items.getById(policyId)
-          .select('DistributionScope', 'TargetDepartments', 'TargetRoles', 'TargetLocations',
-                  'Visibility', 'Departments', 'IsMandatory', 'ReadTimeframe', 'ReadTimeframeDays',
-                  'RequiresAcknowledgement', 'PolicyCategory', 'ComplianceRisk', 'PolicyNumber',
-                  'AudienceId')();
+      // Delegate to PolicyService.publishPolicy() — THE SINGLE AUTHORITATIVE PUBLISH FLOW
+      // This handles: status change, version creation, document conversion, audience resolution,
+      // distribution queue (server-side), acknowledgement creation, email notifications,
+      // audit logging, DWx cross-app notification, reminder scheduling, and source request completion.
+      const { PolicyService } = await import('../../../services/PolicyService');
+      const siteUrl = this.props.context?.pageContext?.web?.absoluteUrl || 'https://mf7m.sharepoint.com/sites/PolicyManager';
+      const policyService = new PolicyService(this.props.sp, siteUrl);
+      await policyService.initialize();
 
-        const visibility = policyItem.DistributionScope || policyItem.Visibility || 'AllEmployees';
-        const requiresAck = policyItem.RequiresAcknowledgement !== false;
-        const departments = (policyItem.TargetDepartments || policyItem.Departments || '').split(/[;,]/).map((d: string) => d.trim()).filter(Boolean);
-        const targetRoles = (policyItem.TargetRoles || '').split(/[;,]/).map((r: string) => r.trim()).filter(Boolean);
-        const audienceId = policyItem.AudienceId || null;
-        const readDays = policyItem.ReadTimeframeDays || 30;
-
-        // Resolve target users via AudienceRuleService
-        let targetUsers: Array<{ Id: number; Email: string; Title: string }> = [];
-        try {
-          const { AudienceRuleService } = await import('../../../services/AudienceRuleService');
-          const audienceSvc = new AudienceRuleService(this.props.sp);
-
-          if (audienceId) {
-            // Named audience from PM_Audiences — use its saved rules
-            const resolved = await audienceSvc.resolveAudienceById(audienceId);
-            targetUsers = resolved.map(u => ({ Id: u.Id, Email: u.Email, Title: u.Title }));
-          } else if (visibility === 'AllEmployees' || visibility === 'All Employees') {
-            const users = await audienceSvc.evaluateRules([{ field: 'IsActive', operator: 'equals', value: 'true' }], 'AND');
-            targetUsers = users.map(u => ({ Id: u.Id, Email: u.Email, Title: u.Title }));
-          } else if ((visibility === 'Department' || visibility === 'Department Only' || visibility === 'Targeted') && departments.length > 0) {
-            const rules = departments.map((dept: string) => ({ field: 'Department', operator: 'equals', value: dept }));
-            const users = await audienceSvc.evaluateRules(rules, 'OR');
-            targetUsers = users.map(u => ({ Id: u.Id, Email: u.Email, Title: u.Title }));
-          } else if ((visibility === 'Role-Based' || visibility === 'Role') && targetRoles.length > 0) {
-            const rules = targetRoles.map((role: string) => ({ field: 'PMRole', operator: 'contains', value: role }));
-            const users = await audienceSvc.evaluateRules(rules, 'OR');
-            targetUsers = users.map(u => ({ Id: u.Id, Email: u.Email, Title: u.Title }));
-          } else if (visibility === 'SecurityGroup' || visibility === 'Security Group') {
-            // SecurityGroup — fall back to all active users (proper SG resolution requires Graph API)
-            const users = await audienceSvc.evaluateRules([{ field: 'IsActive', operator: 'equals', value: 'true' }], 'AND');
-            targetUsers = users.map(u => ({ Id: u.Id, Email: u.Email, Title: u.Title }));
-          } else {
-            // Default — all active users
-            const users = await audienceSvc.evaluateRules([{ field: 'IsActive', operator: 'equals', value: 'true' }], 'AND');
-            targetUsers = users.map(u => ({ Id: u.Id, Email: u.Email, Title: u.Title }));
-          }
-        } catch (audienceErr) {
-          console.warn('[PolicyAuthorView] Audience resolution failed:', audienceErr);
-        }
-
-        // Create acknowledgement records for target users (if required)
-        if (requiresAck && targetUsers.length > 0) {
-          const dueDate = new Date();
-          dueDate.setDate(dueDate.getDate() + readDays);
-          let ackCreated = 0;
-          for (const user of targetUsers) {
-            try {
-              // Check if ack already exists (avoid duplicates)
-              const existing = await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_ACKNOWLEDGEMENTS)
-                .items.filter(`PolicyId eq ${policyId} and AckUserId eq ${user.Id}`).select('Id').top(1)();
-              if (existing.length > 0) continue;
-
-              await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_ACKNOWLEDGEMENTS).items.add({
-                Title: `Ack - ${title}`,
-                PolicyId: policyId,
-                PolicyName: title,
-                PolicyNumber: policyItem.PolicyNumber || '',
-                PolicyCategory: policyItem.PolicyCategory || '',
-                AckUserId: user.Id,
-                UserEmail: user.Email,
-                AckStatus: 'Pending',
-                AssignedDate: new Date().toISOString(),
-                DueDate: dueDate.toISOString(),
-                IsMandatory: policyItem.IsMandatory || false,
-                ReadTimeframe: policyItem.ReadTimeframe || 'Week 1'
-              });
-              ackCreated++;
-            } catch { /* per-user — continue on failure */ }
-          }
-          console.log(`[PolicyAuthorView] Created ${ackCreated}/${targetUsers.length} acknowledgement records for policy ${policyId}`);
-        }
-
-        // Queue publish notification emails (first 50 users to avoid overloading)
-        const emailRecipients = targetUsers.slice(0, 50);
-        const policyCategory = policyItem.PolicyCategory || '';
-        const riskLevel = policyItem.ComplianceRisk || 'Medium';
-        for (const user of emailRecipients) {
-          try {
-            const userEmailHtml = EmailTemplateBuilder.policyPublished({
-              recipientName: user.Title || 'Colleague',
-              policyTitle: title,
-              policyNumber: '',
-              publishedBy: publisherName,
-              category: policyCategory,
-              department: departments.join(', ') || 'All Departments',
-              riskLevel: riskLevel,
-              effectiveDate: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }),
-              ctaUrl: policyUrl
-            });
-            await this.queueEmail({
-              Title: `New Policy: ${title}`,
-              RecipientEmail: user.Email,
-              RecipientName: user.Title || '',
-              SenderName: publisherName,
-              SenderEmail: this.props.context?.pageContext?.user?.email || '',
-              PolicyId: policyId,
-              PolicyTitle: title,
-              NotificationType: 'policy-published',
-              Channel: 'Email',
-              Message: userEmailHtml,
-              QueueStatus: 'Pending',
-              Priority: requiresAck ? 'High' : 'Normal'
-            });
-          } catch { /* per-recipient — continue on failure */ }
-        }
-      } catch { /* audience/notification best-effort */ }
+      await policyService.publishPolicy({
+        policyId,
+        effectiveDate: new Date(),
+        distributionScope: distributionScope as any,
+        targetDepartments: departments.length > 0 ? departments : undefined,
+        targetRoles: roles.length > 0 ? roles : undefined,
+        targetLocations: locations.length > 0 ? locations : undefined,
+        dueDate,
+        sendNotifications: true,
+      });
 
       // Schedule revision/expiry reminders if applicable
       try {
-        const reviewFrequency = policyItem?.ReviewFrequency || '';
+        const reviewFrequency = policyItem.ReviewFrequency || '';
         const authorEmail = this.props.context?.pageContext?.user?.email || '';
         if (reviewFrequency && reviewFrequency !== 'None' && authorEmail) {
           const { ReminderScheduleService } = await import('../../../services/ReminderScheduleService');
@@ -1734,7 +1640,8 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
       void this.dialogManager.showAlert(`"${title}" has been published successfully!`, { variant: 'success', title: 'Policy Published' });
     } catch (err) {
       console.error('Publish failed:', err);
-      void this.dialogManager.showAlert('Failed to publish policy. Please try again.', { variant: 'error' });
+      const errMsg = err instanceof Error ? err.message : String(err);
+      void this.dialogManager.showAlert(`Failed to publish policy: ${errMsg}`, { variant: 'error' });
     }
   }
 

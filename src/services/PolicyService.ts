@@ -601,12 +601,19 @@ export class PolicyService {
    */
   public async submitForReview(policyId: number, reviewerIds: number[]): Promise<IPolicy> {
     try {
+      // Pre-flight: verify policy exists and is in Draft status
+      const preCheck = await this.getPolicyById(policyId);
+      if (!preCheck) throw new Error(`Policy ${policyId} not found.`);
+      if (preCheck.PolicyStatus !== 'Draft' && preCheck.PolicyStatus !== PolicyStatus.Draft) {
+        throw new Error(`Policy is in "${preCheck.PolicyStatus}" status — must be "Draft" to submit for review.`);
+      }
+
       await this.sp.web.lists.getByTitle(this.POLICIES_LIST)
         .items.getById(policyId).update({
           PolicyStatus: PolicyStatus.InReview
         });
 
-      // Fetch policy for audit + notifications
+      // Fetch updated policy for audit + notifications
       const policy = await this.getPolicyById(policyId);
       const policyTitle = policy?.PolicyName || policy?.Title || `Policy ${policyId}`;
 
@@ -879,18 +886,50 @@ export class PolicyService {
    * future use (e.g., scheduled publishing, API-triggered publishing).
    */
   public async publishPolicy(request: IPolicyPublishRequest): Promise<IPolicyDistribution> {
+    const pId = request.policyId;
+    const steps: string[] = []; // Transaction log for debugging
     try {
-      const policy = await this.getPolicyById(request.policyId);
+      // ══════════════════════════════════════════════════════════════
+      // PRE-FLIGHT VALIDATION — fail fast before any writes
+      // ══════════════════════════════════════════════════════════════
 
-      // Update policy status
-      await this.updatePolicy(request.policyId, {
+      // Force fresh user resolution (never rely on stale cache for publish)
+      try {
+        const freshUser = await this.sp.web.currentUser();
+        this.currentUserId = freshUser.Id;
+        this.currentUserEmail = freshUser.Email;
+        this.currentUserName = freshUser.Title;
+        steps.push(`User resolved: ${freshUser.Email} (ID: ${freshUser.Id})`);
+      } catch (userErr) {
+        throw new Error(`Cannot resolve current user — publish aborted. ${(userErr as Error)?.message || ''}`);
+      }
+
+      const policy = await this.getPolicyById(pId);
+      if (!policy) throw new Error(`Policy ${pId} not found — cannot publish.`);
+      steps.push(`Policy loaded: "${policy.PolicyName}" (${policy.PolicyNumber})`);
+
+      // Status guard — only Approved policies can be published
+      if (policy.PolicyStatus !== 'Approved' && policy.PolicyStatus !== PolicyStatus.Approved) {
+        throw new Error(`Policy is in "${policy.PolicyStatus}" status — must be "Approved" to publish.`);
+      }
+      steps.push(`Status validated: ${policy.PolicyStatus}`);
+
+      // ══════════════════════════════════════════════════════════════
+      // STEP 1: Update policy status → Published
+      // ══════════════════════════════════════════════════════════════
+
+      await this.updatePolicy(pId, {
         PolicyStatus: PolicyStatus.Published,
         IsActive: true,
         PublishedDate: new Date(),
         EffectiveDate: request.effectiveDate || new Date()
       });
+      steps.push('Status → Published');
 
-      // Convert linked document (.docx, .pptx) to HTML for clean reader rendering
+      // ══════════════════════════════════════════════════════════════
+      // STEP 2: Document conversion (non-blocking)
+      // ══════════════════════════════════════════════════════════════
+
       if (policy.DocumentURL) {
         try {
           const { DocumentConversionService } = await import('./DocumentConversionService');
@@ -903,16 +942,26 @@ export class PolicyService {
               logger.info('PolicyService', `Document converted to HTML for policy ${policy.PolicyName}`);
             }
           }
+          steps.push('Document converted to HTML');
         } catch (convErr) {
+          steps.push('Document conversion skipped (non-blocking)');
           logger.warn('PolicyService', 'Document conversion skipped (non-blocking):', convErr);
         }
+      } else {
+        steps.push('No document to convert');
       }
 
-      // Create new version
-      await this.createVersion(request.policyId, VersionType.Major, 'Policy published');
+      // ══════════════════════════════════════════════════════════════
+      // STEP 3: Create version record + bump version number
+      // ══════════════════════════════════════════════════════════════
+
+      await this.createVersion(pId, VersionType.Major, 'Policy published');
+      steps.push('Version record created');
 
       // Bump to next major version number on the policy record
-      const nextMajor = (policy.MajorVersion || 1) + 1;
+      // First publish: v0.1 → v1.0. Subsequent: v1.0 → v2.0
+      const currentMajor = policy.MajorVersion || 0;
+      const nextMajor = currentMajor < 1 ? 1 : currentMajor + 1;
       await this.sp.web.lists
         .getByTitle(this.POLICIES_LIST)
         .items.getById(request.policyId)
@@ -923,7 +972,12 @@ export class PolicyService {
           VersionType: 'Major'
         });
 
-      // Get target users
+      steps.push(`Version bumped to v${nextMajor}.0`);
+
+      // ══════════════════════════════════════════════════════════════
+      // STEP 4: Resolve target users
+      // ══════════════════════════════════════════════════════════════
+
       const targetUsers = await this.resolveTargetUsers(
         request.distributionScope,
         request.targetUserIds,
@@ -932,7 +986,15 @@ export class PolicyService {
         request.targetRoles
       );
 
-      // Create distribution record
+      if (targetUsers.length === 0) {
+        logger.warn('PolicyService', `publishPolicy: zero target users resolved for scope "${request.distributionScope}" — distribution will have no recipients`);
+      }
+      steps.push(`Target users resolved: ${targetUsers.length} (scope: ${request.distributionScope})`);
+
+      // ══════════════════════════════════════════════════════════════
+      // STEP 5: Create distribution record
+      // ══════════════════════════════════════════════════════════════
+
       const distribution = await this.createDistribution({
         PolicyId: request.policyId,
         DistributionName: `${policy.PolicyName} - ${new Date().toLocaleDateString()}`,
@@ -943,9 +1005,12 @@ export class PolicyService {
         IsActive: true
       });
 
-      // Queue bulk processing server-side (survives browser close)
-      // Instead of creating 2000+ acknowledgements + notifications inline,
-      // we write ONE queue record and let the Azure Function process it.
+      steps.push(`Distribution record created (ID: ${distribution?.Id || 'N/A'})`);
+
+      // ══════════════════════════════════════════════════════════════
+      // STEP 6: Queue distribution (server-side preferred, inline fallback)
+      // ══════════════════════════════════════════════════════════════
+
       try {
         const { DistributionQueueService } = await import('./DistributionQueueService');
         const queueService = new DistributionQueueService(this.sp);
@@ -960,9 +1025,11 @@ export class PolicyService {
           queuedBy: this.currentUserEmail ? this.currentUserEmail.split('@')[0] : 'System',
           queuedByEmail: this.currentUserEmail || ''
         });
+        steps.push(`Distribution queued server-side (job: ${jobId}, ${targetUsers.length} users)`);
         logger.info('PolicyService', `Distribution queued as job ${jobId}: ${policy.PolicyName} → ${targetUsers.length} users (server-side processing)`);
       } catch (queueError) {
-        // Fallback: if queue list doesn't exist, process inline (legacy behaviour)
+        // Fallback: if queue list doesn't exist, process inline
+        steps.push('Distribution queue unavailable — falling back to inline processing');
         logger.warn('PolicyService', 'PM_DistributionQueue not available, falling back to inline processing:', queueError);
         await this.createAcknowledgements(
           request.policyId,
@@ -970,17 +1037,23 @@ export class PolicyService {
           targetUsers,
           request.dueDate
         );
+        steps.push(`Inline: ${targetUsers.length} acknowledgements created`);
         if (request.sendNotifications && this.notificationService) {
           await this.notificationService.sendNewPolicyNotification(policy, targetUsers);
+          steps.push(`Inline: notifications sent to ${targetUsers.length} users`);
         }
       }
 
+      // ══════════════════════════════════════════════════════════════
+      // STEP 7: Audit log
+      // ══════════════════════════════════════════════════════════════
+
       await this.logAudit({
         EntityType: 'Policy',
-        EntityId: request.policyId,
-        PolicyId: request.policyId,
+        EntityId: pId,
+        PolicyId: pId,
         AuditAction: 'Published',
-        ActionDescription: `Policy distribution queued for ${targetUsers.length} users`,
+        ActionDescription: `Policy published → ${targetUsers.length} users. Steps: ${steps.join(' → ')}`,
         PerformedById: this.currentUserId,
         PerformedByEmail: this.currentUserEmail,
         ActionDate: new Date(),
@@ -1047,10 +1120,16 @@ export class PolicyService {
         }
       }
 
+      steps.push('PUBLISH COMPLETE');
+      logger.info('PolicyService', `publishPolicy SUCCESS for ${pId}: ${steps.join(' → ')}`);
       return distribution;
     } catch (error) {
-      logger.error('PolicyService', 'Failed to publish policy:', error);
-      throw error;
+      const lastStep = steps.length > 0 ? steps[steps.length - 1] : 'pre-flight';
+      logger.error('PolicyService', `publishPolicy FAILED at step "${lastStep}" for policy ${pId}:`, error);
+      logger.error('PolicyService', `Transaction log: ${steps.join(' → ')}`);
+      // Re-throw with context so the UI can show a meaningful error
+      const errMsg = (error as Error)?.message || String(error);
+      throw new Error(`Publish failed at "${lastStep}": ${errMsg}`);
     }
   }
 

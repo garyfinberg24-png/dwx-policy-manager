@@ -1768,103 +1768,87 @@ export class PolicyService {
   /**
    * Resolve target users based on distribution scope
    */
+  /**
+   * Resolve target users for distribution.
+   * Always queries PM_UserProfiles and resolves to SP user IDs via ensureUser.
+   * Returns SP user IDs (not list item IDs) for use with siteUsers.getById().
+   */
   private async resolveTargetUsers(
-    scope: DistributionScope,
+    scope: DistributionScope | string,
     userIds?: number[],
     departments?: string[],
     locations?: string[],
     roles?: string[]
   ): Promise<number[]> {
     try {
-      let targetUsers: number[] = [];
+      // Normalise scope string — handle both enum values and UI strings
+      const scopeNorm = String(scope || '').toLowerCase().replace(/[^a-z]/g, '');
 
-      switch (scope) {
-        case DistributionScope.AllEmployees:
-          // Get all site users
-          const allUsers = await this.sp.web.siteUsers();
-          targetUsers = allUsers.map(u => u.Id);
-          break;
-
-        case DistributionScope.Custom:
-          targetUsers = userIds || [];
-          break;
-
-        case DistributionScope.Department:
-          // Filter users by department from PM_Employees list
-          if (departments && departments.length > 0) {
-            try {
-              const deptFilter = departments.map(d => `Department eq '${d}'`).join(' or ');
-              const deptEmployees = await this.sp.web.lists
-                .getByTitle('PM_UserProfiles')
-                .items
-                .filter(deptFilter)
-                .select('Id', 'Email')();
-              targetUsers = deptEmployees.map((e: Record<string, unknown>) => e.Id as number).filter(Boolean);
-            } catch {
-              targetUsers = userIds || [];
-            }
-          } else {
-            targetUsers = userIds || [];
-          }
-          break;
-
-        case DistributionScope.Location:
-          // Filter users by location from PM_Employees list
-          if (locations && locations.length > 0) {
-            try {
-              const locFilter = locations.map(l => `Location eq '${l}'`).join(' or ');
-              const locEmployees = await this.sp.web.lists
-                .getByTitle('PM_UserProfiles')
-                .items
-                .filter(locFilter)
-                .select('Id', 'Email')();
-              targetUsers = locEmployees.map((e: Record<string, unknown>) => e.Id as number).filter(Boolean);
-            } catch {
-              targetUsers = userIds || [];
-            }
-          } else {
-            targetUsers = userIds || [];
-          }
-          break;
-
-        case DistributionScope.Role:
-          // Filter users by role/job title from PM_Employees list
-          if (roles && roles.length > 0) {
-            try {
-              const roleFilter = roles.map(r => `JobTitle eq '${r}'`).join(' or ');
-              const roleEmployees = await this.sp.web.lists
-                .getByTitle('PM_UserProfiles')
-                .items
-                .filter(roleFilter)
-                .select('Id', 'Email')();
-              targetUsers = roleEmployees.map((e: Record<string, unknown>) => e.Id as number).filter(Boolean);
-            } catch {
-              targetUsers = userIds || [];
-            }
-          } else {
-            targetUsers = userIds || [];
-          }
-          break;
-
-        case DistributionScope.NewHiresOnly:
-          // Get new hires from PM_Employees (hired in last 90 days)
-          try {
-            const ninetyDaysAgo = new Date();
-            ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-            const newHires = await this.sp.web.lists
-              .getByTitle('PM_UserProfiles')
-              .items
-              .filter(`StartDate ge datetime'${ninetyDaysAgo.toISOString()}'`)
-              .select('Id', 'Email')();
-            targetUsers = newHires.map((e: Record<string, unknown>) => e.Id as number).filter(Boolean);
-          } catch {
-            // Fall back to provided userIds if PM_Employees doesn't exist
-            targetUsers = userIds || [];
-          }
-          break;
+      // Query PM_UserProfiles for matching users, then resolve to SP user IDs
+      let filter = '';
+      if (scopeNorm === 'allemployees' || scopeNorm === '' || scopeNorm === 'all') {
+        // All active users
+        filter = "EmployeeStatus eq 'Active'";
+      } else if (scopeNorm === 'department' && departments && departments.length > 0) {
+        filter = departments.map(d => `Department eq '${d.replace(/'/g, "''")}'`).join(' or ');
+      } else if (scopeNorm === 'location' && locations && locations.length > 0) {
+        filter = locations.map(l => `Location eq '${l.replace(/'/g, "''")}'`).join(' or ');
+      } else if (scopeNorm === 'role' && roles && roles.length > 0) {
+        filter = roles.map(r => `JobTitle eq '${r.replace(/'/g, "''")}'`).join(' or ');
+      } else if (scopeNorm === 'newhiresonly') {
+        const ninetyDaysAgo = new Date();
+        ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+        filter = `StartDate ge datetime'${ninetyDaysAgo.toISOString()}'`;
+      } else if (scopeNorm === 'custom') {
+        return userIds || [];
+      } else {
+        // Unknown scope — default to all active users
+        logger.warn('PolicyService', `resolveTargetUsers: unknown scope "${scope}", defaulting to all active users`);
+        filter = "EmployeeStatus eq 'Active'";
       }
 
-      return targetUsers;
+      // Query PM_UserProfiles for Email addresses
+      let profileItems: Array<{ Email?: string }> = [];
+      try {
+        profileItems = await this.sp.web.lists
+          .getByTitle('PM_UserProfiles')
+          .items
+          .filter(filter)
+          .select('Email')
+          .top(2000)();
+      } catch (profileErr) {
+        // PM_UserProfiles may not have the filter column — fall back to all
+        logger.warn('PolicyService', `resolveTargetUsers: filter "${filter}" failed, falling back to all users:`, profileErr);
+        try {
+          profileItems = await this.sp.web.lists
+            .getByTitle('PM_UserProfiles')
+            .items
+            .select('Email')
+            .top(2000)();
+        } catch {
+          logger.error('PolicyService', 'resolveTargetUsers: PM_UserProfiles not accessible');
+          return userIds || [];
+        }
+      }
+
+      // Resolve emails to SP user IDs via ensureUser
+      const emails = profileItems.map(p => p.Email).filter(Boolean) as string[];
+      logger.info('PolicyService', `resolveTargetUsers: ${emails.length} emails from PM_UserProfiles (scope: ${scope})`);
+
+      const spUserIds: number[] = [];
+      for (const email of emails) {
+        try {
+          const ensured = await this.sp.web.ensureUser(email);
+          if (ensured?.data?.Id) {
+            spUserIds.push(ensured.data.Id);
+          }
+        } catch {
+          // User may not exist in SP — skip silently
+        }
+      }
+
+      logger.info('PolicyService', `resolveTargetUsers: ${spUserIds.length} SP user IDs resolved from ${emails.length} emails`);
+      return spUserIds;
     } catch (error) {
       logger.error('PolicyService', 'Failed to resolve target users:', error);
       return [];

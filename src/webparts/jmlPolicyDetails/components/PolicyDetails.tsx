@@ -2879,17 +2879,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
         void this.dialogManager.showAlert('Comments are required for Request Changes and Reject decisions.', { variant: 'warning' });
         return;
       }
-      // Warn if approving without completing at least 4 of 6 checklist items
-      if (reviewDecision === 'approve') {
-        const checkedCount = reviewChecklist.filter(Boolean).length;
-        if (checkedCount < 4) {
-          const proceed = await this.dialogManager.showConfirm(
-            `You have only completed ${checkedCount} of 6 review checklist items. It is recommended to complete at least 4 items before approving. Do you want to proceed anyway?`,
-            { title: 'Incomplete Review Checklist', confirmLabel: 'Proceed', cancelLabel: 'Go Back' }
-          );
-          if (!proceed) return;
-        }
-      }
+      // Checklist is purely informational — no validation required
       this.setState({ reviewSubmitting: true } as any);
       try {
         const currentUserId = this.props.context?.pageContext?.legacyPageContext?.userId || 0;
@@ -2954,25 +2944,9 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
             }
           } catch { /* best-effort */ }
         } else if (allApproved) {
-          // Check if there are final approvers still pending
-          const hasApprovers = updatedReviewers.some((r: any) => r.ReviewerType === 'Final Approver' || r.ReviewerType === 'Executive Approver');
-          const allApproversApproved = updatedReviewers
-            .filter((r: any) => r.ReviewerType === 'Final Approver' || r.ReviewerType === 'Executive Approver')
-            .every((r: any) => r.ReviewStatus === 'Approved');
-
-          if (hasApprovers && allApproversApproved) {
-            // All reviewers AND approvers approved → Approved
-            await this.props.sp.web.lists.getByTitle('PM_Policies')
-              .items.getById(policy!.Id).update({ PolicyStatus: 'Approved' });
-          } else if (hasApprovers && !allApproversApproved) {
-            // Reviewers approved but approvers still pending → Pending Approval
-            await this.props.sp.web.lists.getByTitle('PM_Policies')
-              .items.getById(policy!.Id).update({ PolicyStatus: 'Pending Approval' });
-          } else {
-            // No separate approvers — all reviewers approved → Approved
-            await this.props.sp.web.lists.getByTitle('PM_Policies')
-              .items.getById(policy!.Id).update({ PolicyStatus: 'Approved' });
-          }
+          // All reviewers approved → move to Approved (ready for publish)
+          await this.props.sp.web.lists.getByTitle('PM_Policies')
+            .items.getById(policy!.Id).update({ PolicyStatus: 'Approved', ApprovedDate: new Date().toISOString() });
         }
 
         // Audit log

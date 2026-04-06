@@ -1595,14 +1595,16 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
         });
       } catch { /* best-effort */ }
 
+      // Read policy details for audience + reminder scheduling
+      const siteUrl = this.props.context?.pageContext?.web?.absoluteUrl || '/sites/PolicyManager';
+      const policyUrl = `${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policyId}`;
+      const publisherName = this.props.context?.pageContext?.user?.displayName || 'An author';
+      let policyItem: any = null;
+
       // Resolve audience and create acknowledgement records + notifications
       try {
-        const siteUrl = this.props.context?.pageContext?.web?.absoluteUrl || '/sites/PolicyManager';
-        const policyUrl = `${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policyId}`;
-        const publisherName = this.props.context?.pageContext?.user?.displayName || 'An author';
-
         // Read policy audience settings — try both old and new field names
-        const policyItem = await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES)
+        policyItem = await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES)
           .items.getById(policyId)
           .select('DistributionScope', 'TargetDepartments', 'TargetRoles', 'TargetLocations',
                   'Visibility', 'Departments', 'IsMandatory', 'ReadTimeframe', 'ReadTimeframeDays',
@@ -1719,7 +1721,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
 
       // Schedule revision/expiry reminders if applicable
       try {
-        const reviewFrequency = policyItem.ReviewFrequency || '';
+        const reviewFrequency = policyItem?.ReviewFrequency || '';
         const authorEmail = this.props.context?.pageContext?.user?.email || '';
         if (reviewFrequency && reviewFrequency !== 'None' && authorEmail) {
           const { ReminderScheduleService } = await import('../../../services/ReminderScheduleService');

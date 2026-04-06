@@ -1607,7 +1607,7 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
     };
 
     return (
-      <div style={{ marginTop: 32 }}>
+      <div style={{ padding: '0 40px', maxWidth: 1400, margin: '0 auto', marginTop: 32 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <div style={{ borderLeft: '3px solid #7c3aed', paddingLeft: 12, fontSize: 16, fontWeight: 600, color: '#1e293b' }}>
             Distribution & Email Queue

@@ -1617,7 +1617,9 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
           errors.push('Policy content is required, or link a document');
         }
         break;
-      case 3: // Review & Submit
+      case 3: // Reviewers & Approvers — optional, no validation
+        break;
+      case 4: // Review & Submit
         break;
     }
     return errors;
@@ -3471,12 +3473,13 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     const isFastTrack = (this.state as any)._wizardMode === 'fast-track';
 
     if (isFastTrack) {
-      // Fast Track: 0=Template, 1=Details, 2=Content, 3=Review
+      // Fast Track: 0=Template, 1=Details, 2=Content, 3=Reviewers, 4=Review
       switch (currentStep) {
         case 0: return this.renderFastTrackTemplateStep();
         case 1: return this.renderFastTrackDetailsStep();
         case 2: return this.renderStep2_Content();
-        case 3: return this.renderStep7_Review();
+        case 3: return this.renderStep6_Workflow();
+        case 4: return this.renderStep7_Review();
         default: return this.renderFastTrackTemplateStep();
       }
     }

@@ -96,6 +96,7 @@ export type WizardStep =
   | 'ft-template'
   | 'ft-details'
   | 'ft-content'
+  | 'ft-reviewers'
   | 'ft-review';
 
 /**
@@ -128,6 +129,7 @@ export const FAST_TRACK_STEPS: IWizardStepConfig[] = [
   { key: 'ft-template', title: 'Fast Track Template', description: 'Select a pre-configured template', icon: 'LightningBolt' },
   { key: 'ft-details', title: 'Policy Details', description: 'Name and review pre-filled settings', icon: 'Info' },
   { key: 'ft-content', title: 'Policy Content', description: 'Write or edit policy content', icon: 'Edit' },
+  { key: 'ft-reviewers', title: 'Reviewers & Approvers', description: 'Assign reviewers and approvers', icon: 'People' },
   { key: 'ft-review', title: 'Review & Submit', description: 'Final review before submission', icon: 'CheckMark' }
 ];
 

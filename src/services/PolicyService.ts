@@ -89,10 +89,11 @@ export class PolicyService {
     this.retentionService = new PolicyRetentionService(sp);
     // Initialize cache service
     this.cacheService = getPolicyCacheService();
-    // Initialize notification service
-    if (this.siteUrl) {
-      this.notificationService = new PolicyNotificationService(sp, this.siteUrl);
-    }
+    // Initialize notification service — always create, use siteUrl or derive from window
+    const resolvedSiteUrl = this.siteUrl
+      || (typeof window !== 'undefined' ? window.location.origin + '/sites/PolicyManager' : '');
+    this.siteUrl = resolvedSiteUrl || this.siteUrl;
+    this.notificationService = new PolicyNotificationService(sp, resolvedSiteUrl || 'https://mf7m.sharepoint.com/sites/PolicyManager');
   }
 
   /**
@@ -629,12 +630,12 @@ export class PolicyService {
         ComplianceRelevant: true
       });
 
-      // Send notifications to reviewers (non-blocking)
-      // Always attempt — even with empty reviewerIds, the notification service
-      // will still queue an in-app notification for the policy owner
+      // Send notifications to reviewers
+      logger.info('PolicyService', `submitForReview: notificationService=${!!this.notificationService}, reviewerIds=${JSON.stringify(reviewerIds)}, siteUrl=${this.siteUrl}`);
       if (this.notificationService) {
         try {
           if (reviewerIds.length > 0) {
+            logger.info('PolicyService', `submitForReview: sending review notifications to ${reviewerIds.length} reviewers`);
             await this.notificationService.sendSubmittedForReviewNotification(
               policy,
               reviewerIds,

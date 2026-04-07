@@ -280,7 +280,7 @@ async function callAzureOpenAI(systemPrompt: string, context: InvocationContext)
         { role: "user", content: "Generate the quiz questions now. Return ONLY the JSON array." }
       ],
       temperature: 0.7,
-      max_tokens: 8000,
+      max_completion_tokens: 8000,
       top_p: 0.95
     })
   });

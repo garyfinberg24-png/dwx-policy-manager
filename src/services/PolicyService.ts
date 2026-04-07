@@ -631,11 +631,17 @@ export class PolicyService {
       });
 
       // Send notifications to reviewers
-      logger.info('PolicyService', `submitForReview: notificationService=${!!this.notificationService}, reviewerIds=${JSON.stringify(reviewerIds)}, siteUrl=${this.siteUrl}`);
+      console.log('[PolicyService] submitForReview:', {
+        notificationService: !!this.notificationService,
+        reviewerCount: reviewerIds.length,
+        reviewerIds,
+        siteUrl: this.siteUrl,
+        currentUser: this.currentUserEmail
+      });
       if (this.notificationService) {
         try {
           if (reviewerIds.length > 0) {
-            logger.info('PolicyService', `submitForReview: sending review notifications to ${reviewerIds.length} reviewers`);
+            console.log(`[PolicyService] Sending review notifications to ${reviewerIds.length} reviewers...`);
             await this.notificationService.sendSubmittedForReviewNotification(
               policy,
               reviewerIds,

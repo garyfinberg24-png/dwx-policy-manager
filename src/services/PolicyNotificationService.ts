@@ -191,7 +191,8 @@ export class PolicyNotificationService {
         ctaUrl: policyUrl
       });
 
-      // Queue to PM_NotificationQueue (two-step write to guarantee QueueStatus)
+      // Queue to PM_NotificationQueue
+      console.log(`[PolicyNotificationService] Writing to PM_NotificationQueue: ${opts.eventName} → ${opts.recipientEmail}`);
       const qResult = await this.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
         Title: subject,
         RecipientEmail: opts.recipientEmail,
@@ -204,8 +205,11 @@ export class PolicyNotificationService {
         QueueStatus: 'Pending',
         Priority: opts.priority || 'Normal'
       });
-      try { const qId = qResult?.data?.Id; if (qId) await this.sp.web.lists.getByTitle('PM_NotificationQueue').items.getById(qId).update({ QueueStatus: 'Pending' }); } catch { /* */ }
+      const qId = qResult?.data?.Id || (qResult as any)?.Id;
+      console.log(`[PolicyNotificationService] ✓ Queued to PM_NotificationQueue (ID: ${qId}) for ${opts.recipientEmail}`);
+      try { if (qId) await this.sp.web.lists.getByTitle('PM_NotificationQueue').items.getById(qId).update({ QueueStatus: 'Pending' }); } catch { /* */ }
     } catch (err) {
+      console.error(`[PolicyNotificationService] ✗ FAILED to queue email for ${opts.eventName}:`, err);
       logger.warn('PolicyNotificationService', `Failed to queue templated email for ${opts.eventName}:`, err);
     }
   }
@@ -495,6 +499,9 @@ export class PolicyNotificationService {
     submitterName: string
   ): Promise<void> {
     const policyUrl = `${this.siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policy.Id}&mode=review`;
+    console.log('[PolicyNotificationService] sendSubmittedForReviewNotification:', {
+      policyId: policy.Id, policyName: policy.PolicyName, reviewerIds, submitterName, siteUrl: this.siteUrl, policyUrl
+    });
 
     // Send email + in-app notification to each reviewer
     let failCount = 0;
@@ -502,9 +509,11 @@ export class PolicyNotificationService {
       try {
         // Resolve reviewer email/name
         const reviewer = await this.sp.web.siteUsers.getById(reviewerId).select('Email', 'Title')();
-        if (!reviewer?.Email) continue;
+        console.log(`[PolicyNotificationService] Reviewer ${reviewerId}:`, reviewer?.Email, reviewer?.Title);
+        if (!reviewer?.Email) { console.warn(`[PolicyNotificationService] Reviewer ${reviewerId} has no email — skipping`); continue; }
 
         // Queue templated email via PM_NotificationQueue
+        console.log(`[PolicyNotificationService] Queuing review email for ${reviewer.Email}...`);
         await this.queueTemplatedEmail({
           eventName: 'review-required',
           recipientEmail: reviewer.Email,
@@ -523,6 +532,7 @@ export class PolicyNotificationService {
           fallbackSubject: `Review Required: ${policy.PolicyName}`,
           fallbackBody: `<p>${submitterName} has submitted <strong>${policy.PolicyName}</strong> for your review.</p><p><a href="${policyUrl}">Review Policy</a></p>`
         });
+        console.log(`[PolicyNotificationService] ✓ Email queued for ${reviewer.Email}`);
 
         // In-app notification
         try {

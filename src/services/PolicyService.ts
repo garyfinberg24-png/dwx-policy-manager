@@ -1033,11 +1033,11 @@ export class PolicyService {
           queuedByEmail: this.currentUserEmail || ''
         });
         steps.push(`Distribution queued server-side (job: ${jobId}, ${targetUsers.length} users)`);
-        logger.info('PolicyService', `Distribution queued as job ${jobId}: ${policy.PolicyName} → ${targetUsers.length} users (server-side processing)`);
+        console.log(`[PolicyService] Distribution queued as job ${jobId}: ${policy.PolicyName} → ${targetUsers.length} users`);
       } catch (queueError) {
-        // Fallback: if queue list doesn't exist, process inline
-        steps.push('Distribution queue unavailable — falling back to inline processing');
-        logger.warn('PolicyService', 'PM_DistributionQueue not available, falling back to inline processing:', queueError);
+        // Fallback: if queue list doesn't exist, create acks inline
+        steps.push('Distribution queue unavailable — creating acknowledgements inline');
+        console.log('[PolicyService] PM_DistributionQueue not available, creating acks inline');
         await this.createAcknowledgements(
           request.policyId,
           policy.VersionNumber,
@@ -1045,10 +1045,22 @@ export class PolicyService {
           request.dueDate
         );
         steps.push(`Inline: ${targetUsers.length} acknowledgements created`);
-        if (request.sendNotifications && this.notificationService) {
+      }
+
+      // ALWAYS send notification emails inline (don't depend on Azure Function)
+      if (request.sendNotifications !== false && this.notificationService && targetUsers.length > 0) {
+        try {
+          console.log(`[PolicyService] Sending publish notifications to ${targetUsers.length} users...`);
           await this.notificationService.sendNewPolicyNotification(policy, targetUsers);
-          steps.push(`Inline: notifications sent to ${targetUsers.length} users`);
+          steps.push(`Publish notifications sent to ${targetUsers.length} users`);
+          console.log(`[PolicyService] ✓ Publish notifications sent`);
+        } catch (notifyErr) {
+          steps.push('Publish notification send failed (non-blocking)');
+          console.error('[PolicyService] ✗ Publish notifications failed:', notifyErr);
         }
+      } else {
+        console.log(`[PolicyService] Skipping publish notifications: sendNotifications=${request.sendNotifications}, notificationService=${!!this.notificationService}, targetUsers=${targetUsers.length}`);
+        steps.push(`Notifications skipped (send=${request.sendNotifications}, svc=${!!this.notificationService}, users=${targetUsers.length})`);
       }
 
       // ══════════════════════════════════════════════════════════════

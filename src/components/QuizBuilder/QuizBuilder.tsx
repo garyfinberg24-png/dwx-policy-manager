@@ -3129,14 +3129,14 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
       let docExtension = '';
       let documentBase64 = '';
 
-      // Fallback: if no DocumentURL but policy has converted HTML content, use that
-      if (!docUrl && policy?.PolicyContent && policy.PolicyContent.length > 100) {
-        console.log('[QuizBuilder] Using PolicyContent (converted HTML) as source text');
-        // Strip HTML tags to get plain text for AI
+      // Fallback: if no DocumentURL but policy has HTML content, use that as source text
+      const htmlContent = policy?.PolicyContent || policy?.HTMLContent || (policy as any)?.PolicyDescription || '';
+      if (!docUrl && htmlContent && htmlContent.length > 50) {
+        console.log('[QuizBuilder] Using HTML content as source text (length:', htmlContent.length, ')');
         const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = policy.PolicyContent;
+        tempDiv.innerHTML = htmlContent;
         policyText = (tempDiv.textContent || tempDiv.innerText || '').trim();
-        console.log(`[QuizBuilder] Extracted ${policyText.length} chars from PolicyContent`);
+        console.log(`[QuizBuilder] Extracted ${policyText.length} chars from policy content`);
       }
 
       if (docUrl) {

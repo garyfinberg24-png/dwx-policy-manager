@@ -3094,9 +3094,26 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
     this.setState({ aiGenerating: true, aiError: null, aiGeneratedQuestions: [] });
 
     try {
-      // Find the policy to get its document URL and metadata
-      const policy = this.state.policies.find(p => p.Id === policyId);
-      const policyTitle = policy?.PolicyName || 'Policy';
+      // Fetch the policy FRESH from SP to guarantee all fields are loaded
+      let policy = this.state.policies.find(p => p.Id === policyId);
+      try {
+        const freshPolicy = await this.props.sp.web.lists.getByTitle('PM_Policies')
+          .items.getById(policyId as number)
+          .select('Id', 'Title', 'PolicyName', 'PolicyNumber', 'PolicyCategory', 'PolicyDescription',
+                  'HTMLContent', 'PolicyContent', 'DocumentURL', 'ComplianceRisk', 'VersionNumber')();
+        policy = { ...policy, ...freshPolicy } as any;
+        console.log('[QuizBuilder] Fresh policy loaded:', {
+          id: freshPolicy.Id, name: freshPolicy.PolicyName,
+          hasDocURL: !!freshPolicy.DocumentURL,
+          hasHTML: !!(freshPolicy.HTMLContent || '').length,
+          hasContent: !!(freshPolicy.PolicyContent || '').length,
+          hasDesc: !!(freshPolicy.PolicyDescription || '').length,
+        });
+      } catch (fetchErr) {
+        console.warn('[QuizBuilder] Could not fetch fresh policy, using cached:', fetchErr);
+      }
+
+      const policyTitle = policy?.PolicyName || policy?.Title || 'Policy';
       const policyCategory = policy?.PolicyCategory || 'General';
 
       // Fetch the document text from SharePoint if possible
@@ -3196,8 +3213,21 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
         // Last resort: pass URL (may fail without auth)
         requestBody.policyDocumentUrl = docUrl;
       } else {
-        this.setState({ aiGenerating: false, aiError: 'No policy document URL found. Please link a document to this policy first.' });
-        return;
+        // Last resort: use policy title + description as minimal context for AI
+        const minimalText = [
+          policy?.PolicyName || '',
+          (policy as any)?.PolicyDescription || (policy as any)?.Description || '',
+          policy?.PolicyCategory ? `Category: ${policy.PolicyCategory}` : '',
+          policy?.ComplianceRisk ? `Risk Level: ${policy.ComplianceRisk}` : '',
+        ].filter(Boolean).join('\n\n');
+
+        if (minimalText.length > 20) {
+          console.log(`[QuizBuilder] Using minimal policy metadata as AI context (${minimalText.length} chars)`);
+          requestBody.policyText = minimalText;
+        } else {
+          this.setState({ aiGenerating: false, aiError: 'No policy content found. Please add content to the policy (HTML, document, or description) before generating questions.' });
+          return;
+        }
       }
 
       const response = await fetch(aiFunctionUrl, {

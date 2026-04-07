@@ -93,6 +93,8 @@ export interface IPipelinePolicy {
   Version: string;
   IsReviewer: boolean; // true if current user is a reviewer, not the author
   IsBulkImport: boolean;
+  RequiresQuiz: boolean;
+  LinkedQuizId: number | null;
 }
 
 export interface IPolicyApproval {
@@ -607,7 +609,8 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
           .items.select(
             'Id', 'Title', 'PolicyNumber', 'PolicyCategory', 'PolicyStatus',
             'ComplianceRisk', 'Author/Id', 'Author/Title', 'PolicyOwner/Id',
-            'Modified', 'Created', 'VersionNumber', 'CreationMethod'
+            'Modified', 'Created', 'VersionNumber', 'CreationMethod',
+            'RequiresQuiz', 'LinkedQuizId'
           )
           .expand('Author', 'PolicyOwner')
           .orderBy('Modified', false)
@@ -620,7 +623,9 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
             .items.select(
               'Id', 'Title', 'PolicyNumber', 'PolicyCategory', 'PolicyStatus',
               'ComplianceRisk', 'Author/Id', 'Author/Title',
-              'Modified', 'Created', 'VersionNumber', 'CreationMethod'
+              'Modified', 'Created', 'VersionNumber',
+              'RequiresQuiz', 'LinkedQuizId', 'CreationMethod',
+              'RequiresQuiz', 'LinkedQuizId'
             )
             .expand('Author')
             .orderBy('Modified', false)
@@ -633,7 +638,8 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
             .items.select(
               'Id', 'Title', 'PolicyNumber', 'PolicyCategory', 'PolicyStatus',
               'ComplianceRisk', 'Author/Id', 'Author/Title',
-              'Modified', 'Created', 'VersionNumber'
+              'Modified', 'Created', 'VersionNumber',
+              'RequiresQuiz', 'LinkedQuizId'
             )
             .expand('Author')
             .orderBy('Modified', false)
@@ -666,7 +672,9 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
           Created: item.Created || '',
           Version: item.VersionNumber || '0.1',
           IsReviewer: false,
-          IsBulkImport: item.CreationMethod === 'BulkImport'
+          IsBulkImport: item.CreationMethod === 'BulkImport',
+          RequiresQuiz: item.RequiresQuiz || false,
+          LinkedQuizId: item.LinkedQuizId || null
         }));
     } catch (err) {
       console.warn('[PolicyAuthorView] loadPipelinePolicies failed:', err);
@@ -1204,6 +1212,16 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                             disabled={!canDelete}
                             styles={canDelete ? del : delDis}
                             ariaLabel={`Delete ${policy.Title}`} />
+                          {/* Create Quiz — shown when RequiresQuiz is set */}
+                          {policy.RequiresQuiz && (
+                            <IconButton iconProps={{ iconName: 'Questionnaire' }}
+                              title={policy.LinkedQuizId ? 'Edit Quiz' : 'Create Quiz'}
+                              href={policy.LinkedQuizId
+                                ? `${siteUrl}/SitePages/QuizBuilder.aspx?quizId=${policy.LinkedQuizId}`
+                                : `${siteUrl}/SitePages/QuizBuilder.aspx?policyId=${policy.Id}`}
+                              styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: policy.LinkedQuizId ? '#0d9488' : '#d97706' } }}
+                              ariaLabel={`${policy.LinkedQuizId ? 'Edit' : 'Create'} quiz for ${policy.Title}`} />
+                          )}
                         </>);
                       })()}
                       </>); })()}

@@ -454,7 +454,7 @@ export class EmailTemplateBuilder {
     <td align="center" style="padding:32px 16px;">
       <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px; width:100%; border-radius:12px; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,0.08);">
         <tr>
-          <td style="background:linear-gradient(135deg, ${config.gradientStart} 0%, ${config.gradientEnd} 100%); padding:0;">
+          <td style="background-color:${config.gradientEnd}; background:linear-gradient(135deg, ${config.gradientStart} 0%, ${config.gradientEnd} 100%); padding:0;">
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
               <tr>
                 <td style="padding:20px 40px 18px 40px;">

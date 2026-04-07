@@ -606,6 +606,14 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
         const quiz = await this.quizService.getQuizById(this.props.quizId);
         const questions = await this.quizService.getQuizQuestions(this.props.quizId);
 
+        // Load sections (non-blocking — list may not exist)
+        try {
+          const loadedSections = await this.quizService.getQuizSections(this.props.quizId);
+          if (loadedSections.length > 0) {
+            this.setState({ sections: loadedSections, enableSections: true });
+          }
+        } catch { /* PM_QuizSections may not exist */ }
+
         if (quiz) {
           this.setState({
             quizId: quiz.Id,
@@ -1702,7 +1710,22 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
   }
 
   private renderQuestions(): JSX.Element {
-    const { questions, quizId } = this.state;
+    const { questions, quizId, sections, enableSections, showSectionPanel } = this.state;
+
+    // Group questions by section when sections enabled
+    const sectionGroups: Array<{ section: IQuizSection | null; questions: Array<{ question: any; globalIndex: number }> }> = [];
+    if (enableSections && sections.length > 0) {
+      // Unassigned group
+      const unassigned = questions.map((q, i) => ({ question: q, globalIndex: i })).filter(({ question }) => !question.SectionId);
+      if (unassigned.length > 0) {
+        sectionGroups.push({ section: null, questions: unassigned });
+      }
+      // Section groups
+      for (const sec of sections.sort((a, b) => a.Order - b.Order)) {
+        const secQuestions = questions.map((q, i) => ({ question: q, globalIndex: i })).filter(({ question }) => question.SectionId === sec.Id);
+        sectionGroups.push({ section: sec, questions: secQuestions });
+      }
+    }
 
     return (
       <div className={styles.section}>
@@ -1712,47 +1735,70 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
             Questions ({questions.length})
           </Text>
           {quizId && (
-            <Stack horizontal tokens={{ childrenGap: 8 }}>
-              <DefaultButton
-                text="From Question Bank"
-                iconProps={{ iconName: 'Library' }}
-                onClick={() => this.setState({ showQuestionBankPanel: true })}
+            <Stack horizontal tokens={{ childrenGap: 8 }} verticalAlign="center">
+              <Toggle
+                label="Sections"
+                inlineLabel
+                checked={enableSections}
+                onChange={(_, checked) => this.setState({ enableSections: !!checked })}
+                styles={{ root: { marginBottom: 0 }, label: { fontSize: 12, fontWeight: 600, color: '#64748b' } }}
               />
-              <PrimaryButton
-                text="Add Question"
-                iconProps={{ iconName: 'Add' }}
-                onClick={this.handleAddQuestion}
-              />
+              <DefaultButton text="From Question Bank" iconProps={{ iconName: 'Library' }} onClick={() => this.setState({ showQuestionBankPanel: true })} />
+              <PrimaryButton text="Add Question" iconProps={{ iconName: 'Add' }} onClick={this.handleAddQuestion} />
             </Stack>
           )}
         </Stack>
 
-        {/* Info bar — question count, total points, linked policy */}
+        {/* Info bar */}
         {quizId && questions.length > 0 && (
-          <div style={{
-            padding: '10px 16px', background: '#f0fdfa', border: '1px solid #99f6e4', borderRadius: 4,
-            fontSize: 12, color: '#0f766e', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12
-          }}>
+          <div style={{ padding: '10px 16px', background: '#f0fdfa', border: '1px solid #99f6e4', borderRadius: 4, fontSize: 12, color: '#0f766e', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
             <Icon iconName="ClipboardList" styles={{ root: { fontSize: 14 } }} />
             <strong>{questions.length} questions</strong>
             <span>&middot;</span>
             <span>{questions.reduce((sum, q) => sum + (q.Points || 0), 0)} total points</span>
+            {enableSections && <><span>&middot;</span><span>{sections.length} section{sections.length !== 1 ? 's' : ''}</span></>}
             {(() => {
               const linkedPolicy = (this.state.policies || []).find((p: any) => p.Id === this.state.policyId);
-              return linkedPolicy ? (
-                <>
-                  <span>&middot;</span>
-                  <span>Linked to <strong style={{ color: '#0d9488' }}>{linkedPolicy.PolicyNumber} — {linkedPolicy.PolicyName}</strong></span>
-                </>
-              ) : null;
+              return linkedPolicy ? (<><span>&middot;</span><span>Linked to <strong style={{ color: '#0d9488' }}>{linkedPolicy.PolicyNumber} — {linkedPolicy.PolicyName}</strong></span></>) : null;
             })()}
           </div>
         )}
 
+        {/* Section management bar */}
+        {enableSections && quizId && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, padding: '10px 14px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 6 }}>
+            <Icon iconName="BulletedTreeList" styles={{ root: { fontSize: 14, color: '#7c3aed' } }} />
+            <span style={{ fontSize: 12, fontWeight: 600, color: '#475569' }}>Sections:</span>
+            {sections.sort((a, b) => a.Order - b.Order).map((sec, i) => (
+              <button
+                key={sec.Id}
+                onClick={() => this.setState({ showSectionPanel: true, editingSection: sec, editingSectionIndex: i })}
+                style={{
+                  padding: '4px 12px', borderRadius: 4, fontSize: 11, fontWeight: 600,
+                  border: '1px solid #e2e8f0', background: '#fff', color: '#475569',
+                  cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4,
+                }}
+              >
+                <span style={{ width: 16, height: 16, borderRadius: '50%', background: '#7c3aed', color: '#fff', fontSize: 9, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{i + 1}</span>
+                {sec.Title}
+                <span style={{ fontSize: 10, color: '#94a3b8' }}>({questions.filter(q => q.SectionId === sec.Id).length})</span>
+              </button>
+            ))}
+            <button
+              onClick={() => this.setState({
+                showSectionPanel: true,
+                editingSection: { Title: '', Description: '', Order: sections.length + 1, RandomizeWithinSection: false, QuizId: quizId } as any,
+                editingSectionIndex: -1
+              })}
+              style={{ padding: '4px 12px', borderRadius: 4, fontSize: 11, fontWeight: 600, border: '1px dashed #0d9488', background: '#f0fdfa', color: '#0d9488', cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              + Add Section
+            </button>
+          </div>
+        )}
+
         {!quizId && (
-          <MessageBar messageBarType={MessageBarType.info}>
-            Save the quiz first to add questions.
-          </MessageBar>
+          <MessageBar messageBarType={MessageBarType.info}>Save the quiz first to add questions.</MessageBar>
         )}
 
         {quizId && questions.length === 0 && (
@@ -1762,65 +1808,189 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
           </div>
         )}
 
-        {questions.map((question, index) => (
-          <div key={question.Id} className={styles.questionCard}>
-            <div className={styles.questionHeader}>
-              <Stack horizontal verticalAlign="center" styles={{ root: { flex: 1 } }}>
-                <div className={styles.questionNumber}>{index + 1}</div>
-                <Text className={styles.questionText}>{question.QuestionText}</Text>
-                <span
-                  className={styles.questionTypeBadge}
-                  style={{
-                    backgroundColor: this.getQuestionTypeColor(question.QuestionType).bg,
-                    color: this.getQuestionTypeColor(question.QuestionType).text
-                  }}
-                >
-                  {question.QuestionType}
+        {/* Render questions — grouped by section or flat */}
+        {enableSections && sections.length > 0 ? (
+          sectionGroups.map((group, gi) => (
+            <div key={group.section?.Id || 'unassigned'} style={{ marginBottom: 20 }}>
+              {/* Section header */}
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', marginBottom: 8,
+                background: group.section ? '#f5f3ff' : '#f8fafc',
+                border: `1px solid ${group.section ? '#ddd6fe' : '#e2e8f0'}`,
+                borderLeft: `3px solid ${group.section ? '#7c3aed' : '#94a3b8'}`,
+                borderRadius: 4,
+              }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: group.section ? '#7c3aed' : '#64748b' }}>
+                  {group.section ? group.section.Title : 'Unassigned Questions'}
                 </span>
-                {question.QuestionType === QuestionType.Essay && (
-                  <span className={`${styles.badge} ${styles.badgeWarning}`} style={{ marginLeft: '8px' }}>
-                    Manual Grading
-                  </span>
-                )}
-              </Stack>
-              <Stack horizontal tokens={{ childrenGap: 4 }} verticalAlign="center">
-                <Text className={styles.points}>{question.Points} pts</Text>
-                <IconButton
-                  iconProps={{ iconName: 'Up' }}
-                  title="Move Up"
-                  disabled={index === 0}
-                  onClick={() => this.handleMoveQuestion(index, index - 1)}
-                  styles={{ root: { height: 28, width: 28 } }}
-                />
-                <IconButton
-                  iconProps={{ iconName: 'Down' }}
-                  title="Move Down"
-                  disabled={index === questions.length - 1}
-                  onClick={() => this.handleMoveQuestion(index, index + 1)}
-                  styles={{ root: { height: 28, width: 28 } }}
-                />
-                <IconButton
-                  iconProps={{ iconName: 'Copy' }}
-                  title="Duplicate"
-                  onClick={() => this.handleDuplicateQuestion(question)}
-                />
-                <IconButton
-                  iconProps={{ iconName: 'Edit' }}
-                  title="Edit"
-                  onClick={() => this.handleEditQuestion(question, index)}
-                />
-                <IconButton
-                  iconProps={{ iconName: 'Delete' }}
-                  title="Delete"
-                  onClick={() => this.setState({ showDeleteDialog: true, questionToDelete: question.Id })}
-                />
-              </Stack>
+                <span style={{ fontSize: 11, color: '#94a3b8' }}>({group.questions.length} question{group.questions.length !== 1 ? 's' : ''})</span>
+                {group.section?.Description && <span style={{ fontSize: 11, color: '#94a3b8' }}>&middot; {group.section.Description}</span>}
+                {group.section?.RandomizeWithinSection && <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 3, background: '#dbeafe', color: '#2563eb', fontWeight: 600 }}>Randomized</span>}
+                {group.section?.QuestionsRequired && <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 3, background: '#fef3c7', color: '#d97706', fontWeight: 600 }}>Pick {group.section.QuestionsRequired}</span>}
+              </div>
+              {group.questions.map(({ question, globalIndex }) => this._renderQuestionCard(question, globalIndex, questions))}
             </div>
+          ))
+        ) : (
+          questions.map((question, index) => this._renderQuestionCard(question, index, questions))
+        )}
 
-            {this.renderQuestionPreview(question)}
-          </div>
-        ))}
+        {/* Section create/edit panel */}
+        {showSectionPanel && this._renderSectionPanel()}
       </div>
+    );
+  }
+
+  /** Render a single question card with optional section assignment */
+  private _renderQuestionCard(question: any, index: number, allQuestions: any[]): JSX.Element {
+    const { enableSections, sections } = this.state;
+    return (
+      <div key={question.Id} className={styles.questionCard}>
+        <div className={styles.questionHeader}>
+          <Stack horizontal verticalAlign="center" styles={{ root: { flex: 1 } }}>
+            <div className={styles.questionNumber}>{index + 1}</div>
+            <Text className={styles.questionText}>{question.QuestionText}</Text>
+            <span className={styles.questionTypeBadge} style={{ backgroundColor: this.getQuestionTypeColor(question.QuestionType).bg, color: this.getQuestionTypeColor(question.QuestionType).text }}>
+              {question.QuestionType}
+            </span>
+            {question.QuestionType === QuestionType.Essay && (
+              <span className={`${styles.badge} ${styles.badgeWarning}`} style={{ marginLeft: '8px' }}>Manual Grading</span>
+            )}
+          </Stack>
+          <Stack horizontal tokens={{ childrenGap: 4 }} verticalAlign="center">
+            {/* Section assignment dropdown */}
+            {enableSections && sections.length > 0 && (
+              <Dropdown
+                selectedKey={question.SectionId || 0}
+                options={[
+                  { key: 0, text: 'No Section' },
+                  ...sections.sort((a, b) => a.Order - b.Order).map(s => ({ key: s.Id, text: s.Title }))
+                ]}
+                onChange={(_, opt) => {
+                  if (opt) {
+                    const updated = [...allQuestions];
+                    updated[index] = { ...question, SectionId: opt.key === 0 ? undefined : opt.key };
+                    this.setState({ questions: updated });
+                    // Persist to SP
+                    if (question.Id) {
+                      this.props.sp.web.lists.getByTitle('PM_PolicyQuizQuestions')
+                        .items.getById(question.Id)
+                        .update({ SectionId: opt.key === 0 ? null : opt.key })
+                        .catch(() => {});
+                    }
+                  }
+                }}
+                styles={{ root: { minWidth: 120, maxWidth: 140 }, dropdown: { borderRadius: 4, fontSize: 11 }, title: { fontSize: 11, height: 28, lineHeight: '28px' }, caretDownWrapper: { height: 28, lineHeight: '28px' } }}
+              />
+            )}
+            <Text className={styles.points}>{question.Points} pts</Text>
+            <IconButton iconProps={{ iconName: 'Up' }} title="Move Up" disabled={index === 0} onClick={() => this.handleMoveQuestion(index, index - 1)} styles={{ root: { height: 28, width: 28 } }} />
+            <IconButton iconProps={{ iconName: 'Down' }} title="Move Down" disabled={index === allQuestions.length - 1} onClick={() => this.handleMoveQuestion(index, index + 1)} styles={{ root: { height: 28, width: 28 } }} />
+            <IconButton iconProps={{ iconName: 'Copy' }} title="Duplicate" onClick={() => this.handleDuplicateQuestion(question)} />
+            <IconButton iconProps={{ iconName: 'Edit' }} title="Edit" onClick={() => this.handleEditQuestion(question, index)} />
+            <IconButton iconProps={{ iconName: 'Delete' }} title="Delete" onClick={() => this.setState({ showDeleteDialog: true, questionToDelete: question.Id })} />
+          </Stack>
+        </div>
+        {this.renderQuestionPreview(question)}
+      </div>
+    );
+  }
+
+  /** Section create/edit panel */
+  private _renderSectionPanel(): JSX.Element {
+    const { editingSection, editingSectionIndex, sections, quizId } = this.state;
+    if (!editingSection) return <></>;
+    const isNew = editingSectionIndex === -1;
+
+    return (
+      <StyledPanel
+        isOpen={true}
+        onDismiss={() => this.setState({ showSectionPanel: false, editingSection: null })}
+        type={PanelType.smallFixedFar}
+        hasCloseButton={false}
+        onRenderNavigation={() => (
+          <div style={{ background: 'linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%)', borderBottom: '1px solid #99f6e4', padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ fontSize: 18, fontWeight: 700, color: '#0f766e' }}>{isNew ? 'Add Section' : 'Edit Section'}</div>
+            <button onClick={() => this.setState({ showSectionPanel: false, editingSection: null })} style={{ width: 32, height: 32, borderRadius: 4, border: 'none', background: 'transparent', cursor: 'pointer', color: '#0f766e', fontSize: 18 }}>×</button>
+          </div>
+        )}
+        styles={{ navigation: { padding: 0, margin: 0, height: 'auto', background: 'transparent', borderBottom: 'none' }, commands: { padding: 0, margin: 0, background: 'transparent' }, header: { display: 'none' } }}
+      >
+        <Stack tokens={{ childrenGap: 16 }} style={{ paddingTop: 16 }}>
+          <TextField
+            label="Section Title" required
+            value={editingSection.Title || ''}
+            onChange={(_, v) => this.setState({ editingSection: { ...editingSection, Title: v || '' } })}
+            placeholder="e.g., Data Privacy Fundamentals"
+          />
+          <TextField
+            label="Description" multiline rows={2}
+            value={editingSection.Description || ''}
+            onChange={(_, v) => this.setState({ editingSection: { ...editingSection, Description: v || '' } })}
+            placeholder="Brief description of what this section covers"
+          />
+          <Toggle
+            label="Randomize questions within section"
+            checked={editingSection.RandomizeWithinSection || false}
+            onText="Yes" offText="No"
+            onChange={(_, c) => this.setState({ editingSection: { ...editingSection, RandomizeWithinSection: !!c } })}
+          />
+          <TextField
+            label="Questions required (optional)"
+            type="number"
+            value={editingSection.QuestionsRequired ? String(editingSection.QuestionsRequired) : ''}
+            onChange={(_, v) => this.setState({ editingSection: { ...editingSection, QuestionsRequired: v ? parseInt(v, 10) : undefined } })}
+            description="If set, randomly select this many questions from the section"
+          />
+
+          <Stack horizontal tokens={{ childrenGap: 8 }}>
+            <PrimaryButton
+              text={isNew ? 'Create Section' : 'Save Changes'}
+              disabled={!editingSection.Title?.trim()}
+              onClick={async () => {
+                try {
+                  if (isNew) {
+                    const result = await this.quizService.createSection({ ...editingSection, QuizId: quizId } as any);
+                    if (result) {
+                      this.setState({ sections: [...sections, result], showSectionPanel: false, editingSection: null });
+                    }
+                  } else if (editingSection.Id) {
+                    await this.quizService.updateSection(editingSection.Id, editingSection as any);
+                    this.setState({
+                      sections: sections.map(s => s.Id === editingSection.Id ? { ...s, ...editingSection } as IQuizSection : s),
+                      showSectionPanel: false, editingSection: null
+                    });
+                  }
+                } catch (err) {
+                  console.error('Section save failed:', err);
+                }
+              }}
+              styles={{ root: { background: '#0d9488', borderColor: '#0d9488', borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+            />
+            {!isNew && editingSection.Id && (
+              <DefaultButton
+                text="Delete Section"
+                onClick={async () => {
+                  try {
+                    await this.quizService.deleteSection(editingSection.Id as number);
+                    // Unassign questions from this section
+                    const updated = this.state.questions.map(q => q.SectionId === editingSection.Id ? { ...q, SectionId: undefined } : q);
+                    this.setState({
+                      sections: sections.filter(s => s.Id !== editingSection.Id),
+                      questions: updated,
+                      showSectionPanel: false, editingSection: null
+                    });
+                  } catch (err) {
+                    console.error('Section delete failed:', err);
+                  }
+                }}
+                styles={{ root: { borderRadius: 4, color: '#dc2626', borderColor: '#fca5a5' }, rootHovered: { background: '#fef2f2', borderColor: '#dc2626' } }}
+              />
+            )}
+            <DefaultButton text="Cancel" onClick={() => this.setState({ showSectionPanel: false, editingSection: null })} />
+          </Stack>
+        </Stack>
+      </StyledPanel>
     );
   }
 

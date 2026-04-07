@@ -1663,6 +1663,32 @@ export class QuizService {
     }
   }
 
+  public async updateSection(sectionId: number, data: Partial<IQuizSection>): Promise<void> {
+    try {
+      await this.sp.web.lists.getByTitle(this.sectionListName)
+        .items.getById(sectionId).update({
+          Title: data.Title,
+          Description: data.Description,
+          Order: data.Order,
+          RandomizeWithinSection: data.RandomizeWithinSection,
+          QuestionsRequired: data.QuestionsRequired
+        });
+    } catch (error) {
+      logger.error("QuizService", "Failed to update section", error);
+      throw error;
+    }
+  }
+
+  public async deleteSection(sectionId: number): Promise<void> {
+    try {
+      await this.sp.web.lists.getByTitle(this.sectionListName)
+        .items.getById(sectionId).delete();
+    } catch (error) {
+      logger.error("QuizService", "Failed to delete section", error);
+      throw error;
+    }
+  }
+
   // ============================================================================
   // Statistics & Analytics
   // ============================================================================

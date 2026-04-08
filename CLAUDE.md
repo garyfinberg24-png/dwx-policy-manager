@@ -848,15 +848,97 @@ The QuizBuilder's "AI Generate" panel calls the Azure Function with:
 - Create Policy: metadata profile values restored on draft edit
 - Policy Hub: Department refiner removed
 
-**Event Viewer Feature Backlog (planned for next session):**
-- Health Check Runner, SP List Schema Validator, Config Audit
-- Request/Response Inspector, Correlation Chains, Error Replay Breadcrumbs
-- Smart Watch Rules, Shareable Diagnostic Snapshot, Trend Dashboard
-- Incident Report (IncidentReportService started, UI not wired yet)
-- Session Comparison, SLA Monitor, Bundle Size Analyser
+**Event Viewer Feature Backlog:** ALL 13 features completed in Session 22 (see below).
 
 **Build:** Zero errors, 16 webpart manifests, 9.5MB sppkg
 **Commit:** `fea2861` — pushed to both ADO and GitHub
+
+### Recently Completed (Session 22 — 7-8 Apr 2026)
+
+#### Event Viewer — 13 Diagnostic Features + Vertical Nav + Troubleshooter (29 commits)
+
+**Event Viewer Round 1 — Services + UI:**
+- HealthCheckService: 26 SP lists, 2 Azure Functions, 5 config keys, queue health
+- SchemaValidatorService: compares SP list columns against expected provisioning schema
+- ConfigAuditService: PM_Configuration reader with defaults + categories
+- IncidentReportService UI: Report Incident panel with PM standard header
+- All wired into System Health tab with on-demand loading
+
+**Event Viewer Round 2 — Core Diagnostics:**
+- Request/Response Inspector: click-to-inspect network rows (headers, body, response)
+- Correlation Chains: auto-groups related events, expandable vertical timeline with gap analysis
+- Error Replay Breadcrumbs: BreadcrumbInterceptor captures clicks/navigation
+
+**Event Viewer Round 3 — Reporting & Monitoring:**
+- Smart Watch Rules: 6 built-in alert rules with live banner
+- DiagnosticSnapshotService: shareable HTML snapshot download
+- TrendDashboardService: 7-day error bar chart from PM_EventLog
+- SLAMonitorService: P50/P95/P99 latency per SP list
+- SessionComparisonService: diff two sessions from PM_EventLog
+- BundleSizeService: JS/CSS analysis via Performance API
+- Troubleshooter tab (7th tab): wizard-driven diagnostics with 7 problem categories
+
+**Event Viewer Layout:**
+- Vertical nav panel replacing horizontal tabs (220px, collapsible to 56px)
+- Forest Teal theme (default) + Dark Slate dark mode toggle (localStorage persisted)
+- Page selector dropdown for filtering events by page
+- DetailsList tables for Event Stream + Network Monitor (sortable, resizable, groupable)
+
+**Critical: Draft → Publish Pipeline Consolidation:**
+- SINGLE authoritative publish path: PolicyService.publishPolicy()
+- Replaced 160-line inline publish in PolicyAuthorView with service delegation
+- Pre-flight validation: status guard, fresh user resolution, policy existence check
+- Transaction logging: every step recorded, error context pinpoints exact failure
+- Version number fix: first publish v0.1→v1.0 (was incorrectly v2.0)
+- resolveTargetUsers REWRITE: queries PM_UserProfiles → ensureUser (was returning wrong IDs)
+- Publish notifications fire inline (don't depend on Azure Function)
+
+**Critical: Email Notification Pipeline:**
+- ALL 5 sp.utility.sendEmail() replaced with PM_NotificationQueue writes
+- notificationService constructor fix: always created (was null due to empty string fallback)
+- Wizard submit-for-review: 6 PeoplePicker persona property shapes + PM_PolicyReviewers fallback
+- Email URL fix: uses this.siteUrl (was sp.web.toUrl() returning /_api/web)
+- Duplicate greeting fix: strips leading "Hi {name}" from template body
+- Email header: solid background-color fallback for Outlook (CSS gradient not supported)
+- Console.log diagnostics at every notification step for runtime debugging
+
+**Policy Hub:**
+- Sidebar filters replaced with inline dropdown toolbar (Category + Risk Level only)
+
+**Quiz Builder:**
+- Question sections: toggle, management bar, grouping, per-question assignment, create/edit panel
+- AI Generate fix: max_tokens → max_completion_tokens (Azure OpenAI gpt-5.1 model)
+- AI Generate: fresh policy fetch + HTML content fallback + metadata fallback
+- Create Quiz action icon in Drafts & Pipeline view (amber=create, teal=edit)
+
+**Wizard Fixes:**
+- Fast Track: added Reviewers & Approvers step (was 4 steps, now 5)
+- Step 4: Role-Based + Security Group selector controls
+- Step 4: removed audience search box + group tiles
+- Step 8: removed Save as Template button, added Save Draft spinner
+- Metadata profile: auto-switch to Custom tab when editing draft with values
+- Template save: DocumentTemplateURL sent as URL object with string fallback
+- Checklist validation removed (purely informational)
+- Approval status simplified: all reviewers approved → Approved (removed complex logic)
+
+**Distribution:**
+- Visual Distribution Queue on Distribution page + Event Viewer System Health
+- DistributionQueueViewService: reads PM_DistributionQueue + PM_NotificationQueue
+- Pipeline verification script: Verify-PublishPipeline.ps1 (51 checks, 8 sections)
+- Patch scripts: NotificationQueueColumns + PolicyReadReceipts
+
+**Azure Function Fixes:**
+- Quiz generator: max_tokens → max_completion_tokens (gpt-5.1 compatibility)
+- Both functions: API version updated to 2024-08-01-preview
+- Both functions: API key set directly (was Key Vault reference)
+- Both functions restarted
+
+**Build:** Zero errors, 16 webpart manifests, 9.7MB sppkg
+**Commits:** 29 commits (`f69e09f`..`f6889d3`) — pushed to both ADO and GitHub
+
+### Rollback Checkpoints (Updated)
+- Session 22 start: commit `ebf4fda`
+- Session 22 end: commit `f6889d3`
 
 ### Rollback Checkpoints (Updated)
 - Session 21 start: commit `49718d4`
@@ -1531,12 +1613,13 @@ Three parallel audit streams identified ~45 optimization opportunities:
 | ------ | ------- | ------- |
 | Security | 9/10 | All email templates escaped, MIME validation, OData sanitized, PII redaction, document.write eliminated |
 | Performance | 7.5/10 | Parallelized loads, reduced query limits. Remaining: React.lazy, virtualization |
-| Reliability | 9/10 | ErrorBoundary on all 15 webparts, _isMounted on all class components, per-recipient resilience |
-| Code Quality | 8/10 | EmailTemplateBuilder centralized, explicit nav permissions, 596 lines dead code removed, border-radius standardized |
-| Notifications | 9.5/10 | All 9+ events now queue emails via Logic App, EmailTemplateBuilder centralized, local notification bell |
-| Testing | 3.5/10 | Jest config + 6 unit test suites. Remaining: integration, component, E2E |
+| Reliability | 9.5/10 | ErrorBoundary on all 16 webparts, _isMounted on all class components, publish pipeline hardened with pre-flight + transaction logging |
+| Code Quality | 8.5/10 | Single authoritative publish path, zero sp.utility.sendEmail, console diagnostics in critical paths |
+| Notifications | 10/10 | ALL emails via PM_NotificationQueue → Logic App. Zero sp.utility.sendEmail. Premium EmailTemplateBuilder with Outlook fallback. Publish notifications fire inline. |
+| Diagnostics | 9/10 | Event Viewer with 13 features, 7 tabs, vertical nav, Troubleshooter wizard, pipeline verification script |
+| Testing | 3.5/10 | Jest config + 6 unit test suites + Verify-PublishPipeline.ps1 (51 checks). Remaining: integration, component, E2E |
 | Accessibility | 3/10 | Basic Fluent UI a11y. Remaining: ARIA roles, keyboard nav, screen reader |
-| Overall | ~85/100 | Up from 80. Full hardening pass, 33 fixes, all backlog cleared, AI extraction upgraded |
+| Overall | ~88/100 | Up from 85. Publish pipeline consolidated, notifications reliable, Event Viewer complete |
 
 ### Known Issues
 
@@ -1550,6 +1633,11 @@ Three parallel audit streams identified ~45 optimization opportunities:
 - CreationMethod column must be provisioned on PM_Policies for Bulk Import filter to work
 - PnP PowerShell `Add-PnPField` does NOT support `-DefaultValue` — use `Set-PnPField -Values @{DefaultValue="..."}` separately
 - Logic App API connections (Office 365 + SharePoint) require manual OAuth authorization in Azure Portal after deployment — ARM/Bicep cannot perform consent
+- Azure OpenAI model gpt-5.1 requires `max_completion_tokens` (not `max_tokens`) — both quiz and chat functions updated
+- Azure OpenAI API version updated to `2024-08-01-preview` — old `2024-02-15-preview` caused 400 errors with newer models
+- PM_QuizSections list must be provisioned for quiz sections feature to work
+- Disk space: webpack production build requires ~2GB free — clean with `npx gulp clean` if space is low
+- MetadataProfileId column does not exist on PM_Policies — optional field write logs warning but is non-blocking
 
 ### Next Steps
 

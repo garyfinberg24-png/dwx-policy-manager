@@ -6,6 +6,7 @@
  * Adapted from DWx LearnIQ Course Builder implementation.
  */
 import * as React from 'react';
+import { tc } from '../../utils/themeColors';
 
 /* TinyMCE loaded lazily on first editor mount — not at module parse time.
    This avoids adding ~200-300KB to every webpart's initial bundle. */
@@ -176,11 +177,11 @@ export var HtmlEditor: React.FC<IHtmlEditorProps> = function (props) {
     },
       React.createElement('div', { style: { display: 'flex', gap: 8 } },
         React.createElement('button', {
-          style: { padding: '6px 14px', borderRadius: 4, border: '1px solid ' + (showPreview ? '#e2e8f0' : '#0d9488'), background: showPreview ? '#fff' : '#f0fdfa', color: showPreview ? '#64748b' : '#0d9488', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: FONT },
+          style: { padding: '6px 14px', borderRadius: 4, border: '1px solid ' + (showPreview ? '#e2e8f0' : tc.primary), background: showPreview ? '#fff' : tc.primaryLighter, color: showPreview ? '#64748b' : tc.primary, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: FONT },
           onClick: function () { setShowPreview(false); }
         }, 'Editor'),
         React.createElement('button', {
-          style: { padding: '6px 14px', borderRadius: 4, border: '1px solid ' + (showPreview ? '#0d9488' : '#e2e8f0'), background: showPreview ? '#f0fdfa' : '#fff', color: showPreview ? '#0d9488' : '#64748b', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: FONT },
+          style: { padding: '6px 14px', borderRadius: 4, border: '1px solid ' + (showPreview ? tc.primary : '#e2e8f0'), background: showPreview ? tc.primaryLighter : '#fff', color: showPreview ? tc.primary : '#64748b', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: FONT },
           onClick: function () {
             if (editorInstanceRef.current) { setCurrentHtml(editorInstanceRef.current.getContent()); }
             setShowPreview(true);
@@ -188,7 +189,7 @@ export var HtmlEditor: React.FC<IHtmlEditorProps> = function (props) {
         }, 'Preview')
       ),
       props.onSave ? React.createElement('button', {
-        style: { padding: '6px 16px', borderRadius: 4, border: 'none', background: '#0d9488', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 6 },
+        style: { padding: '6px 16px', borderRadius: 4, border: 'none', background: tc.primary, color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 6 },
         onClick: handleSave
       },
         React.createElement('svg', { width: 12, height: 12, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2 },
@@ -204,7 +205,7 @@ export var HtmlEditor: React.FC<IHtmlEditorProps> = function (props) {
     !isReady && !showPreview && !editorError ? React.createElement('div', {
       style: { border: '1px solid #e2e8f0', borderRadius: 10, padding: 48, textAlign: 'center' as const, background: '#fff', minHeight: props.height || 450, display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center' }
     },
-      React.createElement('div', { style: { width: 32, height: 32, border: '3px solid #e2e8f0', borderTopColor: '#0d9488', borderRadius: '50%', animation: 'dwx-spin 0.8s linear infinite', marginBottom: 12 } }),
+      React.createElement('div', { style: { width: 32, height: 32, border: '3px solid #e2e8f0', borderTopColor: tc.primary, borderRadius: '50%', animation: 'dwx-spin 0.8s linear infinite', marginBottom: 12 } }),
       React.createElement('p', { style: { fontSize: 13, color: '#94a3b8' } }, 'Loading editor...')
     ) : null,
     React.createElement('div', { ref: editorContainerRef, style: { display: !showPreview && isReady ? 'block' : 'none' } }),

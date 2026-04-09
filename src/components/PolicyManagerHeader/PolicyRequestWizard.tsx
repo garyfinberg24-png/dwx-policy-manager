@@ -8,6 +8,7 @@ import styles from './PolicyManagerHeader.module.scss';
 import { SPFI } from '@pnp/sp';
 import { PolicyRequestService } from '../../services/PolicyRequestService';
 import { IPolicyRequestFormData, IPolicyRequestSubmitResult, DEFAULT_REQUEST_FORM } from '../../models/IPolicyRequest';
+import { tc } from '../../utils/themeColors';
 
 export interface IPolicyRequestWizardProps {
   /** Whether the wizard overlay is visible */
@@ -286,13 +287,13 @@ export const PolicyRequestWizard: React.FC<IPolicyRequestWizardProps> = ({
               <div className={styles.wizardSuccess}>
                 <div className={styles.wizardSuccessIcon}>
                   <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 48, height: 48 }}>
-                    <path d="M22 11.08V12a10 10 0 11-5.93-9.14" stroke="#0d9488" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M22 4L12 14.01l-3-3" stroke="#0d9488" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M22 11.08V12a10 10 0 11-5.93-9.14" stroke={tc.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M22 4L12 14.01l-3-3" stroke={tc.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </div>
                 <h2 style={{ color: '#0f172a', margin: '16px 0 8px' }}>Policy Request Submitted!</h2>
                 {submitResult?.referenceNumber && (
-                  <div style={{ background: '#f0fdfa', border: '1px solid #99f6e4', borderRadius: 8, padding: '8px 16px', display: 'inline-block', margin: '0 auto 16px', fontFamily: 'monospace', fontSize: 15, color: '#0d9488', fontWeight: 600, letterSpacing: 1 }}>
+                  <div style={{ background: tc.primaryLighter, border: `1px solid ${tc.primaryLight}`, borderRadius: 8, padding: '8px 16px', display: 'inline-block', margin: '0 auto 16px', fontFamily: 'monospace', fontSize: 15, color: tc.primary, fontWeight: 600, letterSpacing: 1 }}>
                     {submitResult.referenceNumber}
                   </div>
                 )}
@@ -300,18 +301,18 @@ export const PolicyRequestWizard: React.FC<IPolicyRequestWizardProps> = ({
                   Your request for "<strong>{requestForm.policyTitle}</strong>" has been submitted successfully.
                   The Policy Authoring team will be notified and will review your request shortly.
                 </p>
-                <div style={{ background: '#f0fdfa', borderRadius: 12, padding: 20, maxWidth: 420, margin: '0 auto 24px', textAlign: 'left' as const }}>
-                  <div style={{ fontWeight: 600, marginBottom: 12, color: '#0d9488' }}>What happens next?</div>
+                <div style={{ background: tc.primaryLighter, borderRadius: 12, padding: 20, maxWidth: 420, margin: '0 auto 24px', textAlign: 'left' as const }}>
+                  <div style={{ fontWeight: 600, marginBottom: 12, color: tc.primary }}>What happens next?</div>
                   <div style={{ display: 'flex', gap: 12, marginBottom: 10 }}>
-                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#0d9488', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>1</div>
+                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: tc.primary, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>1</div>
                     <div style={{ fontSize: 13, color: '#334155' }}>A Policy Author will be assigned to your request</div>
                   </div>
                   <div style={{ display: 'flex', gap: 12, marginBottom: 10 }}>
-                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#0d9488', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>2</div>
+                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: tc.primary, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>2</div>
                     <div style={{ fontSize: 13, color: '#334155' }}>They will draft the policy based on your requirements</div>
                   </div>
                   <div style={{ display: 'flex', gap: 12 }}>
-                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#0d9488', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>3</div>
+                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: tc.primary, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>3</div>
                     <div style={{ fontSize: 13, color: '#334155' }}>You'll be notified when the draft is ready for review</div>
                   </div>
                 </div>
@@ -436,11 +437,11 @@ export const PolicyRequestWizard: React.FC<IPolicyRequestWizardProps> = ({
                       </label>
                       <div
                         style={{
-                          border: `2px dashed ${isDragOver ? '#0d9488' : '#e2e8f0'}`,
+                          border: `2px dashed ${isDragOver ? tc.primary : '#e2e8f0'}`,
                           borderRadius: 10,
                           padding: attachments.length > 0 ? '12px 16px' : '24px 16px',
                           textAlign: 'center' as const,
-                          background: isDragOver ? '#f0fdfa' : '#fafafa',
+                          background: isDragOver ? tc.primaryLighter : '#fafafa',
                           transition: 'all 0.2s ease',
                           cursor: attachments.length >= MAX_FILES ? 'default' : 'pointer'
                         }}
@@ -472,7 +473,7 @@ export const PolicyRequestWizard: React.FC<IPolicyRequestWizardProps> = ({
                               <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                             </svg>
                             <div style={{ fontSize: 13, color: '#64748b' }}>
-                              <span style={{ color: '#0d9488', fontWeight: 600 }}>Click to browse</span> or drag and drop files here
+                              <span style={{ color: tc.primary, fontWeight: 600 }}>Click to browse</span> or drag and drop files here
                             </div>
                             <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>
                               PDF, Word, Excel, PowerPoint, images, or text files
@@ -489,7 +490,7 @@ export const PolicyRequestWizard: React.FC<IPolicyRequestWizardProps> = ({
                                   width: 32, height: 32, borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center',
                                   fontSize: 10, fontWeight: 700, flexShrink: 0,
                                   background: file.type.includes('pdf') ? '#fef2f2' : file.type.includes('word') ? '#eff6ff' : file.type.includes('excel') || file.type.includes('sheet') ? '#f0fdf4' : file.type.includes('image') ? '#faf5ff' : '#f8fafc',
-                                  color: file.type.includes('pdf') ? '#dc2626' : file.type.includes('word') ? '#2563eb' : file.type.includes('excel') || file.type.includes('sheet') ? '#16a34a' : file.type.includes('image') ? '#9333ea' : '#64748b'
+                                  color: file.type.includes('pdf') ? tc.danger : file.type.includes('word') ? tc.accent : file.type.includes('excel') || file.type.includes('sheet') ? '#16a34a' : file.type.includes('image') ? '#9333ea' : '#64748b'
                                 }}>
                                   {getFileIcon(file.type)}
                                 </div>
@@ -515,7 +516,7 @@ export const PolicyRequestWizard: React.FC<IPolicyRequestWizardProps> = ({
                                 onClick={() => fileInputRef.current?.click()}
                                 style={{
                                   background: 'none', border: '1px dashed #cbd5e1', borderRadius: 4, padding: '6px 12px',
-                                  fontSize: 12, color: '#0d9488', cursor: 'pointer', marginTop: 8, width: '100%'
+                                  fontSize: 12, color: tc.primary, cursor: 'pointer', marginTop: 8, width: '100%'
                                 }}
                               >
                                 + Add more files ({MAX_FILES - attachments.length} remaining)
@@ -615,8 +616,8 @@ export const PolicyRequestWizard: React.FC<IPolicyRequestWizardProps> = ({
                     <div className={styles.wizardReviewSection}>
                       <div className={styles.wizardReviewTitle}>
                         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 16, height: 16 }}>
-                          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="#0d9488" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          <path d="M14 2v6h6" stroke="#0d9488" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke={tc.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M14 2v6h6" stroke={tc.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
                         Policy Details
                       </div>
@@ -639,7 +640,7 @@ export const PolicyRequestWizard: React.FC<IPolicyRequestWizardProps> = ({
                     <div className={styles.wizardReviewSection}>
                       <div className={styles.wizardReviewTitle}>
                         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 16, height: 16 }}>
-                          <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke="#0d9488" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke={tc.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
                         Business Case
                       </div>
@@ -659,8 +660,8 @@ export const PolicyRequestWizard: React.FC<IPolicyRequestWizardProps> = ({
                     <div className={styles.wizardReviewSection}>
                       <div className={styles.wizardReviewTitle}>
                         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 16, height: 16 }}>
-                          <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="#0d9488" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          <circle cx="9" cy="7" r="4" stroke="#0d9488" strokeWidth="2"/>
+                          <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke={tc.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          <circle cx="9" cy="7" r="4" stroke={tc.primary} strokeWidth="2"/>
                         </svg>
                         Requirements
                       </div>
@@ -678,7 +679,7 @@ export const PolicyRequestWizard: React.FC<IPolicyRequestWizardProps> = ({
                       <div className={styles.wizardReviewSection}>
                         <div className={styles.wizardReviewTitle}>
                           <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 16, height: 16 }}>
-                            <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" stroke="#0d9488" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" stroke={tc.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                           </svg>
                           Attachments ({attachments.length})
                         </div>
@@ -688,7 +689,7 @@ export const PolicyRequestWizard: React.FC<IPolicyRequestWizardProps> = ({
                               <span style={{
                                 fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
                                 background: file.type.includes('pdf') ? '#fef2f2' : file.type.includes('word') ? '#eff6ff' : '#f8fafc',
-                                color: file.type.includes('pdf') ? '#dc2626' : file.type.includes('word') ? '#2563eb' : '#64748b'
+                                color: file.type.includes('pdf') ? tc.danger : file.type.includes('word') ? tc.accent : '#64748b'
                               }}>{getFileIcon(file.type)}</span>
                               {file.name}
                               <span style={{ fontSize: 11, color: '#94a3b8' }}>({formatFileSize(file.size)})</span>

@@ -5,10 +5,11 @@
  */
 import * as React from 'react';
 import { IJmlAppFooterProps, IFooterLinkGroup } from './IJmlAppFooterProps';
+import { tc } from '../../utils/themeColors';
 
 const footerStyles: Record<string, React.CSSProperties> = {
   footer: {
-    background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
+    background: tc.headerBg,
     color: 'rgba(255,255,255,0.8)',
     padding: 0,
     marginTop: 'auto',
@@ -19,7 +20,7 @@ const footerStyles: Record<string, React.CSSProperties> = {
     fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
   },
   footerCompact: {
-    background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
+    background: tc.headerBg,
     color: 'rgba(255,255,255,0.8)',
     padding: 0,
     marginTop: 'auto',

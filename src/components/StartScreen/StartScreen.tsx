@@ -6,6 +6,7 @@ import { SPFI } from '@pnp/sp';
 import { PolicyManagerRole } from '../../services/PolicyRoleService';
 import { RecentlyViewedService, IRecentlyViewedDisplay } from '../../services/RecentlyViewedService';
 import styles from './StartScreen.module.scss';
+import { tc } from '../../utils/themeColors';
 
 export interface IStartScreenProps {
   sp: SPFI;
@@ -146,16 +147,16 @@ export class StartScreen extends React.Component<IStartScreenProps, IStartScreen
     // Role-based action cards
     const allActions = [
       // User actions (everyone)
-      { key: 'browse', title: 'Browse Policies', desc: 'Explore all published policies in the Policy Hub with search and filters.', icon: 'ViewAll', color: '#0d9488', bg: '#f0fdfa', page: 'PolicyHub.aspx', minRole: 'User' },
-      { key: 'my', title: 'My Policies', desc: 'View your assigned policies, pending acknowledgements, and read history.', icon: 'ClipboardList', color: '#2563eb', bg: '#eff6ff', page: 'MyPolicies.aspx', minRole: 'User' },
+      { key: 'browse', title: 'Browse Policies', desc: 'Explore all published policies in the Policy Hub with search and filters.', icon: 'ViewAll', color: tc.primary, bg: tc.primaryLighter, page: 'PolicyHub.aspx', minRole: 'User' },
+      { key: 'my', title: 'My Policies', desc: 'View your assigned policies, pending acknowledgements, and read history.', icon: 'ClipboardList', color: tc.accent, bg: '#eff6ff', page: 'MyPolicies.aspx', minRole: 'User' },
       { key: 'search', title: 'Search', desc: 'Find policies by name, number, keywords, or category.', icon: 'Search', color: '#7c3aed', bg: '#f5f3ff', page: 'PolicySearch.aspx', minRole: 'User' },
-      { key: 'help', title: 'Help Centre', desc: 'Browse articles, FAQs, keyboard shortcuts, and contact support.', icon: 'Help', color: '#d97706', bg: '#fffbeb', page: 'PolicyHelp.aspx', minRole: 'User' },
+      { key: 'help', title: 'Help Centre', desc: 'Browse articles, FAQs, keyboard shortcuts, and contact support.', icon: 'Help', color: tc.warning, bg: '#fffbeb', page: 'PolicyHelp.aspx', minRole: 'User' },
       // Author actions
       { key: 'new', title: 'New Policy', desc: 'Create a new policy from scratch, template, or document upload.', icon: 'Add', color: '#16a34a', bg: '#f0fdf4', page: 'PolicyBuilder.aspx', minRole: 'Author' },
       { key: 'author', title: 'Policy Author', desc: 'Manage your policies, drafts, approvals, and delegations.', icon: 'EditNote', color: '#0284c7', bg: '#e0f2fe', page: 'PolicyAuthor.aspx', minRole: 'Author' },
       { key: 'quiz', title: 'Quiz Builder', desc: 'Create and manage comprehension quizzes for your policies.', icon: 'Education', color: '#7c3aed', bg: '#f5f3ff', page: 'QuizBuilder.aspx', minRole: 'Author' },
       // Manager actions
-      { key: 'approvals', title: 'Approvals', desc: 'Review and approve pending policy submissions from your team.', icon: 'CheckboxComposite', color: '#0d9488', bg: '#f0fdfa', page: 'PolicyManagerView.aspx?tab=approvals', minRole: 'Manager', badge: stats.pendingApprovals },
+      { key: 'approvals', title: 'Approvals', desc: 'Review and approve pending policy submissions from your team.', icon: 'CheckboxComposite', color: tc.primary, bg: tc.primaryLighter, page: 'PolicyManagerView.aspx?tab=approvals', minRole: 'Manager', badge: stats.pendingApprovals },
       { key: 'distribution', title: 'Distribution', desc: 'Create and manage policy distribution campaigns.', icon: 'Send', color: '#0284c7', bg: '#e0f2fe', page: 'PolicyDistribution.aspx', minRole: 'Manager' },
       { key: 'analytics', title: 'Analytics', desc: 'Executive dashboards, compliance metrics, and SLA tracking.', icon: 'BarChartVertical', color: '#6d28d9', bg: '#ede9fe', page: 'PolicyAnalytics.aspx', minRole: 'Manager' },
       // Admin actions
@@ -177,8 +178,8 @@ export class StartScreen extends React.Component<IStartScreenProps, IStartScreen
       glanceStats.push({ label: 'My Drafts', value: stats.drafts, color: '#94a3b8' });
     }
     if (userRole === 'Manager' || userRole === 'Admin') {
-      glanceStats.splice(1, 0, { label: 'Team Compliance', value: `${stats.teamCompliance}%`, color: '#0d9488' });
-      glanceStats.push({ label: 'Pending Approvals', value: stats.pendingApprovals, color: stats.pendingApprovals > 0 ? '#d97706' : undefined });
+      glanceStats.splice(1, 0, { label: 'Team Compliance', value: `${stats.teamCompliance}%`, color: tc.primary });
+      glanceStats.push({ label: 'Pending Approvals', value: stats.pendingApprovals, color: stats.pendingApprovals > 0 ? tc.warning : undefined });
     }
     if (userRole === 'Admin') {
       glanceStats.push({ label: 'Total Users', value: stats.totalUsers });
@@ -324,28 +325,28 @@ export class StartScreen extends React.Component<IStartScreenProps, IStartScreen
                 </div>
                 <div className={styles.statCard}>
                   <div className={styles.statIcon} style={{ background: '#fef3c7' }}>
-                    <Icon iconName="Clock" styles={{ root: { fontSize: 18, color: '#d97706' } }} />
+                    <Icon iconName="Clock" styles={{ root: { fontSize: 18, color: tc.warning } }} />
                   </div>
                   <div>
-                    <div className={styles.statValue} style={{ color: '#d97706' }}>{stats.pending}</div>
+                    <div className={styles.statValue} style={{ color: tc.warning }}>{stats.pending}</div>
                     <div className={styles.statLabel}>Pending</div>
                   </div>
                 </div>
                 <div className={styles.statCard}>
                   <div className={styles.statIcon} style={{ background: '#fee2e2' }}>
-                    <Icon iconName="Warning" styles={{ root: { fontSize: 18, color: '#dc2626' } }} />
+                    <Icon iconName="Warning" styles={{ root: { fontSize: 18, color: tc.danger } }} />
                   </div>
                   <div>
-                    <div className={styles.statValue} style={{ color: '#dc2626' }}>{stats.overdue}</div>
+                    <div className={styles.statValue} style={{ color: tc.danger }}>{stats.overdue}</div>
                     <div className={styles.statLabel}>Overdue</div>
                   </div>
                 </div>
                 <div className={styles.statCard}>
-                  <div className={styles.statIcon} style={{ background: '#f0fdfa' }}>
-                    <Icon iconName="Shield" styles={{ root: { fontSize: 18, color: '#0d9488' } }} />
+                  <div className={styles.statIcon} style={{ background: tc.primaryLighter }}>
+                    <Icon iconName="Shield" styles={{ root: { fontSize: 18, color: tc.primary } }} />
                   </div>
                   <div>
-                    <div className={styles.statValue} style={{ color: '#0d9488' }}>
+                    <div className={styles.statValue} style={{ color: tc.primary }}>
                       {stats.acknowledged + stats.pending > 0 ? Math.round((stats.acknowledged / (stats.acknowledged + stats.pending)) * 100) : 100}%
                     </div>
                     <div className={styles.statLabel}>Compliance</div>

@@ -9,6 +9,7 @@ import { BookmarkService, IBookmarkEntry } from '../../services/BookmarkService'
 import { PolicyRequestWizard } from './PolicyRequestWizard';
 import { DwxHubService, DwxNotificationService, DwxNotificationBell } from '@dwx/core';
 import { PolicyChatPanel } from '../PolicyChatPanel';
+import { tc } from '../../utils/themeColors';
 // PolicyHelpPanel deprecated — Help now uses full page at PolicyHelp.aspx
 
 export interface INavItem {
@@ -818,12 +819,12 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
                             display: 'flex', alignItems: 'center', gap: 10,
                             transition: 'background 0.1s'
                           }}
-                          onMouseEnter={(ev) => { (ev.currentTarget as HTMLElement).style.background = '#f0fdfa'; }}
+                          onMouseEnter={(ev) => { (ev.currentTarget as HTMLElement).style.background = tc.primaryLighter; }}
                           onMouseLeave={(ev) => { (ev.currentTarget as HTMLElement).style.background = '#fff'; }}
                         >
-                          <div style={{ width: 32, height: 32, borderRadius: 4, background: '#f0fdfa', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <div style={{ width: 32, height: 32, borderRadius: 4, background: tc.primaryLighter, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                             <svg viewBox="0 0 24 24" fill="none" style={{ width: 16, height: 16 }}>
-                              <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke="#0d9488" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke={tc.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                             </svg>
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
@@ -851,10 +852,10 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
                       }}
                       onKeyDown={(ev) => { if (ev.key === 'Enter') { setShowSearchDropdown(false); window.location.href = `/sites/PolicyManager/SitePages/PolicySearch.aspx?q=${encodeURIComponent(searchQuery.trim())}`; } }}
                       style={{ padding: '10px 16px', textAlign: 'center', cursor: 'pointer', borderTop: '1px solid #e2e8f0', background: '#f8fafc' }}
-                      onMouseEnter={(ev) => { (ev.currentTarget as HTMLElement).style.background = '#f0fdfa'; }}
+                      onMouseEnter={(ev) => { (ev.currentTarget as HTMLElement).style.background = tc.primaryLighter; }}
                       onMouseLeave={(ev) => { (ev.currentTarget as HTMLElement).style.background = '#f8fafc'; }}
                     >
-                      <span style={{ fontSize: 12, color: '#0d9488', fontWeight: 600 }}>
+                      <span style={{ fontSize: 12, color: tc.primary, fontWeight: 600 }}>
                         View all results for &ldquo;{searchQuery}&rdquo; →
                       </span>
                     </div>
@@ -936,7 +937,7 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
                         >
                           <div
                             className={styles.notificationItemIcon}
-                            style={{ background: '#0d9488' }}
+                            style={{ background: tc.primary }}
                           >
                             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: 16, height: 16 }}>
                               <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -1003,7 +1004,7 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
                       >
                         <div
                           className={styles.notificationItemIcon}
-                          style={{ background: '#0d9488' }}
+                          style={{ background: tc.primary }}
                         >
                           <svg viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg" style={{ width: 16, height: 16 }}>
                             <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -1036,7 +1037,7 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
                       type="button"
                       onClick={() => { BookmarkService.clearAll(); setBookmarkedPolicies([]); }}
                       className={styles.dropdownFooterLink}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#0d9488', fontSize: 12 }}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: tc.primary, fontSize: 12 }}
                     >
                       Clear All Bookmarks
                     </button>
@@ -1129,10 +1130,10 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
                 {localUnreadCount > 0 && (
                   <span style={{
                     position: 'absolute', top: 0, right: 0,
-                    background: '#dc2626', color: '#fff', fontSize: 9, fontWeight: 700,
+                    background: tc.danger, color: '#fff', fontSize: 9, fontWeight: 700,
                     minWidth: 16, height: 16, borderRadius: 8,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    padding: '0 4px', lineHeight: 1, border: '2px solid #0f766e',
+                    padding: '0 4px', lineHeight: 1, border: `2px solid ${tc.primaryDark}`,
                   }}>
                     {localUnreadCount > 9 ? '9+' : localUnreadCount}
                   </span>
@@ -1144,7 +1145,7 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
                   <div style={{ padding: '12px 16px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>Notifications</span>
                     {localUnreadCount > 0 && (
-                      <span style={{ fontSize: 10, color: '#0d9488', fontWeight: 600, cursor: 'pointer' }}
+                      <span style={{ fontSize: 10, color: tc.primary, fontWeight: 600, cursor: 'pointer' }}
                         onClick={async () => {
                           try {
                             for (const n of localNotifications.filter((x: any) => !x.IsRead)) {
@@ -1176,7 +1177,7 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
                           style={{
                             display: 'flex', gap: 10, padding: '10px 16px', textDecoration: 'none',
                             borderBottom: '1px solid #f8fafc', cursor: 'pointer',
-                            background: n.IsRead ? 'transparent' : '#f0fdfa',
+                            background: n.IsRead ? 'transparent' : tc.primaryLighter,
                           }}
                           onClick={() => {
                             if (!n.IsRead) {
@@ -1201,7 +1202,7 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
                             <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>{timeAgo}</div>
                           </div>
                           {!n.IsRead && (
-                            <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#0d9488', flexShrink: 0, marginTop: 8 }} />
+                            <div style={{ width: 6, height: 6, borderRadius: '50%', background: tc.primary, flexShrink: 0, marginTop: 8 }} />
                           )}
                         </a>
                       );
@@ -1248,7 +1249,7 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
                       display: 'inline-block', marginTop: 4,
                       padding: '2px 10px', borderRadius: 4, fontSize: 11, fontWeight: 600,
                       background: policyRole === 'Admin' ? '#fef2f2' : policyRole === 'Manager' ? '#fffbeb' : policyRole === 'Author' ? '#f0fdf4' : '#f0f9ff',
-                      color: policyRole === 'Admin' ? '#dc2626' : policyRole === 'Manager' ? '#d97706' : policyRole === 'Author' ? '#16a34a' : '#0284c7'
+                      color: policyRole === 'Admin' ? tc.danger : policyRole === 'Manager' ? tc.warning : policyRole === 'Author' ? '#16a34a' : '#0284c7'
                     }}>
                       {policyRole}
                     </span>
@@ -1370,12 +1371,12 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
                         }}
                         style={{
                           display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px',
-                          fontSize: 13, color: activeNavKey === child.key ? '#0d9488' : '#334155',
+                          fontSize: 13, color: activeNavKey === child.key ? tc.primary : '#334155',
                           fontWeight: activeNavKey === child.key ? 600 : 400,
-                          background: activeNavKey === child.key ? '#f0fdfa' : 'transparent',
+                          background: activeNavKey === child.key ? tc.primaryLighter : 'transparent',
                           textDecoration: 'none', cursor: 'pointer'
                         }}
-                        onMouseEnter={(e) => { if (activeNavKey !== child.key) (e.currentTarget as HTMLElement).style.background = '#f0fdfa'; }}
+                        onMouseEnter={(e) => { if (activeNavKey !== child.key) (e.currentTarget as HTMLElement).style.background = tc.primaryLighter; }}
                         onMouseLeave={(e) => { if (activeNavKey !== child.key) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
                       >
                         <span style={{ width: 20, display: 'flex', justifyContent: 'center' }}>{child.icon}</span>
@@ -1429,10 +1430,10 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
                           display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px',
                           fontSize: 13, color: '#334155', textDecoration: 'none', cursor: 'pointer'
                         }}
-                        onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.background = '#f0fdfa'}
+                        onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.background = tc.primaryLighter}
                         onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.background = 'transparent'}
                       >
-                        <Icon iconName={lib.icon || 'Lock'} styles={{ root: { fontSize: 16, color: '#0d9488' } }} />
+                        <Icon iconName={lib.icon || 'Lock'} styles={{ root: { fontSize: 16, color: tc.primary } }} />
                         {lib.title}
                       </a>
                     ))}

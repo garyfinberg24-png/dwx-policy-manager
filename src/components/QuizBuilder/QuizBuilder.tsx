@@ -48,6 +48,7 @@ import { SPFI } from '@pnp/sp';
 import { WebPartContext } from '@microsoft/sp-webpart-base';
 import { SPService } from '../../services/SPService';
 import { ConfigKeys } from '../../models/IJmlConfiguration';
+import { tc } from '../../utils/themeColors';
 
 export interface IQuizBuilderProps {
   sp: SPFI;
@@ -1362,7 +1363,7 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
             iconProps={{ iconName: 'Robot' }}
             onClick={() => this.setState({ showAiPanel: true })}
             disabled={saving || !quizId}
-            styles={{ root: { borderRadius: '4px', borderColor: '#0d9488', color: '#0d9488' }, rootHovered: { borderColor: '#0b7c72', color: '#0b7c72' } }}
+            styles={{ root: { borderRadius: '4px', borderColor: tc.primary, color: tc.primary }, rootHovered: { borderColor: '#0b7c72', color: '#0b7c72' } }}
           />
         </Stack>
         <Stack horizontal tokens={{ childrenGap: 8 }} wrap>
@@ -1676,7 +1677,7 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
 
               {/* Certificate Preview Card */}
               <div style={{
-                background: 'linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 50%, #f0fdf4 100%)',
+                background: `linear-gradient(135deg, ${tc.primaryLighter} 0%, #ecfdf5 50%, #f0fdf4 100%)`,
                 border: '2px solid #99f6e4', borderRadius: 8, padding: 32, textAlign: 'center', position: 'relative'
               }}>
                 <div style={{
@@ -1684,10 +1685,10 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
                   border: '1px dashed #99f6e4', borderRadius: 4
                 }} />
                 <div style={{ fontSize: 32, marginBottom: 8, position: 'relative' }}>&#127941;</div>
-                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 2, color: '#0d9488', marginBottom: 4, position: 'relative' }}>
+                <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 2, color: tc.primary, marginBottom: 4, position: 'relative' }}>
                   Certificate of Completion
                 </div>
-                <div style={{ fontSize: 22, fontWeight: 700, color: '#0f766e', marginBottom: 4, position: 'relative' }}>
+                <div style={{ fontSize: 22, fontWeight: 700, color: tc.primaryDark, marginBottom: 4, position: 'relative' }}>
                   {title || 'Quiz Name'}
                 </div>
                 <div style={{ fontSize: 13, color: '#64748b', position: 'relative' }}>
@@ -1751,7 +1752,7 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
 
         {/* Info bar */}
         {quizId && questions.length > 0 && (
-          <div style={{ padding: '10px 16px', background: '#f0fdfa', border: '1px solid #99f6e4', borderRadius: 4, fontSize: 12, color: '#0f766e', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+          <div style={{ padding: '10px 16px', background: tc.primaryLighter, border: `1px solid ${tc.primaryLight}`, borderRadius: 4, fontSize: 12, color: tc.primaryDark, display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
             <Icon iconName="ClipboardList" styles={{ root: { fontSize: 14 } }} />
             <strong>{questions.length} questions</strong>
             <span>&middot;</span>
@@ -1759,7 +1760,7 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
             {enableSections && <><span>&middot;</span><span>{sections.length} section{sections.length !== 1 ? 's' : ''}</span></>}
             {(() => {
               const linkedPolicy = (this.state.policies || []).find((p: any) => p.Id === this.state.policyId);
-              return linkedPolicy ? (<><span>&middot;</span><span>Linked to <strong style={{ color: '#0d9488' }}>{linkedPolicy.PolicyNumber} — {linkedPolicy.PolicyName}</strong></span></>) : null;
+              return linkedPolicy ? (<><span>&middot;</span><span>Linked to <strong style={{ color: tc.primary }}>{linkedPolicy.PolicyNumber} — {linkedPolicy.PolicyName}</strong></span></>) : null;
             })()}
           </div>
         )}
@@ -1790,7 +1791,7 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
                 editingSection: { Title: '', Description: '', Order: sections.length + 1, RandomizeWithinSection: false, QuizId: quizId } as any,
                 editingSectionIndex: -1
               })}
-              style={{ padding: '4px 12px', borderRadius: 4, fontSize: 11, fontWeight: 600, border: '1px dashed #0d9488', background: '#f0fdfa', color: '#0d9488', cursor: 'pointer', fontFamily: 'inherit' }}
+              style={{ padding: '4px 12px', borderRadius: 4, fontSize: 11, fontWeight: 600, border: `1px dashed ${tc.primary}`, background: tc.primaryLighter, color: tc.primary, cursor: 'pointer', fontFamily: 'inherit' }}
             >
               + Add Section
             </button>
@@ -1909,9 +1910,9 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
         type={PanelType.smallFixedFar}
         hasCloseButton={false}
         onRenderNavigation={() => (
-          <div style={{ background: 'linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%)', borderBottom: '1px solid #99f6e4', padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ fontSize: 18, fontWeight: 700, color: '#0f766e' }}>{isNew ? 'Add Section' : 'Edit Section'}</div>
-            <button onClick={() => this.setState({ showSectionPanel: false, editingSection: null })} style={{ width: 32, height: 32, borderRadius: 4, border: 'none', background: 'transparent', cursor: 'pointer', color: '#0f766e', fontSize: 18 }}>×</button>
+          <div style={{ background: `linear-gradient(135deg, ${tc.primaryLighter} 0%, ${tc.primaryLight} 100%)`, borderBottom: `1px solid ${tc.primaryLight}`, padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ fontSize: 18, fontWeight: 700, color: tc.primaryDark }}>{isNew ? 'Add Section' : 'Edit Section'}</div>
+            <button onClick={() => this.setState({ showSectionPanel: false, editingSection: null })} style={{ width: 32, height: 32, borderRadius: 4, border: 'none', background: 'transparent', cursor: 'pointer', color: tc.primaryDark, fontSize: 18 }}>×</button>
           </div>
         )}
         styles={{ navigation: { padding: 0, margin: 0, height: 'auto', background: 'transparent', borderBottom: 'none' }, commands: { padding: 0, margin: 0, background: 'transparent' }, header: { display: 'none' } }}
@@ -1965,7 +1966,7 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
                   console.error('Section save failed:', err);
                 }
               }}
-              styles={{ root: { background: '#0d9488', borderColor: '#0d9488', borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+              styles={{ root: { background: tc.primary, borderColor: tc.primary, borderRadius: 4 }, rootHovered: { background: tc.primaryDark, borderColor: tc.primaryDark } }}
             />
             {!isNew && editingSection.Id && (
               <DefaultButton
@@ -3693,7 +3694,7 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
                 {aiGeneratedQuestions.map((q, i) => (
                   <div key={i} style={{ padding: '12px 0', borderBottom: i < aiGeneratedQuestions.length - 1 ? '1px solid #edebe9' : 'none' }}>
                     <Stack horizontal tokens={{ childrenGap: 8 }} verticalAlign="center">
-                      <span style={{ fontWeight: 700, color: '#0d9488', minWidth: 24 }}>{i + 1}.</span>
+                      <span style={{ fontWeight: 700, color: tc.primary, minWidth: 24 }}>{i + 1}.</span>
                       <span style={{ backgroundColor: '#e8f5e9', padding: '2px 8px', borderRadius: 4, fontSize: 11 }}>
                         {q.QuestionType}
                       </span>
@@ -3803,7 +3804,7 @@ export class QuizBuilder extends React.Component<IQuizBuilderProps, IQuizBuilder
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px' }}>
             {[
               { label: 'Questions', value: questions.length, color: '#0078d4' },
-              { label: 'Total Points', value: totalPoints, color: '#0d9488' },
+              { label: 'Total Points', value: totalPoints, color: tc.primary },
               { label: 'Passing Score', value: `${passingScore}%`, color: '#107c10' },
               { label: 'Time Limit', value: `${timeLimit} min`, color: '#8764b8' },
               { label: 'Max Attempts', value: maxAttempts, color: '#d83b01' },

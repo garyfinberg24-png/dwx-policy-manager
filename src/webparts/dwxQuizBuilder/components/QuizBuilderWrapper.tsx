@@ -9,6 +9,7 @@ import { RoleDetectionService } from '../../../services/RoleDetectionService';
 import { PolicyManagerRole, getHighestPolicyRole, hasMinimumRole } from '../../../services/PolicyRoleService';
 import { Icon, Text, DefaultButton } from '@fluentui/react';
 import styles from './QuizBuilderWrapper.module.scss';
+import { tc } from '../../../utils/themeColors';
 
 // Status badge colors
 const statusColors: Record<string, { bg: string; color: string }> = {
@@ -228,7 +229,7 @@ export const QuizBuilderWrapper: React.FC<IQuizBuilderWrapperProps> = (props) =>
                   alignItems: 'center',
                   gap: '8px',
                   padding: '10px 20px',
-                  backgroundColor: '#0d9488',
+                  backgroundColor: tc.primary,
                   color: '#fff',
                   border: 'none',
                   borderRadius: '4px',
@@ -271,7 +272,7 @@ export const QuizBuilderWrapper: React.FC<IQuizBuilderWrapperProps> = (props) =>
                       borderRadius: '4px',
                       cursor: 'pointer',
                       backgroundColor: filterStatus === status ? '#fff' : 'transparent',
-                      color: filterStatus === status ? '#0d9488' : '#605e5c',
+                      color: filterStatus === status ? tc.primary : '#605e5c',
                       boxShadow: filterStatus === status ? '0 1px 3px rgba(0,0,0,0.12)' : 'none',
                       transition: 'all 0.15s'
                     }}
@@ -354,7 +355,7 @@ export const QuizBuilderWrapper: React.FC<IQuizBuilderWrapperProps> = (props) =>
                     onClick={() => window.location.href = '/sites/PolicyManager/SitePages/QuizBuilder.aspx?quizId=new'}
                     style={{
                       padding: '10px 20px',
-                      backgroundColor: '#0d9488',
+                      backgroundColor: tc.primary,
                       color: '#fff',
                       border: 'none',
                       borderRadius: '4px',
@@ -513,9 +514,9 @@ export const QuizBuilderWrapper: React.FC<IQuizBuilderWrapperProps> = (props) =>
                             padding: '8px',
                             fontSize: '13px',
                             fontWeight: 500,
-                            border: '1px solid #0d9488',
+                            border: `1px solid ${tc.primary}`,
                             borderRadius: '4px',
-                            backgroundColor: '#0d9488',
+                            backgroundColor: tc.primary,
                             color: '#fff',
                             cursor: 'pointer'
                           }}

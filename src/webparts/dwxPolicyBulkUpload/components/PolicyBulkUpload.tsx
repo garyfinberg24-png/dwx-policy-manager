@@ -15,6 +15,7 @@ import { PM_LISTS } from '../../../constants/SharePointListNames';
 import { RoleDetectionService } from '../../../services/RoleDetectionService';
 import { createDialogManager } from '../../../hooks/useDialog';
 import { PolicyManagerRole, getHighestPolicyRole, hasMinimumRole } from '../../../services/PolicyRoleService';
+import { tc } from '../../../utils/themeColors';
 
 // ============================================================================
 // TYPES
@@ -698,11 +699,11 @@ CLASSIFICATION GUIDANCE:
               const done = completedSteps.has(step.num); const active = step.num === wizardStep; const clickable = done || step.num <= wizardStep;
               return (
                 <div key={step.num} onClick={() => clickable && this.setState({ wizardStep: step.num as WizardStep })}
-                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', cursor: clickable ? 'pointer' : 'default', borderLeft: active ? '3px solid #0d9488' : '3px solid transparent', background: active ? '#f0fdfa' : 'transparent' }}>
-                  <div style={{ width: 26, height: 26, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, flexShrink: 0, background: done ? '#0d9488' : active ? '#f0fdfa' : '#fff', color: done ? '#fff' : active ? '#0d9488' : '#94a3b8', border: `2px solid ${done ? '#0d9488' : active ? '#0d9488' : '#e2e8f0'}` }}>
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', cursor: clickable ? 'pointer' : 'default', borderLeft: active ? `3px solid ${tc.primary}` : '3px solid transparent', background: active ? tc.primaryLighter : 'transparent' }}>
+                  <div style={{ width: 26, height: 26, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, flexShrink: 0, background: done ? tc.primary : active ? tc.primaryLighter : '#fff', color: done ? '#fff' : active ? tc.primary : '#94a3b8', border: `2px solid ${done ? tc.primary : active ? tc.primary : '#e2e8f0'}` }}>
                     {done ? <Icon iconName="CheckMark" style={{ fontSize: 10 }} /> : step.num}
                   </div>
-                  <div><div style={{ fontWeight: active ? 600 : 500, color: active ? '#0d9488' : done ? '#0f172a' : '#475569', fontSize: 12 }}>{step.title}</div><div style={{ fontSize: 9, color: '#94a3b8' }}>{step.desc}</div></div>
+                  <div><div style={{ fontWeight: active ? 600 : 500, color: active ? tc.primary : done ? '#0f172a' : '#475569', fontSize: 12 }}>{step.title}</div><div style={{ fontSize: 9, color: '#94a3b8' }}>{step.desc}</div></div>
                 </div>
               );
             })}
@@ -731,7 +732,7 @@ CLASSIFICATION GUIDANCE:
               styles={{ root: { borderRadius: 4, visibility: wizardStep === 1 ? 'hidden' : 'visible' } }} />
             {wizardStep < 4 && (
               <PrimaryButton onClick={() => { const c = new Set(this.state.completedSteps); c.add(wizardStep); this.setState({ wizardStep: Math.min(4, wizardStep + 1) as WizardStep, completedSteps: c }); }}
-                styles={{ root: { background: '#0d9488', borderColor: '#0d9488', borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}>
+                styles={{ root: { background: tc.primary, borderColor: tc.primary, borderRadius: 4 }, rootHovered: { background: tc.primaryDark, borderColor: tc.primaryDark } }}>
                 Next <Icon iconName="ChevronRight" style={{ marginLeft: 6 }} />
               </PrimaryButton>
             )}
@@ -755,9 +756,9 @@ CLASSIFICATION GUIDANCE:
 
         <div onDragOver={(e) => { e.preventDefault(); this.setState({ dragOver: true }); }} onDragLeave={() => this.setState({ dragOver: false })} onDrop={this.handleFileDrop}
           onClick={() => this._fileInputRef.current?.click()}
-          style={{ border: `2px dashed ${dragOver ? '#0d9488' : '#cbd5e1'}`, borderRadius: 10, padding: '36px 24px', textAlign: 'center', cursor: 'pointer', background: dragOver ? '#f0fdfa' : '#fff', marginBottom: 16 }}>
+          style={{ border: `2px dashed ${dragOver ? tc.primary : '#cbd5e1'}`, borderRadius: 10, padding: '36px 24px', textAlign: 'center', cursor: 'pointer', background: dragOver ? tc.primaryLighter : '#fff', marginBottom: 16 }}>
           <input ref={this._fileInputRef} type="file" multiple accept={ALLOWED_EXTENSIONS.join(',')} onChange={this.handleFileSelect} style={{ display: 'none' }} />
-          <svg viewBox="0 0 24 24" fill="none" width="32" height="32" style={{ color: dragOver ? '#0d9488' : '#94a3b8', marginBottom: 8 }}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M17 8l-5-5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><path d="M12 3v12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+          <svg viewBox="0 0 24 24" fill="none" width="32" height="32" style={{ color: dragOver ? tc.primary : '#94a3b8', marginBottom: 8 }}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><path d="M17 8l-5-5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><path d="M12 3v12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
           <div style={{ fontSize: 13, fontWeight: 600, color: '#0f172a' }}>{dragOver ? 'Drop files here' : 'Drag & drop or click to browse'}</div>
         </div>
 
@@ -780,7 +781,7 @@ CLASSIFICATION GUIDANCE:
         {uploading && <ProgressIndicator label={`Uploading... ${uploadProgress}%`} percentComplete={uploadProgress / 100} style={{ marginBottom: 12 }} />}
         {pending.length > 0 && !uploading && (
           <PrimaryButton text={`Upload ${pending.length} File${pending.length !== 1 ? 's' : ''}`} iconProps={{ iconName: 'CloudUpload' }} onClick={() => this.uploadToSharePoint()}
-            styles={{ root: { background: '#0d9488', borderColor: '#0d9488', borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }} />
+            styles={{ root: { background: tc.primary, borderColor: tc.primary, borderRadius: 4 }, rootHovered: { background: tc.primaryDark, borderColor: tc.primaryDark } }} />
         )}
       </>
     );
@@ -852,17 +853,17 @@ CLASSIFICATION GUIDANCE:
           {groups.map(group => (
             <React.Fragment key={group.key || '__all'}>
               {group.key && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 14px', background: '#f0fdfa', borderBottom: '1px solid #e2e8f0', cursor: 'pointer' }}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 14px', background: tc.primaryLighter, borderBottom: '1px solid #e2e8f0', cursor: 'pointer' }}
                   onClick={() => { const ids = group.items.map(i => i.id); const allGrp = ids.every(id => selectedIds.has(id)); const next = new Set(selectedIds); if (allGrp) ids.forEach(id => next.delete(id)); else ids.forEach(id => next.add(id)); this.setState({ selectedIds: next }); }}>
                   <input type="checkbox" checked={group.items.every(i => selectedIds.has(i.id))} readOnly />
-                  <span style={{ fontSize: 12, fontWeight: 700, color: '#0d9488' }}>{group.key}</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: tc.primary }}>{group.key}</span>
                   <span style={{ fontSize: 11, color: '#94a3b8' }}>({group.items.length})</span>
                 </div>
               )}
               {group.items.map(item => {
             const meta = item.existingMetadata || {};
             return (
-              <div key={item.id} style={{ display: 'grid', gridTemplateColumns: '32px 1fr 90px 90px 90px 80px', padding: '8px 14px', borderBottom: '1px solid #f1f5f9', alignItems: 'center', background: selectedIds.has(item.id) ? '#f0fdfa' : '#fff' }}>
+              <div key={item.id} style={{ display: 'grid', gridTemplateColumns: '32px 1fr 90px 90px 90px 80px', padding: '8px 14px', borderBottom: '1px solid #f1f5f9', alignItems: 'center', background: selectedIds.has(item.id) ? tc.primaryLighter : '#fff' }}>
                 <div><input type="checkbox" checked={selectedIds.has(item.id)} onChange={() => { const n = new Set(selectedIds); if (n.has(item.id)) n.delete(item.id); else n.add(item.id); this.setState({ selectedIds: n }); }} /></div>
                 <div>
                   <input type="text" value={item.title} onChange={(e) => this.updateItem(item.id, { title: (e.target as HTMLInputElement).value })}
@@ -892,7 +893,7 @@ CLASSIFICATION GUIDANCE:
     let enrichable = imports.filter(i => !['pending', 'failed'].includes(i.status));
     const templateOptions: IDropdownOption[] = [{ key: '', text: '— No template —' }, ...fastTrackTemplates.map(t => ({ key: String(t.Id), text: t.Title }))];
     const selectedCount = selectedIds.size;
-    const riskColor = (r: string) => r === 'Critical' ? '#dc2626' : r === 'High' ? '#d97706' : r === 'Medium' ? '#0d9488' : r === 'Low' ? '#059669' : '#94a3b8';
+    const riskColor = (r: string) => r === 'Critical' ? '#dc2626' : r === 'High' ? '#d97706' : r === 'Medium' ? tc.primary : r === 'Low' ? '#059669' : '#94a3b8';
 
     // Filter
     if (enrichFilterCat !== 'All') enrichable = enrichable.filter(i => i.category === enrichFilterCat);
@@ -945,10 +946,10 @@ CLASSIFICATION GUIDANCE:
               {/* Fill-down quick actions */}
               <Dropdown placeholder="Fill Category ↓" options={CATEGORY_OPTIONS.filter(o => o.key)}
                 onChange={(_, opt) => { if (opt?.key) fillDown('category', String(opt.key)); }}
-                styles={{ root: { width: 130 }, title: { borderRadius: 4, height: 30, lineHeight: '28px', fontSize: 11, color: '#0d9488', borderColor: '#99f6e4' }, caretDownWrapper: { height: 30, lineHeight: '30px' } }} />
+                styles={{ root: { width: 130 }, title: { borderRadius: 4, height: 30, lineHeight: '28px', fontSize: 11, color: tc.primary, borderColor: '#99f6e4' }, caretDownWrapper: { height: 30, lineHeight: '30px' } }} />
               <Dropdown placeholder="Fill Risk ↓" options={RISK_OPTIONS.filter(o => o.key)}
                 onChange={(_, opt) => { if (opt?.key) fillDown('risk', String(opt.key)); }}
-                styles={{ root: { width: 110 }, title: { borderRadius: 4, height: 30, lineHeight: '28px', fontSize: 11, color: '#0d9488', borderColor: '#99f6e4' }, caretDownWrapper: { height: 30, lineHeight: '30px' } }} />
+                styles={{ root: { width: 110 }, title: { borderRadius: 4, height: 30, lineHeight: '28px', fontSize: 11, color: tc.primary, borderColor: '#99f6e4' }, caretDownWrapper: { height: 30, lineHeight: '30px' } }} />
               <Dropdown placeholder="Fill Template ↓" selectedKey="" options={[{ key: '', text: 'Fill Template ↓' }, ...templateOptions.filter(o => o.key)]}
                 onChange={(_, opt) => {
                   if (opt?.key) {
@@ -975,7 +976,7 @@ CLASSIFICATION GUIDANCE:
           {enrichable.map(item => {
             const isClassifying = item.status === 'classifying';
             return (
-              <div key={item.id} style={{ display: 'grid', gridTemplateColumns: '32px 1.5fr 140px 100px 130px 140px 60px 40px', padding: '8px 14px', borderBottom: '1px solid #f1f5f9', alignItems: 'center', background: isClassifying ? '#faf5ff' : selectedIds.has(item.id) ? '#f0fdfa' : '#fff', opacity: isClassifying ? 0.7 : 1, gap: 6 }}>
+              <div key={item.id} style={{ display: 'grid', gridTemplateColumns: '32px 1.5fr 140px 100px 130px 140px 60px 40px', padding: '8px 14px', borderBottom: '1px solid #f1f5f9', alignItems: 'center', background: isClassifying ? '#faf5ff' : selectedIds.has(item.id) ? tc.primaryLighter : '#fff', opacity: isClassifying ? 0.7 : 1, gap: 6 }}>
                 <div><input type="checkbox" checked={selectedIds.has(item.id)} disabled={isClassifying} onChange={() => { const n = new Set(selectedIds); if (n.has(item.id)) n.delete(item.id); else n.add(item.id); this.setState({ selectedIds: n }); }} /></div>
 
                 {/* Title — editable */}
@@ -1025,7 +1026,7 @@ CLASSIFICATION GUIDANCE:
                 <div>
                   {item.spId && <IconButton iconProps={{ iconName: 'Edit' }} title="Open in Policy Builder"
                     onClick={async () => { const ok = await this.dialogManager.showConfirm(`Open "${item.title}" in Policy Builder?\n\nYou will leave the Bulk Upload wizard. Your progress is saved.`, { title: 'Open in Builder', confirmText: 'Open', cancelText: 'Cancel' }); if (ok) window.location.href = `${siteUrl}/SitePages/PolicyBuilder.aspx?editPolicyId=${item.spId}`; }}
-                    styles={{ root: { width: 24, height: 24 }, icon: { fontSize: 12, color: '#0d9488' } }} />}
+                    styles={{ root: { width: 24, height: 24 }, icon: { fontSize: 12, color: tc.primary } }} />}
                 </div>
               </div>
             );
@@ -1084,7 +1085,7 @@ CLASSIFICATION GUIDANCE:
         {/* Action buttons */}
         <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
           <PrimaryButton text="Open Drafts & Pipeline" iconProps={{ iconName: 'ViewAll' }} href={`${siteUrl}/SitePages/PolicyAuthor.aspx`}
-            styles={{ root: { background: '#0d9488', borderColor: '#0d9488', borderRadius: 4, fontSize: 12, height: 32 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }} />
+            styles={{ root: { background: tc.primary, borderColor: tc.primary, borderRadius: 4, fontSize: 12, height: 32 }, rootHovered: { background: tc.primaryDark, borderColor: tc.primaryDark } }} />
           <div style={{ width: 1, height: 24, background: '#e2e8f0', margin: '0 4px' }} />
           {selectedCount > 0 ? (
             <>
@@ -1116,7 +1117,7 @@ CLASSIFICATION GUIDANCE:
         <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden', marginBottom: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
             <span style={{ fontWeight: 600, fontSize: 13, color: '#0f172a' }}>Processed Files ({processedItems.length})</span>
-            {selectedCount > 0 && <span style={{ fontSize: 12, color: '#0d9488', fontWeight: 600 }}>{selectedCount} selected</span>}
+            {selectedCount > 0 && <span style={{ fontSize: 12, color: tc.primary, fontWeight: 600 }}>{selectedCount} selected</span>}
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '32px 1fr 110px 80px 100px 140px 70px', padding: '6px 16px', background: '#fafafa', borderBottom: '1px solid #f1f5f9', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, color: '#64748b' }}>
             <div><input type="checkbox" checked={allSelected} onChange={() => { if (allSelected) this.setState({ selectedIds: new Set() }); else this.setState({ selectedIds: new Set(processedItems.map(i => i.id)) }); }} /></div>
@@ -1124,12 +1125,12 @@ CLASSIFICATION GUIDANCE:
           </div>
           <div style={{ maxHeight: 400, overflowY: 'auto' }}>
             {processedItems.map(item => {
-              const rc = item.risk === 'Critical' ? '#dc2626' : item.risk === 'High' ? '#d97706' : item.risk === 'Medium' ? '#0d9488' : '#059669';
+              const rc = item.risk === 'Critical' ? '#dc2626' : item.risk === 'High' ? '#d97706' : item.risk === 'Medium' ? tc.primary : '#059669';
               const sc = item.status === 'failed' ? '#dc2626' : ['classified', 'enriched'].includes(item.status) ? '#059669' : '#2563eb';
               const sl = item.status === 'failed' ? 'Failed' : ['classified', 'enriched'].includes(item.status) ? 'Ready' : 'Uploaded';
               const isSelected = selectedIds.has(item.id);
               return (
-                <div key={item.id} style={{ display: 'grid', gridTemplateColumns: '32px 1fr 110px 80px 100px 140px 70px', padding: '8px 16px', borderBottom: '1px solid #f8fafc', alignItems: 'center', fontSize: 12, background: isSelected ? '#f0fdfa' : '#fff' }}>
+                <div key={item.id} style={{ display: 'grid', gridTemplateColumns: '32px 1fr 110px 80px 100px 140px 70px', padding: '8px 16px', borderBottom: '1px solid #f8fafc', alignItems: 'center', fontSize: 12, background: isSelected ? tc.primaryLighter : '#fff' }}>
                   <div><input type="checkbox" checked={isSelected} onChange={() => { const n = new Set(selectedIds); if (n.has(item.id)) n.delete(item.id); else n.add(item.id); this.setState({ selectedIds: n }); }} /></div>
                   <div><div style={{ fontWeight: 600, color: '#0f172a', fontSize: 13 }}>{item.title}</div><div style={{ fontSize: 10, color: '#cbd5e1' }}>{item.fileName}</div></div>
                   <div>{item.category ? <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 4, background: '#f5f3ff', color: '#7c3aed' }}>{item.category}</span> : <span style={{ color: '#cbd5e1' }}>—</span>}</div>
@@ -1205,13 +1206,13 @@ CLASSIFICATION GUIDANCE:
                 }
                 this.setState({ showBatchPanel: false, batchTemplateId: '', batchCategory: '', batchRisk: '', selectedIds: new Set() });
               }}
-              styles={{ root: { background: '#0d9488', borderColor: '#0d9488', borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }} />
+              styles={{ root: { background: tc.primary, borderColor: tc.primary, borderRadius: 4 }, rootHovered: { background: tc.primaryDark, borderColor: tc.primaryDark } }} />
             <DefaultButton text="Cancel" onClick={() => this.setState({ showBatchPanel: false })} styles={{ root: { borderRadius: 4 } }} />
           </Stack>
         )} isFooterAtBottom={true}>
         <Stack tokens={{ childrenGap: 16 }} style={{ paddingTop: 16 }}>
           <Text style={{ fontSize: 13, color: '#64748b' }}>Apply a template or set metadata for {selectedIds.size} files.</Text>
-          <div style={{ background: '#f0fdfa', border: '1px solid #99f6e4', borderRadius: 4, padding: 14 }}>
+          <div style={{ background: tc.primaryLighter, border: `1px solid ${tc.primaryLight}`, borderRadius: 4, padding: 14 }}>
             <Text style={{ fontWeight: 600, color: '#0f172a', fontSize: 13, display: 'block', marginBottom: 6 }}>Fast Track Template</Text>
             <Dropdown selectedKey={batchTemplateId} options={templateOptions} onChange={(_, opt) => this.setState({ batchTemplateId: String(opt?.key || '') })} placeholder="Select..." styles={{ title: { borderRadius: 4 }, dropdown: { borderRadius: 4 } }} />
           </div>

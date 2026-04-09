@@ -44,6 +44,7 @@ import { PolicyReportExportService } from '../../../services/PolicyReportExportS
 import { ReportHtmlGenerator } from '../../../utils/reportHtmlGenerator';
 import { createDialogManager } from '../../../hooks/useDialog';
 import styles from './PolicyManagerView.module.scss';
+import { tc } from '../../../utils/themeColors';
 
 // ============================================================================
 // INTERFACES
@@ -923,7 +924,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
               text={scheduleSaving ? 'Saving...' : 'Save Schedule'}
               disabled={scheduleSaving || !scheduleRecipients.trim()}
               onClick={this.handleSaveSchedule}
-              styles={{ root: { background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e' } }}
+              styles={{ root: { background: tc.primary, borderColor: tc.primary }, rootHovered: { background: tc.primaryDark } }}
             />
             <DefaultButton text="Cancel" onClick={() => this.setState({ showSchedulePanel: false })} />
           </Stack>
@@ -931,7 +932,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
       >
         <div style={{ padding: 0 }}>
           {/* Report name */}
-          <div style={{ fontSize: 12, color: '#0d9488', fontWeight: 600, marginBottom: 20 }}>{scheduleReportName}</div>
+          <div style={{ fontSize: 12, color: tc.primary, fontWeight: 600, marginBottom: 20 }}>{scheduleReportName}</div>
 
           {/* Frequency */}
           <div style={{ marginBottom: 16 }}>
@@ -992,7 +993,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
                 type="checkbox"
                 checked={scheduleEnabled}
                 onChange={(e) => this.setState({ scheduleEnabled: (e.target as HTMLInputElement).checked })}
-                style={{ accentColor: '#0d9488', width: 16, height: 16 }}
+                style={{ accentColor: tc.primary, width: 16, height: 16 }}
               />
               Schedule is active
             </label>
@@ -1060,7 +1061,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
             styles={{
               root: { borderBottom: '1px solid #edebe9', marginBottom: 0 },
               link: { fontSize: 14, height: 44, lineHeight: '44px', color: '#605e5c' },
-              linkIsSelected: { fontSize: 14, height: 44, lineHeight: '44px', color: '#0d9488', fontWeight: 600 },
+              linkIsSelected: { fontSize: 14, height: 44, lineHeight: '44px', color: tc.primary, fontWeight: 600 },
               linkContent: {},
               itemContainer: {}
             }}
@@ -1114,7 +1115,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
     const ringOffset = 408.4 * (1 - overallCompliance / 100);
 
     const kpiData = [
-      { label: 'Team Compliance', value: `${overallCompliance}%`, color: '#0d9488', trend: '+3% from last month', trendUp: true },
+      { label: 'Team Compliance', value: `${overallCompliance}%`, color: tc.primary, trend: '+3% from last month', trendUp: true },
       { label: 'Pending Approvals', value: pendingApprovals, color: '#d97706', trend: urgentApprovals > 0 ? `${urgentApprovals} urgent` : undefined },
       { label: 'Overdue Ack', value: totalOverdue, color: '#dc2626', trend: totalOverdue > 0 ? `${atRisk.length} at risk` : undefined },
       { label: 'Active Delegations', value: activeDelegations, color: '#2563eb' },
@@ -1486,8 +1487,8 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
                 onKeyDown={(e) => { if (e.key === 'Enter') this.setState({ approvalFilter: f }); }}
                 style={{
                   padding: '6px 16px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                  border: `1px solid ${isActive ? '#0d9488' : '#e2e8f0'}`,
-                  background: isActive ? '#0d9488' : '#fff', color: isActive ? '#fff' : '#64748b'
+                  border: `1px solid ${isActive ? tc.primary : '#e2e8f0'}`,
+                  background: isActive ? tc.primary : '#fff', color: isActive ? '#fff' : '#64748b'
                 }}>
                 {f} <span style={{ display: 'inline-block', minWidth: 18, height: 18, borderRadius: 9, background: isActive ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.06)', fontSize: 10, lineHeight: '18px', textAlign: 'center', marginLeft: 4 }}>{count}</span>
               </span>
@@ -1511,7 +1512,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
               const risk = riskBadges[(approval as any).ComplianceRisk || 'Medium'] || riskBadges.Medium;
               return (
                 <div key={approval.Id} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '20px 24px', display: 'flex', gap: 20, alignItems: 'flex-start', transition: 'border-color 0.15s' }}
-                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#0d9488')} onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#e2e8f0')}>
+                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = tc.primary)} onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#e2e8f0')}>
                   {/* Priority bar */}
                   <div style={{ width: 4, borderRadius: 2, minHeight: 80, background: priColor, flexShrink: 0 }} />
                   {/* Content */}
@@ -1524,7 +1525,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
                     </div>
                     <Text style={{ fontSize: 12, color: '#64748b', lineHeight: 1.5, display: 'block', marginBottom: 10 }}>{approval.ChangeSummary}</Text>
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: 9, fontWeight: 600, padding: '3px 8px', borderRadius: 4, background: '#f0fdfa', color: '#0d9488', textTransform: 'uppercase' }}>{approval.Category}</span>
+                      <span style={{ fontSize: 9, fontWeight: 600, padding: '3px 8px', borderRadius: 4, background: tc.primaryLighter, color: tc.primary, textTransform: 'uppercase' }}>{approval.Category}</span>
                       <span style={{ fontSize: 9, fontWeight: 600, padding: '3px 8px', borderRadius: 4, background: risk.bg, color: risk.color, textTransform: 'uppercase' }}>{(approval as any).ComplianceRisk || 'Medium'} Risk</span>
                       {isOverdue && <span style={{ fontSize: 9, fontWeight: 600, padding: '3px 8px', borderRadius: 4, background: '#fee2e2', color: '#dc2626', textTransform: 'uppercase' }}>Overdue</span>}
                     </div>
@@ -1580,7 +1581,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
             <Text style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>Manage policy tasks delegated to your team</Text>
           </div>
           <PrimaryButton text="+ New Delegation" iconProps={{ iconName: 'AddFriend' }}
-            styles={{ root: { background: '#0d9488', borderColor: '#0d9488', borderRadius: 6 }, rootHovered: { background: '#0f766e' } }}
+            styles={{ root: { background: tc.primary, borderColor: tc.primary, borderRadius: 6 }, rootHovered: { background: tc.primaryDark } }}
             onClick={() => this.setState({ showDelegationPanel: true })} />
         </div>
 
@@ -1604,7 +1605,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
             return (
               <span key={f} role="button" tabIndex={0} onClick={() => this.setState({ delegationFilter: f })}
                 onKeyDown={(e) => { if (e.key === 'Enter') this.setState({ delegationFilter: f }); }}
-                style={{ padding: '6px 16px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: `1px solid ${isActive ? '#0d9488' : '#e2e8f0'}`, background: isActive ? '#0d9488' : '#fff', color: isActive ? '#fff' : '#64748b' }}>
+                style={{ padding: '6px 16px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: `1px solid ${isActive ? tc.primary : '#e2e8f0'}`, background: isActive ? tc.primary : '#fff', color: isActive ? '#fff' : '#64748b' }}>
                 {f === 'InProgress' ? 'In Progress' : f} <span style={{ display: 'inline-block', minWidth: 18, height: 18, borderRadius: 9, background: isActive ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.06)', fontSize: 10, lineHeight: '18px', textAlign: 'center', marginLeft: 4 }}>{count}</span>
               </span>
             );
@@ -1623,7 +1624,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
               const isOverdue = d.Status === 'Overdue';
               return (
                 <div key={d.Id} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden', transition: 'border-color 0.15s' }}
-                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#0d9488')} onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#e2e8f0')}>
+                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = tc.primary)} onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#e2e8f0')}>
                   <div style={{ padding: '16px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Text style={{ fontSize: 14, fontWeight: 700 }}>{d.PolicyTitle}</Text>
                     <span style={{ fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, background: ts.bg, color: ts.color, textTransform: 'uppercase', letterSpacing: 0.3 }}>{d.TaskType}</span>
@@ -1664,7 +1665,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
     const filters: Array<'All' | 'Due' | 'Overdue' | 'Upcoming' | 'Completed'> = ['All', 'Due', 'Overdue', 'Upcoming', 'Completed'];
     const filtered = reviewFilter === 'All' ? reviews : reviews.filter(r => r.Status === reviewFilter);
     const statusStyles: Record<string, { bg: string; color: string }> = { Due: { bg: '#fef3c7', color: '#d97706' }, Overdue: { bg: '#fee2e2', color: '#dc2626' }, Upcoming: { bg: '#f1f5f9', color: '#64748b' }, Completed: { bg: '#dcfce7', color: '#16a34a' } };
-    const catBadges: Record<string, { bg: string; color: string }> = { 'HR Policies': { bg: '#f0fdfa', color: '#0d9488' }, 'IT & Security': { bg: '#eff6ff', color: '#2563eb' }, Compliance: { bg: '#fef3c7', color: '#92400e' } };
+    const catBadges: Record<string, { bg: string; color: string }> = { 'HR Policies': { bg: tc.primaryLighter, color: tc.primary }, 'IT & Security': { bg: '#eff6ff', color: '#2563eb' }, Compliance: { bg: '#fef3c7', color: '#92400e' } };
     const cycleLabelMap: Record<number, string> = { 90: '3 Months', 180: '6 Months', 365: 'Annual', 730: '2 Years', 1095: '3 Years' };
 
     return (
@@ -1699,7 +1700,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
             return (
               <span key={f} role="button" tabIndex={0} onClick={() => this.setState({ reviewFilter: f })}
                 onKeyDown={(e) => { if (e.key === 'Enter') this.setState({ reviewFilter: f }); }}
-                style={{ padding: '6px 16px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: `1px solid ${isActive ? '#0d9488' : '#e2e8f0'}`, background: isActive ? '#0d9488' : '#fff', color: isActive ? '#fff' : '#64748b' }}>
+                style={{ padding: '6px 16px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: `1px solid ${isActive ? tc.primary : '#e2e8f0'}`, background: isActive ? tc.primary : '#fff', color: isActive ? '#fff' : '#64748b' }}>
                 {f} <span style={{ display: 'inline-block', minWidth: 18, height: 18, borderRadius: 9, background: isActive ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.06)', fontSize: 10, lineHeight: '18px', textAlign: 'center', marginLeft: 4 }}>{count}</span>
               </span>
             );
@@ -1737,7 +1738,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                     {(r.Status === 'Due' || r.Status === 'Overdue') ? (
                       <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                        <button onClick={() => { window.location.href = `/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${r.Id}&mode=browse`; }} style={{ padding: '5px 10px', borderRadius: 4, fontSize: 11, fontWeight: 600, cursor: 'pointer', border: '1px solid #0d9488', background: '#0d9488', color: '#fff', fontFamily: 'inherit' }}>Review</button>
+                        <button onClick={() => { window.location.href = `/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${r.Id}&mode=browse`; }} style={{ padding: '5px 10px', borderRadius: 4, fontSize: 11, fontWeight: 600, cursor: 'pointer', border: `1px solid ${tc.primary}`, background: tc.primary, color: '#fff', fontFamily: 'inherit' }}>Review</button>
                         <button onClick={async () => {
                           try {
                             const newReviewer = await this.dialogManager?.showPrompt?.(`Reassign reviewer for "${r.PolicyTitle}".\nEnter new reviewer email:`);
@@ -1825,7 +1826,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
           styles={{
             root: { borderBottom: '1px solid #edebe9', marginBottom: 20 },
             link: { fontSize: 13, height: 38, lineHeight: '38px', color: '#605e5c' },
-            linkIsSelected: { fontSize: 13, height: 38, lineHeight: '38px', color: '#0d9488', fontWeight: 600 },
+            linkIsSelected: { fontSize: 13, height: 38, lineHeight: '38px', color: tc.primary, fontWeight: 600 },
           }}
         >
           <PivotItem headerText="Report Hub" itemKey="hub" itemIcon="GridViewMedium" />
@@ -1915,7 +1916,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
                   text={this.state.reportGeneratingKey === report.key ? 'Generating...' : 'Generate'}
                   iconProps={{ iconName: this.state.reportGeneratingKey === report.key ? 'Sync' : 'Play' }}
                   disabled={this.state.reportGenerating}
-                  styles={{ root: { height: 30, padding: '0 12px', fontSize: 12, background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+                  styles={{ root: { height: 30, padding: '0 12px', fontSize: 12, background: tc.primary, borderColor: tc.primary }, rootHovered: { background: tc.primaryDark, borderColor: tc.primaryDark } }}
                   onClick={() => this.handleGenerateReport(report.key, 'csv')} />
                 <DefaultButton text="Schedule" iconProps={{ iconName: 'ScheduleEventAction' }}
                   styles={{ root: { height: 30, padding: '0 12px', fontSize: 12 } }}
@@ -1935,7 +1936,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
         {/* Scheduled Reports Table */}
         <div className={(styles as Record<string, string>).sectionCard} style={{ marginTop: 28 }}>
           <div className={(styles as Record<string, string>).sectionTitle}>
-            <Icon iconName="ScheduleEventAction" style={{ color: '#0d9488' }} />
+            <Icon iconName="ScheduleEventAction" style={{ color: tc.primary }} />
             Scheduled Reports
           </div>
           <table className={(styles as Record<string, string>).complianceTable}>
@@ -2095,7 +2096,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
                 { label: 'Include risk assessment', defaultChecked: false }
               ].map((opt, idx) => (
                 <label key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
-                  <input type="checkbox" defaultChecked={opt.defaultChecked} style={{ accentColor: '#0d9488' }} />
+                  <input type="checkbox" defaultChecked={opt.defaultChecked} style={{ accentColor: tc.primary }} />
                   {opt.label}
                 </label>
               ))}
@@ -2104,13 +2105,13 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
             {/* Action Buttons */}
             <Stack horizontal tokens={{ childrenGap: 10 }}>
               <PrimaryButton text="Preview" iconProps={{ iconName: 'RedEye' }}
-                styles={{ root: { background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+                styles={{ root: { background: tc.primary, borderColor: tc.primary }, rootHovered: { background: tc.primaryDark, borderColor: tc.primaryDark } }}
                 onClick={() => this.setState({ showReportPreview: true })} />
               <PrimaryButton
                 text={this.state.reportGenerating ? 'Generating...' : 'Generate Report'}
                 iconProps={{ iconName: 'Play' }}
                 disabled={this.state.reportGenerating}
-                styles={{ root: { background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+                styles={{ root: { background: tc.primary, borderColor: tc.primary }, rootHovered: { background: tc.primaryDark, borderColor: tc.primaryDark } }}
                 onClick={() => this.handleGenerateReport(selectedReport.key, this.state.builderFormat || 'csv')} />
               <DefaultButton text="Schedule" iconProps={{ iconName: 'ScheduleEventAction' }}
                 onClick={() => this.openSchedulePanel(selectedReport.key, selectedReport.title)} />
@@ -2123,7 +2124,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
           {showReportPreview && (
             <div className={(styles as Record<string, string>).sectionCard} style={{ marginTop: 20 }}>
               <div className={(styles as Record<string, string>).sectionTitle}>
-                <Icon iconName="RedEye" style={{ color: '#0d9488' }} />
+                <Icon iconName="RedEye" style={{ color: tc.primary }} />
                 Report Preview — {selectedReport.title}
               </div>
 
@@ -2179,7 +2180,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
           {/* Recent Reports */}
           <div className={(styles as Record<string, string>).sectionCard} style={{ marginTop: 20 }}>
             <div className={(styles as Record<string, string>).sectionTitle}>
-              <Icon iconName="History" style={{ color: '#0d9488' }} />
+              <Icon iconName="History" style={{ color: tc.primary }} />
               Recently Generated Reports
             </div>
             <table className={(styles as Record<string, string>).complianceTable}>
@@ -2206,7 +2207,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
                     </td>
                     <td style={{ fontSize: 12, color: '#64748b' }}>{rr.size}</td>
                     <td>
-                      <a href="#" onClick={(e) => { e.preventDefault(); this.handleGenerateReport('dept-compliance', rr.format?.toLowerCase() || 'csv'); }} style={{ color: '#0d9488', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Re-generate</a>
+                      <a href="#" onClick={(e) => { e.preventDefault(); this.handleGenerateReport('dept-compliance', rr.format?.toLowerCase() || 'csv'); }} style={{ color: tc.primary, fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Re-generate</a>
                     </td>
                   </tr>
                 ))}
@@ -2255,11 +2256,11 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
         {/* KPI Cards */}
         <div className={(styles as Record<string, string>).kpiGrid}>
           <div className={`${(styles as Record<string, string>).kpiCard} ${(styles as Record<string, string>).kpiCardHighlight}`}>
-            <div className={(styles as Record<string, string>).kpiIcon} style={{ background: '#f0fdfa', color: '#0d9488' }}>
+            <div className={(styles as Record<string, string>).kpiIcon} style={{ background: tc.primaryLighter, color: tc.primary }}>
               <Icon iconName="ReportDocument" />
             </div>
             <div className={(styles as Record<string, string>).kpiContent}>
-              <div className={(styles as Record<string, string>).kpiValue} style={{ color: '#0d9488' }}>{(this.state.recentExecutions || []).length}</div>
+              <div className={(styles as Record<string, string>).kpiValue} style={{ color: tc.primary }}>{(this.state.recentExecutions || []).length}</div>
               <div className={(styles as Record<string, string>).kpiLabel}>Reports Generated</div>
             </div>
           </div>
@@ -2295,13 +2296,13 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
         {/* Quick Reports */}
         <div className={(styles as Record<string, string>).sectionCard}>
           <div className={(styles as Record<string, string>).sectionTitle}>
-            <Icon iconName="LightningBolt" style={{ color: '#0d9488' }} />
+            <Icon iconName="LightningBolt" style={{ color: tc.primary }} />
             Quick Reports
           </div>
           <div className={(styles as Record<string, string>).quickReportsScroll}>
             {quickReports.map((qr, idx) => (
               <div key={idx} className={(styles as Record<string, string>).quickReportCard} onClick={() => this.handleGenerateReport(qr.key, 'csv')}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: '#f0fdfa', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0d9488', fontSize: 16, marginBottom: 10 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: tc.primaryLighter, display: 'flex', alignItems: 'center', justifyContent: 'center', color: tc.primary, fontSize: 16, marginBottom: 10 }}>
                   <Icon iconName={qr.icon} />
                 </div>
                 <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 4 }}>{qr.title}</div>
@@ -2314,7 +2315,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
         {/* Full Report Library */}
         <div className={(styles as Record<string, string>).sectionCard}>
           <div className={(styles as Record<string, string>).sectionTitle}>
-            <Icon iconName="Library" style={{ color: '#0d9488' }} />
+            <Icon iconName="Library" style={{ color: tc.primary }} />
             Full Report Library
           </div>
           <table className={(styles as Record<string, string>).complianceTable}>
@@ -2336,11 +2337,11 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
                   <tr key={idx}>
                     <td style={{ fontWeight: 600 }}>
                       <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
-                        <Icon iconName={report.icon} style={{ color: '#0d9488', fontSize: 14 }} />
+                        <Icon iconName={report.icon} style={{ color: tc.primary, fontSize: 14 }} />
                         <span>{report.title}</span>
                       </Stack>
                     </td>
-                    <td><span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 4, background: '#f0fdfa', color: '#0d9488', fontWeight: 600 }}>{report.category}</span></td>
+                    <td><span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 4, background: tc.primaryLighter, color: tc.primary, fontWeight: 600 }}>{report.category}</span></td>
                     <td style={{ fontSize: 12, color: '#64748b' }}>{report.lastGenerated}</td>
                     <td>
                       {report.formats.map((fmt: string) => (
@@ -2353,9 +2354,9 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
                     <td><span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 10, background: '#f0fdf4', color: '#16a34a', fontWeight: 600 }}>Active</span></td>
                     <td>
                       <Stack horizontal tokens={{ childrenGap: 8 }}>
-                        <a href="#" onClick={(e) => { e.preventDefault(); this.handleGenerateReport(report.key, 'csv'); }} style={{ color: '#0d9488', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Generate</a>
-                        <a href="#" onClick={(e) => { e.preventDefault(); this.handleGenerateReport(report.key, 'csv'); }} style={{ color: '#0d9488', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Download</a>
-                        <a href="#" onClick={(e) => { e.preventDefault(); this.openSchedulePanel(report.key, report.title); }} style={{ color: '#0d9488', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Schedule</a>
+                        <a href="#" onClick={(e) => { e.preventDefault(); this.handleGenerateReport(report.key, 'csv'); }} style={{ color: tc.primary, fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Generate</a>
+                        <a href="#" onClick={(e) => { e.preventDefault(); this.handleGenerateReport(report.key, 'csv'); }} style={{ color: tc.primary, fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Download</a>
+                        <a href="#" onClick={(e) => { e.preventDefault(); this.openSchedulePanel(report.key, report.title); }} style={{ color: tc.primary, fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Schedule</a>
                       </Stack>
                     </td>
                   </tr>
@@ -2368,7 +2369,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
         {/* Scheduled Reports */}
         <div className={(styles as Record<string, string>).sectionCard}>
           <div className={(styles as Record<string, string>).sectionTitle}>
-            <Icon iconName="ScheduleEventAction" style={{ color: '#0d9488' }} />
+            <Icon iconName="ScheduleEventAction" style={{ color: tc.primary }} />
             Scheduled Reports
           </div>
           <table className={(styles as Record<string, string>).complianceTable}>
@@ -2404,7 +2405,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
                   <td style={{ fontSize: 12, color: '#64748b' }}>{sr.recipients}</td>
                   <td>
                     <Stack horizontal tokens={{ childrenGap: 8 }}>
-                      <a href="#" onClick={(e) => { e.preventDefault(); this.openSchedulePanel(sr.key, sr.name, sr.id, sr); }} style={{ color: '#0d9488', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Edit</a>
+                      <a href="#" onClick={(e) => { e.preventDefault(); this.openSchedulePanel(sr.key, sr.name, sr.id, sr); }} style={{ color: tc.primary, fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Edit</a>
                       <a href="#" onClick={async (e) => { e.preventDefault(); const ok = await this.dialogManager?.showConfirm?.(`Delete schedule for "${sr.name}"?`, { title: 'Delete Schedule' }); if (ok) this.handleDeleteSchedule(sr.id); }} style={{ color: '#d13438', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>Delete</a>
                     </Stack>
                   </td>
@@ -2417,7 +2418,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
         {/* Report History Timeline */}
         <div className={(styles as Record<string, string>).sectionCard}>
           <div className={(styles as Record<string, string>).sectionTitle}>
-            <Icon iconName="History" style={{ color: '#0d9488' }} />
+            <Icon iconName="History" style={{ color: tc.primary }} />
             Report History
           </div>
           <div className={(styles as Record<string, string>).reportTimeline}>
@@ -2437,7 +2438,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
                     {' '}&middot; {item.size}
                   </div>
                 </div>
-                <a href="#" onClick={(e) => { e.preventDefault(); this.handleGenerateReport(item.title.toLowerCase().includes('compliance') ? 'dept-compliance' : item.title.toLowerCase().includes('ack') ? 'ack-status' : 'audit-trail', 'csv'); }} style={{ color: '#0d9488', fontSize: 12, fontWeight: 600, textDecoration: 'none', alignSelf: 'center' }}>Re-generate</a>
+                <a href="#" onClick={(e) => { e.preventDefault(); this.handleGenerateReport(item.title.toLowerCase().includes('compliance') ? 'dept-compliance' : item.title.toLowerCase().includes('ack') ? 'ack-status' : 'audit-trail', 'csv'); }} style={{ color: tc.primary, fontSize: 12, fontWeight: 600, textDecoration: 'none', alignSelf: 'center' }}>Re-generate</a>
               </div>
             ))}
           </div>
@@ -2476,7 +2477,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
               text={this.state.reportGenerating ? 'Generating...' : 'Generate Full Report'}
               iconProps={{ iconName: 'Play' }}
               disabled={this.state.reportGenerating}
-              styles={{ root: { background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+              styles={{ root: { background: tc.primary, borderColor: tc.primary }, rootHovered: { background: tc.primaryDark, borderColor: tc.primaryDark } }}
               onClick={() => { this.handleGenerateReport(report.key, 'csv'); this.setState({ showReportFlyout: false }); }} />
           </Stack>
         )}
@@ -2583,7 +2584,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
         onRenderFooterContent={() => (
           <Stack horizontal tokens={{ childrenGap: 8 }} style={{ padding: '16px 0' }}>
             <PrimaryButton text="Create Delegation" iconProps={{ iconName: 'AddFriend' }} disabled={!isFormValid}
-              styles={{ root: { background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+              styles={{ root: { background: tc.primary, borderColor: tc.primary }, rootHovered: { background: tc.primaryDark, borderColor: tc.primaryDark } }}
               onClick={() => this.handleCreateDelegation()} />
             <DefaultButton text="Cancel" onClick={() => this.dismissDelegationPanel()} />
           </Stack>

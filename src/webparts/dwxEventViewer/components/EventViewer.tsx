@@ -31,6 +31,7 @@ import { AdminConfigService } from '../../../services/AdminConfigService';
 import { ISessionInfo, IEventViewerConfig, DEFAULT_EVENT_VIEWER_CONFIG, EventSeverity } from '../../../models/IEventViewer';
 import { exportEventsCsv, exportEventsJson } from './common/ExportUtils';
 import styles from './EventViewer.module.scss';
+import { tc } from '../../../utils/themeColors';
 
 // ============================================================================
 // STATE
@@ -435,7 +436,7 @@ export default class EventViewer extends React.Component<IEventViewerProps, IEve
               <button className={styles.headerBtn} style={{ background: '#fff', color: '#334155', border: '1px solid #e2e8f0' }} onClick={() => exportEventsCsv(this._eventBuffer.getAll())}>Export CSV</button>
               <button className={styles.headerBtn} style={{ background: '#fff', color: '#334155', border: '1px solid #e2e8f0' }} onClick={() => DiagnosticSnapshotService.download(this._eventBuffer)}>Snapshot</button>
               {this.state.detectedRole === PolicyManagerRole.Admin && (
-                <button className={`${styles.headerBtn} ${styles.headerBtnPrimary}`} style={{ background: '#0d9488', color: '#fff', borderColor: '#0d9488' }} onClick={() => this.setState({ showIncidentPanel: true })}>Report Incident</button>
+                <button className={`${styles.headerBtn} ${styles.headerBtnPrimary}`} style={{ background: tc.primary, color: '#fff', borderColor: tc.primary }} onClick={() => this.setState({ showIncidentPanel: true })}>Report Incident</button>
               )}
             </div>
           </div>
@@ -783,7 +784,7 @@ export default class EventViewer extends React.Component<IEventViewerProps, IEve
                 style={{
                   padding: '8px 20px', border: 'none', fontSize: 13, fontWeight: 600,
                   fontFamily: 'inherit', cursor: 'pointer',
-                  background: this.state.perfSubTab === 'optimizer' ? '#0d9488' : '#fff',
+                  background: this.state.perfSubTab === 'optimizer' ? tc.primary : '#fff',
                   color: this.state.perfSubTab === 'optimizer' ? '#fff' : '#64748b',
                   display: 'flex', alignItems: 'center', gap: 6,
                 }}
@@ -941,7 +942,7 @@ export default class EventViewer extends React.Component<IEventViewerProps, IEve
                   <div style={{ color: '#64748b' }}>{wp.fileCount}</div>
                   <div>
                     <div style={{
-                      height: 8, borderRadius: 4, background: wp.sizeKB > 500 ? '#dc2626' : wp.sizeKB > 200 ? '#d97706' : '#0d9488',
+                      height: 8, borderRadius: 4, background: wp.sizeKB > 500 ? '#dc2626' : wp.sizeKB > 200 ? '#d97706' : tc.primary,
                       width: `${barWidth}%`, transition: 'width 0.3s',
                     }} />
                   </div>
@@ -1053,18 +1054,18 @@ export default class EventViewer extends React.Component<IEventViewerProps, IEve
         hasCloseButton={false}
         onRenderNavigation={() => (
           <div style={{
-            background: 'linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%)',
-            borderBottom: '1px solid #99f6e4',
+            background: `linear-gradient(135deg, ${tc.primaryLighter} 0%, ${tc.primaryLight} 100%)`,
+            borderBottom: `1px solid ${tc.primaryLight}`,
             padding: '16px 24px',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           }}>
-            <div style={{ fontSize: 18, fontWeight: 700, color: '#0f766e' }}>Report Incident</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: tc.primaryDark }}>Report Incident</div>
             <button
               onClick={this._dismissIncidentPanel}
               style={{
                 width: 32, height: 32, borderRadius: 4, border: 'none', background: 'transparent',
                 cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: '#0f766e', fontSize: 18,
+                color: tc.primaryDark, fontSize: 18,
               }}
               onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(13,148,136,0.1)'; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
@@ -1084,10 +1085,10 @@ export default class EventViewer extends React.Component<IEventViewerProps, IEve
           {/* Buffer summary bar */}
           <div style={{
             display: 'flex', gap: 12, padding: '12px 16px', marginBottom: 20,
-            background: 'linear-gradient(135deg, #f0fdfa, #ecfdf5)', border: '1px solid #99f6e4', borderRadius: 8,
+            background: `linear-gradient(135deg, ${tc.primaryLighter}, #ecfdf5)`, border: `1px solid ${tc.primaryLight}`, borderRadius: 8,
           }}>
             {[
-              { label: 'Events', value: stats?.totalCount || 0, color: '#0d9488' },
+              { label: 'Events', value: stats?.totalCount || 0, color: tc.primary },
               { label: 'Errors', value: stats?.errorCount || 0, color: '#dc2626' },
               { label: 'Warnings', value: stats?.warningCount || 0, color: '#d97706' },
               { label: 'Network', value: stats?.networkCount || 0, color: '#2563eb' },
@@ -1112,7 +1113,7 @@ export default class EventViewer extends React.Component<IEventViewerProps, IEve
               placeholder="e.g., Policy publish failing with 403 errors"
               value={incidentTitle}
               onChange={(e) => this.setState({ incidentTitle: e.target.value })}
-              onFocus={(e) => { e.target.style.borderColor = '#0d9488'; }}
+              onFocus={(e) => { e.target.style.borderColor = tc.primary; }}
               onBlur={(e) => { e.target.style.borderColor = '#e2e8f0'; }}
             />
           </div>
@@ -1125,7 +1126,7 @@ export default class EventViewer extends React.Component<IEventViewerProps, IEve
               placeholder="What happened? What were you doing when the issue occurred?"
               value={incidentDescription}
               onChange={(e) => this.setState({ incidentDescription: e.target.value })}
-              onFocus={(e) => { e.target.style.borderColor = '#0d9488'; }}
+              onFocus={(e) => { e.target.style.borderColor = tc.primary; }}
               onBlur={(e) => { e.target.style.borderColor = '#e2e8f0'; }}
               rows={3}
             />
@@ -1164,7 +1165,7 @@ export default class EventViewer extends React.Component<IEventViewerProps, IEve
               placeholder="Steps already tried, suspected root cause, affected users..."
               value={incidentNotes}
               onChange={(e) => this.setState({ incidentNotes: e.target.value })}
-              onFocus={(e) => { e.target.style.borderColor = '#0d9488'; }}
+              onFocus={(e) => { e.target.style.borderColor = tc.primary; }}
               onBlur={(e) => { e.target.style.borderColor = '#e2e8f0'; }}
               rows={4}
             />
@@ -1188,7 +1189,7 @@ export default class EventViewer extends React.Component<IEventViewerProps, IEve
               disabled={!incidentTitle.trim()}
               style={{
                 flex: 1, padding: '10px 16px', borderRadius: 4, cursor: incidentTitle.trim() ? 'pointer' : 'not-allowed',
-                background: incidentTitle.trim() ? 'linear-gradient(135deg, #0d9488, #0f766e)' : '#e2e8f0',
+                background: incidentTitle.trim() ? tc.headerBg : '#e2e8f0',
                 color: incidentTitle.trim() ? '#fff' : '#94a3b8',
                 border: 'none', fontSize: 13, fontWeight: 600,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,

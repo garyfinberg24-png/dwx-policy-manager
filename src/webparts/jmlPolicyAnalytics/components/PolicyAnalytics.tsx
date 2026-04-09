@@ -2,6 +2,7 @@
 import { Icon } from '@fluentui/react/lib/Icon';
 import * as React from 'react';
 import styles from './PolicyAnalytics.module.scss';
+import { tc } from '../../../utils/themeColors';
 import { IPolicyAnalyticsProps } from './IPolicyAnalyticsProps';
 import { JmlAppLayout } from '../../../components/JmlAppLayout/JmlAppLayout';
 import { ErrorBoundary } from '../../../components/ErrorBoundary/ErrorBoundary';
@@ -1115,9 +1116,9 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
                   padding: '7px 16px', borderRadius: 20, fontSize: 13, cursor: 'pointer',
                   fontFamily: 'inherit', transition: 'all 0.15s',
                   fontWeight: activeTab === tab.key ? 600 : 500,
-                  background: activeTab === tab.key ? '#0d9488' : '#fff',
+                  background: activeTab === tab.key ? tc.primary : '#fff',
                   color: activeTab === tab.key ? '#fff' : '#64748b',
-                  border: `1px solid ${activeTab === tab.key ? '#0d9488' : '#e2e8f0'}`,
+                  border: `1px solid ${activeTab === tab.key ? tc.primary : '#e2e8f0'}`,
                 }}
               >
                 {tab.text}
@@ -1199,8 +1200,8 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
       <div>
         {/* KPI Strip */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 12, marginBottom: 28 }}>
-          <div style={{ ...kpiCardStyle, borderTopColor: '#0d9488' }}>
-            <div style={{ ...kpiValueStyle, color: '#0d9488' }}>{overallCompliance}%</div>
+          <div style={{ ...kpiCardStyle, borderTopColor: tc.primary }}>
+            <div style={{ ...kpiValueStyle, color: tc.primary }}>{overallCompliance}%</div>
             <div style={kpiLabelStyle}>Overall Compliance</div>
             <div style={{ ...kpiTrendStyle, color: '#059669' }}>+2.1% vs last month</div>
           </div>
@@ -1241,7 +1242,7 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
                   return (
                     <div key={idx} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
                       <div style={{ fontSize: 10, fontWeight: 700, color: '#334155' }}>{pt.value}%</div>
-                      <div style={{ width: '100%', borderRadius: '4px 4px 0 0', minWidth: 20, height: `${(pt.value / 100) * 160}px`, background: isLast ? 'linear-gradient(180deg, #059669, #10b981)' : 'linear-gradient(180deg, #0d9488, #14b8a6)' }} />
+                      <div style={{ width: '100%', borderRadius: '4px 4px 0 0', minWidth: 20, height: `${(pt.value / 100) * 160}px`, background: isLast ? 'linear-gradient(180deg, #059669, #10b981)' : `linear-gradient(180deg, ${tc.primary}, #14b8a6)` }} />
                       <div style={{ fontSize: 9, color: '#94a3b8', textAlign: 'center' }}>{pt.month}</div>
                     </div>
                   );
@@ -1342,7 +1343,7 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
     const cardBodyStyle: React.CSSProperties = { padding: 20 };
     const h3Style: React.CSSProperties = { fontSize: 14, fontWeight: 700, margin: 0 };
 
-    const catBarColors = ['#0d9488', '#2563eb', '#d97706', '#059669', '#7c3aed', '#94a3b8', '#dc2626'];
+    const catBarColors = [tc.primary, tc.accent, tc.warning, tc.success, '#7c3aed', '#94a3b8', tc.danger];
     const maxCatCount = policyByCategory.length > 0 ? policyByCategory[0].count : 1;
 
     // SVG donut chart
@@ -1423,12 +1424,12 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
             <div style={cardBodyStyle}>
               {mostViewed.map((p, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: i < mostViewed.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
-                  <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#f0fdfa', color: '#0d9488', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</div>
+                  <div style={{ width: 24, height: 24, borderRadius: '50%', background: tc.primaryLighter, color: tc.primary, fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 13, fontWeight: 600 }}>{p.title}</div>
                     <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>{p.category}</div>
                   </div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: '#0d9488' }}>{p.views.toLocaleString()} views</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: tc.primary }}>{p.views.toLocaleString()} views</div>
                 </div>
               ))}
             </div>
@@ -1493,7 +1494,7 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
     const thStyle: React.CSSProperties = { fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, color: '#94a3b8', padding: '8px 12px', textAlign: 'left', borderBottom: '2px solid #e2e8f0' };
     const tdStyle: React.CSSProperties = { padding: '10px 12px', fontSize: 12, borderBottom: '1px solid #f1f5f9' };
 
-    const funnelColors = ['#2563eb', '#7c3aed', '#d97706', '#059669', '#0d9488'];
+    const funnelColors = [tc.accent, '#7c3aed', tc.warning, tc.success, tc.primary];
 
     const totalSent = ackFunnel.length > 0 ? ackFunnel[0].count : 0;
     const totalAcked = ackFunnel.length > 4 ? ackFunnel[4].count : 0;
@@ -1519,8 +1520,8 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
       <div>
         {/* KPI Strip */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 28 }}>
-          <div style={{ ...kpiCardStyle, borderTopColor: '#0d9488' }}>
-            <div style={{ ...kpiValueStyle, color: '#0d9488' }}>{overallAckRate}%</div>
+          <div style={{ ...kpiCardStyle, borderTopColor: tc.primary }}>
+            <div style={{ ...kpiValueStyle, color: tc.primary }}>{overallAckRate}%</div>
             <div style={kpiLabelStyle}>Overall Ack Rate</div>
           </div>
           <div style={{ ...kpiCardStyle, borderTopColor: '#059669' }}>
@@ -1569,10 +1570,10 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
                 <div style={{ width: 180, height: 180, position: 'relative' }}>
                   <svg viewBox="0 0 180 180" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
                     <circle cx="90" cy="90" r={gaugeR} fill="none" stroke="#f1f5f9" strokeWidth="16" />
-                    <circle cx="90" cy="90" r={gaugeR} fill="none" stroke="#0d9488" strokeWidth="16" strokeDasharray={`${gaugeFill} ${gaugeCirc}`} strokeLinecap="round" />
+                    <circle cx="90" cy="90" r={gaugeR} fill="none" stroke={tc.primary} strokeWidth="16" strokeDasharray={`${gaugeFill} ${gaugeCirc}`} strokeLinecap="round" />
                   </svg>
                   <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
-                    <div style={{ fontSize: 32, fontWeight: 700, color: '#0d9488' }}>{overallAckRate}%</div>
+                    <div style={{ fontSize: 32, fontWeight: 700, color: tc.primary }}>{overallAckRate}%</div>
                     <div style={{ fontSize: 10, color: '#94a3b8', textTransform: 'uppercase' }}>Ack Rate</div>
                   </div>
                 </div>
@@ -1887,7 +1888,7 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
                     </li>
                   ))}
                 </ul>
-                <div style={{ fontSize: 10, color: '#0d9488', fontStyle: 'italic', marginTop: 8, paddingTop: 8, borderTop: '1px solid #f1f5f9' }}>
+                <div style={{ fontSize: 10, color: tc.primary, fontStyle: 'italic', marginTop: 8, paddingTop: 8, borderTop: '1px solid #f1f5f9' }}>
                   Mitigation: {risk.mitigation}
                 </div>
               </div>
@@ -1942,7 +1943,7 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
     const thStyle: React.CSSProperties = { fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, color: '#94a3b8', padding: '8px 12px', textAlign: 'left', borderBottom: '2px solid #e2e8f0' };
     const tdStyle: React.CSSProperties = { padding: '10px 12px', fontSize: 12, borderBottom: '1px solid #f1f5f9', verticalAlign: 'middle' };
     const filterBtnStyle: React.CSSProperties = { padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer', background: '#fff', color: '#334155', fontFamily: 'inherit' };
-    const filterBtnActiveStyle: React.CSSProperties = { ...filterBtnStyle, background: '#0d9488', color: '#fff', borderColor: '#0d9488' };
+    const filterBtnActiveStyle: React.CSSProperties = { ...filterBtnStyle, background: tc.primary, color: '#fff', borderColor: tc.primary };
 
     const getActionBadge = (action: string): { bg: string; color: string } => {
       const a = action.toLowerCase();
@@ -1950,14 +1951,14 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
       if (a.includes('approv')) return { bg: '#dbeafe', color: '#2563eb' };
       if (a.includes('reject')) return { bg: '#fee2e2', color: '#dc2626' };
       if (a.includes('update') || a.includes('config')) return { bg: '#fef3c7', color: '#d97706' };
-      if (a.includes('acknowledge') || a.includes('complete')) return { bg: '#f0fdfa', color: '#0d9488' };
+      if (a.includes('acknowledge') || a.includes('complete')) return { bg: tc.primaryLighter, color: tc.primary };
       if (a.includes('create') || a.includes('submit')) return { bg: '#e0e7ff', color: '#4f46e5' };
       if (a.includes('violation') || a.includes('escalat')) return { bg: '#fee2e2', color: '#dc2626' };
       if (a.includes('access') || a.includes('role')) return { bg: '#fef3c7', color: '#d97706' };
       return { bg: '#f1f5f9', color: '#64748b' };
     };
 
-    const avatarColors = ['#0d9488', '#2563eb', '#7c3aed', '#059669', '#d97706', '#dc2626', '#94a3b8'];
+    const avatarColors = [tc.primary, tc.accent, '#7c3aed', tc.success, tc.warning, tc.danger, '#94a3b8'];
     const getInitials = (name: string): string => {
       const parts = name.split(' ');
       return parts.length >= 2 ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase() : name.substring(0, 2).toUpperCase();
@@ -2123,7 +2124,7 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
     const getScoreColor = (score: number): string => score >= 80 ? '#059669' : score >= 70 ? '#d97706' : '#dc2626';
 
     const getDeptBarGradient = (score: number): string => {
-      if (score >= 80) return 'linear-gradient(90deg, #0d9488, #14b8a6)';
+      if (score >= 80) return `linear-gradient(90deg, ${tc.primary}, #14b8a6)`;
       if (score >= 70) return 'linear-gradient(90deg, #d97706, #f59e0b)';
       return 'linear-gradient(90deg, #dc2626, #ef4444)';
     };
@@ -2144,8 +2145,8 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
             <div style={kpiLabelStyle}>Active</div>
             <div style={{ ...kpiTrendStyle, color: '#94a3b8' }}>{quizOverview.totalQuizzes - quizOverview.activeQuizzes} draft</div>
           </div>
-          <div style={{ ...kpiCardStyle, borderTopColor: '#0d9488' }}>
-            <div style={{ ...kpiValueStyle, color: '#0d9488' }}>{quizOverview.totalAttempts.toLocaleString()}</div>
+          <div style={{ ...kpiCardStyle, borderTopColor: tc.primary }}>
+            <div style={{ ...kpiValueStyle, color: tc.primary }}>{quizOverview.totalAttempts.toLocaleString()}</div>
             <div style={kpiLabelStyle}>Total Attempts</div>
           </div>
           <div style={{ ...kpiCardStyle, borderTopColor: '#d97706' }}>

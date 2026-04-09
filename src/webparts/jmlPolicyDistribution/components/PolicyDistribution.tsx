@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { Icon } from '@fluentui/react/lib/Icon';
 import styles from './PolicyDistribution.module.scss';
+import { tc } from '../../../utils/themeColors';
 import { IPolicyDistributionProps } from './IPolicyDistributionProps';
 import { JmlAppLayout } from '../../../components/JmlAppLayout/JmlAppLayout';
 import { ErrorBoundary } from '../../../components/ErrorBoundary/ErrorBoundary';
@@ -991,8 +992,8 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
 
   private renderKPIs(): React.ReactElement {
     const kpis = this.getKPIs();
-    const kpiColors = ['#0d9488', '#2563eb', '#7c3aed', '#059669', '#0d9488', '#d97706', '#dc2626'];
-    const kpiValueColors = ['#0d9488', '#2563eb', '#7c3aed', '#059669', '#0d9488', '#d97706', '#dc2626'];
+    const kpiColors = [tc.primary, tc.accent, '#7c3aed', tc.success, tc.primary, tc.warning, tc.danger];
+    const kpiValueColors = [tc.primary, tc.accent, '#7c3aed', tc.success, tc.primary, tc.warning, tc.danger];
     return (
       <div style={{ padding: '0 40px', maxWidth: 1400, margin: '0 auto', marginBottom: 28 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
@@ -1006,7 +1007,7 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
               title="Refresh distributions"
               ariaLabel="Refresh distributions"
               onClick={this.reloadDistributions}
-              styles={{ root: { color: '#0d9488' }, rootHovered: { color: '#0f766e' } }}
+              styles={{ root: { color: tc.primary }, rootHovered: { color: tc.primaryDark } }}
             />
           </div>
         </div>
@@ -1053,7 +1054,7 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
             text="New Campaign"
             iconProps={{ iconName: 'Add' }}
             onClick={this.openCreatePanel}
-            styles={{ root: { borderRadius: 4, background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' }, label: { fontWeight: 400 } }}
+            styles={{ root: { borderRadius: 4, background: tc.primary, borderColor: tc.primary }, rootHovered: { background: tc.primaryDark, borderColor: tc.primaryDark }, label: { fontWeight: 400 } }}
           />
         </div>
       </div>
@@ -1076,7 +1077,7 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
     }
 
     const statusColors: Record<string, { bg: string; color: string }> = {
-      'Active': { bg: '#ccfbf1', color: '#0d9488' },
+      'Active': { bg: tc.primaryLight, color: tc.primary },
       'Scheduled': { bg: '#fef3c7', color: '#d97706' },
       'Completed': { bg: '#dcfce7', color: '#16a34a' },
       'Draft': { bg: '#f1f5f9', color: '#64748b' },
@@ -1090,18 +1091,18 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
             const pct = this.getAckPercentage(campaign);
             const sColors = statusColors[campaign.status] || statusColors['Draft'];
             const isSelected = selectedCampaign && selectedCampaign.id === campaign.id;
-            const progressColor = pct >= 70 ? '#0d9488' : pct >= 40 ? '#d97706' : '#94a3b8';
+            const progressColor = pct >= 70 ? tc.primary : pct >= 40 ? '#d97706' : '#94a3b8';
 
             return (
               <div
                 key={campaign.id}
                 style={{
-                  background: '#fff', border: isSelected ? '1px solid #0d9488' : '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden',
+                  background: '#fff', border: isSelected ? `1px solid ${tc.primary}` : '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden',
                   transition: 'all 0.2s', cursor: 'pointer',
                   boxShadow: isSelected ? '0 4px 16px rgba(13,148,136,0.15)' : 'none'
                 }}
                 onClick={() => this.selectCampaign(campaign)}
-                onMouseEnter={(e) => { if (!isSelected) { (e.currentTarget as HTMLElement).style.borderColor = '#0d9488'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 16px rgba(13,148,136,0.1)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; } }}
+                onMouseEnter={(e) => { if (!isSelected) { (e.currentTarget as HTMLElement).style.borderColor = tc.primary; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 16px rgba(13,148,136,0.1)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; } }}
                 onMouseLeave={(e) => { if (!isSelected) { (e.currentTarget as HTMLElement).style.borderColor = '#e2e8f0'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; } }}
               >
                 {/* Campaign Header */}
@@ -1184,7 +1185,7 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
           {[
             { label: 'Target', value: c.targetCount, accent: '#64748b' },
             { label: 'Sent', value: c.totalSent, accent: '#2563eb' },
-            { label: 'Delivered', value: c.totalDelivered, accent: '#0d9488' },
+            { label: 'Delivered', value: c.totalDelivered, accent: tc.primary },
             { label: 'Opened', value: c.totalOpened, accent: '#7c3aed' },
             { label: 'Acknowledged', value: c.totalAcknowledged, accent: '#059669' },
             { label: 'Overdue', value: c.totalOverdue, accent: '#dc2626' },
@@ -1211,7 +1212,7 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {c.status === 'Draft' && (
-              <PrimaryButton text="Send Now" iconProps={{ iconName: 'Send' }} styles={{ root: { borderRadius: 4, background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }} />
+              <PrimaryButton text="Send Now" iconProps={{ iconName: 'Send' }} styles={{ root: { borderRadius: 4, background: tc.primary, borderColor: tc.primary }, rootHovered: { background: tc.primaryDark, borderColor: tc.primaryDark } }} />
             )}
             {(c.status === 'Active' || c.status === 'Paused') && (
               <DefaultButton
@@ -1316,7 +1317,7 @@ export default class PolicyDistribution extends React.Component<IPolicyDistribut
         headerText={editingCampaign ? 'Edit Distribution Campaign' : 'New Distribution Campaign'}
         onRenderFooterContent={() => (
           <div style={{ display: 'flex', gap: 8 }}>
-            <PrimaryButton text={editingCampaign ? 'Update' : 'Create Campaign'} onClick={this.saveCampaign} styles={{ root: { borderRadius: 4, background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }} />
+            <PrimaryButton text={editingCampaign ? 'Update' : 'Create Campaign'} onClick={this.saveCampaign} styles={{ root: { borderRadius: 4, background: tc.primary, borderColor: tc.primary }, rootHovered: { background: tc.primaryDark, borderColor: tc.primaryDark } }} />
             <DefaultButton text="Cancel" onClick={() => this.setState({ showCreatePanel: false, errorMessage: '' })} styles={{ root: { borderRadius: 4 } }} />
           </div>
         )}

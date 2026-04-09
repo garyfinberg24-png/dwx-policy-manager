@@ -2,6 +2,7 @@
 import { Icon } from '@fluentui/react/lib/Icon';
 import * as React from 'react';
 import styles from './PolicyHelp.module.scss';
+import { tc } from '../../../utils/themeColors';
 import { IPolicyHelpProps } from './IPolicyHelpProps';
 import {
   SearchBox,
@@ -256,14 +257,14 @@ interface IPolicyHelpState {
 // Helper
 const getCategoryColor = (category: string): string => {
   const colors: Record<string, string> = {
-    'Getting Started': '#0d9488',
+    'Getting Started': tc.primary,
     'My Policies': '#107c10',
     'Policy Author': '#8764b8',
     'Approvals': '#ff8c00',
     'Policy Packs': '#0078d4',
     'Analytics': '#00bcf2',
   };
-  return colors[category] || '#0d9488';
+  return colors[category] || tc.primary;
 };
 
 export default class PolicyHelp extends React.Component<IPolicyHelpProps, IPolicyHelpState> {
@@ -383,7 +384,7 @@ export default class PolicyHelp extends React.Component<IPolicyHelpProps, IPolic
       textAlign: 'center', transition: 'all 0.2s', cursor: 'pointer'
     };
     const quickIconBgs = [
-      'linear-gradient(135deg, #ccfbf1, #99f6e4)',
+      `linear-gradient(135deg, ${tc.primaryLight}, #99f6e4)`,
       'linear-gradient(135deg, #dbeafe, #bfdbfe)',
       'linear-gradient(135deg, #ede9fe, #ddd6fe)',
       'linear-gradient(135deg, #fef3c7, #fde68a)'
@@ -404,10 +405,10 @@ export default class PolicyHelp extends React.Component<IPolicyHelpProps, IPolic
               key={idx}
               style={quickCardStyle}
               onClick={() => this.setState({ currentTab: card.tab })}
-              onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = '#0d9488'; el.style.boxShadow = '0 4px 16px rgba(13,148,136,0.1)'; el.style.transform = 'translateY(-2px)'; }}
+              onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = tc.primary; el.style.boxShadow = '0 4px 16px rgba(13,148,136,0.1)'; el.style.transform = 'translateY(-2px)'; }}
               onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = '#e2e8f0'; el.style.boxShadow = 'none'; el.style.transform = 'translateY(0)'; }}
             >
-              <div style={{ width: 56, height: 56, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px', background: quickIconBgs[idx], color: '#0d9488' }}>
+              <div style={{ width: 56, height: 56, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px', background: quickIconBgs[idx], color: tc.primary }}>
                 <svg viewBox="0 0 24 24" fill="none" width="24" height="24" dangerouslySetInnerHTML={{ __html: card.iconSvg }} />
               </div>
               <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>{card.title}</div>
@@ -420,7 +421,7 @@ export default class PolicyHelp extends React.Component<IPolicyHelpProps, IPolic
         <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>Featured Articles</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 36 }}>
           {helpArticles.filter(a => a.isFeatured).map((article, idx) => {
-            const gradientBgs = ['linear-gradient(135deg, #f0fdfa, #ccfbf1)', 'linear-gradient(135deg, #eff6ff, #dbeafe)', 'linear-gradient(135deg, #f5f3ff, #ede9fe)'];
+            const gradientBgs = [`linear-gradient(135deg, ${tc.primaryLighter}, ${tc.primaryLight})`, 'linear-gradient(135deg, #eff6ff, #dbeafe)', 'linear-gradient(135deg, #f5f3ff, #ede9fe)'];
             return (
               <div
                 key={article.id}
@@ -429,11 +430,11 @@ export default class PolicyHelp extends React.Component<IPolicyHelpProps, IPolic
                   transition: 'all 0.2s', cursor: 'pointer'
                 }}
                 onClick={() => this.setState({ selectedArticle: article })}
-                onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = '#0d9488'; el.style.boxShadow = '0 4px 16px rgba(13,148,136,0.1)'; el.style.transform = 'translateY(-2px)'; }}
+                onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = tc.primary; el.style.boxShadow = '0 4px 16px rgba(13,148,136,0.1)'; el.style.transform = 'translateY(-2px)'; }}
                 onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = '#e2e8f0'; el.style.boxShadow = 'none'; el.style.transform = 'translateY(0)'; }}
               >
                 <div style={{ height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', background: gradientBgs[idx % 3] }}>
-                  <svg viewBox="0 0 24 24" fill="none" width="48" height="48" style={{ color: '#0d9488' }}><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" strokeWidth="1.5"/><path d="M14 2v6h6" stroke="currentColor" strokeWidth="1.5"/></svg>
+                  <svg viewBox="0 0 24 24" fill="none" width="48" height="48" style={{ color: tc.primary }}><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" strokeWidth="1.5"/><path d="M14 2v6h6" stroke="currentColor" strokeWidth="1.5"/></svg>
                 </div>
                 <div style={{ padding: '16px 20px' }}>
                   <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>{article.title}</div>
@@ -486,8 +487,8 @@ export default class PolicyHelp extends React.Component<IPolicyHelpProps, IPolic
     const filtered = this.getFilteredFAQs();
     const catDotColors: Record<string, string> = {
       'General': '#94a3b8', 'My Policies': '#059669', 'Policy Author': '#7c3aed',
-      'Approvals': '#d97706', 'Policy Packs': '#2563eb', 'Analytics': '#0d9488',
-      'Compliance': '#2563eb', 'Human Resources': '#db2777', 'IT & Access': '#0d9488'
+      'Approvals': '#d97706', 'Policy Packs': '#2563eb', 'Analytics': tc.primary,
+      'Compliance': '#2563eb', 'Human Resources': '#db2777', 'IT & Access': tc.primary
     };
     return (
       <div style={{ marginBottom: 36 }}>
@@ -512,7 +513,7 @@ export default class PolicyHelp extends React.Component<IPolicyHelpProps, IPolic
                   <div style={{ fontSize: 14, fontWeight: 600 }}>{faq.question}</div>
                   <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>{faq.category}</div>
                 </div>
-                <svg viewBox="0 0 24 24" fill="none" width="16" height="16" style={{ color: isOpen ? '#0d9488' : '#94a3b8', transition: 'transform 0.2s', transform: isOpen ? 'rotate(180deg)' : 'rotate(0)' }}>
+                <svg viewBox="0 0 24 24" fill="none" width="16" height="16" style={{ color: isOpen ? tc.primary : '#94a3b8', transition: 'transform 0.2s', transform: isOpen ? 'rotate(180deg)' : 'rotate(0)' }}>
                   <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </div>
@@ -677,7 +678,7 @@ export default class PolicyHelp extends React.Component<IPolicyHelpProps, IPolic
           <div className={styles.contentWrapper}>
             {/* Hero Section — Single row: title left, search centre, bottom-aligned */}
             <div style={{
-              background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)', padding: '16px 40px',
+              background: tc.headerBg, padding: '16px 40px',
               position: 'relative', overflow: 'hidden', margin: '0 -24px'
             }}>
               <div style={{ position: 'absolute', right: -60, bottom: -60, width: 200, height: 200, background: 'rgba(255,255,255,0.03)', borderRadius: '50%' }} />
@@ -729,8 +730,8 @@ export default class PolicyHelp extends React.Component<IPolicyHelpProps, IPolic
                   style={{
                     padding: '12px 20px', fontSize: 13, cursor: 'pointer',
                     fontWeight: currentTab === tab.key ? 700 : 500,
-                    color: currentTab === tab.key ? '#0d9488' : '#64748b',
-                    borderBottom: currentTab === tab.key ? '2px solid #0d9488' : '2px solid transparent',
+                    color: currentTab === tab.key ? tc.primary : '#64748b',
+                    borderBottom: currentTab === tab.key ? `2px solid ${tc.primary}` : '2px solid transparent',
                     marginBottom: -2, transition: 'all 0.15s'
                   }}
                 >{tab.label}</div>

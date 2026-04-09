@@ -439,7 +439,7 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
 
     return (
       <div style={{
-        background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
+        background: tc.headerBg,
         padding: '16px 40px', position: 'relative', overflow: 'hidden', margin: '0 -24px'
       }}>
         <div style={{ position: 'absolute', right: -60, bottom: -60, width: 200, height: 200, background: 'rgba(255,255,255,0.03)', borderRadius: '50%' }} />

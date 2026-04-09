@@ -41,6 +41,7 @@ import {
 import { PeoplePicker, PrincipalType } from "@pnp/spfx-controls-react/lib/PeoplePicker";
 import { StyledPanel } from '../../../components/StyledPanel';
 import styles from './PolicyPackManager.module.scss';
+import { tc } from '../../../utils/themeColors';
 
 export interface IPolicyPackManagerState {
   loading: boolean;
@@ -473,15 +474,15 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
 
     // Gradient strip colors by pack type
     const stripGradients: Record<string, string> = {
-      'Onboarding': 'linear-gradient(90deg, #0d9488, #059669)',
-      'Department': 'linear-gradient(90deg, #2563eb, #7c3aed)',
-      'Role': 'linear-gradient(90deg, #d97706, #dc2626)',
-      'Location': 'linear-gradient(90deg, #059669, #0d9488)',
+      'Onboarding': `linear-gradient(90deg, ${tc.primary}, ${tc.success})`,
+      'Department': `linear-gradient(90deg, ${tc.accent}, #7c3aed)`,
+      'Role': `linear-gradient(90deg, ${tc.warning}, ${tc.danger})`,
+      'Location': `linear-gradient(90deg, ${tc.success}, ${tc.primary})`,
       'Custom': 'linear-gradient(90deg, #64748b, #475569)'
     };
 
     const badgeColors: Record<string, { bg: string; color: string }> = {
-      'Onboarding': { bg: '#ccfbf1', color: '#0d9488' },
+      'Onboarding': { bg: tc.primaryLight, color: tc.primary },
       'Department': { bg: '#dbeafe', color: '#2563eb' },
       'Role': { bg: '#fef3c7', color: '#d97706' },
       'Location': { bg: '#dcfce7', color: '#059669' },
@@ -500,7 +501,7 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
           <PrimaryButton
             text="+ Create Pack"
             onClick={this.handleCreatePack}
-            styles={{ root: { background: '#0d9488', borderColor: '#0d9488', borderRadius: 6 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+            styles={{ root: { background: tc.primary, borderColor: tc.primary, borderRadius: 6 }, rootHovered: { background: tc.primaryDark, borderColor: tc.primaryDark } }}
           />
         </div>
       );
@@ -518,15 +519,15 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
             onClick={this.handleCreatePack}
             style={{
               padding: '8px 16px', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer',
-              border: '1px solid #0d9488', background: '#0d9488', color: '#fff', fontFamily: 'inherit'
+              border: `1px solid ${tc.primary}`, background: tc.primary, color: '#fff', fontFamily: 'inherit'
             }}
           >+ Create Pack</button>
         </div>
 
         {/* KPI Strip */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 28 }}>
-          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '18px 16px', borderTop: '3px solid #0d9488' }}>
-            <div style={{ fontSize: 28, fontWeight: 700, lineHeight: 1.1, color: '#0d9488' }}>{policyPacks.length}</div>
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '18px 16px', borderTop: `3px solid ${tc.primary}` }}>
+            <div style={{ fontSize: 28, fontWeight: 700, lineHeight: 1.1, color: tc.primary }}>{policyPacks.length}</div>
             <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#94a3b8', fontWeight: 600, marginTop: 4 }}>Total Packs</div>
           </div>
           <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '18px 16px', borderTop: '3px solid #059669' }}>
@@ -543,10 +544,10 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <span style={{ fontSize: 13, color: '#64748b' }}>{policyPacks.length} policy pack{policyPacks.length !== 1 ? 's' : ''}</span>
           <div style={{ display: 'flex', gap: 4 }}>
-            <button onClick={() => this.setState({ viewMode: 'list' })} title="List View" style={{ width: 32, height: 32, borderRadius: 4, border: `1px solid ${this.state.viewMode === 'list' ? '#0d9488' : '#e2e8f0'}`, background: this.state.viewMode === 'list' ? '#f0fdfa' : '#fff', color: this.state.viewMode === 'list' ? '#0d9488' : '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <button onClick={() => this.setState({ viewMode: 'list' })} title="List View" style={{ width: 32, height: 32, borderRadius: 4, border: `1px solid ${this.state.viewMode === 'list' ? tc.primary : '#e2e8f0'}`, background: this.state.viewMode === 'list' ? tc.primaryLighter : '#fff', color: this.state.viewMode === 'list' ? tc.primary : '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </button>
-            <button onClick={() => this.setState({ viewMode: 'grid' })} title="Grid View" style={{ width: 32, height: 32, borderRadius: 4, border: `1px solid ${this.state.viewMode === 'grid' ? '#0d9488' : '#e2e8f0'}`, background: this.state.viewMode === 'grid' ? '#f0fdfa' : '#fff', color: this.state.viewMode === 'grid' ? '#0d9488' : '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <button onClick={() => this.setState({ viewMode: 'grid' })} title="Grid View" style={{ width: 32, height: 32, borderRadius: 4, border: `1px solid ${this.state.viewMode === 'grid' ? tc.primary : '#e2e8f0'}`, background: this.state.viewMode === 'grid' ? tc.primaryLighter : '#fff', color: this.state.viewMode === 'grid' ? tc.primary : '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="2"/><rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="2"/><rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="2"/><rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="2"/></svg>
             </button>
           </div>
@@ -573,7 +574,7 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
                     {pack.PackDescription && <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 400 }}>{pack.PackDescription}</div>}
                   </div>
                   <span style={{ fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: 0.5, background: badge.bg, color: badge.color, display: 'inline-block', width: 'fit-content' }}>{packType}</span>
-                  <span style={{ fontWeight: 600, color: '#0d9488' }}>{policyCount}</span>
+                  <span style={{ fontWeight: 600, color: tc.primary }}>{policyCount}</span>
                   <span style={{ fontSize: 11, color: pack.IsActive === false ? '#dc2626' : '#059669', fontWeight: 500 }}>{pack.IsActive === false ? 'Inactive' : 'Active'}</span>
                   <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                     <button onClick={() => this.handleAssignPack(pack)} style={{ padding: '4px 10px', borderRadius: 4, fontSize: 11, fontWeight: 600, cursor: 'pointer', border: '1px solid #e2e8f0', background: '#fff', color: '#334155', fontFamily: 'inherit' }}>Assign</button>
@@ -603,7 +604,7 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
                   background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden',
                   transition: 'all 0.2s', cursor: 'pointer', opacity: isInactive ? 0.7 : 1
                 }}
-                onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = '#0d9488'; el.style.boxShadow = '0 4px 16px rgba(13,148,136,0.1)'; el.style.transform = 'translateY(-2px)'; }}
+                onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = tc.primary; el.style.boxShadow = '0 4px 16px rgba(13,148,136,0.1)'; el.style.transform = 'translateY(-2px)'; }}
                 onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = '#e2e8f0'; el.style.boxShadow = 'none'; el.style.transform = 'translateY(0)'; }}
               >
                 {/* Gradient top strip */}
@@ -614,7 +615,7 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
                     <div style={{ fontSize: 16, fontWeight: 700 }}>{pack.PackName}</div>
                     <div>
-                      <div style={{ fontSize: 22, fontWeight: 700, color: isInactive ? '#64748b' : '#0d9488', textAlign: 'right' }}>{policyCount}</div>
+                      <div style={{ fontSize: 22, fontWeight: 700, color: isInactive ? '#64748b' : tc.primary, textAlign: 'right' }}>{policyCount}</div>
                       <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: '#94a3b8', fontWeight: 600 }}>Policies</div>
                     </div>
                   </div>
@@ -639,12 +640,12 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
                   {/* Feature badges */}
                   <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
                     {pack.SendWelcomeEmail && (
-                      <span style={{ fontSize: 10, fontWeight: 600, padding: '4px 10px', borderRadius: 12, background: isInactive ? '#f1f5f9' : '#f0fdfa', color: isInactive ? '#64748b' : '#0d9488', border: `1px solid ${isInactive ? '#e2e8f0' : '#ccfbf1'}` }}>
+                      <span style={{ fontSize: 10, fontWeight: 600, padding: '4px 10px', borderRadius: 12, background: isInactive ? '#f1f5f9' : tc.primaryLighter, color: isInactive ? '#64748b' : tc.primary, border: `1px solid ${isInactive ? '#e2e8f0' : tc.primaryLight}` }}>
                         Email Notifications
                       </span>
                     )}
                     {pack.SendTeamsNotification && (
-                      <span style={{ fontSize: 10, fontWeight: 600, padding: '4px 10px', borderRadius: 12, background: isInactive ? '#f1f5f9' : '#f0fdfa', color: isInactive ? '#64748b' : '#0d9488', border: `1px solid ${isInactive ? '#e2e8f0' : '#ccfbf1'}` }}>
+                      <span style={{ fontSize: 10, fontWeight: 600, padding: '4px 10px', borderRadius: 12, background: isInactive ? '#f1f5f9' : tc.primaryLighter, color: isInactive ? '#64748b' : tc.primary, border: `1px solid ${isInactive ? '#e2e8f0' : tc.primaryLight}` }}>
                         Teams Notifications
                       </span>
                     )}
@@ -799,10 +800,10 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
                               display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px',
                               borderRadius: 4, cursor: 'pointer', fontSize: 13,
                               background: isSelected ? '#e6f7f5' : '#f8f9fa',
-                              border: isSelected ? '1px solid #0d9488' : '1px solid #e2e8f0',
+                              border: isSelected ? `1px solid ${tc.primary}` : '1px solid #e2e8f0',
                             }}
                           >
-                            <Icon iconName={isSelected ? 'CheckboxComposite' : 'Checkbox'} style={{ color: isSelected ? '#0d9488' : '#8a8886', fontSize: 14 }} />
+                            <Icon iconName={isSelected ? 'CheckboxComposite' : 'Checkbox'} style={{ color: isSelected ? tc.primary : '#8a8886', fontSize: 14 }} />
                             <span style={{ flex: 1, color: '#323130' }}>{policy.PolicyNumber ? `${policy.PolicyNumber} - ` : ''}{policy.PolicyName || policy.Title || 'Untitled Policy'}</span>
                             {policy.Category && (
                               <span style={{
@@ -837,13 +838,13 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
                   return (
                     <div key={id} style={{
                       display: 'inline-flex', alignItems: 'center', gap: 4,
-                      background: '#e6f7f5', border: '1px solid #0d9488', borderRadius: 12,
-                      padding: '2px 8px 2px 10px', fontSize: 12, color: '#0f766e'
+                      background: '#e6f7f5', border: `1px solid ${tc.primary}`, borderRadius: 12,
+                      padding: '2px 8px 2px 10px', fontSize: 12, color: tc.primaryDark
                     }}>
                       <span>{policy.PolicyNumber || policy.PolicyName || policy.Title || `Policy #${id}`}</span>
                       <IconButton
                         iconProps={{ iconName: 'Cancel', style: { fontSize: 10 } }}
-                        styles={{ root: { width: 18, height: 18, color: '#0f766e' }, rootHovered: { color: '#b91c1c', background: 'transparent' } }}
+                        styles={{ root: { width: 18, height: 18, color: tc.primaryDark }, rootHovered: { color: '#b91c1c', background: 'transparent' } }}
                         onClick={() => this.setState({ selectedPolicyIds: selectedPolicyIds.filter(pid => pid !== id) })}
                         title="Remove"
                       />
@@ -872,7 +873,7 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
                 iconName={this.state.deliveryOptionsExpanded ? 'ChevronDown' : 'ChevronRight'}
                 style={{ fontSize: 12, color: '#605e5c' }}
               />
-              <Icon iconName="Settings" style={{ fontSize: 14, color: '#0d9488' }} />
+              <Icon iconName="Settings" style={{ fontSize: 14, color: tc.primary }} />
               <Text variant="medium" style={{ fontWeight: 600, color: '#323130', flex: 1 }}>
                 Delivery &amp; Notification Options
               </Text>

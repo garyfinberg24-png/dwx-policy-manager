@@ -11,6 +11,7 @@ import { ErrorBoundary } from '../../../components/ErrorBoundary/ErrorBoundary';
 import { PM_LISTS } from '../../../constants/SharePointListNames';
 import { RoleDetectionService } from '../../../services/RoleDetectionService';
 import { PolicyManagerRole, getHighestPolicyRole, hasMinimumRole } from '../../../services/PolicyRoleService';
+import { tc } from '../../../utils/themeColors';
 
 // ============================================================================
 // INTERFACES
@@ -130,7 +131,7 @@ export default class PolicyAuthorReports extends React.Component<IPolicyAuthorRe
       // Status distribution
       const statusCounts: Record<string, number> = {};
       policies.forEach((p: any) => { const s = p.PolicyStatus || 'Draft'; statusCounts[s] = (statusCounts[s] || 0) + 1; });
-      const statusColors: Record<string, string> = { Draft: '#64748b', 'In Review': '#2563eb', 'Pending Approval': '#d97706', Approved: '#059669', Published: '#0d9488', Retired: '#94a3b8', Rejected: '#dc2626' };
+      const statusColors: Record<string, string> = { Draft: '#64748b', 'In Review': '#2563eb', 'Pending Approval': '#d97706', Approved: '#059669', Published: tc.primary, Retired: '#94a3b8', Rejected: '#dc2626' };
       const statusDistribution = Object.entries(statusCounts).map(([status, count]) => ({ status, count, color: statusColors[status] || '#64748b' }));
 
       // Category distribution
@@ -213,7 +214,7 @@ export default class PolicyAuthorReports extends React.Component<IPolicyAuthorRe
         <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #e2e8f0', marginBottom: 24 }}>
           {tabs.map(tab => (
             <button key={tab.key} onClick={() => this.setState({ activeTab: tab.key })}
-              style={{ padding: '10px 20px', fontSize: 13, fontWeight: activeTab === tab.key ? 600 : 400, color: activeTab === tab.key ? '#0d9488' : '#64748b', background: 'none', border: 'none', borderBottom: activeTab === tab.key ? '2px solid #0d9488' : '2px solid transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
+              style={{ padding: '10px 20px', fontSize: 13, fontWeight: activeTab === tab.key ? 600 : 400, color: activeTab === tab.key ? tc.primary : '#64748b', background: 'none', border: 'none', borderBottom: activeTab === tab.key ? `2px solid ${tc.primary}` : '2px solid transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
               <Icon iconName={tab.icon} style={{ fontSize: 14 }} /> {tab.label}
             </button>
           ))}
@@ -238,7 +239,7 @@ export default class PolicyAuthorReports extends React.Component<IPolicyAuthorRe
         {/* KPI Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
           {[
-            { label: 'Total Policies', value: data.totalPolicies, color: '#0d9488', sub: `${data.publishedPolicies} published · ${data.draftPolicies} drafts` },
+            { label: 'Total Policies', value: data.totalPolicies, color: tc.primary, sub: `${data.publishedPolicies} published · ${data.draftPolicies} drafts` },
             { label: 'Avg Ack Rate', value: `${data.averageAckRate}%`, color: data.averageAckRate >= 80 ? '#059669' : data.averageAckRate >= 50 ? '#d97706' : '#dc2626', sub: `${data.completedAcknowledgements}/${data.totalAcknowledgements} completed` },
             { label: 'Overdue', value: data.overdueAcknowledgements, color: data.overdueAcknowledgements > 0 ? '#dc2626' : '#059669', sub: data.overdueAcknowledgements > 0 ? 'Require attention' : 'All on track' },
             { label: 'In Review', value: data.inReviewPolicies, color: '#2563eb', sub: 'Awaiting reviewer action' }
@@ -271,9 +272,9 @@ export default class PolicyAuthorReports extends React.Component<IPolicyAuthorRe
             {data.categoryDistribution.map((c, i) => (
               <div key={c.category} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                 <span style={{ fontSize: 13, color: '#334155', flex: 1 }}>{c.category}</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: '#0d9488' }}>{c.count}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: tc.primary }}>{c.count}</span>
                 <div style={{ width: 100, height: 6, background: '#f1f5f9', borderRadius: 3, overflow: 'hidden' }}>
-                  <div style={{ width: `${data.totalPolicies > 0 ? (c.count / data.totalPolicies) * 100 : 0}%`, height: '100%', background: '#0d9488', borderRadius: 3, opacity: 1 - (i * 0.1) }} />
+                  <div style={{ width: `${data.totalPolicies > 0 ? (c.count / data.totalPolicies) * 100 : 0}%`, height: '100%', background: tc.primary, borderRadius: 3, opacity: 1 - (i * 0.1) }} />
                 </div>
               </div>
             ))}
@@ -355,7 +356,7 @@ export default class PolicyAuthorReports extends React.Component<IPolicyAuthorRe
               <div key={policy.id} style={{ display: 'grid', gridTemplateColumns: '1fr 90px 80px 70px 70px 80px 100px', padding: '12px 16px', borderBottom: '1px solid #f1f5f9', alignItems: 'center' }}>
                 <div>
                   <a href={`${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policy.id}`} style={{ fontSize: 13, fontWeight: 600, color: '#0f172a', textDecoration: 'none' }}
-                    onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.color = '#0d9488'} onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.color = '#0f172a'}>
+                    onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.color = tc.primary} onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.color = '#0f172a'}>
                     {policy.title}
                   </a>
                   <div style={{ fontSize: 11, color: '#94a3b8' }}>{policy.policyNumber || policy.category}</div>
@@ -388,7 +389,7 @@ export default class PolicyAuthorReports extends React.Component<IPolicyAuthorRe
       { name: 'Draft', count: data.draftPolicies, color: '#64748b', icon: 'Edit' },
       { name: 'In Review', count: data.inReviewPolicies, color: '#2563eb', icon: 'View' },
       { name: 'Approved', count: data.approvedPolicies, color: '#059669', icon: 'Accept' },
-      { name: 'Published', count: data.publishedPolicies, color: '#0d9488', icon: 'PublishContent' },
+      { name: 'Published', count: data.publishedPolicies, color: tc.primary, icon: 'PublishContent' },
       { name: 'Retired', count: data.retiredPolicies, color: '#94a3b8', icon: 'Archive' },
     ];
 
@@ -507,7 +508,7 @@ export default class PolicyAuthorReports extends React.Component<IPolicyAuthorRe
 
     const actionColors: Record<string, string> = {
       Published: '#059669', SubmittedForReview: '#2563eb', VersionCreated: '#7c3aed',
-      Retired: '#94a3b8', Created: '#0d9488', Updated: '#d97706', Rejected: '#dc2626',
+      Retired: '#94a3b8', Created: tc.primary, Updated: '#d97706', Rejected: '#dc2626',
       Approved: '#059669', Deleted: '#dc2626'
     };
 

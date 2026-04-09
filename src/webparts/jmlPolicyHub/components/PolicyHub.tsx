@@ -309,15 +309,13 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
     this._isMounted = true;
     injectPortalStyles();
 
-    try {
-      await this.initializeUserContext();
-    } catch (err) {
-      console.error('User context init failed (non-blocking):', err);
-    }
-
-    // Parallelize independent data loads for faster initial render
+    // Load everything in parallel — user context, featured, and policies all at once
+    // User context is needed for visibility filtering but policies can start loading immediately
     try {
       await Promise.all([
+        this.initializeUserContext().catch(err => {
+          console.error('User context init failed (non-blocking):', err);
+        }),
         this.initializeFeaturedAndRecent().catch(() => {}),
         this.loadPolicies().catch(() => {
           if (this._isMounted) this.setState({ loading: false, error: 'Failed to load policies.' });
@@ -697,6 +695,26 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
   private async loadPolicies(): Promise<void> {
     try {
       this.setState({ loading: true, error: null });
+
+      // Check sessionStorage cache for instant load on back-navigation (5 min TTL)
+      const cacheKey = 'pm_hub_policies';
+      const cacheTTL = 5 * 60 * 1000;
+      try {
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached) {
+          const { data, timestamp } = JSON.parse(cached);
+          if (Date.now() - timestamp < cacheTTL && data?.policies?.length > 0) {
+            console.log(`[PolicyHub] Using cached policies (${data.policies.length} items, ${Math.round((Date.now() - timestamp) / 1000)}s old)`);
+            if (this._isMounted) {
+              this.setState({ searchResults: data, loading: false });
+            }
+            // Still refresh in background for freshness
+            this.hubService.initialize().then(() => this._refreshPoliciesInBackground()).catch(() => {});
+            return;
+          }
+        }
+      } catch { /* cache read failed — proceed with fresh load */ }
+
       await this.hubService.initialize();
 
       const {
@@ -758,6 +776,11 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
       }
 
       if (this._isMounted) { this.setState({ searchResults: results, loading: false }); }
+
+      // Cache results for instant load on back-navigation
+      try {
+        sessionStorage.setItem('pm_hub_policies', JSON.stringify({ data: results, timestamp: Date.now() }));
+      } catch { /* storage full or unavailable */ }
     } catch (error) {
       console.error('Failed to load policies:', error);
       if (this._isMounted) { this.setState({
@@ -765,6 +788,28 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
         loading: false
       }); }
     }
+  }
+
+  /** Background refresh — updates state silently without showing loading spinner */
+  private async _refreshPoliciesInBackground(): Promise<void> {
+    try {
+      const { searchText, selectedCategory, selectedRisk, selectedDepartment, selectedRole, sortBy, sortDescending } = this.state;
+      const results = await this.hubService.searchPolicyHub({
+        searchText: searchText || undefined,
+        filters: { policyCategories: selectedCategory ? [selectedCategory] : undefined, statuses: [PolicyStatus.Published], complianceRisks: selectedRisk ? [selectedRisk as ComplianceRisk] : undefined, departments: selectedDepartment ? [selectedDepartment] : undefined, targetRoles: selectedRole ? [selectedRole] : undefined },
+        sort: { field: sortBy as any, direction: sortDescending ? 'desc' as const : 'asc' as const },
+        page: 1, pageSize: this.props.itemsPerPage, includeFacets: true, includeDocuments: false
+      });
+      const { userVisibilityContext } = this.state;
+      if (userVisibilityContext && results.policies) {
+        results.policies = this.hubService.filterByVisibility(results.policies, userVisibilityContext);
+        results.totalCount = results.policies.length;
+      }
+      if (this._isMounted) {
+        this.setState({ searchResults: results });
+        try { sessionStorage.setItem('pm_hub_policies', JSON.stringify({ data: results, timestamp: Date.now() })); } catch { /* */ }
+      }
+    } catch { /* background refresh failed — cached data is still displayed */ }
   }
 
   private handleSearch = (newValue?: string): void => {

@@ -91,6 +91,7 @@ import {
   QuizBuilderTab,
   PolicyPacksTab,
 } from './tabs';
+import { tc } from '../../../utils/themeColors';
 
 export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorProps, IPolicyAuthorEnhancedState> {
   private _isMounted = false;
@@ -1791,8 +1792,8 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                   style={{
                     display: 'flex', alignItems: 'center', gap: 10, padding: '10px 20px',
                     cursor: isClickable ? 'pointer' : 'default', transition: 'all 0.15s',
-                    borderLeft: isCurrent ? '3px solid #0d9488' : '3px solid transparent',
-                    background: isCurrent ? '#f0fdfa' : 'transparent'
+                    borderLeft: isCurrent ? `3px solid ${tc.primary}` : '3px solid transparent',
+                    background: isCurrent ? tc.primaryLighter : 'transparent'
                   }}
                   onMouseEnter={(e) => { if (!isCurrent) (e.currentTarget as HTMLElement).style.background = '#f8fafc'; }}
                   onMouseLeave={(e) => { if (!isCurrent) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
@@ -1800,9 +1801,9 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                   <div style={{
                     width: 26, height: 26, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: 11, fontWeight: 700, minWidth: 26, transition: 'all 0.15s',
-                    background: isCompleted ? '#0d9488' : isCurrent ? '#f0fdfa' : '#fff',
-                    color: isCompleted ? '#fff' : isCurrent ? '#0d9488' : '#94a3b8',
-                    border: `2px solid ${isCompleted ? '#0d9488' : isCurrent ? '#0d9488' : '#e2e8f0'}`
+                    background: isCompleted ? tc.primary : isCurrent ? tc.primaryLighter : '#fff',
+                    color: isCompleted ? '#fff' : isCurrent ? tc.primary : '#94a3b8',
+                    border: `2px solid ${isCompleted ? tc.primary : isCurrent ? tc.primary : '#e2e8f0'}`
                   }}>
                     {isCompleted ? (
                       <Icon iconName="CheckMark" style={{ fontSize: 11 }} />
@@ -1812,7 +1813,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                   </div>
                   <span style={{
                     fontWeight: isCurrent ? 600 : isCompleted ? 500 : 500,
-                    color: isCurrent ? '#0d9488' : isCompleted ? '#0f172a' : '#475569',
+                    color: isCurrent ? tc.primary : isCompleted ? '#0f172a' : '#475569',
                     fontSize: 13, flex: 1
                   }}>
                     {step.title}
@@ -1837,7 +1838,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                         <li key={fi} style={{
                           padding: '4px 0',
                           fontSize: 12,
-                          color: fi === 0 ? '#0f766e' : '#6b7280',
+                          color: fi === 0 ? tc.primaryDark : '#6b7280',
                           fontWeight: fi === 0 ? 600 : 400,
                           display: 'flex',
                           alignItems: 'center',
@@ -1846,7 +1847,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                           <span style={{
                             width: 5, height: 5,
                             borderRadius: '50%',
-                            background: '#0d9488',
+                            background: tc.primary,
                             opacity: fi === 0 ? 1 : 0.5,
                             display: 'inline-block',
                             flexShrink: 0
@@ -1928,7 +1929,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         <div className={styles.v3PanelSection}>
           <Text variant="small" style={TextStyles.sectionHeading}>
             <span style={{
-              width: 18, height: 18, background: '#f0fdfa', borderRadius: 4,
+              width: 18, height: 18, background: tc.primaryLighter, borderRadius: 4,
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               color: Colors.tealPrimary, fontSize: 10
             }}>
@@ -1948,7 +1949,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         <div className={styles.v3PanelSection}>
           <Text variant="small" style={TextStyles.sectionHeading}>
             <span style={{
-              width: 18, height: 18, background: '#f0fdfa', borderRadius: 4,
+              width: 18, height: 18, background: tc.primaryLighter, borderRadius: 4,
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               color: Colors.tealPrimary, fontSize: 10
             }}>
@@ -2003,7 +2004,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         <div className={styles.wizardNavCenter} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontSize: 12, color: '#64748b', whiteSpace: 'nowrap' }}>Step {currentStep + 1} of {WIZARD_STEPS.length}</span>
           <div style={{ width: 120, height: 4, background: '#e2e8f0', borderRadius: 2, overflow: 'hidden' }}>
-            <div style={{ height: '100%', background: '#0d9488', borderRadius: 2, width: `${((currentStep + 1) / WIZARD_STEPS.length) * 100}%`, transition: 'width 0.3s' }} />
+            <div style={{ height: '100%', background: tc.primary, borderRadius: 2, width: `${((currentStep + 1) / WIZARD_STEPS.length) * 100}%`, transition: 'width 0.3s' }} />
           </div>
         </div>
 
@@ -2063,18 +2064,18 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
               border: '2px solid #e2e8f0', borderRadius: 12, padding: 32, cursor: 'pointer',
               transition: 'all 0.2s', textAlign: 'center', position: 'relative', background: '#fff'
             }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = '#0d9488'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 24px rgba(13,148,136,0.1)'; }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = tc.primary; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 24px rgba(13,148,136,0.1)'; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = '#e2e8f0'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
           >
             <span style={{ position: 'absolute', top: 12, right: 12, fontSize: 9, fontWeight: 700, padding: '3px 10px', borderRadius: 4, background: '#fef3c7', color: '#d97706', textTransform: 'uppercase' }}>Recommended</span>
             <div style={{ width: 64, height: 64, borderRadius: 16, background: '#fef3c7', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, margin: '0 auto 16px' }}>&#x26A1;</div>
             <Text style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', display: 'block', marginBottom: 8 }}>Fast Track</Text>
             <Text style={{ fontSize: 13, color: '#64748b', lineHeight: '1.5', display: 'block', marginBottom: 16 }}>Pick a pre-configured template with all settings ready. Just name it, write content, and submit.</Text>
-            <Text style={{ fontSize: 12, fontWeight: 600, color: '#0d9488' }}>4 steps &bull; ~5 minutes</Text>
+            <Text style={{ fontSize: 12, fontWeight: 600, color: tc.primary }}>4 steps &bull; ~5 minutes</Text>
             <div style={{ textAlign: 'left', marginTop: 16, paddingTop: 16, borderTop: '1px solid #e2e8f0' }}>
               {['Pre-filled metadata, audience, reviewers', 'Skip 4 configuration steps', 'Best for recurring policy types', 'Override any setting if needed'].map((f, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', fontSize: 12, color: '#475569' }}>
-                  <span style={{ color: '#0d9488', fontWeight: 700 }}>&#x2714;</span> {f}
+                  <span style={{ color: tc.primary, fontWeight: 700 }}>&#x2714;</span> {f}
                 </div>
               ))}
             </div>
@@ -2136,7 +2137,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       'Health & Safety': { bg: '#fef3c7', color: '#d97706' },
       'Financial': { bg: '#dbeafe', color: '#2563eb' },
       'Legal': { bg: '#f1f5f9', color: '#64748b' },
-      'Operational': { bg: '#f0fdfa', color: '#0d9488' }
+      'Operational': { bg: tc.primaryLighter, color: tc.primary }
     };
 
     return (
@@ -2157,7 +2158,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
             {filtered.map((tmpl: any) => {
               const isSelected = selectedFTId === tmpl.Id;
-              const colors = catColors[tmpl.PolicyCategory] || { bg: '#f0fdfa', color: '#0d9488' };
+              const colors = catColors[tmpl.PolicyCategory] || { bg: tc.primaryLighter, color: tc.primary };
               return (
                 <div
                   key={tmpl.Id}
@@ -2168,17 +2169,17 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                   }}
                   onKeyDown={(e) => { if (e.key === 'Enter') { this.setState({ _selectedFTTemplateId: tmpl.Id, _selectedFTTemplate: tmpl } as any); this.handleApplyMetadataProfile(tmpl); } }}
                   style={{
-                    padding: 14, border: `1px solid ${isSelected ? '#0d9488' : '#e2e8f0'}`,
-                    borderLeft: `3px solid ${isSelected ? '#0d9488' : colors.color}`,
+                    padding: 14, border: `1px solid ${isSelected ? tc.primary : '#e2e8f0'}`,
+                    borderLeft: `3px solid ${isSelected ? tc.primary : colors.color}`,
                     borderRadius: 6, cursor: 'pointer', transition: 'all 0.15s',
-                    background: isSelected ? '#f0fdfa' : '#fff'
+                    background: isSelected ? tc.primaryLighter : '#fff'
                   }}
-                  onMouseEnter={(e) => { if (!isSelected) (e.currentTarget as HTMLElement).style.borderColor = '#0d9488'; }}
+                  onMouseEnter={(e) => { if (!isSelected) (e.currentTarget as HTMLElement).style.borderColor = tc.primary; }}
                   onMouseLeave={(e) => { if (!isSelected) { (e.currentTarget as HTMLElement).style.borderColor = '#e2e8f0'; (e.currentTarget as HTMLElement).style.borderLeftColor = colors.color; } }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                     <Text style={{ fontWeight: 600, fontSize: 13, color: '#0f172a', flex: 1 }}>{tmpl.ProfileName || tmpl.Title}</Text>
-                    {isSelected && <Icon iconName="CheckMark" styles={{ root: { fontSize: 14, color: '#0d9488' } }} />}
+                    {isSelected && <Icon iconName="CheckMark" styles={{ root: { fontSize: 14, color: tc.primary } }} />}
                   </div>
                   <Text style={{ fontSize: 11, color: '#64748b', lineHeight: '1.3', display: 'block', marginBottom: 8 }}>{(tmpl.Description || 'Pre-configured template').substring(0, 60)}{(tmpl.Description || '').length > 60 ? '...' : ''}</Text>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
@@ -2254,7 +2255,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             <DefaultButton
               text={showOverride ? 'Lock' : 'Override'}
               onClick={() => this.setState({ _ftShowOverride: !showOverride } as any)}
-              styles={{ root: { fontSize: 11, padding: '4px 10px', minWidth: 'auto', height: 28, borderRadius: 4, border: '1px solid #99f6e4', background: '#f0fdfa', color: '#0d9488' } }}
+              styles={{ root: { fontSize: 11, padding: '4px 10px', minWidth: 'auto', height: 28, borderRadius: 4, border: '1px solid #99f6e4', background: tc.primaryLighter, color: tc.primary } }}
             />
           </div>
 
@@ -2304,7 +2305,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
     // 6 document types in horizontal strip
     const docTypes = [
-      { key: 'richtext', label: 'Rich Text', icon: 'EditNote', bg: '#ccfbf1', color: '#0d9488' },
+      { key: 'richtext', label: 'Rich Text', icon: 'EditNote', bg: tc.primaryLight, color: tc.primary },
       { key: 'html', label: 'HTML', icon: 'Code', bg: '#dbeafe', color: '#2563eb' },
       { key: 'word', label: 'Word', icon: 'WordDocument', bg: '#dbeafe', color: '#2b579a' },
       { key: 'excel', label: 'Excel', icon: 'ExcelDocument', bg: '#dcfce7', color: '#217346' },
@@ -2369,8 +2370,8 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                   flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
                   padding: '16px 12px', cursor: 'pointer', transition: 'all 0.15s',
                   borderRight: dt.key !== 'upload' ? '1px solid #e2e8f0' : 'none',
-                  background: isSelected ? '#f0fdfa' : '#fff',
-                  borderBottom: isSelected ? '3px solid #0d9488' : '3px solid transparent'
+                  background: isSelected ? tc.primaryLighter : '#fff',
+                  borderBottom: isSelected ? `3px solid ${tc.primary}` : '3px solid transparent'
                 }}
                 onMouseEnter={(e) => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = '#f8fafc'; }}
                 onMouseLeave={(e) => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = '#fff'; }}
@@ -2383,7 +2384,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                 </div>
                 <Text style={{
                   fontSize: 11, fontWeight: isSelected ? 700 : 600,
-                  color: isSelected ? '#0d9488' : '#475569', textAlign: 'center', lineHeight: '1.3'
+                  color: isSelected ? tc.primary : '#475569', textAlign: 'center', lineHeight: '1.3'
                 }}>{dt.label}</Text>
               </div>
             );
@@ -2408,7 +2409,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                   border: '2px dashed #cbd5e1', borderRadius: 8, padding: 40, textAlign: 'center',
                   cursor: 'pointer', transition: 'all 0.15s'
                 }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = '#0d9488'; (e.currentTarget as HTMLElement).style.background = '#f0fdfa'; }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = tc.primary; (e.currentTarget as HTMLElement).style.background = tc.primaryLighter; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = '#cbd5e1'; (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
               >
                 <Icon iconName="CloudUpload" styles={{ root: { fontSize: 40, color: '#94a3b8', display: 'block', marginBottom: 12 } }} />
@@ -2439,16 +2440,16 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                   }}
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.setState({ selectedTemplate: null } as any); } }}
                   style={{
-                    border: !(this.state as any).selectedTemplate ? '2px solid #0d9488' : '1px solid #e2e8f0',
+                    border: !(this.state as any).selectedTemplate ? `2px solid ${tc.primary}` : '1px solid #e2e8f0',
                     borderRadius: 8, padding: 16, cursor: 'pointer', transition: 'all 0.15s',
-                    background: !(this.state as any).selectedTemplate ? '#f0fdfa' : '#fff'
+                    background: !(this.state as any).selectedTemplate ? tc.primaryLighter : '#fff'
                   }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = '#0d9488'; (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 8px rgba(13,148,136,0.1)'; }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = tc.primary; (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 8px rgba(13,148,136,0.1)'; }}
                   onMouseLeave={(e) => { if ((this.state as any).selectedTemplate) { (e.currentTarget as HTMLElement).style.borderColor = '#e2e8f0'; } (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                     <div style={{ width: 32, height: 32, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9' }}>
-                      <Icon iconName="Add" styles={{ root: { fontSize: 16, color: '#0d9488' } }} />
+                      <Icon iconName="Add" styles={{ root: { fontSize: 16, color: tc.primary } }} />
                     </div>
                     <Text style={{ fontWeight: 600, fontSize: 13, color: '#0f172a' }}>{blankLabels[creationMethod as string] || 'Blank'}</Text>
                   </div>
@@ -2468,11 +2469,11 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                       onClick={() => this.setState({ selectedTemplate: tmpl } as any)}
                       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.setState({ selectedTemplate: tmpl } as any); } }}
                       style={{
-                        border: isSelected ? '2px solid #0d9488' : '1px solid #e2e8f0',
+                        border: isSelected ? `2px solid ${tc.primary}` : '1px solid #e2e8f0',
                         borderRadius: 8, padding: 16, cursor: 'pointer', transition: 'all 0.15s',
-                        background: isSelected ? '#f0fdfa' : '#fff'
+                        background: isSelected ? tc.primaryLighter : '#fff'
                       }}
-                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = '#0d9488'; (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 8px rgba(13,148,136,0.1)'; }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = tc.primary; (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 8px rgba(13,148,136,0.1)'; }}
                       onMouseLeave={(e) => { if (!isSelected) { (e.currentTarget as HTMLElement).style.borderColor = '#e2e8f0'; } (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
@@ -2509,9 +2510,9 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
         {/* Tip */}
         <div style={{
-          display: 'flex', alignItems: 'flex-start', gap: 10, background: '#f0fdfa',
+          display: 'flex', alignItems: 'flex-start', gap: 10, background: tc.primaryLighter,
           border: '1px solid #99f6e4', borderRadius: 4, padding: '12px 16px', marginTop: 20,
-          fontSize: 12, color: '#0f766e', lineHeight: '1.5'
+          fontSize: 12, color: tc.primaryDark, lineHeight: '1.5'
         }}>
           <Icon iconName="Info" styles={{ root: { fontSize: 16, flexShrink: 0, marginTop: 1 } }} />
           <span>Choose your document type and starting point. Complete all metadata in the following steps, then write your content on Step 7.</span>
@@ -2609,7 +2610,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                 </Stack>
                 <div style={{ height: 4, background: '#e2e8f0', borderRadius: 2, marginTop: 6, overflow: 'hidden' }}>
                   <div style={{
-                    height: '100%', borderRadius: 2, background: '#0d9488', transition: 'width 0.3s',
+                    height: '100%', borderRadius: 2, background: tc.primary, transition: 'width 0.3s',
                     width: `${templateSections.length > 0 ? (templateSections.filter((s: any) => {
                       const content = (sectionContents[s.id] || '').replace(/<[^>]*>/g, '').trim();
                       return content.length > 0;
@@ -2626,14 +2627,14 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                   return (
                     <div key={section.id} style={{
                       background: '#fff',
-                      border: `1px solid ${section.required ? '#0d9488' : '#e2e8f0'}`,
-                      borderLeft: `3px solid ${section.required ? '#0d9488' : '#e2e8f0'}`,
+                      border: `1px solid ${section.required ? tc.primary : '#e2e8f0'}`,
+                      borderLeft: `3px solid ${section.required ? tc.primary : '#e2e8f0'}`,
                       borderRadius: 4, overflow: 'hidden'
                     }}>
                       {/* Section header */}
                       <div style={{
                         padding: '10px 16px',
-                        background: hasContent ? '#f0fdfa' : '#f8fafc',
+                        background: hasContent ? tc.primaryLighter : '#f8fafc',
                         borderBottom: '1px solid #e2e8f0',
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between'
                       }}>
@@ -2641,7 +2642,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                           <span style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', minWidth: 24 }}>#{index + 1}</span>
                           <Text style={{ fontWeight: 600, fontSize: 14, color: '#0f172a' }}>{section.title}</Text>
                           {section.required && (
-                            <span style={{ fontSize: 9, fontWeight: 600, padding: '1px 6px', borderRadius: 3, background: '#ccfbf1', color: '#0d9488' }}>REQUIRED</span>
+                            <span style={{ fontSize: 9, fontWeight: 600, padding: '1px 6px', borderRadius: 3, background: tc.primaryLight, color: tc.primary }}>REQUIRED</span>
                           )}
                         </Stack>
                         <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 6 }}>
@@ -2686,14 +2687,14 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
               {linkedDocumentUrl && (
                 <div style={{
                   display: 'flex', alignItems: 'center', gap: 14, padding: '16px 20px',
-                  background: '#f0fdfa', border: '1px solid #99f6e4', borderRadius: 8
+                  background: tc.primaryLighter, border: '1px solid #99f6e4', borderRadius: 8
                 }}>
                   <Icon iconName={
                     creationMethod === 'word' ? 'WordDocument' :
                     creationMethod === 'excel' ? 'ExcelDocument' :
                     creationMethod === 'powerpoint' ? 'PowerPointDocument' :
                     'PictureFill'
-                  } styles={{ root: { fontSize: 28, color: '#0d9488' } }} />
+                  } styles={{ root: { fontSize: 28, color: tc.primary } }} />
                   <div style={{ flex: 1 }}>
                     <Text style={{ fontWeight: 600, fontSize: 14, color: '#0f172a', display: 'block' }}>
                       Document linked successfully
@@ -2711,8 +2712,8 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                       window.open(editUrl, '_blank');
                     }}
                     styles={{
-                      root: { background: '#0d9488', borderColor: '#0d9488', borderRadius: 4 },
-                      rootHovered: { background: '#0f766e', borderColor: '#0f766e' }
+                      root: { background: tc.primary, borderColor: tc.primary, borderRadius: 4 },
+                      rootHovered: { background: tc.primaryDark, borderColor: tc.primaryDark }
                     }}
                   />
                 </div>
@@ -2745,7 +2746,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     const timeframeOptions: IDropdownOption[] = Object.values(ReadTimeframe).map(tf => ({ key: tf, text: tf }));
     const availableProfiles = (metadataProfiles || []).filter((p: any) => p.IsActive !== false);
 
-    const riskColors: Record<string, string> = { Critical: '#dc2626', High: '#ea580c', Medium: '#d97706', Low: '#0d9488', Informational: '#64748b' };
+    const riskColors: Record<string, string> = { Critical: tc.danger, High: '#ea580c', Medium: tc.warning, Low: tc.primary, Informational: '#64748b' };
 
     const applyProfile = (profile: any): void => {
       this.setState({
@@ -2797,13 +2798,13 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.setState({ _profileMode: mode } as any); } }}
           style={{
             flex: 1, padding: 16, borderRadius: 4, cursor: 'pointer',
-            border: `2px solid ${isActive ? '#0d9488' : '#edebe9'}`,
-            background: isActive ? '#f0fdfa' : '#fff',
+            border: `2px solid ${isActive ? tc.primary : '#edebe9'}`,
+            background: isActive ? tc.primaryLighter : '#fff',
             boxShadow: isActive ? '0 2px 8px rgba(13,148,136,0.12)' : 'none',
             transition: 'all 0.2s'
           }}
         >
-          <Icon iconName={icon} styles={{ root: { fontSize: 24, color: isActive ? '#0d9488' : '#94a3b8', marginBottom: 6, display: 'block' } }} />
+          <Icon iconName={icon} styles={{ root: { fontSize: 24, color: isActive ? tc.primary : '#94a3b8', marginBottom: 6, display: 'block' } }} />
           <Text style={{ fontWeight: 700, fontSize: 13, display: 'block', color: '#0f172a' }}>{title}</Text>
           <Text style={{ fontSize: 11, color: '#64748b' }}>{desc}</Text>
         </div>
@@ -2841,12 +2842,12 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                           style={{
                             display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px',
                             borderRadius: 4, cursor: 'pointer', marginBottom: 8,
-                            border: `2px solid ${isSelected ? '#0d9488' : '#edebe9'}`,
-                            background: isSelected ? '#f0fdfa' : '#fff',
+                            border: `2px solid ${isSelected ? tc.primary : '#edebe9'}`,
+                            background: isSelected ? tc.primaryLighter : '#fff',
                             transition: 'all 0.15s'
                           }}
                         >
-                          <Icon iconName="Tag" styles={{ root: { fontSize: 18, color: isSelected ? '#0d9488' : '#94a3b8' } }} />
+                          <Icon iconName="Tag" styles={{ root: { fontSize: 18, color: isSelected ? tc.primary : '#94a3b8' } }} />
                           <div style={{ flex: 1 }}>
                             <Text style={{ fontWeight: 600, color: '#0f172a', display: 'block' }}>{profile.ProfileName || profile.Title}</Text>
                             <Stack horizontal tokens={{ childrenGap: 12 }} style={{ marginTop: 4 }}>
@@ -2856,7 +2857,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                               <Text style={{ fontSize: 11, color: '#64748b' }}>Ack: {profile.RequiresAcknowledgement ? 'Yes' : 'No'}</Text>
                             </Stack>
                           </div>
-                          {isSelected && <Icon iconName="CheckMark" styles={{ root: { fontSize: 16, color: '#0d9488' } }} />}
+                          {isSelected && <Icon iconName="CheckMark" styles={{ root: { fontSize: 16, color: tc.primary } }} />}
                         </div>
                       );
                     })}
@@ -2959,7 +2960,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                       text={savingProfile ? 'Creating...' : 'Create & Apply Profile'}
                       onClick={handleCreateProfile}
                       disabled={!newProfile.ProfileName?.trim() || savingProfile}
-                      styles={{ root: { background: '#0d9488', borderColor: '#0d9488', borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+                      styles={{ root: { background: tc.primary, borderColor: tc.primary, borderRadius: 4 }, rootHovered: { background: tc.primaryDark, borderColor: tc.primaryDark } }}
                     />
                     <DefaultButton text="Cancel" onClick={() => this.setState({ _profileMode: 'existing', _newProfileData: null } as any)} />
                   </Stack>
@@ -3037,7 +3038,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       Department: { bg: '#dbeafe', color: '#2563eb' },
       Role: { bg: '#ede9fe', color: '#7c3aed' },
       Location: { bg: '#fef3c7', color: '#d97706' },
-      Custom: { bg: '#f0fdfa', color: '#0d9488' },
+      Custom: { bg: tc.primaryLighter, color: tc.primary },
       Compliance: { bg: '#fee2e2', color: '#dc2626' },
       Onboarding: { bg: '#dcfce7', color: '#059669' }
     };
@@ -3148,17 +3149,17 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
           {/* Audience count (search + tiles removed per tester feedback) */}
           {selectedAudienceId && audiencePreviewCount > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: '#0d9488' }}>
-              <Icon iconName="People" styles={{ root: { fontSize: 12, color: '#0d9488' } }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: tc.primary }}>
+              <Icon iconName="People" styles={{ root: { fontSize: 12, color: tc.primary } }} />
               ~{audiencePreviewCount} users match
             </div>
           )}
 
           {/* Selected audience info */}
           {selectedAudienceId && audiencePreviewCount > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: '#f0fdfa', border: '1px solid #99f6e4', borderRadius: 6 }}>
-              <Icon iconName="People" styles={{ root: { fontSize: 16, color: '#0d9488' } }} />
-              <Text style={{ fontSize: 13, color: '#0f766e' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: tc.primaryLighter, border: '1px solid #99f6e4', borderRadius: 6 }}>
+              <Icon iconName="People" styles={{ root: { fontSize: 16, color: tc.primary } }} />
+              <Text style={{ fontSize: 13, color: tc.primaryDark }}>
                 <strong>{audiencePreviewCount}</strong> users match this audience. They will receive this policy when distributed.
               </Text>
             </div>
@@ -3208,7 +3209,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                 <>
                   <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: 16, marginTop: 8 }}>
                     <Text style={{ fontWeight: 600, fontSize: 14, display: 'block', marginBottom: 4 }}>
-                      <Icon iconName="Lock" styles={{ root: { marginRight: 6, fontSize: 14, color: '#0d9488' } }} />
+                      <Icon iconName="Lock" styles={{ root: { marginRight: 6, fontSize: 14, color: tc.primary } }} />
                       Storage & Security
                     </Text>
                     <Text style={{ fontSize: 12, color: '#64748b', marginBottom: 12, display: 'block' }}>
@@ -3373,7 +3374,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     const editBtn = (step: number): JSX.Element => (
       <button
         onClick={() => this.setState({ currentStep: step })}
-        style={{ background: 'none', border: 'none', color: '#0d9488', fontSize: 12, fontWeight: 600, cursor: 'pointer', padding: '2px 8px', borderRadius: 4 }}
+        style={{ background: 'none', border: 'none', color: tc.primary, fontSize: 12, fontWeight: 600, cursor: 'pointer', padding: '2px 8px', borderRadius: 4 }}
         title={`Edit Step ${step + 1}`}
       >
         Edit
@@ -3471,11 +3472,11 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                 onClick={() => toggleSection(section.key)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', cursor: 'pointer',
-                  background: isExpanded ? '#f0fdfa' : '#fff', borderBottom: isExpanded ? '1px solid #e2e8f0' : 'none'
+                  background: isExpanded ? tc.primaryLighter : '#fff', borderBottom: isExpanded ? '1px solid #e2e8f0' : 'none'
                 }}
               >
                 <span style={{ fontSize: 10, color: '#94a3b8', transition: 'transform 0.2s', transform: isExpanded ? 'rotate(90deg)' : 'rotate(0)' }}>&#x25B6;</span>
-                <Icon iconName={section.icon} styles={{ root: { fontSize: 14, color: '#0d9488' } }} />
+                <Icon iconName={section.icon} styles={{ root: { fontSize: 14, color: tc.primary } }} />
                 <span style={{ fontWeight: 600, fontSize: 13, color: '#0f172a', flex: 1 }}>{section.title}</span>
                 {editBtn(section.step)}
                 <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 4, background: '#dcfce7', color: '#059669' }}>Complete</span>
@@ -4304,7 +4305,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     };
 
     const templateTypes: Record<string, { label: string; icon: string; color: string; bgColor: string }> = {
-      richtext: { label: 'Rich Text', icon: 'EditNote', color: '#0d9488', bgColor: '#ccfbf1' },
+      richtext: { label: 'Rich Text', icon: 'EditNote', color: tc.primary, bgColor: tc.primaryLight },
       word: { label: 'Word', icon: 'WordDocument', color: '#2b579a', bgColor: '#dce6f5' },
       excel: { label: 'Excel', icon: 'ExcelDocument', color: '#217346', bgColor: '#d4edda' },
       powerpoint: { label: 'PowerPoint', icon: 'PowerPointDocument', color: '#b7472a', bgColor: '#f5d4cc' },
@@ -4435,8 +4436,8 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
                       {/* Content preview (toggle) */}
                       {(this.state as any)._previewTemplateId === template.Id && (
-                        <div style={{ padding: 12, borderRadius: 4, background: '#f0fdfa', border: '1px solid #ccfbf1', maxHeight: 200, overflowY: 'auto' }}>
-                          <Text variant="tiny" style={{ fontWeight: 600, color: '#0f766e', display: 'block', marginBottom: 8 }}>Template Content Preview</Text>
+                        <div style={{ padding: 12, borderRadius: 4, background: tc.primaryLighter, border: `1px solid ${tc.primaryLight}`, maxHeight: 200, overflowY: 'auto' }}>
+                          <Text variant="tiny" style={{ fontWeight: 600, color: tc.primaryDark, display: 'block', marginBottom: 8 }}>Template Content Preview</Text>
                           {template.TemplateContent || template.HTMLTemplate ? (
                             <div style={{ fontSize: 12, lineHeight: 1.6, color: '#334155' }}
                               dangerouslySetInnerHTML={{ __html: (template.TemplateContent || template.HTMLTemplate || '').substring(0, 1000) + ((template.TemplateContent || template.HTMLTemplate || '').length > 1000 ? '...' : '') }}
@@ -4488,7 +4489,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
               const input = document.getElementById('policyFileInput') as HTMLInputElement;
               if (input) input.click();
             }}
-            onDragOver={(e) => { e.preventDefault(); (e.currentTarget as HTMLElement).style.borderColor = '#0d9488'; }}
+            onDragOver={(e) => { e.preventDefault(); (e.currentTarget as HTMLElement).style.borderColor = tc.primary; }}
             onDragLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = '#c8c6c4'; }}
             onDrop={(e) => {
               e.preventDefault();
@@ -6407,7 +6408,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                   padding: 16,
                   border: '1px solid #e2e8f0',
                   borderRadius: 8,
-                  backgroundColor: version.IsCurrentVersion ? '#f0fdfa' : '#ffffff'
+                  backgroundColor: version.IsCurrentVersion ? tc.primaryLighter : '#ffffff'
                 }}
               >
                 <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
@@ -6426,7 +6427,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                       {version.IsCurrentVersion && (
                         <span style={{
                           padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600,
-                          backgroundColor: '#ccfbf1', color: Colors.tealPrimary
+                          backgroundColor: tc.primaryLight, color: Colors.tealPrimary
                         }}>
                           Current
                         </span>
@@ -7156,7 +7157,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
               horizontal
               verticalAlign="center"
               tokens={{ childrenGap: 12 }}
-              styles={{ root: { padding: 16, background: '#f0fdfa', borderRadius: 8, border: '1px solid #99f6e4' } }}
+              styles={{ root: { padding: 16, background: tc.primaryLighter, borderRadius: 8, border: '1px solid #99f6e4' } }}
             >
               <div style={{ ...ContainerStyles.imageThumbnail, flexShrink: 0 }}>
                 <img src={imageUrl} alt={fileName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -7174,7 +7175,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                   imageViewerTitle: fileName,
                   imageViewerZoom: 100
                 })}
-                styles={{ root: { background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+                styles={{ root: { background: tc.primary, borderColor: tc.primary }, rootHovered: { background: tc.primaryDark, borderColor: tc.primaryDark } }}
               />
               <DefaultButton
                 text="Open in SharePoint"
@@ -7420,7 +7421,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       <div>
         {/* Workflow Template Info Bar */}
         {workflowTemplates.length > 0 && (
-          <div style={{ marginBottom: 20, padding: 14, background: '#f0fdfa', borderRadius: 10, border: '1px solid #ccfbf1' }}>
+          <div style={{ marginBottom: 20, padding: 14, background: tc.primaryLighter, borderRadius: 10, border: `1px solid ${tc.primaryLight}` }}>
             <Dropdown
               label="Workflow Template"
               placeholder="Select a workflow template (optional)..."
@@ -8124,31 +8125,31 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       // Sidebar
       sidebar: { background: '#fff', borderRight: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gridRow: '1 / 3', borderRadius: '10px 0 0 10px', overflowY: 'auto' } as React.CSSProperties,
       sidebarHeader: { padding: '24px 20px 16px', borderBottom: '1px solid #e2e8f0' } as React.CSSProperties,
-      stepItem: (active: boolean) => ({ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 20px', cursor: 'pointer', transition: 'all 0.15s', borderLeft: active ? '3px solid #0d9488' : '3px solid transparent', background: active ? '#f0fdfa' : 'transparent' }) as React.CSSProperties,
-      stepNum: (active: boolean, done: boolean) => ({ width: 26, height: 26, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, minWidth: 26, background: done ? '#0d9488' : active ? '#f0fdfa' : '#fff', color: done ? '#fff' : active ? '#0d9488' : '#94a3b8', border: `2px solid ${done ? '#0d9488' : active ? '#0d9488' : '#e2e8f0'}` }) as React.CSSProperties,
-      stepLabel: (active: boolean, done: boolean) => ({ fontWeight: active ? 600 : 500, color: active ? '#0d9488' : done ? '#0f172a' : '#475569', fontSize: 13, flex: 1 }) as React.CSSProperties,
+      stepItem: (active: boolean) => ({ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 20px', cursor: 'pointer', transition: 'all 0.15s', borderLeft: active ? `3px solid ${tc.primary}` : '3px solid transparent', background: active ? tc.primaryLighter : 'transparent' }) as React.CSSProperties,
+      stepNum: (active: boolean, done: boolean) => ({ width: 26, height: 26, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, minWidth: 26, background: done ? tc.primary : active ? tc.primaryLighter : '#fff', color: done ? '#fff' : active ? tc.primary : '#94a3b8', border: `2px solid ${done ? tc.primary : active ? tc.primary : '#e2e8f0'}` }) as React.CSSProperties,
+      stepLabel: (active: boolean, done: boolean) => ({ fontWeight: active ? 600 : 500, color: active ? tc.primary : done ? '#0f172a' : '#475569', fontSize: 13, flex: 1 }) as React.CSSProperties,
       bulletList: { padding: '4px 20px 10px 56px', margin: 0, listStyle: 'none' } as React.CSSProperties,
-      bullet: (first: boolean) => ({ padding: '3px 0', fontSize: 11, color: first ? '#0d9488' : '#94a3b8', fontWeight: first ? 600 : 400, display: 'flex', alignItems: 'center', gap: 6 }) as React.CSSProperties,
-      bulletDot: { width: 5, height: 5, borderRadius: '50%', background: '#0d9488', display: 'inline-block', flexShrink: 0 } as React.CSSProperties,
+      bullet: (first: boolean) => ({ padding: '3px 0', fontSize: 11, color: first ? tc.primary : '#94a3b8', fontWeight: first ? 600 : 400, display: 'flex', alignItems: 'center', gap: 6 }) as React.CSSProperties,
+      bulletDot: { width: 5, height: 5, borderRadius: '50%', background: tc.primary, display: 'inline-block', flexShrink: 0 } as React.CSSProperties,
       // Content area
       content: { padding: '32px 40px 24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', background: '#f8fafc' } as React.CSSProperties,
       contentHeader: { marginBottom: 24, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 24 } as React.CSSProperties,
       progressWrap: { display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, paddingTop: 6 } as React.CSSProperties,
       progressTrack: { width: 120, height: 6, background: '#e2e8f0', borderRadius: 3, overflow: 'hidden' } as React.CSSProperties,
-      progressFill: { height: '100%', background: '#0d9488', borderRadius: 3, transition: 'width 0.3s' } as React.CSSProperties,
+      progressFill: { height: '100%', background: tc.primary, borderRadius: 3, transition: 'width 0.3s' } as React.CSSProperties,
       // Right panel
       rightPanel: { background: '#fff', borderLeft: '1px solid #e2e8f0', padding: '24px 20px', overflowY: 'auto', borderRadius: '0 10px 0 0' } as React.CSSProperties,
       panelHeading: { fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 } as React.CSSProperties,
-      tipCard: { background: '#f0fdfa', borderRadius: 6, padding: 12, marginBottom: 8 } as React.CSSProperties,
+      tipCard: { background: tc.primaryLighter, borderRadius: 6, padding: 12, marginBottom: 8 } as React.CSSProperties,
       tipTitle: { fontSize: 12, fontWeight: 600, color: '#0f172a', marginBottom: 4, display: 'block' } as React.CSSProperties,
       tipBody: { fontSize: 11, color: '#115e59', lineHeight: '1.5' } as React.CSSProperties,
       relatedItem: { display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0', borderBottom: '1px solid #f1f5f9', fontSize: 12 } as React.CSSProperties,
-      relatedDot: { width: 6, height: 6, borderRadius: '50%', background: '#0d9488', flexShrink: 0 } as React.CSSProperties,
+      relatedDot: { width: 6, height: 6, borderRadius: '50%', background: tc.primary, flexShrink: 0 } as React.CSSProperties,
       // Footer
       footer: { gridColumn: '2 / 3', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 40px', background: '#fff', borderTop: '1px solid #e2e8f0' } as React.CSSProperties,
       footerCenter: { display: 'flex', alignItems: 'center', gap: 12 } as React.CSSProperties,
       footerTrack: { width: 100, height: 4, background: '#e2e8f0', borderRadius: 2, overflow: 'hidden' } as React.CSSProperties,
-      footerFill: { height: '100%', background: '#0d9488', borderRadius: 2, transition: 'width 0.3s' } as React.CSSProperties,
+      footerFill: { height: '100%', background: tc.primary, borderRadius: 2, transition: 'width 0.3s' } as React.CSSProperties,
     };
 
     // ── Tips data ──
@@ -8258,7 +8259,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         <aside style={S.rightPanel}>
           <div style={{ marginBottom: 24 }}>
             <div style={S.panelHeading as React.CSSProperties}>
-              <Icon iconName="Lightbulb" style={{ fontSize: 12, color: '#0d9488' }} />
+              <Icon iconName="Lightbulb" style={{ fontSize: 12, color: tc.primary }} />
               Tips & Guidance
             </div>
             {tips.map((tip, i) => (
@@ -8270,7 +8271,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
           </div>
           <div>
             <div style={S.panelHeading as React.CSSProperties}>
-              <Icon iconName="Documentation" style={{ fontSize: 12, color: '#0d9488' }} />
+              <Icon iconName="Documentation" style={{ fontSize: 12, color: tc.primary }} />
               Related Policies
             </div>
             {relatedPolicies.map((p, i) => (
@@ -8291,7 +8292,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             text={currentStep > 0 ? '\u2190 Back' : ''}
             onClick={this.handlePreviousStep}
             disabled={saving || currentStep === 0}
-            styles={{ root: { borderRadius: 4, border: '1px solid #e2e8f0', visibility: currentStep === 0 ? 'hidden' : 'visible', minWidth: 80 }, rootHovered: { borderColor: '#0d9488', color: '#0d9488' } }}
+            styles={{ root: { borderRadius: 4, border: '1px solid #e2e8f0', visibility: currentStep === 0 ? 'hidden' : 'visible', minWidth: 80 }, rootHovered: { borderColor: tc.primary, color: tc.primary } }}
           />
           <div style={S.footerCenter}>
             <span style={{ fontSize: 12, color: '#64748b', whiteSpace: 'nowrap' }}>Step {currentStep + 1} of {activeSteps.length}</span>
@@ -8303,7 +8304,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
               iconProps={saving ? undefined : { iconName: 'Save' }}
               onClick={() => { this.handleSaveDraft(); }}
               disabled={saving}
-              styles={{ root: { borderRadius: 4, background: '#f0fdfa', color: '#0d9488', border: '1px solid #99f6e4', minWidth: 100 }, rootHovered: { background: '#ccfbf1' } }}
+              styles={{ root: { borderRadius: 4, background: tc.primaryLighter, color: tc.primary, border: '1px solid #99f6e4', minWidth: 100 }, rootHovered: { background: tc.primaryLight } }}
             >
               {saving && <Spinner size={SpinnerSize.xSmall} styles={{ root: { marginRight: 6 } }} />}
             </DefaultButton>
@@ -8311,7 +8312,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
               <PrimaryButton
                 onClick={this.handleNextStep}
                 disabled={saving}
-                styles={{ root: { background: '#0d9488', borderColor: '#0d9488', borderRadius: 4, minWidth: 80 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+                styles={{ root: { background: tc.primary, borderColor: tc.primary, borderRadius: 4, minWidth: 80 }, rootHovered: { background: tc.primaryDark, borderColor: tc.primaryDark } }}
               >
                 Next <Icon iconName="ChevronRight" style={{ marginLeft: 6 }} />
               </PrimaryButton>
@@ -8322,7 +8323,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
                   iconProps={{ iconName: 'Send' }}
                   onClick={() => { this.handleSubmitForReview(); }}
                   disabled={saving}
-                  styles={{ root: { background: '#0d9488', borderColor: '#0d9488', borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+                  styles={{ root: { background: tc.primary, borderColor: tc.primary, borderRadius: 4 }, rootHovered: { background: tc.primaryDark, borderColor: tc.primaryDark } }}
                 />
               </>
             )}

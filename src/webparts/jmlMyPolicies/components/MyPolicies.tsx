@@ -11,6 +11,7 @@ import { JmlAppLayout } from '../../../components/JmlAppLayout';
 import { ErrorBoundary } from '../../../components/ErrorBoundary/ErrorBoundary';
 import { StyledPanel } from '../../../components/StyledPanel';
 import { PM_LISTS } from '../../../constants/SharePointListNames';
+import { tc } from '../../../utils/themeColors';
 
 // Assigned policy interface
 interface IAssignedPolicy {
@@ -92,18 +93,18 @@ const getStatusLabel = (status: string): string => {
 
 const getStatusBadgeClass = (status: string): { bg: string; text: string } => {
   const colors: Record<string, { bg: string; text: string }> = {
-    'unread': { bg: '#fef3c7', text: '#d97706' },
-    'in-progress': { bg: '#fef3c7', text: '#d97706' },
+    'unread': { bg: '#fef3c7', text: tc.warning },
+    'in-progress': { bg: '#fef3c7', text: tc.warning },
     'completed': { bg: '#dcfce7', text: '#16a34a' },
-    'overdue': { bg: '#fee2e2', text: '#dc2626' },
+    'overdue': { bg: '#fee2e2', text: tc.danger },
   };
   return colors[status] || { bg: '#f1f5f9', text: '#64748b' };
 };
 
 const getRiskBadge = (priority: string): { bg: string; text: string; label: string } => {
   const map: Record<string, { bg: string; text: string; label: string }> = {
-    high: { bg: '#fee2e2', text: '#dc2626', label: 'Critical' },
-    medium: { bg: '#fef3c7', text: '#d97706', label: 'Medium' },
+    high: { bg: '#fee2e2', text: tc.danger, label: 'Critical' },
+    medium: { bg: '#fef3c7', text: tc.warning, label: 'Medium' },
     low: { bg: '#f1f5f9', text: '#64748b', label: 'Low' },
   };
   return map[priority] || { bg: '#f1f5f9', text: '#64748b', label: priority };
@@ -375,9 +376,9 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
 
   private getPolicyIconColors(status: string): { bg: string; color: string } {
     switch (status) {
-      case 'completed': return { bg: '#dcfce7', color: '#059669' };
-      case 'overdue': return { bg: '#fee2e2', color: '#dc2626' };
-      default: return { bg: '#fef3c7', color: '#d97706' };
+      case 'completed': return { bg: '#dcfce7', color: tc.success };
+      case 'overdue': return { bg: '#fee2e2', color: tc.danger };
+      default: return { bg: '#fef3c7', color: tc.warning };
     }
   }
 
@@ -387,9 +388,9 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
     }
     const days = getDaysUntilDue(policy.dueDate);
     if (days === null) return { text: 'No due date', color: '#94a3b8', bold: false };
-    if (days < 0) return { text: `${Math.abs(days)} days overdue`, color: '#dc2626', bold: true };
-    if (days <= 3) return { text: `Due in ${days} days`, color: '#d97706', bold: true };
-    if (days <= 7) return { text: `Due in ${days} days`, color: '#d97706', bold: true };
+    if (days < 0) return { text: `${Math.abs(days)} days overdue`, color: tc.danger, bold: true };
+    if (days <= 3) return { text: `Due in ${days} days`, color: tc.warning, bold: true };
+    if (days <= 7) return { text: `Due in ${days} days`, color: tc.warning, bold: true };
     return { text: `Due ${formatDate(policy.dueDate)}`, color: '#94a3b8', bold: false };
   }
 
@@ -532,7 +533,7 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
     const tabs = [
       { key: 'all' as const, label: 'All', count: null },
       { key: 'pending' as const, label: 'Pending', count: kpi.pending, countBg: 'rgba(0,0,0,0.06)', countColor: '#334155' },
-      { key: 'overdue' as const, label: 'Overdue', count: kpi.overdue, countBg: '#fee2e2', countColor: '#dc2626' },
+      { key: 'overdue' as const, label: 'Overdue', count: kpi.overdue, countBg: '#fee2e2', countColor: tc.danger },
       { key: 'completed' as const, label: 'Completed', count: null },
     ];
 
@@ -560,8 +561,8 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
                     borderRadius: '6px',
                     fontSize: '12px',
                     fontWeight: 600,
-                    border: `1px solid ${isActive ? '#0d9488' : '#e2e8f0'}`,
-                    background: isActive ? '#0d9488' : '#fff',
+                    border: `1px solid ${isActive ? tc.primary : '#e2e8f0'}`,
+                    background: isActive ? tc.primary : '#fff',
                     color: isActive ? '#fff' : '#334155',
                     cursor: 'pointer',
                     fontFamily: 'inherit',
@@ -615,11 +616,11 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
           borderBottom: '1px solid #f1f5f9',
           cursor: 'pointer',
           transition: 'all 0.1s',
-          background: isSelected ? '#f0fdfa' : 'transparent',
-          borderLeft: isSelected ? '3px solid #0d9488' : isOverdueRow ? '3px solid #dc2626' : '3px solid transparent',
+          background: isSelected ? tc.primaryLighter : 'transparent',
+          borderLeft: isSelected ? `3px solid ${tc.primary}` : isOverdueRow ? `3px solid ${tc.danger}` : '3px solid transparent',
           alignItems: 'center',
         }}
-        onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = '#f0fdfa'; }}
+        onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = tc.primaryLighter; }}
         onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
       >
         {/* Status icon */}
@@ -643,7 +644,7 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
         </div>
 
         {/* Policy # */}
-        <div style={{ fontFamily: "'Cascadia Code', 'Fira Code', 'Consolas', monospace", fontSize: 11, color: '#0d9488', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        <div style={{ fontFamily: "'Cascadia Code', 'Fira Code', 'Consolas', monospace", fontSize: 11, color: tc.primary, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           POL-{policy.id.toString().padStart(3, '0')}
         </div>
 
@@ -677,7 +678,7 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
             }}>{riskBadge.label}</span>
           )}
           {policy.isSecure && (
-            <span style={{ fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, textTransform: 'uppercase' as const, letterSpacing: 0.3, background: '#fef2f2', color: '#dc2626', display: 'inline-flex', alignItems: 'center', gap: 2, whiteSpace: 'nowrap' }}>
+            <span style={{ fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, textTransform: 'uppercase' as const, letterSpacing: 0.3, background: '#fef2f2', color: tc.danger, display: 'inline-flex', alignItems: 'center', gap: 2, whiteSpace: 'nowrap' }}>
               <svg viewBox="0 0 24 24" fill="none" width="9" height="9"><rect x="3" y="11" width="18" height="11" rx="2" stroke="currentColor" strokeWidth="2"/><path d="M7 11V7a5 5 0 0110 0v4" stroke="currentColor" strokeWidth="2"/></svg>
               Secure
             </span>
@@ -699,12 +700,12 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
           onClick={(e) => { e.stopPropagation(); this.selectPolicy(policy.id); }}
           style={{
             width: 32, height: 32, borderRadius: 6,
-            border: `1px solid ${isSelected ? '#0d9488' : '#e2e8f0'}`,
-            background: isSelected ? '#f0fdfa' : '#fff',
+            border: `1px solid ${isSelected ? tc.primary : '#e2e8f0'}`,
+            background: isSelected ? tc.primaryLighter : '#fff',
             cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: isSelected ? '#0d9488' : '#94a3b8', transition: 'all 0.15s',
+            color: isSelected ? tc.primary : '#94a3b8', transition: 'all 0.15s',
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#0d9488'; e.currentTarget.style.color = '#0d9488'; e.currentTarget.style.background = '#f0fdfa'; }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = tc.primary; e.currentTarget.style.color = tc.primary; e.currentTarget.style.background = tc.primaryLighter; }}
           onMouseLeave={(e) => { if (!isSelected) { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.background = '#fff'; } }}
           title="Read policy"
           aria-label={`Read ${policy.title}`}
@@ -779,20 +780,20 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
     let bannerBorder = '#fbbf24';
     let bannerLabel = 'Acknowledgement Pending';
     let bannerDesc = '';
-    let bannerIconColor = '#d97706';
+    let bannerIconColor = tc.warning;
 
     if (policy.status === 'completed') {
       bannerBg = '#dcfce7';
       bannerBorder = '#86efac';
       bannerLabel = 'Acknowledged';
       bannerDesc = policy.acknowledgementDate ? `Completed on ${formatDate(policy.acknowledgementDate)}` : 'Policy acknowledged';
-      bannerIconColor = '#059669';
+      bannerIconColor = tc.success;
     } else if (policy.status === 'overdue') {
       bannerBg = '#fee2e2';
       bannerBorder = '#fca5a5';
       bannerLabel = 'Overdue';
       bannerDesc = days !== null ? `${Math.abs(days)} days overdue` : 'Past due date';
-      bannerIconColor = '#dc2626';
+      bannerIconColor = tc.danger;
     } else {
       bannerDesc = policy.dueDate ? `Due in ${days} days -- ${formatDate(policy.dueDate)}` : 'No due date set';
     }
@@ -811,7 +812,7 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
         {policy && (
         <div style={{ padding: '0' }}>
           {/* Policy number subtitle */}
-          <div style={{ fontSize: '12px', color: '#0d9488', marginBottom: '16px' }}>POL-{policy.id.toString().padStart(3, '0')} | Version {policy.version}</div>
+          <div style={{ fontSize: '12px', color: tc.primary, marginBottom: '16px' }}>POL-{policy.id.toString().padStart(3, '0')} | Version {policy.version}</div>
           {/* Status Banner */}
           <div style={{
             display: 'flex',
@@ -852,10 +853,10 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
             }}>Your Progress</div>
             <div style={{ display: 'flex', gap: 0, margin: '16px 0' }}>
               {steps.map((step, idx) => {
-                const dotBg = step.state === 'done' ? '#059669' : step.state === 'current' ? '#0d9488' : '#e2e8f0';
+                const dotBg = step.state === 'done' ? tc.success : step.state === 'current' ? tc.primary : '#e2e8f0';
                 const dotColor = step.state === 'pending' ? '#94a3b8' : '#fff';
                 const dotShadow = step.state === 'current' ? '0 0 0 3px rgba(13,148,136,0.2)' : 'none';
-                const lineBg = step.state === 'done' ? '#059669' : '#e2e8f0';
+                const lineBg = step.state === 'done' ? tc.success : '#e2e8f0';
 
                 return (
                   <div key={step.label} style={{ flex: 1, textAlign: 'center', position: 'relative' }}>
@@ -915,7 +916,7 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
               <div>
                 <div style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Category</div>
                 <div style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a', marginTop: '2px' }}>
-                  <span style={{ fontSize: '10px', fontWeight: 700, padding: '3px 8px', borderRadius: '4px', background: '#ccfbf1', color: '#0d9488' }}>{policy.category}</span>
+                  <span style={{ fontSize: '10px', fontWeight: 700, padding: '3px 8px', borderRadius: '4px', background: tc.primaryLight, color: tc.primary }}>{policy.category}</span>
                 </div>
               </div>
               <div>
@@ -991,15 +992,15 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
               <div style={{
                 width: '28px', height: '28px', borderRadius: '6px',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                flexShrink: 0, background: '#f0fdfa',
+                flexShrink: 0, background: tc.primaryLighter,
               }}>
-                <DocumentIcon size={14} color="#0d9488" />
+                <DocumentIcon size={14} color={tc.primary} />
               </div>
               <div style={{ flex: 1, fontSize: '12px', color: '#334155' }}>Read the full policy document</div>
               <span style={{
                 fontSize: '8px', fontWeight: 700, padding: '3px 8px', borderRadius: '4px', textTransform: 'uppercase',
                 background: policy.status === 'in-progress' || policy.status === 'completed' ? '#dcfce7' : '#fef3c7',
-                color: policy.status === 'in-progress' || policy.status === 'completed' ? '#16a34a' : '#d97706',
+                color: policy.status === 'in-progress' || policy.status === 'completed' ? '#16a34a' : tc.warning,
               }}>
                 {policy.status === 'in-progress' || policy.status === 'completed' ? 'Done' : 'Required'}
               </span>
@@ -1019,7 +1020,7 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
                 <span style={{
                   fontSize: '8px', fontWeight: 700, padding: '3px 8px', borderRadius: '4px', textTransform: 'uppercase',
                   background: policy.status === 'completed' ? '#dcfce7' : '#fef3c7',
-                  color: policy.status === 'completed' ? '#16a34a' : '#d97706',
+                  color: policy.status === 'completed' ? '#16a34a' : tc.warning,
                 }}>
                   {policy.status === 'completed' ? 'Done' : 'Required'}
                 </span>
@@ -1033,7 +1034,7 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 flexShrink: 0, background: '#dbeafe',
               }}>
-                <ShieldIcon size={14} color="#2563eb" />
+                <ShieldIcon size={14} color={tc.accent} />
               </div>
               <div style={{ flex: 1, fontSize: '12px', color: '#334155' }}>Sign digital acknowledgement</div>
               <span style={{
@@ -1071,9 +1072,9 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
                   <div style={{
                     width: '28px', height: '28px', borderRadius: '6px',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexShrink: 0, background: '#f0fdfa',
+                    flexShrink: 0, background: tc.primaryLighter,
                   }}>
-                    <DocumentIcon size={14} color="#0d9488" />
+                    <DocumentIcon size={14} color={tc.primary} />
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: '12px', color: '#334155', fontWeight: 600 }}>{rp.title}</div>
@@ -1087,15 +1088,15 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
           {/* Primary Action buttons */}
           <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
             <button type="button" onClick={() => this.handlePolicyClick(policy.id)}
-              style={{ flex: 1, padding: '10px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', border: '1px solid #0d9488', fontFamily: 'inherit', textAlign: 'center', background: '#0d9488', color: '#fff' }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = '#0f766e'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = '#0d9488'; }}>
+              style={{ flex: 1, padding: '10px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', border: `1px solid ${tc.primary}`, fontFamily: 'inherit', textAlign: 'center', background: tc.primary, color: '#fff' }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = tc.primaryDark; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = tc.primary; }}>
               {policy.status === 'completed' ? 'View Policy' : 'Read Policy'}
             </button>
             {policy.hasQuiz && policy.status !== 'completed' && (
               <button type="button" onClick={() => this.handlePolicyClick(policy.id)}
-                style={{ flex: 1, padding: '10px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', border: '1px solid #0d9488', fontFamily: 'inherit', textAlign: 'center', background: '#fff', color: '#0d9488' }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = '#f0fdfa'; }}
+                style={{ flex: 1, padding: '10px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', border: `1px solid ${tc.primary}`, fontFamily: 'inherit', textAlign: 'center', background: '#fff', color: tc.primary }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = tc.primaryLighter; }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = '#fff'; }}>
                 Start Quiz
               </button>

@@ -54,6 +54,7 @@ import { QuizService, IQuizResult } from '../../../services/QuizService';
 import { QuizTaker } from '../../../components/QuizTaker/QuizTaker';
 import { DwxLinkedRecordService, DwxLinkedRecordsPanel } from '@dwx/core';
 import { RecentlyViewedService } from '../../../services/RecentlyViewedService';
+import { tc } from '../../../utils/themeColors';
 
 // Read flow steps
 export type ReadFlowStep = 'reading' | 'quiz' | 'acknowledge' | 'complete';
@@ -706,8 +707,8 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
         viewBox="0 0 24 24"
         width="24"
         height="24"
-        fill={filled ? '#0d9488' : 'none'}
-        stroke={filled ? '#0d9488' : '#cbd5e1'}
+        fill={filled ? tc.primary : 'none'}
+        stroke={filled ? tc.primary : '#cbd5e1'}
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -780,7 +781,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                 onClick={this.handleSubmitRating}
                 disabled={submittingRating}
                 style={{
-                  padding: '6px 16px', borderRadius: 6, border: 'none', background: '#0d9488',
+                  padding: '6px 16px', borderRadius: 6, border: 'none', background: tc.primary,
                   color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit'
                 }}
               >
@@ -830,7 +831,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                 }}>
                   {/* Avatar */}
                   <div style={{
-                    width: 36, height: 36, borderRadius: '50%', background: '#0d9488', flexShrink: 0,
+                    width: 36, height: 36, borderRadius: '50%', background: tc.primary, flexShrink: 0,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     color: '#fff', fontSize: 13, fontWeight: 700
                   }}>
@@ -894,7 +895,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                     disabled={!newComment.trim() || submittingComment}
                     style={{
                       padding: '8px 16px', borderRadius: 6, border: 'none',
-                      background: newComment.trim() ? '#0d9488' : '#e2e8f0',
+                      background: newComment.trim() ? tc.primary : '#e2e8f0',
                       color: newComment.trim() ? '#fff' : '#94a3b8',
                       fontSize: 12, fontWeight: 600, cursor: newComment.trim() ? 'pointer' : 'default',
                       fontFamily: 'inherit', whiteSpace: 'nowrap'
@@ -1219,7 +1220,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
           type: 'badge-row',
           data: [
             { label: 'Status', value: 'Acknowledged', color: '#059669' },
-            { label: 'Policy', value: receipt.PolicyNumber, color: '#0d9488' },
+            { label: 'Policy', value: receipt.PolicyNumber, color: tc.primary },
             ...(receipt.QuizRequired ? [{ label: 'Quiz', value: `${receipt.QuizScore}%`, color: receipt.QuizScore >= 75 ? '#059669' : '#dc2626' }] : [])
           ]
         },
@@ -1573,7 +1574,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
           <div style={{
             background: '#fff',
             border: '1px solid #e2e8f0',
-            borderLeft: '4px solid #0d9488',
+            borderLeft: `4px solid ${tc.primary}`,
             borderRadius: 4,
             marginTop: 5,
             marginBottom: 12,
@@ -1617,14 +1618,14 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                   title="Version History"
                   ariaLabel="Version History"
                   onClick={(e) => { e.stopPropagation(); this.loadVersionHistory(); }}
-                  styles={{ root: { height: 28, width: 28 }, icon: { fontSize: 14, color: '#0d9488' } }}
+                  styles={{ root: { height: 28, width: 28 }, icon: { fontSize: 14, color: tc.primary } }}
                 />
                 <IconButton
                   iconProps={{ iconName: 'Share' }}
                   title="Share"
                   ariaLabel="Share policy"
                   onClick={(e) => { e.stopPropagation(); this.handleShare(); }}
-                  styles={{ root: { height: 28, width: 28 }, icon: { fontSize: 14, color: '#0d9488' } }}
+                  styles={{ root: { height: 28, width: 28 }, icon: { fontSize: 14, color: tc.primary } }}
                 />
               </Stack>
             </div>
@@ -1673,7 +1674,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
             {!isFocusedMode && (
               <div className={styles.viewerToolbar}>
                 <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
-                  <Icon iconName={documentUrl ? this.getDocumentIcon(documentUrl) : 'FileHTML'} style={{ fontSize: 16, color: '#0d9488' }} />
+                  <Icon iconName={documentUrl ? this.getDocumentIcon(documentUrl) : 'FileHTML'} style={{ fontSize: 16, color: tc.primary }} />
                   <Text variant="small" style={{ fontWeight: 600, color: '#334155' }}>
                     {documentUrl ? documentUrl.split('/').pop() : `${policy.PolicyNumber || ''} ${policy.PolicyName || policy.Title}`.trim()}
                   </Text>
@@ -1698,14 +1699,14 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                         URL.revokeObjectURL(url);
                       }
                     }}
-                    styles={{ root: { height: 28, width: 28 }, icon: { fontSize: 14, color: '#0d9488' } }}
+                    styles={{ root: { height: 28, width: 28 }, icon: { fontSize: 14, color: tc.primary } }}
                   />
                   <IconButton
                     iconProps={{ iconName: this.state.isFullscreen ? 'BackToWindow' : 'FullScreen' }}
                     title={this.state.isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
                     ariaLabel={this.state.isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
                     onClick={this.toggleFullscreen}
-                    styles={{ root: { height: 28, width: 28 }, icon: { fontSize: 14, color: '#0d9488' } }}
+                    styles={{ root: { height: 28, width: 28 }, icon: { fontSize: 14, color: tc.primary } }}
                   />
                   {documentUrl && (
                     <>
@@ -1755,7 +1756,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
             {!isFocusedMode && (
               <div className={styles.viewerToolbar}>
                 <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
-                  <Icon iconName={this.getDocumentIcon(documentUrl)} style={{ fontSize: 16, color: '#0d9488' }} />
+                  <Icon iconName={this.getDocumentIcon(documentUrl)} style={{ fontSize: 16, color: tc.primary }} />
                   <Text variant="small" style={{ fontWeight: 600, color: '#334155' }}>
                     {documentUrl.split('/').pop()}
                   </Text>
@@ -1769,7 +1770,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                     title={this.state.isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
                     ariaLabel={this.state.isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
                     onClick={this.toggleFullscreen}
-                    styles={{ root: { height: 28, width: 28 }, icon: { fontSize: 14, color: '#0d9488' } }}
+                    styles={{ root: { height: 28, width: 28 }, icon: { fontSize: 14, color: tc.primary } }}
                   />
                   <DefaultButton
                     iconProps={{ iconName: 'OpenInNewTab' }}
@@ -1824,7 +1825,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
           <div className={styles.documentViewerWrapper}>
             <div className={styles.viewerToolbar}>
               <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
-                <Icon iconName="PDF" style={{ fontSize: 16, color: '#0d9488' }} />
+                <Icon iconName="PDF" style={{ fontSize: 16, color: tc.primary }} />
                 <Text variant="small" style={{ fontWeight: 600, color: '#334155' }}>
                   {policy.PolicyNumber}-{(policy.PolicyName || policy.Title).replace(/\s+/g, '-')}.pdf
                 </Text>
@@ -1860,25 +1861,25 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                   <div style={{ fontSize: 13, color: '#64748b' }}>
                     Policy Number: {policy.PolicyNumber} | Version {policy.VersionNumber || '1.0'} | Effective: {policy.EffectiveDate ? new Date(policy.EffectiveDate).toLocaleDateString() : 'TBD'}
                   </div>
-                  <hr style={{ border: 'none', borderTop: '2px solid #0d9488', width: 80, margin: '16px auto' }} />
+                  <hr style={{ border: 'none', borderTop: `2px solid ${tc.primary}`, width: 80, margin: '16px auto' }} />
                 </div>
 
-                <h2 style={{ fontSize: 18, color: '#0f766e', marginBottom: 8 }}>1. Purpose</h2>
+                <h2 style={{ fontSize: 18, color: tc.primaryDark, marginBottom: 8 }}>1. Purpose</h2>
                 <p style={{ marginBottom: 16 }}>
                   {policy.PolicySummary || `This policy establishes the guidelines and requirements for ${(policy.PolicyName || policy.Title).toLowerCase()} across the organisation. All employees are expected to read, understand, and comply with the provisions outlined in this document.`}
                 </p>
 
-                <h2 style={{ fontSize: 18, color: '#0f766e', marginBottom: 8 }}>2. Scope</h2>
+                <h2 style={{ fontSize: 18, color: tc.primaryDark, marginBottom: 8 }}>2. Scope</h2>
                 <p style={{ marginBottom: 16 }}>
                   This policy applies to all employees, contractors, and third-party personnel within the {policy.Department || policy.PolicyCategory || 'organisation'} department and any associated business units. Compliance is mandatory from the effective date.
                 </p>
 
-                <h2 style={{ fontSize: 18, color: '#0f766e', marginBottom: 8 }}>3. Policy Statement</h2>
+                <h2 style={{ fontSize: 18, color: tc.primaryDark, marginBottom: 8 }}>3. Policy Statement</h2>
                 <p style={{ marginBottom: 16 }}>
                   The organisation is committed to maintaining the highest standards in {(policy.PolicyCategory || 'operations').toLowerCase()}. All staff members must adhere to the procedures and controls described herein to ensure regulatory compliance and operational excellence.
                 </p>
 
-                <h2 style={{ fontSize: 18, color: '#0f766e', marginBottom: 8 }}>4. Responsibilities</h2>
+                <h2 style={{ fontSize: 18, color: tc.primaryDark, marginBottom: 8 }}>4. Responsibilities</h2>
                 <ul style={{ marginBottom: 16, paddingLeft: 24 }}>
                   <li style={{ marginBottom: 6 }}><strong>Management:</strong> Ensure policy dissemination and monitor compliance within their teams.</li>
                   <li style={{ marginBottom: 6 }}><strong>Employees:</strong> Read, acknowledge, and follow all policy requirements.</li>
@@ -1886,18 +1887,18 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                   <li style={{ marginBottom: 6 }}><strong>Compliance Team:</strong> Conduct audits and report on adherence metrics.</li>
                 </ul>
 
-                <h2 style={{ fontSize: 18, color: '#0f766e', marginBottom: 8 }}>5. Compliance & Enforcement</h2>
+                <h2 style={{ fontSize: 18, color: tc.primaryDark, marginBottom: 8 }}>5. Compliance & Enforcement</h2>
                 <p style={{ marginBottom: 16 }}>
                   Non-compliance with this policy may result in disciplinary action up to and including termination of employment. All violations must be reported to the compliance team within 48 hours of discovery.
                 </p>
 
-                <h2 style={{ fontSize: 18, color: '#0f766e', marginBottom: 8 }}>6. Review Schedule</h2>
+                <h2 style={{ fontSize: 18, color: tc.primaryDark, marginBottom: 8 }}>6. Review Schedule</h2>
                 <p style={{ marginBottom: 16 }}>
                   This policy will be reviewed {policy.ReviewFrequency || 'annually'} or sooner if regulatory changes require updates. The next scheduled review is {policy.NextReviewDate ? new Date(policy.NextReviewDate).toLocaleDateString() : 'as per the annual review cycle'}.
                 </p>
 
-                <div style={{ marginTop: 32, padding: 16, background: '#f0fdfa', borderRadius: 4, borderLeft: '3px solid #0d9488' }}>
-                  <div style={{ fontSize: 12, color: '#0f766e', fontWeight: 600, fontFamily: 'system-ui, sans-serif' }}>
+                <div style={{ marginTop: 32, padding: 16, background: tc.primaryLighter, borderRadius: 4, borderLeft: `3px solid ${tc.primary}` }}>
+                  <div style={{ fontSize: 12, color: tc.primaryDark, fontWeight: 600, fontFamily: 'system-ui, sans-serif' }}>
                     Document Classification: Internal | Owner: {policy.PolicyOwner || 'Policy Administrator'} | Category: {policy.PolicyCategory || 'General'}
                   </div>
                 </div>
@@ -1917,8 +1918,8 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                 const fileName = url.split('/').pop() || `Attachment ${index + 1}`;
                 return (
                   <Stack key={index} horizontal verticalAlign="center" tokens={{ childrenGap: 8 }} className={styles.attachmentRow}>
-                    <Icon iconName={this.getDocumentIcon(url)} style={{ fontSize: 16, color: '#0d9488' }} />
-                    <a href={url} target="_blank" rel="noopener noreferrer" style={{ color: '#0d9488', textDecoration: 'none', flex: 1 }}>{fileName}</a>
+                    <Icon iconName={this.getDocumentIcon(url)} style={{ fontSize: 16, color: tc.primary }} />
+                    <a href={url} target="_blank" rel="noopener noreferrer" style={{ color: tc.primary, textDecoration: 'none', flex: 1 }}>{fileName}</a>
                     <Text variant="tiny" style={{ color: '#94a3b8' }}>{this.getDocumentTypeLabel(url)}</Text>
                   </Stack>
                 );
@@ -1973,8 +1974,8 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
               disabled={scrollProgress < 95 && readDuration < 30}
               onClick={() => this.handleMarkAsRead()}
               styles={{
-                root: { borderRadius: 4, minWidth: 80, background: scrollProgress >= 95 || readDuration >= 30 ? '#0d9488' : '#94a3b8', borderColor: scrollProgress >= 95 || readDuration >= 30 ? '#0d9488' : '#94a3b8' },
-                rootHovered: { background: '#0f766e', borderColor: '#0f766e' }
+                root: { borderRadius: 4, minWidth: 80, background: scrollProgress >= 95 || readDuration >= 30 ? tc.primary : '#94a3b8', borderColor: scrollProgress >= 95 || readDuration >= 30 ? tc.primary : '#94a3b8' },
+                rootHovered: { background: tc.primaryDark, borderColor: tc.primaryDark }
               }}
             />
           </div>
@@ -2018,7 +2019,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
           style={{ padding: '12px 16px', cursor: 'pointer', backgroundColor: '#f8fafc' }}
         >
           <Icon iconName={docsExpanded ? 'ChevronDown' : 'ChevronRight'} style={{ fontSize: 12 }} />
-          <Icon iconName="FolderOpen" style={{ fontSize: 16, color: '#0d9488' }} />
+          <Icon iconName="FolderOpen" style={{ fontSize: 16, color: tc.primary }} />
           <Text style={{ fontWeight: 600, flex: 1 }}>Policy Documents</Text>
           {docsLoaded && <Text style={{ color: '#94a3b8', fontSize: 12 }}>{policyDocs.length} file{policyDocs.length !== 1 ? 's' : ''}</Text>}
         </Stack>
@@ -2032,12 +2033,12 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
               <Stack tokens={{ childrenGap: 6 }}>
                 {policyDocs.map((doc: any, i: number) => (
                   <Stack key={i} horizontal verticalAlign="center" tokens={{ childrenGap: 8 }} style={{ padding: '4px 0' }}>
-                    <Icon iconName={this.getDocumentIcon(doc.Name)} style={{ fontSize: 14, color: '#0d9488' }} />
+                    <Icon iconName={this.getDocumentIcon(doc.Name)} style={{ fontSize: 14, color: tc.primary }} />
                     <a
                       href={doc.ServerRelativeUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{ color: '#0d9488', textDecoration: 'none', fontSize: 13, flex: 1 }}
+                      style={{ color: tc.primary, textDecoration: 'none', fontSize: 13, flex: 1 }}
                     >
                       {doc.Name}
                     </a>
@@ -2121,7 +2122,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
             {/* Progress bar */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
               <div style={{ flex: 1, height: 6, background: '#e2e8f0', borderRadius: 3, overflow: 'hidden' }}>
-                <div style={{ height: '100%', background: '#0d9488', borderRadius: 3, width: `${((qi + 1) / questions.length) * 100}%`, transition: 'width 0.5s' }} />
+                <div style={{ height: '100%', background: tc.primary, borderRadius: 3, width: `${((qi + 1) / questions.length) * 100}%`, transition: 'width 0.5s' }} />
               </div>
               <span style={{ fontSize: 12, color: '#64748b', whiteSpace: 'nowrap' }}>{qi + 1} / {questions.length}</span>
             </div>
@@ -2144,9 +2145,9 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                     style={{
                       width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
-                      background: correct ? '#059669' : incorrect ? '#dc2626' : tryingAgain ? '#d97706' : isCurrent ? '#f0fdfa' : '#fff',
-                      border: `2px solid ${correct ? '#059669' : incorrect ? '#dc2626' : tryingAgain ? '#d97706' : isCurrent ? '#0d9488' : '#e2e8f0'}`,
-                      color: correct || incorrect || tryingAgain ? '#fff' : isCurrent ? '#0d9488' : '#94a3b8',
+                      background: correct ? '#059669' : incorrect ? '#dc2626' : tryingAgain ? '#d97706' : isCurrent ? tc.primaryLighter : '#fff',
+                      border: `2px solid ${correct ? '#059669' : incorrect ? '#dc2626' : tryingAgain ? '#d97706' : isCurrent ? tc.primary : '#e2e8f0'}`,
+                      color: correct || incorrect || tryingAgain ? '#fff' : isCurrent ? tc.primary : '#94a3b8',
                     }}
                   >
                     {correct ? '✓' : incorrect ? '✗' : tryingAgain ? '!' : i + 1}
@@ -2191,17 +2192,17 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                     onKeyDown={(e) => { if (e.key === 'Enter') this.handleQuizSelectAnswer(qi, oi); }}
                     style={{
                       display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', marginBottom: 8,
-                      border: `2px solid ${isWrongSelection ? '#dc2626' : isCorrectOption ? '#059669' : isSelected ? '#0d9488' : '#e2e8f0'}`,
+                      border: `2px solid ${isWrongSelection ? '#dc2626' : isCorrectOption ? '#059669' : isSelected ? tc.primary : '#e2e8f0'}`,
                       borderStyle: isCorrectOption && !isSelected ? 'dashed' : 'solid',
                       borderRadius: 4, cursor: isConfirmed ? 'default' : 'pointer', transition: 'all 0.2s', fontSize: 14,
-                      background: isWrongSelection ? '#fef2f2' : isCorrectOption ? '#f0fdf4' : isSelected ? '#f0fdfa' : '#fff',
+                      background: isWrongSelection ? '#fef2f2' : isCorrectOption ? '#f0fdf4' : isSelected ? tc.primaryLighter : '#fff',
                     }}
                   >
                     <div style={{
                       width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
                       display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700,
-                      border: `2px solid ${isWrongSelection ? '#dc2626' : isCorrectOption ? '#059669' : isSelected ? '#0d9488' : '#cbd5e1'}`,
-                      background: isWrongSelection ? '#dc2626' : isCorrectOption ? '#059669' : isSelected ? '#0d9488' : 'transparent',
+                      border: `2px solid ${isWrongSelection ? '#dc2626' : isCorrectOption ? '#059669' : isSelected ? tc.primary : '#cbd5e1'}`,
+                      background: isWrongSelection ? '#dc2626' : isCorrectOption ? '#059669' : isSelected ? tc.primary : 'transparent',
                       color: (isWrongSelection || isCorrectOption || isSelected) ? '#fff' : 'transparent',
                     }}>
                       {isWrongSelection ? '✗' : isCorrectOption ? '✓' : isSelected ? '•' : ''}
@@ -2226,20 +2227,20 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                   text={isFirstWrongAttempt ? 'Confirm 2nd Attempt →' : 'Confirm Answer →'}
                   disabled={quizAnswers[qi] < 0}
                   onClick={this.handleQuizConfirmAnswer}
-                  styles={{ root: { borderRadius: 4, background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e' } }}
+                  styles={{ root: { borderRadius: 4, background: tc.primary, borderColor: tc.primary }, rootHovered: { background: tc.primaryDark } }}
                 />
               ) : qi < questions.length - 1 ? (
                 <PrimaryButton
                   text="Next Question →"
                   onClick={this.handleQuizNextAfterConfirm}
-                  styles={{ root: { borderRadius: 4, background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e' } }}
+                  styles={{ root: { borderRadius: 4, background: tc.primary, borderColor: tc.primary }, rootHovered: { background: tc.primaryDark } }}
                 />
               ) : allConfirmed ? (
                 <PrimaryButton
                   text="View Results"
                   iconProps={{ iconName: 'Accept' }}
                   onClick={this.handleQuizSubmit}
-                  styles={{ root: { borderRadius: 4, background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e' } }}
+                  styles={{ root: { borderRadius: 4, background: tc.primary, borderColor: tc.primary }, rootHovered: { background: tc.primaryDark } }}
                 />
               ) : (
                 <PrimaryButton text="Answer remaining questions" disabled styles={{ root: { borderRadius: 4 } }} />
@@ -2300,7 +2301,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                 <PrimaryButton
                   text="Proceed to Acknowledgement →"
                   onClick={() => this.setState({ currentFlowStep: 'acknowledge', showAcknowledgePanel: true })}
-                  styles={{ root: { borderRadius: 4, background: '#0d9488', borderColor: '#0d9488', padding: '12px 32px' }, rootHovered: { background: '#0f766e' } }}
+                  styles={{ root: { borderRadius: 4, background: tc.primary, borderColor: tc.primary, padding: '12px 32px' }, rootHovered: { background: tc.primaryDark } }}
                 />
               ) : (
                 <DefaultButton
@@ -2325,7 +2326,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
     return (
       <div className={styles.stepContent}>
         <div className={styles.wizardCard} style={{ textAlign: 'center', padding: 48 }}>
-          <Icon iconName="Lock" styles={{ root: { fontSize: 48, color: '#0d9488', marginBottom: 12 } }} />
+          <Icon iconName="Lock" styles={{ root: { fontSize: 48, color: tc.primary, marginBottom: 12 } }} />
           <Text variant="xLarge" style={{ fontWeight: 700, display: 'block', marginBottom: 8 }}>Policy Acknowledgement</Text>
           <Text style={{ color: '#64748b', display: 'block', marginBottom: 24 }}>
             The acknowledgement panel will open from the right. Please review the policy details and complete your legal acknowledgement.
@@ -2351,7 +2352,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
       <div className={styles.stepContent}>
         <div className={styles.successContainer}>
           <div className={styles.trophyIcon}>&#127942;</div>
-          <Text variant="xxLarge" style={{ fontWeight: 800, color: '#0f766e', display: 'block', marginBottom: 8 }}>
+          <Text variant="xxLarge" style={{ fontWeight: 800, color: tc.primaryDark, display: 'block', marginBottom: 8 }}>
             Congratulations!
           </Text>
           <Text variant="mediumPlus" style={{ color: '#64748b', display: 'block', marginBottom: 28 }}>
@@ -2520,7 +2521,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                   padding: 16,
                   border: '1px solid #e2e8f0',
                   borderRadius: 4,
-                  backgroundColor: version.IsCurrentVersion ? '#f0fdfa' : '#ffffff'
+                  backgroundColor: version.IsCurrentVersion ? tc.primaryLighter : '#ffffff'
                 }}
               >
                 <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
@@ -2545,8 +2546,8 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                           borderRadius: 4,
                           fontSize: 11,
                           fontWeight: 600,
-                          backgroundColor: '#ccfbf1',
-                          color: '#0d9488'
+                          backgroundColor: tc.primaryLight,
+                          color: tc.primary
                         }}>
                           Current
                         </span>
@@ -2623,7 +2624,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
         isFooterAtBottom={true}
         onRenderHeader={() => (
           <div style={{
-            background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
+            background: tc.headerBg,
             padding: '16px 24px',
             display: 'flex',
             alignItems: 'center',
@@ -2661,7 +2662,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
       >
         <Stack tokens={{ childrenGap: 24 }}>
           <div className={styles.legalHeader}>
-            <Icon iconName="Shield" style={{ fontSize: 32, color: '#0d9488' }} />
+            <Icon iconName="Shield" style={{ fontSize: 32, color: tc.primary }} />
             <Text variant="xLarge" style={{ fontWeight: 600 }}>Acknowledgement Declaration</Text>
           </div>
 
@@ -3118,10 +3119,10 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
         activeNavKey="author"
       >
         {/* Review Banner */}
-        <div style={{ background: 'linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%)', borderBottom: '2px solid #0d9488', padding: '14px 0' }}>
+        <div style={{ background: `linear-gradient(135deg, ${tc.primaryLighter} 0%, #ecfdf5 100%)`, borderBottom: `2px solid ${tc.primary}`, padding: '14px 0' }}>
           <div style={{ maxWidth: 1400, margin: '0 auto', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#0d9488', color: '#fff', padding: '6px 16px', borderRadius: 4, fontSize: 12, fontWeight: 600 }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8, background: tc.primary, color: '#fff', padding: '6px 16px', borderRadius: 4, fontSize: 12, fontWeight: 600 }}>
                 <Icon iconName="RedEye" styles={{ root: { fontSize: 14 } }} /> Review Mode
               </span>
               <span style={{ fontSize: 12, color: '#64748b' }}>Submitted by <strong style={{ color: '#0f172a' }}>{(policy as any).PolicyOwner || 'Author'}</strong></span>
@@ -3152,7 +3153,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                 <Text style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10, display: 'block' }}>Key Points</Text>
                 {(() => { try { return JSON.parse((policy as any).InternalNotes).map((kp: string, i: number) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '6px 0', fontSize: 13, color: '#475569' }}>
-                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#0d9488', marginTop: 6, flexShrink: 0 }} />
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: tc.primary, marginTop: 6, flexShrink: 0 }} />
                     {kp}
                   </div>
                 )); } catch { return null; } })()}
@@ -3166,7 +3167,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
             {/* Decision */}
             <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
               <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{ width: 28, height: 28, borderRadius: 4, background: '#f0fdfa', color: '#0d9488', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>&#x2714;</div>
+                <div style={{ width: 28, height: 28, borderRadius: 4, background: tc.primaryLighter, color: tc.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>&#x2714;</div>
                 <Text style={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>Your Review Decision</Text>
               </div>
               <div style={{ padding: 20 }}>
@@ -3182,8 +3183,8 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                       onKeyDown={(e) => { if (e.key === 'Enter') this.setState({ reviewDecision: d.key } as any); }}
                       style={{
                         display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', borderRadius: 4,
-                        border: `2px solid ${reviewDecision === d.key ? '#0d9488' : '#e2e8f0'}`,
-                        background: reviewDecision === d.key ? '#f0fdfa' : '#fff', cursor: 'pointer', transition: 'all 0.15s'
+                        border: `2px solid ${reviewDecision === d.key ? tc.primary : '#e2e8f0'}`,
+                        background: reviewDecision === d.key ? tc.primaryLighter : '#fff', cursor: 'pointer', transition: 'all 0.15s'
                       }}
                     >
                       <div style={{ width: 36, height: 36, borderRadius: 4, background: d.bg, color: d.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }} dangerouslySetInnerHTML={{ __html: d.icon }} />
@@ -3209,12 +3210,12 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                   styles={{
                     root: {
                       width: '100%', marginTop: 16, borderRadius: 4, height: 40,
-                      background: reviewDecision === 'approve' ? '#0d9488' : reviewDecision === 'changes' ? '#d97706' : reviewDecision === 'reject' ? '#dc2626' : '#94a3b8',
-                      borderColor: reviewDecision === 'approve' ? '#0d9488' : reviewDecision === 'changes' ? '#d97706' : reviewDecision === 'reject' ? '#dc2626' : '#94a3b8'
+                      background: reviewDecision === 'approve' ? tc.primary : reviewDecision === 'changes' ? '#d97706' : reviewDecision === 'reject' ? '#dc2626' : '#94a3b8',
+                      borderColor: reviewDecision === 'approve' ? tc.primary : reviewDecision === 'changes' ? '#d97706' : reviewDecision === 'reject' ? '#dc2626' : '#94a3b8'
                     },
                     rootHovered: {
-                      background: reviewDecision === 'approve' ? '#0f766e' : reviewDecision === 'changes' ? '#b45309' : reviewDecision === 'reject' ? '#b91c1c' : '#64748b',
-                      borderColor: reviewDecision === 'approve' ? '#0f766e' : reviewDecision === 'changes' ? '#b45309' : reviewDecision === 'reject' ? '#b91c1c' : '#64748b'
+                      background: reviewDecision === 'approve' ? tc.primaryDark : reviewDecision === 'changes' ? '#b45309' : reviewDecision === 'reject' ? '#b91c1c' : '#64748b',
+                      borderColor: reviewDecision === 'approve' ? tc.primaryDark : reviewDecision === 'changes' ? '#b45309' : reviewDecision === 'reject' ? '#b91c1c' : '#64748b'
                     }
                   }}
                 />
@@ -3234,7 +3235,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                       const updated = [...reviewChecklist];
                       updated[i] = !updated[i];
                       this.setState({ reviewChecklist: updated } as any);
-                    }} style={{ accentColor: '#0d9488', width: 16, height: 16 }} />
+                    }} style={{ accentColor: tc.primary, width: 16, height: 16 }} />
                     <span style={{ color: reviewChecklist[i] ? '#94a3b8' : '#475569', textDecoration: reviewChecklist[i] ? 'line-through' : 'none' }}>{label}</span>
                   </label>
                 ))}
@@ -3690,7 +3691,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
 
     // Category badge color
     const catColors: Record<string, { bg: string; color: string }> = {
-      'Compliance': { bg: '#fef3c7', color: '#92400e' }, 'HR Policies': { bg: '#ccfbf1', color: '#0d9488' },
+      'Compliance': { bg: '#fef3c7', color: '#92400e' }, 'HR Policies': { bg: tc.primaryLight, color: tc.primary },
       'IT & Security': { bg: '#dbeafe', color: '#2563eb' }, 'Health & Safety': { bg: '#fef3c7', color: '#d97706' },
       'Governance': { bg: '#ede9fe', color: '#7c3aed' }, 'Ethics': { bg: '#dcfce7', color: '#059669' },
       'Financial': { bg: '#ede9fe', color: '#7c3aed' }, 'Data Privacy': { bg: '#dbeafe', color: '#0284c7' },
@@ -3717,9 +3718,9 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
           background: '#f8fafc', borderBottom: '1px solid #e2e8f0', padding: '10px 40px',
           display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#64748b'
         }}>
-          <a href="/sites/PolicyManager" style={{ color: '#0d9488', textDecoration: 'none', fontWeight: 500 }}>Policy Manager</a>
+          <a href="/sites/PolicyManager" style={{ color: tc.primary, textDecoration: 'none', fontWeight: 500 }}>Policy Manager</a>
           <span style={{ color: '#cbd5e1' }}>/</span>
-          <a href="/sites/PolicyManager/SitePages/PolicyHub.aspx" style={{ color: '#0d9488', textDecoration: 'none', fontWeight: 500 }}>Policy Hub</a>
+          <a href="/sites/PolicyManager/SitePages/PolicyHub.aspx" style={{ color: tc.primary, textDecoration: 'none', fontWeight: 500 }}>Policy Hub</a>
           <span style={{ color: '#cbd5e1' }}>/</span>
           <span style={{ color: '#0f172a', fontWeight: 600 }}>{policy.PolicyName}</span>
         </div>
@@ -3731,7 +3732,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
               <div>
                 <h1 style={{ fontSize: 24, fontWeight: 700, color: '#0f172a', marginBottom: 6 }}>{policy.PolicyName}</h1>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 12, color: '#0d9488', fontWeight: 600 }}>{policy.PolicyNumber}</span>
+                  <span style={{ fontSize: 12, color: tc.primary, fontWeight: 600 }}>{policy.PolicyNumber}</span>
                   <span style={badgeStyle(cat.bg, cat.color)}>{policy.PolicyCategory}</span>
                   {policy.ComplianceRisk && <span style={badgeStyle(risk.bg, risk.color)}>{policy.ComplianceRisk}</span>}
                   <span style={badgeStyle('#dcfce7', '#16a34a')}>Published</span>
@@ -3758,7 +3759,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                 onClick={() => { window.location.href = '/sites/PolicyManager/SitePages/PolicyHub.aspx'; }}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 4,
-                  fontSize: 13, fontWeight: 600, color: '#0d9488', background: '#fff', border: '1px solid #e2e8f0',
+                  fontSize: 13, fontWeight: 600, color: tc.primary, background: '#fff', border: '1px solid #e2e8f0',
                   cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0
                 }}
               >
@@ -3802,7 +3803,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                   if (!document.fullscreenElement) { el.requestFullscreen().catch(() => {}); }
                   else { document.exitFullscreen().catch(() => {}); }
                 }}
-                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 4, fontSize: 11, fontWeight: 500, color: '#fff', background: '#0d9488', border: '1px solid #0d9488', cursor: 'pointer', fontFamily: 'inherit' }}
+                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 4, fontSize: 11, fontWeight: 500, color: '#fff', background: tc.primary, border: `1px solid ${tc.primary}`, cursor: 'pointer', fontFamily: 'inherit' }}
               >
                 <svg viewBox="0 0 24 24" fill="none" width="12" height="12"><path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 Fullscreen
@@ -3812,7 +3813,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                   BookmarkService.toggle(policy.Id, policy.PolicyName || policy.Title || '', policy.PolicyCategory || '');
                   this.forceUpdate();
                 }}
-                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 4, fontSize: 11, fontWeight: 500, color: BookmarkService.isBookmarked(policy.Id) ? '#0d9488' : '#64748b', background: '#fff', border: `1px solid ${BookmarkService.isBookmarked(policy.Id) ? '#0d9488' : '#e2e8f0'}`, cursor: 'pointer', fontFamily: 'inherit' }}
+                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 4, fontSize: 11, fontWeight: 500, color: BookmarkService.isBookmarked(policy.Id) ? tc.primary : '#64748b', background: '#fff', border: `1px solid ${BookmarkService.isBookmarked(policy.Id) ? tc.primary : '#e2e8f0'}`, cursor: 'pointer', fontFamily: 'inherit' }}
               >
                 <svg viewBox="0 0 24 24" fill={BookmarkService.isBookmarked(policy.Id) ? 'currentColor' : 'none'} width="12" height="12"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 {BookmarkService.isBookmarked(policy.Id) ? 'Bookmarked' : 'Bookmark'}
@@ -3881,7 +3882,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
         }}>
           <div style={{ maxWidth: 1400, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 12, color: '#64748b' }}>
-              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#0d9488' }} />
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: tc.primary }} />
               <span>Reading: <strong style={{ color: '#0f172a' }}>{policy.PolicyName}</strong></span>
               <span style={{ color: '#94a3b8' }}>&middot; {policy.PolicyNumber} &middot; v{policy.VersionNumber || policy.PolicyVersion || '1.0'}</span>
             </div>
@@ -3889,7 +3890,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
               onClick={() => { window.location.href = '/sites/PolicyManager/SitePages/PolicyHub.aspx'; }}
               style={{
                 display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 4,
-                fontSize: 13, fontWeight: 600, color: '#0d9488', background: '#fff', border: '1px solid #e2e8f0',
+                fontSize: 13, fontWeight: 600, color: tc.primary, background: '#fff', border: '1px solid #e2e8f0',
                 cursor: 'pointer', fontFamily: 'inherit'
               }}
             >
@@ -3947,7 +3948,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
         <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#fff' }}>
           {/* Minimal focused header — no nav items */}
           <div style={{
-            background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
+            background: tc.headerBg,
             padding: '10px 24px',
             display: 'flex',
             alignItems: 'center',
@@ -3981,7 +3982,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
           {/* Reading progress bar */}
           {currentFlowStep === 'reading' && (
             <div style={{ height: 3, background: '#e2e8f0', flexShrink: 0 }}>
-              <div style={{ height: '100%', background: '#0d9488', width: `${scrollPct}%`, transition: 'width 0.3s' }} />
+              <div style={{ height: '100%', background: tc.primary, width: `${scrollPct}%`, transition: 'width 0.3s' }} />
             </div>
           )}
 
@@ -3994,7 +3995,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <span style={{ fontWeight: 700, fontSize: 16, color: '#0f172a' }}>{policy.PolicyName}</span>
               <span style={{ padding: '3px 10px', borderRadius: 4, fontSize: 11, fontWeight: 600, background: '#ecfdf5', color: '#059669' }}>{policy.PolicyStatus}</span>
-              <span style={{ padding: '3px 10px', borderRadius: 4, fontSize: 11, fontWeight: 600, background: '#f0fdfa', color: '#0d9488' }}>{policy.PolicyCategory}</span>
+              <span style={{ padding: '3px 10px', borderRadius: 4, fontSize: 11, fontWeight: 600, background: tc.primaryLighter, color: tc.primary }}>{policy.PolicyCategory}</span>
               <span style={{ padding: '3px 10px', borderRadius: 4, fontSize: 11, fontWeight: 600, background: '#f1f5f9', color: '#64748b' }}>{policy.PolicyNumber}</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: '#64748b', fontSize: 12 }}>
@@ -4023,7 +4024,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                 background: '#fff', borderRadius: 4, boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
                 border: '1px solid #e2e8f0', overflow: 'hidden', zIndex: 100
               }}>
-                <div style={{ background: 'linear-gradient(135deg, #0d9488, #0f766e)', padding: '14px 18px', color: '#fff' }}>
+                <div style={{ background: tc.headerBg, padding: '14px 18px', color: '#fff' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                     <span style={{ fontSize: 13, fontWeight: 600 }}>Reading Progress</span>
                     <span style={{ fontSize: 12, opacity: 0.8 }}>Step {currentStepIndex + 1} of {totalSteps}</span>
@@ -4052,7 +4053,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                     disabled={scrollPct < 95}
                     style={{
                       width: '100%', padding: '10px 16px', borderRadius: 4, border: 'none',
-                      background: scrollPct >= 95 ? '#0d9488' : '#94a3b8',
+                      background: scrollPct >= 95 ? tc.primary : '#94a3b8',
                       color: '#fff', fontWeight: 600, fontSize: 14,
                       cursor: scrollPct >= 95 ? 'pointer' : 'not-allowed',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8

@@ -43,6 +43,7 @@ import { PM_LISTS } from '../../../constants/SharePointListNames';
 import { RetentionService } from '../../../services/RetentionService';
 import { StyledPanel } from '../../../components/StyledPanel';
 import styles from './PolicyAuthorView.module.scss';
+import { tc } from '../../../utils/themeColors';
 
 // ============================================================================
 // INTERFACES
@@ -765,8 +766,8 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                   {tab.count > 0 && (
                     <span style={{
                       fontSize: 10, fontWeight: 700, padding: '1px 7px', borderRadius: 10, minWidth: 20, textAlign: 'center',
-                      background: isActive ? '#ccfbf1' : '#e2e8f0',
-                      color: isActive ? '#0d9488' : '#94a3b8'
+                      background: isActive ? tc.primaryLight : '#e2e8f0',
+                      color: isActive ? tc.primary : '#94a3b8'
                     }}>{tab.count}</span>
                   )}
                 </button>
@@ -925,16 +926,16 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
               { label: 'In Review', count: inReviewCount, color: '#2563eb', filter: 'In Review' as PipelineStatusFilter },
               { label: 'Rejected', count: rejectedCount, color: '#dc2626', filter: 'Rejected' as PipelineStatusFilter },
               { label: 'Approved', count: pipelinePolicies.filter(p => p.PolicyStatus === 'Approved').length, color: '#059669', filter: 'Approved' as PipelineStatusFilter },
-              { label: 'Published', count: publishedCount, color: '#0d9488', filter: 'Published' as PipelineStatusFilter },
+              { label: 'Published', count: publishedCount, color: tc.primary, filter: 'Published' as PipelineStatusFilter },
             ].map((kpi, i, arr) => (
               <React.Fragment key={kpi.label}>
                 <div
                   onClick={() => this.setState({ pipelineFilter: kpi.filter, pipelineBulkOnly: false })}
                   style={{
-                    flex: 1, background: pipelineFilter === kpi.filter ? '#f0fdfa' : '#fff',
-                    borderLeft: `1px solid ${pipelineFilter === kpi.filter ? '#0d9488' : '#e2e8f0'}`,
-                    borderRight: `1px solid ${pipelineFilter === kpi.filter ? '#0d9488' : '#e2e8f0'}`,
-                    borderBottom: `1px solid ${pipelineFilter === kpi.filter ? '#0d9488' : '#e2e8f0'}`,
+                    flex: 1, background: pipelineFilter === kpi.filter ? tc.primaryLighter : '#fff',
+                    borderLeft: `1px solid ${pipelineFilter === kpi.filter ? tc.primary : '#e2e8f0'}`,
+                    borderRight: `1px solid ${pipelineFilter === kpi.filter ? tc.primary : '#e2e8f0'}`,
+                    borderBottom: `1px solid ${pipelineFilter === kpi.filter ? tc.primary : '#e2e8f0'}`,
                     borderTop: `3px solid ${kpi.color}`,
                     borderRadius: 10,
                     padding: '14px 16px', cursor: 'pointer', transition: 'all 0.2s'
@@ -967,9 +968,9 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                   onClick={() => this.setState({ pipelineFilter: f, selectedPipelineIds: new Set<number>(), pipelineBulkOnly: false })}
                   style={{
                     padding: '5px 12px', fontSize: 12, fontWeight: pipelineFilter === f ? 700 : 500,
-                    border: `1px solid ${pipelineFilter === f ? '#0d9488' : '#e2e8f0'}`,
+                    border: `1px solid ${pipelineFilter === f ? tc.primary : '#e2e8f0'}`,
                     borderRadius: 4, cursor: 'pointer',
-                    background: pipelineFilter === f ? '#0d9488' : '#fff',
+                    background: pipelineFilter === f ? tc.primary : '#fff',
                     color: pipelineFilter === f ? '#fff' : '#475569'
                   }}
                 >{f}</button>
@@ -1012,7 +1013,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                     }
                     this.setState({ showBatchMetadataPanel: true });
                   }}
-                  styles={{ root: { fontSize: 12, height: 30, color: '#0d9488', borderColor: '#99f6e4' } }}
+                  styles={{ root: { fontSize: 12, height: 30, color: tc.primary, borderColor: '#99f6e4' } }}
                 />
                 <DefaultButton
                   text="Delete"
@@ -1076,7 +1077,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                     style={{
                       display: 'grid', gridTemplateColumns: '36px 1fr 130px 120px 150px 90px 110px 210px',
                       padding: '12px 16px', borderBottom: '1px solid #f1f5f9', alignItems: 'center',
-                      background: isSelected ? '#f0fdfa' : '#fff',
+                      background: isSelected ? tc.primaryLighter : '#fff',
                       transition: 'background 0.1s'
                     }}
                     onMouseEnter={(e) => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = '#fafafa'; }}
@@ -1095,7 +1096,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                       <a
                         href={`${siteUrl}/SitePages/PolicyBuilder.aspx?editPolicyId=${policy.Id}`}
                         style={{ color: '#0f172a', fontWeight: 600, fontSize: 13, textDecoration: 'none' }}
-                        onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.color = '#0d9488'}
+                        onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.color = tc.primary}
                         onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.color = '#0f172a'}
                       >
                         {policy.Title || 'Untitled'}
@@ -1126,7 +1127,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                         { step: 'In Review', color: '#2563eb' },
                         { step: 'Pending Approval', color: '#d97706' },
                         { step: 'Approved', color: '#059669' },
-                        { step: 'Published', color: '#0d9488' },
+                        { step: 'Published', color: tc.primary },
                       ].map((s, si) => {
                         const stepOrder = ['Draft', 'In Review', 'Pending Approval', 'Approved', 'Published'];
                         const currentIdx = stepOrder.indexOf(policy.PolicyStatus);
@@ -1177,7 +1178,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                         const s = policy.PolicyStatus;
                         const act = { root: { width: 28, height: 28 }, icon: { fontSize: 13, color: '#0f172a' } };
                         const del = { root: { width: 28, height: 28 }, rootHovered: { background: '#fef2f2' }, icon: { fontSize: 13, color: '#0f172a' }, iconHovered: { color: '#dc2626' } };
-                        const qz = { root: { width: 28, height: 28 }, icon: { fontSize: 13, color: policy.LinkedQuizId ? '#0d9488' : '#d97706' } };
+                        const qz = { root: { width: 28, height: 28 }, icon: { fontSize: 13, color: policy.LinkedQuizId ? tc.primary : '#d97706' } };
                         return (<>
                           {/* View — available in ALL states */}
                           <IconButton iconProps={{ iconName: 'View' }} title="View Policy"
@@ -1288,7 +1289,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                     await this.reloadPipeline();
                     void this.dialogManager.showAlert(`Metadata applied to ${count} polic${count !== 1 ? 'ies' : 'y'}.`, { variant: 'success' });
                   }}
-                  styles={{ root: { background: '#0d9488', borderColor: '#0d9488', borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }} />
+                  styles={{ root: { background: tc.primary, borderColor: tc.primary, borderRadius: 4 }, rootHovered: { background: tc.primaryDark, borderColor: tc.primaryDark } }} />
                 <DefaultButton text="Cancel" onClick={() => this.setState({ showBatchMetadataPanel: false })} styles={{ root: { borderRadius: 4 } }} />
               </Stack>
             );
@@ -1299,7 +1300,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
             <Text style={{ fontSize: 13, color: '#64748b' }}>
               Apply a Fast Track Template or set metadata for {selectedPipelineIds.size} selected polic{selectedPipelineIds.size !== 1 ? 'ies' : 'y'}.
             </Text>
-            <div style={{ background: '#f0fdfa', border: '1px solid #99f6e4', borderRadius: 4, padding: 14 }}>
+            <div style={{ background: tc.primaryLighter, border: '1px solid #99f6e4', borderRadius: 4, padding: 14 }}>
               <Text style={{ fontWeight: 600, color: '#0f172a', fontSize: 13, display: 'block', marginBottom: 6 }}>Fast Track Template</Text>
               <Dropdown
                 selectedKey={this.state.batchMetaTemplateId}
@@ -1953,7 +1954,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
         {/* KPI Summary Cards with arrows */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 24 }}>
           {[
-            { label: 'New Requests', count: newCount, color: '#0d9488', onClick: () => this.setState({ statusFilter: 'New' }) },
+            { label: 'New Requests', count: newCount, color: tc.primary, onClick: () => this.setState({ statusFilter: 'New' }) },
             { label: 'Assigned', count: assignedCount, color: '#8764b8', onClick: () => this.setState({ statusFilter: 'Assigned' }) },
             { label: 'In Progress', count: inProgressCount, color: '#f59e0b', onClick: () => this.setState({ statusFilter: 'InProgress' }) },
             { label: 'Completed', count: completedCount, color: '#107c10', onClick: () => this.setState({ statusFilter: 'All' }) },
@@ -2001,12 +2002,12 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                   minWidth: 'auto',
                   padding: '2px 14px',
                   height: 32,
-                  border: statusFilter === status ? '2px solid #0d9488' : '1px solid #e1dfdd',
-                  background: statusFilter === status ? '#f0fdfa' : 'transparent',
-                  color: statusFilter === status ? '#0d9488' : '#605e5c',
+                  border: statusFilter === status ? `2px solid ${tc.primary}` : '1px solid #e1dfdd',
+                  background: statusFilter === status ? tc.primaryLighter : 'transparent',
+                  color: statusFilter === status ? tc.primary : '#605e5c',
                   fontWeight: statusFilter === status ? 600 : 400
                 },
-                rootHovered: { borderColor: '#0d9488', color: '#0d9488' }
+                rootHovered: { borderColor: tc.primary, color: tc.primary }
               }}
               onClick={() => this.setState({ statusFilter: status })}
             />
@@ -2110,7 +2111,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                 Read within: {request.ReadTimeframeDays} days
               </Text>
               {request.RequiresAcknowledgement && (
-                <Text variant="small" style={{ color: '#0d9488' }}>
+                <Text variant="small" style={{ color: tc.primary }}>
                   <Icon iconName="CheckboxComposite" style={{ marginRight: 4, fontSize: 12 }} /> Acknowledgement
                 </Text>
               )}
@@ -2222,7 +2223,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
           )}
 
           {/* Section: Policy Requirements (teal) */}
-          <div style={{ background: '#f0fdfa', borderRadius: 8, padding: 16, marginBottom: 16, borderLeft: '4px solid #0d9488' }}>
+          <div style={{ background: tc.primaryLighter, borderRadius: 8, padding: 16, marginBottom: 16, borderLeft: `4px solid ${tc.primary}` }}>
             <Text variant="mediumPlus" style={{ fontWeight: 600, marginBottom: 12, display: 'block' }}>Policy Requirements</Text>
             <Stack tokens={{ childrenGap: 8 }}>
               <Stack horizontal tokens={{ childrenGap: 4 }}>
@@ -2333,7 +2334,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
               <PrimaryButton
                 text="Mark as Draft Ready"
                 iconProps={{ iconName: 'CheckMark' }}
-                styles={{ root: { background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+                styles={{ root: { background: tc.primary, borderColor: tc.primary }, rootHovered: { background: tc.primaryDark, borderColor: tc.primaryDark } }}
                 onClick={() => {
                   const updated = { ...request, Status: 'Draft Ready' as const };
                   this.setState({
@@ -2362,7 +2363,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
       case 'New': return '#2563eb';
       case 'Assigned': return '#7c3aed';
       case 'InProgress': return '#d97706';
-      case 'Draft Ready': return '#0d9488';
+      case 'Draft Ready': return tc.primary;
       case 'Completed': return '#059669';
       case 'Rejected': return '#dc2626';
       default: return '#94a3b8';
@@ -2410,12 +2411,12 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
               styles={{
                 root: {
                   borderRadius: 4, minWidth: 'auto', padding: '2px 14px', height: 32,
-                  border: approvalFilter === f ? '2px solid #0d9488' : '1px solid #e1dfdd',
-                  background: approvalFilter === f ? '#f0fdfa' : 'transparent',
-                  color: approvalFilter === f ? '#0d9488' : '#605e5c',
+                  border: approvalFilter === f ? `2px solid ${tc.primary}` : '1px solid #e1dfdd',
+                  background: approvalFilter === f ? tc.primaryLighter : 'transparent',
+                  color: approvalFilter === f ? tc.primary : '#605e5c',
                   fontWeight: approvalFilter === f ? 600 : 400
                 },
-                rootHovered: { borderColor: '#0d9488', color: '#0d9488' }
+                rootHovered: { borderColor: tc.primary, color: tc.primary }
               }}
               onClick={() => this.setState({ approvalFilter: f })}
             />
@@ -2630,8 +2631,8 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
             text="Add Delegation"
             iconProps={{ iconName: 'AddFriend' }}
             styles={{
-              root: { background: '#0d9488', borderColor: '#0d9488', borderRadius: 4, height: 36 },
-              rootHovered: { background: '#0f766e', borderColor: '#0f766e' },
+              root: { background: tc.primary, borderColor: tc.primary, borderRadius: 4, height: 36 },
+              rootHovered: { background: tc.primaryDark, borderColor: tc.primaryDark },
               rootPressed: { background: '#115e59', borderColor: '#115e59' }
             }}
             onClick={() => this.setState({ showDelegationPanel: true })}
@@ -2640,7 +2641,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
 
         {/* KPI Row */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
-          {this.renderKpiCard('Pending', pendingCount, 'Clock', '#0d9488', '#e8f4fd', () => this.setState({ delegationFilter: 'Pending' }))}
+          {this.renderKpiCard('Pending', pendingCount, 'Clock', tc.primary, '#e8f4fd', () => this.setState({ delegationFilter: 'Pending' }))}
           {this.renderKpiCard('In Progress', delegations.filter(d => d.Status === 'InProgress').length, 'Edit', '#f59e0b', '#fff8e6', () => this.setState({ delegationFilter: 'InProgress' }))}
           {this.renderKpiCard('Overdue', overdueCount, 'Warning', '#d13438', '#fef2f2', () => this.setState({ delegationFilter: 'Overdue' }))}
           {this.renderKpiCard('Completed', delegations.filter(d => d.Status === 'Completed').length, 'CheckMark', '#107c10', '#dff6dd', () => this.setState({ delegationFilter: 'Completed' }))}
@@ -2655,12 +2656,12 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
               styles={{
                 root: {
                   borderRadius: 4, minWidth: 'auto', padding: '2px 14px', height: 32,
-                  border: delegationFilter === f ? '2px solid #0d9488' : '1px solid #e1dfdd',
-                  background: delegationFilter === f ? '#f0fdfa' : 'transparent',
-                  color: delegationFilter === f ? '#0d9488' : '#605e5c',
+                  border: delegationFilter === f ? `2px solid ${tc.primary}` : '1px solid #e1dfdd',
+                  background: delegationFilter === f ? tc.primaryLighter : 'transparent',
+                  color: delegationFilter === f ? tc.primary : '#605e5c',
                   fontWeight: delegationFilter === f ? 600 : 400
                 },
-                rootHovered: { borderColor: '#0d9488', color: '#0d9488' }
+                rootHovered: { borderColor: tc.primary, color: tc.primary }
               }}
               onClick={() => this.setState({ delegationFilter: f })}
             />
@@ -2684,7 +2685,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
               <div
                 key={delegation.Id}
                 className={(styles as Record<string, string>).requestCard}
-                style={{ borderLeft: `4px solid ${delegation.Status === 'Overdue' ? '#d13438' : delegation.Status === 'InProgress' ? '#f59e0b' : delegation.Status === 'Completed' ? '#107c10' : '#0d9488'}` }}
+                style={{ borderLeft: `4px solid ${delegation.Status === 'Overdue' ? '#d13438' : delegation.Status === 'InProgress' ? '#f59e0b' : delegation.Status === 'Completed' ? '#107c10' : tc.primary}` }}
               >
                 <Stack horizontal horizontalAlign="space-between" verticalAlign="start">
                   <div style={{ flex: 1 }}>
@@ -2693,7 +2694,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                       <span style={{
                         fontSize: 11, padding: '2px 8px', borderRadius: 4, fontWeight: 600,
                         background: delegation.TaskType === 'Review' ? '#e8f4fd' : delegation.TaskType === 'Draft' ? '#fff8e6' : delegation.TaskType === 'Approve' ? '#dff6dd' : '#f3eefc',
-                        color: delegation.TaskType === 'Review' ? '#0d9488' : delegation.TaskType === 'Draft' ? '#f59e0b' : delegation.TaskType === 'Approve' ? '#107c10' : '#8764b8'
+                        color: delegation.TaskType === 'Review' ? tc.primary : delegation.TaskType === 'Draft' ? '#f59e0b' : delegation.TaskType === 'Approve' ? '#107c10' : '#8764b8'
                       }}>
                         {delegation.TaskType}
                       </span>
@@ -2746,7 +2747,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
 
   private getDelegationStatusColor(status: string): string {
     switch (status) {
-      case 'Pending': return '#0d9488';
+      case 'Pending': return tc.primary;
       case 'InProgress': return '#f59e0b';
       case 'Completed': return '#107c10';
       case 'Overdue': return '#d13438';
@@ -2791,8 +2792,8 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
               iconProps={{ iconName: 'AddFriend' }}
               disabled={!isFormValid}
               styles={{
-                root: { background: '#0d9488', borderColor: '#0d9488' },
-                rootHovered: { background: '#0f766e', borderColor: '#0f766e' }
+                root: { background: tc.primary, borderColor: tc.primary },
+                rootHovered: { background: tc.primaryDark, borderColor: tc.primaryDark }
               }}
               onClick={() => this.handleCreateDelegation()}
             />

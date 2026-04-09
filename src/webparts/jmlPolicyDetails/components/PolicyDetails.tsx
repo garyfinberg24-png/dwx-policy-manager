@@ -3055,8 +3055,10 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
             const policyTitle = policy!.PolicyName || policy!.Title || '';
             const policyNumber = policy!.PolicyNumber || '';
             const decisionDate = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+            // Approved → link to Author Dashboard where Publish button lives
+            // Rejected → link to Policy Builder to edit and resubmit
             const ctaUrl = reviewDecision === 'approve'
-              ? `${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policy!.Id}&mode=approve`
+              ? `${siteUrl}/SitePages/PolicyAuthor.aspx`
               : `${siteUrl}/SitePages/PolicyBuilder.aspx?editPolicyId=${policy!.Id}`;
             const emailHtml = reviewDecision === 'approve'
               ? EmailTemplateBuilder.approvalApproved({

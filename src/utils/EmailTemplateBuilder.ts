@@ -300,7 +300,7 @@ export class EmailTemplateBuilder {
         { label: 'Comments', value: escapeHtml(p.comments) },
         { label: 'Next Step', value: 'Publish when ready', valueColor: '#059669', valueBold: true },
       ],
-      ctaText: 'Publish Policy',
+      ctaText: 'Go to Dashboard & Publish',
       ctaUrl: p.ctaUrl,
     });
   }

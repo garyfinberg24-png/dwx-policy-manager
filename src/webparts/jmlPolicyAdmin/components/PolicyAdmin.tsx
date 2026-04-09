@@ -65,6 +65,7 @@ import {
 } from '../../../models/IAdminConfig';
 import { ThemeManager } from '../../../utils/themeManager';
 import styles from './PolicyAdmin.module.scss';
+import { tc } from '../../../utils/themeColors';
 
 interface INavItem {
   key: string;
@@ -742,7 +743,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
 
     const columns: IColumn[] = [
       { key: 'icon', name: '', minWidth: 40, maxWidth: 40, onRender: (item: IPolicyCategory) => (
-        <Icon iconName={item.IconName || 'Tag'} style={{ ...IconStyles.mediumLarge, color: item.Color || '#0d9488' }} />
+        <Icon iconName={item.IconName || 'Tag'} style={{ ...IconStyles.mediumLarge, color: item.Color || tc.primary }} />
       )},
       { key: 'name', name: 'Category', fieldName: 'CategoryName', minWidth: 180, maxWidth: 260, isResizable: true, onRender: (item: IPolicyCategory) => (
         <Stack>
@@ -752,14 +753,14 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       )},
       { key: 'color', name: 'Color', minWidth: 80, maxWidth: 100, onRender: (item: IPolicyCategory) => (
         <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 6 }}>
-          <div style={{ ...ContainerStyles.colorSwatch, backgroundColor: item.Color || '#0d9488' }} />
+          <div style={{ ...ContainerStyles.colorSwatch, backgroundColor: item.Color || tc.primary }} />
           <Text variant="small">{item.Color}</Text>
         </Stack>
       )},
       { key: 'order', name: 'Order', fieldName: 'SortOrder', minWidth: 60, maxWidth: 80, isResizable: true },
       { key: 'status', name: 'Status', minWidth: 80, maxWidth: 100, onRender: (item: IPolicyCategory) => (
         <Stack horizontal tokens={{ childrenGap: 6 }}>
-          <span style={{ ...BadgeStyles.activeInactive, backgroundColor: item.IsActive ? '#ccfbf1' : '#f1f5f9', color: item.IsActive ? '#0d9488' : '#64748b' }}>
+          <span style={{ ...BadgeStyles.activeInactive, backgroundColor: item.IsActive ? tc.primaryLight : '#f1f5f9', color: item.IsActive ? tc.primary : '#64748b' }}>
             {item.IsActive ? 'Active' : 'Inactive'}
           </span>
           {item.IsDefault && (
@@ -794,7 +795,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           <Stack horizontal horizontalAlign="end" verticalAlign="center" style={{ marginBottom: 8 }}>
             <Text style={{ fontSize: 12, color: '#94a3b8', marginRight: 'auto' }}>{policyCategories.length} categories</Text>
             <PrimaryButton text="New Category" iconProps={{ iconName: 'Add' }} onClick={() => this.setState({
-              editingCategory: { Id: 0, Title: '', CategoryName: '', IconName: 'Tag', Color: '#0d9488', Description: '', SortOrder: policyCategories.length + 1, IsActive: true, IsDefault: false },
+              editingCategory: { Id: 0, Title: '', CategoryName: '', IconName: 'Tag', Color: tc.primary, Description: '', SortOrder: policyCategories.length + 1, IsActive: true, IsDefault: false },
               showCategoryPanel: true
             })} />
           </Stack>
@@ -869,7 +870,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               {editingCategory.IconName && (
                 <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
                   <Text variant="small">Preview:</Text>
-                  <Icon iconName={editingCategory.IconName} style={{ ...IconStyles.xxLarge, color: editingCategory.Color || '#0d9488' }} />
+                  <Icon iconName={editingCategory.IconName} style={{ ...IconStyles.xxLarge, color: editingCategory.Color || tc.primary }} />
                 </Stack>
               )}
               <TextField label="Color" description="Hex color code (e.g. #0d9488)" value={editingCategory.Color || ''} onChange={(_, v) => this.setState({ editingCategory: { ...editingCategory, Color: v || '' } })} />
@@ -1044,7 +1045,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
 
     // Template type metadata
     const templateTypes: Record<string, { label: string; icon: string; color: string; bgColor: string }> = {
-      richtext: { label: 'Rich Text', icon: 'EditNote', color: '#0d9488', bgColor: '#ccfbf1' },
+      richtext: { label: 'Rich Text', icon: 'EditNote', color: tc.primary, bgColor: tc.primaryLight },
       html: { label: 'HTML', icon: 'Code', color: '#2563eb', bgColor: '#dbeafe' },
       word: { label: 'Word', icon: 'WordDocument', color: '#2b579a', bgColor: '#dce6f5' },
       excel: { label: 'Excel', icon: 'ExcelDocument', color: '#217346', bgColor: '#d4edda' },
@@ -1106,9 +1107,9 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               onClick={() => this.setState({ _templateTypeFilter: 'all' } as any)}
               style={{
                 padding: '4px 12px', borderRadius: 4, fontSize: 12, fontWeight: 500, cursor: 'pointer',
-                background: templateTypeFilter === 'all' ? '#0d9488' : '#f1f5f9',
+                background: templateTypeFilter === 'all' ? tc.primary : '#f1f5f9',
                 color: templateTypeFilter === 'all' ? '#fff' : '#475569',
-                border: `1px solid ${templateTypeFilter === 'all' ? '#0d9488' : '#e2e8f0'}`
+                border: `1px solid ${templateTypeFilter === 'all' ? tc.primary : '#e2e8f0'}`
               }}
             >
               All ({templates.length})
@@ -1191,7 +1192,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                           styles={{ root: { height: 28, width: 28 }, icon: { fontSize: 13 } }} />
                         <IconButton iconProps={{ iconName: 'View' }} title="Preview" ariaLabel="Preview template"
                           onClick={() => this.setState({ _previewTemplate: template, _showTemplatePreview: true } as any)}
-                          styles={{ root: { height: 28, width: 28 }, icon: { fontSize: 13, color: '#0d9488' } }} />
+                          styles={{ root: { height: 28, width: 28 }, icon: { fontSize: 13, color: tc.primary } }} />
                         <IconButton iconProps={{ iconName: 'Copy' }} title="Duplicate" ariaLabel="Duplicate template"
                           onClick={() => this._duplicateTemplate(template)}
                           styles={{ root: { height: 28, width: 28 }, icon: { fontSize: 13 } }} />
@@ -1216,8 +1217,8 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                         </Stack>
                         {template.RequiresAcknowledgement && (
                           <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 4 }}>
-                            <Icon iconName="Handwriting" style={{ fontSize: 11, color: '#0d9488' }} />
-                            <Text variant="tiny" style={{ color: '#0d9488' }}>Ack</Text>
+                            <Icon iconName="Handwriting" style={{ fontSize: 11, color: tc.primary }} />
+                            <Text variant="tiny" style={{ color: tc.primary }}>Ack</Text>
                           </Stack>
                         )}
                         {template.RequiresQuiz && (
@@ -1278,7 +1279,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
 
                   {/* Show current file if URL exists */}
                   {editingTemplate.DocumentTemplateURL && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: '#f0fdfa', border: `1px solid ${Colors.tealBorder}`, borderRadius: 4 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: tc.primaryLighter, border: `1px solid ${Colors.tealBorder}`, borderRadius: 4 }}>
                       <Icon iconName="DocumentSet" styles={{ root: { fontSize: 20, color: Colors.tealPrimary } }} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <Text style={{ fontWeight: 600, fontSize: 13, color: Colors.textDark, display: 'block' }}>
@@ -1305,7 +1306,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                         border: '2px dashed #cbd5e1', borderRadius: 8, padding: '24px 16px', textAlign: 'center',
                         cursor: 'pointer', transition: 'all 0.15s', position: 'relative'
                       }}
-                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = Colors.tealPrimary; (e.currentTarget as HTMLElement).style.background = '#f0fdfa'; }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = Colors.tealPrimary; (e.currentTarget as HTMLElement).style.background = tc.primaryLighter; }}
                       onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = '#cbd5e1'; (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
                       onClick={() => {
                         const input = document.createElement('input');
@@ -1421,7 +1422,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                       {editSections().map((section: any, index: number) => (
                         <div key={section.id} style={{
                           background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 4, padding: 12,
-                          borderLeft: section.required ? '3px solid #0d9488' : '3px solid #e2e8f0'
+                          borderLeft: section.required ? `3px solid ${tc.primary}` : '3px solid #e2e8f0'
                         }}>
                           <Stack horizontal horizontalAlign="space-between" verticalAlign="start">
                             <Stack tokens={{ childrenGap: 8 }} style={{ flex: 1, marginRight: 12 }}>
@@ -1527,7 +1528,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                     <div><Text style={{ fontSize: 11, color: '#94a3b8' }}>Risk Level</Text><Text style={{ fontSize: 13, fontWeight: 600 }}>{preview.ComplianceRisk || 'Medium'}</Text></div>
                     <div><Text style={{ fontSize: 11, color: '#94a3b8' }}>Read Timeframe</Text><Text style={{ fontSize: 13, fontWeight: 600 }}>{preview.SuggestedReadTimeframe || 'Week 1'}</Text></div>
-                    <div><Text style={{ fontSize: 11, color: '#94a3b8' }}>Acknowledgement</Text><Text style={{ fontSize: 13, fontWeight: 600, color: preview.RequiresAcknowledgement ? '#0d9488' : '#94a3b8' }}>{preview.RequiresAcknowledgement ? 'Required' : 'Not required'}</Text></div>
+                    <div><Text style={{ fontSize: 11, color: '#94a3b8' }}>Acknowledgement</Text><Text style={{ fontSize: 13, fontWeight: 600, color: preview.RequiresAcknowledgement ? tc.primary : '#94a3b8' }}>{preview.RequiresAcknowledgement ? 'Required' : 'Not required'}</Text></div>
                     <div><Text style={{ fontSize: 11, color: '#94a3b8' }}>Quiz</Text><Text style={{ fontSize: 13, fontWeight: 600, color: preview.RequiresQuiz ? '#7c3aed' : '#94a3b8' }}>{preview.RequiresQuiz ? 'Required' : 'Not required'}</Text></div>
                     {preview.RegulatoryFramework && <div><Text style={{ fontSize: 11, color: '#94a3b8' }}>Regulatory Framework</Text><Text style={{ fontSize: 13, fontWeight: 600 }}>{preview.RegulatoryFramework}</Text></div>}
                     {preview.RegulatoryReferences && <div><Text style={{ fontSize: 11, color: '#94a3b8' }}>Regulatory References</Text><Text style={{ fontSize: 13, fontWeight: 600 }}>{preview.RegulatoryReferences}</Text></div>}
@@ -1542,7 +1543,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                     <Stack tokens={{ childrenGap: 4 }}>
                       {keyPoints.map((point: string, i: number) => (
                         <Stack key={i} horizontal verticalAlign="center" tokens={{ childrenGap: 6 }}>
-                          <Icon iconName="StatusCircleCheckmark" styles={{ root: { fontSize: 12, color: '#0d9488' } }} />
+                          <Icon iconName="StatusCircleCheckmark" styles={{ root: { fontSize: 12, color: tc.primary } }} />
                           <Text style={{ fontSize: 12, color: '#334155' }}>{point}</Text>
                         </Stack>
                       ))}
@@ -1561,11 +1562,11 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                         <div key={section.id || i} style={{
                           padding: '8px 12px', borderRadius: 4,
                           background: '#f8fafc',
-                          borderLeft: `3px solid ${section.required ? '#0d9488' : '#e2e8f0'}`
+                          borderLeft: `3px solid ${section.required ? tc.primary : '#e2e8f0'}`
                         }}>
                           <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 6 }}>
                             <Text style={{ fontWeight: 600, fontSize: 12, color: '#0f172a' }}>#{i + 1} {section.title}</Text>
-                            {section.required && <span style={{ fontSize: 9, fontWeight: 600, padding: '1px 5px', borderRadius: 2, background: '#ccfbf1', color: '#0d9488' }}>REQUIRED</span>}
+                            {section.required && <span style={{ fontSize: 9, fontWeight: 600, padding: '1px 5px', borderRadius: 2, background: tc.primaryLight, color: tc.primary }}>REQUIRED</span>}
                           </Stack>
                           {section.description && <Text style={{ fontSize: 11, color: '#64748b', display: 'block', marginTop: 2 }}>{section.description}</Text>}
                         </div>
@@ -2076,7 +2077,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                       {selectedGroups.length > 0 && (
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 8 }}>
                           {selectedGroups.map(g => (
-                            <span key={g} style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 4, background: '#f0fdfa', color: '#0d9488', border: '1px solid #99f6e4' }}>{g}</span>
+                            <span key={g} style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 4, background: tc.primaryLighter, color: tc.primary, border: `1px solid ${tc.primaryLight}` }}>{g}</span>
                           ))}
                         </div>
                       )}
@@ -2330,7 +2331,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <Text style={{ fontSize: 15, fontWeight: 600, color: '#0f172a' }}>{t.TemplateName}</Text>
-                        {t.IsDefault && <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', padding: '2px 6px', borderRadius: 4, background: '#f0fdfa', color: '#0d9488' }}>Default</span>}
+                        {t.IsDefault && <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', padding: '2px 6px', borderRadius: 4, background: tc.primaryLighter, color: tc.primary }}>Default</span>}
                         {!t.IsActive && <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', padding: '2px 6px', borderRadius: 4, background: '#fef2f2', color: '#dc2626' }}>Inactive</span>}
                       </div>
                       <Text style={{ fontSize: 12, color: '#64748b' }}>{t.Description}</Text>
@@ -2372,7 +2373,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                       title="Edit template"
                       ariaLabel="Edit template"
                       onClick={() => this.setState({ showWorkflowTemplatePanel: true, editingWorkflowTemplate: { ...t, LevelDefinitions: [...t.LevelDefinitions] } })}
-                      styles={{ root: { color: '#0d9488' } }}
+                      styles={{ root: { color: tc.primary } }}
                     />
                     {t.Id && (
                       <IconButton
@@ -2466,7 +2467,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             <Label>Level Definitions</Label>
             {editing.LevelDefinitions.map((lvl, li) => (
               <Stack key={li} horizontal tokens={{ childrenGap: 8 }} verticalAlign="end">
-                <Text style={{ fontSize: 13, fontWeight: 600, color: '#0d9488', minWidth: 24 }}>L{lvl.level}</Text>
+                <Text style={{ fontSize: 13, fontWeight: 600, color: tc.primary, minWidth: 24 }}>L{lvl.level}</Text>
                 <TextField
                   label={li === 0 ? 'Name' : undefined}
                   value={lvl.name}
@@ -2668,7 +2669,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     const categories = [...new Set(eventConfigs.map(e => e.category))];
 
     const categoryColors: Record<string, { bg: string; color: string }> = {
-      Acknowledgement: { bg: '#ccfbf1', color: '#0d9488' },
+      Acknowledgement: { bg: tc.primaryLight, color: tc.primary },
       Approval: { bg: '#dbeafe', color: '#2563eb' },
       Quiz: { bg: '#ede9fe', color: '#7c3aed' },
       Review: { bg: '#fef3c7', color: '#d97706' },
@@ -2677,7 +2678,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       System: { bg: '#f1f5f9', color: '#475569' }
     };
 
-    const priorityColors: Record<string, string> = { low: '#94a3b8', normal: '#0d9488', high: '#d97706', urgent: '#dc2626' };
+    const priorityColors: Record<string, string> = { low: '#94a3b8', normal: tc.primary, high: tc.warning, urgent: tc.danger };
 
     const updateChannel = (index: number, channel: string, value: boolean): void => {
       const updated = [...eventConfigs];
@@ -2780,8 +2781,8 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           <Stack horizontal tokens={{ childrenGap: 6 }} wrap>
             <span onClick={() => this.setState({ _notifCatFilter: '' } as any)} style={{
               padding: '4px 12px', borderRadius: 4, fontSize: 12, fontWeight: 500, cursor: 'pointer',
-              background: !activeCat ? '#0d9488' : '#f8fafc', color: !activeCat ? '#fff' : '#475569',
-              border: `1px solid ${!activeCat ? '#0d9488' : '#e2e8f0'}`
+              background: !activeCat ? tc.primary : '#f8fafc', color: !activeCat ? '#fff' : '#475569',
+              border: `1px solid ${!activeCat ? tc.primary : '#e2e8f0'}`
             }}>All ({eventConfigs.length})</span>
             {categories.map(cat => {
               const colors = categoryColors[cat] || categoryColors.System;
@@ -3163,7 +3164,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               text="+ Create Group"
               iconProps={{ iconName: 'AddGroup' }}
               onClick={() => this.setState({ _showReviewerCreateForm: !showCreateForm } as any)}
-              styles={{ root: { background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+              styles={{ root: { background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: tc.primaryDark, borderColor: tc.primaryDark } }}
             />
           </Stack>
 
@@ -3188,7 +3189,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                 <TextField label="Description" placeholder="Users who can review and approve policies" value={newGroupDesc} onChange={(_, v) => this.setState({ _reviewerNewGroupDesc: v || '' } as any)} multiline rows={2} />
                 <Stack horizontal tokens={{ childrenGap: 8 }}>
                   <PrimaryButton text={creatingGroup ? 'Creating...' : 'Create Group'} onClick={handleCreateGroup} disabled={!newGroupName.trim() || creatingGroup}
-                    styles={{ root: { background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }} />
+                    styles={{ root: { background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: tc.primaryDark, borderColor: tc.primaryDark } }} />
                   <DefaultButton text="Cancel" onClick={() => this.setState({ _showReviewerCreateForm: false, _reviewerNewGroupName: '', _reviewerNewGroupDesc: '' } as any)} />
                 </Stack>
               </Stack>
@@ -3356,9 +3357,9 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     const ACTION_TYPES = ['All', 'Created', 'Published', 'Updated', 'Archived', 'Approved', 'Rejected', 'Acknowledged', 'Accessed', 'Downloaded', 'Shared', 'Delegated', 'Reviewed', 'Deleted'];
 
     const actionColors: Record<string, string> = {
-      Created: '#059669', Published: '#0d9488', Updated: '#2563eb', Archived: '#64748b',
+      Created: tc.success, Published: tc.primary, Updated: tc.accent, Archived: '#64748b',
       Approved: '#059669', Rejected: '#dc2626', Acknowledged: '#059669', Accessed: '#6366f1',
-      Downloaded: '#d97706', Shared: '#8b5cf6', Delegated: '#0284c7', Reviewed: '#0d9488', Deleted: '#dc2626'
+      Downloaded: tc.warning, Shared: '#8b5cf6', Delegated: '#0284c7', Reviewed: tc.primary, Deleted: tc.danger
     };
 
     const loadAuditLog = async (): Promise<void> => {
@@ -3437,7 +3438,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               {filtered.slice(0, 100).map((entry: any) => (
                 <div key={entry.Id}>
                   <div
-                    style={{ display: 'grid', gridTemplateColumns: '160px 100px 60px 120px 1fr 40px', padding: '8px 12px', fontSize: 12, borderBottom: `1px solid ${Colors.borderLight}`, cursor: 'pointer', background: expandedId === entry.Id ? '#f0fdfa' : '#fff' }}
+                    style={{ display: 'grid', gridTemplateColumns: '160px 100px 60px 120px 1fr 40px', padding: '8px 12px', fontSize: 12, borderBottom: `1px solid ${Colors.borderLight}`, cursor: 'pointer', background: expandedId === entry.Id ? tc.primaryLighter : '#fff' }}
                     onClick={() => this.setState({ _auditExpandedId: expandedId === entry.Id ? null : entry.Id } as any)}
                   >
                     <span style={{ fontFamily: 'Consolas, monospace', color: Colors.textTertiary }}>{entry.Timestamp ? new Date(entry.Timestamp).toLocaleString() : ''}</span>
@@ -3755,7 +3756,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       this.setState({ _dlpRules: updated } as any);
     };
 
-    const actionColors: Record<string, string> = { Block: '#dc2626', Warn: '#d97706', LogOnly: '#0d9488' };
+    const actionColors: Record<string, string> = { Block: tc.danger, Warn: tc.warning, LogOnly: tc.primary };
     const entityOptions: IDropdownOption[] = ['All', 'Policy', 'Quiz', 'Acknowledgement', 'SecureLibrary', 'Distribution', 'User'].map(t => ({ key: t, text: t }));
     const actionOptions: IDropdownOption[] = [{ key: 'Block', text: 'Block' }, { key: 'Warn', text: 'Warn' }, { key: 'LogOnly', text: 'Log Only' }];
 
@@ -3766,7 +3767,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           <Stack horizontal horizontalAlign="end" verticalAlign="center">
             <PrimaryButton text="+ Add Rule" iconProps={{ iconName: 'Add' }}
               onClick={() => this.setState({ _showDlpPanel: true, _editingDlpRule: { name: '', description: '', entityType: 'All', action: 'Warn', pattern: '', enabled: true } } as any)}
-              styles={{ root: { background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+              styles={{ root: { background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: tc.primaryDark, borderColor: tc.primaryDark } }}
             />
           </Stack>
 
@@ -3809,7 +3810,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           headerText={editingRule?.id && dlpRules.some((r: any) => r.id === editingRule?.id) ? 'Edit DLP Rule' : 'New DLP Rule'}
           onRenderFooterContent={() => (
             <Stack horizontal tokens={{ childrenGap: 8 }}>
-              <PrimaryButton text="Save Rule" onClick={handleSaveRule} disabled={!editingRule?.name?.trim()} styles={{ root: { background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }} />
+              <PrimaryButton text="Save Rule" onClick={handleSaveRule} disabled={!editingRule?.name?.trim()} styles={{ root: { background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: tc.primaryDark, borderColor: tc.primaryDark } }} />
               <DefaultButton text="Cancel" onClick={() => this.setState({ _showDlpPanel: false, _editingDlpRule: null } as any)} />
             </Stack>
           )}
@@ -3944,7 +3945,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               styles={{ root: { borderColor: '#d97706', color: '#d97706', borderRadius: 4 }, rootHovered: { borderColor: '#b45309', color: '#b45309', background: '#fffbeb' } }}
             />
             <PrimaryButton text="Save Retention Policy" onClick={handleSave}
-              styles={{ root: { background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+              styles={{ root: { background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: tc.primaryDark, borderColor: tc.primaryDark } }}
             />
           </Stack>
         </Stack>
@@ -4019,7 +4020,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     const { namingRules } = this.state;
 
     const segmentTypeColors: Record<string, string> = {
-      prefix: '#0d9488',
+      prefix: tc.primary,
       counter: '#7c3aed',
       date: '#2563eb',
       category: '#d97706',
@@ -4048,8 +4049,8 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                 disabled={this.state.refreshingAllRules || this.state.refreshingRuleId !== null}
                 onClick={() => void this.refreshAllNamingRules()}
                 styles={{
-                  root: { borderColor: '#0d9488', color: Colors.tealPrimary },
-                  rootHovered: { borderColor: '#0f766e', color: '#0f766e', background: '#f0fdfa' },
+                  root: { borderColor: tc.primary, color: Colors.tealPrimary },
+                  rootHovered: { borderColor: tc.primaryDark, color: tc.primaryDark, background: tc.primaryLighter },
                   rootDisabled: { borderColor: '#94a3b8', color: Colors.slateLight }
                 }}
               />
@@ -4095,16 +4096,16 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               <div
                 key={rule.Id}
                 className={styles.adminCard}
-                style={{ borderLeft: `4px solid ${rule.IsActive ? '#0d9488' : '#94a3b8'}` }}
+                style={{ borderLeft: `4px solid ${rule.IsActive ? tc.primary : '#94a3b8'}` }}
               >
                 <Stack tokens={{ childrenGap: 12 }}>
                   <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
                     <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 10 }}>
-                      <Icon iconName="Rename" style={{ ...IconStyles.mediumLarge, color: rule.IsActive ? '#0d9488' : '#94a3b8' }} />
+                      <Icon iconName="Rename" style={{ ...IconStyles.mediumLarge, color: rule.IsActive ? tc.primary : '#94a3b8' }} />
                       <Text variant="mediumPlus" style={TextStyles.semiBold}>{rule.Title}</Text>
                     </Stack>
                     <Stack horizontal tokens={{ childrenGap: 8 }} verticalAlign="center">
-                      <div style={{ ...BadgeStyles.activeInactive, backgroundColor: rule.IsActive ? '#ccfbf1' : '#f1f5f9', color: rule.IsActive ? '#0d9488' : '#64748b' }}>
+                      <div style={{ ...BadgeStyles.activeInactive, backgroundColor: rule.IsActive ? tc.primaryLight : '#f1f5f9', color: rule.IsActive ? tc.primary : '#64748b' }}>
                         {rule.IsActive ? 'Active' : 'Inactive'}
                       </div>
                       <div style={{
@@ -4118,9 +4119,9 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                         text={this.state.refreshingRuleId === rule.Id ? 'Refreshing...' : 'Refresh'}
                         disabled={!rule.IsActive || this.state.refreshingRuleId !== null || this.state.refreshingAllRules}
                         styles={{
-                          root: { minWidth: 'auto', padding: '0 8px', height: 28, borderColor: '#0d9488', color: Colors.tealPrimary },
+                          root: { minWidth: 'auto', padding: '0 8px', height: 28, borderColor: tc.primary, color: Colors.tealPrimary },
                           label: { fontSize: 12 },
-                          rootHovered: { borderColor: '#0f766e', color: '#0f766e', background: '#f0fdfa' },
+                          rootHovered: { borderColor: tc.primaryDark, color: tc.primaryDark, background: tc.primaryLighter },
                           rootDisabled: { borderColor: '#e2e8f0', color: Colors.slateLight }
                         }}
                         onClick={() => void this.refreshNamingRule(rule)}
@@ -4300,7 +4301,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                   <div style={{ display: 'flex', gap: 4 }}>
                     {['All', 'Open', 'Resolved', 'Waived'].map(f => (
                       <button key={f} onClick={() => this.setState({ _breachStatusFilter: f } as any)}
-                        style={{ padding: '4px 10px', fontSize: 11, fontWeight: statusFilter === f ? 700 : 500, border: `1px solid ${statusFilter === f ? '#0d9488' : '#e2e8f0'}`, borderRadius: 4, cursor: 'pointer', background: statusFilter === f ? '#f0fdfa' : '#fff', color: statusFilter === f ? '#0d9488' : '#64748b' }}>
+                        style={{ padding: '4px 10px', fontSize: 11, fontWeight: statusFilter === f ? 700 : 500, border: `1px solid ${statusFilter === f ? tc.primary : '#e2e8f0'}`, borderRadius: 4, cursor: 'pointer', background: statusFilter === f ? tc.primaryLighter : '#fff', color: statusFilter === f ? tc.primary : '#64748b' }}>
                         {f}{f === 'All' ? ` (${breaches.length})` : ` (${breaches.filter((b: any) => b.BreachStatus === f).length})`}
                       </button>
                     ))}
@@ -4362,17 +4363,17 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                 <div
                   key={sla.Id}
                   className={styles.adminCard}
-                  style={{ borderTop: `4px solid ${sla.IsActive ? '#0d9488' : '#94a3b8'}` }}
+                  style={{ borderTop: `4px solid ${sla.IsActive ? tc.primary : '#94a3b8'}` }}
                 >
                   <Stack tokens={{ childrenGap: 12 }}>
                     <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
                       <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 10 }}>
                         <div style={{
                           width: 36, height: 36, borderRadius: 4,
-                          backgroundColor: sla.IsActive ? '#ccfbf1' : '#f1f5f9',
+                          backgroundColor: sla.IsActive ? tc.primaryLight : '#f1f5f9',
                           display: 'flex', alignItems: 'center', justifyContent: 'center'
                         }}>
-                          <Icon iconName={iconName} style={{ ...IconStyles.mediumLarge, color: sla.IsActive ? '#0d9488' : '#94a3b8' }} />
+                          <Icon iconName={iconName} style={{ ...IconStyles.mediumLarge, color: sla.IsActive ? tc.primary : '#94a3b8' }} />
                         </div>
                         <Text variant="mediumPlus" style={TextStyles.semiBold}>{sla.Title}</Text>
                       </Stack>
@@ -4416,13 +4417,13 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                     <div style={DividerStyles.progressContainer}>
                       <div style={{
                         width: `${100 - percentage}%`, height: '100%', borderRadius: 4,
-                        background: sla.IsActive ? 'linear-gradient(90deg, #0d9488, #14b8a6)' : '#94a3b8'
+                        background: sla.IsActive ? `linear-gradient(90deg, ${tc.primary}, #14b8a6)` : '#94a3b8'
                       }} />
                     </div>
 
                     <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
                       <Text variant="small" style={TextStyles.secondary}>Process: {sla.ProcessType}</Text>
-                      <div style={{ ...BadgeStyles.activeInactive, backgroundColor: sla.IsActive ? '#ccfbf1' : '#f1f5f9', color: sla.IsActive ? '#0d9488' : '#64748b' }}>
+                      <div style={{ ...BadgeStyles.activeInactive, backgroundColor: sla.IsActive ? tc.primaryLight : '#f1f5f9', color: sla.IsActive ? tc.primary : '#64748b' }}>
                         {sla.IsActive ? 'Active' : 'Inactive'}
                       </div>
                     </Stack>
@@ -4452,7 +4453,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     };
 
     const entityColors: Record<string, string> = {
-      Policies: '#0d9488',
+      Policies: tc.primary,
       Drafts: '#7c3aed',
       Acknowledgements: '#2563eb',
       AuditLogs: '#d97706',
@@ -4498,7 +4499,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           {/* Summary bar */}
           <div style={{
             display: 'flex', gap: 16, padding: '16px 20px',
-            background: 'linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%)',
+            background: `linear-gradient(135deg, ${tc.primaryLighter} 0%, #ecfdf5 100%)`,
             borderRadius: 4, border: '1px solid #a7f3d0'
           }}>
             <div style={LayoutStyles.flex1Center}>
@@ -4598,8 +4599,8 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                       </div>
                       <div style={{
                         padding: '4px 12px', borderRadius: 4, fontSize: 12, fontWeight: 600,
-                        backgroundColor: policy.IsActive ? '#ccfbf1' : '#f1f5f9',
-                        color: policy.IsActive ? '#0d9488' : '#64748b'
+                        backgroundColor: policy.IsActive ? tc.primaryLight : '#f1f5f9',
+                        color: policy.IsActive ? tc.primary : '#64748b'
                       }}>
                         {policy.IsActive ? 'Active' : 'Inactive'}
                       </div>
@@ -4655,7 +4656,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           {/* Summary */}
           <div style={{
             display: 'flex', gap: 12, padding: '12px 16px',
-            background: '#f0fdfa', borderRadius: 4, border: '1px solid #99f6e4'
+            background: tc.primaryLighter, borderRadius: 4, border: `1px solid ${tc.primaryLight}`
           }}>
             <Text variant="small" style={{ color: Colors.greenDark }}>
               <strong>{navToggles.filter(t => t.isVisible).length}</strong> of <strong>{navToggles.length}</strong> navigation items enabled
@@ -4672,7 +4673,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                   key={item.key}
                   className={styles.adminCard}
                   style={{
-                    borderLeft: `4px solid ${item.isVisible ? '#0d9488' : '#e2e8f0'}`,
+                    borderLeft: `4px solid ${item.isVisible ? tc.primary : '#e2e8f0'}`,
                     opacity: item.isVisible ? 1 : 0.7,
                     padding: '12px 20px'
                   }}
@@ -4681,10 +4682,10 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                     <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 12 }}>
                       <div style={{
                         width: 36, height: 36, borderRadius: 4,
-                        backgroundColor: item.isVisible ? '#ccfbf1' : '#f1f5f9',
+                        backgroundColor: item.isVisible ? tc.primaryLight : '#f1f5f9',
                         display: 'flex', alignItems: 'center', justifyContent: 'center'
                       }}>
-                        <Icon iconName={item.icon} style={{ ...IconStyles.mediumLarge, color: item.isVisible ? '#0d9488' : '#94a3b8' }} />
+                        <Icon iconName={item.icon} style={{ ...IconStyles.mediumLarge, color: item.isVisible ? tc.primary : '#94a3b8' }} />
                       </div>
                       <div>
                         <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
@@ -4692,7 +4693,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                           {isProtected && (
                             <div style={{
                               padding: '1px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600,
-                              backgroundColor: '#f0fdfa', color: Colors.tealPrimary, border: '1px solid #99f6e4'
+                              backgroundColor: tc.primaryLighter, color: Colors.tealPrimary, border: `1px solid ${tc.primaryLight}`
                             }}>
                               Required
                             </div>
@@ -4714,7 +4715,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                       }}
                       styles={{
                         root: { marginBottom: 0 },
-                        pill: { background: item.isVisible ? '#0d9488' : undefined }
+                        pill: { background: item.isVisible ? tc.primary : undefined }
                       }}
                     />
                   </Stack>
@@ -5416,7 +5417,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             <Stack tokens={{ childrenGap: 16 }}>
               <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 10 }}>
                 <div style={{
-                  width: 36, height: 36, borderRadius: 4, backgroundColor: '#ccfbf1',
+                  width: 36, height: 36, borderRadius: 4, backgroundColor: tc.primaryLight,
                   display: 'flex', alignItems: 'center', justifyContent: 'center'
                 }}>
                   <Icon iconName="ViewAll" style={IconStyles.mediumTeal} />
@@ -5459,7 +5460,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               <Stack tokens={{ childrenGap: 16 }}>
                 <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 10 }}>
                   <div style={{
-                    width: 36, height: 36, borderRadius: 4, backgroundColor: '#ccfbf1',
+                    width: 36, height: 36, borderRadius: 4, backgroundColor: tc.primaryLight,
                     display: 'flex', alignItems: 'center', justifyContent: 'center'
                   }}>
                     <Icon iconName={group.icon} style={IconStyles.mediumTeal} />
@@ -5487,7 +5488,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                         onChange={(_, checked) => updateSetting(setting.key, !!checked)}
                         styles={{
                           root: { marginBottom: 0 },
-                          pill: { background: setting.value ? '#0d9488' : undefined }
+                          pill: { background: setting.value ? tc.primary : undefined }
                         }}
                       />
                     </div>
@@ -5531,7 +5532,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             <Stack tokens={{ childrenGap: 16 }}>
               <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 10 }}>
                 <div style={{
-                  width: 36, height: 36, borderRadius: 4, backgroundColor: '#ccfbf1',
+                  width: 36, height: 36, borderRadius: 4, backgroundColor: tc.primaryLight,
                   display: 'flex', alignItems: 'center', justifyContent: 'center'
                 }}>
                   <Icon iconName="Branding" style={IconStyles.mediumTeal} />
@@ -5565,7 +5566,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             <Stack tokens={{ childrenGap: 16 }}>
               <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 10 }}>
                 <div style={{
-                  width: 36, height: 36, borderRadius: 4, backgroundColor: '#ccfbf1',
+                  width: 36, height: 36, borderRadius: 4, backgroundColor: tc.primaryLight,
                   display: 'flex', alignItems: 'center', justifyContent: 'center'
                 }}>
                   <Icon iconName="Upload" style={IconStyles.mediumTeal} />
@@ -5605,7 +5606,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             <Stack tokens={{ childrenGap: 16 }}>
               <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 10 }}>
                 <div style={{
-                  width: 36, height: 36, borderRadius: 4, backgroundColor: '#ccfbf1',
+                  width: 36, height: 36, borderRadius: 4, backgroundColor: tc.primaryLight,
                   display: 'flex', alignItems: 'center', justifyContent: 'center'
                 }}>
                   <Icon iconName="Education" style={IconStyles.mediumTeal} />
@@ -5906,7 +5907,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           {/* Category Pill Filters */}
           {(() => {
             const categoryColors: Record<string, { bg: string; color: string; border: string }> = {
-              Acknowledgement: { bg: '#ccfbf1', color: '#0d9488', border: '#0d9488' },
+              Acknowledgement: { bg: tc.primaryLight, color: tc.primary, border: tc.primary },
               Approval: { bg: '#dbeafe', color: '#2563eb', border: '#2563eb' },
               Quiz: { bg: '#ede9fe', color: '#7c3aed', border: '#7c3aed' },
               Review: { bg: '#fef3c7', color: '#d97706', border: '#d97706' },
@@ -5925,9 +5926,9 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                   onClick={() => this.setState({ _emailCatPillFilter: '' } as any)}
                   style={{
                     padding: '4px 12px', borderRadius: 4, fontSize: 12, fontWeight: 500, cursor: 'pointer',
-                    background: !activeCatFilter ? '#0d9488' : '#f8fafc',
+                    background: !activeCatFilter ? tc.primary : '#f8fafc',
                     color: !activeCatFilter ? '#fff' : '#475569',
-                    border: `1px solid ${!activeCatFilter ? '#0d9488' : '#e2e8f0'}`
+                    border: `1px solid ${!activeCatFilter ? tc.primary : '#e2e8f0'}`
                   }}
                 >
                   All ({emailTemplates.length})
@@ -6010,7 +6011,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             });
 
             const categoryHeaderColors: Record<string, { gradient: string; text: string }> = {
-              Acknowledgement: { gradient: 'linear-gradient(135deg, #0d9488, #0f766e)', text: '#fff' },
+              Acknowledgement: { gradient: tc.headerBg, text: '#fff' },
               Approval: { gradient: 'linear-gradient(135deg, #2563eb, #1d4ed8)', text: '#fff' },
               Quiz: { gradient: 'linear-gradient(135deg, #7c3aed, #6d28d9)', text: '#fff' },
               Review: { gradient: 'linear-gradient(135deg, #d97706, #b45309)', text: '#fff' },
@@ -6022,11 +6023,11 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
 
             const eventColors: Record<string, { bg: string; color: string }> = {
               'Policy Published': { bg: '#dcfce7', color: '#16a34a' },
-              'Policy Acknowledged': { bg: '#ccfbf1', color: '#0d9488' },
+              'Policy Acknowledged': { bg: tc.primaryLight, color: tc.primary },
               'Ack Reminder 3-Day': { bg: '#fef3c7', color: '#d97706' },
               'Ack Reminder 1-Day': { bg: '#fee2e2', color: '#dc2626' },
               'Ack Overdue': { bg: '#fee2e2', color: '#dc2626' },
-              'Ack Complete Manager': { bg: '#ccfbf1', color: '#0d9488' },
+              'Ack Complete Manager': { bg: tc.primaryLight, color: tc.primary },
               'Approval Needed': { bg: '#dbeafe', color: '#2563eb' },
               'Approval Approved': { bg: '#dcfce7', color: '#16a34a' },
               'Approval Rejected': { bg: '#fee2e2', color: '#dc2626' },
@@ -6108,7 +6109,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                         <div style={{ borderTop: '1px solid #f1f5f9', padding: '8px 16px', display: 'flex', gap: 16 }}>
                           <span role="button" tabIndex={0} onClick={() => this.setState({ _previewEmailTemplate: template, _showEmailPreview: true } as any)}
                             onKeyDown={(e) => { if (e.key === 'Enter') this.setState({ _previewEmailTemplate: template, _showEmailPreview: true } as any); }}
-                            style={{ fontSize: 11, color: '#0d9488', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+                            style={{ fontSize: 11, color: tc.primary, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
                             <Icon iconName="View" styles={{ root: { fontSize: 12 } }} /> Preview
                           </span>
                           <span role="button" tabIndex={0} onClick={() => this.handleEditEmailTemplate(template)}
@@ -6280,7 +6281,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                 <div style={{
                   border: '1px solid #e2e8f0', borderRadius: 4, overflow: 'hidden'
                 }}>
-                  <div style={{ background: 'linear-gradient(135deg, #0d9488, #0f766e)', padding: '16px 20px', color: '#fff' }}>
+                  <div style={{ background: tc.headerBg, padding: '16px 20px', color: '#fff' }}>
                     <Text style={{ fontWeight: 700, fontSize: 15, color: '#fff' }}>Policy Manager</Text>
                   </div>
                   <div style={{ padding: '20px', fontSize: 13, lineHeight: 1.7, color: '#334155' }}
@@ -6540,7 +6541,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           ) : (
             <Stack tokens={{ childrenGap: 12 }}>
               {audiences.map((aud) => (
-                <div key={aud.Id} className={styles.adminCard} style={{ borderLeft: `3px solid ${aud.IsActive ? '#0d9488' : '#94a3b8'}` }}>
+                <div key={aud.Id} className={styles.adminCard} style={{ borderLeft: `3px solid ${aud.IsActive ? tc.primary : '#94a3b8'}` }}>
                   <Stack horizontal horizontalAlign="space-between" verticalAlign="start">
                     <Stack tokens={{ childrenGap: 6 }} style={LayoutStyles.flex1}>
                       <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
@@ -7987,25 +7988,25 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           {/* Summary bar */}
           <div style={{
             display: 'flex', gap: 16, padding: '16px 20px', flexWrap: 'wrap',
-            background: 'linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%)',
+            background: `linear-gradient(135deg, ${tc.primaryLighter} 0%, #ecfdf5 100%)`,
             borderRadius: 4, border: '1px solid #a7f3d0'
           }}>
             <div style={{ flex: '1 1 100px', textAlign: 'center', minWidth: 80 }}>
-              <Text variant="xLarge" style={{ fontWeight: 700, color: '#0d9488', display: 'block' }}>
+              <Text variant="xLarge" style={{ fontWeight: 700, color: tc.primary, display: 'block' }}>
                 {existsCount} / {totalCount}
               </Text>
               <Text variant="small" style={{ color: '#059669' }}>Lists Provisioned</Text>
             </div>
             <div style={{ width: 1, background: '#a7f3d0' }} />
             <div style={{ flex: '1 1 100px', textAlign: 'center', minWidth: 80 }}>
-              <Text variant="xLarge" style={{ fontWeight: 700, color: '#0d9488', display: 'block' }}>
+              <Text variant="xLarge" style={{ fontWeight: 700, color: tc.primary, display: 'block' }}>
                 {totalItems}
               </Text>
               <Text variant="small" style={{ color: '#059669' }}>Total Items</Text>
             </div>
             <div style={{ width: 1, background: '#a7f3d0' }} />
             <div style={{ flex: '1 1 100px', textAlign: 'center', minWidth: 80 }}>
-              <Text variant="xLarge" style={{ fontWeight: 700, color: '#0d9488', display: 'block' }}>
+              <Text variant="xLarge" style={{ fontWeight: 700, color: tc.primary, display: 'block' }}>
                 {seedableCount}
               </Text>
               <Text variant="small" style={{ color: '#059669' }}>Seedable Lists</Text>
@@ -8019,7 +8020,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               iconProps={{ iconName: 'Sync' }}
               disabled={provisioningRunning}
               onClick={handleCheckAll}
-              styles={{ root: { background: '#0d9488', borderColor: '#0d9488' }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+              styles={{ root: { background: tc.primary, borderColor: tc.primary }, rootHovered: { background: tc.primaryDark, borderColor: tc.primaryDark } }}
             />
             <DefaultButton
               text="Provision Missing Lists"
@@ -8060,7 +8061,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
 
           {/* Progress */}
           {provisioningRunning && (
-            <ProgressIndicator label="Working..." styles={{ progressBar: { background: '#0d9488' } }} />
+            <ProgressIndicator label="Working..." styles={{ progressBar: { background: tc.primary } }} />
           )}
 
           {/* Log console */}
@@ -8127,7 +8128,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                           ariaLabel={`Seed sample data into ${def.title}`}
                           disabled={provisioningRunning}
                           onClick={() => handleSeedList(def.title)}
-                          styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: '#0d9488' } }}
+                          styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: tc.primary } }}
                         />
                         <IconButton
                           iconProps={{ iconName: 'Delete' }}
@@ -8465,7 +8466,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               text={docStorageLoading ? 'Creating...' : 'Create Library'}
               onClick={handleCreateLibrary}
               disabled={!newLibName.trim() || docStorageLoading}
-              styles={{ root: { background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+              styles={{ root: { background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: tc.primaryDark, borderColor: tc.primaryDark } }}
             />
             <Text style={{ fontSize: 11, color: Colors.slateLight, fontStyle: 'italic', display: 'block', marginTop: 8 }}>
               This creates a SharePoint Document Library (BaseTemplate 101) on the current site.
@@ -8626,7 +8627,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             iconProps={{ iconName: 'Add' }}
             onClick={() => this.setState({ _showCreateSecureLib: true, _editingSecureLib: { title: '', securityGroups: [], icon: 'Lock', subfolders: [], _customSubfolder: '' } } as any)}
             disabled={showCreateSecureLib}
-            styles={{ root: { background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+            styles={{ root: { background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: tc.primaryDark, borderColor: tc.primaryDark } }}
           />
         </Stack>
 
@@ -8720,7 +8721,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                   text={secureLibsLoading ? 'Creating...' : 'Create Secure Library'}
                   onClick={handleCreateLibrary}
                   disabled={!editingSecureLib.title?.trim() || (editingSecureLib.securityGroups || []).length === 0 || secureLibsLoading}
-                  styles={{ root: { background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+                  styles={{ root: { background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: tc.primaryDark, borderColor: tc.primaryDark } }}
                 />
                 <DefaultButton text="Cancel" onClick={() => this.setState({ _showCreateSecureLib: false, _editingSecureLib: null } as any)} />
               </Stack>
@@ -8751,7 +8752,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                     <Text style={{ fontWeight: 600, color: Colors.textDark, display: 'block' }}>{lib.title}</Text>
                     <Stack horizontal tokens={{ childrenGap: 8 }} style={{ marginTop: 4 }}>
                       {(lib.securityGroups || []).map(g => (
-                        <span key={g} style={{ padding: '1px 8px', borderRadius: 10, fontSize: 10, fontWeight: 600, background: '#ccfbf1', color: Colors.tealPrimary }}>{g}</span>
+                        <span key={g} style={{ padding: '1px 8px', borderRadius: 10, fontSize: 10, fontWeight: 600, background: tc.primaryLight, color: Colors.tealPrimary }}>{g}</span>
                       ))}
                     </Stack>
                     {(lib.subfolders || []).length > 0 && (
@@ -9091,7 +9092,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                   color: activeGroupTab === tab.key ? '#fff' : '#605e5c',
                   fontWeight: activeGroupTab === tab.key ? 600 : 400
                 },
-                rootHovered: { borderColor: Colors.tealPrimary, color: activeGroupTab === tab.key ? '#fff' : Colors.tealPrimary, background: activeGroupTab === tab.key ? '#0f766e' : '#f0fdfa' },
+                rootHovered: { borderColor: Colors.tealPrimary, color: activeGroupTab === tab.key ? '#fff' : Colors.tealPrimary, background: activeGroupTab === tab.key ? tc.primaryDark : tc.primaryLighter },
                 label: { display: 'flex', alignItems: 'center', gap: 6 }
               }}
             >
@@ -9114,7 +9115,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                 color: activeGroupTab === 'all' ? '#fff' : '#94a3b8',
                 fontWeight: activeGroupTab === 'all' ? 600 : 400
               },
-              rootHovered: { borderColor: Colors.tealPrimary, color: activeGroupTab === 'all' ? '#fff' : Colors.tealPrimary, background: activeGroupTab === 'all' ? '#0f766e' : '#f8fafc' }
+              rootHovered: { borderColor: Colors.tealPrimary, color: activeGroupTab === 'all' ? '#fff' : Colors.tealPrimary, background: activeGroupTab === 'all' ? tc.primaryDark : '#f8fafc' }
             }}
           >
             <span style={{
@@ -9156,7 +9157,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               iconProps={{ iconName: 'AddGroup' }}
               onClick={() => this.setState({ _showCreateGroupForm: true } as any)}
               disabled={showCreateForm}
-              styles={{ root: { background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+              styles={{ root: { background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: tc.primaryDark, borderColor: tc.primaryDark } }}
             />
           )}
           {activeGroupTab === 'library' && (
@@ -9197,7 +9198,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                   text={creatingGroup ? 'Creating...' : 'Create Group'}
                   onClick={handleCreateGroup}
                   disabled={!newGroupName.trim() || creatingGroup}
-                  styles={{ root: { background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+                  styles={{ root: { background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: tc.primaryDark, borderColor: tc.primaryDark } }}
                 />
                 <DefaultButton
                   text="Cancel"
@@ -9354,7 +9355,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             iconProps={{ iconName: 'AddGroup' }}
             onClick={() => this.setState({ _showCreateGroupForm: true } as any)}
             disabled={showCreateForm}
-            styles={{ root: { background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+            styles={{ root: { background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: tc.primaryDark, borderColor: tc.primaryDark } }}
           />
         </Stack>
 
@@ -9394,7 +9395,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                   text={creatingGroup ? 'Creating...' : 'Create Group'}
                   onClick={handleCreateGroup}
                   disabled={!newGroupName.trim() || creatingGroup}
-                  styles={{ root: { background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+                  styles={{ root: { background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: tc.primaryDark, borderColor: tc.primaryDark } }}
                 />
                 <DefaultButton
                   text="Cancel"
@@ -9659,7 +9660,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <input
           type="color"
-          value={value || '#0d9488'}
+          value={value || tc.primary}
           onChange={(e) => {
             const updates: Partial<ICustomTheme> = { [key]: e.target.value } as any;
             // If changing primary, also update gradient start
@@ -9681,7 +9682,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     );
 
     const presetThemes = [
-      { key: 'forest-teal', name: 'Forest Teal', color: '#0d9488' },
+      { key: 'forest-teal', name: 'Forest Teal', color: tc.primary },
       { key: 'corporate-blue', name: 'Corporate Blue', color: '#1e40af' },
       { key: 'slate-professional', name: 'Slate Professional', color: '#475569' },
       { key: 'royal-purple', name: 'Royal Purple', color: '#7c3aed' },
@@ -9939,7 +9940,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
 
         {/* Open Event Viewer button */}
         <div style={{
-          background: 'linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%)',
+          background: `linear-gradient(135deg, ${tc.primaryLighter} 0%, #ecfdf5 100%)`,
           border: '1px solid #a7f3d0',
           borderRadius: 10,
           padding: '18px 24px',
@@ -9950,7 +9951,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         }}>
           <div>
             <div style={{ fontSize: 15, fontWeight: 600, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0d9488" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={tc.primary} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="2" y="3" width="20" height="14" rx="2"/>
                 <line x1="8" y1="21" x2="16" y2="21"/>
                 <line x1="12" y1="17" x2="12" y2="21"/>
@@ -9969,7 +9970,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             }}
             style={{
               padding: '10px 24px',
-              background: 'linear-gradient(135deg, #0d9488, #0f766e)',
+              background: tc.headerBg,
               color: '#fff',
               border: 'none',
               borderRadius: 6,
@@ -10003,7 +10004,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           />
 
           {/* Buffer Sizes */}
-          <div style={{ borderLeft: '3px solid #0d9488', paddingLeft: 12, marginBottom: 4, marginTop: 8, fontSize: 14, fontWeight: 600, color: '#1e293b' }}>
+          <div style={{ borderLeft: `3px solid ${tc.primary}`, paddingLeft: 12, marginBottom: 4, marginTop: 8, fontSize: 14, fontWeight: 600, color: '#1e293b' }}>
             Ring Buffer Sizes
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
@@ -10126,7 +10127,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             <Stack horizontal tokens={{ childrenGap: 24 }} verticalAlign="start">
               <div style={{
                 width: 80, height: 80, borderRadius: 4,
-                background: 'linear-gradient(135deg, #0d9488, #14b8a6)',
+                background: `linear-gradient(135deg, ${tc.primary}, #14b8a6)`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 color: '#fff', fontSize: 28, fontWeight: 800, fontFamily: 'Inter, sans-serif'
               }}>
@@ -10164,7 +10165,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 10 }} style={LayoutStyles.marginBottom16}>
               <div style={{
                 width: 36, height: 36, borderRadius: 4,
-                background: '#f0fdfa', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                background: tc.primaryLighter, display: 'flex', alignItems: 'center', justifyContent: 'center'
               }}>
                 <Icon iconName="Info" style={IconStyles.mediumTeal} />
               </div>
@@ -10199,7 +10200,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                   <Stack tokens={{ childrenGap: 4 }}>
                     {cat.items.map((item, j) => (
                       <Stack key={j} horizontal verticalAlign="center" tokens={{ childrenGap: 6 }}>
-                        <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#0d9488' }} />
+                        <div style={{ width: 5, height: 5, borderRadius: '50%', background: tc.primary }} />
                         <Text variant="small">{item}</Text>
                       </Stack>
                     ))}
@@ -10336,7 +10337,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                   <span style={{
                     position: 'absolute', top: 8, right: 8,
                     padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 700,
-                    background: '#0d9488', color: '#fff', textTransform: 'uppercase'
+                    background: tc.primary, color: '#fff', textTransform: 'uppercase'
                   }}>Current App</span>
                 )}
                 {product.isNew && (
@@ -10562,12 +10563,12 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               }}
               styles={{
                 root: {
-                  background: aiTestStatus === 'success' ? '#059669' : aiTestStatus === 'error' ? '#dc2626' : '#0d9488',
-                  borderColor: aiTestStatus === 'success' ? '#059669' : aiTestStatus === 'error' ? '#dc2626' : '#0d9488',
+                  background: aiTestStatus === 'success' ? '#059669' : aiTestStatus === 'error' ? '#dc2626' : tc.primary,
+                  borderColor: aiTestStatus === 'success' ? '#059669' : aiTestStatus === 'error' ? '#dc2626' : tc.primary,
                 },
                 rootHovered: {
-                  background: aiTestStatus === 'success' ? '#047857' : aiTestStatus === 'error' ? '#b91c1c' : '#0f766e',
-                  borderColor: aiTestStatus === 'success' ? '#047857' : aiTestStatus === 'error' ? '#b91c1c' : '#0f766e',
+                  background: aiTestStatus === 'success' ? '#047857' : aiTestStatus === 'error' ? '#b91c1c' : tc.primaryDark,
+                  borderColor: aiTestStatus === 'success' ? '#047857' : aiTestStatus === 'error' ? '#b91c1c' : tc.primaryDark,
                 }
               }}
             />
@@ -10606,7 +10607,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           {/* Status Summary Card */}
           <div style={{
             display: 'flex', gap: 12, padding: '14px 16px',
-            background: 'linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%)',
+            background: `linear-gradient(135deg, ${tc.primaryLighter} 0%, #ecfdf5 100%)`,
             borderRadius: 4, border: '1px solid #a7f3d0', flexWrap: 'wrap'
           }}>
             <div style={{ flex: '1 1 100px', textAlign: 'center', minWidth: 80 }}>
@@ -10629,7 +10630,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             </div>
             <div style={{ width: 1, background: '#a7f3d0', alignSelf: 'stretch' }} />
             <div style={{ flex: '1 1 100px', textAlign: 'center', minWidth: 80 }}>
-              <Text variant="xLarge" style={{ fontWeight: 700, color: '#0d9488', display: 'block' }}>
+              <Text variant="xLarge" style={{ fontWeight: 700, color: tc.primary, display: 'block' }}>
                 {(st as any)._docScanEligible ?? '—'}
               </Text>
               <Text variant="small" style={{ color: '#334155' }}>Eligible</Text>
@@ -10714,12 +10715,12 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               }}
               styles={{
                 root: {
-                  background: (st as any)._docConverterTestStatus === 'success' ? '#059669' : (st as any)._docConverterTestStatus === 'error' ? '#dc2626' : '#0d9488',
-                  borderColor: (st as any)._docConverterTestStatus === 'success' ? '#059669' : (st as any)._docConverterTestStatus === 'error' ? '#dc2626' : '#0d9488',
+                  background: (st as any)._docConverterTestStatus === 'success' ? '#059669' : (st as any)._docConverterTestStatus === 'error' ? '#dc2626' : tc.primary,
+                  borderColor: (st as any)._docConverterTestStatus === 'success' ? '#059669' : (st as any)._docConverterTestStatus === 'error' ? '#dc2626' : tc.primary,
                 },
                 rootHovered: {
-                  background: (st as any)._docConverterTestStatus === 'success' ? '#047857' : (st as any)._docConverterTestStatus === 'error' ? '#b91c1c' : '#0f766e',
-                  borderColor: (st as any)._docConverterTestStatus === 'success' ? '#047857' : (st as any)._docConverterTestStatus === 'error' ? '#b91c1c' : '#0f766e',
+                  background: (st as any)._docConverterTestStatus === 'success' ? '#047857' : (st as any)._docConverterTestStatus === 'error' ? '#b91c1c' : tc.primaryDark,
+                  borderColor: (st as any)._docConverterTestStatus === 'success' ? '#047857' : (st as any)._docConverterTestStatus === 'error' ? '#b91c1c' : tc.primaryDark,
                 }
               }}
             />
@@ -10858,7 +10859,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                         <div key={doc.id} style={{
                           display: 'grid', gridTemplateColumns: '32px 60px 1fr 140px 80px 60px',
                           padding: '8px 12px', fontSize: 12, borderBottom: `1px solid ${Colors.borderLight}`, alignItems: 'center',
-                          background: selectedIds.has(doc.id) ? '#f0fdfa' : '#fff'
+                          background: selectedIds.has(doc.id) ? tc.primaryLighter : '#fff'
                         }}>
                           <input
                             type="checkbox"
@@ -10914,7 +10915,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                             this.setState({ _batchConvertRunning: false, _batchConvertResult: { converted: 0, failed: 0, skipped: 0 } } as any);
                           }
                         }}
-                        styles={{ root: { marginTop: 8, background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+                        styles={{ root: { marginTop: 8, background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: tc.primaryDark, borderColor: tc.primaryDark } }}
                       />
                     )}
                   </div>
@@ -10973,7 +10974,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                 <div style={{
                   height: '100%',
                   borderRadius: 3,
-                  background: '#0d9488',
+                  background: tc.primary,
                   width: `${(st as any)._batchConvertTotal ? ((st as any)._batchConvertCurrent / (st as any)._batchConvertTotal) * 100 : 0}%`,
                   transition: 'width 0.3s ease'
                 }} />
@@ -11223,7 +11224,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                 saveTypes(updated);
               }
             }}
-            styles={{ root: { background: '#0d9488', borderColor: '#0d9488', borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+            styles={{ root: { background: tc.primary, borderColor: tc.primary, borderRadius: 4 }, rootHovered: { background: tc.primaryDark, borderColor: tc.primaryDark } }}
           />
         </div>
 
@@ -11240,7 +11241,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                   display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px',
                   borderBottom: i < packTypes.length - 1 ? '1px solid #f1f5f9' : 'none',
                 }}>
-                  <Icon iconName="FabricFolder" styles={{ root: { fontSize: 14, color: '#0d9488' } }} />
+                  <Icon iconName="FabricFolder" styles={{ root: { fontSize: 14, color: tc.primary } }} />
                   <span style={{ flex: 1, fontSize: 14, fontWeight: 500, color: '#0f172a' }}>{type}</span>
                   <IconButton
                     iconProps={{ iconName: 'Up' }} title="Move up" disabled={i === 0}

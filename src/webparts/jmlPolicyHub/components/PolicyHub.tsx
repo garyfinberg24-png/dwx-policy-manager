@@ -1,6 +1,7 @@
 // @ts-nocheck
 /* eslint-disable */
 import * as React from 'react';
+import { tc } from '../../../utils/themeColors';
 import { IPolicyHubProps } from './IPolicyHubProps';
 import {
   Stack,
@@ -1710,7 +1711,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
                 }}
                 onMouseEnter={(e) => {
                   const el = e.currentTarget as HTMLElement;
-                  el.style.borderColor = '#0d9488';
+                  el.style.borderColor = tc.primary;
                   el.style.boxShadow = '0 4px 16px rgba(13,148,136,0.1)';
                 }}
                 onMouseLeave={(e) => {
@@ -1721,7 +1722,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
               >
                 <div style={{ width: 5, background: 'linear-gradient(180deg, #0d9488, #2563eb)', flexShrink: 0 }} />
                 <div style={{ padding: '14px 18px', flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#0d9488', marginBottom: 4 }}>&#9733; Featured Policy</div>
+                  <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: tc.primary, marginBottom: 4 }}>&#9733; Featured Policy</div>
                   <div style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{policy.title}</div>
                   {policy.description && (
                     <div style={{ fontSize: 12, color: '#64748b', lineHeight: 1.5, marginBottom: 10, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' } as React.CSSProperties}>
@@ -1735,12 +1736,12 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
                   </div>
                 </div>
                 <div style={{ width: 100, background: 'linear-gradient(135deg, #f0fdfa, #ecfdf5)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '12px 10px', flexShrink: 0 }}>
-                  <div style={{ fontSize: 22, fontWeight: 700, color: '#0d9488', lineHeight: 1 }}>{policy.acknowledgedPercent || 0}%</div>
+                  <div style={{ fontSize: 22, fontWeight: 700, color: tc.primary, lineHeight: 1 }}>{policy.acknowledgedPercent || 0}%</div>
                   <div style={{ fontSize: 8, textTransform: 'uppercase', letterSpacing: 0.5, color: '#64748b', marginTop: 2, marginBottom: 8 }}>Acknowledged</div>
                   <button
                     style={{
                       padding: '5px 12px', borderRadius: 4, fontSize: 11, fontWeight: 600, cursor: 'pointer',
-                      background: '#0d9488', color: '#fff', border: 'none', fontFamily: 'inherit', whiteSpace: 'nowrap'
+                      background: tc.primary, color: '#fff', border: 'none', fontFamily: 'inherit', whiteSpace: 'nowrap'
                     }}
                     onClick={(e) => { e.stopPropagation(); window.location.href = `/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${policy.id}&mode=browse`; }}
                   >
@@ -1807,7 +1808,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
 
     return (
       <div style={{
-        background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
+        background: tc.headerBg,
         padding: '16px 40px', position: 'relative', overflow: 'hidden'
       }}>
         {/* Decorative background circle */}
@@ -1875,9 +1876,9 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
       display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0', fontSize: 12, color: '#334155', cursor: 'pointer'
     };
     const checkboxStyle = (checked: boolean): React.CSSProperties => ({
-      width: 16, height: 16, border: `2px solid ${checked ? '#0d9488' : '#cbd5e1'}`, borderRadius: 3,
+      width: 16, height: 16, border: `2px solid ${checked ? tc.primary : '#cbd5e1'}`, borderRadius: 3,
       flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: checked ? '#0d9488' : 'transparent', color: '#fff', fontSize: 10, fontWeight: 700
+      background: checked ? tc.primary : 'transparent', color: '#fff', fontSize: 10, fontWeight: 700
     });
     const countStyle: React.CSSProperties = { marginLeft: 'auto', fontSize: 10, color: '#94a3b8' };
     const groupStyle: React.CSSProperties = { background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: 16, marginBottom: 12 };
@@ -1949,7 +1950,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
               onClick={() => this.setState({ viewMode: 'grid' })}
               style={{
                 padding: '6px 10px', fontSize: 12, cursor: 'pointer', border: 'none', fontFamily: 'inherit',
-                background: viewMode === 'grid' ? '#0d9488' : '#fff', color: viewMode === 'grid' ? '#fff' : '#94a3b8'
+                background: viewMode === 'grid' ? tc.primary : '#fff', color: viewMode === 'grid' ? '#fff' : '#94a3b8'
               }}
               aria-label="Grid view"
             >
@@ -1959,7 +1960,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
               onClick={() => this.setState({ viewMode: 'list' })}
               style={{
                 padding: '6px 10px', fontSize: 12, cursor: 'pointer', border: 'none', fontFamily: 'inherit',
-                background: viewMode === 'list' ? '#0d9488' : '#fff', color: viewMode === 'list' ? '#fff' : '#94a3b8'
+                background: viewMode === 'list' ? tc.primary : '#fff', color: viewMode === 'list' ? '#fff' : '#94a3b8'
               }}
               aria-label="List view"
             >
@@ -2012,10 +2013,10 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
           <Dropdown options={sortOptions} selectedKey={sortOption || 'most-recent'} onChange={(_, opt) => this.setState({ sortOption: opt?.key as string, currentPage: 1 }, () => this.loadPolicies())} styles={{ root: { minWidth: 160 }, dropdown: { border: '1px solid #e2e8f0', borderRadius: 4 }, title: { fontSize: 13, fontFamily: 'inherit', color: '#334155', borderColor: '#e2e8f0' } }} />
 
           <div style={{ display: 'flex', border: '1px solid #e2e8f0', borderRadius: 6, overflow: 'hidden' }}>
-            <button onClick={() => this.setState({ viewMode: 'grid' })} style={{ padding: '6px 10px', fontSize: 12, cursor: 'pointer', border: 'none', fontFamily: 'inherit', background: viewMode === 'grid' ? '#0d9488' : '#fff', color: viewMode === 'grid' ? '#fff' : '#94a3b8' }} aria-label="Grid view">
+            <button onClick={() => this.setState({ viewMode: 'grid' })} style={{ padding: '6px 10px', fontSize: 12, cursor: 'pointer', border: 'none', fontFamily: 'inherit', background: viewMode === 'grid' ? tc.primary : '#fff', color: viewMode === 'grid' ? '#fff' : '#94a3b8' }} aria-label="Grid view">
               <svg viewBox="0 0 24 24" fill="none" width="14" height="14"><rect x="3" y="3" width="7" height="7" stroke="currentColor" strokeWidth="2" rx="1" /><rect x="14" y="3" width="7" height="7" stroke="currentColor" strokeWidth="2" rx="1" /><rect x="3" y="14" width="7" height="7" stroke="currentColor" strokeWidth="2" rx="1" /><rect x="14" y="14" width="7" height="7" stroke="currentColor" strokeWidth="2" rx="1" /></svg>
             </button>
-            <button onClick={() => this.setState({ viewMode: 'list' })} style={{ padding: '6px 10px', fontSize: 12, cursor: 'pointer', border: 'none', fontFamily: 'inherit', background: viewMode === 'list' ? '#0d9488' : '#fff', color: viewMode === 'list' ? '#fff' : '#94a3b8' }} aria-label="List view">
+            <button onClick={() => this.setState({ viewMode: 'list' })} style={{ padding: '6px 10px', fontSize: 12, cursor: 'pointer', border: 'none', fontFamily: 'inherit', background: viewMode === 'list' ? tc.primary : '#fff', color: viewMode === 'list' ? '#fff' : '#94a3b8' }} aria-label="List view">
               <svg viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
             </button>
           </div>
@@ -2484,8 +2485,8 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
 
     const catBadge: Record<string, { bg: string; color: string }> = {
       'Compliance': { bg: '#fef3c7', color: '#92400e' },
-      'HR': { bg: '#ccfbf1', color: '#0d9488' },
-      'Human Resources': { bg: '#ccfbf1', color: '#0d9488' },
+      'HR': { bg: '#ccfbf1', color: tc.primary },
+      'Human Resources': { bg: '#ccfbf1', color: tc.primary },
       'IT': { bg: '#dbeafe', color: '#2563eb' },
       'IT Security': { bg: '#dbeafe', color: '#2563eb' },
       'Governance': { bg: '#ede9fe', color: '#7c3aed' },
@@ -2542,7 +2543,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
                   padding: '12px 20px', borderBottom: '1px solid #f1f5f9', alignItems: 'center',
                   cursor: 'pointer', transition: 'background 0.1s',
                   background: isSelected ? '#f0fdfa' : undefined,
-                  borderLeft: isSelected ? '3px solid #0d9488' : '3px solid transparent',
+                  borderLeft: isSelected ? `3px solid ${tc.primary}` : '3px solid transparent',
                 }}
                 onMouseEnter={(e) => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = '#f0fdfa'; }}
                 onMouseLeave={(e) => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = ''; }}
@@ -2646,7 +2647,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
     };
     const catBadge: Record<string, { bg: string; color: string }> = {
       'Compliance': { bg: '#fef3c7', color: '#92400e' },
-      'HR': { bg: '#ccfbf1', color: '#0d9488' }, 'Human Resources': { bg: '#ccfbf1', color: '#0d9488' },
+      'HR': { bg: '#ccfbf1', color: tc.primary }, 'Human Resources': { bg: '#ccfbf1', color: tc.primary },
       'IT': { bg: '#dbeafe', color: '#2563eb' }, 'IT Security': { bg: '#dbeafe', color: '#2563eb' },
       'Governance': { bg: '#ede9fe', color: '#7c3aed' },
       'Safety': { bg: '#fef3c7', color: '#d97706' }, 'Health & Safety': { bg: '#fef3c7', color: '#d97706' },
@@ -2674,7 +2675,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
         {policy && (
           <div style={{ padding: 0 }}>
             {/* Policy number subtitle */}
-            <div style={{ fontSize: 12, color: '#0d9488', marginBottom: 16 }}>
+            <div style={{ fontSize: 12, color: tc.primary, marginBottom: 16 }}>
               {policy.PolicyNumber}{policy.PolicyVersion ? ` | Version ${policy.PolicyVersion}` : ''}
             </div>
 
@@ -3008,7 +3009,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
                     fontWeight: selectedCat === cat && selectedSub === sub ? 600 : 400
                   }}
                 >
-                  <Icon iconName="FolderOpen" style={{ fontSize: 11, marginRight: 4, color: '#0d9488' }} />
+                  <Icon iconName="FolderOpen" style={{ fontSize: 11, marginRight: 4, color: tc.primary }} />
                   {sub} <span style={{ color: '#94a3b8', marginLeft: 4 }}>({count})</span>
                 </div>
               ))}

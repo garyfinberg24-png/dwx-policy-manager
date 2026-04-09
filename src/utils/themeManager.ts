@@ -51,6 +51,9 @@ export class ThemeManager {
     // Inject override stylesheet
     this.injectOverrideStyles(merged);
 
+    // Invalidate inline theme color cache so tc.primary etc. pick up new values
+    try { const { invalidateThemeCache } = require('./themeColors'); invalidateThemeCache(); } catch { /* */ }
+
     // Persist to localStorage for cross-webpart sharing
     try {
       localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(merged));

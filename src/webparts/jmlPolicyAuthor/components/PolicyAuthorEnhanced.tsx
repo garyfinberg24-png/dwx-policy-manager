@@ -2304,20 +2304,22 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
     // 6 document types in horizontal strip
     const docTypes = [
+      { key: 'richtext', label: 'Rich Text', icon: 'EditNote', bg: '#ccfbf1', color: '#0d9488' },
+      { key: 'html', label: 'HTML', icon: 'Code', bg: '#dbeafe', color: '#2563eb' },
       { key: 'word', label: 'Word', icon: 'WordDocument', bg: '#dbeafe', color: '#2b579a' },
       { key: 'excel', label: 'Excel', icon: 'ExcelDocument', bg: '#dcfce7', color: '#217346' },
       { key: 'powerpoint', label: 'PowerPoint', icon: 'PowerPointDocument', bg: '#fee2e2', color: '#b7472a' },
-      { key: 'html', label: 'HTML', icon: 'CodeEdit', bg: '#ede9fe', color: '#7c3aed' },
       { key: 'infographic', label: 'Infographic', icon: 'PictureFill', bg: '#fce7f3', color: '#db2777' },
       { key: 'upload', label: 'Upload', icon: 'Upload', bg: '#fef3c7', color: '#d97706' }
     ];
 
     // Filter templates by selected type
     const typeTemplateMap: Record<string, string[]> = {
+      richtext: ['richtext', 'blank', 'Standard', 'General'],
+      html: ['html', 'richtext', 'blank'],
       word: ['word', 'corporate', 'regulatory', 'Standard', 'General'],
       excel: ['excel'],
       powerpoint: ['powerpoint'],
-      html: ['richtext', 'html', 'blank'],
       infographic: []
     };
     const matchTypes = typeTemplateMap[creationMethod as string] || [];
@@ -2328,10 +2330,11 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
     // Blank card label per type
     const blankLabels: Record<string, string> = {
+      richtext: 'Blank Rich Text',
+      html: 'Blank HTML Document',
       word: 'Blank Word Document',
       excel: 'Blank Excel Spreadsheet',
       powerpoint: 'Blank Presentation',
-      html: 'Blank HTML Document',
       infographic: 'Upload Image / Infographic',
       upload: 'Browse & Upload'
     };

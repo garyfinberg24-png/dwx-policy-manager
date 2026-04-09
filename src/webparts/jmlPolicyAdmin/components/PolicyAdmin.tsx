@@ -1076,6 +1076,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               <DefaultButton text="New Template" iconProps={{ iconName: 'Add' }} menuProps={{
                 items: [
                   { key: 'richtext', text: 'Rich Text Template', iconProps: { iconName: 'EditNote' }, onClick: () => this._openNewTemplate('richtext') },
+                  { key: 'html', text: 'HTML Template', iconProps: { iconName: 'Code' }, onClick: () => this._openNewTemplate('html') },
                   { key: 'corporate', text: 'Corporate Template', iconProps: { iconName: 'CityNext' }, onClick: () => this._openNewTemplate('corporate') },
                   { key: 'regulatory', text: 'Regulatory Template', iconProps: { iconName: 'Shield' }, onClick: () => this._openNewTemplate('regulatory') },
                   { key: 'divider1', text: '-', itemType: 1 } as any,

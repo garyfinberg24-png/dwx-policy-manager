@@ -23,36 +23,36 @@ const PANEL_STYLES: Partial<IPanelStyles> = {
     borderRadius: 0,
   },
   navigation: {
-    background: 'linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%)',
+    background: 'var(--pm-panel-header-bg, linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%))',
     height: 'auto',
     borderBottom: 'none',
     justifyContent: 'flex-end',
     padding: '8px 8px 0 0',
   },
   commands: {
-    background: 'linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%)',
+    background: 'var(--pm-panel-header-bg, linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%))',
     margin: 0,
     padding: '4px 4px 0 0',
   },
   header: {
-    background: 'linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%)',
+    background: 'var(--pm-panel-header-bg, linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%))',
     padding: '0 24px 12px 24px',
     marginBottom: 0,
-    borderBottom: '1px solid #99f6e4',
+    borderBottom: '1px solid var(--pm-primary-light, #99f6e4)',
   },
   headerText: {
-    color: '#0f766e',
+    color: 'var(--pm-primary-dark, #0f766e)',
     fontWeight: 700,
     fontSize: '18px',
     lineHeight: '24px',
   },
   closeButton: {
     borderRadius: '4px',
-    color: '#0f766e',
+    color: 'var(--pm-primary-dark, #0f766e)',
     selectors: {
       ':hover': {
         background: 'rgba(13, 148, 136, 0.1)',
-        color: '#0d9488',
+        color: 'var(--pm-primary, #0d9488)',
       },
     },
   },

@@ -42,6 +42,9 @@ export class ThemeManager {
     root.style.setProperty('--pm-control-radius', `${merged.controlBorderRadius}px`);
     root.style.setProperty('--pm-font-family', merged.fontFamily);
 
+    // Panel header gradient (derived from primary lighter shades)
+    root.style.setProperty('--pm-panel-header-bg', `linear-gradient(135deg, ${merged.primaryLighter} 0%, ${merged.primaryLight} 100%)`);
+
     // Header gradient/solid
     const headerBg = merged.headerStyle === 'gradient'
       ? `linear-gradient(135deg, ${merged.headerGradientStart} 0%, ${merged.headerGradientEnd} 100%)`

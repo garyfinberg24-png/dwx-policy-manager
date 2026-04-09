@@ -77,7 +77,7 @@ type RequestStatusFilter = 'All' | 'New' | 'Assigned' | 'InProgress' | 'Draft Re
 
 type AuthorViewTab = 'pipeline' | 'requests' | 'approvals' | 'delegations';
 
-type PipelineStatusFilter = 'All' | 'Draft' | 'In Review' | 'Pending Approval' | 'Approved' | 'Published' | 'Rejected';
+type PipelineStatusFilter = 'All' | 'Draft' | 'In Review' | 'Approved' | 'Published' | 'Rejected';
 
 export interface IPipelinePolicy {
   Id: number;
@@ -800,7 +800,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
       return <div style={{ padding: 40, textAlign: 'center' }}><Spinner size={SpinnerSize.large} label="Loading pipeline..." /></div>;
     }
 
-    const statusFilters: PipelineStatusFilter[] = ['Draft', 'In Review', 'Pending Approval', 'Approved', 'Published', 'Rejected', 'All'];
+    const statusFilters: PipelineStatusFilter[] = ['Draft', 'In Review', 'Rejected', 'Approved', 'Published', 'All'];
 
     // Apply filters
     let filtered = pipelineFilter === 'All' ? pipelinePolicies : pipelinePolicies.filter(p => p.PolicyStatus === pipelineFilter);
@@ -817,7 +817,6 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
     // KPI counts
     const draftCount = pipelinePolicies.filter(p => p.PolicyStatus === 'Draft').length;
     const inReviewCount = pipelinePolicies.filter(p => p.PolicyStatus === 'In Review').length;
-    const pendingApprovalCount = pipelinePolicies.filter(p => p.PolicyStatus === 'Pending Approval').length;
     const rejectedCount = pipelinePolicies.filter(p => p.PolicyStatus === 'Rejected').length;
     const publishedCount = pipelinePolicies.filter(p => p.PolicyStatus === 'Published').length;
     const reviewingCount = pipelinePolicies.filter(p => p.IsReviewer).length;
@@ -917,10 +916,9 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
             {[
               { label: 'Drafts', count: draftCount, color: '#64748b', filter: 'Draft' as PipelineStatusFilter },
               { label: 'In Review', count: inReviewCount, color: '#2563eb', filter: 'In Review' as PipelineStatusFilter },
-              { label: 'Pending', count: pendingApprovalCount, color: '#d97706', filter: 'Pending Approval' as PipelineStatusFilter },
+              { label: 'Rejected', count: rejectedCount, color: '#dc2626', filter: 'Rejected' as PipelineStatusFilter },
               { label: 'Approved', count: pipelinePolicies.filter(p => p.PolicyStatus === 'Approved').length, color: '#059669', filter: 'Approved' as PipelineStatusFilter },
               { label: 'Published', count: publishedCount, color: '#0d9488', filter: 'Published' as PipelineStatusFilter },
-              { label: 'Rejected', count: rejectedCount, color: '#dc2626', filter: 'Rejected' as PipelineStatusFilter }
             ].map((kpi, i, arr) => (
               <React.Fragment key={kpi.label}>
                 <div
@@ -1162,66 +1160,78 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                           Destructive (#94a3b8 default, #dc2626 on hover): Delete/Retire
                           Disabled (#cbd5e1): legal hold blocked */}
 
-                      {/* ── Action buttons — always shown, state-enabled per status ── */}
+                      {/* ── Action icons — status-specific, only valid actions shown ── */}
+                      {/* Draft: Submit, View, Edit, Duplicate, Delete, Quiz (all black)
+                          In Review: View only (black)
+                          Rejected: View, Edit, Duplicate (all black)
+                          Approved: Publish, View, Edit (all black)
+                          Published: View, Edit, Retire (all black) */}
                       {(() => {
                         const s = policy.PolicyStatus;
-                        const canSubmit = s === 'Draft';
-                        const canEdit = ['Draft', 'Rejected', 'Approved'].includes(s) && !isHeld;
-                        const canDuplicate = ['Draft', 'Rejected'].includes(s);
-                        const canDelete = s === 'Draft' && !isHeld;
-                        const canWithdraw = ['In Review', 'Pending Approval'].includes(s) && !isHeld;
-                        const canPublish = s === 'Approved';
-                        const canRetire = ['Approved', 'Published'].includes(s) && !isHeld;
-                        const dis = { root: { width: 28, height: 28 }, icon: { fontSize: 13, color: '#cbd5e1' } };
-                        const pri = { root: { width: 28, height: 28 }, icon: { fontSize: 13, color: '#0f172a' } };
-                        const sec = { root: { width: 28, height: 28 }, icon: { fontSize: 13, color: '#94a3b8' } };
-                        const del = { root: { width: 28, height: 28 }, rootHovered: { background: '#fef2f2' }, icon: { fontSize: 13, color: '#94a3b8' }, iconHovered: { color: '#dc2626' } };
-                        const delDis = { root: { width: 28, height: 28 }, icon: { fontSize: 13, color: '#cbd5e1' } };
+                        const act = { root: { width: 28, height: 28 }, icon: { fontSize: 13, color: '#0f172a' } };
+                        const del = { root: { width: 28, height: 28 }, rootHovered: { background: '#fef2f2' }, icon: { fontSize: 13, color: '#0f172a' }, iconHovered: { color: '#dc2626' } };
+                        const qz = { root: { width: 28, height: 28 }, icon: { fontSize: 13, color: policy.LinkedQuizId ? '#0d9488' : '#d97706' } };
                         return (<>
-                          {/* Submit for Review */}
-                          <IconButton iconProps={{ iconName: 'Send' }}
-                            title={canSubmit ? 'Submit for Review' : `Cannot submit (status: ${s})`}
-                            onClick={canSubmit ? () => this.handlePipelineSubmitForReview(policy.Id, policy.Title) : undefined}
-                            disabled={!canSubmit}
-                            styles={canSubmit ? pri : dis}
-                            ariaLabel={`Submit ${policy.Title} for review`} />
-                          {/* View — always enabled */}
+                          {/* View — available in ALL states */}
                           <IconButton iconProps={{ iconName: 'View' }} title="View Policy"
                             href={`${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policy.Id}&mode=browse`}
-                            target="_blank"
-                            styles={sec}
-                            ariaLabel={`View ${policy.Title}`} />
-                          {/* Edit */}
-                          <IconButton iconProps={{ iconName: 'Edit' }}
-                            title={canEdit ? 'Edit in Policy Builder' : isHeld ? 'Under legal hold' : `Cannot edit (status: ${s})`}
-                            href={canEdit ? `${siteUrl}/SitePages/PolicyBuilder.aspx?editPolicyId=${policy.Id}` : undefined}
-                            disabled={!canEdit}
-                            styles={canEdit ? sec : dis}
-                            ariaLabel={`Edit ${policy.Title}`} />
-                          {/* Duplicate */}
-                          <IconButton iconProps={{ iconName: 'Copy' }}
-                            title={canDuplicate ? 'Duplicate as new Draft' : `Cannot duplicate (status: ${s})`}
-                            onClick={canDuplicate ? () => this.handlePipelineDuplicate(policy.Id, policy.Title) : undefined}
-                            disabled={!canDuplicate}
-                            styles={canDuplicate ? sec : dis}
-                            ariaLabel={`Duplicate ${policy.Title}`} />
-                          {/* Delete */}
-                          <IconButton iconProps={{ iconName: 'Delete' }}
-                            title={canDelete ? 'Delete Draft' : isHeld ? 'Under legal hold' : `Cannot delete (status: ${s})`}
-                            onClick={canDelete ? () => this.handlePipelineDelete(policy.Id, policy.Title) : undefined}
-                            disabled={!canDelete}
-                            styles={canDelete ? del : delDis}
-                            ariaLabel={`Delete ${policy.Title}`} />
-                          {/* Create Quiz — shown when RequiresQuiz is set */}
-                          {policy.RequiresQuiz && (
-                            <IconButton iconProps={{ iconName: 'Questionnaire' }}
-                              title={policy.LinkedQuizId ? 'Edit Quiz' : 'Create Quiz'}
-                              href={policy.LinkedQuizId
-                                ? `${siteUrl}/SitePages/QuizBuilder.aspx?quizId=${policy.LinkedQuizId}`
-                                : `${siteUrl}/SitePages/QuizBuilder.aspx?policyId=${policy.Id}`}
-                              styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: policy.LinkedQuizId ? '#0d9488' : '#d97706' } }}
-                              ariaLabel={`${policy.LinkedQuizId ? 'Edit' : 'Create'} quiz for ${policy.Title}`} />
-                          )}
+                            target="_blank" styles={act} ariaLabel={`View ${policy.Title}`} />
+
+                          {/* Draft actions */}
+                          {s === 'Draft' && (<>
+                            <IconButton iconProps={{ iconName: 'Send' }} title="Submit for Review"
+                              onClick={() => this.handlePipelineSubmitForReview(policy.Id, policy.Title)}
+                              styles={act} ariaLabel={`Submit ${policy.Title} for review`} />
+                            <IconButton iconProps={{ iconName: 'Edit' }} title="Edit"
+                              href={`${siteUrl}/SitePages/PolicyBuilder.aspx?editPolicyId=${policy.Id}`}
+                              styles={act} ariaLabel={`Edit ${policy.Title}`} />
+                            <IconButton iconProps={{ iconName: 'Copy' }} title="Duplicate"
+                              onClick={() => this.handlePipelineDuplicate(policy.Id, policy.Title)}
+                              styles={act} ariaLabel={`Duplicate ${policy.Title}`} />
+                            <IconButton iconProps={{ iconName: 'Delete' }} title="Delete"
+                              onClick={() => this.handlePipelineDelete(policy.Id, policy.Title)}
+                              styles={del} ariaLabel={`Delete ${policy.Title}`} />
+                            {policy.RequiresQuiz && (
+                              <IconButton iconProps={{ iconName: 'Questionnaire' }}
+                                title={policy.LinkedQuizId ? 'Edit Quiz' : 'Create Quiz'}
+                                href={policy.LinkedQuizId
+                                  ? `${siteUrl}/SitePages/QuizBuilder.aspx?quizId=${policy.LinkedQuizId}`
+                                  : `${siteUrl}/SitePages/QuizBuilder.aspx?policyId=${policy.Id}`}
+                                styles={qz} ariaLabel={`Quiz for ${policy.Title}`} />
+                            )}
+                          </>)}
+
+                          {/* In Review — View only (already rendered above) */}
+
+                          {/* Rejected actions */}
+                          {s === 'Rejected' && (<>
+                            <IconButton iconProps={{ iconName: 'Edit' }} title="Edit & Resubmit"
+                              href={`${siteUrl}/SitePages/PolicyBuilder.aspx?editPolicyId=${policy.Id}`}
+                              styles={act} ariaLabel={`Edit ${policy.Title}`} />
+                            <IconButton iconProps={{ iconName: 'Copy' }} title="Duplicate"
+                              onClick={() => this.handlePipelineDuplicate(policy.Id, policy.Title)}
+                              styles={act} ariaLabel={`Duplicate ${policy.Title}`} />
+                          </>)}
+
+                          {/* Approved actions */}
+                          {s === 'Approved' && (<>
+                            <IconButton iconProps={{ iconName: 'PublishContent' }} title="Publish"
+                              onClick={() => this.handlePipelinePublish(policy.Id, policy.Title)}
+                              styles={act} ariaLabel={`Publish ${policy.Title}`} />
+                            <IconButton iconProps={{ iconName: 'Edit' }} title="Edit"
+                              href={`${siteUrl}/SitePages/PolicyBuilder.aspx?editPolicyId=${policy.Id}`}
+                              styles={act} ariaLabel={`Edit ${policy.Title}`} />
+                          </>)}
+
+                          {/* Published actions */}
+                          {s === 'Published' && (<>
+                            <IconButton iconProps={{ iconName: 'Edit' }} title="Revise"
+                              href={`${siteUrl}/SitePages/PolicyBuilder.aspx?editPolicyId=${policy.Id}`}
+                              styles={act} ariaLabel={`Revise ${policy.Title}`} />
+                            <IconButton iconProps={{ iconName: 'Archive' }} title="Retire"
+                              onClick={() => this.handlePipelineRetire(policy.Id, policy.Title)}
+                              styles={del} ariaLabel={`Retire ${policy.Title}`} />
+                          </>)}
                         </>);
                       })()}
                       </>); })()}

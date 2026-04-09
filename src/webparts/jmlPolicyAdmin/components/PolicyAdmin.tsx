@@ -161,7 +161,8 @@ const NAV_SECTIONS: INavSection[] = [
       { key: 'categories', label: 'Categories', icon: 'BulletedList2', description: 'Manage policy categories and sub-categories' },
       { key: 'templates', label: 'Templates', icon: 'DocumentSet', description: 'Reusable policy templates with defaults' },
       { key: 'metadata', label: 'Metadata Profiles', icon: 'Tag', description: 'Pre-configured metadata profiles for policy creation' },
-      { key: 'naming', label: 'Naming Rules', icon: 'Rename', description: 'Auto-generated policy numbering conventions' }
+      { key: 'naming', label: 'Naming Rules', icon: 'Rename', description: 'Auto-generated policy numbering conventions' },
+      { key: 'policyPacks', label: 'Policy Packs', icon: 'FabricFolder', description: 'Configure pack types for policy bundling' }
     ]
   },
   {

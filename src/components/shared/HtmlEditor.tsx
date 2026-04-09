@@ -7,35 +7,43 @@
  */
 import * as React from 'react';
 
-/* Import TinyMCE core + plugins + theme + skin CSS directly into SPFx bundle */
+/* TinyMCE loaded lazily on first editor mount — not at module parse time.
+   This avoids adding ~200-300KB to every webpart's initial bundle. */
 /* eslint-disable @typescript-eslint/no-var-requires */
 var tinymce: any = null;
-try {
-  tinymce = require('tinymce');
-  require('tinymce/themes/silver');
-  require('tinymce/icons/default');
-  require('tinymce/models/dom');
-  require('tinymce/skins/ui/oxide/skin.js');
-  require('tinymce/skins/ui/oxide/content.js');
-  require('tinymce/skins/content/default/content.js');
-  require('tinymce/plugins/advlist');
-  require('tinymce/plugins/autolink');
-  require('tinymce/plugins/lists');
-  require('tinymce/plugins/link');
-  require('tinymce/plugins/image');
-  require('tinymce/plugins/charmap');
-  require('tinymce/plugins/preview');
-  require('tinymce/plugins/searchreplace');
-  require('tinymce/plugins/visualblocks');
-  require('tinymce/plugins/code');
-  require('tinymce/plugins/fullscreen');
-  require('tinymce/plugins/insertdatetime');
-  require('tinymce/plugins/media');
-  require('tinymce/plugins/table');
-  require('tinymce/plugins/wordcount');
-  require('tinymce/plugins/codesample');
-} catch (e) {
-  /* TinyMCE not available — will show fallback */
+var tinymceLoaded = false;
+
+function loadTinyMCE(): any {
+  if (tinymceLoaded) return tinymce;
+  try {
+    tinymce = require('tinymce');
+    require('tinymce/themes/silver');
+    require('tinymce/icons/default');
+    require('tinymce/models/dom');
+    require('tinymce/skins/ui/oxide/skin.js');
+    require('tinymce/skins/ui/oxide/content.js');
+    require('tinymce/skins/content/default/content.js');
+    require('tinymce/plugins/advlist');
+    require('tinymce/plugins/autolink');
+    require('tinymce/plugins/lists');
+    require('tinymce/plugins/link');
+    require('tinymce/plugins/image');
+    require('tinymce/plugins/charmap');
+    require('tinymce/plugins/preview');
+    require('tinymce/plugins/searchreplace');
+    require('tinymce/plugins/visualblocks');
+    require('tinymce/plugins/code');
+    require('tinymce/plugins/fullscreen');
+    require('tinymce/plugins/insertdatetime');
+    require('tinymce/plugins/media');
+    require('tinymce/plugins/table');
+    require('tinymce/plugins/wordcount');
+    require('tinymce/plugins/codesample');
+    tinymceLoaded = true;
+  } catch (e) {
+    /* TinyMCE not available — will show fallback */
+  }
+  return tinymce;
 }
 
 export interface IHtmlEditorProps {
@@ -73,7 +81,9 @@ export var HtmlEditor: React.FC<IHtmlEditorProps> = function (props) {
   var setEditorError = errorState[1];
 
   React.useEffect(function () {
-    if (!tinymce) {
+    // Lazy-load TinyMCE on first editor mount
+    var tmce = loadTinyMCE();
+    if (!tmce) {
       setEditorError('TinyMCE could not be loaded. Use the plain text editor instead.');
       return;
     }
@@ -93,7 +103,7 @@ export var HtmlEditor: React.FC<IHtmlEditorProps> = function (props) {
       document.head.appendChild(style);
     }
 
-    tinymce.init({
+    tmce.init({
       selector: '#' + editorId,
       height: props.height || 450,
       menubar: true,

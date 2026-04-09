@@ -1642,7 +1642,10 @@ export class PolicyService {
       const allAcknowledgements = await this.sp.web.lists
         .getByTitle(this.POLICY_ACKNOWLEDGEMENTS_LIST)
         .items.filter(`AckUserId eq ${ValidationUtils.validateInteger(userId, 'userId', 1)}`)
-        .select('*')
+        .select('Id', 'Title', 'PolicyId', 'PolicyName', 'PolicyNumber', 'PolicyCategory',
+                'AckStatus', 'AckUserId', 'UserEmail', 'AssignedDate', 'DueDate',
+                'AcknowledgedDate', 'IsCompliant', 'IsMandatory', 'ReadTimeframe',
+                'QuizRequired', 'QuizCompleted', 'PolicyVersionNumber')
         .top(1000)();
 
       const acks = allAcknowledgements as IPolicyAcknowledgement[];
@@ -1859,23 +1862,30 @@ export class PolicyService {
         }
       }
 
-      // Resolve emails to SP user IDs via ensureUser
+      // Resolve emails to SP user IDs via ensureUser — parallelised in batches of 10
       const emails = profileItems.map(p => p.Email).filter(Boolean) as string[];
-      logger.info('PolicyService', `resolveTargetUsers: ${emails.length} emails from PM_UserProfiles (scope: ${scope})`);
+      console.log(`[PolicyService] resolveTargetUsers: ${emails.length} emails — resolving in parallel batches`);
 
       const spUserIds: number[] = [];
-      for (const email of emails) {
-        try {
-          const ensured = await this.sp.web.ensureUser(email);
-          if (ensured?.data?.Id) {
-            spUserIds.push(ensured.data.Id);
-          }
-        } catch {
-          // User may not exist in SP — skip silently
+      const BATCH_SIZE = 10;
+      for (let i = 0; i < emails.length; i += BATCH_SIZE) {
+        const batch = emails.slice(i, i + BATCH_SIZE);
+        const results = await Promise.all(
+          batch.map(async (email) => {
+            try {
+              const ensured = await this.sp.web.ensureUser(email);
+              return ensured?.data?.Id || null;
+            } catch {
+              return null;
+            }
+          })
+        );
+        for (const id of results) {
+          if (id && spUserIds.indexOf(id) === -1) spUserIds.push(id);
         }
       }
 
-      logger.info('PolicyService', `resolveTargetUsers: ${spUserIds.length} SP user IDs resolved from ${emails.length} emails`);
+      console.log(`[PolicyService] resolveTargetUsers: ${spUserIds.length} SP user IDs resolved from ${emails.length} emails`);
       return spUserIds;
     } catch (error) {
       logger.error('PolicyService', 'Failed to resolve target users:', error);

@@ -3349,9 +3349,17 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         const items = await this.props.sp.web.lists
           .getByTitle('PM_PolicyAuditLog')
           .items.orderBy('Created', false)
-          .select('Id', 'Title', 'EventType', 'EntityType', 'EntityName', 'PolicyId', 'Description', 'PerformedByName', 'PerformedByEmail', 'Severity', 'ComplianceRelevant', 'Created')
+          .select('Id', 'Title', 'AuditAction', 'EntityType', 'EntityId', 'PolicyId', 'ActionDescription', 'PerformedByEmail', 'ComplianceRelevant', 'Created')
           .top(500)();
-        const mapped = items.map((item: any) => ({ ...item, Timestamp: item.Created || item.EventTimestamp }));
+        const mapped = items.map((item: any) => ({
+          ...item,
+          EventType: item.AuditAction || item.Title,
+          Description: item.ActionDescription || item.Title,
+          PerformedByName: item.PerformedByEmail?.split('@')[0] || '',
+          EntityName: item.EntityType || '',
+          Severity: item.ComplianceRelevant ? 'High' : 'Medium',
+          Timestamp: item.Created
+        }));
         this.setState({ _auditEntries: mapped, _auditLoading: false } as any);
       } catch (err: any) {
         const msg = err?.message || 'Failed to load';
@@ -5386,10 +5394,6 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               />
             </Stack>
           </Stack>
-
-          <Text variant="small" style={TextStyles.secondary}>
-            Configure application-wide display options, feature toggles, and system settings. Changes apply to all users.
-          </Text>
 
           {/* Default View Mode & Pagination */}
           <div className={styles.adminCard} style={ContainerStyles.tealBorderLeft}>

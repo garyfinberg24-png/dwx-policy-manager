@@ -1030,6 +1030,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     // Template type metadata
     const templateTypes: Record<string, { label: string; icon: string; color: string; bgColor: string }> = {
       richtext: { label: 'Rich Text', icon: 'EditNote', color: '#0d9488', bgColor: '#ccfbf1' },
+      html: { label: 'HTML', icon: 'Code', color: '#2563eb', bgColor: '#dbeafe' },
       word: { label: 'Word', icon: 'WordDocument', color: '#2b579a', bgColor: '#dce6f5' },
       excel: { label: 'Excel', icon: 'ExcelDocument', color: '#217346', bgColor: '#d4edda' },
       powerpoint: { label: 'PowerPoint', icon: 'PowerPointDocument', color: '#b7472a', bgColor: '#f5d4cc' },

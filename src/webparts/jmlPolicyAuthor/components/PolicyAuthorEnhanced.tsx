@@ -7203,13 +7203,15 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       <div className={styles.section}>
         <Label>Policy Content</Label>
 
-        <div className={styles.richTextEditor}>
-          <RichText
-            value={policyContent}
-            onChange={(text) => { this.setState({ policyContent: text }); return text; }}
-            placeholder="Enter the detailed policy content..."
-          />
-        </div>
+        {React.createElement(
+          (require('../../../components/shared/HtmlEditor') as any).HtmlEditor,
+          {
+            value: policyContent,
+            onChange: (html: string) => { this.setState({ policyContent: html }); },
+            placeholder: 'Enter the detailed policy content...',
+            height: 500,
+          }
+        )}
       </div>
     );
   }

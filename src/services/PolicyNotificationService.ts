@@ -226,8 +226,13 @@ export class PolicyNotificationService {
     recipientIds: number[]
   ): Promise<void> {
     const emailBody = this.buildNewPolicyEmail(policy);
+    // Deduplicate recipient IDs
+    const uniqueIds: number[] = [];
+    for (const id of recipientIds) { if (uniqueIds.indexOf(id) === -1) uniqueIds.push(id); }
+    this.resetBatchTracking();
+    console.log(`[PolicyNotificationService] sendNewPolicyNotification: ${uniqueIds.length} unique recipients (from ${recipientIds.length})`);
     let failCount = 0;
-    for (const recipientId of recipientIds) {
+    for (const recipientId of uniqueIds) {
       try {
         await this.sendNotification({
           recipientId,
@@ -898,6 +903,12 @@ export class PolicyNotificationService {
   // HELPER METHODS
   // ============================================================================
 
+  // Track emails sent in current batch to prevent duplicates within a single publish/notify operation
+  private _sentEmailsThisBatch = new Set<string>();
+
+  /** Reset batch tracking — call before starting a new notification batch */
+  public resetBatchTracking(): void { this._sentEmailsThisBatch.clear(); }
+
   private async sendNotification(notification: IPolicyNotification): Promise<void> {
     try {
       // Get recipient email if not provided
@@ -911,6 +922,14 @@ export class PolicyNotificationService {
         logger.warn('PolicyNotificationService', 'No email found for recipient', { recipientId: notification.recipientId });
         return;
       }
+
+      // Dedup: skip if already sent to this email in current batch
+      const dedupKey = `${notification.notificationType}:${notification.recipientEmail.toLowerCase()}`;
+      if (this._sentEmailsThisBatch.has(dedupKey)) {
+        console.log(`[PolicyNotificationService] Dedup: skipping ${dedupKey} (already sent this batch)`);
+        return;
+      }
+      this._sentEmailsThisBatch.add(dedupKey);
 
       // Log the notification (in production, this would send via SP utility or Graph API)
       logger.info('PolicyNotificationService', 'Sending notification', {

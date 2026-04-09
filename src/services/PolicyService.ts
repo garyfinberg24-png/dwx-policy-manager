@@ -1180,19 +1180,18 @@ export class PolicyService {
       }
       await execute();
 
-      // Create new version
-      const versionData = {
+      // Create new version — only include fields known to exist on PM_PolicyVersions
+      const versionData: Record<string, unknown> = {
         Title: `${policy.PolicyName} - v${policy.VersionNumber}`,
         PolicyId: policyId,
         VersionNumber: policy.VersionNumber,
         VersionType: versionType,
-        ChangeDescription: changeDescription,
-        DocumentURL: policy.DocumentURL,
-        HTMLContent: policy.HTMLContent,
-        EffectiveDate: new Date().toISOString(),
-        CreatedById: this.currentUserId,
+        VersionDescription: changeDescription,
         IsCurrentVersion: true
       };
+      // Optional fields — add only if they have values (avoids 400 on missing columns)
+      if (policy.HTMLContent) versionData.HTMLContent = policy.HTMLContent;
+      if (policy.DocumentURL) versionData.DocumentURL = typeof policy.DocumentURL === 'string' ? policy.DocumentURL : (policy.DocumentURL as any)?.Url || '';
 
       const result = await this.sp.web.lists
         .getByTitle(this.POLICY_VERSIONS_LIST)

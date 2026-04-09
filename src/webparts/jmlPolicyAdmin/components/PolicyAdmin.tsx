@@ -161,7 +161,7 @@ const NAV_SECTIONS: INavSection[] = [
       { key: 'settings', label: 'General Settings', icon: 'Settings', description: 'Display, feature toggles, and app config' },
       { key: 'navigation', label: 'App Navigation', icon: 'Nav2DMapView', description: 'Toggle app navigation items and features' },
       { key: 'aiAssistant', label: 'AI Settings', icon: 'Robot', description: 'AI chat, document conversion, and integration URLs' },
-      { key: 'customTheme', label: 'Custom Theme', icon: 'Color', description: 'Brand colors, logo, fonts, and preset themes' },
+      { key: 'customTheme', label: 'Theme Editor', icon: 'Color', description: 'Brand colors, logo, fonts, and preset themes' },
       { key: 'provisioning', label: 'Provisioning', icon: 'Database', description: 'SharePoint lists, seed data, and system setup' },
       { key: 'eventViewer', label: 'Event Viewer', icon: 'EventDate', description: 'Diagnostic event capture, buffer sizes, AI triage, and retention' },
       { key: 'systemInfo', label: 'System Info', icon: 'Info', description: 'Version, technology stack, and diagnostics' }
@@ -7529,8 +7529,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     return (
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 16 }}>
-          <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
-            <Text variant="mediumPlus" style={TextStyles.semiBold}>Role Permissions</Text>
+          <Stack horizontal horizontalAlign="end" verticalAlign="center">
             <Stack horizontal tokens={{ childrenGap: 8 }}>
               <PrimaryButton
                 text="Save Permissions"

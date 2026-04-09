@@ -244,6 +244,8 @@ export class EntraUserSyncService {
       } else {
         // Add new employee
         const newItemId = await this.addEmployee(employeeData);
+        // Send welcome email to new user (non-blocking)
+        this.sendWelcomeEmail(entraUser.mail || entraUser.userPrincipalName, entraUser.displayName).catch(() => {});
         return {
           userIdentifier: entraUser.mail || entraUser.userPrincipalName,
           displayName: entraUser.displayName,
@@ -971,6 +973,8 @@ export class EntraUserSyncService {
         }
       } else {
         const newId = await this.addEmployee(employeeData);
+        // Send welcome email to new user (non-blocking)
+        this.sendWelcomeEmail(entraUser.mail || entraUser.userPrincipalName, entraUser.displayName).catch(() => {});
         return {
           userIdentifier,
           displayName: entraUser.displayName,
@@ -1035,6 +1039,47 @@ export class EntraUserSyncService {
       .items.add(this.prepareListItemData(data));
 
     return (result.data as { Id: number }).Id;
+  }
+
+  /**
+   * Send welcome email to a newly synced user via PM_NotificationQueue.
+   * Non-blocking — failures are logged but don't break sync.
+   */
+  private async sendWelcomeEmail(email: string, displayName: string, siteUrl?: string): Promise<void> {
+    try {
+      if (!email) return;
+      const site = siteUrl || (typeof window !== 'undefined' ? window.location.origin + '/sites/PolicyManager' : 'https://mf7m.sharepoint.com/sites/PolicyManager');
+      const myPoliciesUrl = `${site}/SitePages/MyPolicies.aspx`;
+      const helpUrl = `${site}/SitePages/PolicyHelp.aspx`;
+
+      // Build welcome email using premium template
+      const { EmailTemplateBuilder } = await import('../utils/EmailTemplateBuilder');
+      const htmlBody = EmailTemplateBuilder.welcome({
+        recipientName: displayName || 'New Team Member',
+        role: 'User',
+        policiesAssigned: 0,
+        dueDate: 'Policies will be assigned by your manager',
+        helpUrl,
+        ctaUrl: myPoliciesUrl,
+      });
+
+      await this.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
+        Title: `Welcome to Policy Manager`,
+        To: email,
+        RecipientEmail: email,
+        RecipientName: displayName || '',
+        Subject: `Welcome to Policy Manager, ${displayName || 'Team Member'}!`,
+        Message: htmlBody,
+        QueueStatus: 'Pending',
+        Priority: 'Normal',
+        NotificationType: 'welcome',
+        Channel: 'Email',
+      });
+      console.log(`[EntraUserSync] Welcome email queued for ${email}`);
+    } catch (err) {
+      console.warn(`[EntraUserSync] Failed to queue welcome email for ${email}:`, err);
+      // Non-blocking — sync continues even if welcome email fails
+    }
   }
 
   /**

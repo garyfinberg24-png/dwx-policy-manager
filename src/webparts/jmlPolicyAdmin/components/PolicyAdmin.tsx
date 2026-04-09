@@ -170,9 +170,16 @@ const NAV_SECTIONS: INavSection[] = [
     items: [
       { key: 'workflows', label: 'Approval Workflows', icon: 'Flow', description: 'Approval chains and routing rules' },
       { key: 'workflowTemplates', label: 'Workflow Templates', icon: 'ProcessMetaTask', description: 'Reusable multi-level approval templates' },
-      { key: 'reviewersApprovers', label: 'Reviewers & Approvers', icon: 'People', description: 'Manage reviewer, approver, and override user groups' },
+      { key: 'reviewersApprovers', label: 'Reviewers & Approvers', icon: 'People', description: 'Manage reviewer, approver, and override user groups' }
+    ]
+  },
+  {
+    category: 'COMPLIANCE',
+    items: [
+      { key: 'compliance', label: 'Compliance Settings', icon: 'Shield', description: 'Acknowledgement, review, and risk defaults' },
       { key: 'sla', label: 'SLA Targets', icon: 'Timer', description: 'Target completion times and warning thresholds' },
-      { key: 'compliance', label: 'Compliance Settings', icon: 'Shield', description: 'Acknowledgement, review, and risk defaults' }
+      { key: 'lifecycle', label: 'Data Lifecycle', icon: 'History', description: 'Retention, archival, and cleanup rules' },
+      { key: 'dlpRules', label: 'DLP Rules', icon: 'Shield', description: 'Data loss prevention rules (block, warn, log)' }
     ]
   },
   {
@@ -196,7 +203,6 @@ const NAV_SECTIONS: INavSection[] = [
     category: 'CONTENT & STORAGE',
     items: [
       { key: 'documentStorage', label: 'Document Libraries', icon: 'DocLibrary', description: 'Configure document libraries and folder structure' },
-      { key: 'lifecycle', label: 'Data Lifecycle', icon: 'History', description: 'Retention, archival, and cleanup rules' },
       { key: 'legalHolds', label: 'Legal Holds', icon: 'LockSolid', description: 'Legal hold management and compliance locks' },
       { key: 'export', label: 'Data Export', icon: 'Download', description: 'Export policy data and reports' }
     ]
@@ -216,8 +222,7 @@ const NAV_SECTIONS: INavSection[] = [
   {
     category: 'AUDIT & SECURITY',
     items: [
-      { key: 'audit', label: 'Audit Log', icon: 'ComplianceAudit', description: 'Event log with filters, change tracking, and CSV export' },
-      { key: 'dlpRules', label: 'DLP Rules', icon: 'Shield', description: 'Data loss prevention rules (block, warn, log)' }
+      { key: 'audit', label: 'Audit Log', icon: 'ComplianceAudit', description: 'Event log with filters, change tracking, and CSV export' }
     ]
   },
   {
@@ -705,22 +710,13 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     return 'System';
   }
 
-  private renderSectionIntro(title: string, description: string, tips?: string[]): JSX.Element {
-    return (
-      <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid #e2e8f0' }}>
-        <Text variant="xLarge" style={{ fontWeight: 700, color: '#0f172a', display: 'block', marginBottom: 4 }}>{title}</Text>
-        <Text variant="small" style={{ color: '#64748b', lineHeight: 1.5, display: 'block' }}>{description}</Text>
-        {tips && tips.length > 0 && (
-          <div style={{ marginTop: 8, padding: '8px 12px', background: '#f0fdfa', borderRadius: 4, borderLeft: '3px solid #0d9488' }}>
-            {tips.map((tip, i) => (
-              <Text key={i} variant="small" style={{ color: '#0f766e', display: 'block', lineHeight: 1.6 }}>
-                {tip}
-              </Text>
-            ))}
-          </div>
-        )}
-      </div>
-    );
+  /**
+   * Section intro cards REMOVED — page header provides sufficient context.
+   * Method kept as no-op to avoid breaking 28+ callsites.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  private renderSectionIntro(_title: string, _description: string, _tips?: string[]): JSX.Element {
+    return <></>;
   }
 
   private renderCategoriesContent(): JSX.Element {
@@ -1065,14 +1061,11 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     return (
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 16 }}>
-          {/* Header */}
+          {/* Action bar */}
           <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
-            <div>
-              <Text variant="mediumPlus" style={TextStyles.semiBold}>Template Manager</Text>
-              <Text variant="small" style={{ ...TextStyles.secondary, display: 'block', marginTop: 2 }}>
-                {templates.length} templates — {templates.filter((t: any) => t.IsActive !== false).length} active
-              </Text>
-            </div>
+            <Text variant="small" style={{ color: '#64748b' }}>
+              {templates.length} templates — {templates.filter((t: any) => t.IsActive !== false).length} active
+            </Text>
             <Stack horizontal tokens={{ childrenGap: 8 }}>
               <DefaultButton text="New Template" iconProps={{ iconName: 'Add' }} menuProps={{
                 items: [
@@ -5618,72 +5611,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             </Stack>
           </div>
 
-          {/* AI Quiz Generation */}
-          <div className={styles.adminCard} style={CardBorderStyles.indigoLeft}>
-            <Stack tokens={{ childrenGap: 12 }}>
-              <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 10 }}>
-                <div style={{
-                  width: 36, height: 36, borderRadius: 4, backgroundColor: '#eef2ff',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center'
-                }}>
-                  <Icon iconName="Robot" style={{ ...IconStyles.mediumLarge, color: '#6366f1' }} />
-                </div>
-                <div>
-                  <Text variant="medium" style={{ fontWeight: 600, display: 'block' }}>AI Quiz Generation</Text>
-                  <Text variant="small" style={TextStyles.secondary}>Azure Function URL for AI-powered quiz question generation</Text>
-                </div>
-              </Stack>
-              <TextField
-                label="AI Function URL"
-                placeholder="https://your-function.azurewebsites.net/api/generate-quiz-questions?code=..."
-                value={generalSettings.aiFunctionUrl}
-                onChange={(_, val) => updateSetting('aiFunctionUrl', val || '')}
-                description="Full URL to the Azure Function endpoint including the ?code= function key. Used by the Quiz Builder's AI Generate feature."
-              />
-              <PrimaryButton
-                text="Save AI URL"
-                iconProps={{ iconName: 'Save' }}
-                styles={{ root: { marginTop: 4 } }}
-                onClick={async () => {
-                  let savedToSP = false;
-                  try {
-                    await this.spService.setConfigValue(
-                      ConfigKeys.AI_FUNCTION_URL,
-                      generalSettings.aiFunctionUrl,
-                      'Integration'
-                    );
-                    savedToSP = true;
-                  } catch {
-                    // PM_Configuration list may not exist — fall through to localStorage
-                  }
-
-                  // Always persist to localStorage as fallback / redundancy
-                  try {
-                    localStorage.setItem('PM_AI_FunctionUrl', generalSettings.aiFunctionUrl);
-                  } catch { /* storage unavailable */ }
-
-                  if (savedToSP) {
-                    void this.dialogManager.showAlert('AI Function URL has been saved.', { title: 'Saved', variant: 'success' });
-                  } else {
-                    void this.dialogManager.showAlert(
-                      'AI Function URL saved to browser storage. For permanent storage across all users, run the upgrade-quiz-questions-list.ps1 script to create the PM_Configuration list, then save again.',
-                      { title: 'Saved (Local Only)', variant: 'warning' }
-                    );
-                  }
-                }}
-              />
-              {generalSettings.aiFunctionUrl && (
-                <MessageBar messageBarType={MessageBarType.success}>
-                  AI Function URL configured. Quiz Builder will use this URL for AI question generation.
-                </MessageBar>
-              )}
-              {!generalSettings.aiFunctionUrl && (
-                <MessageBar messageBarType={MessageBarType.info}>
-                  No AI Function URL configured. Users can still enter it manually in the Quiz Builder.
-                </MessageBar>
-              )}
-            </Stack>
-          </div>
+          {/* AI Quiz Generation — moved to AI Assistant section */}
         </Stack>
       </div>
     );
@@ -11161,6 +11089,39 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               ))}
             </div>
           )}
+          {/* AI Quiz Generation — moved from General Settings */}
+          <div className={styles.adminCard} style={CardBorderStyles.indigoLeft}>
+            <Stack tokens={{ childrenGap: 12 }}>
+              <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 10 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 4, backgroundColor: '#eef2ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Icon iconName="Robot" style={{ ...IconStyles.mediumLarge, color: '#6366f1' }} />
+                </div>
+                <div>
+                  <Text variant="medium" style={{ fontWeight: 600, display: 'block' }}>AI Quiz Generation</Text>
+                  <Text variant="small" style={TextStyles.secondary}>Azure Function URL for AI-powered quiz question generation</Text>
+                </div>
+              </Stack>
+              <TextField
+                label="AI Function URL"
+                placeholder="https://your-function.azurewebsites.net/api/generate-quiz-questions?code=..."
+                value={(this.state as any).generalSettings?.aiFunctionUrl || ''}
+                onChange={(_, val) => {
+                  const gs = { ...(this.state as any).generalSettings, aiFunctionUrl: val || '' };
+                  this.setState({ generalSettings: gs } as any);
+                }}
+                description="Full URL to the Azure Function endpoint including the ?code= function key."
+              />
+              <PrimaryButton text="Save AI URL" iconProps={{ iconName: 'Save' }} styles={{ root: { marginTop: 4 } }}
+                onClick={async () => {
+                  const url = (this.state as any).generalSettings?.aiFunctionUrl || '';
+                  try { await this.spService.setConfigValue(ConfigKeys.AI_FUNCTION_URL, url, 'Integration'); } catch { /* fallback */ }
+                  try { localStorage.setItem('PM_AI_FunctionUrl', url); } catch { /* */ }
+                  void this.dialogManager.showAlert('AI Function URL saved.', { title: 'Saved', variant: 'success' });
+                }}
+              />
+            </Stack>
+          </div>
+
         </Stack>
       </div>
     );
@@ -11217,11 +11178,6 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
 
     return (
       <div>
-        <Text style={{ fontSize: 20, fontWeight: 700, color: '#0f172a', display: 'block', marginBottom: 4 }}>Policy Pack Types</Text>
-        <Text style={{ fontSize: 13, color: '#64748b', display: 'block', marginBottom: 20 }}>
-          Configure the types available in the "Pack Type" dropdown when creating or editing a policy pack.
-        </Text>
-
         {/* Add new type */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
           <TextField

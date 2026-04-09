@@ -933,12 +933,48 @@ The QuizBuilder's "AI Generate" panel calls the Azure Function with:
 - Both functions: API key set directly (was Key Vault reference)
 - Both functions restarted
 
-**Build:** Zero errors, 16 webpart manifests, 9.7MB sppkg
-**Commits:** 29 commits (`f69e09f`..`f6889d3`) — pushed to both ADO and GitHub
+**Session 22 Continued (9 Apr 2026):**
+
+**TinyMCE WYSIWYG Editor:**
+- TinyMCE 6.8.6 bundled via npm (CSP-safe, no CDN)
+- `src/components/shared/HtmlEditor.tsx` — reusable wrapper with Editor/Preview toggle, Forest Teal styling
+- Policy Builder Step 7 now uses TinyMCE (replaced SPFx RichText control)
+- Full toolbar: blocks, fonts, colors, tables, images, media, code blocks, fullscreen, source view
+- "Rich Text" + "HTML" added as creation methods in Step 1 (both invoke TinyMCE)
+- "HTML Template" added to Admin Centre > Templates > New Template dropdown
+
+**Pipeline Action Icons:**
+- Status-specific visibility: only valid actions shown per status (all black/active)
+- Draft: Submit, View, Edit, Duplicate, Delete, Quiz
+- In Review: View only
+- Rejected: View, Edit & Resubmit, Duplicate
+- Approved: Publish, View, Edit
+- Published: View, Revise, Retire
+- Pending Approval KPI removed (dead state)
+- KPI order: Draft → In Review → Rejected → Approved → Published
+
+**Policy Pack Enhancements:**
+- Recently Created list removed from Create Pack panel
+- Approval notification emails to assigned approvers (on create + update)
+- Audit logging for pack create/update (PM_PolicyAuditLog, ComplianceRelevant)
+- Pack Types CRUD in Admin Centre > Policy Structure > Policy Packs
+- Dynamic Pack Type dropdown loads from PM_Configuration
+
+**Email Fixes:**
+- Review email triplicate: deduplicate reviewer IDs + email addresses
+- Approval email: CTA links to Author Dashboard (was old approve mode)
+- Template type revert: apply template metadata on Step 0 exit
+
+**Welcome Email:**
+- New users synced from Entra ID receive welcome email via PM_NotificationQueue
+- Uses EmailTemplateBuilder.welcome() with "Go to My Policies" CTA
+
+**Build:** Zero errors, 16 webpart manifests, 11MB sppkg (TinyMCE adds ~1.3MB)
+**Commits:** 39 total (`f69e09f`..`78f95df`) — pushed to both ADO and GitHub
 
 ### Rollback Checkpoints (Updated)
 - Session 22 start: commit `ebf4fda`
-- Session 22 end: commit `f6889d3`
+- Session 22 end: commit `78f95df`
 
 ### Rollback Checkpoints (Updated)
 - Session 21 start: commit `49718d4`
@@ -1619,7 +1655,7 @@ Three parallel audit streams identified ~45 optimization opportunities:
 | Diagnostics | 9/10 | Event Viewer with 13 features, 7 tabs, vertical nav, Troubleshooter wizard, pipeline verification script |
 | Testing | 3.5/10 | Jest config + 6 unit test suites + Verify-PublishPipeline.ps1 (51 checks). Remaining: integration, component, E2E |
 | Accessibility | 3/10 | Basic Fluent UI a11y. Remaining: ARIA roles, keyboard nav, screen reader |
-| Overall | ~88/100 | Up from 85. Publish pipeline consolidated, notifications reliable, Event Viewer complete |
+| Overall | ~90/100 | Up from 88. TinyMCE editor, pack types CRUD, welcome email, pipeline icons, template fix |
 
 ### Known Issues
 

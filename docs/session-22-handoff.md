@@ -118,6 +118,34 @@ Result: 51/51 PASS, 0 FAIL, 0 WARN
 
 ---
 
+## Session 22 Continued (9 Apr 2026) — 10 Additional Commits
+
+### TinyMCE Editor Integration
+- TinyMCE 6.8.6 bundled via npm (CSP-safe for SharePoint)
+- `src/components/shared/HtmlEditor.tsx` — reusable wrapper, Forest Teal styling
+- Policy Builder Step 7 uses TinyMCE (replaced SPFx RichText)
+- Rich Text + HTML added as creation methods in Step 1
+- HTML Template option added to Admin Centre
+
+### Pipeline & UI Fixes
+- Action icons: status-specific visibility (only valid actions shown, all black)
+- Pending Approval KPI removed, KPI order: Draft→InReview→Rejected→Approved→Published
+- Template type revert fix: apply template on Step 0 exit
+- Review email dedup: reviewer IDs + email addresses
+- Approval email: CTA links to Author Dashboard
+
+### Policy Pack Enhancements
+- Recently Created list removed, approval emails + audit logging added
+- Pack Types CRUD in Admin Centre > Policy Structure > Policy Packs
+- Dynamic dropdown from PM_Configuration
+
+### Welcome Email
+- New Entra users receive welcome email on first sync
+
+**Build:** 11MB sppkg (TinyMCE adds ~1.3MB), 39 total commits
+
+---
+
 ## Next Steps
 
 1. **PM_QuizSections** list needs provisioning for quiz sections to persist

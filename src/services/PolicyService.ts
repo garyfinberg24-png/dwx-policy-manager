@@ -937,25 +937,35 @@ export class PolicyService {
       // STEP 2: Document conversion (non-blocking)
       // ══════════════════════════════════════════════════════════════
 
-      if (policy.DocumentURL) {
+      const docUrl = policy.DocumentURL
+        ? (typeof policy.DocumentURL === 'string' ? policy.DocumentURL : (policy.DocumentURL as any)?.Url || '')
+        : '';
+      const docExt = docUrl ? docUrl.split('.').pop()?.toLowerCase() || '' : '';
+      const isOfficeDoc = ['docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls'].includes(docExt);
+
+      if (isOfficeDoc && docUrl) {
+        // Office document — MUST convert to HTML for reader to display
+        console.log(`[PolicyService] Office document detected (.${docExt}) — converting to HTML before publish`);
         try {
           const { DocumentConversionService } = await import('./DocumentConversionService');
           const converter = new DocumentConversionService(this.sp);
-          const docUrl = typeof policy.DocumentURL === 'string' ? policy.DocumentURL
-            : (policy.DocumentURL as any)?.Url || '';
-          if (docUrl) {
-            const converted = await converter.convertAndSave(this.siteUrl, docUrl, request.policyId);
-            if (converted) {
-              logger.info('PolicyService', `Document converted to HTML for policy ${policy.PolicyName}`);
-            }
+          const converted = await converter.convertAndSave(this.siteUrl, docUrl, pId);
+          if (converted) {
+            steps.push(`Document .${docExt} converted to HTML`);
+            console.log(`[PolicyService] ✓ Document converted to HTML`);
+          } else {
+            steps.push(`Document conversion returned no HTML (.${docExt})`);
+            console.warn(`[PolicyService] Document conversion returned no HTML for .${docExt}`);
           }
-          steps.push('Document converted to HTML');
         } catch (convErr) {
-          steps.push('Document conversion skipped (non-blocking)');
-          logger.warn('PolicyService', 'Document conversion skipped (non-blocking):', convErr);
+          steps.push(`Document conversion failed (.${docExt}) — reader will use iframe fallback`);
+          console.error('[PolicyService] Document conversion failed:', convErr);
         }
+      } else if (docUrl) {
+        // PDF or other format — no conversion needed, reader handles natively
+        steps.push(`Document .${docExt} — no conversion needed`);
       } else {
-        steps.push('No document to convert');
+        steps.push('No document to convert (HTML/Rich Text policy)');
       }
 
       // ══════════════════════════════════════════════════════════════

@@ -249,7 +249,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     this.state = {
       loading: true,
       error: null,
-      activeSection: 'categories',
+      activeSection: 'settings',
       collapsedSections: {
         'USERS & ACCESS': true,
         'POLICY STRUCTURE': true,
@@ -5334,9 +5334,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         icon: 'View',
         description: 'Control which panels and sections are visible on the Policy Hub page',
         settings: [
-          { key: 'showFeaturedPolicy' as const, label: 'Featured Policy Panel', description: 'Display the featured policy hero section at the top of the Policy Hub', value: generalSettings.showFeaturedPolicy },
-          { key: 'showRecentlyViewed' as const, label: 'Recently Viewed Panel', description: 'Show the recently viewed policies section for each user', value: generalSettings.showRecentlyViewed },
-          { key: 'showQuickStats' as const, label: 'Quick Stats Dashboard', description: 'Display KPI stat cards at the top of the Policy Hub', value: generalSettings.showQuickStats }
+          { key: 'showFeaturedPolicy' as const, label: 'Featured Policy Panel', description: 'Display the featured policy hero section at the top of the Policy Hub', value: generalSettings.showFeaturedPolicy }
         ]
       },
       {

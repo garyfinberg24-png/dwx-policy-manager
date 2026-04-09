@@ -309,6 +309,23 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
     this._isMounted = true;
     injectPortalStyles();
 
+    // Load admin display settings (view mode, items per page)
+    try {
+      const configItems = await this.props.sp.web.lists.getByTitle('PM_Configuration')
+        .items.filter("ConfigKey eq 'Admin.General.DefaultViewMode' or ConfigKey eq 'Admin.General.PoliciesPerPage'")
+        .select('ConfigKey', 'ConfigValue').top(2)();
+      for (const item of configItems) {
+        if (item.ConfigKey === 'Admin.General.DefaultViewMode' && item.ConfigValue) {
+          const mode = item.ConfigValue.toLowerCase();
+          if (mode === 'grid' || mode === 'card' || mode === 'card view') {
+            this.setState({ viewMode: 'grid' } as any);
+          } else if (mode === 'list' || mode === 'list view') {
+            this.setState({ viewMode: 'list' } as any);
+          }
+        }
+      }
+    } catch { /* PM_Configuration may not exist — use defaults */ }
+
     // Load everything in parallel — user context, featured, and policies all at once
     // User context is needed for visibility filtering but policies can start loading immediately
     try {
@@ -347,6 +364,17 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
    */
   private async initializeFeaturedAndRecent(): Promise<void> {
     try {
+      // Check admin setting — Featured Policy Panel toggle
+      try {
+        const configItems = await this.props.sp.web.lists.getByTitle('PM_Configuration')
+          .items.filter("ConfigKey eq 'Admin.General.ShowFeaturedPolicy'")
+          .select('ConfigValue').top(1)();
+        if (configItems.length > 0 && configItems[0].ConfigValue === 'false') {
+          if (this._isMounted) this.setState({ showFeaturedSection: false });
+          return; // Skip loading featured data
+        }
+      } catch { /* PM_Configuration may not exist — show featured by default */ }
+
       // Featured: first 3 published policies (most recently modified)
       const featuredItems = await this.props.sp.web.lists.getByTitle('PM_Policies')
         .items

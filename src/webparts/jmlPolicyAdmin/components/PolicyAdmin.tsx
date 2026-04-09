@@ -156,37 +156,15 @@ type IEmailTemplate = IEmailTemplateModel;
 
 const NAV_SECTIONS: INavSection[] = [
   {
-    category: 'POLICY STRUCTURE',
+    category: 'SYSTEM',
     items: [
-      { key: 'categories', label: 'Categories', icon: 'BulletedList2', description: 'Manage policy categories and sub-categories' },
-      { key: 'templates', label: 'Templates', icon: 'DocumentSet', description: 'Reusable policy templates with defaults' },
-      { key: 'metadata', label: 'Metadata Profiles', icon: 'Tag', description: 'Pre-configured metadata profiles for policy creation' },
-      { key: 'naming', label: 'Naming Rules', icon: 'Rename', description: 'Auto-generated policy numbering conventions' },
-      { key: 'policyPacks', label: 'Policy Packs', icon: 'FabricFolder', description: 'Configure pack types for policy bundling' }
-    ]
-  },
-  {
-    category: 'WORKFLOWS & APPROVALS',
-    items: [
-      { key: 'workflows', label: 'Approval Workflows', icon: 'Flow', description: 'Approval chains and routing rules' },
-      { key: 'workflowTemplates', label: 'Workflow Templates', icon: 'ProcessMetaTask', description: 'Reusable multi-level approval templates' },
-      { key: 'reviewersApprovers', label: 'Reviewers & Approvers', icon: 'People', description: 'Manage reviewer, approver, and override user groups' }
-    ]
-  },
-  {
-    category: 'COMPLIANCE',
-    items: [
-      { key: 'compliance', label: 'Compliance Settings', icon: 'Shield', description: 'Acknowledgement, review, and risk defaults' },
-      { key: 'sla', label: 'SLA Targets', icon: 'Timer', description: 'Target completion times and warning thresholds' },
-      { key: 'lifecycle', label: 'Data Lifecycle', icon: 'History', description: 'Retention, archival, and cleanup rules' },
-      { key: 'dlpRules', label: 'DLP Rules', icon: 'Shield', description: 'Data loss prevention rules (block, warn, log)' }
-    ]
-  },
-  {
-    category: 'NOTIFICATIONS',
-    items: [
-      { key: 'emailTemplates', label: 'Email Templates', icon: 'MailOptions', description: 'Notification email designs and content' },
-      { key: 'notifications', label: 'Notification Rules', icon: 'Mail', description: 'Notification events, channels, and delivery settings' }
+      { key: 'settings', label: 'General Settings', icon: 'Settings', description: 'Display, feature toggles, and app config' },
+      { key: 'navigation', label: 'App Navigation', icon: 'Nav2DMapView', description: 'Toggle app navigation items and features' },
+      { key: 'aiAssistant', label: 'AI Settings', icon: 'Robot', description: 'AI chat, document conversion, and integration URLs' },
+      { key: 'customTheme', label: 'Custom Theme', icon: 'Color', description: 'Brand colors, logo, fonts, and preset themes' },
+      { key: 'provisioning', label: 'Provisioning', icon: 'Database', description: 'SharePoint lists, seed data, and system setup' },
+      { key: 'eventViewer', label: 'Event Viewer', icon: 'EventDate', description: 'Diagnostic event capture, buffer sizes, AI triage, and retention' },
+      { key: 'systemInfo', label: 'System Info', icon: 'Info', description: 'Version, technology stack, and diagnostics' }
     ]
   },
   {
@@ -200,6 +178,31 @@ const NAV_SECTIONS: INavSection[] = [
     ]
   },
   {
+    category: 'POLICY STRUCTURE',
+    items: [
+      { key: 'categories', label: 'Categories', icon: 'BulletedList2', description: 'Manage policy categories and sub-categories' },
+      { key: 'templates', label: 'Templates', icon: 'DocumentSet', description: 'Reusable policy templates with defaults' },
+      { key: 'metadata', label: 'Metadata Profiles', icon: 'Tag', description: 'Pre-configured metadata profiles for policy creation' },
+      { key: 'naming', label: 'Naming Rules', icon: 'Rename', description: 'Auto-generated policy numbering conventions' },
+      { key: 'policyPacks', label: 'Policy Packs', icon: 'FabricFolder', description: 'Configure pack types for policy bundling' }
+    ]
+  },
+  {
+    category: 'NOTIFICATIONS',
+    items: [
+      { key: 'emailTemplates', label: 'Email Templates', icon: 'MailOptions', description: 'Notification email designs and content' },
+      { key: 'notifications', label: 'Notification Rules', icon: 'Mail', description: 'Notification events, channels, and delivery settings' }
+    ]
+  },
+  {
+    category: 'WORKFLOWS & APPROVALS',
+    items: [
+      { key: 'workflows', label: 'Approval Workflows', icon: 'Flow', description: 'Approval chains and routing rules' },
+      { key: 'workflowTemplates', label: 'Workflow Templates', icon: 'ProcessMetaTask', description: 'Reusable multi-level approval templates' },
+      { key: 'reviewersApprovers', label: 'Reviewers & Approvers', icon: 'People', description: 'Manage reviewer, approver, and override user groups' }
+    ]
+  },
+  {
     category: 'CONTENT & STORAGE',
     items: [
       { key: 'documentStorage', label: 'Document Libraries', icon: 'DocLibrary', description: 'Configure document libraries and folder structure' },
@@ -208,15 +211,12 @@ const NAV_SECTIONS: INavSection[] = [
     ]
   },
   {
-    category: 'SYSTEM',
+    category: 'COMPLIANCE',
     items: [
-      { key: 'settings', label: 'General Settings', icon: 'Settings', description: 'Display, feature toggles, and app config' },
-      { key: 'navigation', label: 'App Navigation', icon: 'Nav2DMapView', description: 'Toggle app navigation items and features' },
-      { key: 'aiAssistant', label: 'AI Settings', icon: 'Robot', description: 'AI chat, document conversion, and integration URLs' },
-      { key: 'customTheme', label: 'Custom Theme', icon: 'Color', description: 'Brand colors, logo, fonts, and preset themes' },
-      { key: 'provisioning', label: 'Provisioning', icon: 'Database', description: 'SharePoint lists, seed data, and system setup' },
-      { key: 'eventViewer', label: 'Event Viewer', icon: 'EventDate', description: 'Diagnostic event capture, buffer sizes, AI triage, and retention' },
-      { key: 'systemInfo', label: 'System Info', icon: 'Info', description: 'Version, technology stack, and diagnostics' }
+      { key: 'compliance', label: 'Compliance Settings', icon: 'Shield', description: 'Acknowledgement, review, and risk defaults' },
+      { key: 'sla', label: 'SLA Targets', icon: 'Timer', description: 'Target completion times and warning thresholds' },
+      { key: 'lifecycle', label: 'Data Lifecycle', icon: 'History', description: 'Retention, archival, and cleanup rules' },
+      { key: 'dlpRules', label: 'DLP Rules', icon: 'Shield', description: 'Data loss prevention rules (block, warn, log)' }
     ]
   },
   {
@@ -250,7 +250,17 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       loading: true,
       error: null,
       activeSection: 'categories',
-      collapsedSections: {},
+      collapsedSections: {
+        'USERS & ACCESS': true,
+        'POLICY STRUCTURE': true,
+        'NOTIFICATIONS': true,
+        'WORKFLOWS & APPROVALS': true,
+        'CONTENT & STORAGE': true,
+        'COMPLIANCE': true,
+        'AUDIT & SECURITY': true,
+        'DWX SUITE': true,
+        // SYSTEM starts expanded (not in this list)
+      },
       templates: [],
       metadataProfiles: [],
       saving: false,

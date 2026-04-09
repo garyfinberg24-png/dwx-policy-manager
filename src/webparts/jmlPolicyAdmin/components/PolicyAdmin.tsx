@@ -11163,6 +11163,135 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     );
   }
 
+  // ==========================================================================
+  // POLICY PACK TYPES CRUD
+  // ==========================================================================
+
+  private renderPolicyPackTypesContent(): JSX.Element {
+    const st = this.state as any;
+    const packTypes: string[] = st._packTypes || [];
+    const newTypeName: string = st._newPackTypeName || '';
+    const packTypesLoading = st._packTypesLoading || false;
+
+    // Load pack types on first render
+    if (!st._packTypesLoaded && !packTypesLoading) {
+      this.setState({ _packTypesLoading: true } as any);
+      this.props.sp.web.lists.getByTitle('PM_Configuration')
+        .items.filter("ConfigKey eq 'Admin.PolicyPack.Types'").select('Id', 'ConfigValue').top(1)()
+        .then((items: any[]) => {
+          const types = items.length > 0 && items[0].ConfigValue
+            ? items[0].ConfigValue.split(';').map((t: string) => t.trim()).filter(Boolean)
+            : ['Onboarding', 'Department', 'Role', 'Location', 'Custom'];
+          const configId = items.length > 0 ? items[0].Id : 0;
+          this.setState({ _packTypes: types, _packTypesLoaded: true, _packTypesLoading: false, _packTypesConfigId: configId } as any);
+        })
+        .catch(() => {
+          this.setState({ _packTypes: ['Onboarding', 'Department', 'Role', 'Location', 'Custom'], _packTypesLoaded: true, _packTypesLoading: false } as any);
+        });
+    }
+
+    const saveTypes = async (types: string[]): Promise<void> => {
+      const configId = st._packTypesConfigId || 0;
+      const value = types.join(';');
+      try {
+        if (configId) {
+          await this.props.sp.web.lists.getByTitle('PM_Configuration').items.getById(configId).update({ ConfigValue: value });
+        } else {
+          const result = await this.props.sp.web.lists.getByTitle('PM_Configuration').items.add({
+            Title: 'Policy Pack Types',
+            ConfigKey: 'Admin.PolicyPack.Types',
+            ConfigValue: value,
+            Category: 'PolicyPacks',
+            IsActive: true
+          });
+          this.setState({ _packTypesConfigId: result?.data?.Id } as any);
+        }
+        this.setState({ _packTypes: types } as any);
+      } catch (err) {
+        console.error('Failed to save pack types:', err);
+      }
+    };
+
+    return (
+      <div>
+        <Text style={{ fontSize: 20, fontWeight: 700, color: '#0f172a', display: 'block', marginBottom: 4 }}>Policy Pack Types</Text>
+        <Text style={{ fontSize: 13, color: '#64748b', display: 'block', marginBottom: 20 }}>
+          Configure the types available in the "Pack Type" dropdown when creating or editing a policy pack.
+        </Text>
+
+        {/* Add new type */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+          <TextField
+            placeholder="New pack type name..."
+            value={newTypeName}
+            onChange={(_, v) => this.setState({ _newPackTypeName: v || '' } as any)}
+            styles={{ root: { flex: 1 } }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && newTypeName.trim()) {
+                const updated = [...packTypes, newTypeName.trim()];
+                this.setState({ _newPackTypeName: '' } as any);
+                saveTypes(updated);
+              }
+            }}
+          />
+          <PrimaryButton
+            text="Add Type"
+            iconProps={{ iconName: 'Add' }}
+            disabled={!newTypeName.trim() || packTypes.some(t => t.toLowerCase() === newTypeName.trim().toLowerCase())}
+            onClick={() => {
+              if (newTypeName.trim()) {
+                const updated = [...packTypes, newTypeName.trim()];
+                this.setState({ _newPackTypeName: '' } as any);
+                saveTypes(updated);
+              }
+            }}
+            styles={{ root: { background: '#0d9488', borderColor: '#0d9488', borderRadius: 4 }, rootHovered: { background: '#0f766e', borderColor: '#0f766e' } }}
+          />
+        </div>
+
+        {/* Current types list */}
+        {packTypesLoading ? (
+          <Spinner size={SpinnerSize.small} label="Loading pack types..." />
+        ) : (
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, overflow: 'hidden' }}>
+            {packTypes.length === 0 ? (
+              <div style={{ padding: 24, textAlign: 'center', color: '#94a3b8', fontSize: 13 }}>No pack types configured.</div>
+            ) : (
+              packTypes.map((type, i) => (
+                <div key={i} style={{
+                  display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px',
+                  borderBottom: i < packTypes.length - 1 ? '1px solid #f1f5f9' : 'none',
+                }}>
+                  <Icon iconName="FabricFolder" styles={{ root: { fontSize: 14, color: '#0d9488' } }} />
+                  <span style={{ flex: 1, fontSize: 14, fontWeight: 500, color: '#0f172a' }}>{type}</span>
+                  <IconButton
+                    iconProps={{ iconName: 'Up' }} title="Move up" disabled={i === 0}
+                    onClick={() => { const t = [...packTypes]; [t[i - 1], t[i]] = [t[i], t[i - 1]]; saveTypes(t); }}
+                    styles={{ root: { height: 28, width: 28 }, icon: { fontSize: 12 } }}
+                  />
+                  <IconButton
+                    iconProps={{ iconName: 'Down' }} title="Move down" disabled={i === packTypes.length - 1}
+                    onClick={() => { const t = [...packTypes]; [t[i], t[i + 1]] = [t[i + 1], t[i]]; saveTypes(t); }}
+                    styles={{ root: { height: 28, width: 28 }, icon: { fontSize: 12 } }}
+                  />
+                  <IconButton
+                    iconProps={{ iconName: 'Delete' }} title="Remove"
+                    onClick={() => { saveTypes(packTypes.filter((_, idx) => idx !== i)); }}
+                    styles={{ root: { height: 28, width: 28 }, icon: { fontSize: 12, color: '#94a3b8' }, rootHovered: { background: '#fef2f2' }, iconHovered: { color: '#dc2626' } }}
+                  />
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        <Text style={{ fontSize: 11, color: '#94a3b8', marginTop: 12, display: 'block' }}>
+          Changes are saved immediately. Pack types appear in the "Pack Type" dropdown when creating policy packs.
+        </Text>
+      </div>
+    );
+  }
+
   private renderActiveContent(): JSX.Element {
     switch (this.state.activeSection) {
       case 'categories': return this.renderCategoriesContent();
@@ -11198,6 +11327,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       case 'dataRetention': return this.renderDataRetentionContent(); // legacy — merged into Data Lifecycle
       case 'systemInfo': return this.renderSystemInfoContent();
       case 'eventViewer': return this.renderEventViewerConfigContent();
+      case 'policyPacks': return this.renderPolicyPackTypesContent();
       case 'productShowcase': return this.renderProductShowcaseContent();
       default: return this.renderTemplatesContent();
     }

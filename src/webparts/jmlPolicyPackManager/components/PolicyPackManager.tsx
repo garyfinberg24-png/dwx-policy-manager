@@ -138,11 +138,22 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
         p.PolicyStatus === PolicyStatus.Draft
       );
 
+      // Load pack types from PM_Configuration (non-blocking)
+      let packTypes: string[] = [];
+      try {
+        const configItems = await this.props.sp.web.lists.getByTitle('PM_Configuration')
+          .items.filter("ConfigKey eq 'Admin.PolicyPack.Types'").select('ConfigValue').top(1)();
+        if (configItems.length > 0 && configItems[0].ConfigValue) {
+          packTypes = configItems[0].ConfigValue.split(';').map((t: string) => t.trim()).filter(Boolean);
+        }
+      } catch { /* PM_Configuration may not have this key */ }
+
       if (this._isMounted) { this.setState({
         policyPacks: packs,
         allPolicies: policies,
+        _packTypes: packTypes,
         loading: false
-      }); }
+      } as any); }
     } catch (error) {
       console.error('Failed to load data:', error);
       if (this._isMounted) { this.setState({
@@ -680,13 +691,17 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
 
     const isEditing = editingPackId !== null;
 
-    const packTypeOptions: IDropdownOption[] = [
-      { key: 'Onboarding', text: 'Onboarding' },
-      { key: 'Department', text: 'Department' },
-      { key: 'Role', text: 'Role' },
-      { key: 'Location', text: 'Location' },
-      { key: 'Custom', text: 'Custom' }
-    ];
+    // Pack types — loaded from PM_Configuration or default fallback
+    const dynamicTypes: string[] = (this.state as any)._packTypes || [];
+    const packTypeOptions: IDropdownOption[] = dynamicTypes.length > 0
+      ? dynamicTypes.map(t => ({ key: t, text: t }))
+      : [
+          { key: 'Onboarding', text: 'Onboarding' },
+          { key: 'Department', text: 'Department' },
+          { key: 'Role', text: 'Role' },
+          { key: 'Location', text: 'Location' },
+          { key: 'Custom', text: 'Custom' }
+        ];
 
     return (
       <StyledPanel

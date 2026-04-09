@@ -787,6 +787,11 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
 
   private handleSelectTemplate = (template: IPolicyTemplate): void => {
     const templateType = (template as any).TemplateType || 'richtext';
+    console.log('[PolicyBuilder] handleSelectTemplate:', {
+      id: template.Id, name: template.TemplateName || template.Title,
+      templateType, documentURL: (template as any).DocumentTemplateURL,
+      hasContent: !!(template.TemplateContent || template.HTMLTemplate),
+    });
     const isSectionBased = templateType === 'corporate' || templateType === 'regulatory';
     const isDocBased = ['word', 'excel', 'powerpoint'].includes(templateType);
 
@@ -1640,6 +1645,20 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     // Mark current step as completed and move to next
     const newCompletedSteps = new Set(completedSteps);
     newCompletedSteps.add(currentStep);
+
+    // If leaving Step 0 with a selected template, apply template metadata
+    if (currentStep === 0 && (this.state as any).selectedTemplate) {
+      const tmpl = (this.state as any).selectedTemplate;
+      if (tmpl.Id) {
+        const savedMethod = this.state.creationMethod; // Preserve user's type selection
+        this.handleSelectTemplate(tmpl);
+        // Restore creationMethod from the type button (not the template's type)
+        // so "Word" type stays "word" even if template defaults to 'template'
+        if (savedMethod && ['word', 'excel', 'powerpoint', 'html', 'infographic'].includes(savedMethod as string)) {
+          this.setState({ creationMethod: savedMethod } as any);
+        }
+      }
+    }
 
     const nextStep = Math.min(currentStep + 1, WIZARD_STEPS.length - 1);
 

@@ -737,35 +737,42 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
           </div>
         </div>
 
-        {/* Tab Bar */}
-        <div style={{ display: 'flex', gap: 0, borderBottom: '2px solid #e2e8f0', padding: '0 40px', marginTop: 24, maxWidth: 1400, width: '100%', margin: '24px auto 0', boxSizing: 'border-box' }}>
-          {[
-            { key: 'pipeline' as AuthorViewTab, label: 'Drafts & Pipeline', count: this.state.pipelinePolicies.length },
-            { key: 'requests' as AuthorViewTab, label: 'Policy Requests', count: this.state.policyRequests.filter(r => r.Status === 'New').length },
-            { key: 'approvals' as AuthorViewTab, label: 'Approvals', count: this.state.approvals.filter(a => a.Status === 'Pending').length },
-            { key: 'delegations' as AuthorViewTab, label: 'Delegations', count: this.state.delegations.filter(d => d.Status === 'Pending' || d.Status === 'Overdue').length }
-          ].map(tab => (
-            <div
-              key={tab.key}
-              onClick={() => this.setState({ activeTab: tab.key })}
-              style={{
-                padding: '10px 20px', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
-                fontWeight: this.state.activeTab === tab.key ? 700 : 500,
-                color: this.state.activeTab === tab.key ? '#0d9488' : '#64748b',
-                borderBottom: this.state.activeTab === tab.key ? '2px solid #0d9488' : '2px solid transparent',
-                marginBottom: -2, transition: 'all 0.15s'
-              }}
-            >
-              {tab.label}
-              {tab.count > 0 && (
-                <span style={{
-                  fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 10,
-                  background: this.state.activeTab === tab.key ? '#ccfbf1' : '#f1f5f9',
-                  color: this.state.activeTab === tab.key ? '#0d9488' : '#64748b'
-                }}>{tab.count}</span>
-              )}
-            </div>
-          ))}
+        {/* Pill Tab Bar */}
+        <div style={{ padding: '0 40px', marginTop: 20, maxWidth: 1400, width: '100%', margin: '20px auto 0', boxSizing: 'border-box' }}>
+          <div style={{ display: 'flex', gap: 4, padding: 4, background: '#f1f5f9', borderRadius: 8, width: 'fit-content' }}>
+            {[
+              { key: 'pipeline' as AuthorViewTab, label: 'Drafts & Pipeline', count: this.state.pipelinePolicies.length },
+              { key: 'requests' as AuthorViewTab, label: 'Policy Requests', count: this.state.policyRequests.filter(r => r.Status === 'New').length },
+              { key: 'approvals' as AuthorViewTab, label: 'Approvals', count: this.state.approvals.filter(a => a.Status === 'Pending').length },
+              { key: 'delegations' as AuthorViewTab, label: 'Delegations', count: this.state.delegations.filter(d => d.Status === 'Pending' || d.Status === 'Overdue').length }
+            ].map(tab => {
+              const isActive = this.state.activeTab === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => this.setState({ activeTab: tab.key })}
+                  style={{
+                    padding: '8px 18px', borderRadius: 6, fontSize: 13, cursor: 'pointer',
+                    border: 'none', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 6,
+                    fontWeight: isActive ? 600 : 500,
+                    color: isActive ? '#0f172a' : '#64748b',
+                    background: isActive ? '#fff' : 'transparent',
+                    boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  {tab.label}
+                  {tab.count > 0 && (
+                    <span style={{
+                      fontSize: 10, fontWeight: 700, padding: '1px 7px', borderRadius: 10, minWidth: 20, textAlign: 'center',
+                      background: isActive ? '#ccfbf1' : '#e2e8f0',
+                      color: isActive ? '#0d9488' : '#94a3b8'
+                    }}>{tab.count}</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
         {this.state.activeTab === 'pipeline' && this.renderPipelineTab()}
         {this.state.activeTab === 'requests' && this.renderContent()}

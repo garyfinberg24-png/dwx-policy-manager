@@ -1458,7 +1458,9 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
             || '';
           if (email && email.indexOf('@') !== -1) {
             const ensured = await this.props.sp.web.ensureUser(email);
-            reviewerIds.push(ensured.data.Id);
+            if (ensured.data.Id && reviewerIds.indexOf(ensured.data.Id) === -1) {
+              reviewerIds.push(ensured.data.Id);
+            }
           }
         } catch { /* skip unresolvable users */ }
       }

@@ -499,18 +499,26 @@ export class PolicyNotificationService {
     submitterName: string
   ): Promise<void> {
     const policyUrl = `${this.siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policy.Id}&mode=review`;
+    // Deduplicate reviewer IDs — prevents sending the same person multiple emails
+    const uniqueIds: number[] = [];
+    for (const id of reviewerIds) { if (uniqueIds.indexOf(id) === -1) uniqueIds.push(id); }
     console.log('[PolicyNotificationService] sendSubmittedForReviewNotification:', {
-      policyId: policy.Id, policyName: policy.PolicyName, reviewerIds, submitterName, siteUrl: this.siteUrl, policyUrl
+      policyId: policy.Id, policyName: policy.PolicyName,
+      originalIds: reviewerIds.length, uniqueIds: uniqueIds.length,
+      submitterName, siteUrl: this.siteUrl
     });
 
-    // Send email + in-app notification to each reviewer
+    // Send email + in-app notification to each unique reviewer
     let failCount = 0;
-    for (const reviewerId of reviewerIds) {
+    const sentEmails = new Set<string>(); // Track emails already sent to prevent duplicates
+    for (const reviewerId of uniqueIds) {
       try {
         // Resolve reviewer email/name
         const reviewer = await this.sp.web.siteUsers.getById(reviewerId).select('Email', 'Title')();
         console.log(`[PolicyNotificationService] Reviewer ${reviewerId}:`, reviewer?.Email, reviewer?.Title);
         if (!reviewer?.Email) { console.warn(`[PolicyNotificationService] Reviewer ${reviewerId} has no email — skipping`); continue; }
+        if (sentEmails.has(reviewer.Email.toLowerCase())) { console.log(`[PolicyNotificationService] Already sent to ${reviewer.Email} — skipping duplicate`); continue; }
+        sentEmails.add(reviewer.Email.toLowerCase());
 
         // Queue templated email via PM_NotificationQueue
         console.log(`[PolicyNotificationService] Queuing review email for ${reviewer.Email}...`);

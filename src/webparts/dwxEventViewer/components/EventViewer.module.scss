@@ -34,7 +34,7 @@
 
 /* Forest Teal theme (default) */
 .navThemeTeal {
-  background: linear-gradient(180deg, #0f766e 0%, #115e59 100%);
+  background: linear-gradient(180deg, var(--pm-primary-dark, var(--pm-primary-dark, #0f766e)) 0%, #115e59 100%);
 
   .navSectionTitle { color: rgba(255, 255, 255, 0.35); }
   .navItem { color: rgba(255, 255, 255, 0.65); }
@@ -69,7 +69,7 @@
   .navItem { color: #94a3b8; }
   .navItem:hover { background: rgba(255, 255, 255, 0.06); color: #e2e8f0; }
   .navItemActive { background: rgba(13, 148, 136, 0.15); color: #5eead4; }
-  .navItemActive::before { background: #0d9488; }
+  .navItemActive::before { background: var(--pm-primary, #0d9488); }
   .navHeaderText { color: #fff; }
   .navHeaderSub { color: #64748b; }
   .navHeaderIcon { background: rgba(13, 148, 136, 0.2); }
@@ -84,7 +84,7 @@
   .navBadgePurple { background: rgba(124, 58, 237, 0.2); color: #c4b5fd; }
   .darkModeToggle { background: rgba(255, 255, 255, 0.04); }
   .darkModeToggle:hover { background: rgba(255, 255, 255, 0.08); }
-  .toggleTrack { background: #0d9488; }
+  .toggleTrack { background: var(--pm-primary, #0d9488); }
   .toggleThumb { left: 16px; }
   .toggleIcon { color: #94a3b8; }
   .darkModeLabel { color: #64748b; }
@@ -123,7 +123,7 @@
   padding: 6px 10px; border-radius: 6px; font-size: 11px; font-family: inherit;
   width: 100%; cursor: pointer; border: 1px solid; appearance: none; -webkit-appearance: none;
 }
-.pageSelector:focus { border-color: #0d9488; outline: none; }
+.pageSelector:focus { border-color: var(--pm-primary, #0d9488); outline: none; }
 .navFooter { padding: 10px 16px; display: flex; align-items: center; gap: 8px; }
 .navFooterDot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: #22c55e; box-shadow: 0 0 6px rgba(34, 197, 94, 0.4); }
 .navFooterText { font-size: 11px; }
@@ -198,7 +198,7 @@
 
 .tabButtonActive {
   background: #f1f5f9;
-  color: #0f766e;
+  color: var(--pm-primary-dark, #0f766e);
   font-weight: 600;
 }
 
@@ -211,7 +211,7 @@
 }
 
 .tabButtonActive .tabBadge {
-  background: #0d9488;
+  background: var(--pm-primary, #0d9488);
   color: #fff;
 }
 
@@ -235,7 +235,7 @@
 
 /* ── Header Bar ── */
 .headerBar {
-  background: linear-gradient(135deg, #0d9488, #0f766e);
+  background: var(--pm-header-bg, linear-gradient(135deg, var(--pm-primary, #0d9488), var(--pm-primary-dark, #0f766e)));
   color: #fff;
   padding: 20px 32px 0;
 }
@@ -305,7 +305,7 @@
 
 .headerBtnPrimary {
   background: rgba(255, 255, 255, 0.92);
-  color: #0f766e;
+  color: var(--pm-primary-dark, #0f766e);
   border-color: transparent;
   font-weight: 600;
 

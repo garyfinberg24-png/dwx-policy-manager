@@ -169,6 +169,8 @@ export interface ICustomTheme {
   // Colors
   primaryColor: string;
   primaryDark: string;
+  primaryLight: string;    // Light tint (e.g. #ccfbf1 for teal)
+  primaryLighter: string;  // Lighter tint (e.g. #f0fdfa for teal)
   accentColor: string;
   successColor: string;
   warningColor: string;
@@ -203,6 +205,8 @@ export const DEFAULT_THEME: ICustomTheme = {
   faviconUrl: '',
   primaryColor: '#0d9488',
   primaryDark: '#0f766e',
+  primaryLight: '#ccfbf1',
+  primaryLighter: '#f0fdfa',
   accentColor: '#0284c7',
   successColor: '#059669',
   warningColor: '#d97706',
@@ -222,50 +226,50 @@ export const DEFAULT_THEME: ICustomTheme = {
 export const PRESET_THEMES: Record<string, Partial<ICustomTheme>> = {
   'forest-teal': {
     preset: 'forest-teal',
-    primaryColor: '#0d9488', primaryDark: '#0f766e',
+    primaryColor: '#0d9488', primaryDark: '#0f766e', primaryLight: '#ccfbf1', primaryLighter: '#f0fdfa',
     headerGradientStart: '#0d9488', headerGradientEnd: '#0f766e',
     accentColor: '#0284c7', successColor: '#059669', warningColor: '#d97706', dangerColor: '#dc2626'
   },
   'corporate-blue': {
     preset: 'corporate-blue',
-    primaryColor: '#1e40af', primaryDark: '#1e3a8a',
+    primaryColor: '#1e40af', primaryDark: '#1e3a8a', primaryLight: '#dbeafe', primaryLighter: '#eff6ff',
     headerGradientStart: '#1e40af', headerGradientEnd: '#1e3a8a',
     accentColor: '#0369a1', successColor: '#059669', warningColor: '#d97706', dangerColor: '#dc2626'
   },
   'slate-professional': {
     preset: 'slate-professional',
-    primaryColor: '#475569', primaryDark: '#334155',
+    primaryColor: '#475569', primaryDark: '#334155', primaryLight: '#e2e8f0', primaryLighter: '#f8fafc',
     headerGradientStart: '#475569', headerGradientEnd: '#334155',
     accentColor: '#0284c7', successColor: '#059669', warningColor: '#d97706', dangerColor: '#dc2626'
   },
   'royal-purple': {
     preset: 'royal-purple',
-    primaryColor: '#7c3aed', primaryDark: '#6d28d9',
+    primaryColor: '#7c3aed', primaryDark: '#6d28d9', primaryLight: '#ede9fe', primaryLighter: '#f5f3ff',
     headerGradientStart: '#7c3aed', headerGradientEnd: '#6d28d9',
     accentColor: '#2563eb', successColor: '#059669', warningColor: '#d97706', dangerColor: '#dc2626'
   },
   'crimson-red': {
     preset: 'crimson-red',
-    primaryColor: '#dc2626', primaryDark: '#b91c1c',
+    primaryColor: '#dc2626', primaryDark: '#b91c1c', primaryLight: '#fecaca', primaryLighter: '#fef2f2',
     headerGradientStart: '#dc2626', headerGradientEnd: '#b91c1c',
     accentColor: '#0284c7', successColor: '#059669', warningColor: '#d97706', dangerColor: '#7c3aed'
   },
   'forest-green': {
     preset: 'forest-green',
-    primaryColor: '#15803d', primaryDark: '#166534',
+    primaryColor: '#15803d', primaryDark: '#166534', primaryLight: '#bbf7d0', primaryLighter: '#f0fdf4',
     headerGradientStart: '#15803d', headerGradientEnd: '#166534',
     accentColor: '#0284c7', successColor: '#0d9488', warningColor: '#d97706', dangerColor: '#dc2626'
   },
   'midnight': {
     preset: 'midnight',
-    primaryColor: '#1e293b', primaryDark: '#0f172a',
+    primaryColor: '#1e293b', primaryDark: '#0f172a', primaryLight: '#cbd5e1', primaryLighter: '#f1f5f9',
     headerGradientStart: '#1e293b', headerGradientEnd: '#0f172a',
     accentColor: '#3b82f6', successColor: '#10b981', warningColor: '#f59e0b', dangerColor: '#ef4444',
     sidebarBackground: '#1e293b', contentBackground: '#f8fafc'
   },
   'microsoft-fluent': {
     preset: 'microsoft-fluent',
-    primaryColor: '#0078d4', primaryDark: '#106ebe',
+    primaryColor: '#0078d4', primaryDark: '#106ebe', primaryLight: '#cfe4fa', primaryLighter: '#eff6fc',
     headerGradientStart: '#0078d4', headerGradientEnd: '#106ebe',
     accentColor: '#0078d4', successColor: '#107c10', warningColor: '#ffb900', dangerColor: '#d13438',
     sidebarBackground: '#f3f2f1', contentBackground: '#ffffff'

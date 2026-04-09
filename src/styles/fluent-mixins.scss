@@ -550,22 +550,22 @@
 
   // Panel header — light teal gradient (StyledPanel standard)
   .ms-Panel-header {
-    background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%) !important;
+    background: linear-gradient(135deg, var(--pm-primary-lighter, #f0fdfa) 0%, var(--pm-primary-light, #ccfbf1) 100%) !important;
   }
   .ms-Panel-navigation {
-    background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%) !important;
+    background: linear-gradient(135deg, var(--pm-primary-lighter, #f0fdfa) 0%, var(--pm-primary-light, #ccfbf1) 100%) !important;
   }
   .ms-Panel-commands {
-    background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%) !important;
+    background: linear-gradient(135deg, var(--pm-primary-lighter, #f0fdfa) 0%, var(--pm-primary-light, #ccfbf1) 100%) !important;
   }
   .ms-Panel-headerText {
     font-weight: 700 !important;
-    color: #0f766e !important;
+    color: var(--pm-primary-dark, #0f766e) !important;
     font-size: 18px !important;
   }
   .ms-Panel-closeButton {
     border-radius: 4px !important;
-    color: #0f766e !important;
+    color: var(--pm-primary-dark, #0f766e) !important;
   }
 
   // ComboBox — 4px

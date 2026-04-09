@@ -6,10 +6,10 @@
 
 // ── Variables ──
 
-$teal: #0d9488;
-$tealDark: #0f766e;
-$tealLight: #ccfbf1;
-$tealPale: #f0fdfa;
+$teal: var(--pm-primary, #0d9488);
+$tealDark: var(--pm-primary-dark, #0f766e);
+$tealLight: var(--pm-primary-light, #ccfbf1);
+$tealPale: var(--pm-primary-lighter, #f0fdfa);
 $tealBorder: #99f6e4;
 $textPrimary: #0f172a;
 $textSecondary: #334155;

@@ -17,12 +17,12 @@
    ============================================ */
 
 /* Colors */
-$jml-color-primary: #0d9488;
-$jml-color-primary-dark: #0f766e;
+$jml-color-primary: var(--pm-primary, #0d9488);
+$jml-color-primary-dark: var(--pm-primary-dark, #0f766e);
 $jml-color-success: #4caf50;
 $jml-color-warning: #f57c00;
 $jml-color-error: #f44336;
-$jml-color-info: #0d9488;
+$jml-color-info: var(--pm-primary, #0d9488);
 
 /* Spacing (4px grid) */
 $jml-spacing-xxs: 4px;

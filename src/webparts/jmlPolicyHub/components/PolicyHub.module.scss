@@ -851,7 +851,7 @@
 .expandedDetailRow {
   td {
     background: #f8fffe;
-    border-bottom: 2px solid #0d9488;
+    border-bottom: 2px solid var(--pm-primary, #0d9488);
     padding: 0 !important;
   }
 
@@ -892,13 +892,13 @@
     align-items: center;
     gap: 8px;
     padding: 10px 14px;
-    background: linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%);
+    background: linear-gradient(135deg, var(--pm-primary-lighter, #f0fdfa) 0%, #ecfdf5 100%);
     border-bottom: 1px solid #d1fae5;
   }
 
   .expandedCardIcon {
     font-size: 15px;
-    color: #0d9488;
+    color: var(--pm-primary, #0d9488);
   }
 
   .expandedCardTitle {
@@ -950,8 +950,8 @@
   }
 
   .expandedTag {
-    background: #ccfbf1;
-    color: #0d9488;
+    background: var(--pm-primary-light, #ccfbf1);
+    color: var(--pm-primary, #0d9488);
     padding: 2px 8px;
     border-radius: 4px;
     font-size: 11px;
@@ -1337,7 +1337,7 @@
 }
 
 .accentDefault {
-  background: linear-gradient(180deg, #0d9488, #14b8a6);
+  background: linear-gradient(180deg, var(--pm-primary, var(--pm-primary, #0d9488)), #14b8a6);
 }
 
 // Card content area (right of accent bar)
@@ -1495,9 +1495,9 @@
 .btnView {
   padding: 5px 14px;
   border-radius: 4px;
-  border: 1px solid #0d9488;
+  border: 1px solid var(--pm-primary, #0d9488);
   background: transparent;
-  color: #0d9488;
+  color: var(--pm-primary, #0d9488);
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
@@ -1506,7 +1506,7 @@
   min-width: auto;
 
   &:hover {
-    background: #0d9488;
+    background: var(--pm-primary, #0d9488);
     color: #ffffff;
   }
 }
@@ -1593,7 +1593,7 @@
 .policyIcon {
   width: 40px;
   height: 40px;
-  background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+  background: var(--pm-header-bg, linear-gradient(135deg, var(--pm-primary, #0d9488) 0%, var(--pm-primary-dark, #0f766e) 100%));
   border-radius: 8px;
   display: flex;
   align-items: center;

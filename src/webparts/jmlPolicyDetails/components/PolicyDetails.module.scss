@@ -3,11 +3,11 @@
 
 // Forest Teal Theme
 $teal-900: #0f4c47;
-$teal-700: #0f766e;
-$teal-600: #0d9488;
+$teal-700: var(--pm-primary-dark, #0f766e);
+$teal-600: var(--pm-primary, #0d9488);
 $teal-500: #14b8a6;
-$teal-100: #ccfbf1;
-$teal-50: #f0fdfa;
+$teal-100: var(--pm-primary-light, #ccfbf1);
+$teal-50: var(--pm-primary-lighter, #f0fdfa);
 $slate-900: #0f172a;
 $slate-700: #334155;
 $slate-500: #64748b;

@@ -1,7 +1,7 @@
 @import '../../../styles/fluent-mixins';
 
-$pm-primary: #0d9488;
-$pm-primary-dark: #0f766e;
+$pm-primary: var(--pm-primary, #0d9488);
+$pm-primary-dark: var(--pm-primary-dark, #0f766e);
 $pm-primary-light: #14b8a6;
 
 .policyManagerView {
@@ -305,7 +305,7 @@ $pm-primary-light: #14b8a6;
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #f0fdfa;
+  background: var(--pm-primary-lighter, #f0fdfa);
   color: $pm-primary;
   display: flex;
   align-items: center;
@@ -387,7 +387,7 @@ $pm-primary-light: #14b8a6;
   &:hover {
     border-color: $pm-primary;
     color: $pm-primary;
-    background: #f0fdfa;
+    background: var(--pm-primary-lighter, #f0fdfa);
   }
 }
 
@@ -431,13 +431,13 @@ $pm-primary-light: #14b8a6;
   margin-bottom: 2px;
 
   &:hover {
-    background: #f0fdfa;
-    border-left-color: #ccfbf1;
+    background: var(--pm-primary-lighter, #f0fdfa);
+    border-left-color: var(--pm-primary-light, #ccfbf1);
   }
 }
 
 .reportBuilderNavItemActive {
-  background: #f0fdfa;
+  background: var(--pm-primary-lighter, #f0fdfa);
   border-left-color: $pm-primary;
   color: $pm-primary;
   font-weight: 600;
@@ -459,7 +459,7 @@ $pm-primary-light: #14b8a6;
 }
 
 .reportPreviewStat {
-  background: #f0fdfa;
+  background: var(--pm-primary-lighter, #f0fdfa);
   border-radius: 8px;
   padding: 14px 16px;
   text-align: center;

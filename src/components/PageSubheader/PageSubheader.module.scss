@@ -5,8 +5,8 @@
  */
 
 // Policy Manager Teal Accent
-$pm-teal-accent: #0d9488;
-$pm-teal-light: #f0fdfa;
+$pm-teal-accent: var(--pm-primary, #0d9488);
+$pm-teal-light: var(--pm-primary-lighter, #f0fdfa);
 
 .pageSubheader {
   display: flex;

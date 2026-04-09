@@ -29,6 +29,8 @@ export class ThemeManager {
     // Set CSS custom properties
     root.style.setProperty('--pm-primary', merged.primaryColor);
     root.style.setProperty('--pm-primary-dark', merged.primaryDark);
+    root.style.setProperty('--pm-primary-light', merged.primaryLight);
+    root.style.setProperty('--pm-primary-lighter', merged.primaryLighter);
     root.style.setProperty('--pm-accent', merged.accentColor);
     root.style.setProperty('--pm-success', merged.successColor);
     root.style.setProperty('--pm-warning', merged.warningColor);
@@ -65,9 +67,10 @@ export class ThemeManager {
 
     // Clear all CSS custom properties from root
     const root = document.documentElement;
-    const pmProps = ['--pm-primary', '--pm-primary-dark', '--pm-accent', '--pm-success', '--pm-warning',
-      '--pm-danger', '--pm-sidebar-bg', '--pm-content-bg', '--pm-card-bg', '--pm-card-radius',
-      '--pm-control-radius', '--pm-font-family', '--pm-header-bg'];
+    const pmProps = ['--pm-primary', '--pm-primary-dark', '--pm-primary-light', '--pm-primary-lighter',
+      '--pm-accent', '--pm-success', '--pm-warning', '--pm-danger', '--pm-sidebar-bg',
+      '--pm-content-bg', '--pm-card-bg', '--pm-card-radius', '--pm-control-radius',
+      '--pm-font-family', '--pm-header-bg'];
     pmProps.forEach(prop => root.style.removeProperty(prop));
 
     // Clear localStorage
@@ -148,6 +151,8 @@ export class ThemeManager {
       :root {
         --pm-primary: ${theme.primaryColor};
         --pm-primary-dark: ${theme.primaryDark};
+        --pm-primary-light: ${theme.primaryLight};
+        --pm-primary-lighter: ${theme.primaryLighter};
         --pm-accent: ${theme.accentColor};
         --pm-success: ${theme.successColor};
         --pm-warning: ${theme.warningColor};

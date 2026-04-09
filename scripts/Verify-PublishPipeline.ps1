@@ -2,11 +2,8 @@
 # Verify-PublishPipeline.ps1
 # Pre-deployment verification for the Draft → Publish → Distribution pipeline
 #
-# Run AFTER connecting to SharePoint:
-#   Connect-PnPOnline -Url https://mf7m.sharepoint.com/sites/PolicyManager -Interactive
-#   .\scripts\Verify-PublishPipeline.ps1
-#
-# This script checks every dependency in the pipeline and reports pass/fail
+# Assumes you are already connected to SharePoint via Connect-PnPOnline.
+# Checks every dependency in the pipeline and reports pass/fail
 # with remediation steps for each failure.
 # ============================================================================
 

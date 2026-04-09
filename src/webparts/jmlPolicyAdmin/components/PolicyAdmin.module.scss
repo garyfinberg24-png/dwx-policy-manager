@@ -74,7 +74,7 @@
   }
 
   .sidebarHeader {
-    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+    background: var(--pm-header-bg, linear-gradient(135deg, var(--pm-primary, #0d9488) 0%, #0f766e 100%));
     padding: 24px 20px;
     color: #ffffff;
   }
@@ -149,7 +149,7 @@
 
     &:hover {
       background-color: #e2e8f0;
-      color: #0d9488;
+      color: var(--pm-primary, #0d9488);
     }
 
     i {
@@ -160,18 +160,18 @@
   }
 
   .navItemActive {
-    background-color: #ccfbf1;
-    border-left: 3px solid #0d9488;
-    color: #0d9488;
+    background-color: var(--pm-primary-light, #ccfbf1);
+    border-left: 3px solid var(--pm-primary, #0d9488);
+    color: var(--pm-primary, #0d9488);
     font-weight: 600;
 
     &:hover {
-      background-color: #ccfbf1;
-      color: #0d9488;
+      background-color: var(--pm-primary-light, #ccfbf1);
+      color: var(--pm-primary, #0d9488);
     }
 
     i {
-      color: #0d9488;
+      color: var(--pm-primary, #0d9488);
     }
   }
 
@@ -194,14 +194,14 @@
     align-items: center;
     gap: 16px;
     border-bottom: 1px solid #e2e8f0;
-    border-top: 4px solid #0d9488;
+    border-top: 4px solid var(--pm-primary, #0d9488);
   }
 
   .contentHeaderIcon {
     width: 48px;
     height: 48px;
     min-width: 48px;
-    background: #0d9488;
+    background: var(--pm-primary, #0d9488);
     border-radius: 4px;
     display: flex;
     align-items: center;

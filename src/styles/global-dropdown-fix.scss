@@ -39,8 +39,8 @@
 
   .ms-Dropdown.is-open .ms-Dropdown-title,
   .ms-Dropdown-title:focus {
-    border-color: #0d9488 !important;
-    box-shadow: 0 0 0 1px #0d9488 !important;
+    border-color: var(--pm-primary, #0d9488) !important;
+    box-shadow: 0 0 0 1px var(--pm-primary, #0d9488) !important;
   }
 
   /* Dropdown caret */
@@ -115,7 +115,7 @@
   .ms-Dropdown-item:hover,
   [role="option"]:hover,
   .ms-Dropdown-item.is-highlighted {
-    background-color: #f0fdfa !important;
+    background-color: var(--pm-primary-lighter, #f0fdfa) !important;
     color: #0f172a !important;
   }
 
@@ -123,8 +123,8 @@
   .ms-Dropdown-item.is-selected,
   [role="option"][aria-checked="true"],
   [role="option"][aria-selected="true"] {
-    background-color: #f0fdfa !important;
-    color: #0d9488 !important;
+    background-color: var(--pm-primary-lighter, #f0fdfa) !important;
+    color: var(--pm-primary, #0d9488) !important;
     font-weight: 600 !important;
     font-weight: 600 !important;
   }
@@ -617,8 +617,8 @@
   input:focus,
   textarea:focus {
     outline: none !important;
-    border-color: #0d9488 !important;
-    box-shadow: 0 0 0 1px #0d9488 !important;
+    border-color: var(--pm-primary, #0d9488) !important;
+    box-shadow: 0 0 0 1px var(--pm-primary, #0d9488) !important;
   }
 
   /* Remove double blue outline on Fluent dropdowns */
@@ -626,14 +626,14 @@
   .ms-Dropdown-title:focus::after,
   .ms-TextField-fieldGroup:focus-within::after,
   .ms-BasePicker-text:focus-within::after {
-    border-color: #0d9488 !important;
+    border-color: var(--pm-primary, #0d9488) !important;
     outline: none !important;
   }
 
   /* Fluent focus indicator (the inner border) */
   .ms-Fabric--isFocusVisible .ms-Dropdown:focus::after,
   .ms-Fabric--isFocusVisible .ms-TextField-fieldGroup:focus-within::after {
-    border: 1px solid #0d9488 !important;
+    border: 1px solid var(--pm-primary, #0d9488) !important;
     outline: none !important;
   }
 
@@ -641,12 +641,12 @@
   button:focus-visible,
   .ms-Button:focus::after {
     outline: none !important;
-    border-color: #0d9488 !important;
+    border-color: var(--pm-primary, #0d9488) !important;
   }
 
   /* Date picker focus */
   .ms-DatePicker-wrap:focus-within .ms-TextField-fieldGroup {
-    border-color: #0d9488 !important;
+    border-color: var(--pm-primary, #0d9488) !important;
   }
 }
 
@@ -667,8 +667,8 @@
   }
 
   .ms-TextField-fieldGroup:focus-within {
-    border-color: #0d9488 !important;
-    box-shadow: 0 0 0 1px #0d9488 !important;
+    border-color: var(--pm-primary, #0d9488) !important;
+    box-shadow: 0 0 0 1px var(--pm-primary, #0d9488) !important;
   }
 
   /* Remove the Fluent underline animation */
@@ -706,8 +706,8 @@
 
   .ms-SearchBox.is-active,
   .ms-SearchBox:focus-within {
-    border-color: #0d9488 !important;
-    box-shadow: 0 0 0 1px #0d9488 !important;
+    border-color: var(--pm-primary, #0d9488) !important;
+    box-shadow: 0 0 0 1px var(--pm-primary, #0d9488) !important;
   }
 
   .ms-SearchBox::after {
@@ -727,8 +727,8 @@
   }
 
   .ms-Checkbox.is-checked .ms-Checkbox-checkbox {
-    background-color: #0d9488 !important;
-    border-color: #0d9488 !important;
+    background-color: var(--pm-primary, #0d9488) !important;
+    border-color: var(--pm-primary, #0d9488) !important;
   }
 
   /* DatePicker styling */
@@ -743,8 +743,8 @@
   }
 
   .ms-Toggle.is-checked .ms-Toggle-background {
-    background-color: #0d9488 !important;
-    border-color: #0d9488 !important;
+    background-color: var(--pm-primary, #0d9488) !important;
+    border-color: var(--pm-primary, #0d9488) !important;
   }
 
   /* PeoplePicker styling */
@@ -755,8 +755,8 @@
   }
 
   .ms-BasePicker-text:focus-within {
-    border-color: #0d9488 !important;
-    box-shadow: 0 0 0 1px #0d9488 !important;
+    border-color: var(--pm-primary, #0d9488) !important;
+    box-shadow: 0 0 0 1px var(--pm-primary, #0d9488) !important;
   }
 
   .ms-BasePicker-text::after {

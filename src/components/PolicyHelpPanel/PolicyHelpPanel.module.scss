@@ -1,8 +1,8 @@
 // Policy Help Panel Styles
 // Large Fluent Panel — Forest Teal theme
 
-$pm-primary-teal: #0d9488;
-$pm-dark-teal: #0f766e;
+$pm-primary-teal: var(--pm-primary, #0d9488);
+$pm-dark-teal: var(--pm-primary-dark, #0f766e);
 
 .helpPanelContent {
   padding: 0;

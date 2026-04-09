@@ -1,9 +1,9 @@
 @import '../../../styles/fluent-mixins';
 
-$pm-primary: #0d9488;
-$pm-primary-dark: #0f766e;
+$pm-primary: var(--pm-primary, #0d9488);
+$pm-primary-dark: var(--pm-primary-dark, #0f766e);
 $pm-primary-light: #14b8a6;
-$pm-primary-bg: #ccfbf1;
+$pm-primary-bg: var(--pm-primary-light, #ccfbf1);
 $pm-font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
 
 .policyDistribution {

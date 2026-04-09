@@ -1,8 +1,8 @@
 // StartScreen — Command Centre Layout
 // Sidebar (teal gradient) + Main content (white)
 
-$teal-primary: #0d9488;
-$teal-dark: #0f766e;
+$teal-primary: var(--pm-primary, #0d9488);
+$teal-dark: var(--pm-primary-dark, #0f766e);
 $teal-darker: #134e4a;
 
 .startScreen {
@@ -227,7 +227,7 @@ $teal-darker: #134e4a;
   font-weight: 700;
   padding: 2px 8px;
   border-radius: 3px;
-  background: #ccfbf1;
+  background: var(--pm-primary-light, #ccfbf1);
   color: $teal-primary;
   text-transform: uppercase;
   letter-spacing: 0.5px;

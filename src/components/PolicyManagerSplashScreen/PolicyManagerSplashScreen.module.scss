@@ -15,8 +15,8 @@
  */
 
 // DWx Brand Colors - Forest Teal Theme for Policy Manager
-$pm-primary-teal: #0d9488;
-$pm-dark-teal: #0f766e;
+$pm-primary-teal: var(--pm-primary, #0d9488);
+$pm-dark-teal: var(--pm-primary-dark, #0f766e);
 $pm-light-teal: #14b8a6;
 $pm-accent-teal: #2dd4bf;
 $pm-dark-gray: #333333;

@@ -216,11 +216,72 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
       };
 
       if (editingPackId) {
-        // Update existing pack
+        // Update existing pack — triggers new approval if approvers assigned
         await this.packService.updatePolicyPack(editingPackId, request);
+        // Audit: pack updated
+        try {
+          await this.props.sp.web.lists.getByTitle('PM_PolicyAuditLog').items.add({
+            Title: `Pack Updated: ${newPackName}`,
+            EntityType: 'PolicyPack', EntityId: editingPackId,
+            AuditAction: 'Updated',
+            ActionDescription: `Policy pack "${newPackName}" updated (${selectedPolicyIds.length} policies). ${this.state.approverEmails.length > 0 ? 'New approval required.' : ''}`,
+            PerformedByEmail: this.props.context?.pageContext?.user?.email || '',
+            ActionDate: new Date().toISOString(), ComplianceRelevant: true
+          });
+        } catch { /* audit best-effort */ }
       } else {
         // Create new pack
         await this.packService.createPolicyPack(request);
+        // Audit: pack created
+        try {
+          await this.props.sp.web.lists.getByTitle('PM_PolicyAuditLog').items.add({
+            Title: `Pack Created: ${newPackName}`,
+            EntityType: 'PolicyPack',
+            AuditAction: 'Created',
+            ActionDescription: `New policy pack "${newPackName}" created with ${selectedPolicyIds.length} policies. Type: ${newPackType}.`,
+            PerformedByEmail: this.props.context?.pageContext?.user?.email || '',
+            ActionDate: new Date().toISOString(), ComplianceRelevant: true
+          });
+        } catch { /* audit best-effort */ }
+      }
+
+      // Send approval notification emails to approvers (if any assigned)
+      if (this.state.approverEmails.length > 0) {
+        const siteUrl = this.props.context?.pageContext?.web?.absoluteUrl || 'https://mf7m.sharepoint.com/sites/PolicyManager';
+        const authorName = this.props.context?.pageContext?.user?.displayName || 'An author';
+        const { EmailTemplateBuilder } = await import('../../../utils/EmailTemplateBuilder');
+
+        for (const approverEmail of this.state.approverEmails) {
+          try {
+            const emailHtml = EmailTemplateBuilder.build('approval-request', {
+              recipientName: approverEmail.split('@')[0],
+              headerTitle: `Policy Pack Approval: ${newPackName}`,
+              bodyText: `${authorName} has ${editingPackId ? 'updated' : 'created'} the policy pack "${newPackName}" and requires your approval before distribution. The pack contains ${selectedPolicyIds.length} polic${selectedPolicyIds.length !== 1 ? 'ies' : 'y'}.`,
+              rows: [
+                { label: 'Pack Name', value: newPackName },
+                { label: 'Pack Type', value: newPackType },
+                { label: 'Policies', value: `${selectedPolicyIds.length}` },
+                { label: 'Requested By', value: authorName },
+              ],
+              ctaText: 'Review Policy Pack',
+              ctaUrl: `${siteUrl}/SitePages/PolicyPacks.aspx`,
+            });
+
+            await this.props.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
+              Title: `Pack Approval Required: ${newPackName}`,
+              To: approverEmail,
+              RecipientEmail: approverEmail,
+              Subject: `Policy Pack Approval Required: ${newPackName}`,
+              Message: emailHtml,
+              QueueStatus: 'Pending',
+              Priority: 'High',
+              NotificationType: 'PackApproval',
+              Channel: 'Email',
+            });
+          } catch (emailErr) {
+            console.warn(`[PolicyPackManager] Failed to queue approval email to ${approverEmail}:`, emailErr);
+          }
+        }
       }
 
       this.setState({
@@ -231,7 +292,9 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
 
       await this.loadData();
       await this.dialogManager.showAlert(
-        editingPackId ? 'Policy pack updated successfully!' : 'Policy pack created successfully!',
+        editingPackId
+          ? `Policy pack updated! ${this.state.approverEmails.length > 0 ? 'Approval notifications sent.' : ''}`
+          : `Policy pack created! ${this.state.approverEmails.length > 0 ? 'Approval notifications sent.' : ''}`,
         { variant: 'success' }
       );
     } catch (error) {
@@ -680,73 +743,7 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
           <div>
             <Label required>Select Policies</Label>
 
-            {/* Recently Created Policies — Collapsible */}
-            {(() => {
-              const recentPolicies = [...allPolicies]
-                .sort((a, b) => {
-                  const dateA = a.Created ? new Date(a.Created).getTime() : 0;
-                  const dateB = b.Created ? new Date(b.Created).getTime() : 0;
-                  return dateB - dateA;
-                })
-                .slice(0, 5);
-              return recentPolicies.length > 0 ? (
-                <div style={{ marginBottom: 12 }}>
-                  <div
-                    onClick={() => this.setState({ recentPoliciesExpanded: !this.state.recentPoliciesExpanded })}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer',
-                      padding: '6px 0', marginBottom: this.state.recentPoliciesExpanded ? 6 : 0
-                    }}
-                  >
-                    <Icon
-                      iconName={this.state.recentPoliciesExpanded ? 'ChevronDown' : 'ChevronRight'}
-                      style={{ fontSize: 12, color: '#605e5c', transition: 'transform 0.15s' }}
-                    />
-                    <Text variant="small" style={{ color: '#605e5c', fontWeight: 600 }}>
-                      Recently Created
-                    </Text>
-                    <Text variant="small" style={{ color: '#a0aec0', fontSize: 11 }}>
-                      ({recentPolicies.length})
-                    </Text>
-                  </div>
-                  {this.state.recentPoliciesExpanded && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                      {recentPolicies.map((policy: IPolicy) => {
-                        const isSelected = selectedPolicyIds.includes(policy.Id);
-                        return (
-                          <div
-                            key={policy.Id}
-                            onClick={() => {
-                              if (isSelected) {
-                                this.setState({ selectedPolicyIds: selectedPolicyIds.filter(id => id !== policy.Id) });
-                              } else {
-                                this.setState({ selectedPolicyIds: [...selectedPolicyIds, policy.Id] });
-                              }
-                            }}
-                            style={{
-                              display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px',
-                              borderRadius: 4, cursor: 'pointer', fontSize: 13,
-                              background: isSelected ? '#e6f7f5' : '#f8f9fa',
-                              border: isSelected ? '1px solid #0d9488' : '1px solid #e2e8f0',
-                            }}
-                          >
-                            <Icon iconName={isSelected ? 'CheckboxComposite' : 'Checkbox'} style={{ color: isSelected ? '#0d9488' : '#8a8886', fontSize: 14 }} />
-                            <span style={{ flex: 1, color: '#323130' }}>{policy.PolicyNumber ? `${policy.PolicyNumber} - ` : ''}{policy.PolicyName || policy.Title || 'Untitled Policy'}</span>
-                            {policy.Created && (
-                              <span style={{ color: '#a0aec0', fontSize: 11 }}>
-                                {new Date(policy.Created).toLocaleDateString()}
-                              </span>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              ) : null;
-            })()}
-
-            {/* Filter-as-you-type search */}
+            {/* Filter-as-you-type search — select policies for the pack */}
             <TextField
               placeholder="Search policies by name or number..."
               iconProps={{ iconName: 'Search' }}

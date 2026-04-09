@@ -618,12 +618,20 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
   };
 
   private toggleSection = (category: string): void => {
-    this.setState(prev => ({
-      collapsedSections: {
-        ...prev.collapsedSections,
-        [category]: !prev.collapsedSections[category]
+    this.setState(prev => {
+      const isCurrentlyCollapsed = prev.collapsedSections[category];
+      if (isCurrentlyCollapsed) {
+        // Opening this section — collapse ALL others (accordion behavior)
+        const newCollapsed: Record<string, boolean> = {};
+        for (const sec of NAV_SECTIONS) {
+          newCollapsed[sec.category] = sec.category !== category;
+        }
+        return { collapsedSections: newCollapsed };
+      } else {
+        // Closing this section
+        return { collapsedSections: { ...prev.collapsedSections, [category]: true } };
       }
-    }));
+    });
   };
 
   private getActiveNavItem(): INavItem | undefined {

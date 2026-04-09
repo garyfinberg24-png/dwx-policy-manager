@@ -72,7 +72,7 @@ export class PolicyHubService {
           'PolicyDescription', 'ComplianceRisk', 'VersionNumber', 'IsActive',
           'EffectiveDate', 'PublishedDate', 'Modified', 'Created',
           'ReadTimeframe', 'RequiresAcknowledgement', 'RequiresQuiz',
-          'DistributionScope', 'Visibility', 'TargetSecurityGroups',
+          'DistributionScope',
           'DocumentURL'
         );
 

@@ -440,7 +440,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
         return {
           Id: item.Id,
           PolicyId: item.ProcessID || 0,
-          PolicyTitle: policy.PolicyName || policy.Title || item.Title || 'Untitled Policy',
+          PolicyTitle: policy.PolicyName || policy.Title || item.Title || (item.ProcessID ? `Policy ${item.ProcessID}` : 'Untitled Policy'),
           PolicyNumber: policy.PolicyNumber || '',
           Version: policy.VersionNumber || policy.PolicyVersion || '1.0',
           SubmittedBy: authorName,
@@ -2488,149 +2488,135 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
             <Text style={{ color: '#605e5c' }}>No approvals match the selected filter</Text>
           </Stack>
         ) : (
-          <div className={(styles as Record<string, string>).requestList}>
-            {filtered.map(approval => (
-              <div
-                key={approval.Id}
-                className={(styles as Record<string, string>).requestCard}
-                style={{ borderLeft: `4px solid ${approval.Priority === 'Urgent' ? '#d13438' : approval.Status === 'Pending' ? '#f59e0b' : approval.Status === 'Approved' ? '#107c10' : '#8764b8'}` }}
-              >
-                <Stack horizontal horizontalAlign="space-between" verticalAlign="start">
-                  <div style={{ flex: 1 }}>
-                    {/* Row 1: Policy name + badges */}
-                    <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }} wrap>
-                      <Text variant="mediumPlus" style={{ fontWeight: 600 }}>{approval.PolicyTitle}</Text>
-                      {(approval as any).PolicyNumber && (
-                        <span style={{ fontSize: 10, color: '#64748b', background: '#f1f5f9', padding: '2px 8px', borderRadius: 4, fontWeight: 600 }}>{(approval as any).PolicyNumber}</span>
-                      )}
-                      <span style={{ fontSize: 10, color: '#64748b', background: '#f1f5f9', padding: '2px 8px', borderRadius: 4 }}>v{approval.Version}</span>
-                      {approval.Category && (
-                        <span style={{ fontSize: 10, color: 'var(--pm-primary, #0d9488)', background: 'var(--pm-primary-light, #ccfbf1)', padding: '2px 8px', borderRadius: 4, fontWeight: 600 }}>{approval.Category}</span>
-                      )}
-                      {(approval as any).RiskLevel && (
-                        <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 4,
-                          background: (approval as any).RiskLevel === 'Critical' || (approval as any).RiskLevel === 'High' ? '#fef2f2' : (approval as any).RiskLevel === 'Medium' ? '#fffbeb' : '#f0fdf4',
-                          color: (approval as any).RiskLevel === 'Critical' || (approval as any).RiskLevel === 'High' ? '#dc2626' : (approval as any).RiskLevel === 'Medium' ? '#d97706' : '#059669'
-                        }}>{(approval as any).RiskLevel}</span>
-                      )}
-                      {approval.Priority === 'Urgent' && (
-                        <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 4, background: '#fef2f2', color: '#dc2626', textTransform: 'uppercase' as const }}>URGENT</span>
-                      )}
-                    </Stack>
-                    {/* Row 2: Submitted by + approval level */}
-                    <Text variant="small" style={{ color: '#64748b', display: 'block', marginTop: 6 }}>
-                      {approval.SubmittedBy ? <>Submitted by <strong style={{ color: '#334155' }}>{approval.SubmittedBy}</strong></> : 'Awaiting review'}
-                      {approval.Department ? <> &bull; {approval.Department}</> : ''}
-                      {(approval as any).ApprovalLevel ? <> &bull; <span style={{ color: 'var(--pm-primary, #0d9488)', fontWeight: 600 }}>{(approval as any).ApprovalLevel}</span></> : ''}
-                    </Text>
-                    {/* Row 3: Dates + due countdown */}
-                    <Stack horizontal tokens={{ childrenGap: 16 }} style={{ marginTop: 8 }}>
-                      {approval.SubmittedDate && (
-                        <Text variant="small" style={{ color: '#64748b' }}>
-                          <Icon iconName="Calendar" style={{ marginRight: 4, fontSize: 12 }} />
-                          {(() => { try { return new Date(approval.SubmittedDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); } catch { return '—'; } })()}
-                        </Text>
-                      )}
-                      {approval.DueDate && (
-                        <Text variant="small" style={{ color: (() => { try { return new Date(approval.DueDate) < new Date() && approval.Status === 'Pending' ? '#dc2626' : '#64748b'; } catch { return '#64748b'; } })() }}>
-                          <Icon iconName="Clock" style={{ marginRight: 4, fontSize: 12 }} />
-                          Due: {(() => {
-                            try {
-                              const due = new Date(approval.DueDate);
-                              if (isNaN(due.getTime())) return '—';
-                              const daysLeft = Math.ceil((due.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-                              const dateStr = due.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-                              if (approval.Status !== 'Pending') return dateStr;
-                              if (daysLeft < 0) return `${dateStr} (${Math.abs(daysLeft)}d overdue)`;
-                              if (daysLeft === 0) return `${dateStr} (today)`;
-                              return `${dateStr} (${daysLeft}d remaining)`;
-                            } catch { return '—'; }
-                          })()}
-                        </Text>
-                      )}
-                    </Stack>
-                  </div>
-                  <Stack horizontalAlign="end" tokens={{ childrenGap: 8 }}>
-                    <span style={{
-                      background: `${this.getApprovalStatusColor(approval.Status)}15`,
-                      color: this.getApprovalStatusColor(approval.Status),
-                      padding: '4px 12px', borderRadius: 12, fontSize: 12, fontWeight: 600
-                    }}>
-                      {approval.Status}
-                    </span>
-                    {/* Approval Progress Stepper */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginTop: 8 }}>
-                      {[
-                        { label: 'Draft', icon: 'Edit', done: true },
-                        { label: 'Submitted', icon: 'Send', done: true },
-                        { label: 'In Review', icon: 'ReviewSolid', done: approval.Status !== 'Pending' || true },
-                        { label: approval.Status === 'Approved' ? 'Approved' : approval.Status === 'Rejected' ? 'Rejected' : approval.Status === 'Returned' ? 'Returned' : 'Pending', icon: approval.Status === 'Approved' ? 'CheckMark' : approval.Status === 'Rejected' ? 'Cancel' : approval.Status === 'Returned' ? 'Undo' : 'Clock', done: approval.Status !== 'Pending' },
-                        { label: 'Published', icon: 'Globe', done: false }
-                      ].map((step, i, arr) => {
-                        const isActive = (i === 2 && approval.Status === 'Pending') || (i === 3 && approval.Status !== 'Pending');
-                        const isComplete = (i < 2) || (i === 2 && approval.Status !== 'Pending') || (i === 3 && approval.Status === 'Approved');
-                        const isFailed = i === 3 && (approval.Status === 'Rejected' || approval.Status === 'Returned');
-                        const dotColor = isFailed ? '#dc2626' : isComplete ? '#059669' : isActive ? '#d97706' : '#e2e8f0';
-                        const lineColor = isComplete ? '#059669' : '#e2e8f0';
-                        return (
-                          <React.Fragment key={i}>
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 60 }}>
-                              <div style={{ width: 24, height: 24, borderRadius: '50%', background: dotColor, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <Icon iconName={step.icon} style={{ fontSize: 11, color: '#fff' }} />
-                              </div>
-                              <span style={{ fontSize: 9, color: isFailed ? '#dc2626' : isActive ? '#d97706' : isComplete ? '#059669' : '#94a3b8', fontWeight: isActive || isFailed ? 700 : 500, marginTop: 3 }}>{step.label}</span>
-                            </div>
-                            {i < arr.length - 1 && <div style={{ flex: 1, height: 2, background: lineColor, marginTop: -14, minWidth: 20 }} />}
-                          </React.Fragment>
-                        );
-                      })}
-                    </div>
+          <Stack tokens={{ childrenGap: 12 }}>
+            {filtered.map(approval => {
+              const siteUrl = this.props.context?.pageContext?.web?.absoluteUrl || '';
+              const borderColor = approval.Priority === 'Urgent' ? '#dc2626' : approval.Status === 'Pending' ? '#d97706' : approval.Status === 'Approved' ? '#059669' : '#8764b8';
+              const riskLevel = (approval as any).RiskLevel || '';
+              const riskColor = riskLevel === 'Critical' || riskLevel === 'High' ? '#dc2626' : riskLevel === 'Medium' ? '#d97706' : '#059669';
+              const riskBg = riskLevel === 'Critical' || riskLevel === 'High' ? '#fef2f2' : riskLevel === 'Medium' ? '#fffbeb' : '#f0fdf4';
 
-                    {/* Previous comments */}
-                    {approval.Comments && approval.Status !== 'Pending' && (
-                      <div style={{ marginTop: 4, padding: '6px 10px', background: '#f8fafc', borderRadius: 4, borderLeft: '3px solid #94a3b8', fontSize: 12, color: '#475569' }}>
-                        <strong>Comments:</strong> {approval.Comments}
+              // Stepper logic
+              const steps = [
+                { label: 'Draft', done: true },
+                { label: 'Submitted', done: true },
+                { label: 'In Review', done: true },
+                { label: approval.Status === 'Approved' ? 'Approved' : approval.Status === 'Rejected' ? 'Rejected' : approval.Status === 'Returned' ? 'Returned' : 'Pending', done: approval.Status !== 'Pending' },
+                { label: 'Published', done: false }
+              ];
+
+              // Due date calculation
+              let dueDisplay = '—';
+              let dueColor = '#64748b';
+              try {
+                const due = new Date(approval.DueDate);
+                if (!isNaN(due.getTime())) {
+                  const daysLeft = Math.ceil((due.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                  const dateStr = due.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+                  if (approval.Status !== 'Pending') { dueDisplay = dateStr; }
+                  else if (daysLeft < 0) { dueDisplay = `${dateStr} (${Math.abs(daysLeft)}d overdue)`; dueColor = '#dc2626'; }
+                  else if (daysLeft === 0) { dueDisplay = `${dateStr} (today)`; dueColor = '#dc2626'; }
+                  else { dueDisplay = `${dateStr} (${daysLeft}d remaining)`; }
+                }
+              } catch { /* */ }
+
+              return (
+              <div key={approval.Id} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, borderLeft: `4px solid ${borderColor}`, overflow: 'hidden' }}>
+                <div style={{ padding: '16px 20px' }}>
+                  {/* Top row: Info left, Status + Stepper right */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    {/* Left: Policy info */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
+                        <span style={{ fontSize: 15, fontWeight: 600 }}>{approval.PolicyTitle}</span>
+                        {(approval as any).PolicyNumber && <span style={{ fontSize: 9, color: '#64748b', background: '#f1f5f9', padding: '2px 8px', borderRadius: 4, fontWeight: 600 }}>{(approval as any).PolicyNumber}</span>}
+                        <span style={{ fontSize: 9, color: '#64748b', background: '#f1f5f9', padding: '2px 8px', borderRadius: 4 }}>v{approval.Version}</span>
+                        {approval.Category && <span style={{ fontSize: 9, color: 'var(--pm-primary, #0d9488)', background: 'var(--pm-primary-light, #ccfbf1)', padding: '2px 8px', borderRadius: 4, fontWeight: 600 }}>{approval.Category}</span>}
+                        {riskLevel && <span style={{ fontSize: 9, fontWeight: 600, padding: '2px 8px', borderRadius: 4, background: riskBg, color: riskColor }}>{riskLevel}</span>}
+                        {approval.Priority === 'Urgent' && <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 8px', borderRadius: 4, background: '#fef2f2', color: '#dc2626' }}>URGENT</span>}
                       </div>
-                    )}
-                    {approval.Status === 'Pending' && (
-                      <Stack tokens={{ childrenGap: 8 }} style={{ marginTop: 8 }}>
-                        <TextField
-                          placeholder="Add comments (required for Return/Reject)..."
-                          multiline rows={2}
-                          value={(this.state as any)[`_approvalComment_${approval.Id}`] || ''}
-                          onChange={(_, v) => this.setState({ [`_approvalComment_${approval.Id}`]: v || '' } as any)}
-                          styles={{ root: { maxWidth: 400 }, fieldGroup: { minHeight: 50 } }}
-                        />
-                        <Stack horizontal tokens={{ childrenGap: 6 }}>
-                          <PrimaryButton text="Approve" iconProps={{ iconName: 'CheckMark' }}
-                            styles={{ root: { height: 30, padding: '0 12px', fontSize: 12, background: '#059669', borderColor: '#059669' }, rootHovered: { background: '#047857' } }}
-                            onClick={() => this.updateApprovalStatus(approval.Id, 'Approved', (this.state as any)[`_approvalComment_${approval.Id}`])} />
-                          <DefaultButton text="Request Changes" iconProps={{ iconName: 'Edit' }}
-                            styles={{ root: { height: 30, padding: '0 12px', fontSize: 12, color: '#d97706', borderColor: '#fde68a' }, rootHovered: { color: '#d97706', borderColor: '#d97706' } }}
-                            onClick={() => {
-                              const comment = (this.state as any)[`_approvalComment_${approval.Id}`] || '';
-                              if (!comment.trim()) { void this.dialogManager.showAlert('Please add comments explaining the changes needed.', { title: 'Comments Required' }); return; }
-                              this.updateApprovalStatus(approval.Id, 'Returned', comment);
-                            }} />
-                          <DefaultButton text="Reject" iconProps={{ iconName: 'Cancel' }}
-                            styles={{ root: { height: 30, padding: '0 12px', fontSize: 12, color: '#dc2626', borderColor: '#fca5a5' }, rootHovered: { color: '#dc2626', borderColor: '#dc2626' } }}
-                            onClick={() => {
-                              const comment = (this.state as any)[`_approvalComment_${approval.Id}`] || '';
-                              if (!comment.trim()) { void this.dialogManager.showAlert('Please add comments explaining the rejection reason.', { title: 'Comments Required' }); return; }
-                              this.updateApprovalStatus(approval.Id, 'Rejected', comment);
-                            }} />
-                          <DefaultButton text="View Policy" iconProps={{ iconName: 'View' }}
-                            styles={{ root: { height: 30, padding: '0 12px', fontSize: 12 } }}
-                            href={`${this.props.context?.pageContext?.web?.absoluteUrl || ''}/SitePages/PolicyDetails.aspx?policyId=${approval.PolicyId}&mode=browse`}
-                            target="_blank" />
-                        </Stack>
-                      </Stack>
-                    )}
-                  </Stack>
-                </Stack>
+                      <div style={{ fontSize: 12, color: '#64748b' }}>
+                        {approval.SubmittedBy ? <>Submitted by <strong style={{ color: '#334155' }}>{approval.SubmittedBy}</strong></> : 'Awaiting review'}
+                        {approval.Department ? <> &bull; {approval.Department}</> : ''}
+                        {(approval as any).ApprovalLevel ? <> &bull; <span style={{ color: 'var(--pm-primary, #0d9488)', fontWeight: 600 }}>{(approval as any).ApprovalLevel}</span></> : ''}
+                      </div>
+                      <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>
+                        {approval.SubmittedDate && <><Icon iconName="Calendar" style={{ marginRight: 4, fontSize: 11 }} />{(() => { try { return new Date(approval.SubmittedDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); } catch { return '—'; } })()} &nbsp; </>}
+                        <span style={{ color: dueColor }}><Icon iconName="Clock" style={{ marginRight: 4, fontSize: 11 }} />Due: {dueDisplay}</span>
+                      </div>
+                    </div>
+                    {/* Right: Status + Stepper */}
+                    <div style={{ textAlign: 'right', minWidth: 280, flexShrink: 0, paddingLeft: 16 }}>
+                      <span style={{ background: `${this.getApprovalStatusColor(approval.Status)}15`, color: this.getApprovalStatusColor(approval.Status), padding: '3px 12px', borderRadius: 12, fontSize: 11, fontWeight: 600 }}>{approval.Status}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginTop: 10 }}>
+                        {steps.map((step, i, arr) => {
+                          const isActive = (i === 2 && approval.Status === 'Pending') || (i === 3 && approval.Status !== 'Pending');
+                          const isComplete = (i < 2) || (i === 2 && approval.Status !== 'Pending') || (i === 3 && approval.Status === 'Approved');
+                          const isFailed = i === 3 && (approval.Status === 'Rejected' || approval.Status === 'Returned');
+                          const dotColor = isFailed ? '#dc2626' : isComplete ? '#059669' : isActive ? '#d97706' : '#e2e8f0';
+                          const lineColor = isComplete ? '#059669' : '#e2e8f0';
+                          return (
+                            <React.Fragment key={i}>
+                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 50 }}>
+                                <div style={{ width: 22, height: 22, borderRadius: '50%', background: dotColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#fff', fontWeight: 700 }}>
+                                  {isComplete ? '✓' : isFailed ? '✕' : isActive ? '⏱' : ''}
+                                </div>
+                                <span style={{ fontSize: 8, color: isFailed ? '#dc2626' : isActive ? '#d97706' : isComplete ? '#059669' : '#94a3b8', fontWeight: isActive || isFailed ? 700 : 500, marginTop: 2 }}>{step.label}</span>
+                              </div>
+                              {i < arr.length - 1 && <div style={{ flex: 1, height: 2, background: lineColor, marginTop: -12, minWidth: 12 }} />}
+                            </React.Fragment>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Previous comments (for completed approvals) */}
+                  {approval.Comments && approval.Status !== 'Pending' && (
+                    <div style={{ marginTop: 10, padding: '8px 12px', background: '#f8fafc', borderRadius: 4, borderLeft: `3px solid ${approval.Status === 'Approved' ? '#059669' : '#94a3b8'}`, fontSize: 12, color: '#475569' }}>
+                      <strong>Comments:</strong> {approval.Comments}
+                    </div>
+                  )}
+                </div>
+
+                {/* Action Footer — only for Pending */}
+                {approval.Status === 'Pending' && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', padding: '12px 20px', borderTop: '1px solid #f1f5f9', background: '#fafafa' }}>
+                    <textarea
+                      placeholder="Add comments (required for Return/Reject)..."
+                      value={(this.state as any)[`_approvalComment_${approval.Id}`] || ''}
+                      onChange={(e) => this.setState({ [`_approvalComment_${approval.Id}`]: (e.target as HTMLTextAreaElement).value } as any)}
+                      style={{ flex: 1, maxWidth: 500, marginRight: 16, border: '1px solid #e2e8f0', borderRadius: 6, padding: '8px 12px', fontFamily: 'inherit', fontSize: 12, resize: 'vertical', minHeight: 44, outline: 'none' }}
+                    />
+                    <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                      <PrimaryButton text="Approve" iconProps={{ iconName: 'CheckMark' }}
+                        styles={{ root: { height: 32, padding: '0 16px', fontSize: 12, background: '#059669', borderColor: '#059669' }, rootHovered: { background: '#047857' } }}
+                        onClick={() => this.updateApprovalStatus(approval.Id, 'Approved', (this.state as any)[`_approvalComment_${approval.Id}`])} />
+                      <DefaultButton text="Request Changes" iconProps={{ iconName: 'Edit' }}
+                        styles={{ root: { height: 32, padding: '0 14px', fontSize: 12, color: '#d97706', borderColor: '#fde68a' }, rootHovered: { borderColor: '#d97706' } }}
+                        onClick={() => {
+                          const comment = (this.state as any)[`_approvalComment_${approval.Id}`] || '';
+                          if (!comment.trim()) { void this.dialogManager.showAlert('Please add comments explaining the changes needed.', { title: 'Comments Required' }); return; }
+                          this.updateApprovalStatus(approval.Id, 'Returned', comment);
+                        }} />
+                      <DefaultButton text="Reject" iconProps={{ iconName: 'Cancel' }}
+                        styles={{ root: { height: 32, padding: '0 14px', fontSize: 12, color: '#dc2626', borderColor: '#fca5a5' }, rootHovered: { borderColor: '#dc2626' } }}
+                        onClick={() => {
+                          const comment = (this.state as any)[`_approvalComment_${approval.Id}`] || '';
+                          if (!comment.trim()) { void this.dialogManager.showAlert('Please add comments explaining the rejection reason.', { title: 'Comments Required' }); return; }
+                          this.updateApprovalStatus(approval.Id, 'Rejected', comment);
+                        }} />
+                      <DefaultButton text="View" iconProps={{ iconName: 'View' }}
+                        styles={{ root: { height: 32, padding: '0 14px', fontSize: 12 } }}
+                        href={`${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${approval.PolicyId}&mode=browse`}
+                        target="_blank" />
+                    </div>
+                  </div>
+                )}
               </div>
-            ))}
-          </div>
+              );
+            })}
+          </Stack>
         )}
       </section>
     );

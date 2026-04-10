@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Approval Card — Layout Variations</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', -apple-system, sans-serif; background: #f1f5f9; padding: 40px; color: #0f172a; }
+  h2 { font-size: 16px; color: #64748b; margin: 32px 0 12px; font-weight: 600; letter-spacing: -0.3px; }
+  h2:first-child { margin-top: 0; }
+  .label { display: inline-block; background: #fef3c7; color: #d97706; font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: 600; margin-bottom: 8px; }
+
+  /* Shared */
+  .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+  .badge { font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .badge-pending { background: #fef3c7; color: #d97706; }
+  .badge-approved { background: #dcfce7; color: #059669; }
+  .badge-urgent { background: #fef2f2; color: #dc2626; }
+  .badge-version { background: #f1f5f9; color: #64748b; }
+  .badge-category { background: #ccfbf1; color: #0d9488; }
+  .badge-risk { background: #fffbeb; color: #d97706; }
+  .meta { font-size: 11px; color: #94a3b8; }
+  .meta strong { color: #334155; }
+  .btn { padding: 7px 16px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid; display: inline-flex; align-items: center; gap: 6px; }
+  .btn-approve { background: #059669; border-color: #059669; color: #fff; }
+  .btn-changes { background: #fff; border-color: #fde68a; color: #d97706; }
+  .btn-reject { background: #fff; border-color: #fca5a5; color: #dc2626; }
+  .btn-view { background: #fff; border-color: #e2e8f0; color: #334155; }
+
+  /* Stepper */
+  .stepper { display: flex; align-items: center; gap: 0; }
+  .step { display: flex; flex-direction: column; align-items: center; min-width: 50px; }
+  .step-dot { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #fff; }
+  .step-dot.done { background: #059669; }
+  .step-dot.active { background: #d97706; }
+  .step-dot.pending { background: #e2e8f0; }
+  .step-dot.failed { background: #dc2626; }
+  .step-label { font-size: 8px; color: #94a3b8; margin-top: 3px; font-weight: 600; }
+  .step-line { flex: 1; height: 2px; margin-top: -12px; min-width: 16px; }
+  .step-line.done { background: #059669; }
+  .step-line.pending { background: #e2e8f0; }
+
+  textarea { width: 100%; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 12px; font-family: inherit; font-size: 12px; resize: vertical; min-height: 44px; outline: none; }
+  textarea:focus { border-color: #0d9488; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2>A — Compact Row (Recommended)</h2>
+<span class="label">Stepper inline with metadata, comments in expandable area</span>
+
+<div class="card" style="border-left: 4px solid #d97706;">
+  <div style="padding: 16px 20px;">
+    <!-- Row 1: Title + badges + status + stepper -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+      <div style="flex: 1;">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px;">
+          <span style="font-size: 15px; font-weight: 600;">Bring Your Own Device (BYOD) Policy</span>
+          <span class="badge badge-version">POL-IT-005</span>
+          <span class="badge badge-version">v2.1</span>
+          <span class="badge badge-category">IT & Security</span>
+          <span class="badge badge-risk">Medium</span>
+          <span class="badge badge-urgent">URGENT</span>
+        </div>
+        <div class="meta">
+          Submitted by <strong>Gary Finberg</strong> • IT Department • <span style="color: #0d9488; font-weight: 600;">Technical Reviewer</span>
+        </div>
+        <div class="meta" style="margin-top: 4px;">
+          📅 25 Mar 2026 &nbsp; 🕐 <span style="color: #dc2626; font-weight: 600;">Due: 1 Apr (8d overdue)</span>
+        </div>
+      </div>
+      <!-- Right: Status + Stepper -->
+      <div style="text-align: right; min-width: 280px;">
+        <span class="badge badge-pending" style="font-size: 11px; padding: 3px 12px;">Pending</span>
+        <div class="stepper" style="margin-top: 10px;">
+          <div class="step"><div class="step-dot done">✓</div><div class="step-label">Draft</div></div>
+          <div class="step-line done"></div>
+          <div class="step"><div class="step-dot done">✓</div><div class="step-label">Submitted</div></div>
+          <div class="step-line done"></div>
+          <div class="step"><div class="step-dot done">✓</div><div class="step-label">In Review</div></div>
+          <div class="step-line pending"></div>
+          <div class="step"><div class="step-dot active">⏱</div><div class="step-label" style="color: #d97706;">Pending</div></div>
+          <div class="step-line pending"></div>
+          <div class="step"><div class="step-dot pending"></div><div class="step-label">Published</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Bar -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 12px; padding-top: 12px; border-top: 1px solid #f1f5f9;">
+      <textarea placeholder="Add comments (required for Return/Reject)..." style="max-width: 500px; margin-right: 16px;"></textarea>
+      <div style="display: flex; gap: 8px; flex-shrink: 0;">
+        <button class="btn btn-approve">✓ Approve</button>
+        <button class="btn btn-changes">✎ Request Changes</button>
+        <button class="btn btn-reject">✕ Reject</button>
+        <button class="btn btn-view">👁 View</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Approved version -->
+<div class="card" style="border-left: 4px solid #059669;">
+  <div style="padding: 16px 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+      <div style="flex: 1;">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px;">
+          <span style="font-size: 15px; font-weight: 600;">Information Security Policy</span>
+          <span class="badge badge-version">POL-IT-001</span>
+          <span class="badge badge-version">v3.0</span>
+          <span class="badge badge-category">Compliance</span>
+        </div>
+        <div class="meta">
+          Submitted by <strong>Chris Botha</strong> • Compliance • <span style="color: #0d9488; font-weight: 600;">Compliance Officer</span>
+        </div>
+        <div class="meta" style="margin-top: 4px;">📅 20 Mar 2026 &nbsp; 🕐 Due: 27 Mar</div>
+        <div style="margin-top: 6px; padding: 6px 10px; background: #f8fafc; border-radius: 4px; border-left: 3px solid #059669; font-size: 11px; color: #334155;">
+          <strong>Comments:</strong> Reviewed and approved. Excellent coverage of data classification requirements.
+        </div>
+      </div>
+      <div style="text-align: right; min-width: 280px;">
+        <span class="badge badge-approved" style="font-size: 11px; padding: 3px 12px;">Approved</span>
+        <div class="stepper" style="margin-top: 10px;">
+          <div class="step"><div class="step-dot done">✓</div><div class="step-label">Draft</div></div>
+          <div class="step-line done"></div>
+          <div class="step"><div class="step-dot done">✓</div><div class="step-label">Submitted</div></div>
+          <div class="step-line done"></div>
+          <div class="step"><div class="step-dot done">✓</div><div class="step-label">In Review</div></div>
+          <div class="step-line done"></div>
+          <div class="step"><div class="step-dot done">✓</div><div class="step-label" style="color: #059669;">Approved</div></div>
+          <div class="step-line pending"></div>
+          <div class="step"><div class="step-dot pending"></div><div class="step-label">Published</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2>B — Two-Column Split</h2>
+<span class="label">Policy info left, stepper + actions right — cleaner separation</span>
+
+<div class="card" style="border-left: 4px solid #d97706;">
+  <div style="display: grid; grid-template-columns: 1fr 320px; gap: 0;">
+    <!-- Left: Policy details -->
+    <div style="padding: 16px 20px; border-right: 1px solid #f1f5f9;">
+      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px;">
+        <span style="font-size: 15px; font-weight: 600;">Data Privacy & Protection Policy</span>
+        <span class="badge badge-version">POL-CP-003</span>
+        <span class="badge badge-version">v1.2</span>
+        <span class="badge badge-category">Compliance</span>
+        <span class="badge badge-risk">High</span>
+      </div>
+      <div class="meta">Submitted by <strong>Adele Vance</strong> • Legal • <span style="color: #0d9488; font-weight: 600;">Legal Reviewer</span></div>
+      <div class="meta" style="margin-top: 4px;">📅 22 Mar 2026 &nbsp; 🕐 <span style="color: #dc2626; font-weight: 600;">Due: 29 Mar (5d overdue)</span></div>
+      <!-- Comments -->
+      <textarea placeholder="Add comments..." style="margin-top: 12px;"></textarea>
+    </div>
+    <!-- Right: Stepper + Actions -->
+    <div style="padding: 16px 20px; display: flex; flex-direction: column; justify-content: space-between;">
+      <div>
+        <span class="badge badge-pending" style="font-size: 11px; padding: 3px 12px; display: inline-block; margin-bottom: 12px;">Pending</span>
+        <div class="stepper">
+          <div class="step"><div class="step-dot done">✓</div><div class="step-label">Draft</div></div>
+          <div class="step-line done"></div>
+          <div class="step"><div class="step-dot done">✓</div><div class="step-label">Submitted</div></div>
+          <div class="step-line done"></div>
+          <div class="step"><div class="step-dot done">✓</div><div class="step-label">In Review</div></div>
+          <div class="step-line pending"></div>
+          <div class="step"><div class="step-dot active">⏱</div><div class="step-label" style="color: #d97706;">Pending</div></div>
+          <div class="step-line pending"></div>
+          <div class="step"><div class="step-dot pending"></div><div class="step-label">Published</div></div>
+        </div>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px;">
+        <button class="btn btn-approve" style="flex: 1;">✓ Approve</button>
+        <button class="btn btn-changes" style="flex: 1;">✎ Changes</button>
+        <button class="btn btn-reject" style="flex: 1;">✕ Reject</button>
+        <button class="btn btn-view" style="flex: 1;">👁 View</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2>C — Minimal Row (Dense)</h2>
+<span class="label">No stepper, compact single-line — for large lists</span>
+
+<div class="card" style="border-left: 4px solid #d97706;">
+  <div style="padding: 12px 20px; display: flex; align-items: center; gap: 16px;">
+    <div style="flex: 1; min-width: 0;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">BYOD Policy</span>
+        <span class="badge badge-version">POL-IT-005</span>
+        <span class="badge badge-category">IT & Security</span>
+        <span class="badge badge-risk">Medium</span>
+      </div>
+      <div class="meta" style="margin-top: 2px;">
+        Gary Finberg • Technical Reviewer • 📅 25 Mar • 🕐 <span style="color: #dc2626;">8d overdue</span>
+      </div>
+    </div>
+    <span class="badge badge-pending">Pending</span>
+    <div style="display: flex; gap: 6px; flex-shrink: 0;">
+      <button class="btn btn-approve" style="padding: 5px 12px; font-size: 11px;">✓ Approve</button>
+      <button class="btn btn-changes" style="padding: 5px 12px; font-size: 11px;">✎ Changes</button>
+      <button class="btn btn-reject" style="padding: 5px 12px; font-size: 11px;">✕ Reject</button>
+      <button class="btn btn-view" style="padding: 5px 12px; font-size: 11px;">👁</button>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="border-left: 4px solid #d97706;">
+  <div style="padding: 12px 20px; display: flex; align-items: center; gap: 16px;">
+    <div style="flex: 1; min-width: 0;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 14px; font-weight: 600;">Data Privacy Policy</span>
+        <span class="badge badge-version">POL-CP-003</span>
+        <span class="badge badge-category">Compliance</span>
+        <span class="badge badge-risk">High</span>
+      </div>
+      <div class="meta" style="margin-top: 2px;">
+        Adele Vance • Legal Reviewer • 📅 22 Mar • 🕐 <span style="color: #dc2626;">5d overdue</span>
+      </div>
+    </div>
+    <span class="badge badge-pending">Pending</span>
+    <div style="display: flex; gap: 6px; flex-shrink: 0;">
+      <button class="btn btn-approve" style="padding: 5px 12px; font-size: 11px;">✓ Approve</button>
+      <button class="btn btn-changes" style="padding: 5px 12px; font-size: 11px;">✎ Changes</button>
+      <button class="btn btn-reject" style="padding: 5px 12px; font-size: 11px;">✕ Reject</button>
+      <button class="btn btn-view" style="padding: 5px 12px; font-size: 11px;">👁</button>
+    </div>
+  </div>
+</div>
+
+<div style="text-align: center; padding: 24px; color: #94a3b8; font-size: 12px;">
+  Approval Card Variations — Session 23
+</div>
+
+</body>
+</html>

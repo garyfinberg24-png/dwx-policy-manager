@@ -6099,6 +6099,49 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               title="Add all 29 default email templates to the list (skips existing)" />
             <DefaultButton iconProps={{ iconName: 'Sync' }} text="Refresh"
               onClick={() => this.setState({ _emailTemplatesLoaded: false } as any)} />
+            <DefaultButton iconProps={{ iconName: 'RemoveFilter' }} text="Remove Duplicates"
+              disabled={(this.state as any)._dedupingTemplates}
+              styles={{ root: { color: '#d97706', borderColor: '#fde68a' }, rootHovered: { color: '#d97706', borderColor: '#d97706' } }}
+              onClick={async () => {
+                this.setState({ _dedupingTemplates: true } as any);
+                try {
+                  // Load all templates from SP
+                  const items = await this.props.sp.web.lists.getByTitle('PM_EmailTemplates')
+                    .items.select('Id', 'Title').top(500)();
+                  // Group by Title, keep newest (highest Id), delete older
+                  const groups: Record<string, number[]> = {};
+                  items.forEach((item: any) => {
+                    const key = (item.Title || '').toLowerCase().trim();
+                    if (!groups[key]) groups[key] = [];
+                    groups[key].push(item.Id);
+                  });
+                  let deleted = 0;
+                  let dupeGroups = 0;
+                  for (const key of Object.keys(groups)) {
+                    if (groups[key].length > 1) {
+                      dupeGroups++;
+                      const sorted = groups[key].sort((a, b) => b - a); // newest first
+                      for (let i = 1; i < sorted.length; i++) {
+                        try {
+                          await this.props.sp.web.lists.getByTitle('PM_EmailTemplates').items.getById(sorted[i]).delete();
+                          deleted++;
+                        } catch { /* skip */ }
+                      }
+                    }
+                  }
+                  if (deleted > 0) {
+                    void this.dialogManager.showAlert(`Removed ${deleted} duplicate templates from ${dupeGroups} groups. ${items.length - deleted} unique templates remaining.`, { title: 'Duplicates Removed', variant: 'success' });
+                    this.setState({ _emailTemplatesLoaded: false } as any); // refresh
+                  } else {
+                    void this.dialogManager.showAlert('No duplicates found — all templates are unique.', { title: 'All Clean', variant: 'success' });
+                  }
+                } catch (err: any) {
+                  void this.dialogManager.showAlert(`Failed: ${err.message || 'Unknown error'}`, { title: 'Error' });
+                }
+                this.setState({ _dedupingTemplates: false } as any);
+              }}
+              title="Scan for templates with duplicate names and remove older copies"
+            />
           </Stack>
 
           {/* Count */}

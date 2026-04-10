@@ -13,6 +13,8 @@ import {
   DetailsList,
   DetailsListLayoutMode,
   SelectionMode,
+  Selection,
+  CheckboxVisibility,
   IColumn,
   TextField,
   Dropdown,
@@ -246,6 +248,12 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
   private retentionService: RetentionService;
   private dialogManager = createDialogManager();
   private _isMounted = false;
+  private _userSelection = new Selection({
+    onSelectionChanged: () => {
+      const selected = this._userSelection.getSelection().map((item: any) => item.Id);
+      this.setState({ _selectedUserIds: selected } as any);
+    }
+  });
   private _userSearchTimer: any = null;
 
   constructor(props: IPolicyAdminProps) {
@@ -7033,14 +7041,14 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     const totalPages = Math.ceil(employeesTotal / PAGE_SIZE);
 
     const columns: IColumn[] = [
-      { key: 'name', name: 'Name', fieldName: 'Title', minWidth: 150, maxWidth: 220, onRender: (item: any) => (
+      { key: 'name', name: 'Name', fieldName: 'Title', minWidth: 150, maxWidth: 220, isSorted: (st._userSortField || 'Title') === 'Title', isSortedDescending: st._userSortDesc || false, isResizable: true, onRender: (item: any) => (
         <Stack>
           <Text style={TextStyles.primaryDark}>{item.Title}</Text>
           <Text style={TextStyles.smallSlate}>{item.Email}</Text>
         </Stack>
       )},
-      { key: 'department', name: 'Department', fieldName: 'Department', minWidth: 100, maxWidth: 140 },
-      { key: 'jobTitle', name: 'Job Title', fieldName: 'JobTitle', minWidth: 100, maxWidth: 160 },
+      { key: 'department', name: 'Department', fieldName: 'Department', minWidth: 100, maxWidth: 140, isSorted: st._userSortField === 'Department', isSortedDescending: st._userSortDesc || false, isResizable: true },
+      { key: 'jobTitle', name: 'Job Title', fieldName: 'JobTitle', minWidth: 100, maxWidth: 160, isSorted: st._userSortField === 'JobTitle', isSortedDescending: st._userSortDesc || false, isResizable: true },
       { key: 'role', name: 'Roles', fieldName: 'PMRole', minWidth: 100, maxWidth: 160, onRender: (item: any) => {
         const roles: string[] = item.PMRoles ? item.PMRoles.split(';').map((r: string) => r.trim()).filter(Boolean) : [item.PMRole || 'User'];
         return (
@@ -7197,11 +7205,95 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             </MessageBar>
           ) : (
             <>
+              {/* Grouping + Bulk action bar */}
+              <Stack horizontal horizontalAlign="space-between" verticalAlign="center" style={{ marginBottom: 8 }}>
+                <Stack horizontal tokens={{ childrenGap: 8 }} verticalAlign="center">
+                  <Text style={{ fontSize: 11, color: '#94a3b8', fontWeight: 500 }}>Group by:</Text>
+                  {['None', 'Department', 'Role', 'Status'].map(g => (
+                    <button key={g} onClick={() => this.setState({ _userGroupBy: g === 'None' ? '' : g } as any)}
+                      style={{ fontSize: 11, padding: '3px 10px', borderRadius: 4, cursor: 'pointer', border: (st._userGroupBy || '') === (g === 'None' ? '' : g) ? '1px solid var(--pm-primary, #0d9488)' : '1px solid #e2e8f0', background: (st._userGroupBy || '') === (g === 'None' ? '' : g) ? 'var(--pm-primary-lighter, #f0fdfa)' : '#fff', color: (st._userGroupBy || '') === (g === 'None' ? '' : g) ? 'var(--pm-primary, #0d9488)' : '#64748b', fontWeight: (st._userGroupBy || '') === (g === 'None' ? '' : g) ? 600 : 500 }}>{g}</button>
+                  ))}
+                </Stack>
+                {(st._selectedUserIds || []).length > 0 && (
+                  <Stack horizontal tokens={{ childrenGap: 8 }} verticalAlign="center">
+                    <Text style={{ fontSize: 12, fontWeight: 600, color: 'var(--pm-primary, #0d9488)' }}>{(st._selectedUserIds || []).length} selected</Text>
+                    <Dropdown placeholder="Bulk Assign Role..." options={[{ key: 'User', text: 'User' }, { key: 'Author', text: 'Author' }, { key: 'Manager', text: 'Manager' }, { key: 'Admin', text: 'Admin' }]}
+                      styles={{ root: { width: 160 }, title: { height: 30, lineHeight: 28 } }}
+                      onChange={async (_, opt) => {
+                        if (!opt) return;
+                        const ids: number[] = st._selectedUserIds || [];
+                        const confirmed = await this.dialogManager.showConfirm(`Assign "${opt.text}" role to ${ids.length} users?`, { title: 'Bulk Assign Role', confirmText: `Assign ${opt.text}` });
+                        if (!confirmed) return;
+                        this.setState({ _employeesLoading: true } as any);
+                        let success = 0;
+                        for (const id of ids) {
+                          try { await this.userManagementService.updateUserRole(id, opt.key as string); success++; } catch { /* skip */ }
+                        }
+                        void this.dialogManager.showAlert(`Role "${opt.text}" assigned to ${success}/${ids.length} users.`, { title: 'Bulk Assign Complete', variant: 'success' });
+                        this.setState({ _selectedUserIds: [], _usersLoaded: false } as any);
+                      }}
+                    />
+                  </Stack>
+                )}
+              </Stack>
+
               <DetailsList
-                items={employees}
+                items={(() => {
+                  // Sort
+                  let sorted = [...employees];
+                  const sortField = st._userSortField || 'Title';
+                  const sortDesc = st._userSortDesc || false;
+                  sorted.sort((a: any, b: any) => {
+                    const av = (a[sortField] || '').toString().toLowerCase();
+                    const bv = (b[sortField] || '').toString().toLowerCase();
+                    return sortDesc ? bv.localeCompare(av) : av.localeCompare(bv);
+                  });
+                  return sorted;
+                })()}
                 columns={columns}
+                onColumnHeaderClick={(_, col) => {
+                  if (!col?.fieldName) return;
+                  const isCurrentSort = st._userSortField === col.fieldName;
+                  this.setState({ _userSortField: col.fieldName, _userSortDesc: isCurrentSort ? !st._userSortDesc : false } as any);
+                }}
+                groups={(() => {
+                  const groupBy = st._userGroupBy || '';
+                  if (!groupBy) return undefined;
+                  const sorted = [...employees];
+                  const field = groupBy === 'Role' ? 'PMRole' : groupBy;
+                  const groupMap = new Map<string, number[]>();
+                  sorted.forEach((item: any, idx: number) => {
+                    const key = item[field] || 'Unknown';
+                    if (!groupMap.has(key)) groupMap.set(key, []);
+                    groupMap.get(key)!.push(idx);
+                  });
+                  let startIdx = 0;
+                  return Array.from(groupMap.entries()).map(([name, indices]) => {
+                    const group = { key: name, name: `${groupBy}: ${name}`, startIndex: startIdx, count: indices.length, isCollapsed: false };
+                    startIdx += indices.length;
+                    return group;
+                  });
+                })()}
                 layoutMode={DetailsListLayoutMode.justified}
-                selectionMode={SelectionMode.none}
+                selectionMode={SelectionMode.multiple}
+                selection={this._userSelection}
+                checkboxVisibility={CheckboxVisibility.always}
+                getKey={(item: any) => item.Id}
+                onItemInvoked={(item: any) => {
+                  this.setState({
+                    _editingEmployee: item, _editingRole: item.PMRole || 'User',
+                    _editingRoles: item.PMRoles ? item.PMRoles.split(';').map((r: string) => r.trim()).filter(Boolean) : [item.PMRole || 'User'],
+                    _editingManagedDepts: item.ManagedDepartments ? item.ManagedDepartments.split(';').map((d: string) => d.trim()).filter(Boolean) : [],
+                    _showUserPanel: true,
+                  } as any);
+                }}
+                onRenderDetailsHeader={(headerProps, defaultRender) => {
+                  if (!headerProps || !defaultRender) return null;
+                  return defaultRender({
+                    ...headerProps,
+                    onRenderColumnHeaderTooltip: (tooltipHostProps) => <span>{tooltipHostProps?.children}</span>
+                  });
+                }}
                 compact={false}
                 styles={{
                   root: {

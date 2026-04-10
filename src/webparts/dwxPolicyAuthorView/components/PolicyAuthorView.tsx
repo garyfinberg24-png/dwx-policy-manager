@@ -2514,18 +2514,72 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                     }}>
                       {approval.Status}
                     </span>
+                    {/* Approval Progress Stepper */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginTop: 8 }}>
+                      {[
+                        { label: 'Draft', icon: 'Edit', done: true },
+                        { label: 'Submitted', icon: 'Send', done: true },
+                        { label: 'In Review', icon: 'ReviewSolid', done: approval.Status !== 'Pending' || true },
+                        { label: approval.Status === 'Approved' ? 'Approved' : approval.Status === 'Rejected' ? 'Rejected' : approval.Status === 'Returned' ? 'Returned' : 'Pending', icon: approval.Status === 'Approved' ? 'CheckMark' : approval.Status === 'Rejected' ? 'Cancel' : approval.Status === 'Returned' ? 'Undo' : 'Clock', done: approval.Status !== 'Pending' },
+                        { label: 'Published', icon: 'Globe', done: false }
+                      ].map((step, i, arr) => {
+                        const isActive = (i === 2 && approval.Status === 'Pending') || (i === 3 && approval.Status !== 'Pending');
+                        const isComplete = (i < 2) || (i === 2 && approval.Status !== 'Pending') || (i === 3 && approval.Status === 'Approved');
+                        const isFailed = i === 3 && (approval.Status === 'Rejected' || approval.Status === 'Returned');
+                        const dotColor = isFailed ? '#dc2626' : isComplete ? '#059669' : isActive ? '#d97706' : '#e2e8f0';
+                        const lineColor = isComplete ? '#059669' : '#e2e8f0';
+                        return (
+                          <React.Fragment key={i}>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 60 }}>
+                              <div style={{ width: 24, height: 24, borderRadius: '50%', background: dotColor, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Icon iconName={step.icon} style={{ fontSize: 11, color: '#fff' }} />
+                              </div>
+                              <span style={{ fontSize: 9, color: isFailed ? '#dc2626' : isActive ? '#d97706' : isComplete ? '#059669' : '#94a3b8', fontWeight: isActive || isFailed ? 700 : 500, marginTop: 3 }}>{step.label}</span>
+                            </div>
+                            {i < arr.length - 1 && <div style={{ flex: 1, height: 2, background: lineColor, marginTop: -14, minWidth: 20 }} />}
+                          </React.Fragment>
+                        );
+                      })}
+                    </div>
+
+                    {/* Previous comments */}
+                    {approval.Comments && approval.Status !== 'Pending' && (
+                      <div style={{ marginTop: 4, padding: '6px 10px', background: '#f8fafc', borderRadius: 4, borderLeft: '3px solid #94a3b8', fontSize: 12, color: '#475569' }}>
+                        <strong>Comments:</strong> {approval.Comments}
+                      </div>
+                    )}
                     {approval.Status === 'Pending' && (
-                      <Stack horizontal tokens={{ childrenGap: 6 }}>
-                        <PrimaryButton text="Approve" iconProps={{ iconName: 'CheckMark' }}
-                          styles={{ root: { height: 28, padding: '0 10px', fontSize: 12, background: '#107c10', borderColor: '#107c10' }, rootHovered: { background: '#0e6b0e' } }}
-                          onClick={() => this.updateApprovalStatus(approval.Id, 'Approved')} />
-                        <DefaultButton text="Return" iconProps={{ iconName: 'Undo' }}
-                          styles={{ root: { height: 28, padding: '0 10px', fontSize: 12 } }}
-                          onClick={() => this.updateApprovalStatus(approval.Id, 'Returned')} />
-                        <DefaultButton text="View" iconProps={{ iconName: 'View' }}
-                          styles={{ root: { height: 28, padding: '0 10px', fontSize: 12 } }}
-                          href={`${this.props.context?.pageContext?.web?.absoluteUrl || ''}/SitePages/PolicyDetails.aspx?policyId=${approval.PolicyId}&mode=browse`}
-                          target="_blank" />
+                      <Stack tokens={{ childrenGap: 8 }} style={{ marginTop: 8 }}>
+                        <TextField
+                          placeholder="Add comments (required for Return/Reject)..."
+                          multiline rows={2}
+                          value={(this.state as any)[`_approvalComment_${approval.Id}`] || ''}
+                          onChange={(_, v) => this.setState({ [`_approvalComment_${approval.Id}`]: v || '' } as any)}
+                          styles={{ root: { maxWidth: 400 }, fieldGroup: { minHeight: 50 } }}
+                        />
+                        <Stack horizontal tokens={{ childrenGap: 6 }}>
+                          <PrimaryButton text="Approve" iconProps={{ iconName: 'CheckMark' }}
+                            styles={{ root: { height: 30, padding: '0 12px', fontSize: 12, background: '#059669', borderColor: '#059669' }, rootHovered: { background: '#047857' } }}
+                            onClick={() => this.updateApprovalStatus(approval.Id, 'Approved', (this.state as any)[`_approvalComment_${approval.Id}`])} />
+                          <DefaultButton text="Request Changes" iconProps={{ iconName: 'Edit' }}
+                            styles={{ root: { height: 30, padding: '0 12px', fontSize: 12, color: '#d97706', borderColor: '#fde68a' }, rootHovered: { color: '#d97706', borderColor: '#d97706' } }}
+                            onClick={() => {
+                              const comment = (this.state as any)[`_approvalComment_${approval.Id}`] || '';
+                              if (!comment.trim()) { void this.dialogManager.showAlert('Please add comments explaining the changes needed.', { title: 'Comments Required' }); return; }
+                              this.updateApprovalStatus(approval.Id, 'Returned', comment);
+                            }} />
+                          <DefaultButton text="Reject" iconProps={{ iconName: 'Cancel' }}
+                            styles={{ root: { height: 30, padding: '0 12px', fontSize: 12, color: '#dc2626', borderColor: '#fca5a5' }, rootHovered: { color: '#dc2626', borderColor: '#dc2626' } }}
+                            onClick={() => {
+                              const comment = (this.state as any)[`_approvalComment_${approval.Id}`] || '';
+                              if (!comment.trim()) { void this.dialogManager.showAlert('Please add comments explaining the rejection reason.', { title: 'Comments Required' }); return; }
+                              this.updateApprovalStatus(approval.Id, 'Rejected', comment);
+                            }} />
+                          <DefaultButton text="View Policy" iconProps={{ iconName: 'View' }}
+                            styles={{ root: { height: 30, padding: '0 12px', fontSize: 12 } }}
+                            href={`${this.props.context?.pageContext?.web?.absoluteUrl || ''}/SitePages/PolicyDetails.aspx?policyId=${approval.PolicyId}&mode=browse`}
+                            target="_blank" />
+                        </Stack>
                       </Stack>
                     )}
                   </Stack>
@@ -2548,7 +2602,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
     }
   }
 
-  private async updateApprovalStatus(id: number, status: 'Approved' | 'Rejected' | 'Returned'): Promise<void> {
+  private async updateApprovalStatus(id: number, status: 'Approved' | 'Rejected' | 'Returned', comments?: string): Promise<void> {
     const approval = this.state.approvals.find(a => a.Id === id);
     if (!approval) return;
 
@@ -2569,7 +2623,8 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
         await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_REVIEWERS)
           .items.getById(realId).update({
             ReviewStatus: reviewStatus,
-            ReviewedDate: new Date().toISOString()
+            ReviewedDate: new Date().toISOString(),
+            ReviewComments: comments || ''
           });
 
         // If rejected/returned, reset policy to Draft
@@ -2604,7 +2659,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
         // From PM_Approvals
         try {
           await this.props.sp.web.lists.getByTitle('PM_Approvals')
-            .items.getById(id).update({ Status: status });
+            .items.getById(id).update({ Status: status, Comments: comments || '' });
         } catch { /* PM_Approvals may not exist */ }
       }
 
@@ -2616,7 +2671,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
           EntityType: 'Policy',
           EntityId: policyId,
           AuditAction: status === 'Approved' ? 'ReviewApproved' : status === 'Returned' ? 'ChangesRequested' : 'ReviewRejected',
-          ActionDescription: `Policy ${status.toLowerCase()} from Approvals tab`,
+          ActionDescription: `Policy ${status.toLowerCase()} from Approvals tab${comments ? '. Comments: ' + comments : ''}`,
           PerformedByEmail: this.props.context?.pageContext?.user?.email || '',
           ActionDate: new Date().toISOString()
         });

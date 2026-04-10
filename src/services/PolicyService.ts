@@ -614,6 +614,39 @@ export class PolicyService {
           PolicyStatus: PolicyStatus.InReview
         });
 
+      // ══════════════════════════════════════════════════════════════
+      // DOCUMENT CONVERSION — Convert Office docs to HTML at submit time
+      // so reviewers/approvers see the final HTML format.
+      // PDFs are NOT converted — they stay as PDFs and use the PDF viewer.
+      // ══════════════════════════════════════════════════════════════
+      const docUrl = preCheck.DocumentURL
+        ? (typeof preCheck.DocumentURL === 'string' ? preCheck.DocumentURL : (preCheck.DocumentURL as any)?.Url || '')
+        : '';
+      const docExt = docUrl ? docUrl.split('.').pop()?.toLowerCase() || '' : '';
+      const isOfficeDoc = ['docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls'].includes(docExt);
+      const isPdf = docExt === 'pdf';
+
+      if (isOfficeDoc && docUrl) {
+        console.log(`[PolicyService] submitForReview: Office document (.${docExt}) — converting to HTML for reviewer`);
+        try {
+          const { DocumentConversionService } = await import('./DocumentConversionService');
+          const converter = new DocumentConversionService(this.sp);
+          const converted = await converter.convertAndSave(this.siteUrl, docUrl, policyId);
+          if (converted) {
+            console.log(`[PolicyService] ✓ Document converted to HTML for review`);
+          } else {
+            console.warn(`[PolicyService] Document conversion returned no HTML (.${docExt}) — reviewer will use Office Online viewer`);
+          }
+        } catch (convErr) {
+          // Non-blocking: if conversion fails, reviewer can still view via Office Online iframe
+          console.error('[PolicyService] Document conversion failed at submit-for-review:', convErr);
+        }
+      } else if (isPdf) {
+        console.log(`[PolicyService] submitForReview: PDF detected — no conversion needed, PDF viewer will be used`);
+      } else if (docUrl) {
+        console.log(`[PolicyService] submitForReview: Document .${docExt} — no conversion`);
+      }
+
       // Fetch updated policy for audit + notifications
       const policy = await this.getPolicyById(policyId);
       const policyTitle = policy?.PolicyName || policy?.Title || `Policy ${policyId}`;
@@ -623,7 +656,7 @@ export class PolicyService {
         EntityId: policyId,
         PolicyId: policyId,
         AuditAction: 'SubmittedForReview',
-        ActionDescription: `Policy "${policyTitle}" submitted for review`,
+        ActionDescription: `Policy "${policyTitle}" submitted for review${isOfficeDoc ? ' (document converted to HTML)' : isPdf ? ' (PDF — no conversion)' : ''}`,
         PerformedById: this.currentUserId,
         PerformedByEmail: this.currentUserEmail,
         ActionDate: new Date(),
@@ -934,38 +967,42 @@ export class PolicyService {
       steps.push('Status → Published');
 
       // ══════════════════════════════════════════════════════════════
-      // STEP 2: Document conversion (non-blocking)
+      // STEP 2: Document conversion — ALREADY DONE at submit-for-review
+      // Office docs are converted to HTML when submitted for review, so
+      // reviewers see the final HTML format. By the time we publish,
+      // HTMLContent/PolicyContent already contains the converted HTML.
+      // PDFs are never converted — they use the native PDF viewer.
       // ══════════════════════════════════════════════════════════════
-
-      const docUrl = policy.DocumentURL
-        ? (typeof policy.DocumentURL === 'string' ? policy.DocumentURL : (policy.DocumentURL as any)?.Url || '')
-        : '';
-      const docExt = docUrl ? docUrl.split('.').pop()?.toLowerCase() || '' : '';
-      const isOfficeDoc = ['docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls'].includes(docExt);
-
-      if (isOfficeDoc && docUrl) {
-        // Office document — MUST convert to HTML for reader to display
-        console.log(`[PolicyService] Office document detected (.${docExt}) — converting to HTML before publish`);
-        try {
-          const { DocumentConversionService } = await import('./DocumentConversionService');
-          const converter = new DocumentConversionService(this.sp);
-          const converted = await converter.convertAndSave(this.siteUrl, docUrl, pId);
-          if (converted) {
-            steps.push(`Document .${docExt} converted to HTML`);
-            console.log(`[PolicyService] ✓ Document converted to HTML`);
-          } else {
-            steps.push(`Document conversion returned no HTML (.${docExt})`);
-            console.warn(`[PolicyService] Document conversion returned no HTML for .${docExt}`);
-          }
-        } catch (convErr) {
-          steps.push(`Document conversion failed (.${docExt}) — reader will use iframe fallback`);
-          console.error('[PolicyService] Document conversion failed:', convErr);
-        }
-      } else if (docUrl) {
-        // PDF or other format — no conversion needed, reader handles natively
-        steps.push(`Document .${docExt} — no conversion needed`);
+      const hasHtmlContent = !!(policy.HTMLContent || policy.PolicyContent);
+      if (hasHtmlContent) {
+        steps.push('Document already converted to HTML (from review stage)');
       } else {
-        steps.push('No document to convert (HTML/Rich Text policy)');
+        const docUrl = policy.DocumentURL
+          ? (typeof policy.DocumentURL === 'string' ? policy.DocumentURL : (policy.DocumentURL as any)?.Url || '')
+          : '';
+        const docExt = docUrl ? docUrl.split('.').pop()?.toLowerCase() || '' : '';
+        if (docExt === 'pdf') {
+          steps.push('PDF document — no conversion needed, native PDF viewer');
+        } else if (docUrl) {
+          // Safety net: if conversion was missed at review (e.g., direct approval), convert now
+          const isOfficeDoc = ['docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls'].includes(docExt);
+          if (isOfficeDoc) {
+            console.log(`[PolicyService] No HTML found at publish — running fallback conversion for .${docExt}`);
+            try {
+              const { DocumentConversionService } = await import('./DocumentConversionService');
+              const converter = new DocumentConversionService(this.sp);
+              await converter.convertAndSave(this.siteUrl, docUrl, pId);
+              steps.push(`Fallback conversion: .${docExt} → HTML`);
+            } catch (convErr) {
+              steps.push(`Fallback conversion failed (.${docExt}) — iframe viewer will be used`);
+              console.error('[PolicyService] Fallback conversion failed:', convErr);
+            }
+          } else {
+            steps.push(`Document .${docExt} — no conversion needed`);
+          }
+        } else {
+          steps.push('No document attached (HTML/Rich Text policy)');
+        }
       }
 
       // ══════════════════════════════════════════════════════════════

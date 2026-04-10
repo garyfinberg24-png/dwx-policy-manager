@@ -1058,6 +1058,14 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     );
   }
 
+  /** Safely extract URL string from a field that may be string or { Url, Description } object */
+  private safeUrl(field: any): string {
+    if (!field) return '';
+    if (typeof field === 'string') return field;
+    if (typeof field === 'object' && field.Url) return field.Url;
+    return String(field);
+  }
+
   private renderTemplatesContent(): JSX.Element {
     const { templates } = this.state;
     const editingTemplate = (this.state as any)._editingTemplate;
@@ -1210,7 +1218,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                       </div>
                       <Stack horizontal tokens={{ childrenGap: 2 }}>
                         <IconButton iconProps={{ iconName: 'Edit' }} title="Edit" ariaLabel="Edit template"
-                          onClick={() => this.setState({ _editingTemplate: { ...template }, _showTemplatePanel: true } as any)}
+                          onClick={() => this.setState({ _editingTemplate: { ...template, DocumentTemplateURL: this.safeUrl(template.DocumentTemplateURL) }, _showTemplatePanel: true } as any)}
                           styles={{ root: { height: 28, width: 28 }, icon: { fontSize: 13 } }} />
                         <IconButton iconProps={{ iconName: 'View' }} title="Preview" ariaLabel="Preview template"
                           onClick={() => this.setState({ _previewTemplate: template, _showTemplatePreview: true } as any)}
@@ -1300,15 +1308,15 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                   <Text variant="medium" style={TextStyles.semiBold}>Document Template File</Text>
 
                   {/* Show current file if URL exists */}
-                  {editingTemplate.DocumentTemplateURL && (
+                  {this.safeUrl(editingTemplate.DocumentTemplateURL) && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: tc.primaryLighter, border: `1px solid ${Colors.tealBorder}`, borderRadius: 4 }}>
                       <Icon iconName="DocumentSet" styles={{ root: { fontSize: 20, color: Colors.tealPrimary } }} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <Text style={{ fontWeight: 600, fontSize: 13, color: Colors.textDark, display: 'block' }}>
-                          {editingTemplate.DocumentTemplateURL.split('/').pop() || 'Template file'}
+                          {this.safeUrl(editingTemplate.DocumentTemplateURL).split('/').pop() || 'Template file'}
                         </Text>
                         <Text style={{ fontSize: 11, color: Colors.textTertiary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
-                          {editingTemplate.DocumentTemplateURL}
+                          {this.safeUrl(editingTemplate.DocumentTemplateURL)}
                         </Text>
                       </div>
                       <IconButton
@@ -1322,7 +1330,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                   )}
 
                   {/* Upload control */}
-                  {!editingTemplate.DocumentTemplateURL && (
+                  {!this.safeUrl(editingTemplate.DocumentTemplateURL) && (
                     <div
                       style={{
                         border: '2px dashed #cbd5e1', borderRadius: 8, padding: '24px 16px', textAlign: 'center',
@@ -1572,7 +1580,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                     <div><Text style={{ fontSize: 11, color: '#94a3b8' }}>Quiz</Text><Text style={{ fontSize: 13, fontWeight: 600, color: preview.RequiresQuiz ? '#7c3aed' : '#94a3b8' }}>{preview.RequiresQuiz ? 'Required' : 'Not required'}</Text></div>
                     {preview.RegulatoryFramework && <div><Text style={{ fontSize: 11, color: '#94a3b8' }}>Regulatory Framework</Text><Text style={{ fontSize: 13, fontWeight: 600 }}>{preview.RegulatoryFramework}</Text></div>}
                     {preview.RegulatoryReferences && <div><Text style={{ fontSize: 11, color: '#94a3b8' }}>Regulatory References</Text><Text style={{ fontSize: 13, fontWeight: 600 }}>{preview.RegulatoryReferences}</Text></div>}
-                    {preview.DocumentTemplateURL && <div style={{ gridColumn: '1 / -1' }}><Text style={{ fontSize: 11, color: '#94a3b8' }}>Document URL</Text><Text style={{ fontSize: 12, color: '#2563eb', wordBreak: 'break-all' }}>{preview.DocumentTemplateURL}</Text></div>}
+                    {this.safeUrl(preview.DocumentTemplateURL) && <div style={{ gridColumn: '1 / -1' }}><Text style={{ fontSize: 11, color: '#94a3b8' }}>Document URL</Text><Text style={{ fontSize: 12, color: '#2563eb', wordBreak: 'break-all' }}>{this.safeUrl(preview.DocumentTemplateURL)}</Text></div>}
                   </div>
                 </div>
 
@@ -1622,10 +1630,10 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                 ) : type === 'word' || type === 'excel' || type === 'powerpoint' ? (
                   <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 4, padding: 16 }}>
                     <Text style={{ fontWeight: 600, fontSize: 13, display: 'block', marginBottom: 8 }}>Document Template</Text>
-                    {preview.DocumentTemplateURL ? (
+                    {this.safeUrl(preview.DocumentTemplateURL) ? (
                       <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
                         <Icon iconName={meta.icon} styles={{ root: { fontSize: 20, color: meta.color } }} />
-                        <Text style={{ fontSize: 12, color: '#475569', wordBreak: 'break-all' }}>{preview.DocumentTemplateURL}</Text>
+                        <Text style={{ fontSize: 12, color: '#475569', wordBreak: 'break-all' }}>{this.safeUrl(preview.DocumentTemplateURL)}</Text>
                       </Stack>
                     ) : (
                       <Text style={{ fontSize: 12, color: '#94a3b8' }}>No document template URL configured.</Text>
@@ -1681,7 +1689,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     this.setState({ saving: true });
 
     // Build data outside try/catch so the retry in catch can access it
-    const docUrl = editingTemplate.DocumentTemplateURL || '';
+    const docUrl = this.safeUrl(editingTemplate.DocumentTemplateURL);
     // DocumentTemplateURL may be type URL (object) or Note (string) depending on
     // which provisioning script created it. Try object format first; the catch
     // handler retries with string format if PrimitiveValue/StartObject error occurs.

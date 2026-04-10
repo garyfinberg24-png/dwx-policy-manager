@@ -416,7 +416,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
             const policies = await this.props.sp.web.lists
               .getByTitle(PM_LISTS.POLICIES)
               .items.filter(policyFilter)
-              .select('Id', 'Title', 'PolicyName', 'PolicyCategory', 'PolicyVersion', 'Author/Title', 'Author/EMail', 'Author/Department')
+              .select('Id', 'Title', 'PolicyName', 'PolicyNumber', 'PolicyCategory', 'PolicyVersion', 'VersionNumber', 'ComplianceRisk', 'PolicyDescription', 'PolicyStatus', 'Author/Title', 'Author/EMail', 'Author/Department')
               .expand('Author')
               .top(20)();
             for (const p of policies) {
@@ -430,21 +430,32 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
 
       const fromApprovals = approvalItems.map((item: any) => {
         const policy = policyMap[item.ProcessID] || {};
+        const submittedDate = item.RequestedDate || item.Created || '';
+        // Calculate due date: submission date + 7 days if not set
+        let dueDate = item.DueDate || '';
+        if (!dueDate && submittedDate) {
+          try { const d = new Date(submittedDate); d.setDate(d.getDate() + 7); dueDate = d.toISOString(); } catch { /* */ }
+        }
+        const authorName = policy.Author?.Title || item.Title || '';
         return {
           Id: item.Id,
           PolicyId: item.ProcessID || 0,
-          PolicyTitle: policy.PolicyName || policy.Title || item.Title || `Policy #${item.ProcessID || '?'}`,
-          Version: policy.PolicyVersion || '1.0',
-          SubmittedBy: policy.Author ? policy.Author.Title : '',
-          SubmittedByEmail: policy.Author ? policy.Author.EMail : '',
-          Department: policy.Author ? (policy.Author.Department || '') : '',
+          PolicyTitle: policy.PolicyName || policy.Title || item.Title || 'Untitled Policy',
+          PolicyNumber: policy.PolicyNumber || '',
+          Version: policy.VersionNumber || policy.PolicyVersion || '1.0',
+          SubmittedBy: authorName,
+          SubmittedByEmail: policy.Author?.EMail || '',
+          Department: policy.Author?.Department || '',
           Category: policy.PolicyCategory || '',
-          SubmittedDate: item.RequestedDate || item.Created || '',
-          DueDate: item.DueDate || '',
+          RiskLevel: policy.ComplianceRisk || '',
+          Description: policy.PolicyDescription || '',
+          ApprovalLevel: item.ApprovalLevel || 'Reviewer',
+          SubmittedDate: submittedDate,
+          DueDate: dueDate,
           Status: this.mapApprovalStatus(item.Status),
-          Priority: (item.DueDate && new Date(item.DueDate) < new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)) ? 'Urgent' : 'Normal',
+          Priority: (dueDate && new Date(dueDate) < new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)) ? 'Urgent' : 'Normal',
           Comments: item.Comments || item.Notes || '',
-          ChangeSummary: item.Notes || ''
+          ChangeSummary: item.ApprovalLevel || item.Notes || ''
         };
       });
 
@@ -468,7 +479,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
               const policies = await this.props.sp.web.lists
                 .getByTitle(PM_LISTS.POLICIES)
                 .items.filter(pf)
-                .select('Id', 'Title', 'PolicyName', 'PolicyCategory', 'PolicyStatus')
+                .select('Id', 'Title', 'PolicyName', 'PolicyNumber', 'PolicyCategory', 'PolicyStatus', 'VersionNumber', 'ComplianceRisk')
                 .top(20)();
               for (const p of policies) { reviewPolicyMap[p.Id] = p; }
             }
@@ -477,21 +488,28 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
 
         fromReviewers = reviewerItems.map((r: any) => {
           const pol = reviewPolicyMap[r.PolicyId] || {};
+          const assignedDate = r.AssignedDate || '';
+          let dueDate = '';
+          if (assignedDate) { try { const d = new Date(assignedDate); d.setDate(d.getDate() + 7); dueDate = d.toISOString(); } catch { /* */ } }
           return {
-            Id: r.Id + 10000, // Offset to avoid ID collision with PM_Approvals
+            Id: r.Id + 10000,
             PolicyId: r.PolicyId || 0,
-            PolicyTitle: pol.PolicyName || pol.Title || `Policy #${r.PolicyId}`,
-            Version: '1.0',
-            SubmittedBy: '',
+            PolicyTitle: pol.PolicyName || pol.Title || 'Untitled Policy',
+            PolicyNumber: pol.PolicyNumber || '',
+            Version: pol.VersionNumber || '1.0',
+            SubmittedBy: 'Policy Author',
             SubmittedByEmail: '',
             Department: '',
             Category: pol.PolicyCategory || '',
-            SubmittedDate: r.AssignedDate || '',
-            DueDate: '',
+            RiskLevel: pol.ComplianceRisk || '',
+            Description: '',
+            ApprovalLevel: r.ReviewerType || 'Reviewer',
+            SubmittedDate: assignedDate,
+            DueDate: dueDate,
             Status: this.mapApprovalStatus(r.ReviewStatus),
-            Priority: 'Normal',
+            Priority: (dueDate && new Date(dueDate) < new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)) ? 'Urgent' : 'Normal',
             Comments: r.ReviewComments || '',
-            ChangeSummary: r.ReviewerType || ''
+            ChangeSummary: r.ReviewerType || 'Review'
           };
         });
       } catch { /* PM_PolicyReviewers may not exist */ }
@@ -2435,28 +2453,57 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
               >
                 <Stack horizontal horizontalAlign="space-between" verticalAlign="start">
                   <div style={{ flex: 1 }}>
-                    <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
+                    {/* Row 1: Policy name + badges */}
+                    <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }} wrap>
                       <Text variant="mediumPlus" style={{ fontWeight: 600 }}>{approval.PolicyTitle}</Text>
-                      {approval.Priority === 'Urgent' && (
-                        <span className={(styles as Record<string, string>).criticalBadge}>URGENT</span>
+                      {(approval as any).PolicyNumber && (
+                        <span style={{ fontSize: 10, color: '#64748b', background: '#f1f5f9', padding: '2px 8px', borderRadius: 4, fontWeight: 600 }}>{(approval as any).PolicyNumber}</span>
                       )}
-                      <span style={{ fontSize: 11, color: '#605e5c', background: '#f3f2f1', padding: '2px 8px', borderRadius: 4 }}>v{approval.Version}</span>
+                      <span style={{ fontSize: 10, color: '#64748b', background: '#f1f5f9', padding: '2px 8px', borderRadius: 4 }}>v{approval.Version}</span>
+                      {approval.Category && (
+                        <span style={{ fontSize: 10, color: 'var(--pm-primary, #0d9488)', background: 'var(--pm-primary-light, #ccfbf1)', padding: '2px 8px', borderRadius: 4, fontWeight: 600 }}>{approval.Category}</span>
+                      )}
+                      {(approval as any).RiskLevel && (
+                        <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 4,
+                          background: (approval as any).RiskLevel === 'Critical' || (approval as any).RiskLevel === 'High' ? '#fef2f2' : (approval as any).RiskLevel === 'Medium' ? '#fffbeb' : '#f0fdf4',
+                          color: (approval as any).RiskLevel === 'Critical' || (approval as any).RiskLevel === 'High' ? '#dc2626' : (approval as any).RiskLevel === 'Medium' ? '#d97706' : '#059669'
+                        }}>{(approval as any).RiskLevel}</span>
+                      )}
+                      {approval.Priority === 'Urgent' && (
+                        <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 4, background: '#fef2f2', color: '#dc2626', textTransform: 'uppercase' as const }}>URGENT</span>
+                      )}
                     </Stack>
-                    <Text variant="small" style={{ color: '#605e5c', display: 'block', marginTop: 4 }}>
-                      Submitted by <strong>{approval.SubmittedBy}</strong> ({approval.Department}) &bull; {approval.Category}
+                    {/* Row 2: Submitted by + approval level */}
+                    <Text variant="small" style={{ color: '#64748b', display: 'block', marginTop: 6 }}>
+                      {approval.SubmittedBy ? <>Submitted by <strong style={{ color: '#334155' }}>{approval.SubmittedBy}</strong></> : 'Awaiting review'}
+                      {approval.Department ? <> &bull; {approval.Department}</> : ''}
+                      {(approval as any).ApprovalLevel ? <> &bull; <span style={{ color: 'var(--pm-primary, #0d9488)', fontWeight: 600 }}>{(approval as any).ApprovalLevel}</span></> : ''}
                     </Text>
-                    <Text variant="small" style={{ marginTop: 8, display: 'block', color: '#323130' }}>
-                      {approval.ChangeSummary}
-                    </Text>
-                    <Stack horizontal tokens={{ childrenGap: 16 }} style={{ marginTop: 10 }}>
-                      <Text variant="small" style={{ color: '#605e5c' }}>
-                        <Icon iconName="Calendar" style={{ marginRight: 4, fontSize: 12 }} />
-                        Submitted: {new Date(approval.SubmittedDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                      </Text>
-                      <Text variant="small" style={{ color: new Date(approval.DueDate) < new Date() && approval.Status === 'Pending' ? '#d13438' : '#605e5c' }}>
-                        <Icon iconName="Clock" style={{ marginRight: 4, fontSize: 12 }} />
-                        Due: {new Date(approval.DueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                      </Text>
+                    {/* Row 3: Dates + due countdown */}
+                    <Stack horizontal tokens={{ childrenGap: 16 }} style={{ marginTop: 8 }}>
+                      {approval.SubmittedDate && (
+                        <Text variant="small" style={{ color: '#64748b' }}>
+                          <Icon iconName="Calendar" style={{ marginRight: 4, fontSize: 12 }} />
+                          {(() => { try { return new Date(approval.SubmittedDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); } catch { return '—'; } })()}
+                        </Text>
+                      )}
+                      {approval.DueDate && (
+                        <Text variant="small" style={{ color: (() => { try { return new Date(approval.DueDate) < new Date() && approval.Status === 'Pending' ? '#dc2626' : '#64748b'; } catch { return '#64748b'; } })() }}>
+                          <Icon iconName="Clock" style={{ marginRight: 4, fontSize: 12 }} />
+                          Due: {(() => {
+                            try {
+                              const due = new Date(approval.DueDate);
+                              if (isNaN(due.getTime())) return '—';
+                              const daysLeft = Math.ceil((due.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                              const dateStr = due.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+                              if (approval.Status !== 'Pending') return dateStr;
+                              if (daysLeft < 0) return `${dateStr} (${Math.abs(daysLeft)}d overdue)`;
+                              if (daysLeft === 0) return `${dateStr} (today)`;
+                              return `${dateStr} (${daysLeft}d remaining)`;
+                            } catch { return '—'; }
+                          })()}
+                        </Text>
+                      )}
                     </Stack>
                   </div>
                   <Stack horizontalAlign="end" tokens={{ childrenGap: 8 }}>
@@ -2475,6 +2522,10 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                         <DefaultButton text="Return" iconProps={{ iconName: 'Undo' }}
                           styles={{ root: { height: 28, padding: '0 10px', fontSize: 12 } }}
                           onClick={() => this.updateApprovalStatus(approval.Id, 'Returned')} />
+                        <DefaultButton text="View" iconProps={{ iconName: 'View' }}
+                          styles={{ root: { height: 28, padding: '0 10px', fontSize: 12 } }}
+                          href={`${this.props.context?.pageContext?.web?.absoluteUrl || ''}/SitePages/PolicyDetails.aspx?policyId=${approval.PolicyId}&mode=browse`}
+                          target="_blank" />
                       </Stack>
                     )}
                   </Stack>

@@ -3,7 +3,6 @@ import * as React from 'react';
 import styles from './PolicySearch.module.scss';
 import { IPolicySearchProps } from './IPolicySearchProps';
 import {
-  SearchBox,
   Dropdown,
   IDropdownOption,
   DatePicker,
@@ -375,103 +374,77 @@ export default class PolicySearch extends React.Component<IPolicySearchProps, IP
       <JmlAppLayout context={this.props.context} sp={this.props.sp} breadcrumbs={[{ text: 'Policy Manager', url: this.props.context?.pageContext?.web?.absoluteUrl || '/sites/PolicyManager' }, { text: 'Search' }]}>
         <div className={styles.policySearch}>
           <div className={styles.contentWrapper}>
-            {/* Hero Section */}
-            <div className={styles.heroSection}>
-              <div className={styles.heroHeader}>
-                <Icon iconName="Search" className={styles.heroIcon} />
+            {/* Hero Section — Slim banner matching Help Centre style */}
+            <div style={{
+              background: 'var(--pm-header-bg, linear-gradient(135deg, #0d9488 0%, #0f766e 100%))', padding: '16px 40px',
+              position: 'relative', overflow: 'hidden', margin: '0 -24px'
+            }}>
+              <div style={{ position: 'absolute', right: -60, bottom: -60, width: 200, height: 200, background: 'rgba(255,255,255,0.03)', borderRadius: '50%' }} />
+              <div style={{ maxWidth: 1400, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', alignItems: 'flex-end', position: 'relative', zIndex: 1 }}>
+                {/* Column 1: Title + subtitle */}
                 <div>
-                  <h1 className={styles.heroTitle}>Search Policies</h1>
-                  <p className={styles.heroSubtitle}>
-                    Find policies by name, number, keywords, or category
-                  </p>
+                  <h1 style={{ fontSize: 22, fontWeight: 700, color: '#fff', margin: '0 0 2px 0' }}>Search Policies</h1>
+                  <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', margin: 0 }}>Find policies by name, number, keywords, or category</p>
                 </div>
-              </div>
-
-              {isInitializing ? (
-                <Spinner size={SpinnerSize.medium} label="Connecting to SharePoint..." />
-              ) : (
-                <>
-                  <div className={styles.searchBoxContainer}>
-                    <div className={styles.searchInputRow}>
-                      <SearchBox
-                        placeholder="Search by policy name, number, keywords, category..."
-                        value={searchQuery}
-                        onChange={(_, value) => this.setState({ searchQuery: value || '' })}
-                        onSearch={this.handleSearch}
-                        onClear={() => this.setState({ searchQuery: '', results: [], totalResults: 0, hasSearched: false, error: null })}
-                        styles={{
-                          root: { borderRadius: '6px', backgroundColor: '#ffffff', flex: 1, border: '2px solid transparent', selectors: { ':focus-within': { border: '2px solid #ffffff', boxShadow: '0 0 0 1px rgba(255,255,255,0.5)' }, '::after': { display: 'none' } } },
-                          field: { fontSize: '16px', padding: '8px 12px' },
-                          iconContainer: { color: '#94a3b8' },
-                          clearButton: { selectors: { '.ms-Button': { borderRadius: '4px' } } }
-                        }}
-                      />
-                      <button
-                        className={styles.searchButton}
-                        onClick={() => this.handleSearch(searchQuery)}
-                        type="button"
-                        title="Search"
-                      >
-                        <Icon iconName="Search" />
-                        Search
-                      </button>
-                    </div>
-
-                    {/* Quick Filters by Category */}
-                    <div className={styles.quickFilters}>
-                      {quickFilterOptions.map(opt => (
-                        <button
-                          key={opt.key}
-                          className={`${styles.quickFilterChip} ${quickFilter === opt.key ? styles.quickFilterChipActive : ''}`}
-                          onClick={() => this.handleQuickFilter(opt.key)}
-                          type="button"
-                        >
-                          <Icon iconName={opt.icon} />
-                          {opt.text}
-                        </button>
-                      ))}
-                    </div>
+                {/* Column 2: Search — centred */}
+                <div style={{ display: 'flex', justifyContent: 'center', alignSelf: 'flex-end' }}>
+                  <div style={{ width: '100%', maxWidth: 480, position: 'relative' }}>
+                    <svg viewBox="0 0 24 24" fill="none" width="16" height="16" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.6)' }}>
+                      <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
+                      <path d="M21 21l-4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => this.setState({ searchQuery: (e.target as HTMLInputElement).value })}
+                      onKeyDown={(e) => { if (e.key === 'Enter') this.handleSearch(searchQuery); }}
+                      placeholder="Search by policy name, number, keywords..."
+                      style={{
+                        width: '100%', padding: '10px 18px 10px 44px', borderRadius: 4,
+                        border: '2px solid rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.15)',
+                        fontSize: 13, color: '#fff', outline: 'none', fontFamily: 'inherit',
+                      }}
+                    />
                   </div>
-
-                  {/* Error Message */}
-                  {error && (
-                    <div style={{ color: '#a4262c', padding: '8px 16px', backgroundColor: '#fde7e9', borderRadius: '4px', marginTop: '8px' }}>
-                      <Icon iconName="ErrorBadge" style={{ marginRight: '8px' }} />
-                      {error}
-                    </div>
-                  )}
-
-                  {/* Recent Searches */}
-                  {!hasSearched && recentSearches.length > 0 && (
-                    <div className={styles.recentSearches}>
-                      <div className={styles.recentSearchTitle}>Recent Searches</div>
-                      <div className={styles.recentSearchTags}>
-                        {recentSearches.map((search, index) => (
-                          <span
-                            key={index}
-                            className={styles.recentSearchTag}
-                            onClick={() => {
-                              this.setState({ searchQuery: search }, () => {
-                                this.performSearch(search);
-                              });
-                            }}
-                          >
-                            <Icon iconName="History" />
-                            {search}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
+                </div>
+                {/* Column 3: empty spacer */}
+                <div />
+              </div>
             </div>
 
-            {/* Search Results Area */}
-            {hasSearched && (
-              <div className={styles.mainContent}>
-                {/* Filters Panel */}
-                <div className={styles.filtersPanel}>
+            {/* Quick Filter Chips */}
+            <div style={{ display: 'flex', gap: 8, padding: '12px 0 4px', flexWrap: 'wrap' as const }}>
+              {quickFilterOptions.map(opt => (
+                <button
+                  key={opt.key}
+                  className={`${styles.quickFilterChip} ${quickFilter === opt.key ? styles.quickFilterChipActive : ''}`}
+                  onClick={() => this.handleQuickFilter(opt.key)}
+                  type="button"
+                >
+                  <Icon iconName={opt.icon} />
+                  {opt.text}
+                </button>
+              ))}
+            </div>
+
+            {isInitializing && (
+              <div style={{ padding: '24px 0' }}>
+                <Spinner size={SpinnerSize.medium} label="Connecting to SharePoint..." />
+              </div>
+            )}
+
+            {/* Error Message */}
+            {error && (
+              <div style={{ color: '#a4262c', padding: '8px 16px', backgroundColor: '#fde7e9', borderRadius: '4px', marginTop: '8px' }}>
+                <Icon iconName="ErrorBadge" style={{ marginRight: '8px' }} />
+                {error}
+              </div>
+            )}
+
+            {/* Search Results Area — filters always visible */}
+            <div className={styles.mainContent}>
+              {/* Filters Panel */}
+              <div className={styles.filtersPanel}>
                   <h3 className={styles.filtersPanelTitle}>
                     Filters
                     {activeFilterCount > 0 && (
@@ -541,7 +514,18 @@ export default class PolicySearch extends React.Component<IPolicySearchProps, IP
 
                 {/* Results Panel */}
                 <div className={styles.resultsPanel}>
-                  {isSearching ? (
+                  {!hasSearched ? (
+                    <div className={styles.noResults}>
+                      <svg viewBox="0 0 24 24" fill="none" width="48" height="48" style={{ color: '#94a3b8', marginBottom: 12 }}>
+                        <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.5" />
+                        <path d="M21 21l-4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                      </svg>
+                      <div className={styles.noResultsTitle}>Search for policies</div>
+                      <div className={styles.noResultsText}>
+                        Enter keywords above or select a category filter to find policies.
+                      </div>
+                    </div>
+                  ) : isSearching ? (
                     <div className={styles.loadingOverlay}>
                       <Spinner size={SpinnerSize.large} label="Searching policies..." />
                     </div>
@@ -574,7 +558,7 @@ export default class PolicySearch extends React.Component<IPolicySearchProps, IP
                           <div className={styles.resultHeader}>
                             <div
                               className={styles.resultIcon}
-                              style={{ backgroundColor: '#0d9488' }}
+                              style={{ backgroundColor: 'var(--pm-primary, #0d9488)' }}
                             >
                               <Icon iconName={getCategoryIcon(result.category)} />
                             </div>
@@ -643,7 +627,6 @@ export default class PolicySearch extends React.Component<IPolicySearchProps, IP
                   )}
                 </div>
               </div>
-            )}
           </div>
         </div>
       </JmlAppLayout>

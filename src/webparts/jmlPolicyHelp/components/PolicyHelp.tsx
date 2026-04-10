@@ -678,7 +678,7 @@ export default class PolicyHelp extends React.Component<IPolicyHelpProps, IPolic
           <div className={styles.contentWrapper}>
             {/* Hero Section — Single row: title left, search centre, bottom-aligned */}
             <div style={{
-              background: tc.headerBg, padding: '16px 40px',
+              background: 'var(--pm-header-bg, linear-gradient(135deg, #0d9488 0%, #0f766e 100%))', padding: '16px 40px',
               position: 'relative', overflow: 'hidden', margin: '0 -24px'
             }}>
               <div style={{ position: 'absolute', right: -60, bottom: -60, width: 200, height: 200, background: 'rgba(255,255,255,0.03)', borderRadius: '50%' }} />
@@ -730,8 +730,8 @@ export default class PolicyHelp extends React.Component<IPolicyHelpProps, IPolic
                   style={{
                     padding: '12px 20px', fontSize: 13, cursor: 'pointer',
                     fontWeight: currentTab === tab.key ? 700 : 500,
-                    color: currentTab === tab.key ? tc.primary : '#64748b',
-                    borderBottom: currentTab === tab.key ? `2px solid ${tc.primary}` : '2px solid transparent',
+                    color: currentTab === tab.key ? 'var(--pm-primary, #0d9488)' : '#64748b',
+                    borderBottom: currentTab === tab.key ? '2px solid var(--pm-primary, #0d9488)' : '2px solid transparent',
                     marginBottom: -2, transition: 'all 0.15s'
                   }}
                 >{tab.label}</div>

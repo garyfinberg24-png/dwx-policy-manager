@@ -6,9 +6,30 @@ $pm-primary-teal: var(--pm-primary, #0d9488);
 $pm-dark-teal: var(--pm-primary-dark, #0f766e);
 $pm-light-teal: #14b8a6;
 
+// SharePoint canvas overrides — ensure full-width layout
+:global {
+  .CanvasZone,
+  [class*="CanvasZone"],
+  .CanvasSection,
+  [class*="CanvasSection"],
+  .ControlZone,
+  [class*="ControlZone"],
+  .CanvasZoneContainer,
+  [class*="CanvasZoneContainer"] {
+    max-width: none !important;
+    overflow: visible !important;
+  }
+  [data-sp-web-part],
+  .webPartContainer,
+  [class*="webPartContainer"] {
+    overflow: visible !important;
+  }
+}
+
 .policySearch {
   background: #ffffff;
   min-height: 100vh;
+  width: 100%;
 }
 
 // Hero Section
@@ -171,22 +192,26 @@ $pm-light-teal: #14b8a6;
 // Main Content Grid - filters left + results right
 .mainContent {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: nowrap !important;
   gap: 24px;
   align-items: flex-start;
   width: 100%;
   box-sizing: border-box;
+  position: relative;
+  z-index: 1;
 
   @media (max-width: 768px) {
     flex-direction: column;
+    flex-wrap: wrap !important;
   }
 }
 
-// Filters Panel - matches Contract Manager AssetSearch styling
+// Filters Panel - fixed width sidebar
 .filtersPanel {
   width: 220px;
   min-width: 220px;
-  flex-shrink: 0;
+  max-width: 220px;
+  flex: 0 0 220px;
   background-color: #f8fafc;
   border-radius: 8px;
   padding: 20px;
@@ -195,10 +220,13 @@ $pm-light-teal: #14b8a6;
   top: 20px;
   border: 1px solid #e2e8f0;
   box-sizing: border-box;
-  align-self: flex-start;
+  z-index: 2;
 
   @media (max-width: 768px) {
     width: 100%;
+    min-width: 100%;
+    max-width: 100%;
+    flex: 1 1 100%;
     position: static;
   }
 }
@@ -248,13 +276,16 @@ $pm-light-teal: #14b8a6;
   }
 }
 
-// Results Panel - matches Contract Manager AssetSearch styling
+// Results Panel - takes remaining space beside filters
 .resultsPanel {
-  flex: 1;
+  flex: 1 1 0%;
   min-width: 0;
+  max-width: calc(100% - 244px); // 220px filters + 24px gap
+  z-index: 1;
 
   @media (max-width: 768px) {
     width: 100%;
+    max-width: 100%;
   }
 }
 
@@ -399,13 +430,13 @@ $pm-light-teal: #14b8a6;
   padding: 60px;
 }
 
-// Content Wrapper
+// Content Wrapper — minimal padding, full width for flex layout
 .contentWrapper {
   width: 100%;
-  padding: 16px;
+  padding: 0 16px 16px;
   box-sizing: border-box;
 
   @media (max-width: 768px) {
-    padding: 12px;
+    padding: 0 12px 12px;
   }
 }

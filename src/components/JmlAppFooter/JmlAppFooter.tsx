@@ -5,6 +5,7 @@
  */
 import * as React from 'react';
 import { IJmlAppFooterProps, IFooterLinkGroup } from './IJmlAppFooterProps';
+import { VERSION, BUILD_NUMBER } from '../../constants/BuildInfo';
 // Theme colors applied via CSS var() in inline styles (not tc helper — module-scope objects would cache stale defaults)
 
 const footerStyles: Record<string, React.CSSProperties> = {
@@ -214,7 +215,8 @@ export const DwxAppFooter: React.FC<IJmlAppFooterProps> = ({
             <div style={footerStyles.compactLeft}>
               <div style={footerStyles.brandIcon}>PM</div>
               <span style={{ fontSize: 13, color: '#fff', fontWeight: 500 }}>Policy Manager</span>
-              <span style={footerStyles.versionBadge}>v{version}</span>
+              <span style={footerStyles.versionBadge}>v{VERSION}</span>
+              <span style={{ ...footerStyles.versionBadge, marginLeft: 4, background: 'rgba(255,255,255,0.06)' }}>Build {BUILD_NUMBER}</span>
               <span style={footerStyles.copyright}>
                 © {currentYear} {organizationName}. All rights reserved.
               </span>
@@ -299,7 +301,8 @@ export const DwxAppFooter: React.FC<IJmlAppFooterProps> = ({
               onMouseEnter={e => (e.currentTarget.style.color = '#94a3b8')}
               onMouseLeave={e => (e.currentTarget.style.color = '#475569')}
             >Accessibility</a>
-            <span style={footerStyles.versionBadge}>v{version}</span>
+            <span style={footerStyles.versionBadge}>v{VERSION}</span>
+            <span style={{ ...footerStyles.versionBadge, marginLeft: 4, background: 'rgba(255,255,255,0.06)' }}>Build {BUILD_NUMBER}</span>
             <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>
               Powered by DWx
             </span>

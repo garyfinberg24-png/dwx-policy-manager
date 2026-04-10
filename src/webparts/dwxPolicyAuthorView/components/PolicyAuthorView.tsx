@@ -391,7 +391,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
         .getByTitle('PM_Approvals')
         .items.select(
           'Id', 'Title', 'ProcessID', 'Status', 'RequestedDate', 'DueDate',
-          'Comments', 'Notes', 'ApprovalLevel'
+          'Comments', 'Notes', 'ApprovalLevel', 'EscalationCount'
         )
         .orderBy('RequestedDate', false)
         .top(100);
@@ -2395,20 +2395,64 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
 
   private renderApprovalsTab(): JSX.Element {
     const { approvals, approvalFilter, loading } = this.state;
+    const st = this.state as any;
     const filters: Array<'All' | 'Pending' | 'Approved' | 'Rejected' | 'Returned'> = ['All', 'Pending', 'Approved', 'Rejected', 'Returned'];
     const filtered = approvalFilter === 'All' ? approvals : approvals.filter(a => a.Status === approvalFilter);
 
     const pendingCount = approvals.filter(a => a.Status === 'Pending').length;
     const urgentCount = approvals.filter(a => a.Status === 'Pending' && a.Priority === 'Urgent').length;
 
+    // Calculate overdue count from pending approvals
+    const now = new Date();
+    const overdueApprovals = approvals.filter(a => {
+      if (a.Status !== 'Pending') return false;
+      try { const due = new Date(a.DueDate); return due.getTime() < now.getTime(); } catch { return false; }
+    });
+
+    // Run escalation check on first render (non-blocking)
+    if (!st._escalationChecked) {
+      this.setState({ _escalationChecked: true } as any);
+      (async () => {
+        try {
+          const { EscalationService } = await import('../../../services/EscalationService');
+          const svc = new EscalationService(this.props.sp);
+          await svc.loadConfig();
+          const results = await svc.checkAndEscalate();
+          const summary = await svc.getEscalationSummary();
+          if (this._isMounted && (results.length > 0 || summary.totalOverdue > 0)) {
+            this.setState({ _escalationResults: results, _escalationSummary: summary } as any);
+          }
+        } catch { /* escalation service not available */ }
+      })();
+    }
+
+    const escalationResults: any[] = st._escalationResults || [];
+    const escalationSummary: any = st._escalationSummary || null;
+
     return (
       <section style={{ padding: '24px 40px', maxWidth: 1600, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+        {/* Escalation Banner */}
+        {escalationResults.length > 0 && (
+          <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 4, padding: '12px 16px', marginBottom: 16 }}>
+            <Text style={{ fontWeight: 600, fontSize: 13, color: '#dc2626', display: 'block', marginBottom: 6 }}>
+              <Icon iconName="Warning" style={{ marginRight: 6 }} />
+              {escalationResults.length} Escalation{escalationResults.length !== 1 ? 's' : ''} Triggered
+            </Text>
+            {escalationResults.map((r: any, i: number) => (
+              <Text key={i} style={{ fontSize: 12, color: '#991b1b', display: 'block', padding: '2px 0' }}>
+                • {r.policyTitle}: {r.action} ({r.daysOverdue}d overdue)
+              </Text>
+            ))}
+          </div>
+        )}
+
         {/* KPI Row */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16, marginBottom: 24 }}>
           {this.renderKpiCard('Pending', pendingCount, 'Clock', '#f59e0b', '#fff8e6', () => this.setState({ approvalFilter: 'Pending' }))}
-          {this.renderKpiCard('Urgent', urgentCount, 'Warning', '#d13438', '#fef2f2', () => this.setState({ approvalFilter: 'Pending' }))}
+          {this.renderKpiCard('Overdue', overdueApprovals.length, 'Warning', '#dc2626', '#fef2f2', () => this.setState({ approvalFilter: 'Pending' }))}
+          {this.renderKpiCard('Urgent', urgentCount, 'AlertSolid', '#ea580c', '#fff7ed', () => this.setState({ approvalFilter: 'Pending' }))}
           {this.renderKpiCard('Approved', approvals.filter(a => a.Status === 'Approved').length, 'CheckMark', '#107c10', '#dff6dd', () => this.setState({ approvalFilter: 'Approved' }))}
-          {this.renderKpiCard('Returned', approvals.filter(a => a.Status === 'Returned').length, 'Undo', '#8764b8', '#f3eefc', () => this.setState({ approvalFilter: 'Returned' }))}
+          {this.renderKpiCard('Returned', approvals.filter(a => a.Status === 'Returned' || a.Status === 'Rejected').length, 'Undo', '#8764b8', '#f3eefc', () => this.setState({ approvalFilter: 'Returned' }))}
         </div>
 
         {/* Filter Chips */}

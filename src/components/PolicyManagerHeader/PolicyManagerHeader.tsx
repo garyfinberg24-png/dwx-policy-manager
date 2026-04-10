@@ -900,7 +900,7 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
             {/* Request Policy moved to Manager dropdown */}
             <div className={styles.dropdownContainer} ref={recentlyViewedRef} style={{ display: 'inline-flex' }}>
               <button
-                className={styles.quickActionBtn}
+                className={styles.actionButton}
                 type="button"
                 title="Recently Viewed"
                 aria-label="Recently Viewed"
@@ -913,7 +913,6 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
                   <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
                   <path d="M12 6v6l4 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
-                Recently Viewed
               </button>
 
               {showRecentlyViewedDropdown && (

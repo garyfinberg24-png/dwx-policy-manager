@@ -186,40 +186,6 @@ $pm-font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue'
 }
 
 // Outline button style (e.g. "Recently Viewed") — matches Contract Manager "Recent" button
-.quickActionBtn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 16px;
-  border: 1.5px solid rgba(255, 255, 255, 0.4);
-  border-radius: 4px;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.9);
-  font-family: $pm-font-family;
-  font-size: 12.5px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  white-space: nowrap;
-  line-height: 1;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.6);
-    color: #ffffff;
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-
-  svg {
-    width: 14px;
-    height: 14px;
-    flex-shrink: 0;
-  }
-}
-
 .actionButton {
   width: 40px;
   height: 40px;

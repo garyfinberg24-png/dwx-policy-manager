@@ -6010,42 +6010,6 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     return (
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 16 }}>
-          {this.renderSectionIntro('Email Templates', 'Manage the email templates used for automated notifications. Each template defines the subject line, body content, and formatting for a specific notification type.')}
-          {/* Summary Cards */}
-          <Stack horizontal tokens={{ childrenGap: 12 }} wrap>
-            <div style={{
-              flex: '1 1 160px', padding: 16, borderRadius: 4,
-              background: 'linear-gradient(135deg, #f0fdf4, #ecfdf5)', border: '1px solid #bbf7d0'
-            }}>
-              <Stack tokens={{ childrenGap: 4 }}>
-                <Text style={{ fontSize: 24, fontWeight: 700, color: '#16a34a' }}>{activeCount}</Text>
-                <Text style={{ fontSize: 12, color: '#4ade80', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>Active Templates</Text>
-              </Stack>
-            </div>
-            <div style={{
-              flex: '1 1 160px', padding: 16, borderRadius: 4,
-              background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)', border: '1px solid #e2e8f0'
-            }}>
-              <Stack tokens={{ childrenGap: 4 }}>
-                <Text style={{ fontSize: 24, fontWeight: 700, color: Colors.slateLight }}>{inactiveCount}</Text>
-                <Text style={{ fontSize: 12, color: Colors.slateLight, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>Inactive</Text>
-              </Stack>
-            </div>
-            <div style={{
-              flex: '1 1 160px', padding: 16, borderRadius: 4,
-              background: 'linear-gradient(135deg, #f0f9ff, #e0f2fe)', border: '1px solid #bae6fd'
-            }}>
-              <Stack tokens={{ childrenGap: 4 }}>
-                <Text style={{ fontSize: 24, fontWeight: 700, color: '#0284c7' }}>{emailTemplates.length}</Text>
-                <Text style={{ fontSize: 12, color: '#38bdf8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>Total Templates</Text>
-              </Stack>
-            </div>
-          </Stack>
-
-          <MessageBar messageBarType={MessageBarType.info}>
-            Email templates use merge tags like <strong>{'{{PolicyTitle}}'}</strong> and <strong>{'{{UserName}}'}</strong> that are replaced with actual values when emails are sent.
-          </MessageBar>
-
           {/* Category Pill Filters */}
           {(() => {
             const categoryColors: Record<string, { bg: string; color: string; border: string }> = {

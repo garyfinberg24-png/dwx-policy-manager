@@ -97,6 +97,20 @@ export class PolicyService {
   }
 
   /**
+   * Check if a notification type is enabled via Admin Centre > Notification Rules.
+   * Reads from PM_Configuration. Returns true if not configured (default: enabled).
+   */
+  private async isNotificationEnabled(configKey: string): Promise<boolean> {
+    try {
+      const items = await this.sp.web.lists.getByTitle('PM_Configuration')
+        .items.filter(`ConfigKey eq '${configKey}'`)
+        .select('ConfigValue').top(1)();
+      if (items.length > 0) return items[0].ConfigValue !== 'false';
+    } catch { /* config unavailable — default to enabled */ }
+    return true;
+  }
+
+  /**
    * Wire DWx cross-app services. Call after DwxHubService confirms Hub is available.
    */
   public setDwxServices(
@@ -663,15 +677,17 @@ export class PolicyService {
         ComplianceRelevant: true
       });
 
-      // Send notifications to reviewers
+      // Send notifications to reviewers — respects Admin Centre > Notification Rules toggle
+      const updateNotificationsEnabled = await this.isNotificationEnabled('Admin.Notifications.PolicyUpdates');
       console.log('[PolicyService] submitForReview:', {
         notificationService: !!this.notificationService,
+        updateNotificationsEnabled,
         reviewerCount: reviewerIds.length,
         reviewerIds,
         siteUrl: this.siteUrl,
         currentUser: this.currentUserEmail
       });
-      if (this.notificationService) {
+      if (this.notificationService && updateNotificationsEnabled) {
         try {
           if (reviewerIds.length > 0) {
             console.log(`[PolicyService] Sending review notifications to ${reviewerIds.length} reviewers...`);
@@ -1094,8 +1110,9 @@ export class PolicyService {
         steps.push(`Inline: ${targetUsers.length} acknowledgements created`);
       }
 
-      // ALWAYS send notification emails inline (don't depend on Azure Function)
-      if (request.sendNotifications !== false && this.notificationService && targetUsers.length > 0) {
+      // Send notification emails — respects Admin Centre > Notification Rules global toggle
+      const newPolicyNotificationsEnabled = await this.isNotificationEnabled('Admin.Notifications.NewPolicies');
+      if (request.sendNotifications !== false && newPolicyNotificationsEnabled && this.notificationService && targetUsers.length > 0) {
         try {
           console.log(`[PolicyService] Sending publish notifications to ${targetUsers.length} users...`);
           await this.notificationService.sendNewPolicyNotification(policy, targetUsers);
@@ -1106,8 +1123,9 @@ export class PolicyService {
           console.error('[PolicyService] ✗ Publish notifications failed:', notifyErr);
         }
       } else {
-        console.log(`[PolicyService] Skipping publish notifications: sendNotifications=${request.sendNotifications}, notificationService=${!!this.notificationService}, targetUsers=${targetUsers.length}`);
-        steps.push(`Notifications skipped (send=${request.sendNotifications}, svc=${!!this.notificationService}, users=${targetUsers.length})`);
+        const reason = !newPolicyNotificationsEnabled ? 'disabled in Admin > Notification Rules' : `send=${request.sendNotifications}, svc=${!!this.notificationService}, users=${targetUsers.length}`;
+        console.log(`[PolicyService] Skipping publish notifications: ${reason}`);
+        steps.push(`Notifications skipped (${reason})`);
       }
 
       // ══════════════════════════════════════════════════════════════

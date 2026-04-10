@@ -2793,7 +2793,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             <Stack horizontal tokens={{ childrenGap: 24 }} wrap>
               <Toggle label="Email for new policies" checked={this.state._notifyNewPolicies ?? true} onText="On" offText="Off" onChange={(_, c) => this.setState({ _notifyNewPolicies: !!c } as any)} />
               <Toggle label="Email for policy updates" checked={this.state._notifyPolicyUpdates ?? true} onText="On" offText="Off" onChange={(_, c) => this.setState({ _notifyPolicyUpdates: !!c } as any)} />
-              <Toggle label="Daily digest mode" checked={this.state._notifyDailyDigest ?? false} onText="On" offText="Off" onChange={(_, c) => this.setState({ _notifyDailyDigest: !!c } as any)} />
+              <Toggle label="Daily digest mode (Coming Soon)" checked={this.state._notifyDailyDigest ?? false} onText="On" offText="Off" disabled onChange={(_, c) => this.setState({ _notifyDailyDigest: !!c } as any)} />
             </Stack>
           </div>
 
@@ -7665,11 +7665,11 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             </div>
           ),
           onRender: (item: any, index?: number) => (
-            <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', paddingLeft: 8 }}>
               <Toggle
                 checked={item[roleKey] === true}
                 onChange={(_, v) => updatePermission(index || 0, roleKey, !!v)}
-                styles={{ root: { margin: 0 }, container: { justifyContent: 'center' } }}
+                styles={{ root: { margin: 0, padding: 0 }, container: { justifyContent: 'center', alignItems: 'center' }, pill: { margin: 0 } }}
               />
             </div>
           )
@@ -7704,6 +7704,25 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                 onClick={addCustomRole}
                 disabled={!((st as any)._newRoleName || '').trim()}
                 styles={cmdBtnStyle}
+              />
+              <DefaultButton
+                text="Save Role"
+                iconProps={{ iconName: 'Save' }}
+                styles={cmdBtnStyle}
+                disabled={customRoles.length === 0 || this.state.saving}
+                onClick={async () => {
+                  this.setState({ saving: true });
+                  try {
+                    const saveData = { permissions, customRoles };
+                    const permJson = JSON.stringify(saveData);
+                    await this.adminConfigService.saveConfigByCategory('RolePermissions', { 'Admin.RolePermissions.Config': permJson });
+                    try { localStorage.setItem('pm_custom_roles', JSON.stringify(customRoles)); } catch { /* */ }
+                    void this.dialogManager.showAlert(`${customRoles.length} custom role${customRoles.length !== 1 ? 's' : ''} saved.`, { title: 'Roles Saved', variant: 'success' });
+                  } catch {
+                    void this.dialogManager.showAlert('Failed to save roles.', { title: 'Error' });
+                  }
+                  this.setState({ saving: false });
+                }}
               />
               {customRoles.length > 0 && (
                 <Text style={{ fontSize: 11, color: '#94a3b8' }}>

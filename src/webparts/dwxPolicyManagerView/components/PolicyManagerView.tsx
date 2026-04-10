@@ -881,6 +881,20 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
         });
       } catch { /* log failure is non-blocking */ }
 
+      // Email delivery — queue report notification to recipients
+      try {
+        const user = await this.props.sp.web.currentUser();
+        await this.props.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
+          Title: `Report Generated: ${reportNames[reportKey] || reportKey}`,
+          To: user.Email,
+          RecipientEmail: user.Email,
+          Subject: `Report Ready: ${reportNames[reportKey] || reportKey}`,
+          Message: `<p>Your report <strong>${reportNames[reportKey] || reportKey}</strong> has been generated.</p><p>Format: ${format.toUpperCase()}<br/>Records: ${result?.recordCount || 0}<br/>Generated: ${new Date().toLocaleString()}</p>`,
+          QueueStatus: 'Pending', Priority: 'Normal',
+          NotificationType: 'ReportGenerated', Channel: 'Email'
+        });
+      } catch { /* email notification best-effort */ }
+
       // Reload executions for the recent reports table
       const recentExecutions = await this.loadReportExecutions();
 
@@ -1382,10 +1396,11 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
 
         {/* Summary KPIs */}
         <div className={(styles as Record<string, string>).kpiGrid}>
-          {this.renderKpiCard('Total Assigned', totalAssigned, 'Page', '#0078d4', '#e8f4fd')}
-          {this.renderKpiCard('Acknowledged', totalAcknowledged, 'CheckMark', '#107c10', '#dff6dd')}
-          {this.renderKpiCard('Pending', totalAssigned - totalAcknowledged - totalOverdue, 'Clock', '#f59e0b', '#fff8e6')}
-          {this.renderKpiCard('Overdue', totalOverdue, 'Warning', '#d13438', '#fef2f2')}
+          {this.renderKpiCard('Total Assigned', totalAssigned, 'Page', '#0078d4', '#e8f4fd', () => this.setState({ activeTab: 'team-compliance' }))}
+          {this.renderKpiCard('Acknowledged', totalAcknowledged, 'CheckMark', '#107c10', '#dff6dd', () => this.setState({ activeTab: 'team-compliance' }))}
+          {this.renderKpiCard('Pending', totalAssigned - totalAcknowledged - totalOverdue, 'Clock', '#f59e0b', '#fff8e6', () => this.setState({ activeTab: 'approvals' }))}
+          {this.renderKpiCard('Overdue', totalOverdue, 'Warning', '#d13438', '#fef2f2', () => this.setState({ activeTab: 'reviews' }))}
+
         </div>
 
         {/* Search */}
@@ -1810,6 +1825,18 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
                     {(r.Status === 'Due' || r.Status === 'Overdue') ? (
                       <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                         <button onClick={() => { window.location.href = `/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${r.Id}&mode=browse`; }} style={{ padding: '5px 10px', borderRadius: 4, fontSize: 11, fontWeight: 600, cursor: 'pointer', border: `1px solid ${tc.primary}`, background: tc.primary, color: '#fff', fontFamily: 'inherit' }}>Review</button>
+                        <button onClick={async () => {
+                          try {
+                            await this.props.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
+                              Title: `Review Reminder: ${r.PolicyTitle}`,
+                              Subject: `Review Reminder: ${r.PolicyTitle} is ${r.Status === 'Overdue' ? 'overdue' : 'due for review'}`,
+                              Message: `<p>The policy <strong>${r.PolicyTitle}</strong> is ${r.Status === 'Overdue' ? 'overdue for review' : 'due for review'}. Please complete the review at your earliest convenience.</p>`,
+                              QueueStatus: 'Pending', Priority: r.Status === 'Overdue' ? 'Urgent' : 'High',
+                              NotificationType: 'ReviewReminder', Channel: 'Email'
+                            });
+                            void this.dialogManager?.showAlert?.(`Reminder sent for "${r.PolicyTitle}".`, { variant: 'success' });
+                          } catch { void this.dialogManager?.showAlert?.('Failed to send reminder.', { variant: 'error' }); }
+                        }} style={{ padding: '5px 10px', borderRadius: 4, fontSize: 11, fontWeight: 600, cursor: 'pointer', border: '1px solid #fde68a', background: '#fffbeb', color: '#d97706', fontFamily: 'inherit' }}>Remind</button>
                         <button onClick={async () => {
                           try {
                             const newReviewer = await this.dialogManager?.showPrompt?.(`Reassign reviewer for "${r.PolicyTitle}".\nEnter new reviewer email:`);

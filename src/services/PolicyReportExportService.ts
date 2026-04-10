@@ -6,7 +6,8 @@ import { SPFI } from '@pnp/sp';
 import { WebPartContext } from '@microsoft/sp-webpart-base';
 import { getSP } from '../utils/pnpConfig';
 import { logger } from './LoggingService';
-import { PolicyLists, QuizLists } from '../constants/SharePointListNames';
+import { PolicyLists, QuizLists, ApprovalLists } from '../constants/SharePointListNames';
+import { ReportHtmlGenerator, IReportConfig, IReportSection, ITableData, IKpiItem } from '../utils/reportHtmlGenerator';
 import {
   IPolicy,
   IPolicyAcknowledgement,
@@ -943,6 +944,526 @@ export class PolicyReportExportService {
         exportedAt: new Date(),
         errors: [error instanceof Error ? error.message : 'Unknown error']
       };
+    }
+  }
+
+  // ============================================================================
+  // AUDIT TRAIL REPORT
+  // ============================================================================
+
+  /**
+   * Export audit trail from PM_PolicyAuditLog
+   */
+  public async exportAuditTrail(
+    options: { dateRangeStart?: Date; dateRangeEnd?: Date; departments?: string[] } = {}
+  ): Promise<IExportResult> {
+    try {
+      logger.info('PolicyReportExportService', 'Starting audit trail export');
+
+      const filters: string[] = [];
+      if (options.dateRangeStart) {
+        filters.push(`ActionDate ge datetime'${options.dateRangeStart.toISOString()}'`);
+      }
+      if (options.dateRangeEnd) {
+        filters.push(`ActionDate le datetime'${options.dateRangeEnd.toISOString()}'`);
+      }
+
+      let query = this.sp.web.lists
+        .getByTitle(PolicyLists.POLICY_AUDIT_LOG)
+        .items
+        .select(
+          'Id', 'AuditAction', 'ActionDescription', 'ActionDate',
+          'PolicyId', 'PolicyTitle', 'PerformedByName', 'PerformedByEmail',
+          'EntityType', 'ComplianceRelevant', 'IPAddress'
+        )
+        .orderBy('ActionDate', false)
+        .top(500);
+
+      if (filters.length > 0) {
+        query = query.filter(filters.join(' and '));
+      }
+
+      const auditItems = await query();
+
+      const exportData = auditItems.map((item: any) => ({
+        'Date': this.formatDateTime(item.ActionDate),
+        'Action': item.AuditAction || '',
+        'Description': item.ActionDescription || '',
+        'Policy': item.PolicyTitle || '',
+        'Policy ID': item.PolicyId || '',
+        'Performed By': item.PerformedByName || '',
+        'Email': item.PerformedByEmail || '',
+        'Entity Type': item.EntityType || '',
+        'Compliance Relevant': item.ComplianceRelevant ? 'Yes' : 'No'
+      }));
+
+      const filename = `Audit_Trail_${this.getDateStamp()}.csv`;
+      this.downloadCSV(exportData, filename);
+
+      logger.info('PolicyReportExportService', `Successfully exported ${exportData.length} audit entries`);
+
+      return {
+        success: true,
+        filename,
+        recordCount: exportData.length,
+        exportedAt: new Date()
+      };
+    } catch (error) {
+      logger.error('PolicyReportExportService', 'Failed to export audit trail:', error);
+      return {
+        success: false,
+        filename: '',
+        recordCount: 0,
+        exportedAt: new Date(),
+        errors: [error instanceof Error ? error.message : 'Unknown error']
+      };
+    }
+  }
+
+  // ============================================================================
+  // DELEGATION SUMMARY REPORT
+  // ============================================================================
+
+  /**
+   * Export delegation summary from PM_ApprovalDelegations
+   */
+  public async exportDelegationSummary(
+    options: { dateRangeStart?: Date; dateRangeEnd?: Date } = {}
+  ): Promise<IExportResult> {
+    try {
+      logger.info('PolicyReportExportService', 'Starting delegation summary export');
+
+      const filters: string[] = [];
+      if (options.dateRangeStart) {
+        filters.push(`Created ge datetime'${options.dateRangeStart.toISOString()}'`);
+      }
+      if (options.dateRangeEnd) {
+        filters.push(`Created le datetime'${options.dateRangeEnd.toISOString()}'`);
+      }
+
+      let query = this.sp.web.lists
+        .getByTitle(ApprovalLists.APPROVAL_DELEGATIONS)
+        .items
+        .select(
+          'Id', 'Title', 'DelegatedById', 'DelegatedByName', 'DelegatedToId', 'DelegatedToName',
+          'DelegationType', 'Reason', 'StartDate', 'EndDate', 'Status',
+          'Created', 'Modified'
+        )
+        .orderBy('Created', false)
+        .top(500);
+
+      if (filters.length > 0) {
+        query = query.filter(filters.join(' and '));
+      }
+
+      const delegations = await query();
+
+      const exportData = delegations.map((item: any) => ({
+        'Delegation': item.Title || '',
+        'Delegated By': item.DelegatedByName || '',
+        'Delegated To': item.DelegatedToName || '',
+        'Type': item.DelegationType || '',
+        'Reason': item.Reason || '',
+        'Start Date': this.formatDate(item.StartDate),
+        'End Date': this.formatDate(item.EndDate),
+        'Status': item.Status || '',
+        'Created': this.formatDateTime(item.Created)
+      }));
+
+      const filename = `Delegation_Summary_${this.getDateStamp()}.csv`;
+      this.downloadCSV(exportData, filename);
+
+      logger.info('PolicyReportExportService', `Successfully exported ${exportData.length} delegations`);
+
+      return {
+        success: true,
+        filename,
+        recordCount: exportData.length,
+        exportedAt: new Date()
+      };
+    } catch (error) {
+      logger.error('PolicyReportExportService', 'Failed to export delegation summary:', error);
+      return {
+        success: false,
+        filename: '',
+        recordCount: 0,
+        exportedAt: new Date(),
+        errors: [error instanceof Error ? error.message : 'Unknown error']
+      };
+    }
+  }
+
+  // ============================================================================
+  // REVIEW SCHEDULE REPORT
+  // ============================================================================
+
+  /**
+   * Export policy review schedule — upcoming, due, and overdue reviews
+   */
+  public async exportReviewSchedule(
+    options: { dateRangeStart?: Date; dateRangeEnd?: Date; departments?: string[] } = {}
+  ): Promise<IExportResult> {
+    try {
+      logger.info('PolicyReportExportService', 'Starting review schedule export');
+
+      const filters: string[] = [
+        "Status eq 'Published'",
+        "NextReviewDate ne null"
+      ];
+
+      if (options.departments && options.departments.length > 0) {
+        const deptFilters = options.departments.map(d => `DepartmentOwner eq '${d}'`);
+        filters.push(`(${deptFilters.join(' or ')})`);
+      }
+
+      const policies = await this.sp.web.lists
+        .getByTitle(this.POLICY_LIST)
+        .items
+        .select(
+          'Id', 'PolicyNumber', 'PolicyName', 'PolicyCategory', 'ComplianceRisk',
+          'NextReviewDate', 'ReviewFrequency', 'DepartmentOwner', 'LastReviewDate',
+          'PolicyOwner/Title', 'PolicyOwner/EMail'
+        )
+        .expand('PolicyOwner')
+        .filter(filters.join(' and '))
+        .orderBy('NextReviewDate', true)
+        .top(500)();
+
+      const now = new Date();
+      const exportData = policies.map((p: any) => {
+        const nextReview = p.NextReviewDate ? new Date(p.NextReviewDate) : null;
+        const daysUntil = nextReview ? Math.ceil((nextReview.getTime() - now.getTime()) / 86400000) : 0;
+        const urgency = daysUntil < 0 ? 'Overdue' : daysUntil <= 14 ? 'Due Soon' : daysUntil <= 30 ? 'Upcoming' : 'On Track';
+
+        return {
+          'Policy Number': p.PolicyNumber || '',
+          'Policy Name': p.PolicyName || '',
+          'Category': p.PolicyCategory || '',
+          'Risk Level': p.ComplianceRisk || '',
+          'Department': p.DepartmentOwner || '',
+          'Owner': p.PolicyOwner?.Title || '',
+          'Review Frequency': p.ReviewFrequency || 'Annual',
+          'Last Review': this.formatDate(p.LastReviewDate),
+          'Next Review': this.formatDate(p.NextReviewDate),
+          'Days Until Due': daysUntil,
+          'Urgency': urgency
+        };
+      });
+
+      // Sort: overdue first, then by days until
+      exportData.sort((a: any, b: any) => a['Days Until Due'] - b['Days Until Due']);
+
+      const filename = `Review_Schedule_${this.getDateStamp()}.csv`;
+      this.downloadCSV(exportData, filename);
+
+      logger.info('PolicyReportExportService', `Successfully exported ${exportData.length} review schedules`);
+
+      return {
+        success: true,
+        filename,
+        recordCount: exportData.length,
+        exportedAt: new Date()
+      };
+    } catch (error) {
+      logger.error('PolicyReportExportService', 'Failed to export review schedule:', error);
+      return {
+        success: false,
+        filename: '',
+        recordCount: 0,
+        exportedAt: new Date(),
+        errors: [error instanceof Error ? error.message : 'Unknown error']
+      };
+    }
+  }
+
+  // ============================================================================
+  // PREVIEW DATA (limited query for Report Builder preview)
+  // ============================================================================
+
+  /**
+   * Fetch a limited preview of compliance data by department (top 5)
+   */
+  public async getCompliancePreview(
+    options: { dateRangeStart?: Date; dateRangeEnd?: Date; departments?: string[] } = {}
+  ): Promise<{ departments: any[]; totals: { assigned: number; acknowledged: number; pending: number; overdue: number; rate: number } }> {
+    try {
+      const filters: string[] = [];
+      if (options.dateRangeStart) {
+        filters.push(`AssignedDate ge datetime'${options.dateRangeStart.toISOString()}'`);
+      }
+      if (options.dateRangeEnd) {
+        filters.push(`AssignedDate le datetime'${options.dateRangeEnd.toISOString()}'`);
+      }
+
+      let query = this.sp.web.lists
+        .getByTitle(this.ACKNOWLEDGEMENT_LIST)
+        .items
+        .select('Id', 'AckStatus', 'UserDepartment', 'DueDate')
+        .top(500);
+
+      if (filters.length > 0) {
+        query = query.filter(filters.join(' and '));
+      }
+
+      const acks = await query();
+
+      // Group by department
+      const deptMap = new Map<string, { assigned: number; acknowledged: number; pending: number; overdue: number }>();
+      const now = new Date();
+      acks.forEach((ack: any) => {
+        const dept = ack.UserDepartment || 'Unknown';
+        if (options.departments && options.departments.length > 0 && !options.departments.includes(dept)) return;
+        if (!deptMap.has(dept)) deptMap.set(dept, { assigned: 0, acknowledged: 0, pending: 0, overdue: 0 });
+        const d = deptMap.get(dept)!;
+        d.assigned++;
+        const isAcked = ack.AckStatus === 'Acknowledged' || ack.AckStatus === 'completed';
+        if (isAcked) { d.acknowledged++; }
+        else if (ack.DueDate && new Date(ack.DueDate) < now) { d.overdue++; }
+        else { d.pending++; }
+      });
+
+      const departments = Array.from(deptMap.entries())
+        .map(([dept, data]) => ({
+          department: dept,
+          ...data,
+          rate: data.assigned > 0 ? Math.round((data.acknowledged / data.assigned) * 100) : 0
+        }))
+        .sort((a, b) => b.assigned - a.assigned)
+        .slice(0, 8);
+
+      const totals = departments.reduce((acc, d) => ({
+        assigned: acc.assigned + d.assigned,
+        acknowledged: acc.acknowledged + d.acknowledged,
+        pending: acc.pending + d.pending,
+        overdue: acc.overdue + d.overdue,
+        rate: 0
+      }), { assigned: 0, acknowledged: 0, pending: 0, overdue: 0, rate: 0 });
+      totals.rate = totals.assigned > 0 ? Math.round((totals.acknowledged / totals.assigned) * 100) : 0;
+
+      return { departments, totals };
+    } catch (error) {
+      logger.error('PolicyReportExportService', 'Failed to fetch compliance preview:', error);
+      return { departments: [], totals: { assigned: 0, acknowledged: 0, pending: 0, overdue: 0, rate: 0 } };
+    }
+  }
+
+  /**
+   * Fetch distinct departments from PM_Policies for the builder dropdown
+   */
+  public async getDistinctDepartments(): Promise<string[]> {
+    try {
+      const policies = await this.sp.web.lists
+        .getByTitle(this.POLICY_LIST)
+        .items
+        .select('DepartmentOwner')
+        .filter("DepartmentOwner ne null")
+        .top(500)();
+
+      const depts = new Set<string>();
+      policies.forEach((p: any) => { if (p.DepartmentOwner) depts.add(p.DepartmentOwner); });
+      return Array.from(depts).sort();
+    } catch (error) {
+      logger.error('PolicyReportExportService', 'Failed to fetch departments:', error);
+      return [];
+    }
+  }
+
+  // ============================================================================
+  // PDF REPORT GENERATION (via browser print-to-PDF)
+  // ============================================================================
+
+  /**
+   * Generate a branded PDF report via ReportHtmlGenerator + browser print dialog.
+   * Returns the same IExportResult so callers don't need to know the format.
+   */
+  public async generatePdfReport(
+    reportKey: string,
+    reportTitle: string,
+    options: { dateRangeStart?: Date; dateRangeEnd?: Date; departments?: string[] } = {}
+  ): Promise<IExportResult> {
+    try {
+      logger.info('PolicyReportExportService', `Generating PDF for ${reportKey}`);
+
+      const sections: IReportSection[] = [];
+      let recordCount = 0;
+
+      switch (reportKey) {
+        case 'dept-compliance': {
+          const preview = await this.getCompliancePreview(options);
+          const t = preview.totals;
+          sections.push({
+            type: 'kpi-row',
+            data: [
+              { label: 'Compliance Rate', value: `${t.rate}%`, color: t.rate >= 80 ? '#059669' : '#d97706' },
+              { label: 'Total Assigned', value: String(t.assigned) },
+              { label: 'Acknowledged', value: String(t.acknowledged), color: '#059669' },
+              { label: 'Overdue', value: String(t.overdue), color: t.overdue > 0 ? '#dc2626' : '#059669' }
+            ] as IKpiItem[]
+          });
+          sections.push({ type: 'divider' });
+          sections.push({
+            type: 'table',
+            title: 'Department Breakdown',
+            data: {
+              headers: ['Department', 'Assigned', 'Acknowledged', 'Pending', 'Overdue', 'Rate'],
+              rows: preview.departments.map(d => [d.department, String(d.assigned), String(d.acknowledged), String(d.pending), String(d.overdue), `${d.rate}%`])
+            } as ITableData
+          });
+          recordCount = preview.departments.length;
+          break;
+        }
+        case 'ack-status': {
+          const acks = await this.sp.web.lists.getByTitle(this.ACKNOWLEDGEMENT_LIST).items
+            .select('Id', 'PolicyName', 'PolicyNumber', 'AckStatus', 'DueDate', 'UserDepartment', 'User/Title')
+            .expand('User').top(100)();
+          const pending = acks.filter((a: any) => a.AckStatus !== 'Acknowledged' && a.AckStatus !== 'completed');
+          sections.push({
+            type: 'kpi-row',
+            data: [
+              { label: 'Total', value: String(acks.length) },
+              { label: 'Pending', value: String(pending.length), color: '#d97706' }
+            ] as IKpiItem[]
+          });
+          sections.push({
+            type: 'table',
+            title: 'Pending & Overdue Acknowledgements',
+            data: {
+              headers: ['Policy', 'User', 'Department', 'Status', 'Due Date'],
+              rows: pending.slice(0, 50).map((a: any) => [a.PolicyName || '', a.User?.Title || '', a.UserDepartment || '', a.AckStatus || '', a.DueDate ? new Date(a.DueDate).toLocaleDateString('en-GB') : ''])
+            } as ITableData
+          });
+          recordCount = pending.length;
+          break;
+        }
+        case 'review-schedule': {
+          const policies = await this.sp.web.lists.getByTitle(this.POLICY_LIST).items
+            .select('Id', 'PolicyName', 'PolicyNumber', 'PolicyCategory', 'NextReviewDate', 'ReviewFrequency', 'PolicyOwner/Title')
+            .expand('PolicyOwner')
+            .filter("Status eq 'Published' and NextReviewDate ne null")
+            .orderBy('NextReviewDate', true).top(100)();
+          const now = new Date();
+          sections.push({
+            type: 'table',
+            title: 'Policy Review Schedule',
+            data: {
+              headers: ['Policy', 'Category', 'Owner', 'Frequency', 'Next Review', 'Urgency'],
+              rows: policies.map((p: any) => {
+                const days = p.NextReviewDate ? Math.ceil((new Date(p.NextReviewDate).getTime() - now.getTime()) / 86400000) : 0;
+                return [p.PolicyName || '', p.PolicyCategory || '', p.PolicyOwner?.Title || '', p.ReviewFrequency || 'Annual', p.NextReviewDate ? new Date(p.NextReviewDate).toLocaleDateString('en-GB') : '', days < 0 ? 'OVERDUE' : days <= 30 ? 'Due Soon' : 'On Track'];
+              })
+            } as ITableData
+          });
+          recordCount = policies.length;
+          break;
+        }
+        case 'sla-performance':
+        case 'executive-summary': {
+          const result = await this.getCompliancePreview(options);
+          sections.push({
+            type: 'kpi-row',
+            data: [
+              { label: 'Overall Compliance', value: `${result.totals.rate}%`, color: result.totals.rate >= 80 ? '#059669' : '#d97706' },
+              { label: 'Assigned', value: String(result.totals.assigned) },
+              { label: 'Overdue', value: String(result.totals.overdue), color: result.totals.overdue > 0 ? '#dc2626' : '#059669' }
+            ] as IKpiItem[]
+          });
+          sections.push({
+            type: 'table',
+            title: 'Summary by Department',
+            data: {
+              headers: ['Department', 'Assigned', 'Acknowledged', 'Rate'],
+              rows: result.departments.map(d => [d.department, String(d.assigned), String(d.acknowledged), `${d.rate}%`])
+            } as ITableData
+          });
+          recordCount = result.departments.length;
+          break;
+        }
+        default: {
+          // Generic: use compliance preview
+          const fallback = await this.getCompliancePreview(options);
+          sections.push({
+            type: 'summary-card',
+            title: 'Report Summary',
+            content: `This report covers ${fallback.totals.assigned} acknowledgements across ${fallback.departments.length} departments with an overall compliance rate of ${fallback.totals.rate}%.`
+          });
+          recordCount = fallback.departments.length;
+          break;
+        }
+      }
+
+      const dateRange = options.dateRangeStart || options.dateRangeEnd
+        ? `${options.dateRangeStart ? options.dateRangeStart.toLocaleDateString('en-GB') : 'Start'} — ${options.dateRangeEnd ? options.dateRangeEnd.toLocaleDateString('en-GB') : 'Now'}`
+        : undefined;
+
+      const config: IReportConfig = {
+        title: reportTitle,
+        subtitle: dateRange,
+        reportType: reportKey.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+        sections
+      };
+
+      ReportHtmlGenerator.printReport(config);
+
+      return {
+        success: true,
+        filename: `${reportTitle.replace(/\s+/g, '_')}.pdf`,
+        recordCount,
+        exportedAt: new Date()
+      };
+    } catch (error) {
+      logger.error('PolicyReportExportService', 'Failed to generate PDF report:', error);
+      return { success: false, filename: '', recordCount: 0, exportedAt: new Date(), errors: [error instanceof Error ? error.message : 'Unknown error'] };
+    }
+  }
+
+  // ============================================================================
+  // REPORT STORAGE — save CSV to SharePoint document library
+  // ============================================================================
+
+  /**
+   * Save generated CSV content to PM_PolicySourceDocuments/Reports/ folder.
+   * Returns the server-relative URL of the uploaded file.
+   */
+  public async saveReportToLibrary(csvData: Record<string, any>[], filename: string): Promise<string | null> {
+    try {
+      const folderPath = 'PM_PolicySourceDocuments/Reports';
+
+      // Ensure the Reports folder exists
+      try {
+        await this.sp.web.folders.addUsingPath(folderPath);
+      } catch { /* folder may already exist — non-blocking */ }
+
+      // Build CSV content
+      if (!csvData || csvData.length === 0) return null;
+      const headers = Object.keys(csvData[0]);
+      const rows: string[][] = [headers];
+      for (const item of csvData) {
+        const row: string[] = [];
+        for (const header of headers) {
+          let value = item[header];
+          if (value === null || value === undefined) value = '';
+          else if (typeof value === 'object') value = JSON.stringify(value);
+          const str = String(value);
+          row.push(str.includes(',') || str.includes('"') || str.includes('\n') ? `"${str.replace(/"/g, '""')}"` : str);
+        }
+        rows.push(row);
+      }
+      const BOM = '\uFEFF';
+      const csvContent = BOM + rows.map(r => r.join(',')).join('\n');
+
+      // Upload
+      const fileBlob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const buffer = await fileBlob.arrayBuffer();
+      const result = await this.sp.web
+        .getFolderByServerRelativePath(folderPath)
+        .files.addUsingPath(filename, new Uint8Array(buffer), { Overwrite: true });
+
+      const fileUrl = result.data?.ServerRelativeUrl || '';
+      logger.info('PolicyReportExportService', `Report saved to ${fileUrl}`);
+      return fileUrl;
+    } catch (error) {
+      logger.error('PolicyReportExportService', 'Failed to save report to library:', error);
+      return null;
     }
   }
 

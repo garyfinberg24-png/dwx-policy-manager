@@ -4,10 +4,12 @@ import { IPolicyAuthorReportsProps } from './IPolicyAuthorReportsProps';
 import { Icon } from '@fluentui/react/lib/Icon';
 import {
   Stack, Text, Spinner, SpinnerSize, MessageBar, MessageBarType,
-  PrimaryButton, DefaultButton, SearchBox, Dropdown, IDropdownOption
+  PrimaryButton, DefaultButton, SearchBox, Dropdown, IDropdownOption,
+  PanelType
 } from '@fluentui/react';
 import { JmlAppLayout } from '../../../components/JmlAppLayout/JmlAppLayout';
 import { ErrorBoundary } from '../../../components/ErrorBoundary/ErrorBoundary';
+import { StyledPanel } from '../../../components/StyledPanel/StyledPanel';
 import { PM_LISTS } from '../../../constants/SharePointListNames';
 import { RoleDetectionService } from '../../../services/RoleDetectionService';
 import { PolicyManagerRole, getHighestPolicyRole, hasMinimumRole } from '../../../services/PolicyRoleService';
@@ -33,6 +35,17 @@ interface IActivityItem {
   id: number; action: string; description: string; date: string; policyId: number;
 }
 
+interface IQuizPerformance {
+  policyId: number; policyName: string; policyNumber: string;
+  totalAttempts: number; passRate: number; avgScore: number;
+  multiAttemptRate: number; // % of users who needed 2+ attempts
+}
+
+interface IAckDrillUser {
+  id: number; userName: string; userEmail: string; department: string;
+  status: string; dueDate: string; acknowledgedDate: string; daysOverdue: number;
+}
+
 interface IReportData {
   totalPolicies: number; publishedPolicies: number; draftPolicies: number;
   inReviewPolicies: number; approvedPolicies: number; retiredPolicies: number;
@@ -40,6 +53,7 @@ interface IReportData {
   overdueAcknowledgements: number; pendingAcknowledgements: number;
   averageAckRate: number;
   quizzesPassed: number; quizzesFailed: number; quizTotal: number;
+  quizPerformance: IQuizPerformance[];
   policyPerformance: IPolicyPerformance[];
   upcomingReviews: IUpcomingReview[];
   recentActivity: IActivityItem[];
@@ -51,6 +65,14 @@ interface IPolicyAuthorReportsState {
   loading: boolean; detectedRole: PolicyManagerRole | null;
   data: IReportData | null; error: string;
   activeTab: ReportTab; searchQuery: string; sortBy: string;
+  // Ack drill-down panel
+  ackDrillPolicyId: number | null;
+  ackDrillPolicyName: string;
+  ackDrillData: IAckDrillUser[];
+  ackDrillLoading: boolean;
+  ackDrillFilter: 'all' | 'pending' | 'overdue' | 'acknowledged';
+  // Export
+  exporting: boolean;
 }
 
 // ============================================================================
@@ -62,7 +84,11 @@ export default class PolicyAuthorReports extends React.Component<IPolicyAuthorRe
 
   constructor(props: IPolicyAuthorReportsProps) {
     super(props);
-    this.state = { loading: true, detectedRole: null, data: null, error: '', activeTab: 'overview', searchQuery: '', sortBy: 'ackRate' };
+    this.state = {
+      loading: true, detectedRole: null, data: null, error: '', activeTab: 'overview', searchQuery: '', sortBy: 'ackRate',
+      ackDrillPolicyId: null, ackDrillPolicyName: '', ackDrillData: [], ackDrillLoading: false, ackDrillFilter: 'all',
+      exporting: false
+    };
   }
 
   public componentDidMount(): void { this._isMounted = true; this.detectRoleAndLoad(); }
@@ -100,7 +126,7 @@ export default class PolicyAuthorReports extends React.Component<IPolicyAuthorRe
           .select('Id', 'AuditAction', 'ActionDescription', 'ActionDate', 'PolicyId')
           .orderBy('ActionDate', false).top(50)().catch(() => []),
         this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_QUIZ_RESULTS)
-          .items.select('Id', 'PolicyId', 'Score', 'Passed', 'AttemptDate')
+          .items.select('Id', 'PolicyId', 'Score', 'Passed', 'AttemptDate', 'AttemptNumber', 'UserId')
           .top(500)().catch(() => [])
       ]);
 
@@ -148,6 +174,36 @@ export default class PolicyAuthorReports extends React.Component<IPolicyAuthorRe
 
       const recentActivity: IActivityItem[] = auditItems.map((a: any) => ({ id: a.Id, action: a.AuditAction || '', description: a.ActionDescription || '', date: a.ActionDate || '', policyId: a.PolicyId || 0 }));
 
+      // Quiz performance per policy
+      const quizByPolicy = new Map<number, any[]>();
+      myQuizResults.forEach((q: any) => {
+        const arr = quizByPolicy.get(q.PolicyId) || [];
+        arr.push(q);
+        quizByPolicy.set(q.PolicyId, arr);
+      });
+      const quizPerformance: IQuizPerformance[] = [];
+      quizByPolicy.forEach((results, policyId) => {
+        const policy = policies.find((p: any) => p.Id === policyId);
+        if (!policy || results.length === 0) return;
+        const passed = results.filter((r: any) => r.Passed).length;
+        const scores = results.map((r: any) => r.Score || 0);
+        const avgScore = scores.reduce((sum: number, s: number) => sum + s, 0) / scores.length;
+        // Multi-attempt: group by UserId, count users with >1 attempt
+        const userAttempts = new Map<number, number>();
+        results.forEach((r: any) => {
+          const uid = r.UserId || 0;
+          userAttempts.set(uid, (userAttempts.get(uid) || 0) + 1);
+        });
+        const usersWithMulti = Array.from(userAttempts.values()).filter(c => c > 1).length;
+        const totalUsers = userAttempts.size;
+        quizPerformance.push({
+          policyId, policyName: policy.PolicyName || policy.Title || 'Untitled', policyNumber: policy.PolicyNumber || '',
+          totalAttempts: results.length, passRate: Math.round((passed / results.length) * 100),
+          avgScore: Math.round(avgScore), multiAttemptRate: totalUsers > 0 ? Math.round((usersWithMulti / totalUsers) * 100) : 0
+        });
+      });
+      quizPerformance.sort((a, b) => a.passRate - b.passRate); // worst first
+
       const data: IReportData = {
         totalPolicies: policies.length, publishedPolicies: policies.filter((p: any) => p.PolicyStatus === 'Published').length,
         draftPolicies: policies.filter((p: any) => p.PolicyStatus === 'Draft').length,
@@ -160,7 +216,7 @@ export default class PolicyAuthorReports extends React.Component<IPolicyAuthorRe
         quizzesPassed: myQuizResults.filter((q: any) => q.Passed).length,
         quizzesFailed: myQuizResults.filter((q: any) => !q.Passed).length,
         quizTotal: myQuizResults.length,
-        policyPerformance, upcomingReviews, recentActivity, statusDistribution, categoryDistribution
+        quizPerformance, policyPerformance, upcomingReviews, recentActivity, statusDistribution, categoryDistribution
       };
 
       if (this._isMounted) this.setState({ data, loading: false });
@@ -236,6 +292,12 @@ export default class PolicyAuthorReports extends React.Component<IPolicyAuthorRe
   private renderOverview(data: IReportData, siteUrl: string): React.ReactElement {
     return (
       <>
+        {/* Export toolbar */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+          <DefaultButton text="Download CSV" iconProps={{ iconName: 'Download' }} onClick={this.handleExportOverview}
+            styles={{ root: { fontSize: 12, height: 32, padding: '0 12px' }, icon: { fontSize: 13, color: tc.primary } }} />
+        </div>
+
         {/* KPI Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
           {[
@@ -296,6 +358,9 @@ export default class PolicyAuthorReports extends React.Component<IPolicyAuthorRe
             <div><div style={{ fontSize: 22, fontWeight: 700, color: '#d97706' }}>{data.upcomingReviews.filter(r => r.daysUntil <= 30).length}</div><div style={{ fontSize: 11, color: '#64748b' }}>Reviews Due (30d)</div></div>
           </div>
         </div>
+
+        {/* Quiz Performance Section */}
+        {this.renderQuizPerformance(data)}
       </>
     );
   }
@@ -341,8 +406,12 @@ export default class PolicyAuthorReports extends React.Component<IPolicyAuthorRe
             onChange={(_, opt) => this.setState({ sortBy: String(opt?.key || 'overdue') })}
             styles={{ root: { width: 180 }, title: { borderRadius: 4 }, dropdown: { borderRadius: 4 } }} />
           <div style={{ flex: 1 }} />
-          <span style={{ fontSize: 12, color: '#64748b' }}>{filtered.length} polic{filtered.length !== 1 ? 'ies' : 'y'}</span>
+          <span style={{ fontSize: 12, color: '#64748b', marginRight: 8 }}>{filtered.length} polic{filtered.length !== 1 ? 'ies' : 'y'}</span>
+          <DefaultButton text="Download CSV" iconProps={{ iconName: 'Download' }} onClick={this.handleExportAcknowledgements}
+            styles={{ root: { fontSize: 12, height: 32, padding: '0 12px' }, icon: { fontSize: 13, color: tc.primary } }} />
         </div>
+
+        <div style={{ fontSize: 11, color: '#64748b', marginBottom: 10, fontStyle: 'italic' }}>Click a policy row to see individual user acknowledgement status.</div>
 
         {/* Per-policy acknowledgement table */}
         <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
@@ -353,12 +422,15 @@ export default class PolicyAuthorReports extends React.Component<IPolicyAuthorRe
             const statusColor = policy.status === 'Published' ? '#059669' : policy.status === 'Draft' ? '#64748b' : '#2563eb';
             const rateColor = policy.ackRate >= 80 ? '#059669' : policy.ackRate >= 50 ? '#d97706' : '#dc2626';
             return (
-              <div key={policy.id} style={{ display: 'grid', gridTemplateColumns: '1fr 90px 80px 70px 70px 80px 100px', padding: '12px 16px', borderBottom: '1px solid #f1f5f9', alignItems: 'center' }}>
+              <div key={policy.id} role="button" tabIndex={0}
+                onClick={() => this.loadAckDrillDown(policy.id, policy.title)}
+                onKeyDown={(e) => { if (e.key === 'Enter') this.loadAckDrillDown(policy.id, policy.title); }}
+                style={{ display: 'grid', gridTemplateColumns: '1fr 90px 80px 70px 70px 80px 100px', padding: '12px 16px', borderBottom: '1px solid #f1f5f9', alignItems: 'center', cursor: 'pointer', transition: 'background 0.15s' }}
+                onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.background = '#f8fafc'}
+                onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.background = ''}
+              >
                 <div>
-                  <a href={`${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policy.id}`} style={{ fontSize: 13, fontWeight: 600, color: '#0f172a', textDecoration: 'none' }}
-                    onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.color = tc.primary} onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.color = '#0f172a'}>
-                    {policy.title}
-                  </a>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#0f172a' }}>{policy.title}</span>
                   <div style={{ fontSize: 11, color: '#94a3b8' }}>{policy.policyNumber || policy.category}</div>
                 </div>
                 <div><span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 4, background: `${statusColor}15`, color: statusColor }}>{policy.status}</span></div>
@@ -376,6 +448,9 @@ export default class PolicyAuthorReports extends React.Component<IPolicyAuthorRe
           })}
           {filtered.length === 0 && <div style={{ padding: 32, textAlign: 'center', color: '#94a3b8', fontSize: 13 }}>No policies with acknowledgement data.</div>}
         </div>
+
+        {/* Ack drill-down panel */}
+        {this.renderAckDrillPanel()}
       </>
     );
   }
@@ -395,6 +470,12 @@ export default class PolicyAuthorReports extends React.Component<IPolicyAuthorRe
 
     return (
       <>
+        {/* Export toolbar */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+          <DefaultButton text="Download CSV" iconProps={{ iconName: 'Download' }} onClick={this.handleExportLifecycle}
+            styles={{ root: { fontSize: 12, height: 32, padding: '0 12px' }, icon: { fontSize: 13, color: tc.primary } }} />
+        </div>
+
         {/* Lifecycle pipeline */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 32 }}>
           {stages.map((stage, i) => (
@@ -473,6 +554,12 @@ export default class PolicyAuthorReports extends React.Component<IPolicyAuthorRe
 
     return (
       <>
+        {/* Export toolbar */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+          <DefaultButton text="Download CSV" iconProps={{ iconName: 'Download' }} onClick={this.handleExportReviews}
+            styles={{ root: { fontSize: 12, height: 32, padding: '0 12px' }, icon: { fontSize: 13, color: tc.primary } }} />
+        </div>
+
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
           {[
             { label: 'Overdue', value: overdue.length, color: '#dc2626' },
@@ -517,7 +604,9 @@ export default class PolicyAuthorReports extends React.Component<IPolicyAuthorRe
         <div style={{ display: 'flex', gap: 10, marginBottom: 16, alignItems: 'center' }}>
           <SearchBox placeholder="Search activity..." value={searchQuery} onChange={(_, v) => this.setState({ searchQuery: v || '' })} styles={{ root: { width: 280 } }} />
           <div style={{ flex: 1 }} />
-          <span style={{ fontSize: 12, color: '#64748b' }}>{filtered.length} event{filtered.length !== 1 ? 's' : ''}</span>
+          <span style={{ fontSize: 12, color: '#64748b', marginRight: 8 }}>{filtered.length} event{filtered.length !== 1 ? 's' : ''}</span>
+          <DefaultButton text="Download CSV" iconProps={{ iconName: 'Download' }} onClick={this.handleExportActivity}
+            styles={{ root: { fontSize: 12, height: 32, padding: '0 12px' }, icon: { fontSize: 13, color: tc.primary } }} />
         </div>
 
         <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
@@ -547,6 +636,325 @@ export default class PolicyAuthorReports extends React.Component<IPolicyAuthorRe
           })}
         </div>
       </>
+    );
+  }
+
+  // ============================================================================
+  // CSV EXPORT UTILITY
+  // ============================================================================
+
+  private downloadCSV(data: Record<string, any>[], filename: string): void {
+    if (!data || data.length === 0) return;
+    const headers = Object.keys(data[0]);
+    const rows: string[][] = [headers];
+    for (const item of data) {
+      const row: string[] = [];
+      for (const header of headers) {
+        let value = item[header];
+        if (value === null || value === undefined) value = '';
+        else if (value instanceof Date) value = value.toISOString().split('T')[0];
+        else if (typeof value === 'object') value = JSON.stringify(value);
+        const str = String(value);
+        row.push(str.includes(',') || str.includes('"') || str.includes('\n') ? `"${str.replace(/"/g, '""')}"` : str);
+      }
+      rows.push(row);
+    }
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + rows.map(r => r.join(',')).join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  }
+
+  private getDateStamp(): string {
+    const now = new Date();
+    return `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+  }
+
+  private formatDateForExport(date: string | null | undefined): string {
+    if (!date) return '';
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  }
+
+  // ============================================================================
+  // EXPORT HANDLERS (one per tab)
+  // ============================================================================
+
+  private handleExportOverview = (): void => {
+    const { data } = this.state;
+    if (!data) return;
+    const rows = data.policyPerformance.map(p => ({
+      'Policy Name': p.title, 'Policy Number': p.policyNumber, 'Status': p.status, 'Category': p.category,
+      'Ack Rate %': p.ackRate, 'Total Assigned': p.totalAssigned, 'Acknowledged': p.acknowledged,
+      'Overdue': p.overdue, 'Pending': p.pending, 'Quiz Pass Rate %': p.quizPassRate, 'Quiz Attempts': p.quizTotal
+    }));
+    this.downloadCSV(rows, `My_Policy_Overview_${this.getDateStamp()}.csv`);
+  };
+
+  private handleExportAcknowledgements = (): void => {
+    const { data } = this.state;
+    if (!data) return;
+    const rows = data.policyPerformance.filter(p => p.totalAssigned > 0 || p.status === 'Published').map(p => ({
+      'Policy Name': p.title, 'Policy Number': p.policyNumber, 'Status': p.status,
+      'Assigned': p.totalAssigned, 'Acknowledged': p.acknowledged, 'Overdue': p.overdue,
+      'Pending': p.pending, 'Ack Rate %': p.ackRate
+    }));
+    this.downloadCSV(rows, `My_Ack_Status_${this.getDateStamp()}.csv`);
+  };
+
+  private handleExportLifecycle = (): void => {
+    const { data } = this.state;
+    if (!data) return;
+    const rows = data.policyPerformance.map(p => ({
+      'Policy Name': p.title, 'Policy Number': p.policyNumber, 'Category': p.category,
+      'Status': p.status, 'Last Updated': this.formatDateForExport(p.lastUpdated)
+    }));
+    this.downloadCSV(rows, `My_Policy_Lifecycle_${this.getDateStamp()}.csv`);
+  };
+
+  private handleExportReviews = (): void => {
+    const { data } = this.state;
+    if (!data) return;
+    const rows = data.upcomingReviews.map(r => ({
+      'Policy Name': r.title, 'Review Date': this.formatDateForExport(r.reviewDate),
+      'Frequency': r.reviewFrequency, 'Days Until Due': r.daysUntil,
+      'Urgency': r.daysUntil < 0 ? 'Overdue' : r.daysUntil <= 30 ? 'Due Soon' : 'Upcoming'
+    }));
+    this.downloadCSV(rows, `My_Review_Schedule_${this.getDateStamp()}.csv`);
+  };
+
+  private handleExportActivity = (): void => {
+    const { data } = this.state;
+    if (!data) return;
+    const rows = data.recentActivity.map(a => ({
+      'Date': this.formatDateForExport(a.date), 'Action': a.action,
+      'Description': a.description, 'Policy ID': a.policyId
+    }));
+    this.downloadCSV(rows, `My_Activity_History_${this.getDateStamp()}.csv`);
+  };
+
+  private handleExportAckDrill = (): void => {
+    const { ackDrillData, ackDrillPolicyName } = this.state;
+    if (!ackDrillData.length) return;
+    const rows = ackDrillData.map(u => ({
+      'User Name': u.userName, 'Email': u.userEmail, 'Department': u.department,
+      'Status': u.status, 'Due Date': this.formatDateForExport(u.dueDate),
+      'Acknowledged Date': this.formatDateForExport(u.acknowledgedDate),
+      'Days Overdue': u.daysOverdue > 0 ? u.daysOverdue : ''
+    }));
+    const safeName = (ackDrillPolicyName || 'Policy').replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30);
+    this.downloadCSV(rows, `Ack_Users_${safeName}_${this.getDateStamp()}.csv`);
+  };
+
+  // ============================================================================
+  // ACK DRILL-DOWN — load per-user data for a specific policy
+  // ============================================================================
+
+  private async loadAckDrillDown(policyId: number, policyName: string): Promise<void> {
+    this.setState({ ackDrillPolicyId: policyId, ackDrillPolicyName: policyName, ackDrillLoading: true, ackDrillData: [], ackDrillFilter: 'all' });
+    try {
+      const items = await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICY_ACKNOWLEDGEMENTS)
+        .items
+        .filter(`PolicyId eq ${policyId}`)
+        .select('Id', 'AckStatus', 'DueDate', 'AcknowledgedDate', 'UserDepartment', 'OverdueDays', 'User/Title', 'User/EMail')
+        .expand('User')
+        .orderBy('AckStatus', true)
+        .top(200)();
+
+      const now = new Date();
+      const drillData: IAckDrillUser[] = items.map((item: any) => {
+        const dueDate = item.DueDate ? new Date(item.DueDate) : null;
+        const isAcknowledged = item.AckStatus === 'Acknowledged' || item.AckStatus === 'completed';
+        let daysOverdue = 0;
+        if (!isAcknowledged && dueDate && now > dueDate) {
+          daysOverdue = Math.ceil((now.getTime() - dueDate.getTime()) / 86400000);
+        }
+        return {
+          id: item.Id,
+          userName: item.User?.Title || 'Unknown',
+          userEmail: item.User?.EMail || '',
+          department: item.UserDepartment || '',
+          status: isAcknowledged ? 'Acknowledged' : (daysOverdue > 0 ? 'Overdue' : 'Pending'),
+          dueDate: item.DueDate || '',
+          acknowledgedDate: item.AcknowledgedDate || '',
+          daysOverdue
+        };
+      });
+
+      if (this._isMounted) this.setState({ ackDrillData: drillData, ackDrillLoading: false });
+    } catch (err) {
+      console.error('[PolicyAuthorReports] loadAckDrillDown failed:', err);
+      if (this._isMounted) this.setState({ ackDrillLoading: false });
+    }
+  }
+
+  // ============================================================================
+  // ACK DRILL-DOWN PANEL
+  // ============================================================================
+
+  private renderAckDrillPanel(): React.ReactElement {
+    const { ackDrillPolicyId, ackDrillPolicyName, ackDrillData, ackDrillLoading, ackDrillFilter } = this.state;
+    if (!ackDrillPolicyId) return <></>;
+
+    const acked = ackDrillData.filter(u => u.status === 'Acknowledged').length;
+    const pending = ackDrillData.filter(u => u.status === 'Pending').length;
+    const overdue = ackDrillData.filter(u => u.status === 'Overdue').length;
+    const total = ackDrillData.length;
+    const ackRate = total > 0 ? Math.round((acked / total) * 100) : 0;
+
+    const filtered = ackDrillFilter === 'all' ? ackDrillData
+      : ackDrillData.filter(u => u.status.toLowerCase() === ackDrillFilter);
+
+    const filters: Array<{ key: typeof ackDrillFilter; label: string; count: number }> = [
+      { key: 'all', label: 'All', count: total },
+      { key: 'pending', label: 'Pending', count: pending },
+      { key: 'overdue', label: 'Overdue', count: overdue },
+      { key: 'acknowledged', label: 'Acknowledged', count: acked },
+    ];
+
+    return (
+      <StyledPanel
+        isOpen={!!ackDrillPolicyId}
+        onDismiss={() => this.setState({ ackDrillPolicyId: null, ackDrillData: [] })}
+        type={PanelType.medium}
+        headerText={`Acknowledgements — ${ackDrillPolicyName}`}
+        closeButtonAriaLabel="Close"
+        onRenderFooterContent={() => (
+          <Stack horizontal tokens={{ childrenGap: 8 }} style={{ padding: '16px 0' }}>
+            <DefaultButton text="Download CSV" iconProps={{ iconName: 'Download' }} onClick={this.handleExportAckDrill} disabled={ackDrillData.length === 0} />
+          </Stack>
+        )}
+        isFooterAtBottom={true}
+      >
+        {ackDrillLoading ? (
+          <div style={{ padding: 40, textAlign: 'center' }}><Spinner size={SpinnerSize.medium} label="Loading user data..." /></div>
+        ) : (
+          <Stack tokens={{ childrenGap: 16 }} style={{ paddingTop: 8 }}>
+            {/* Progress bar */}
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#0f172a' }}>Completion</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: ackRate >= 80 ? '#059669' : ackRate >= 50 ? '#d97706' : '#dc2626' }}>{ackRate}%</span>
+              </div>
+              <div style={{ width: '100%', height: 8, background: '#f1f5f9', borderRadius: 4, overflow: 'hidden' }}>
+                <div style={{ width: `${ackRate}%`, height: '100%', background: ackRate >= 80 ? '#059669' : ackRate >= 50 ? '#d97706' : '#dc2626', borderRadius: 4, transition: 'width 0.3s' }} />
+              </div>
+            </div>
+
+            {/* Mini KPIs */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+              {[
+                { label: 'Acknowledged', value: acked, color: '#059669' },
+                { label: 'Pending', value: pending, color: '#d97706' },
+                { label: 'Overdue', value: overdue, color: '#dc2626' },
+              ].map(k => (
+                <div key={k.label} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, borderTop: `3px solid ${k.color}`, padding: '10px 12px', textAlign: 'center' }}>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: k.color }}>{k.value}</div>
+                  <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5, color: '#94a3b8', fontWeight: 600, marginTop: 2 }}>{k.label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Filter pills */}
+            <div style={{ display: 'flex', gap: 6 }}>
+              {filters.map(f => (
+                <button key={f.key} onClick={() => this.setState({ ackDrillFilter: f.key })}
+                  style={{
+                    padding: '5px 12px', fontSize: 12, fontWeight: 600, borderRadius: 4, cursor: 'pointer', border: '1px solid',
+                    background: ackDrillFilter === f.key ? tc.primary : '#fff',
+                    color: ackDrillFilter === f.key ? '#fff' : '#64748b',
+                    borderColor: ackDrillFilter === f.key ? tc.primary : '#e2e8f0',
+                    fontFamily: 'inherit'
+                  }}>
+                  {f.label} ({f.count})
+                </button>
+              ))}
+            </div>
+
+            {/* User table */}
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, overflow: 'hidden' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px 90px 90px 70px', padding: '8px 14px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, color: '#64748b' }}>
+                <div>User</div><div>Department</div><div>Status</div><div>Due Date</div><div>Overdue</div>
+              </div>
+              {filtered.length === 0 ? (
+                <div style={{ padding: 24, textAlign: 'center', color: '#94a3b8', fontSize: 13 }}>No users in this filter.</div>
+              ) : filtered.map(user => {
+                const statusColor = user.status === 'Acknowledged' ? '#059669' : user.status === 'Overdue' ? '#dc2626' : '#d97706';
+                const dueDateStr = user.dueDate ? new Date(user.dueDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '—';
+                return (
+                  <div key={user.id} style={{ display: 'grid', gridTemplateColumns: '1fr 120px 90px 90px 70px', padding: '10px 14px', borderBottom: '1px solid #f1f5f9', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#0f172a' }}>{user.userName}</div>
+                      <div style={{ fontSize: 11, color: '#94a3b8' }}>{user.userEmail}</div>
+                    </div>
+                    <div style={{ fontSize: 12, color: '#475569' }}>{user.department || '—'}</div>
+                    <div><span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 4, background: `${statusColor}15`, color: statusColor }}>{user.status}</span></div>
+                    <div style={{ fontSize: 12, color: '#475569' }}>{dueDateStr}</div>
+                    <div style={{ fontSize: 12, fontWeight: user.daysOverdue > 0 ? 700 : 400, color: user.daysOverdue > 0 ? '#dc2626' : '#94a3b8' }}>
+                      {user.daysOverdue > 0 ? `${user.daysOverdue}d` : '—'}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </Stack>
+        )}
+      </StyledPanel>
+    );
+  }
+
+  // ============================================================================
+  // QUIZ PERFORMANCE SECTION (for Overview tab)
+  // ============================================================================
+
+  private renderQuizPerformance(data: IReportData): React.ReactElement {
+    if (data.quizPerformance.length === 0) return <></>;
+
+    return (
+      <div style={{ marginTop: 24 }}>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', margin: '0 0 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Icon iconName="Education" style={{ fontSize: 16, color: tc.primary }} />
+          Quiz Performance
+        </h3>
+        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 90px 80px 80px 100px', padding: '8px 16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, color: '#64748b' }}>
+            <div>Policy</div><div>Pass Rate</div><div>Avg Score</div><div>Attempts</div><div>Multi-Attempt</div>
+          </div>
+          {data.quizPerformance.map(q => {
+            const rateColor = q.passRate >= 80 ? '#059669' : q.passRate >= 50 ? '#d97706' : '#dc2626';
+            return (
+              <div key={q.policyId} style={{ display: 'grid', gridTemplateColumns: '1fr 90px 80px 80px 100px', padding: '12px 16px', borderBottom: '1px solid #f1f5f9', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: '#0f172a' }}>{q.policyName}</div>
+                  <div style={{ fontSize: 11, color: '#94a3b8' }}>{q.policyNumber}</div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: rateColor }}>{q.passRate}%</span>
+                  <div style={{ width: 40, height: 5, background: '#f1f5f9', borderRadius: 3, overflow: 'hidden' }}>
+                    <div style={{ width: `${q.passRate}%`, height: '100%', background: rateColor, borderRadius: 3 }} />
+                  </div>
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#475569', textAlign: 'center' }}>{q.avgScore}%</div>
+                <div style={{ fontSize: 13, color: '#475569', textAlign: 'center' }}>{q.totalAttempts}</div>
+                <div style={{ fontSize: 12, color: q.multiAttemptRate > 30 ? '#d97706' : '#64748b', textAlign: 'center' }}>
+                  {q.multiAttemptRate}% retried
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 8, fontStyle: 'italic' }}>
+          Sorted by lowest pass rate first. Per-question breakdown will be available in a future update.
+        </div>
+      </div>
     );
   }
 }

@@ -816,11 +816,50 @@ The QuizBuilder's "AI Generate" panel calls the Azure Function with:
 
 ---
 
-## Session State (Last Updated: 10 Apr 2026 — Session 23 Complete)
+## Session State (Last Updated: 11 Apr 2026 — Session 23 Complete)
 
-### Recently Completed (Session 23 — 10 Apr 2026)
+### Recently Completed (Session 23 — 10-11 Apr 2026)
 
-#### Admin Centre Production Readiness Audit + Theme Fixes + JML Feature Assessment
+#### 47 Commits — Admin Centre Overhaul + Approvals + Manager Features + UI Cleanup
+
+**Build: 1.2.5.26** | **Tags:** `session-23-complete` (start), `session-23-end` (end on `35c3169`)
+
+**Admin Centre Audit (9 fixes):** C1-C3 critical (naming rules stubs, config error swallowing, nav persistence), H1-H3 high (PMRoles, role permissions reset, categories IsDefault), M1-M2 medium (version info, audit refresh)
+
+**4 New Admin Sections:** App Security (risk scoring + alerts), License Management (tiers + feature flags), Metadata Tags (Term Store browser), EntraID Sync (5 modes: full/single/group/M365/rules builder with Entra attributes)
+
+**Policy Pack Approval Workflow:** Full lifecycle (Draft → Pending Approval → Approved/Rejected/Changes Requested), approval panel with comments, email deep links, status badges
+
+**Document Conversion:** Moved from publish → submit-for-review. Reviewers see final HTML. PDFs passthrough. Safety-net fallback at publish.
+
+**Escalation Engine:** EscalationService with SLA tracking, progressive escalation (Notify → Reassign → AutoApprove/Reject), configurable via PM_Configuration, auto-runs on Approvals tab load
+
+**Approval Cards (Compact Row):** Policy info + badges left, status + stepper right, comments textarea + action buttons in footer bar. 3 actions: Approve/Request Changes/Reject with required comments.
+
+**Provisioning Overhaul:** Approval gate (request/approve/execute), per-list actions with text labels, 9 new SP lists provisioned, 6 provisioning scripts (29-34)
+
+**DWx Products:** 26 products with rich modal (hero gradient, features grid, integrations, bundles, CTA footer, close button)
+
+**UI Cleanup:** Pill tabs standardized, Groups consolidated, Feature Permissions command bar, section renames (IDENTITY & ACCESS), SLA compact KPIs, header alignment, search CSS Grid (inline styles), Secure Libraries row consistency
+
+**Manager Features:** Analytics verified live, Review Cycles remind button, Dashboard KPIs clickable, Report email delivery, 6 workflow templates seeded
+
+**Critical Fixes:** Search layout (4th attempt — inline styles), template crash (safeUrl), notification toggles wired, Admin role security, theme sync for all users, footer build number, email template dedup
+
+**Build Number System:** `src/constants/BuildInfo.ts` — v1.2.5 Build 1.2.5.X incremented on each package
+
+### Rollback Checkpoints (Updated)
+- Session 23 start: `session-23-complete` on commit `8ae9449`
+- Session 23 end: `session-23-end` on commit `35c3169`
+
+### Key Patterns (Session 23)
+- **Inline styles for SP-critical layouts**: CSS classes get overridden by SharePoint CanvasZone. Use React inline styles (`style={{}}`) for layout-critical elements (search grid, content wrappers).
+- **safeUrl() helper**: Always use for SP URL-type fields (DocumentTemplateURL). Returns string from either `string` or `{ Url, Description }` object.
+- **Build counter**: `src/constants/BuildInfo.ts` — increment BUILD_NUMBER on every `gulp package-solution --ship`. Testers verify via footer badge.
+- **CSS var() vs tc helper**: Module-scope style objects MUST use `var(--pm-primary, #hex)`. Render-scope can use `tc.*`.
+- **Provisioning approval gate**: PM_Configuration `Provisioning.Request.{id}` with status lifecycle. One-time use approvals.
+- **isNotificationEnabled()**: PolicyService checks PM_Configuration global toggles before sending.
+- **EscalationService**: Progressive escalation with configurable MaxEscalations and final action (Notify/Reassign/AutoApprove/Reject).
 
 **Admin Centre Audit — 9 Findings Fixed:**
 - C1: Naming Rules refresh — replaced setTimeout stubs + undefined variables with real SP batch update (query policies → generate PolicyNumber from segments → audit log)
@@ -1700,7 +1739,7 @@ Three parallel audit streams identified ~45 optimization opportunities:
 | Diagnostics | 9/10 | Event Viewer with 13 features, 7 tabs, vertical nav, Troubleshooter wizard, pipeline verification script |
 | Testing | 3.5/10 | Jest config + 6 unit test suites + Verify-PublishPipeline.ps1 (51 checks). Remaining: integration, component, E2E |
 | Accessibility | 3/10 | Basic Fluent UI a11y. Remaining: ARIA roles, keyboard nav, screen reader |
-| Overall | ~91/100 | Up from 90. Admin Centre audit complete, Provisioning hardened, theme system production-ready |
+| Overall | ~93/100 | Up from 91. Escalation engine, approval cards, Manager upgrades, search layout fixed, 47 commits in Session 23 |
 
 ### Known Issues
 

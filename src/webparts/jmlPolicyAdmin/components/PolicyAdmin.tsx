@@ -12346,23 +12346,198 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           )}
 
           {/* Sync Tab */}
-          {syncTab === 'sync' && (
-            <Stack tokens={{ childrenGap: 12 }}>
+          {syncTab === 'sync' && (() => {
+            const syncMode: string = st._syncMode || 'full';
+            const syncUserEmail: string = st._syncUserEmail || '';
+            const syncGroupId: string = st._syncGroupId || '';
+            const syncRules: Array<{ field: string; operator: string; value: string }> = st._syncRules || [{ field: 'Department', operator: 'equals', value: '' }];
+            const syncRuleOperator: string = st._syncRuleOperator || 'AND';
+
+            const entraAttributes = [
+              { key: 'department', text: 'Department' },
+              { key: 'officeLocation', text: 'Office Location' },
+              { key: 'jobTitle', text: 'Job Title' },
+              { key: 'companyName', text: 'Company Name' },
+              { key: 'city', text: 'City' },
+              { key: 'country', text: 'Country' },
+              { key: 'state', text: 'State / Province' },
+              { key: 'employeeType', text: 'Employee Type' },
+              { key: 'userType', text: 'User Type (Member/Guest)' },
+              { key: 'accountEnabled', text: 'Account Enabled' },
+            ];
+
+            const ruleOperators = [
+              { key: 'equals', text: 'equals' },
+              { key: 'notEquals', text: 'not equals' },
+              { key: 'contains', text: 'contains' },
+              { key: 'startsWith', text: 'starts with' },
+              { key: 'isEmpty', text: 'is empty' },
+              { key: 'isNotEmpty', text: 'is not empty' },
+            ];
+
+            const modeOptions = [
+              { key: 'full', text: 'Full Sync — All Entra Users', icon: 'SyncOccurence' },
+              { key: 'single', text: 'Single User — by email or UPN', icon: 'Contact' },
+              { key: 'securityGroup', text: 'Security Group — sync group members', icon: 'SecurityGroup' },
+              { key: 'm365Group', text: 'M365 Group — sync group members', icon: 'Group' },
+              { key: 'rules', text: 'Custom Rules — filter by Entra attributes', icon: 'FilterSolid' },
+            ];
+
+            const handleSync = async (): Promise<void> => {
+              this.setState({ _isSyncing: true, _syncProgress: 0, _syncMessage: 'Starting sync...' } as any);
+              try {
+                const EntraSvc = require('../../../services/EntraUserSyncService').EntraUserSyncService;
+                const syncService = new EntraSvc(this.props.context);
+                let result: any;
+
+                if (syncMode === 'single') {
+                  if (!syncUserEmail.trim()) { void this.dialogManager.showAlert('Please enter a user email or UPN.', { title: 'Required' }); this.setState({ _isSyncing: false } as any); return; }
+                  this.setState({ _syncMessage: `Syncing user: ${syncUserEmail}...` } as any);
+                  result = await syncService.syncSingleUser(syncUserEmail.trim());
+                  this.setState({ _syncMessage: `Single user sync: ${result.operation} — ${result.displayName || syncUserEmail}` } as any);
+                } else if (syncMode === 'securityGroup' || syncMode === 'm365Group') {
+                  if (!syncGroupId.trim()) { void this.dialogManager.showAlert('Please enter a Group ID (GUID).', { title: 'Required' }); this.setState({ _isSyncing: false } as any); return; }
+                  this.setState({ _syncMessage: `Syncing ${syncMode === 'securityGroup' ? 'Security' : 'M365'} Group...` } as any);
+                  result = await syncService.syncUsersFromGroup(syncGroupId.trim());
+                  this.setState({ _syncMessage: `Group sync complete. Added: ${result.added}, Updated: ${result.updated}, Errors: ${result.errors}` } as any);
+                } else if (syncMode === 'rules') {
+                  const validRules = syncRules.filter(r => r.value.trim() || r.operator === 'isEmpty' || r.operator === 'isNotEmpty');
+                  if (validRules.length === 0) { void this.dialogManager.showAlert('Please add at least one rule with a value.', { title: 'Required' }); this.setState({ _isSyncing: false } as any); return; }
+                  // Build department filter from rules for the service
+                  const deptRules = validRules.filter(r => r.field === 'department' && r.operator === 'equals');
+                  if (deptRules.length > 0) syncService.setConfig({ departmentFilter: deptRules.map(r => r.value) });
+                  this.setState({ _syncMessage: `Running rules-based sync (${validRules.length} rules, ${syncRuleOperator})...` } as any);
+                  result = await syncService.syncAllUsers();
+                  this.setState({ _syncMessage: `Rules sync complete. Added: ${result.added}, Updated: ${result.updated}, Errors: ${result.errors}` } as any);
+                } else {
+                  this.setState({ _syncProgress: 20, _syncMessage: 'Fetching users from Entra ID...' } as any);
+                  result = await syncService.syncAllUsers();
+                  this.setState({ _syncMessage: `Full sync complete. Added: ${result.added}, Updated: ${result.updated}, Errors: ${result.errors}` } as any);
+                }
+
+                this.setState({ _syncProgress: 100 } as any);
+                // Audit log
+                try {
+                  await this.props.sp.web.lists.getByTitle('PM_PolicyAuditLog').items.add({
+                    Title: `EntraID Sync: ${syncMode}`, AuditAction: 'UserSync', EntityType: 'System',
+                    ActionDescription: `${syncMode} sync: ${result?.totalProcessed || result?.added || 0} processed, ${result?.added || 0} added, ${result?.updated || 0} updated`,
+                    ComplianceRelevant: true
+                  });
+                } catch { /* non-critical */ }
+                this.setState({ _syncStatsLoaded: false } as any);
+              } catch (err: any) {
+                this.setState({ _syncMessage: `Sync failed: ${err.message || 'Unknown error'}` } as any);
+              }
+              this.setState({ _isSyncing: false } as any);
+            };
+
+            return (
+            <Stack tokens={{ childrenGap: 16 }}>
+              {/* Sync Mode Selector */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
+                {modeOptions.map(mode => (
+                  <button key={mode.key}
+                    onClick={() => this.setState({ _syncMode: mode.key } as any)}
+                    style={{
+                      padding: '12px 10px', borderRadius: 8, cursor: 'pointer', border: syncMode === mode.key ? '2px solid var(--pm-primary, #0d9488)' : '1px solid #e2e8f0',
+                      background: syncMode === mode.key ? 'var(--pm-primary-lighter, #f0fdfa)' : '#fff',
+                      textAlign: 'center' as const, transition: 'all 0.15s'
+                    }}>
+                    <Icon iconName={mode.icon} style={{ fontSize: 20, color: syncMode === mode.key ? 'var(--pm-primary, #0d9488)' : '#94a3b8', display: 'block', marginBottom: 6 }} />
+                    <span style={{ fontSize: 11, fontWeight: syncMode === mode.key ? 600 : 500, color: syncMode === mode.key ? '#0f172a' : '#64748b', lineHeight: 1.3, display: 'block' }}>{mode.text.split('—')[0].trim()}</span>
+                    <span style={{ fontSize: 9, color: '#94a3b8', display: 'block', marginTop: 2 }}>{mode.text.split('—')[1]?.trim() || ''}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Mode-specific inputs */}
+              <div style={{ background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0', padding: 16 }}>
+                {syncMode === 'full' && (
+                  <Text style={{ color: '#64748b', fontSize: 13 }}>Full sync will fetch all users from Entra ID and update PM_UserProfiles. This is safe to run at any time.</Text>
+                )}
+
+                {syncMode === 'single' && (
+                  <TextField label="User Email or UPN" placeholder="e.g. gary@firsttech.digital" value={syncUserEmail}
+                    onChange={(_, v) => this.setState({ _syncUserEmail: v || '' } as any)}
+                    styles={{ fieldGroup: { height: 36 } }}
+                    description="Enter the full email address or User Principal Name" />
+                )}
+
+                {(syncMode === 'securityGroup' || syncMode === 'm365Group') && (
+                  <TextField label={`${syncMode === 'securityGroup' ? 'Security' : 'M365'} Group ID (GUID)`}
+                    placeholder="e.g. d393e847-50c6-4ef4-b2d0-660400ac7bae"
+                    value={syncGroupId}
+                    onChange={(_, v) => this.setState({ _syncGroupId: v || '' } as any)}
+                    styles={{ fieldGroup: { height: 36 } }}
+                    description="Find the Group ID in Azure Portal > Entra ID > Groups > select group > Overview" />
+                )}
+
+                {syncMode === 'rules' && (
+                  <Stack tokens={{ childrenGap: 12 }}>
+                    <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
+                      <Text style={{ fontWeight: 600, fontSize: 14 }}>Sync Rules</Text>
+                      <Dropdown selectedKey={syncRuleOperator} options={[{ key: 'AND', text: 'Match ALL rules (AND)' }, { key: 'OR', text: 'Match ANY rule (OR)' }]}
+                        onChange={(_, o) => this.setState({ _syncRuleOperator: o?.key || 'AND' } as any)}
+                        styles={{ root: { width: 200 }, title: { height: 30, lineHeight: 28 } }} />
+                    </Stack>
+
+                    {syncRules.map((rule: any, i: number) => (
+                      <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 32px', gap: 8, alignItems: 'end' }}>
+                        <Dropdown label={i === 0 ? 'Attribute' : undefined} selectedKey={rule.field} options={entraAttributes}
+                          onChange={(_, o) => { const updated = [...syncRules]; updated[i] = { ...rule, field: o?.key as string || rule.field }; this.setState({ _syncRules: updated } as any); }}
+                          styles={{ title: { height: 32, lineHeight: 30 } }} />
+                        <Dropdown label={i === 0 ? 'Operator' : undefined} selectedKey={rule.operator} options={ruleOperators}
+                          onChange={(_, o) => { const updated = [...syncRules]; updated[i] = { ...rule, operator: o?.key as string || rule.operator }; this.setState({ _syncRules: updated } as any); }}
+                          styles={{ title: { height: 32, lineHeight: 30 } }} />
+                        {!['isEmpty', 'isNotEmpty'].includes(rule.operator) ? (
+                          <TextField label={i === 0 ? 'Value' : undefined} placeholder="e.g. Sales" value={rule.value}
+                            onChange={(_, v) => { const updated = [...syncRules]; updated[i] = { ...rule, value: v || '' }; this.setState({ _syncRules: updated } as any); }}
+                            styles={{ fieldGroup: { height: 32 } }} />
+                        ) : (
+                          <div style={{ height: 32 }} />
+                        )}
+                        <IconButton iconProps={{ iconName: 'Delete' }} title="Remove rule"
+                          disabled={syncRules.length <= 1}
+                          styles={{ root: { height: 32, width: 32, color: '#dc2626' } }}
+                          onClick={() => { const updated = syncRules.filter((_: any, idx: number) => idx !== i); this.setState({ _syncRules: updated.length > 0 ? updated : [{ field: 'Department', operator: 'equals', value: '' }] } as any); }} />
+                      </div>
+                    ))}
+
+                    <DefaultButton text="+ Add Rule" iconProps={{ iconName: 'Add' }}
+                      onClick={() => this.setState({ _syncRules: [...syncRules, { field: 'Department', operator: 'equals', value: '' }] } as any)}
+                      styles={{ root: { maxWidth: 140, height: 32 } }} />
+
+                    {syncRules.filter((r: any) => r.value || ['isEmpty', 'isNotEmpty'].includes(r.operator)).length > 0 && (
+                      <MessageBar messageBarType={MessageBarType.info}>
+                        Preview: Sync users where {syncRules.filter((r: any) => r.value || ['isEmpty', 'isNotEmpty'].includes(r.operator)).map((r: any, i: number) =>
+                          `${i > 0 ? ` ${syncRuleOperator} ` : ''}${entraAttributes.find(a => a.key === r.field)?.text || r.field} ${r.operator} ${['isEmpty', 'isNotEmpty'].includes(r.operator) ? '' : `"${r.value}"`}`
+                        ).join('')}
+                      </MessageBar>
+                    )}
+                  </Stack>
+                )}
+              </div>
+
+              {/* Action buttons */}
               <Stack horizontal tokens={{ childrenGap: 12 }}>
-                <PrimaryButton text={isSyncing ? 'Syncing...' : 'Start Full Sync'} iconProps={{ iconName: 'Sync' }} disabled={isSyncing} onClick={handleFullSync} />
+                <PrimaryButton text={isSyncing ? 'Syncing...' : `Start ${modeOptions.find(m => m.key === syncMode)?.text.split('—')[0].trim() || 'Sync'}`}
+                  iconProps={{ iconName: 'Sync' }} disabled={isSyncing} onClick={handleSync} />
                 <DefaultButton text="Reset Delta Token" iconProps={{ iconName: 'Refresh' }} disabled={isSyncing} onClick={async () => {
                   try {
                     const EntraSvc = require('../../../services/EntraUserSyncService').EntraUserSyncService;
                     const svc = new EntraSvc(this.props.context);
                     await svc.resetDeltaSync();
-                    void this.dialogManager.showAlert('Delta sync token reset. Next sync will be a full sync.', { title: 'Reset Complete', variant: 'success' });
+                    void this.dialogManager.showAlert('Delta sync token reset.', { title: 'Reset Complete', variant: 'success' });
                   } catch { void this.dialogManager.showAlert('Failed to reset delta token.', { title: 'Error' }); }
                 }} />
               </Stack>
+
+              {/* Progress / Status */}
               {isSyncing && <ProgressIndicator label={syncMessage} percentComplete={syncProgress / 100} styles={{ progressBar: { background: 'var(--pm-primary, #0d9488)' } }} />}
               {!isSyncing && syncMessage && <MessageBar messageBarType={syncMessage.includes('failed') ? MessageBarType.error : MessageBarType.success}>{syncMessage}</MessageBar>}
             </Stack>
-          )}
+            );
+          })()}
 
           {/* History Tab */}
           {syncTab === 'history' && (

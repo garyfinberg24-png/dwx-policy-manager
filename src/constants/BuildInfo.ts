@@ -10,5 +10,5 @@
  */
 
 export const VERSION = '1.2.5';
-export const BUILD_NUMBER = '1.2.5.14';
+export const BUILD_NUMBER = '1.2.5.15';
 export const BUILD_DATE = '2026-04-10';

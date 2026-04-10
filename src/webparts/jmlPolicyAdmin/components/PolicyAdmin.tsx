@@ -172,13 +172,13 @@ const NAV_SECTIONS: INavSection[] = [
     ]
   },
   {
-    category: 'USERS & ACCESS',
+    category: 'IDENTITY & ACCESS',
     items: [
-      { key: 'usersRoles', label: 'Users & Roles', icon: 'PlayerSettings', description: 'User management and Entra ID sync' },
+      { key: 'usersRoles', label: 'User Directory', icon: 'PlayerSettings', description: 'User profiles, role assignments, and Entra ID sync' },
       { key: 'userSync', label: 'EntraID Sync', icon: 'Sync', description: 'Microsoft Entra ID user sync with delta queries, field mapping, conflict detection, and analytics' },
-      { key: 'rolePermissions', label: 'Feature Permissions', icon: 'Permissions', description: 'Feature access per role (explicit, no inheritance)' },
-      { key: 'groupsPermissions', label: 'Groups & Permissions', icon: 'SecurityGroup', description: 'Role groups, workflow groups, and secure library groups' },
-      { key: 'audiences', label: 'Audience Targeting', icon: 'Group', description: 'Target audiences for policy distribution' },
+      { key: 'rolePermissions', label: 'Role Permissions', icon: 'Permissions', description: 'Feature access per role (explicit, no inheritance)' },
+      { key: 'groupsPermissions', label: 'Security Groups', icon: 'SecurityGroup', description: 'Role groups, workflow groups, and secure library groups' },
+      { key: 'audiences', label: 'Audiences', icon: 'Group', description: 'Target audiences for policy distribution' },
       { key: 'secureLibraries', label: 'Secure Libraries', icon: 'LockSolid', description: 'Restricted policy libraries with custom security groups' }
     ]
   },
@@ -7184,6 +7184,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               text={syncRunning ? 'Syncing...' : 'Sync from Entra'}
               disabled={syncRunning}
               onClick={handleSync}
+              styles={{ root: { height: 32 } }}
             />
           </Stack>
 

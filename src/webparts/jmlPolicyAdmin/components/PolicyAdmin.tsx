@@ -10538,256 +10538,336 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
   // ============================================================================
 
   private renderProductShowcaseContent(): JSX.Element {
-    const dwxProducts = [
-      { id: 'asset', name: 'Asset Dashboard', tagline: 'Track & manage', description: 'IT Asset Tracking & Management', version: 'v2.1.0', color: '#1a5a8a', icon: 'DeviceLaptopNoPic',
-        paragraph: 'DWx Asset Dashboard provides comprehensive IT asset tracking and lifecycle management across your organisation. Monitor hardware, software, and infrastructure assets from procurement through to disposal with real-time visibility into asset health, location, and assignment status.',
-        usps: ['Full asset lifecycle tracking from procurement to disposal', 'Real-time hardware and software inventory management', 'Automated depreciation calculations and cost reporting', 'Integration with ServiceNow, Intune, and Azure AD', 'Customisable dashboards with drill-down analytics'] },
-      { id: 'cv', name: 'CV Management', tagline: 'Skills that scale', description: 'Skills & Competency Profiling', version: 'v1.8.0', color: '#8764b8', icon: 'ContactCard',
-        paragraph: 'DWx CV Management enables organisations to build a comprehensive skills and competency database. Employees maintain living CVs that showcase their qualifications, experience, and project history — making it easy to identify talent for internal mobility, project staffing, and succession planning.',
-        usps: ['Living employee profiles with skills and competency tracking', 'AI-powered skills gap analysis and recommendations', 'Project history and certification management', 'Internal talent search and team assembly tools', 'Export to PDF, Word, and LinkedIn formats'] },
-      { id: 'document', name: 'Document Hub', tagline: 'Organize everything', description: 'Enterprise Document Management', version: 'v3.0.0', color: '#0078d4', icon: 'DocumentSet', isCore: true,
-        paragraph: 'DWx Document Hub is a powerful enterprise document management solution built on SharePoint. It provides structured document storage with metadata-driven navigation, advanced version control, and intelligent search — ensuring the right people find the right documents at the right time.',
-        usps: ['Metadata-driven document classification and navigation', 'Advanced version control with check-in/check-out workflows', 'Automated document retention and archival policies', 'Full-text search with filters and refiners', 'Secure external sharing with audit trail'] },
-      { id: 'external', name: 'External Sharing Hub', tagline: 'Share securely', description: 'Secure External Collaboration', version: 'v1.5.0', color: '#00ad56', icon: 'Share', isCore: true,
-        paragraph: 'DWx External Sharing Hub enables secure document sharing with external parties while maintaining full governance control. Share files and folders with vendors, clients, and partners using time-limited links, access codes, and comprehensive audit logging.',
-        usps: ['Time-limited secure sharing links with expiry controls', 'Access code protection and recipient verification', 'Real-time sharing activity dashboard and analytics', 'Automatic revocation and compliance reporting', 'Integration with DLP and Information Barriers'] },
-      { id: 'gamification', name: 'Gamification', tagline: 'Engage & reward', description: 'Rewards & Recognition Platform', version: 'v2.0.0', color: '#e3008c', icon: 'Trophy2', isNew: true,
-        paragraph: 'DWx Gamification transforms employee engagement through a rich rewards and recognition platform. Drive adoption of digital workplace tools, celebrate achievements, and foster a culture of appreciation with points, badges, leaderboards, and redeemable rewards.',
-        usps: ['Points, badges, and achievement system for employee recognition', 'Customisable leaderboards by team, department, or organisation', 'Peer-to-peer recognition with social feed', 'Redeemable rewards marketplace with budget controls', 'Adoption tracking for M365 and DWx product usage'] },
-      { id: 'integration', name: 'Integration Hub', tagline: 'Connect systems', description: 'Enterprise System Connector', version: 'v2.5.0', color: '#107c10', icon: 'Plug',
-        paragraph: 'DWx Integration Hub connects your digital workplace to the wider enterprise ecosystem. Pre-built connectors for SAP, Oracle, Salesforce, and hundreds of other systems enable seamless data flow, automated workflows, and a unified employee experience.',
-        usps: ['Pre-built connectors for SAP, Oracle, Salesforce, and more', 'Low-code integration designer with visual mapping', 'Real-time sync and scheduled batch processing', 'Error handling, retry logic, and alerting', 'API management with rate limiting and authentication'] },
-      { id: 'license', name: 'License Management', tagline: 'Stay compliant', description: 'Software License Tracking', version: 'v1.9.0', color: '#5c2d91', icon: 'Certificate',
-        paragraph: 'DWx License Management helps organisations maintain compliance with software licensing agreements. Track entitlements, monitor usage, and receive alerts before renewals — reducing audit risk and optimising software spend across the enterprise.',
-        usps: ['Centralised license entitlement and usage tracking', 'Automated renewal alerts and vendor management', 'Licence compliance reporting for audit readiness', 'Cost optimisation with unused license detection', 'Support for per-user, per-device, and concurrent models'] },
-      { id: 'procurement', name: 'Procurement Manager', tagline: 'Purchase smarter', description: 'Purchase Order Workflows', version: 'v2.2.0', color: '#d83b01', icon: 'ShoppingCart',
-        paragraph: 'DWx Procurement Manager streamlines purchase order creation, approval, and tracking. From requisition to receipt, manage the entire procurement lifecycle with budget controls, multi-level approvals, and vendor performance tracking.',
-        usps: ['End-to-end purchase order lifecycle management', 'Multi-level approval workflows with delegation', 'Budget tracking with real-time spend visibility', 'Vendor management and performance scorecards', 'Three-way matching (PO, receipt, invoice)'] },
-      { id: 'quiz', name: 'Quiz Builder', tagline: 'Test knowledge', description: 'Interactive Assessment Platform', version: 'v1.6.0', color: '#ca5010', icon: 'Questionnaire',
-        paragraph: 'DWx Quiz Builder enables the creation of engaging knowledge assessments and compliance quizzes. Build multiple-choice, true/false, and scenario-based questions with automatic scoring, pass/fail thresholds, and certificate generation.',
-        usps: ['Drag-and-drop quiz creation with rich media support', 'Multiple question types including scenario-based', 'Automatic scoring with configurable pass thresholds', 'Certificate generation and compliance tracking', 'Analytics dashboard with question-level performance data'] },
-      { id: 'reports', name: 'Reports Builder', tagline: 'Insight on demand', description: 'Dynamic Report Generation', version: 'v2.8.0', color: '#004e8c', icon: 'BarChartVertical',
-        paragraph: 'DWx Reports Builder puts powerful reporting capabilities in the hands of business users. Create custom reports with drag-and-drop fields, apply filters, and schedule automated delivery — no developer required. Export to Excel, PDF, or share as live dashboards.',
-        usps: ['Drag-and-drop report designer with live preview', 'Scheduled report delivery via email and Teams', 'Export to Excel, PDF, CSV, and PowerPoint', 'Parameterised reports with user-selectable filters', 'Shared report library with role-based access control'] },
-      { id: 'survey', name: 'Survey Management', tagline: 'Listen & learn', description: 'Employee Feedback Platform', version: 'v1.7.0', color: '#0078d4', icon: 'Feedback',
-        paragraph: 'DWx Survey Management provides a comprehensive employee feedback platform for pulse surveys, engagement surveys, and ad-hoc questionnaires. Capture honest feedback with anonymous options, analyse sentiment, and track action items to close the feedback loop.',
-        usps: ['Anonymous and named survey options', 'Pulse survey scheduling with trend tracking', 'Sentiment analysis and word cloud visualisation', 'Action item tracking to close the feedback loop', 'Integration with Teams for in-context survey delivery'] },
-      { id: 'recruitment', name: 'Recruitment Manager', tagline: 'Recruit smarter', description: 'Talent Acquisition Platform', version: 'v2.3.0', color: '#038387', icon: 'People',
-        paragraph: 'DWx Recruitment Manager streamlines the entire hiring process from requisition to onboarding. Manage job postings, track candidates through customisable pipelines, coordinate interviews, and ensure a smooth handoff to the JML Manager for onboarding.',
-        usps: ['End-to-end recruitment pipeline with Kanban board', 'Job posting to multiple channels and career sites', 'Interview scheduling with calendar integration', 'Candidate scoring and comparison tools', 'Seamless onboarding handoff to DWx JML Manager'] },
-      { id: 'training', name: 'Training & Skills', tagline: 'Grow talent', description: 'Learning Management System', version: 'v1.4.0', color: '#b4009e', icon: 'Education',
-        paragraph: 'DWx Training & Skills is a modern learning management system that supports employee development through structured learning paths, video content, quizzes, and certifications. Track mandatory training compliance and identify skills gaps across your workforce.',
-        usps: ['Structured learning paths with prerequisites', 'Video, document, and interactive content support', 'Mandatory training tracking with compliance alerts', 'Skills matrix and gap analysis by department', 'Integration with DWx Quiz Builder for assessments'] },
-      { id: 'contract', name: 'Contract Manager', tagline: 'Control lifecycle', description: 'Contract Lifecycle Management', version: 'v2.0.0', color: '#1a5a8a', icon: 'PageEdit',
-        paragraph: 'DWx Contract Manager provides full contract lifecycle management from creation through to renewal or expiry. Manage obligations, track key dates, and ensure compliance with automated alerts and a complete audit trail of all contract activities.',
-        usps: ['Full contract lifecycle from draft to renewal', 'Obligation tracking with automated reminders', 'Key date management with escalation workflows', 'Role-based access with redaction support', 'Complete audit trail and version history'] },
-      { id: 'policy', name: 'Policy Manager', tagline: 'Govern with confidence', description: 'Policy Governance & Compliance', version: 'v1.2.0', color: Colors.tealPrimary, icon: 'Shield', isCurrent: true,
-        paragraph: 'DWx Policy Manager is a comprehensive policy governance solution that manages the entire policy lifecycle — from authoring and approval through distribution, acknowledgement, and compliance tracking. Ensure every employee reads, understands, and acknowledges your critical policies.',
-        usps: ['Complete policy lifecycle from draft to retirement', 'Multi-level approval workflows with delegation', 'Targeted distribution with acknowledgement tracking', 'Compliance analytics with SLA monitoring', 'Quiz integration for policy comprehension testing'] },
+    const dwxProducts: Array<{ id: string; name: string; monogram: string; tagline: string; description: string; version: string; color: string; icon: string; category: string; paragraph: string; usps: string[]; integrations?: string[]; stats?: { label: string; value: string }[]; bundles?: string[]; isAI?: boolean; isIQ?: boolean; isCurrent?: boolean; isNew?: boolean; isCore?: boolean; tier?: string }> = [
+      // ═══ PEOPLE & TALENT ═══
+      { id: 'recruitment', name: 'Recruitment Manager', monogram: 'RM', tagline: 'Recruit smarter', description: 'AI-Powered Talent Acquisition', version: 'v2.3.0', color: '#7c3aed', icon: 'People', category: 'People & Talent', isAI: true, tier: 'enterprise',
+        paragraph: 'End-to-end hiring workflow from requisition to offer acceptance, powered by 8 Azure OpenAI features including AI CV parsing, candidate scoring, bias detection, and job description generation.',
+        usps: ['AI-powered CV parsing & candidate scoring', 'Kanban pipeline with drag-and-drop stages', 'Interview scheduling with Teams calendar integration', 'Bias detection & job description generation', 'Seamless onboarding handoff to DWx JML'],
+        integrations: ['Microsoft 365', 'Teams', 'Azure OpenAI', 'LinkedIn', 'Outlook'], stats: [{ label: 'AI Engines', value: '8' }, { label: 'Pipeline Stages', value: '6' }], bundles: ['DWx HR Suite', 'DWx Enterprise'] },
+      { id: 'recruitiq', name: 'RecruitIQ', monogram: 'R', tagline: 'AI-native recruitment', description: 'Agentic AI Recruitment', version: 'v1.0.0', color: '#7c3aed', icon: 'People', category: 'People & Talent', isIQ: true, tier: 'enterprise',
+        paragraph: 'Advanced AI-driven recruitment with proactive candidate matching, autonomous screening workflows, and intelligent interview scheduling powered by agentic AI engines.',
+        usps: ['Proactive candidate matching from talent pools', 'Autonomous multi-step screening workflows', 'AI interview question generation', 'Predictive hiring success scoring', 'Natural language job requisition creation'],
+        bundles: ['DWx IQ Pack', 'DWx HR Suite'] },
+      { id: 'jml', name: 'JML Lite', monogram: 'JL', tagline: 'Lifecycle made simple', description: 'Joiner, Mover, Leaver', version: 'v3.0.0', color: '#2563eb', icon: 'Group', category: 'People & Talent', tier: 'standard',
+        paragraph: 'Complete employee lifecycle management with wizard-driven workflows for onboarding, role transitions, and offboarding — including document packs, asset checklists, and system provisioning.',
+        usps: ['8-step onboarding wizard with document packs', '6-step mover wizard for role transitions', 'Offboarding with asset return checklists', 'Configurable document, asset, and system types', 'Manager and IT approval workflows'],
+        bundles: ['DWx HR Suite', 'DWx Starter Pack'] },
+      { id: 'learniq', name: 'LearnIQ', monogram: 'L', tagline: 'Learn with AI', description: 'AI-Powered Learning', version: 'v1.0.0', color: '#b4009e', icon: 'Education', category: 'People & Talent', isIQ: true, tier: 'enterprise',
+        paragraph: 'AI-powered learning recommendations and personalised development paths. Automatically identifies skills gaps and curates learning content tailored to each employee\'s career trajectory.',
+        usps: ['Personalised learning path recommendations', 'Skills gap analysis with AI insights', 'Auto-curated content from multiple sources', 'Competency progression tracking', 'Manager development dashboards'],
+        bundles: ['DWx IQ Pack', 'DWx HR Suite'] },
+      { id: 'training', name: 'Training Manager', monogram: 'TM', tagline: 'Grow talent', description: 'Learning Management System', version: 'v1.4.0', color: '#b4009e', icon: 'Education', category: 'People & Talent', tier: 'standard',
+        paragraph: 'Full-featured LMS for creating courses, tracking employee skills development, managing certifications, and ensuring mandatory training compliance across your organisation.',
+        usps: ['Course builder with modules & assessments', 'Skills matrix & competency gap analysis', 'Certificate generation & expiry tracking', 'Training calendar with enrolment workflows', 'Integration with DWx Quiz Builder'],
+        bundles: ['DWx HR Suite'] },
+      { id: 'performance', name: 'Performance Manager', monogram: 'PM', tagline: 'Elevate performance', description: 'KPI Tracking & Reviews', version: 'v2.0.0', color: '#7c3aed', icon: 'Trending12', category: 'People & Talent', tier: 'standard',
+        paragraph: 'Comprehensive performance management with review cycles, goal setting, OKR tracking, 360-degree feedback, 1-on-1 mentoring sessions, and team performance dashboards.',
+        usps: ['Configurable review cycles & rating scales', 'Goals, OKRs, and competency tracking', '1-on-1 mentoring sessions & notes', 'Team & individual performance dashboards', '360-degree feedback collection'],
+        bundles: ['DWx HR Suite'] },
+      { id: 'gamification', name: 'Gamification Manager', monogram: 'GM', tagline: 'Engage & reward', description: 'Rewards & Recognition', version: 'v2.0.0', color: '#e3008c', icon: 'Trophy2', category: 'People & Talent', isNew: true, tier: 'standard',
+        paragraph: 'Drive employee engagement through points, badges, achievements, and leaderboards. Celebrate milestones, enable peer recognition, and boost adoption of digital workplace tools.',
+        usps: ['Points, badges, and achievement system', 'Customisable leaderboards by team or department', 'Peer-to-peer recognition with social feed', 'Redeemable rewards marketplace', 'M365 and DWx adoption tracking'],
+        bundles: ['DWx HR Suite'] },
+      // ═══ OPERATIONS & GOVERNANCE ═══
+      { id: 'policy', name: 'Policy Manager', monogram: 'PM', tagline: 'Govern with confidence', description: 'Policy Governance & Compliance', version: 'v1.2.5', color: '#0d9488', icon: 'Shield', category: 'Operations & Governance', isCurrent: true, tier: 'standard',
+        paragraph: 'Centralized policy governance with version-controlled documents, mandatory acknowledgments, compliance dashboards, quiz integration, and automated review cycles. 16 webparts, 150+ services.',
+        usps: ['Complete policy lifecycle from draft to retirement', 'Multi-level approval workflows with delegation', 'Targeted distribution with acknowledgement tracking', 'Compliance analytics with SLA monitoring', 'AI chat assistant and quiz integration'],
+        integrations: ['SharePoint', 'Teams', 'Azure OpenAI', 'Power Automate', 'Outlook'], stats: [{ label: 'Webparts', value: '16' }, { label: 'Services', value: '150+' }, { label: 'AI Features', value: '3' }], bundles: ['DWx Governance Suite', 'DWx Starter Pack'] },
+      { id: 'contract', name: 'Contract Manager', monogram: 'CM', tagline: 'Control lifecycle', description: 'Contract Lifecycle Management', version: 'v2.0.0', color: '#0d9488', icon: 'PageEdit', category: 'Operations & Governance', tier: 'standard',
+        paragraph: 'Full contract lifecycle management from creation through to renewal or expiry. Manage obligations, track key dates, and ensure compliance with automated alerts and a complete audit trail.',
+        usps: ['Full contract lifecycle from draft to renewal', 'Obligation tracking with automated reminders', 'Key date management with escalation workflows', 'Role-based access with redaction support', 'Complete audit trail and version history'],
+        bundles: ['DWx Governance Suite', 'DWx Finance Suite'] },
+      { id: 'riskaudit', name: 'Risk and Audit Manager', monogram: 'RA', tagline: 'Mitigate risk', description: 'Risk Register & Audit Tracking', version: 'v1.5.0', color: '#0d9488', icon: 'Shield', category: 'Operations & Governance', tier: 'enterprise',
+        paragraph: 'Enterprise risk management with risk registers, audit findings, mitigation action plans, heat-map dashboards, and trend analysis for comprehensive governance.',
+        usps: ['Risk scoring with likelihood & impact matrix', 'Audit findings with corrective actions', 'Heat-map dashboards & trend analysis', 'Mitigation plan tracking & escalation', 'Compliance framework alignment'],
+        bundles: ['DWx Governance Suite'] },
+      { id: 'sheci', name: 'SHE CI Manager', monogram: 'SC', tagline: 'Safety first', description: 'Safety, Health, Environment & CI', version: 'v1.3.0', color: '#7c3aed', icon: 'Shield', category: 'Operations & Governance', tier: 'enterprise',
+        paragraph: 'Incident reporting, near-miss tracking, hazard identification, SHEQ inspections, and Kaizen continuous improvement workflows for workplace safety and compliance.',
+        usps: ['Incident & near-miss reporting with photos', 'SHEQ inspection checklists & schedules', 'CAPA tracking (corrective & preventive actions)', 'Continuous improvement suggestion box', 'Regulatory compliance reporting'],
+        bundles: ['DWx Governance Suite'] },
+      { id: 'incidentiq', name: 'DWx IncidentIQ', monogram: 'DI', tagline: 'AI incident analysis', description: 'AI-Driven Incident Management', version: 'v1.0.0', color: '#7c3aed', icon: 'Shield', category: 'Operations & Governance', isIQ: true, tier: 'enterprise',
+        paragraph: 'AI-driven incident analysis, pattern detection, and predictive safety insights. Automatically classifies incidents, identifies root causes, and recommends preventive measures.',
+        usps: ['Automatic incident classification', 'Pattern detection across incidents', 'Root cause analysis with AI', 'Predictive safety scoring', 'Regulatory report generation'],
+        bundles: ['DWx IQ Pack', 'DWx Governance Suite'] },
+      { id: 'boardpack', name: 'Board Pack Manager', monogram: 'BP', tagline: 'Streamline governance', description: 'Board & Committee Meetings', version: 'v1.8.0', color: '#7c3aed', icon: 'DocumentSet', category: 'Operations & Governance', tier: 'enterprise',
+        paragraph: 'Streamline board and committee meetings with agenda builders, secure document pack distribution, meeting minutes, resolution tracking, and action item follow-up.',
+        usps: ['Agenda builder with timed items', 'Secure board pack compilation & distribution', 'Meeting minutes with resolution tracking', 'Action item assignment & follow-up', 'Voting and decision recording'],
+        bundles: ['DWx Governance Suite', 'DWx Project Office'] },
+      { id: 'service', name: 'Service Request Manager', monogram: 'SR', tagline: 'Resolve faster', description: 'IT & Office Service Desk', version: 'v2.1.0', color: '#dc2626', icon: 'Repair', category: 'Operations & Governance', tier: 'standard',
+        paragraph: 'Simple, fast service request portal for IT support, office maintenance, and facility requests with auto-routing, SLA timers, and satisfaction surveys.',
+        usps: ['Categorised request forms with attachments', 'Auto-routing to correct team/queue', 'SLA timers with escalation rules', 'Requester notifications & satisfaction surveys', 'Knowledge base integration'],
+        bundles: ['DWx Starter Pack', 'DWx Facilities Suite'] },
+      // ═══ PROJECTS & PRODUCTIVITY ═══
+      { id: 'hyperproject', name: 'Hyper Project', monogram: 'HP', tagline: 'Deliver on time', description: 'AI-Driven Project Management', version: 'v2.5.0', color: '#7c3aed', icon: 'TaskManager', category: 'Projects & Productivity', isAI: true, tier: 'enterprise',
+        paragraph: 'Full portfolio and project management with AI-assisted planning, backlog management, Kanban boards, Gantt charts, resource balancing, and milestone tracking.',
+        usps: ['Portfolio overview with status health cards', 'Backlog, sprints, tasks & Kanban boards', 'Resource capacity & workload balancing', 'Gantt charts, milestones & dependencies', 'AI risk prediction & schedule optimisation'],
+        bundles: ['DWx Project Office'] },
+      { id: 'survey', name: 'Survey Manager', monogram: 'SM', tagline: 'Listen & learn', description: 'Employee Feedback Platform', version: 'v1.7.0', color: '#7c3aed', icon: 'Feedback', category: 'Projects & Productivity', tier: 'standard',
+        paragraph: 'Build and distribute surveys with drag-and-drop question builder. Capture feedback with anonymous options, analyse sentiment, and track action items.',
+        usps: ['Drag-and-drop survey builder', 'Anonymous & identified response modes', 'Real-time results with charts & heatmaps', 'Action plan tracking from survey insights', 'Teams integration for in-context delivery'],
+        bundles: ['DWx HR Suite'] },
+      // ═══ FINANCE & PROCUREMENT ═══
+      { id: 'procurement', name: 'Procurement Manager', monogram: 'PM', tagline: 'Purchase smarter', description: 'Purchase Order Workflows', version: 'v2.2.0', color: '#7c3aed', icon: 'ShoppingCart', category: 'Finance & Procurement', tier: 'enterprise',
+        paragraph: 'Digitise procurement from purchase requisition through PO creation, goods receipt, and invoice matching with vendor management and spend analytics.',
+        usps: ['Requisition to PO workflow automation', 'Vendor database & performance scoring', '3-way matching (PO, receipt, invoice)', 'Spend analytics & budget tracking', 'Multi-level approval with delegation'],
+        bundles: ['DWx Finance Suite'] },
+      { id: 'finance', name: 'Finance Manager', monogram: 'FM', tagline: 'Financial control', description: 'Budgets, Expenses & Invoices', version: 'v1.5.0', color: '#7c3aed', icon: 'Money', category: 'Finance & Procurement', tier: 'enterprise',
+        paragraph: 'Comprehensive financial management covering department budgets, expense claims, payroll processing, and invoice approval with delegation rules.',
+        usps: ['Department budget allocation & tracking', 'Expense claim submission & approval', 'Payroll processing & payslip generation', 'Invoice approval with delegation rules', 'Financial reporting & analytics'],
+        bundles: ['DWx Finance Suite', 'DWx Project Office'] },
+      // ═══ IT & ASSETS ═══
+      { id: 'asset', name: 'Asset Manager', monogram: 'A', tagline: 'Track & manage', description: 'IT Asset Lifecycle', version: 'v2.1.0', color: '#0d9488', icon: 'DeviceLaptopNoPic', category: 'IT & Assets', tier: 'standard',
+        paragraph: 'Track IT assets from procurement through allocation, maintenance, and disposal. Manage employee assignments, depreciation schedules, and barcode scanning.',
+        usps: ['Asset lifecycle tracking (procure to dispose)', 'Employee allocation & return workflows', 'Depreciation schedules & valuation', 'Barcode/QR code scanning support', 'Vendor and warranty management'],
+        bundles: ['DWx Finance Suite', 'DWx Facilities Suite'] },
+      { id: 'license', name: 'License Manager', monogram: 'LM', tagline: 'Stay compliant', description: 'Software License Tracking', version: 'v1.9.0', color: '#7c3aed', icon: 'Certificate', category: 'IT & Assets', tier: 'standard',
+        paragraph: 'Monitor software license compliance with usage tracking, renewal alerts, cost optimisation, and audit-ready compliance reports.',
+        usps: ['Centralised license entitlement tracking', 'Automated renewal alerts & vendor management', 'Cost optimisation with unused license detection', 'Audit-ready compliance reports', 'Per-user, per-device, and concurrent models'],
+        bundles: ['DWx Finance Suite'] },
+      // ═══ FACILITIES & WORKSPACE ═══
+      { id: 'roombooking', name: 'Room Booking Manager', monogram: 'RB', tagline: 'Book spaces', description: 'Hotseat, Office & Boardroom', version: 'v2.0.0', color: '#dc2626', icon: 'Room', category: 'Facilities & Workspace', tier: 'standard',
+        paragraph: 'Book meeting rooms, hot desks, cubicles, and offices with interactive floor plans, recurring reservations, and Outlook/Teams calendar integration.',
+        usps: ['Interactive floor plans with availability', 'Hot desk & boardroom booking', 'Recurring reservations & cancellation', 'Outlook/Teams calendar integration', 'Usage analytics & space optimisation'],
+        bundles: ['DWx Facilities Suite', 'DWx Starter Pack'] },
+      { id: 'facilities', name: 'Facilities Manager', monogram: 'FM', tagline: 'Maintain everything', description: 'Maintenance & Job Cards', version: 'v1.6.0', color: '#7c3aed', icon: 'Repair', category: 'Facilities & Workspace', tier: 'standard',
+        paragraph: 'Manage building maintenance with digital job cards, work order routing, preventive maintenance scheduling, and contractor management.',
+        usps: ['Digital job card creation & tracking', 'Work order routing to maintenance teams', 'Preventive maintenance scheduling', 'Contractor management & cost tracking', 'Mobile-friendly inspections'],
+        bundles: ['DWx Facilities Suite'] },
+      // ═══ PLATFORM & COLLABORATION ═══
+      { id: 'external', name: 'External Sharing Hub', monogram: 'ES', tagline: 'Share securely', description: 'Secure External Collaboration', version: 'v1.5.0', color: '#dc2626', icon: 'Share', category: 'Platform', isCore: true, tier: 'enterprise',
+        paragraph: 'Control and monitor external document sharing with expiry-based links, guest access management, DLP integration, and comprehensive audit logging.',
+        usps: ['Time-limited secure sharing links', 'Access code protection & recipient verification', 'Real-time sharing activity dashboard', 'Automatic revocation & compliance reporting', 'DLP and Information Barriers integration'],
+        bundles: ['DWx Enterprise'] },
+      { id: 'eventiq', name: 'DWx EventIQ', monogram: 'DE', tagline: 'AI event management', description: 'AI-Driven Events', version: 'v1.0.0', color: '#7c3aed', icon: 'Event', category: 'Platform', isIQ: true, tier: 'enterprise',
+        paragraph: 'AI-driven event management, scheduling optimisation, and attendee engagement tracking with intelligent recommendations.',
+        usps: ['AI-powered event scheduling', 'Attendee engagement tracking', 'Venue & resource optimisation', 'Automated communications', 'Post-event analytics & insights'],
+        bundles: ['DWx IQ Pack'] },
+      { id: 'spstudio', name: 'DWx SPStudio', monogram: 'DS', tagline: 'Build & customise', description: 'SharePoint Development Tools', version: 'v1.2.0', color: '#7c3aed', icon: 'Code', category: 'Platform', tier: 'enterprise',
+        paragraph: 'SharePoint development and customisation tools for building custom webparts, extensions, and integrations on the DWx platform.',
+        usps: ['Visual webpart builder', 'Theme and branding tools', 'Custom form designer', 'API integration toolkit', 'Deployment automation'],
+        bundles: ['DWx Enterprise'] },
+      { id: 'tender', name: 'Tender Management System', monogram: 'TM', tagline: 'Win more bids', description: 'Tender & RFP Management', version: 'v1.3.0', color: '#7c3aed', icon: 'Documentation', category: 'Operations & Governance', tier: 'enterprise',
+        paragraph: 'End-to-end tender management from RFP publication through bid evaluation, scoring, and award. Manage supplier responses, evaluation committees, and compliance documentation.',
+        usps: ['RFP creation and publication', 'Supplier portal for bid submission', 'Evaluation committee scoring', 'Automated compliance checking', 'Award notification workflows'],
+        bundles: ['DWx Finance Suite'] },
+      { id: 'hyperrange', name: 'DWx Hyper Range', monogram: 'DH', tagline: 'Enterprise platform', description: 'DWx Platform Foundation', version: 'v3.0.0', color: '#7c3aed', icon: 'WebAppBuilderModule', category: 'Platform', isCore: true, tier: 'enterprise',
+        paragraph: 'The core DWx infrastructure platform enabling all applications. Zero-trust security, single package deployment, enterprise search, and cross-app integration.',
+        usps: ['Zero-trust security inheritance', 'Single .sppkg package deployment', 'Enterprise search integration', 'Cross-app notification hub', 'Unified admin centre'],
+        bundles: ['DWx Enterprise'] },
     ];
 
     const { selectedProduct, showProductPanel } = this.state;
+    const categories = [...new Set(dwxProducts.map(p => p.category))];
+    const iqCount = dwxProducts.filter(p => p.isIQ).length;
+    const aiCount = dwxProducts.filter(p => p.isAI).length;
+    const productFilter: string = (this.state as any)._productFilter || 'all';
+    const filtered = productFilter === 'all' ? dwxProducts : dwxProducts.filter(p => p.category === productFilter);
 
     return (
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 24 }}>
-          {this.renderSectionIntro('DWx Suite', 'Explore other applications in the DWx (Digital Workplace Excellence) suite. Policy Manager integrates with these apps for cross-application workflows and notifications.')}
+          {this.renderSectionIntro('DWx Suite', 'Explore the complete DWx (Digital Workplace Excellence) suite. Click any product to see the full product sheet with features, integrations, and demo request.')}
           {/* Header */}
           <div style={{
-            background: 'linear-gradient(135deg, #1a5a8a, #2d7ab8)',
-            borderRadius: 4, padding: '28px 32px', color: '#fff'
+            background: 'linear-gradient(135deg, #7c3aed, #5b21b6)',
+            borderRadius: 4, padding: '28px 32px', color: '#fff', position: 'relative', overflow: 'hidden'
           }}>
-            <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
+            <div style={{ position: 'absolute', right: -40, top: -40, width: 180, height: 180, borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
+            <Stack horizontal horizontalAlign="space-between" verticalAlign="center" style={{ position: 'relative', zIndex: 1 }}>
               <Stack tokens={{ childrenGap: 4 }}>
-                <Text style={{ fontSize: 22, fontWeight: 700, color: '#fff' }}>DWx Product Suite</Text>
-                <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 14 }}>Digital Workplace Excellence — 15 products, one unified platform</Text>
+                <Text style={{ fontSize: 24, fontWeight: 700, color: '#fff' }}>DWx Product Suite</Text>
+                <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 14 }}>Digital Workplace Excellence by First Digital — {dwxProducts.length} products, one unified platform</Text>
               </Stack>
               <Stack horizontal tokens={{ childrenGap: 24 }}>
                 <Stack tokens={{ childrenGap: 0 }} horizontalAlign="center">
-                  <Text style={{ fontSize: 28, fontWeight: 700, color: '#fff' }}>15</Text>
-                  <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: 1 }}>Products</Text>
+                  <Text style={{ fontSize: 28, fontWeight: 700, color: '#fff' }}>{dwxProducts.length}</Text>
+                  <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: 1 }}>Products</Text>
                 </Stack>
                 <Stack tokens={{ childrenGap: 0 }} horizontalAlign="center">
-                  <Text style={{ fontSize: 28, fontWeight: 700, color: '#fff' }}>1</Text>
-                  <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: 1 }}>New</Text>
+                  <Text style={{ fontSize: 28, fontWeight: 700, color: '#fbbf24' }}>{iqCount}</Text>
+                  <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: 1 }}>IQ Products</Text>
+                </Stack>
+                <Stack tokens={{ childrenGap: 0 }} horizontalAlign="center">
+                  <Text style={{ fontSize: 28, fontWeight: 700, color: '#38bdf8' }}>{aiCount}</Text>
+                  <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: 1 }}>AI-Powered</Text>
                 </Stack>
               </Stack>
             </Stack>
           </div>
 
+          {/* Category Filter */}
+          <Stack horizontal tokens={{ childrenGap: 8 }} wrap>
+            <button onClick={() => this.setState({ _productFilter: 'all' } as any)} style={{ padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: productFilter === 'all' ? 700 : 500, cursor: 'pointer', border: productFilter === 'all' ? '2px solid #7c3aed' : '1px solid #e2e8f0', background: productFilter === 'all' ? '#7c3aed' : '#fff', color: productFilter === 'all' ? '#fff' : '#64748b' }}>All ({dwxProducts.length})</button>
+            {categories.map(cat => {
+              const count = dwxProducts.filter(p => p.category === cat).length;
+              return <button key={cat} onClick={() => this.setState({ _productFilter: cat } as any)} style={{ padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: productFilter === cat ? 700 : 500, cursor: 'pointer', border: productFilter === cat ? '2px solid #7c3aed' : '1px solid #e2e8f0', background: productFilter === cat ? '#7c3aed' : '#fff', color: productFilter === cat ? '#fff' : '#64748b' }}>{cat} ({count})</button>;
+            })}
+          </Stack>
+
           {/* Product Grid */}
-          <Stack horizontal tokens={{ childrenGap: 16 }} wrap>
-            {dwxProducts.map((product) => (
-              <div
-                key={product.id}
-                className={styles.adminCard}
-                style={{
-                  flex: '1 1 280px',
-                  minWidth: 260,
-                  maxWidth: 380,
-                  borderTop: `4px solid ${product.color}`,
-                  position: 'relative',
-                  background: `linear-gradient(135deg, ${product.color}14, ${product.color}08)`,
-                  boxShadow: `0 2px 8px ${product.color}15`,
-                }}
-              >
-                {product.isCurrent && (
-                  <span style={{
-                    position: 'absolute', top: 8, right: 8,
-                    padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 700,
-                    background: tc.primary, color: '#fff', textTransform: 'uppercase'
-                  }}>Current App</span>
-                )}
-                {product.isNew && (
-                  <span style={{
-                    position: 'absolute', top: 8, right: 8,
-                    padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 700,
-                    background: '#e3008c', color: '#fff', textTransform: 'uppercase'
-                  }}>New</span>
-                )}
-                {product.isCore && (
-                  <span style={{
-                    position: 'absolute', top: 8, right: 8,
-                    padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 700,
-                    background: '#10b981', color: '#fff', textTransform: 'uppercase'
-                  }}>Core</span>
-                )}
-                <Stack tokens={{ childrenGap: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+            {filtered.map((product) => (
+              <div key={product.id} className={styles.adminCard} style={{
+                borderTop: `4px solid ${product.color}`, cursor: 'pointer', position: 'relative',
+                background: `linear-gradient(135deg, ${product.color}08, #fff)`, transition: 'all 0.2s'
+              }} onClick={() => this.setState({ selectedProduct: product, showProductPanel: true })}>
+                {/* Badges */}
+                <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 4 }}>
+                  {product.isCurrent && <span style={{ padding: '2px 8px', borderRadius: 4, fontSize: 9, fontWeight: 700, background: 'var(--pm-primary, #0d9488)', color: '#fff', textTransform: 'uppercase' }}>Current</span>}
+                  {product.isIQ && <span style={{ padding: '2px 8px', borderRadius: 4, fontSize: 9, fontWeight: 700, background: '#fbbf24', color: '#1a1a2e', textTransform: 'uppercase' }}>IQ</span>}
+                  {product.isAI && <span style={{ padding: '2px 8px', borderRadius: 4, fontSize: 9, fontWeight: 700, background: '#38bdf8', color: '#0c4a6e', textTransform: 'uppercase' }}>AI</span>}
+                  {product.isNew && <span style={{ padding: '2px 8px', borderRadius: 4, fontSize: 9, fontWeight: 700, background: '#e3008c', color: '#fff', textTransform: 'uppercase' }}>New</span>}
+                  {product.isCore && <span style={{ padding: '2px 8px', borderRadius: 4, fontSize: 9, fontWeight: 700, background: '#10b981', color: '#fff', textTransform: 'uppercase' }}>Core</span>}
+                </div>
+                <Stack tokens={{ childrenGap: 8 }}>
                   <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 12 }}>
-                    <div style={{
-                      width: 44, height: 44, borderRadius: 4,
-                      background: `linear-gradient(135deg, ${product.color}, ${product.color}cc)`,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      boxShadow: `0 3px 8px ${product.color}40`
-                    }}>
-                      <Icon iconName={product.icon} style={{ ...IconStyles.xLarge, color: '#ffffff' }} />
+                    <div style={{ width: 44, height: 44, borderRadius: 8, background: `linear-gradient(135deg, ${product.color}, ${product.color}cc)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: '#fff', letterSpacing: -0.5 }}>
+                      {product.monogram || product.name.substring(0, 2).toUpperCase()}
                     </div>
                     <Stack>
-                      <Text style={{ fontWeight: 600, fontSize: 14, color: Colors.textDark }}>{product.name}</Text>
-                      <Text style={{ fontSize: 11, color: product.color, fontWeight: 500 }}>{product.tagline}</Text>
+                      <Text style={{ fontWeight: 600, fontSize: 14, color: '#0f172a' }}>{product.name}</Text>
+                      <Text style={{ fontSize: 11, color: product.color, fontWeight: 500, fontStyle: 'italic' }}>{product.tagline}</Text>
                     </Stack>
                   </Stack>
-                  <Text variant="small" style={TextStyles.tertiary}>{product.description}</Text>
-                  <Stack horizontal horizontalAlign="space-between" verticalAlign="center"
-                    style={{ borderTop: '1px solid #f1f5f9', paddingTop: 10, marginTop: 2 }}>
-                    <Text style={{ fontSize: 11, color: Colors.slateLight, fontWeight: 500 }}>{product.version}</Text>
-                    {product.isCurrent ? (
-                      <Text style={{ fontSize: 11, color: Colors.tealPrimary, fontWeight: 600 }}>You Are Here</Text>
-                    ) : (
-                      <DefaultButton
-                        text="Learn More"
-                        onClick={() => this.setState({ selectedProduct: product, showProductPanel: true })}
-                        styles={{ root: { height: 28, minWidth: 0, fontSize: 11, padding: '0 12px', color: product.color, borderColor: `${product.color}40` }, rootHovered: { borderColor: product.color, color: product.color } }}
-                      />
-                    )}
+                  <Text variant="small" style={{ color: '#64748b' }}>{product.description}</Text>
+                  <Stack horizontal horizontalAlign="space-between" verticalAlign="center" style={{ borderTop: '1px solid #f1f5f9', paddingTop: 8, marginTop: 2 }}>
+                    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                      <span style={{ fontSize: 10, color: '#94a3b8', fontWeight: 500 }}>{product.version}</span>
+                      <span style={{ fontSize: 10, color: '#94a3b8' }}>|</span>
+                      <span style={{ fontSize: 10, color: '#94a3b8' }}>{product.category}</span>
+                    </div>
+                    <span style={{ fontSize: 11, color: product.color, fontWeight: 600 }}>View Details →</span>
                   </Stack>
                 </Stack>
               </div>
             ))}
-          </Stack>
+          </div>
 
           {/* Contact CTA */}
-          <div className={styles.adminCard} style={{ textAlign: 'center', background: '#f8fffe', borderColor: '#99f6e4' }}>
+          <div className={styles.adminCard} style={{ textAlign: 'center', background: 'linear-gradient(135deg, #faf5ff, #f5f3ff)', borderColor: '#c4b5fd' }}>
             <Stack tokens={{ childrenGap: 8 }} horizontalAlign="center">
-              <Text variant="mediumPlus" style={TextStyles.semiBold}>Ready to unlock more?</Text>
-              <Text style={TextStyles.tertiary}>Explore all 15 DWx products to supercharge your digital workplace</Text>
-              <Stack horizontal tokens={{ childrenGap: 12 }} horizontalAlign="center" style={LayoutStyles.marginTop8}>
-                <PrimaryButton text="Explore All" iconProps={{ iconName: 'OpenInNewWindow' }} />
+              <Text variant="mediumPlus" style={{ fontWeight: 600 }}>Ready to transform your digital workplace?</Text>
+              <Text style={{ color: '#64748b', fontSize: 13 }}>Explore all {dwxProducts.length} DWx products and discover bundles tailored to your organisation</Text>
+              <Stack horizontal tokens={{ childrenGap: 12 }} horizontalAlign="center" style={{ marginTop: 8 }}>
+                <PrimaryButton text="Request Demo" iconProps={{ iconName: 'Play' }} styles={{ root: { background: '#7c3aed', borderColor: '#7c3aed' }, rootHovered: { background: '#6d28d9', borderColor: '#6d28d9' } }} />
                 <DefaultButton text="Contact Sales" iconProps={{ iconName: 'Mail' }} styles={{ root: { background: '#ef4444', color: '#fff', border: 'none' }, rootHovered: { background: '#dc2626', color: '#fff' } }} />
               </Stack>
-              <Text variant="small" style={{ color: Colors.slateLight, marginTop: 8 }}>
-                Questions? Contact our sales team at <span style={{ color: Colors.tealPrimary, fontWeight: 500 }}>gopremium@firsttech.digital</span>
+              <Text variant="small" style={{ color: '#94a3b8', marginTop: 8 }}>
+                Questions? Contact our sales team at <span style={{ color: '#7c3aed', fontWeight: 500 }}>gopremium@firsttech.digital</span>
               </Text>
             </Stack>
           </div>
         </Stack>
 
-        {/* Learn More Panel */}
-        <StyledPanel
-          isOpen={showProductPanel}
-          onDismiss={() => this.setState({ showProductPanel: false, selectedProduct: null })}
-          type={PanelType.medium}
-          headerText={selectedProduct ? selectedProduct.name : ''}
-          isLightDismiss
-        >
-          {selectedProduct && (
-            <Stack tokens={{ childrenGap: 20 }} style={LayoutStyles.paddingTop16}>
-              {/* Product Header */}
-              <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 16 }}>
-                <div style={{
-                  width: 56, height: 56, borderRadius: 4,
-                  background: `linear-gradient(135deg, ${selectedProduct.color}, ${selectedProduct.color}cc)`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center'
-                }}>
-                  <Icon iconName={selectedProduct.icon} style={{ fontSize: 28, color: '#fff' }} />
-                </div>
-                <Stack>
-                  <Text style={{ fontSize: 20, fontWeight: 700, color: Colors.textDark }}>{selectedProduct.name}</Text>
-                  <Text style={{ fontSize: 13, color: selectedProduct.color, fontWeight: 500, fontStyle: 'italic' }}>{selectedProduct.tagline}</Text>
-                </Stack>
-              </Stack>
-
-              {/* Version & Badge */}
-              <Stack horizontal tokens={{ childrenGap: 8 }} verticalAlign="center">
-                <span style={{
-                  padding: '3px 10px', borderRadius: 4, fontSize: 11, fontWeight: 600,
-                  background: `${selectedProduct.color}12`, color: selectedProduct.color
-                }}>
-                  {selectedProduct.version}
-                </span>
-                {selectedProduct.isNew && (
-                  <span style={{ ...BadgeStyles.highlight, background: '#e3008c', color: '#fff' }}>NEW</span>
-                )}
-                {selectedProduct.isCore && (
-                  <span style={{ ...BadgeStyles.highlight, background: '#10b981', color: '#fff' }}>CORE</span>
-                )}
-              </Stack>
-
-              <Separator />
-
-              {/* Description */}
-              <Stack tokens={{ childrenGap: 8 }}>
-                <Text style={{ fontSize: 14, fontWeight: 600, color: Colors.textDark }}>Overview</Text>
-                <Text style={{ fontSize: 13, lineHeight: '1.7', color: Colors.textSlate }}>{selectedProduct.paragraph}</Text>
-              </Stack>
-
-              <Separator />
-
-              {/* USPs */}
-              <Stack tokens={{ childrenGap: 12 }}>
-                <Text style={{ fontSize: 14, fontWeight: 600, color: Colors.textDark }}>Key Features</Text>
-                {selectedProduct.usps.map((usp: string, idx: number) => (
-                  <Stack key={idx} horizontal verticalAlign="start" tokens={{ childrenGap: 10 }}>
-                    <div style={{
-                      minWidth: 24, height: 24, borderRadius: '50%',
-                      background: `${selectedProduct.color}15`,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 1
-                    }}>
-                      <Icon iconName="CheckMark" style={{ ...IconStyles.small, color: selectedProduct.color, fontWeight: 700 }} />
+        {/* ═══ Rich Product Detail Modal ═══ */}
+        {showProductPanel && selectedProduct && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', zIndex: 1000000, display: 'flex', justifyContent: 'center', alignItems: 'center' }} onClick={() => this.setState({ showProductPanel: false, selectedProduct: null })}>
+            <div style={{ width: 780, maxHeight: '90vh', background: '#fff', borderRadius: 12, overflow: 'hidden', boxShadow: '0 24px 80px rgba(0,0,0,0.25)', display: 'flex', flexDirection: 'column' }} onClick={(e) => e.stopPropagation()}>
+              {/* Hero Banner */}
+              <div style={{ position: 'relative', background: `linear-gradient(135deg, ${selectedProduct.color} 0%, ${selectedProduct.color}cc 100%)`, padding: '32px 40px 32px', color: '#fff', overflow: 'visible' }}>
+                <div style={{ position: 'absolute', right: -40, top: -40, width: 180, height: 180, borderRadius: '50%', background: 'rgba(255,255,255,0.06)' }} />
+                <div style={{ position: 'absolute', right: 60, bottom: -60, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
+                {/* Close X button */}
+                <button onClick={() => this.setState({ showProductPanel: false, selectedProduct: null })} style={{ position: 'absolute', top: 12, right: 12, width: 32, height: 32, borderRadius: 6, border: '1px solid rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.1)', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 400, zIndex: 2, backdropFilter: 'blur(4px)' }} title="Close">✕</button>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 1 }}>
+                  <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
+                    <div style={{ width: 64, height: 64, background: 'rgba(255,255,255,0.15)', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, color: '#fff', border: '1px solid rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)' }}>
+                      {selectedProduct.monogram || selectedProduct.name.substring(0, 2).toUpperCase()}
                     </div>
-                    <Text style={{ fontSize: 13, color: '#334155', lineHeight: '1.5' }}>{usp}</Text>
-                  </Stack>
-                ))}
-              </Stack>
+                    <div>
+                      <div style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>{selectedProduct.name}</div>
+                      <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.85)', fontStyle: 'italic' }}>{selectedProduct.tagline}</div>
+                      <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                        <span style={{ padding: '3px 10px', borderRadius: 4, fontSize: 10, fontWeight: 700, background: 'rgba(255,255,255,0.2)', color: '#fff' }}>{selectedProduct.version}</span>
+                        {selectedProduct.isIQ && <span style={{ padding: '3px 10px', borderRadius: 4, fontSize: 10, fontWeight: 700, background: '#fbbf24', color: '#1a1a2e' }}>IQ — AGENTIC AI</span>}
+                        {selectedProduct.isAI && <span style={{ padding: '3px 10px', borderRadius: 4, fontSize: 10, fontWeight: 700, background: '#38bdf8', color: '#0c4a6e' }}>AI-POWERED</span>}
+                        {selectedProduct.tier && <span style={{ padding: '3px 10px', borderRadius: 4, fontSize: 10, fontWeight: 700, background: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.9)', border: '1px solid rgba(255,255,255,0.25)' }}>{selectedProduct.tier.toUpperCase()}</span>}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, color: 'rgba(255,255,255,0.6)', marginBottom: 4 }}>{selectedProduct.category}</div>
+                    <div style={{ fontSize: 15, fontWeight: 600, color: 'rgba(255,255,255,0.95)' }}>{selectedProduct.description}</div>
+                  </div>
+                </div>
+              </div>
 
-              <Separator />
+              {/* Scrollable Body */}
+              <div style={{ flex: 1, overflowY: 'auto', padding: '28px 40px' }}>
+                {/* Stats Strip */}
+                {selectedProduct.stats && selectedProduct.stats.length > 0 && (
+                  <div style={{ display: 'flex', gap: 0, background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)', borderRadius: 8, border: '1px solid #e2e8f0', overflow: 'hidden', marginBottom: 24 }}>
+                    {selectedProduct.stats.map((stat: any, i: number) => (
+                      <div key={i} style={{ flex: 1, padding: '14px 20px', textAlign: 'center', borderRight: i < selectedProduct.stats.length - 1 ? '1px solid #e2e8f0' : 'none' }}>
+                        <div style={{ fontSize: 22, fontWeight: 700, color: selectedProduct.color }}>{stat.value}</div>
+                        <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5, color: '#94a3b8', marginTop: 2 }}>{stat.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
-              {/* CTA Buttons */}
-              <Stack horizontal tokens={{ childrenGap: 12 }} style={{ paddingTop: 8 }}>
-                <PrimaryButton
-                  text="Request Demo"
-                  iconProps={{ iconName: 'Play' }}
-                  styles={{ root: { background: selectedProduct.color, border: 'none' }, rootHovered: { background: selectedProduct.color, opacity: 0.9 } }}
-                />
-                <DefaultButton text="Contact Sales" iconProps={{ iconName: 'Mail' }} />
-              </Stack>
+                {/* Overview */}
+                <div style={{ marginBottom: 24 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, color: '#64748b', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>Overview<span style={{ flex: 1, height: 1, background: '#e2e8f0' }} /></div>
+                  <div style={{ fontSize: 14, lineHeight: 1.75, color: '#334155' }}>{selectedProduct.paragraph}</div>
+                </div>
 
-              <Text variant="small" style={{ color: Colors.slateLight, marginTop: 8 }}>
-                Contact us at <span style={{ color: Colors.tealPrimary, fontWeight: 500 }}>gopremium@firsttech.digital</span>
-              </Text>
-            </Stack>
-          )}
-        </StyledPanel>
+                {/* Key Features — 2-column grid */}
+                <div style={{ marginBottom: 24 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, color: '#64748b', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>Key Features<span style={{ flex: 1, height: 1, background: '#e2e8f0' }} /></div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                    {selectedProduct.usps.map((usp: string, i: number) => (
+                      <div key={i} style={{ display: 'flex', gap: 12, padding: '12px 14px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0', transition: 'all 0.15s' }}>
+                        <div style={{ width: 22, height: 22, minWidth: 22, borderRadius: '50%', background: `${selectedProduct.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 1 }}>
+                          <span style={{ color: selectedProduct.color, fontWeight: 700, fontSize: 12 }}>✓</span>
+                        </div>
+                        <span style={{ fontSize: 13, color: '#334155', lineHeight: 1.5 }}>{usp}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Integrations */}
+                {selectedProduct.integrations && selectedProduct.integrations.length > 0 && (
+                  <div style={{ marginBottom: 24 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, color: '#64748b', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>Integrations<span style={{ flex: 1, height: 1, background: '#e2e8f0' }} /></div>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {selectedProduct.integrations.map((int: string, i: number) => (
+                        <span key={i} style={{ padding: '5px 12px', borderRadius: 20, fontSize: 11, fontWeight: 500, background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0' }}>{int}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Available In Bundles */}
+                {selectedProduct.bundles && selectedProduct.bundles.length > 0 && (
+                  <div style={{ marginBottom: 24 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, color: '#64748b', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>Available in Bundles<span style={{ flex: 1, height: 1, background: '#e2e8f0' }} /></div>
+                    <div style={{ display: 'flex', gap: 10 }}>
+                      {selectedProduct.bundles.map((bundle: string, i: number) => (
+                        <div key={i} style={{ flex: 1, padding: '14px 16px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                          <div style={{ fontSize: 12, fontWeight: 600, color: '#334155' }}>{bundle}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer CTA */}
+              <div style={{ padding: '16px 40px', borderTop: '1px solid #e2e8f0', background: '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ fontSize: 11, color: '#94a3b8' }}>
+                  Questions? Contact <span style={{ color: '#7c3aed', fontWeight: 500 }}>gopremium@firsttech.digital</span>
+                </div>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button style={{ padding: '9px 20px', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: '1px solid #e2e8f0', background: '#fff', color: '#334155' }}>Download Brochure</button>
+                  <button style={{ padding: '9px 20px', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: 'none', background: 'linear-gradient(135deg, #ef4444, #dc2626)', color: '#fff' }}>Contact Sales</button>
+                  <button style={{ padding: '9px 20px', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: 'none', background: `linear-gradient(135deg, ${selectedProduct.color}, ${selectedProduct.color}cc)`, color: '#fff', boxShadow: `0 4px 12px ${selectedProduct.color}40` }}>▶ Request Demo</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }

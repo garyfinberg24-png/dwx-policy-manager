@@ -11736,11 +11736,11 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             </div>
           )}
 
-          {/* Filters */}
+          {/* Filters — aligned with consistent height */}
           <Stack horizontal tokens={{ childrenGap: 12 }} verticalAlign="end" wrap>
-            <TextField label="Search" placeholder="Search by user, details..." value={secSearch} onChange={(_, v) => this.setState({ _secSearch: v || '' } as any)} styles={{ root: { minWidth: 200 } }} />
-            <Dropdown label="Severity" selectedKey={secFilter} options={[{ key: 'all', text: 'All' }, { key: 'Critical', text: 'Critical' }, { key: 'High', text: 'High' }, { key: 'Medium', text: 'Medium' }, { key: 'Low', text: 'Low' }]} onChange={(_, o) => this.setState({ _securityFilter: o?.key || 'all' } as any)} styles={{ root: { minWidth: 140 } }} />
-            <DefaultButton text="Refresh" iconProps={{ iconName: 'Sync' }} onClick={() => this.setState({ _appSecurityLoaded: false } as any)} />
+            <TextField label="Search" placeholder="Search by user, details..." value={secSearch} onChange={(_, v) => this.setState({ _secSearch: v || '' } as any)} styles={{ root: { minWidth: 200 }, fieldGroup: { height: 32 } }} />
+            <Dropdown label="Severity" selectedKey={secFilter} options={[{ key: 'all', text: 'All' }, { key: 'Critical', text: 'Critical' }, { key: 'High', text: 'High' }, { key: 'Medium', text: 'Medium' }, { key: 'Low', text: 'Low' }]} onChange={(_, o) => this.setState({ _securityFilter: o?.key || 'all' } as any)} styles={{ root: { minWidth: 140 }, title: { height: 30, lineHeight: 28 }, dropdown: { height: 32 } }} />
+            <DefaultButton text="Refresh" iconProps={{ iconName: 'Sync' }} onClick={() => this.setState({ _appSecurityLoaded: false } as any)} styles={{ root: { height: 32, minWidth: 100 } }} />
           </Stack>
 
           {/* Events Table */}

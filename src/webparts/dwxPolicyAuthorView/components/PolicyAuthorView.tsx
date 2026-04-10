@@ -1174,72 +1174,63 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
                           Rejected: View, Edit, Duplicate (all black)
                           Approved: Publish, View, Edit (all black)
                           Published: View, Edit, Retire (all black) */}
+                      {/* ═══ ALL action icons shown — disabled ones greyed out ═══ */}
                       {(() => {
                         const s = policy.PolicyStatus;
-                        const act = { root: { width: 28, height: 28 }, icon: { fontSize: 13, color: '#0f172a' } };
-                        const del = { root: { width: 28, height: 28 }, rootHovered: { background: '#fef2f2' }, icon: { fontSize: 13, color: '#0f172a' }, iconHovered: { color: '#dc2626' } };
-                        const qz = { root: { width: 28, height: 28 }, icon: { fontSize: 13, color: policy.LinkedQuizId ? tc.primary : '#d97706' } };
+                        // Determine which actions are enabled per status
+                        const canSubmit = s === 'Draft';
+                        const canEdit = s === 'Draft' || s === 'Rejected' || s === 'Approved';
+                        const canPublish = s === 'Approved';
+                        const canDuplicate = s === 'Draft' || s === 'Rejected' || s === 'Approved' || s === 'Published';
+                        const canRevise = s === 'Published';
+                        const canRetire = s === 'Published';
+                        const canDelete = s === 'Draft' || s === 'Rejected';
+                        // Styles: active (black) vs disabled (light grey)
+                        const iconStyle = (enabled: boolean) => ({
+                          root: { width: 28, height: 28, cursor: enabled ? 'pointer' : 'default', opacity: enabled ? 1 : 0.35 },
+                          icon: { fontSize: 13, color: enabled ? '#0f172a' : '#cbd5e1' }
+                        });
+                        const trashStyle = (enabled: boolean) => ({
+                          root: { width: 28, height: 28, cursor: enabled ? 'pointer' : 'default', opacity: enabled ? 1 : 0.35 },
+                          rootHovered: enabled ? { background: '#fef2f2' } : {},
+                          icon: { fontSize: 13, color: enabled ? '#dc2626' : '#fca5a5' },
+                          iconHovered: enabled ? { color: '#b91c1c' } : {}
+                        });
                         return (<>
-                          {/* View — available in ALL states */}
+                          {/* 1. View — always enabled */}
                           <IconButton iconProps={{ iconName: 'View' }} title="View Policy"
                             href={`${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policy.Id}&mode=browse`}
-                            target="_blank" styles={act} ariaLabel={`View ${policy.Title}`} />
-
-                          {/* Draft actions */}
-                          {s === 'Draft' && (<>
-                            <IconButton iconProps={{ iconName: 'Send' }} title="Submit for Review"
-                              onClick={() => this.handlePipelineSubmitForReview(policy.Id, policy.Title)}
-                              styles={act} ariaLabel={`Submit ${policy.Title} for review`} />
-                            <IconButton iconProps={{ iconName: 'Edit' }} title="Edit"
-                              href={`${siteUrl}/SitePages/PolicyBuilder.aspx?editPolicyId=${policy.Id}`}
-                              styles={act} ariaLabel={`Edit ${policy.Title}`} />
-                            <IconButton iconProps={{ iconName: 'Copy' }} title="Duplicate"
-                              onClick={() => this.handlePipelineDuplicate(policy.Id, policy.Title)}
-                              styles={act} ariaLabel={`Duplicate ${policy.Title}`} />
-                            <IconButton iconProps={{ iconName: 'Delete' }} title="Delete"
-                              onClick={() => this.handlePipelineDelete(policy.Id, policy.Title)}
-                              styles={del} ariaLabel={`Delete ${policy.Title}`} />
-                            {policy.RequiresQuiz && (
-                              <IconButton iconProps={{ iconName: 'Questionnaire' }}
-                                title={policy.LinkedQuizId ? 'Edit Quiz' : 'Create Quiz'}
-                                href={policy.LinkedQuizId
-                                  ? `${siteUrl}/SitePages/QuizBuilder.aspx?quizId=${policy.LinkedQuizId}`
-                                  : `${siteUrl}/SitePages/QuizBuilder.aspx?policyId=${policy.Id}`}
-                                styles={qz} ariaLabel={`Quiz for ${policy.Title}`} />
-                            )}
-                          </>)}
-
-                          {/* In Review — View only (already rendered above) */}
-
-                          {/* Rejected actions */}
-                          {s === 'Rejected' && (<>
-                            <IconButton iconProps={{ iconName: 'Edit' }} title="Edit & Resubmit"
-                              href={`${siteUrl}/SitePages/PolicyBuilder.aspx?editPolicyId=${policy.Id}`}
-                              styles={act} ariaLabel={`Edit ${policy.Title}`} />
-                            <IconButton iconProps={{ iconName: 'Copy' }} title="Duplicate"
-                              onClick={() => this.handlePipelineDuplicate(policy.Id, policy.Title)}
-                              styles={act} ariaLabel={`Duplicate ${policy.Title}`} />
-                          </>)}
-
-                          {/* Approved actions */}
-                          {s === 'Approved' && (<>
-                            <IconButton iconProps={{ iconName: 'PublishContent' }} title="Publish"
-                              onClick={() => this.handlePipelinePublish(policy.Id, policy.Title)}
-                              styles={act} ariaLabel={`Publish ${policy.Title}`} />
-                            <IconButton iconProps={{ iconName: 'Edit' }} title="Edit"
-                              href={`${siteUrl}/SitePages/PolicyBuilder.aspx?editPolicyId=${policy.Id}`}
-                              styles={act} ariaLabel={`Edit ${policy.Title}`} />
-                          </>)}
-
-                          {/* Published actions */}
-                          {s === 'Published' && (<>
-                            <IconButton iconProps={{ iconName: 'Edit' }} title="Revise"
-                              href={`${siteUrl}/SitePages/PolicyBuilder.aspx?editPolicyId=${policy.Id}`}
-                              styles={act} ariaLabel={`Revise ${policy.Title}`} />
-                            <IconButton iconProps={{ iconName: 'Archive' }} title="Retire"
-                              onClick={() => this.handlePipelineRetire(policy.Id, policy.Title)}
-                              styles={del} ariaLabel={`Retire ${policy.Title}`} />
-                          </>)}
+                            target="_blank" styles={iconStyle(true)} ariaLabel={`View ${policy.Title}`} />
+                          {/* 2. Submit for Review */}
+                          <IconButton iconProps={{ iconName: 'Send' }} title={canSubmit ? 'Submit for Review' : 'Submit (Draft only)'}
+                            disabled={!canSubmit}
+                            onClick={canSubmit ? () => this.handlePipelineSubmitForReview(policy.Id, policy.Title) : undefined}
+                            styles={iconStyle(canSubmit)} ariaLabel={`Submit ${policy.Title}`} />
+                          {/* 3. Edit */}
+                          <IconButton iconProps={{ iconName: 'Edit' }} title={canRevise ? 'Revise' : canEdit ? (s === 'Rejected' ? 'Edit & Resubmit' : 'Edit') : 'Edit (unavailable)'}
+                            disabled={!canEdit && !canRevise}
+                            href={(canEdit || canRevise) ? `${siteUrl}/SitePages/PolicyBuilder.aspx?editPolicyId=${policy.Id}` : undefined}
+                            styles={iconStyle(canEdit || canRevise)} ariaLabel={`Edit ${policy.Title}`} />
+                          {/* 4. Publish */}
+                          <IconButton iconProps={{ iconName: 'PublishContent' }} title={canPublish ? 'Publish' : 'Publish (Approved only)'}
+                            disabled={!canPublish}
+                            onClick={canPublish ? () => this.handlePipelinePublish(policy.Id, policy.Title) : undefined}
+                            styles={iconStyle(canPublish)} ariaLabel={`Publish ${policy.Title}`} />
+                          {/* 5. Duplicate */}
+                          <IconButton iconProps={{ iconName: 'Copy' }} title={canDuplicate ? 'Duplicate' : 'Duplicate (unavailable)'}
+                            disabled={!canDuplicate}
+                            onClick={canDuplicate ? () => this.handlePipelineDuplicate(policy.Id, policy.Title) : undefined}
+                            styles={iconStyle(canDuplicate)} ariaLabel={`Duplicate ${policy.Title}`} />
+                          {/* 6. Retire */}
+                          <IconButton iconProps={{ iconName: 'Archive' }} title={canRetire ? 'Retire' : 'Retire (Published only)'}
+                            disabled={!canRetire}
+                            onClick={canRetire ? () => this.handlePipelineRetire(policy.Id, policy.Title) : undefined}
+                            styles={iconStyle(canRetire)} ariaLabel={`Retire ${policy.Title}`} />
+                          {/* 7. Delete — ALWAYS LAST, ALWAYS RED */}
+                          <IconButton iconProps={{ iconName: 'Delete' }} title={canDelete ? 'Delete' : 'Delete (Draft/Rejected only)'}
+                            disabled={!canDelete}
+                            onClick={canDelete ? () => this.handlePipelineDelete(policy.Id, policy.Title) : undefined}
+                            styles={trashStyle(canDelete)} ariaLabel={`Delete ${policy.Title}`} />
                         </>);
                       })()}
                       </>); })()}

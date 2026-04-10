@@ -189,46 +189,29 @@ $pm-light-teal: #14b8a6;
   }
 }
 
-// Main Content Grid - filters left + results right
+// Main Content Grid - CSS Grid: filters (220px) | results (rest)
+// Using CSS Grid instead of flexbox to prevent z-index stacking issues
 .mainContent {
-  display: flex;
-  flex-wrap: nowrap !important;
+  display: grid;
+  grid-template-columns: 220px 1fr;
   gap: 24px;
-  align-items: flex-start;
+  align-items: start;
   width: 100%;
   box-sizing: border-box;
-  position: relative;
-  z-index: 1;
 
   @media (max-width: 768px) {
-    flex-direction: column;
-    flex-wrap: wrap !important;
+    grid-template-columns: 1fr;
   }
 }
 
-// Filters Panel - fixed width sidebar
+// Filters Panel - left column
 .filtersPanel {
-  width: 220px;
-  min-width: 220px;
-  max-width: 220px;
-  flex: 0 0 220px;
   background-color: #f8fafc;
   border-radius: 8px;
   padding: 20px;
-  height: fit-content;
-  position: sticky;
-  top: 20px;
   border: 1px solid #e2e8f0;
   box-sizing: border-box;
-  z-index: 2;
-
-  @media (max-width: 768px) {
-    width: 100%;
-    min-width: 100%;
-    max-width: 100%;
-    flex: 1 1 100%;
-    position: static;
-  }
+  // No position:sticky — it caused z-index overlap with results
 }
 
 .filtersPanelTitle {
@@ -276,17 +259,9 @@ $pm-light-teal: #14b8a6;
   }
 }
 
-// Results Panel - takes remaining space beside filters
+// Results Panel - right column in grid
 .resultsPanel {
-  flex: 1 1 0%;
-  min-width: 0;
-  max-width: calc(100% - 244px); // 220px filters + 24px gap
-  z-index: 1;
-
-  @media (max-width: 768px) {
-    width: 100%;
-    max-width: 100%;
-  }
+  min-width: 0; // Prevents grid blowout from long content
 }
 
 .resultsHeader {

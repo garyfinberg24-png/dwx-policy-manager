@@ -816,7 +816,52 @@ The QuizBuilder's "AI Generate" panel calls the Azure Function with:
 
 ---
 
-## Session State (Last Updated: 1 Apr 2026 — Session 21 Complete)
+## Session State (Last Updated: 10 Apr 2026 — Session 23 Complete)
+
+### Recently Completed (Session 23 — 10 Apr 2026)
+
+#### Admin Centre Production Readiness Audit + Theme Fixes + JML Feature Assessment
+
+**Admin Centre Audit — 9 Findings Fixed:**
+- C1: Naming Rules refresh — replaced setTimeout stubs + undefined variables with real SP batch update (query policies → generate PolicyNumber from segments → audit log)
+- C2: AdminConfigService.upsertConfigValue() now throws on error instead of silently swallowing
+- C3: Navigation toggles — now persist to PM_Configuration via SP alongside localStorage (was localStorage-only)
+- H1: PMRoles column write — logs warning with error message (was empty catch)
+- H2: Role Permissions "Reset to Defaults" — now saves to SP + localStorage (was state-only)
+- H3: Categories createCategory() passes IsDefault from parameter (was hardcoded false); updateCategory() includes IsDefault
+- M1: System Info — version 1.2.5, SPFx 1.20.0, TypeScript 4.7.4 (was 1.0.0/1.21.1/5.3.3)
+- M2: Audit Log — reloads on section re-entry (resets _auditLoaded on nav click)
+
+**Provisioning Overhaul:**
+- Approval gate: all destructive actions require double-confirmation dialog
+- Audit trail: every action logged to PM_PolicyAuditLog (ComplianceRelevant: true)
+- Per-list card actions: Refresh | Seed | Clear & Reseed | Reprovision/Provision
+- Global actions: Refresh Status | Provision All Lists | Seed All Data | Clear & Reseed All
+- Warning banner about protected section and approval requirement
+
+**Theme / CSS Fixes:**
+- Help Centre hero: replaced tc.headerBg with CSS var() — fixes stale cache on first load
+- Search page: restyled hero to slim banner matching Help Centre (3-column grid)
+- Search: filters panel visible by default (was gated behind hasSearched)
+- Footer: all tc.* references replaced with CSS var() in module-scope styles (was always teal)
+- Admin sidebar title/subtitle: background: transparent (SP default #F3F2F1 override)
+- New Policy header button: converted from green full button to icon-only action button
+- Removed unused quickActionBtnPrimary CSS class
+
+**JML Feature Assessment (for next session):**
+- Investigated User Sync, Metadata Tags, App Security from JML Admin Panel
+- User Sync: 7-tab UI, delta sync, mapping rules engine, analytics — copy EntraUserSyncService + components
+- Metadata Tags: TaxonomyService + TaxonomyPicker for compliance tagging — models already exist in PM
+- App Security: SecurityAuditService (risk scoring), PolicyAuditService (91 event types), SecurityAuditViewer
+- License Management: new feature, not in JML — PM_Configuration License.* keys
+
+**Build:** Zero errors, 16 webpart manifests
+**Commits:** 8 commits (`1f2d0b3`..`8ae9449`) — pushed to ADO + GitHub
+**Tag:** `session-23-complete` on commit `8ae9449`
+
+### Rollback Checkpoints (Updated)
+- Session 23 start: commit `db41843` (first commit before New Policy icon change)
+- Session 23 end: commit `8ae9449` — tag `session-23-complete`
 
 ### Recently Completed (Session 21 — 31 Mar / 1 Apr 2026)
 
@@ -1650,12 +1695,12 @@ Three parallel audit streams identified ~45 optimization opportunities:
 | Security | 9/10 | All email templates escaped, MIME validation, OData sanitized, PII redaction, document.write eliminated |
 | Performance | 7.5/10 | Parallelized loads, reduced query limits. Remaining: React.lazy, virtualization |
 | Reliability | 9.5/10 | ErrorBoundary on all 16 webparts, _isMounted on all class components, publish pipeline hardened with pre-flight + transaction logging |
-| Code Quality | 8.5/10 | Single authoritative publish path, zero sp.utility.sendEmail, console diagnostics in critical paths |
+| Code Quality | 9/10 | Single authoritative publish path, zero sp.utility.sendEmail, Admin Centre audit 9/9 fixes complete, zero stubs |
 | Notifications | 10/10 | ALL emails via PM_NotificationQueue → Logic App. Zero sp.utility.sendEmail. Premium EmailTemplateBuilder with Outlook fallback. Publish notifications fire inline. |
 | Diagnostics | 9/10 | Event Viewer with 13 features, 7 tabs, vertical nav, Troubleshooter wizard, pipeline verification script |
 | Testing | 3.5/10 | Jest config + 6 unit test suites + Verify-PublishPipeline.ps1 (51 checks). Remaining: integration, component, E2E |
 | Accessibility | 3/10 | Basic Fluent UI a11y. Remaining: ARIA roles, keyboard nav, screen reader |
-| Overall | ~90/100 | Up from 88. TinyMCE editor, pack types CRUD, welcome email, pipeline icons, template fix |
+| Overall | ~91/100 | Up from 90. Admin Centre audit complete, Provisioning hardened, theme system production-ready |
 
 ### Known Issues
 
@@ -1674,13 +1719,15 @@ Three parallel audit streams identified ~45 optimization opportunities:
 - PM_QuizSections list must be provisioned for quiz sections feature to work
 - Disk space: webpack production build requires ~2GB free — clean with `npx gulp clean` if space is low
 - MetadataProfileId column does not exist on PM_Policies — optional field write logs warning but is non-blocking
+- **tc helper vs CSS var()**: Module-scope style objects (e.g., footerStyles) MUST use `var(--pm-primary, #hex)` strings, NOT `tc.primary` — `tc` caches values at import time before ThemeManager applies the theme. Use `tc.*` only inside render methods or event handlers.
+- Navigation toggles now dual-persist to localStorage + PM_Configuration. PolicyManagerHeader still reads localStorage only — SP fallback is on Admin Centre load only.
+- PMRoles column on PM_UserProfiles may not exist — multi-role write is non-blocking (logs warning)
 
 ### Next Steps
 
-- Test all Session 20 fixes live in SharePoint (hard refresh required for CDN cache)
-- Run Seed-PolicyPacks.ps1 to populate Policy Packs with sample data
-- Verify local notification bell reads from PM_Notifications correctly
-- Test Accept & Start Drafting flow end-to-end (request → wizard pre-fill)
+- Import JML features: App Security (enhanced audit), License Management, Metadata Tags, User Sync
+- Test all Session 23 Admin Centre audit fixes live in SharePoint
+- Verify Provisioning approval gate + audit trail work correctly
 - Test AI Bulk Import extraction with real policy documents (DOCX, PDF, PPTX)
 - Verify breadcrumbs display correctly on all pages
 - Begin V2 feature development (see Feature Backlog)

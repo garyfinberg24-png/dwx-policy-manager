@@ -162,6 +162,7 @@ const NAV_SECTIONS: INavSection[] = [
       { key: 'settings', label: 'General Settings', icon: 'Settings', description: 'Display, feature toggles, and app config' },
       { key: 'navigation', label: 'App Navigation', icon: 'Nav2DMapView', description: 'Toggle app navigation items and features' },
       { key: 'aiAssistant', label: 'AI Settings', icon: 'Robot', description: 'AI chat, document conversion, and integration URLs' },
+      { key: 'licenseManagement', label: 'License Management', icon: 'Certificate', description: 'License activation, tiers, seat management, and feature flags' },
       { key: 'customTheme', label: 'Theme Editor', icon: 'Color', description: 'Brand colors, logo, fonts, and preset themes' },
       { key: 'provisioning', label: 'Provisioning', icon: 'Database', description: 'SharePoint lists, seed data, and system setup' },
       { key: 'eventViewer', label: 'Event Viewer', icon: 'EventDate', description: 'Diagnostic event capture, buffer sizes, AI triage, and retention' },
@@ -172,6 +173,7 @@ const NAV_SECTIONS: INavSection[] = [
     category: 'USERS & ACCESS',
     items: [
       { key: 'usersRoles', label: 'Users & Roles', icon: 'PlayerSettings', description: 'User management and Entra ID sync' },
+      { key: 'userSync', label: 'User Sync', icon: 'Sync', description: 'Entra ID sync with delta queries, mapping rules, and analytics' },
       { key: 'rolePermissions', label: 'Feature Permissions', icon: 'Permissions', description: 'Feature access per role (explicit, no inheritance)' },
       { key: 'groupsPermissions', label: 'Groups & Permissions', icon: 'SecurityGroup', description: 'Role groups, workflow groups, and secure library groups' },
       { key: 'audiences', label: 'Audience Targeting', icon: 'Group', description: 'Target audiences for policy distribution' },
@@ -217,13 +219,15 @@ const NAV_SECTIONS: INavSection[] = [
       { key: 'compliance', label: 'Compliance Settings', icon: 'Shield', description: 'Acknowledgement, review, and risk defaults' },
       { key: 'sla', label: 'SLA Targets', icon: 'Timer', description: 'Target completion times and warning thresholds' },
       { key: 'lifecycle', label: 'Data Lifecycle', icon: 'History', description: 'Retention, archival, and cleanup rules' },
-      { key: 'dlpRules', label: 'DLP Rules', icon: 'Shield', description: 'Data loss prevention rules (block, warn, log)' }
+      { key: 'dlpRules', label: 'DLP Rules', icon: 'Shield', description: 'Data loss prevention rules (block, warn, log)' },
+      { key: 'metadataTags', label: 'Metadata Tags', icon: 'Tag', description: 'Managed Metadata term store for compliance tagging' }
     ]
   },
   {
     category: 'AUDIT & SECURITY',
     items: [
-      { key: 'audit', label: 'Audit Log', icon: 'ComplianceAudit', description: 'Event log with filters, change tracking, and CSV export' }
+      { key: 'audit', label: 'Audit Log', icon: 'ComplianceAudit', description: 'Event log with filters, change tracking, and CSV export' },
+      { key: 'appSecurity', label: 'App Security', icon: 'Shield', description: 'Security audit dashboard with risk scoring, alerts, and threat detection' }
     ]
   },
   {
@@ -11565,6 +11569,571 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     );
   }
 
+  // ============================================================================
+  // RENDER: APP SECURITY (Enhanced Audit Dashboard)
+  // ============================================================================
+
+  private renderAppSecurityContent(): JSX.Element {
+    const st = this.state as any;
+    const secEvents: any[] = st._securityEvents || [];
+    const secSummary: any = st._securitySummary || null;
+    const secLoading: boolean = st._securityLoading || false;
+    const secFilter: string = st._securityFilter || 'all';
+    const secSeverityFilter: string = st._secSeverityFilter || 'all';
+    const secSearch: string = st._secSearch || '';
+    const secAlerts: any[] = st._securityAlerts || [];
+
+    // Load on first render
+    if (!st._securityLoaded && !secLoading) {
+      this.setState({ _securityLoaded: true, _securityLoading: true } as any);
+      const svc = new (require('../../../services/SecurityAuditService').SecurityAuditService)(this.props.sp);
+      Promise.all([svc.getRecentEvents(200), svc.getSecuritySummary(30), svc.getAlerts(20)])
+        .then(([events, summary, alerts]: any[]) => {
+          if (this._isMounted) this.setState({ _securityEvents: events, _securitySummary: summary, _securityAlerts: alerts, _securityLoading: false } as any);
+        })
+        .catch(() => { if (this._isMounted) this.setState({ _securityLoading: false } as any); });
+    }
+
+    const summary = secSummary || { totalEvents: 0, criticalCount: 0, highCount: 0, mediumCount: 0, lowCount: 0, avgRiskScore: 0, topEventTypes: [], recentAlerts: [] };
+
+    // Filter events
+    let filtered = secEvents;
+    if (secFilter !== 'all') filtered = filtered.filter((e: any) => e.Severity === secFilter);
+    if (secSeverityFilter !== 'all') filtered = filtered.filter((e: any) => e.EventType === secSeverityFilter);
+    if (secSearch) {
+      const q = secSearch.toLowerCase();
+      filtered = filtered.filter((e: any) => (e.UserDisplayName || '').toLowerCase().includes(q) || (e.Details || '').toLowerCase().includes(q) || (e.UserEmail || '').toLowerCase().includes(q));
+    }
+
+    const severityColor = (s: string): string => s === 'Critical' ? '#dc2626' : s === 'High' ? '#d97706' : s === 'Medium' ? '#2563eb' : '#059669';
+
+    const kpiStyle = (borderColor: string): React.CSSProperties => ({
+      flex: 1, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10,
+      borderTop: `3px solid ${borderColor}`, padding: '16px 20px', textAlign: 'center' as const, minWidth: 100
+    });
+
+    return (
+      <div className={styles.sectionContent}>
+        <Stack tokens={{ childrenGap: 16 }}>
+          {this.renderSectionIntro('App Security', 'Security audit dashboard with risk scoring, threat detection, and compliance reporting. All security events are logged with severity, risk scores, and session tracking.')}
+
+          {/* KPI Strip */}
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' as const }}>
+            <div style={kpiStyle('#2563eb')}><div style={{ fontSize: 28, fontWeight: 700, color: '#2563eb' }}>{summary.totalEvents}</div><div style={{ fontSize: 10, textTransform: 'uppercase' as const, letterSpacing: 1, color: '#94a3b8', fontWeight: 600, marginTop: 4 }}>Total Events</div></div>
+            <div style={kpiStyle('#dc2626')}><div style={{ fontSize: 28, fontWeight: 700, color: '#dc2626' }}>{summary.criticalCount}</div><div style={{ fontSize: 10, textTransform: 'uppercase' as const, letterSpacing: 1, color: '#94a3b8', fontWeight: 600, marginTop: 4 }}>Critical</div></div>
+            <div style={kpiStyle('#d97706')}><div style={{ fontSize: 28, fontWeight: 700, color: '#d97706' }}>{summary.highCount}</div><div style={{ fontSize: 10, textTransform: 'uppercase' as const, letterSpacing: 1, color: '#94a3b8', fontWeight: 600, marginTop: 4 }}>High</div></div>
+            <div style={kpiStyle('#2563eb')}><div style={{ fontSize: 28, fontWeight: 700, color: '#2563eb' }}>{summary.mediumCount}</div><div style={{ fontSize: 10, textTransform: 'uppercase' as const, letterSpacing: 1, color: '#94a3b8', fontWeight: 600, marginTop: 4 }}>Medium</div></div>
+            <div style={kpiStyle('#059669')}><div style={{ fontSize: 28, fontWeight: 700, color: '#059669' }}>{summary.lowCount}</div><div style={{ fontSize: 10, textTransform: 'uppercase' as const, letterSpacing: 1, color: '#94a3b8', fontWeight: 600, marginTop: 4 }}>Low</div></div>
+            <div style={kpiStyle('#7c3aed')}><div style={{ fontSize: 28, fontWeight: 700, color: '#7c3aed' }}>{summary.avgRiskScore}</div><div style={{ fontSize: 10, textTransform: 'uppercase' as const, letterSpacing: 1, color: '#94a3b8', fontWeight: 600, marginTop: 4 }}>Avg Risk Score</div></div>
+          </div>
+
+          {/* Active Alerts */}
+          {secAlerts.length > 0 && (
+            <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 4, padding: 16 }}>
+              <Text style={{ fontWeight: 600, fontSize: 14, color: '#dc2626', display: 'block', marginBottom: 8 }}>Active Security Alerts ({secAlerts.length})</Text>
+              {secAlerts.slice(0, 5).map((alert: any, i: number) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: i < 4 ? '1px solid #fecaca' : 'none' }}>
+                  <div>
+                    <span style={{ ...BadgeStyles.tag, background: severityColor(alert.severity) + '18', color: severityColor(alert.severity), marginRight: 8 }}>{alert.severity}</span>
+                    <span style={{ fontSize: 13, fontWeight: 500 }}>{alert.title}</span>
+                    <span style={{ fontSize: 11, color: '#94a3b8', marginLeft: 8 }}>Risk: {alert.riskScore}</span>
+                  </div>
+                  <span style={{ fontSize: 11, color: '#94a3b8' }}>{new Date(alert.timestamp).toLocaleDateString()}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Filters */}
+          <Stack horizontal tokens={{ childrenGap: 12 }} verticalAlign="end" wrap>
+            <TextField label="Search" placeholder="Search by user, details..." value={secSearch} onChange={(_, v) => this.setState({ _secSearch: v || '' } as any)} styles={{ root: { minWidth: 200 } }} />
+            <Dropdown label="Severity" selectedKey={secFilter} options={[{ key: 'all', text: 'All' }, { key: 'Critical', text: 'Critical' }, { key: 'High', text: 'High' }, { key: 'Medium', text: 'Medium' }, { key: 'Low', text: 'Low' }]} onChange={(_, o) => this.setState({ _securityFilter: o?.key || 'all' } as any)} styles={{ root: { minWidth: 140 } }} />
+            <DefaultButton text="Refresh" iconProps={{ iconName: 'Sync' }} onClick={() => this.setState({ _securityLoaded: false } as any)} />
+          </Stack>
+
+          {/* Events Table */}
+          {secLoading ? <Spinner size={SpinnerSize.large} label="Loading security events..." /> : (
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 4, overflow: 'hidden' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '160px 180px 80px 80px 1fr 180px', gap: 0, background: '#f8fafc', padding: '10px 16px', fontSize: 11, fontWeight: 600, color: '#64748b', textTransform: 'uppercase' as const, letterSpacing: 0.5, borderBottom: '1px solid #e2e8f0' }}>
+                <div>Timestamp</div><div>Event Type</div><div>Severity</div><div>Risk</div><div>Details</div><div>User</div>
+              </div>
+              <div style={{ maxHeight: 400, overflowY: 'auto' }}>
+                {filtered.length === 0 ? (
+                  <div style={{ padding: 32, textAlign: 'center', color: '#94a3b8' }}>No security events recorded yet.</div>
+                ) : filtered.slice(0, 100).map((event: any, i: number) => (
+                  <div key={i} style={{ display: 'grid', gridTemplateColumns: '160px 180px 80px 80px 1fr 180px', gap: 0, padding: '10px 16px', fontSize: 12, borderBottom: '1px solid #f1f5f9', alignItems: 'center' }}>
+                    <div style={{ color: '#64748b' }}>{new Date(event.Timestamp).toLocaleString()}</div>
+                    <div><span style={{ ...BadgeStyles.tag, background: '#f1f5f9', color: '#334155' }}>{event.EventType}</span></div>
+                    <div><span style={{ ...BadgeStyles.tag, background: severityColor(event.Severity) + '18', color: severityColor(event.Severity) }}>{event.Severity}</span></div>
+                    <div style={{ fontWeight: 600, color: (event.RiskScore || 0) >= 70 ? '#dc2626' : (event.RiskScore || 0) >= 40 ? '#d97706' : '#64748b' }}>{event.RiskScore || 0}</div>
+                    <div style={{ color: '#334155', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={event.Details}>{event.Details}</div>
+                    <div><div style={{ fontWeight: 500 }}>{event.UserDisplayName}</div><div style={{ fontSize: 10, color: '#94a3b8' }}>{event.UserEmail}</div></div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ padding: '8px 16px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', fontSize: 11, color: '#94a3b8', textAlign: 'center' }}>
+                Showing {Math.min(filtered.length, 100)} of {filtered.length} events {filtered.length < secEvents.length && '(filtered)'}
+              </div>
+            </div>
+          )}
+        </Stack>
+      </div>
+    );
+  }
+
+  // ============================================================================
+  // RENDER: LICENSE MANAGEMENT
+  // ============================================================================
+
+  private renderLicenseManagementContent(): JSX.Element {
+    const st = this.state as any;
+    const licenseKey: string = st._licenseKey || '';
+    const licenseStatus: string = st._licenseStatus || 'inactive'; // inactive | active | expired | trial
+    const licenseTier: string = st._licenseTier || 'standard'; // free | standard | enterprise
+    const licenseExpiry: string = st._licenseExpiry || '';
+    const licensedSeats: number = st._licensedSeats || 0;
+    const usedSeats: number = st._usedSeats || 0;
+    const licenseFeatures: Record<string, boolean> = st._licenseFeatures || {};
+    const licenseSaving: boolean = st._licenseSaving || false;
+    const licenseMessage: string = st._licenseMessage || '';
+
+    // Load on first render
+    if (!st._licenseLoaded) {
+      this.setState({ _licenseLoaded: true } as any);
+      this.adminConfigService.getConfigByCategory('License').then((config: any) => {
+        if (!this._isMounted) return;
+        const seatCount = this.props.sp.web.lists.getByTitle('PM_UserProfiles').items.select('Id').top(5000)().then((items: any[]) => items.length).catch(() => 0);
+        seatCount.then((count: number) => {
+          this.setState({
+            _licenseKey: config['License.Key'] || '',
+            _licenseStatus: config['License.Status'] || 'inactive',
+            _licenseTier: config['License.Tier'] || 'standard',
+            _licenseExpiry: config['License.Expiry'] || '',
+            _licensedSeats: Number(config['License.Seats']) || 0,
+            _usedSeats: count,
+            _licenseFeatures: config['License.Features'] ? JSON.parse(config['License.Features']) : {}
+          } as any);
+        });
+      }).catch(() => {});
+    }
+
+    const tierColors: Record<string, string> = { free: '#94a3b8', standard: '#2563eb', enterprise: '#7c3aed' };
+    const statusColors: Record<string, string> = { inactive: '#94a3b8', active: '#059669', expired: '#dc2626', trial: '#d97706' };
+
+    const kpiStyle = (borderColor: string): React.CSSProperties => ({
+      flex: 1, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10,
+      borderTop: `3px solid ${borderColor}`, padding: '16px 20px', textAlign: 'center' as const, minWidth: 120
+    });
+
+    const allFeatures = [
+      { key: 'policyCreation', label: 'Policy Creation & Publishing', tier: 'free' },
+      { key: 'acknowledgements', label: 'Acknowledgements & Tracking', tier: 'free' },
+      { key: 'basicReporting', label: 'Basic Reporting', tier: 'free' },
+      { key: 'quizBuilder', label: 'Quiz Builder', tier: 'standard' },
+      { key: 'distributions', label: 'Distribution Campaigns', tier: 'standard' },
+      { key: 'emailNotifications', label: 'Email Notifications', tier: 'standard' },
+      { key: 'advancedAnalytics', label: 'Advanced Analytics (6 tabs)', tier: 'standard' },
+      { key: 'metadataProfiles', label: 'Metadata Profiles', tier: 'standard' },
+      { key: 'aiChat', label: 'AI Chat Assistant', tier: 'enterprise' },
+      { key: 'aiQuizGeneration', label: 'AI Quiz Generation', tier: 'enterprise' },
+      { key: 'documentConversion', label: 'Document Conversion', tier: 'enterprise' },
+      { key: 'bulkUpload', label: 'Bulk Upload with AI', tier: 'enterprise' },
+      { key: 'eventViewer', label: 'Event Viewer & Diagnostics', tier: 'enterprise' },
+      { key: 'appSecurity', label: 'App Security & Threat Detection', tier: 'enterprise' },
+      { key: 'userSync', label: 'Entra ID User Sync', tier: 'enterprise' },
+      { key: 'metadataTags', label: 'Managed Metadata Tags', tier: 'enterprise' },
+    ];
+
+    const handleSaveLicense = async (): Promise<void> => {
+      this.setState({ _licenseSaving: true, _licenseMessage: '' } as any);
+      try {
+        await this.adminConfigService.saveConfigByCategory('License', {
+          'License.Key': licenseKey,
+          'License.Status': licenseStatus,
+          'License.Tier': licenseTier,
+          'License.Expiry': licenseExpiry,
+          'License.Seats': String(licensedSeats),
+          'License.Features': JSON.stringify(licenseFeatures)
+        });
+        // Audit log
+        try {
+          await this.props.sp.web.lists.getByTitle('PM_PolicyAuditLog').items.add({
+            Title: 'License configuration updated',
+            AuditAction: 'LicenseUpdate',
+            EntityType: 'System',
+            ActionDescription: `License updated: tier=${licenseTier}, status=${licenseStatus}, seats=${licensedSeats}`,
+            ComplianceRelevant: true
+          });
+        } catch { /* non-critical */ }
+        this.setState({ _licenseSaving: false, _licenseMessage: 'License settings saved successfully.' } as any);
+      } catch {
+        this.setState({ _licenseSaving: false, _licenseMessage: 'Failed to save license settings.' } as any);
+      }
+    };
+
+    return (
+      <div className={styles.sectionContent}>
+        <Stack tokens={{ childrenGap: 16 }}>
+          {this.renderSectionIntro('License Management', 'Manage your Policy Manager license activation, tier, seats, and feature flags. License changes are audit-logged.')}
+
+          {/* KPI Strip */}
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' as const }}>
+            <div style={kpiStyle(statusColors[licenseStatus] || '#94a3b8')}>
+              <div style={{ fontSize: 28, fontWeight: 700, color: statusColors[licenseStatus] || '#94a3b8' }}>{licenseStatus === 'active' ? 'Active' : licenseStatus === 'trial' ? 'Trial' : licenseStatus === 'expired' ? 'Expired' : 'Inactive'}</div>
+              <div style={{ fontSize: 10, textTransform: 'uppercase' as const, letterSpacing: 1, color: '#94a3b8', fontWeight: 600, marginTop: 4 }}>License Status</div>
+            </div>
+            <div style={kpiStyle(tierColors[licenseTier] || '#94a3b8')}>
+              <div style={{ fontSize: 28, fontWeight: 700, color: tierColors[licenseTier] || '#94a3b8' }}>{licenseTier.charAt(0).toUpperCase() + licenseTier.slice(1)}</div>
+              <div style={{ fontSize: 10, textTransform: 'uppercase' as const, letterSpacing: 1, color: '#94a3b8', fontWeight: 600, marginTop: 4 }}>Tier</div>
+            </div>
+            <div style={kpiStyle(usedSeats > licensedSeats && licensedSeats > 0 ? '#dc2626' : '#2563eb')}>
+              <div style={{ fontSize: 28, fontWeight: 700, color: usedSeats > licensedSeats && licensedSeats > 0 ? '#dc2626' : '#2563eb' }}>{usedSeats} / {licensedSeats || '∞'}</div>
+              <div style={{ fontSize: 10, textTransform: 'uppercase' as const, letterSpacing: 1, color: '#94a3b8', fontWeight: 600, marginTop: 4 }}>Seats Used</div>
+            </div>
+            <div style={kpiStyle(licenseExpiry && new Date(licenseExpiry) < new Date() ? '#dc2626' : '#059669')}>
+              <div style={{ fontSize: 20, fontWeight: 700, color: licenseExpiry && new Date(licenseExpiry) < new Date() ? '#dc2626' : '#059669' }}>{licenseExpiry ? new Date(licenseExpiry).toLocaleDateString() : 'No Expiry'}</div>
+              <div style={{ fontSize: 10, textTransform: 'uppercase' as const, letterSpacing: 1, color: '#94a3b8', fontWeight: 600, marginTop: 4 }}>Expiry Date</div>
+            </div>
+          </div>
+
+          {licenseMessage && <MessageBar messageBarType={licenseMessage.includes('Failed') ? MessageBarType.error : MessageBarType.success}>{licenseMessage}</MessageBar>}
+
+          {/* License Key + Config */}
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 4, padding: 20 }}>
+            <Text style={{ fontWeight: 600, fontSize: 14, display: 'block', marginBottom: 12 }}>License Configuration</Text>
+            <Stack tokens={{ childrenGap: 12 }}>
+              <TextField label="License Key" value={licenseKey} onChange={(_, v) => this.setState({ _licenseKey: v || '' } as any)} placeholder="Enter license key..." />
+              <Stack horizontal tokens={{ childrenGap: 12 }} wrap>
+                <Dropdown label="Status" selectedKey={licenseStatus} options={[{ key: 'inactive', text: 'Inactive' }, { key: 'active', text: 'Active' }, { key: 'trial', text: 'Trial' }, { key: 'expired', text: 'Expired' }]} onChange={(_, o) => this.setState({ _licenseStatus: o?.key || 'inactive' } as any)} styles={{ root: { minWidth: 140 } }} />
+                <Dropdown label="Tier" selectedKey={licenseTier} options={[{ key: 'free', text: 'Free' }, { key: 'standard', text: 'Standard' }, { key: 'enterprise', text: 'Enterprise' }]} onChange={(_, o) => this.setState({ _licenseTier: o?.key || 'standard' } as any)} styles={{ root: { minWidth: 140 } }} />
+                <TextField label="Licensed Seats" type="number" value={String(licensedSeats)} onChange={(_, v) => this.setState({ _licensedSeats: Number(v) || 0 } as any)} styles={{ root: { width: 120 } }} />
+                <TextField label="Expiry Date" type="date" value={licenseExpiry} onChange={(_, v) => this.setState({ _licenseExpiry: v || '' } as any)} styles={{ root: { width: 160 } }} />
+              </Stack>
+            </Stack>
+          </div>
+
+          {/* Feature Flags */}
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 4, padding: 20 }}>
+            <Text style={{ fontWeight: 600, fontSize: 14, display: 'block', marginBottom: 12 }}>Feature Flags</Text>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 8 }}>
+              {allFeatures.map(feat => (
+                <div key={feat.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#f8fafc', borderRadius: 4, border: '1px solid #e2e8f0' }}>
+                  <div>
+                    <span style={{ fontSize: 13, fontWeight: 500 }}>{feat.label}</span>
+                    <span style={{ ...BadgeStyles.tag, background: tierColors[feat.tier] + '18', color: tierColors[feat.tier], marginLeft: 8, fontSize: 9 }}>{feat.tier}</span>
+                  </div>
+                  <Toggle checked={licenseFeatures[feat.key] !== false} onChange={(_, checked) => this.setState({ _licenseFeatures: { ...licenseFeatures, [feat.key]: !!checked } } as any)} />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Save */}
+          <Stack horizontal horizontalAlign="end" tokens={{ childrenGap: 8 }}>
+            <PrimaryButton text={licenseSaving ? 'Saving...' : 'Save License Settings'} iconProps={{ iconName: 'Save' }} disabled={licenseSaving} onClick={handleSaveLicense} />
+          </Stack>
+        </Stack>
+      </div>
+    );
+  }
+
+  // ============================================================================
+  // RENDER: METADATA TAGS (Managed Metadata / Term Store)
+  // ============================================================================
+
+  private renderMetadataTagsContent(): JSX.Element {
+    const st = this.state as any;
+    const termSets: any[] = st._termSets || [];
+    const termsLoading: boolean = st._termsLoading || false;
+    const termsError: string = st._termsError || '';
+    const expandedSets: Set<string> = st._expandedTermSets || new Set();
+    const termSearch: string = st._termSearch || '';
+
+    // Load from Term Store on first render
+    if (!st._termsLoaded && !termsLoading) {
+      this.setState({ _termsLoaded: true, _termsLoading: true } as any);
+      (async () => {
+        try {
+          const taxonomyService = new (require('../../../services/TaxonomyService').TaxonomyService)(this.props.sp);
+          await taxonomyService.initialize();
+          const sets = await taxonomyService.getTermSets();
+          const setsWithTerms = [];
+          for (const ts of sets) {
+            try {
+              const terms = await taxonomyService.getTermsBySetType(ts.name);
+              setsWithTerms.push({ ...ts, terms: terms || [], termCount: (terms || []).length });
+            } catch {
+              setsWithTerms.push({ ...ts, terms: [], termCount: 0 });
+            }
+          }
+          if (this._isMounted) this.setState({ _termSets: setsWithTerms, _termsLoading: false } as any);
+        } catch (err: any) {
+          if (this._isMounted) this.setState({ _termsLoading: false, _termsError: err.message || 'Failed to load term store' } as any);
+        }
+      })();
+    }
+
+    const totalTerms = termSets.reduce((sum: number, ts: any) => sum + (ts.termCount || 0), 0);
+    const openSets = termSets.filter((ts: any) => ts.isOpenForTermCreation).length;
+
+    const kpiStyle = (borderColor: string): React.CSSProperties => ({
+      flex: 1, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10,
+      borderTop: `3px solid ${borderColor}`, padding: '16px 20px', textAlign: 'center' as const, minWidth: 100
+    });
+
+    const renderTermTree = (terms: any[], level: number = 0): JSX.Element[] => {
+      if (!terms || terms.length === 0) return [];
+      const q = termSearch.toLowerCase();
+      return terms.filter((t: any) => !q || t.name.toLowerCase().includes(q)).map((term: any) => (
+        <div key={term.id} style={{ paddingLeft: level * 20, padding: `4px 8px 4px ${12 + level * 20}px`, borderBottom: '1px solid #f8fafc' }}>
+          <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
+            {term.children?.length > 0 && (
+              <Icon iconName={expandedSets.has(term.id) ? 'ChevronDown' : 'ChevronRight'} style={{ fontSize: 10, cursor: 'pointer', color: '#94a3b8' }}
+                onClick={() => {
+                  const next = new Set(expandedSets);
+                  next.has(term.id) ? next.delete(term.id) : next.add(term.id);
+                  this.setState({ _expandedTermSets: next } as any);
+                }}
+              />
+            )}
+            <Icon iconName={term.children?.length > 0 ? 'FolderOpen' : 'Tag'} style={{ fontSize: 13, color: term.isDeprecated ? '#d97706' : 'var(--pm-primary, #0d9488)' }} />
+            <span style={{ fontSize: 13, color: term.isDeprecated ? '#d97706' : '#334155' }}>{term.name}</span>
+            {term.isDeprecated && <span style={{ ...BadgeStyles.tag, background: '#fef3c7', color: '#d97706', fontSize: 9 }}>Deprecated</span>}
+            {term.children?.length > 0 && <span style={{ fontSize: 10, color: '#94a3b8' }}>({term.children.length})</span>}
+          </Stack>
+          {expandedSets.has(term.id) && term.children?.length > 0 && renderTermTree(term.children, level + 1)}
+        </div>
+      ));
+    };
+
+    return (
+      <div className={styles.sectionContent}>
+        <Stack tokens={{ childrenGap: 16 }}>
+          {this.renderSectionIntro('Metadata Tags', 'Browse and manage SharePoint Managed Metadata terms for compliance tagging. Tags from the Term Store can be applied to policies for regulatory classification and discovery.')}
+
+          {/* KPIs */}
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' as const }}>
+            <div style={kpiStyle('var(--pm-primary, #0d9488)')}><div style={{ fontSize: 28, fontWeight: 700, color: 'var(--pm-primary, #0d9488)' }}>{termSets.length}</div><div style={{ fontSize: 10, textTransform: 'uppercase' as const, letterSpacing: 1, color: '#94a3b8', fontWeight: 600, marginTop: 4 }}>Term Sets</div></div>
+            <div style={kpiStyle('#2563eb')}><div style={{ fontSize: 28, fontWeight: 700, color: '#2563eb' }}>{totalTerms}</div><div style={{ fontSize: 10, textTransform: 'uppercase' as const, letterSpacing: 1, color: '#94a3b8', fontWeight: 600, marginTop: 4 }}>Total Tags</div></div>
+            <div style={kpiStyle('#059669')}><div style={{ fontSize: 28, fontWeight: 700, color: '#059669' }}>{openSets}</div><div style={{ fontSize: 10, textTransform: 'uppercase' as const, letterSpacing: 1, color: '#94a3b8', fontWeight: 600, marginTop: 4 }}>Open for Tagging</div></div>
+          </div>
+
+          {termsError && <MessageBar messageBarType={MessageBarType.warning}>{termsError}</MessageBar>}
+
+          {/* Search + Link */}
+          <Stack horizontal tokens={{ childrenGap: 12 }} verticalAlign="end">
+            <TextField label="Search Tags" placeholder="Filter terms..." value={termSearch} onChange={(_, v) => this.setState({ _termSearch: v || '' } as any)} styles={{ root: { minWidth: 240 } }} />
+            <DefaultButton text="Open Term Store Manager" iconProps={{ iconName: 'NavigateExternalInline' }}
+              onClick={() => window.open(`${this.props.context?.pageContext?.web?.absoluteUrl || ''}/_layouts/15/termstoremanager.aspx`, '_blank')}
+            />
+            <DefaultButton text="Refresh" iconProps={{ iconName: 'Sync' }} onClick={() => this.setState({ _termsLoaded: false } as any)} />
+          </Stack>
+
+          {/* Term Sets */}
+          {termsLoading ? <Spinner size={SpinnerSize.large} label="Loading term store..." /> : (
+            <div style={{ display: 'grid', gap: 12 }}>
+              {termSets.map((ts: any) => (
+                <div key={ts.id} className={styles.adminCard}>
+                  <Stack horizontal horizontalAlign="space-between" verticalAlign="center" onClick={() => {
+                    const next = new Set(expandedSets);
+                    next.has(ts.id) ? next.delete(ts.id) : next.add(ts.id);
+                    this.setState({ _expandedTermSets: next } as any);
+                  }} style={{ cursor: 'pointer' }}>
+                    <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 10 }}>
+                      <Icon iconName={expandedSets.has(ts.id) ? 'ChevronDown' : 'ChevronRight'} style={{ fontSize: 12, color: '#94a3b8' }} />
+                      <Icon iconName="FolderOpen" style={{ fontSize: 16, color: 'var(--pm-primary, #0d9488)' }} />
+                      <div>
+                        <Text style={{ fontWeight: 600, display: 'block' }}>{ts.name}</Text>
+                        {ts.description && <Text variant="small" style={{ color: '#94a3b8' }}>{ts.description}</Text>}
+                      </div>
+                    </Stack>
+                    <Stack horizontal tokens={{ childrenGap: 8 }}>
+                      <span style={{ ...BadgeStyles.tag, background: '#f0fdf4', color: '#059669' }}>{ts.termCount || 0} terms</span>
+                      <span style={{ ...BadgeStyles.tag, background: ts.isOpenForTermCreation ? '#dbeafe' : '#f1f5f9', color: ts.isOpenForTermCreation ? '#2563eb' : '#94a3b8' }}>
+                        {ts.isOpenForTermCreation ? 'Open' : 'Closed'}
+                      </span>
+                    </Stack>
+                  </Stack>
+                  {expandedSets.has(ts.id) && (
+                    <div style={{ marginTop: 12, borderTop: '1px solid #e2e8f0', paddingTop: 8 }}>
+                      {ts.terms?.length > 0 ? renderTermTree(ts.terms) : <Text variant="small" style={{ color: '#94a3b8', padding: 8 }}>No terms in this set.</Text>}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          <MessageBar messageBarType={MessageBarType.info}>
+            To create or modify terms, use the <strong>Term Store Manager</strong> in SharePoint Admin Centre. Terms created there will automatically appear in Policy Manager's tag pickers.
+          </MessageBar>
+        </Stack>
+      </div>
+    );
+  }
+
+  // ============================================================================
+  // RENDER: USER SYNC (Entra ID Sync Management)
+  // ============================================================================
+
+  private renderUserSyncContent(): JSX.Element {
+    const st = this.state as any;
+    const syncTab: string = st._syncTab || 'sync';
+    const syncLoading: boolean = st._syncLoading || false;
+    const isSyncing: boolean = st._isSyncing || false;
+    const syncProgress: number = st._syncProgress || 0;
+    const syncMessage: string = st._syncMessage || '';
+    const syncHistory: any[] = st._syncHistory || [];
+    const syncStats: any = st._syncStats || { totalEmployees: 0, activeEmployees: 0, inactiveEmployees: 0, syncedToday: 0 };
+
+    // Load stats and history on first render
+    if (!st._syncStatsLoaded && !syncLoading) {
+      this.setState({ _syncStatsLoaded: true, _syncLoading: true } as any);
+      (async () => {
+        try {
+          const employees = await this.props.sp.web.lists.getByTitle('PM_UserProfiles').items.select('Id', 'EmployeeStatus', 'LastSyncedAt').top(5000)();
+          const today = new Date().toISOString().split('T')[0];
+          const stats = {
+            totalEmployees: employees.length,
+            activeEmployees: employees.filter((e: any) => e.EmployeeStatus === 'Active' || !e.EmployeeStatus).length,
+            inactiveEmployees: employees.filter((e: any) => e.EmployeeStatus === 'Inactive').length,
+            syncedToday: employees.filter((e: any) => e.LastSyncedAt && e.LastSyncedAt.startsWith(today)).length,
+            lastSyncDate: employees.reduce((latest: string, e: any) => e.LastSyncedAt > latest ? e.LastSyncedAt : latest, '')
+          };
+          // Load sync history from PM_PolicyAuditLog
+          let history: any[] = [];
+          try {
+            const logs = await this.props.sp.web.lists.getByTitle('PM_PolicyAuditLog')
+              .items.filter("AuditAction eq 'UserSync'").select('Id', 'Title', 'ActionDescription', 'Created').orderBy('Created', false).top(20)();
+            history = logs.map((l: any) => ({ id: l.Id, title: l.Title, description: l.ActionDescription, timestamp: new Date(l.Created) }));
+          } catch { /* audit log may not exist */ }
+          if (this._isMounted) this.setState({ _syncStats: stats, _syncHistory: history, _syncLoading: false } as any);
+        } catch {
+          if (this._isMounted) this.setState({ _syncLoading: false } as any);
+        }
+      })();
+    }
+
+    const handleFullSync = async (): Promise<void> => {
+      this.setState({ _isSyncing: true, _syncProgress: 0, _syncMessage: 'Starting full Entra ID sync...' } as any);
+      try {
+        const EntraSvc = require('../../../services/EntraUserSyncService').EntraUserSyncService;
+        const syncService = new EntraSvc(this.props.context);
+        this.setState({ _syncProgress: 20, _syncMessage: 'Fetching users from Entra ID...' } as any);
+        const result = await syncService.syncAllUsers();
+        this.setState({ _syncProgress: 100, _syncMessage: `Sync complete. Added: ${result.added}, Updated: ${result.updated}, Errors: ${result.errors}` } as any);
+        // Audit log
+        try {
+          await this.props.sp.web.lists.getByTitle('PM_PolicyAuditLog').items.add({
+            Title: `User Sync: ${result.status}`, AuditAction: 'UserSync', EntityType: 'System',
+            ActionDescription: `Full sync: ${result.totalProcessed} processed, ${result.added} added, ${result.updated} updated, ${result.errors} errors`,
+            ComplianceRelevant: true
+          });
+        } catch { /* non-critical */ }
+        // Refresh stats
+        this.setState({ _syncStatsLoaded: false } as any);
+      } catch (err: any) {
+        this.setState({ _syncMessage: `Sync failed: ${err.message || 'Unknown error'}` } as any);
+      }
+      this.setState({ _isSyncing: false } as any);
+    };
+
+    const kpiStyle = (borderColor: string): React.CSSProperties => ({
+      flex: 1, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10,
+      borderTop: `3px solid ${borderColor}`, padding: '16px 20px', textAlign: 'center' as const, minWidth: 100
+    });
+
+    const tabStyle = (active: boolean): React.CSSProperties => ({
+      padding: '8px 16px', fontSize: 13, cursor: 'pointer', fontWeight: active ? 700 : 500,
+      color: active ? 'var(--pm-primary, #0d9488)' : '#64748b',
+      borderBottom: active ? '2px solid var(--pm-primary, #0d9488)' : '2px solid transparent',
+      marginBottom: -2, background: 'transparent', border: 'none', borderBottomWidth: 2, borderBottomStyle: 'solid'
+    });
+
+    return (
+      <div className={styles.sectionContent}>
+        <Stack tokens={{ childrenGap: 16 }}>
+          {this.renderSectionIntro('User Sync', 'Synchronize users from Microsoft Entra ID (Azure AD) to Policy Manager. Supports full sync, delta sync, field mappings, and sync analytics.')}
+
+          {/* KPI Strip */}
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' as const }}>
+            <div style={kpiStyle('#2563eb')}><div style={{ fontSize: 28, fontWeight: 700, color: '#2563eb' }}>{syncStats.totalEmployees}</div><div style={{ fontSize: 10, textTransform: 'uppercase' as const, letterSpacing: 1, color: '#94a3b8', fontWeight: 600, marginTop: 4 }}>Total Users</div></div>
+            <div style={kpiStyle('#059669')}><div style={{ fontSize: 28, fontWeight: 700, color: '#059669' }}>{syncStats.activeEmployees}</div><div style={{ fontSize: 10, textTransform: 'uppercase' as const, letterSpacing: 1, color: '#94a3b8', fontWeight: 600, marginTop: 4 }}>Active</div></div>
+            <div style={kpiStyle('#dc2626')}><div style={{ fontSize: 28, fontWeight: 700, color: '#dc2626' }}>{syncStats.inactiveEmployees}</div><div style={{ fontSize: 10, textTransform: 'uppercase' as const, letterSpacing: 1, color: '#94a3b8', fontWeight: 600, marginTop: 4 }}>Inactive</div></div>
+            <div style={kpiStyle('#d97706')}><div style={{ fontSize: 28, fontWeight: 700, color: '#d97706' }}>{syncStats.syncedToday}</div><div style={{ fontSize: 10, textTransform: 'uppercase' as const, letterSpacing: 1, color: '#94a3b8', fontWeight: 600, marginTop: 4 }}>Synced Today</div></div>
+          </div>
+
+          {/* Tab bar */}
+          <div style={{ display: 'flex', gap: 0, borderBottom: '2px solid #e2e8f0' }}>
+            {[
+              { key: 'sync', label: 'Sync' },
+              { key: 'history', label: 'History' },
+              { key: 'config', label: 'Configuration' }
+            ].map(tab => (
+              <button key={tab.key} style={tabStyle(syncTab === tab.key)} onClick={() => this.setState({ _syncTab: tab.key } as any)}>
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Sync Tab */}
+          {syncTab === 'sync' && (
+            <Stack tokens={{ childrenGap: 12 }}>
+              <Stack horizontal tokens={{ childrenGap: 12 }}>
+                <PrimaryButton text={isSyncing ? 'Syncing...' : 'Start Full Sync'} iconProps={{ iconName: 'Sync' }} disabled={isSyncing} onClick={handleFullSync} />
+                <DefaultButton text="Reset Delta Token" iconProps={{ iconName: 'Refresh' }} disabled={isSyncing} onClick={async () => {
+                  try {
+                    const EntraSvc = require('../../../services/EntraUserSyncService').EntraUserSyncService;
+                    const svc = new EntraSvc(this.props.context);
+                    await svc.resetDeltaSync();
+                    void this.dialogManager.showAlert('Delta sync token reset. Next sync will be a full sync.', { title: 'Reset Complete', variant: 'success' });
+                  } catch { void this.dialogManager.showAlert('Failed to reset delta token.', { title: 'Error' }); }
+                }} />
+              </Stack>
+              {isSyncing && <ProgressIndicator label={syncMessage} percentComplete={syncProgress / 100} styles={{ progressBar: { background: 'var(--pm-primary, #0d9488)' } }} />}
+              {!isSyncing && syncMessage && <MessageBar messageBarType={syncMessage.includes('failed') ? MessageBarType.error : MessageBarType.success}>{syncMessage}</MessageBar>}
+            </Stack>
+          )}
+
+          {/* History Tab */}
+          {syncTab === 'history' && (
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 4, overflow: 'hidden' }}>
+              {syncHistory.length === 0 ? (
+                <div style={{ padding: 32, textAlign: 'center', color: '#94a3b8' }}>No sync history yet. Run your first sync to see results here.</div>
+              ) : (
+                syncHistory.map((entry: any, i: number) => (
+                  <div key={i} style={{ padding: '12px 16px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <Text style={{ fontWeight: 500, display: 'block' }}>{entry.title}</Text>
+                      <Text variant="small" style={{ color: '#94a3b8' }}>{entry.description}</Text>
+                    </div>
+                    <Text variant="small" style={{ color: '#94a3b8' }}>{entry.timestamp.toLocaleString()}</Text>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+
+          {/* Config Tab */}
+          {syncTab === 'config' && (
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 4, padding: 20 }}>
+              <Text style={{ fontWeight: 600, fontSize: 14, display: 'block', marginBottom: 12 }}>Sync Configuration</Text>
+              <MessageBar messageBarType={MessageBarType.info} style={{ marginBottom: 16 }}>
+                Advanced sync settings (delta sync, field mappings, mapping rules, and sync schedules) are configured via the EntraUserSyncService. The full 7-tab management UI from JML is available for future expansion.
+              </MessageBar>
+              <Stack tokens={{ childrenGap: 8 }}>
+                <Toggle label="Include disabled Entra accounts" checked={true} onText="Yes — mark as Inactive" offText="No — skip disabled accounts" />
+                <Toggle label="Update existing user profiles" checked={true} onText="Yes — keep profiles current" offText="No — only add new users" />
+                <Toggle label="Deactivate missing users" checked={false} onText="Yes — auto-deactivate" offText="No — manual only (safer)" />
+                <Dropdown label="Batch size" selectedKey="50" options={[{ key: '25', text: '25' }, { key: '50', text: '50 (default)' }, { key: '100', text: '100' }]} styles={{ root: { maxWidth: 200 } }} />
+              </Stack>
+            </div>
+          )}
+        </Stack>
+      </div>
+    );
+  }
+
   private renderActiveContent(): JSX.Element {
     switch (this.state.activeSection) {
       case 'categories': return this.renderCategoriesContent();
@@ -11581,7 +12150,10 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       case 'usersRoles': return this.renderUsersRolesContent();
       case 'audiences': return this.renderAudiencesContent();
       case 'audit': return this.renderAuditContent();
-      // appSecurity removed per user feedback
+      case 'appSecurity': return this.renderAppSecurityContent();
+      case 'licenseManagement': return this.renderLicenseManagementContent();
+      case 'metadataTags': return this.renderMetadataTagsContent();
+      case 'userSync': return this.renderUserSyncContent();
       case 'rolePermissions': return this.renderRolePermissionsContent();
       case 'export': return this.renderExportContent();
       case 'naming': return this.renderNamingRulesContent();

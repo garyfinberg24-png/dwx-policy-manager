@@ -8265,9 +8265,9 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               styles={{ root: { background: 'var(--pm-primary, #0d9488)', borderColor: 'var(--pm-primary, #0d9488)' }, rootHovered: { background: 'var(--pm-primary-dark, #0f766e)', borderColor: 'var(--pm-primary-dark, #0f766e)' } }}
             />
             <DefaultButton
-              text="Provision All Lists"
+              text={`Provision Missing (${PM_LIST_DEFS.filter(d => !listStatuses.find(s => s.title === d.title && s.exists)).length})`}
               iconProps={{ iconName: 'Database' }}
-              disabled={provisioningRunning}
+              disabled={provisioningRunning || PM_LIST_DEFS.filter(d => !listStatuses.find(s => s.title === d.title && s.exists)).length === 0}
               onClick={async () => {
                 const missing = PM_LIST_DEFS.filter(d => !listStatuses.find(s => s.title === d.title && s.exists));
                 if (missing.length === 0) {
@@ -8275,8 +8275,8 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                   return;
                 }
                 const confirmed = await this.dialogManager.showConfirm(
-                  `This will create ${missing.length} missing SharePoint lists:\n\n${missing.map(d => `• ${d.title}`).join('\n')}\n\nThis is a safe operation — no existing data will be affected.`,
-                  { title: 'Provision Missing Lists', confirmText: 'Provision', cancelText: 'Cancel' }
+                  `This will create ${missing.length} missing SharePoint lists. No existing data will be affected.\n\nLists to create:\n${missing.map(d => `• ${d.title} — ${d.description}`).join('\n')}`,
+                  { title: 'Provision Missing Lists', confirmText: `Create ${missing.length} Lists`, cancelText: 'Cancel' }
                 );
                 if (!confirmed) return;
                 this.setState({ _provisioningRunning: true } as any);

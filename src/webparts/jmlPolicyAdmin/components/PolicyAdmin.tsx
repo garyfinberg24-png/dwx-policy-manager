@@ -9506,110 +9506,68 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       { key: 'library', label: 'Secure Library Groups', count: libraryGroups.length }
     ];
 
+    // All tabs including "All Site Groups"
+    const allTabs = [...tabs, { key: 'all', label: 'All Site Groups', count: groups.length }];
+
     return (
       <div>
-        {/* Header */}
-        <Stack horizontal horizontalAlign="space-between" verticalAlign="center" style={{ marginBottom: 4 }}>
-          <div>
-            <Text variant="xLarge" style={{ ...TextStyles.bold, color: Colors.textDark, display: 'block' }}>Groups & Permissions</Text>
-            <Text style={{ color: Colors.textTertiary, display: 'block', marginBottom: 16 }}>
-              Manage SharePoint groups that control app roles, workflow assignments, and library access.
-            </Text>
-          </div>
-        </Stack>
-
-        {/* Sub-tabs */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 24, borderBottom: `1px solid ${Colors.borderLight}`, paddingBottom: 16 }}>
-          {tabs.map(tab => (
-            <DefaultButton
-              key={tab.key}
-              text={`${tab.label}`}
-              onClick={() => this.setState({ _groupsActiveTab: tab.key, _groupFilterText: '' } as any)}
-              styles={{
-                root: {
-                  borderRadius: 4, minWidth: 'auto', padding: '6px 18px', height: 34,
-                  border: activeGroupTab === tab.key ? `1px solid ${Colors.tealPrimary}` : '1px solid #e2e8f0',
-                  background: activeGroupTab === tab.key ? Colors.tealPrimary : '#fff',
-                  color: activeGroupTab === tab.key ? '#fff' : '#605e5c',
-                  fontWeight: activeGroupTab === tab.key ? 600 : 400
-                },
-                rootHovered: { borderColor: Colors.tealPrimary, color: activeGroupTab === tab.key ? '#fff' : Colors.tealPrimary, background: activeGroupTab === tab.key ? tc.primaryDark : tc.primaryLighter },
-                label: { display: 'flex', alignItems: 'center', gap: 6 }
-              }}
-            >
-              <span style={{
-                display: 'inline-block', background: activeGroupTab === tab.key ? 'rgba(255,255,255,0.25)' : '#f1f5f9',
-                borderRadius: 10, padding: '1px 8px', fontSize: 11, fontWeight: 600,
-                color: activeGroupTab === tab.key ? '#fff' : '#64748b', marginLeft: 6
-              }}>{tab.count}</span>
-            </DefaultButton>
-          ))}
-          <div style={{ flex: 1 }} />
-          <DefaultButton
-            text="All Site Groups"
-            onClick={() => this.setState({ _groupsActiveTab: 'all', _groupFilterText: '' } as any)}
-            styles={{
-              root: {
-                borderRadius: 4, minWidth: 'auto', padding: '6px 18px', height: 34,
-                border: activeGroupTab === 'all' ? `1px solid ${Colors.tealPrimary}` : '1px dashed #cbd5e1',
-                background: activeGroupTab === 'all' ? Colors.tealPrimary : '#fff',
-                color: activeGroupTab === 'all' ? '#fff' : '#94a3b8',
-                fontWeight: activeGroupTab === 'all' ? 600 : 400
-              },
-              rootHovered: { borderColor: Colors.tealPrimary, color: activeGroupTab === 'all' ? '#fff' : Colors.tealPrimary, background: activeGroupTab === 'all' ? tc.primaryDark : '#f8fafc' }
-            }}
-          >
-            <span style={{
-              display: 'inline-block', background: activeGroupTab === 'all' ? 'rgba(255,255,255,0.25)' : '#f1f5f9',
-              borderRadius: 10, padding: '1px 8px', fontSize: 11, fontWeight: 600,
-              color: activeGroupTab === 'all' ? '#fff' : '#94a3b8', marginLeft: 6
-            }}>{groups.length}</span>
-          </DefaultButton>
-        </div>
-
-        {/* Info banner */}
-        <MessageBar
-          messageBarType={activeGroupTab === 'all' ? MessageBarType.warning : MessageBarType.info}
-          isMultiline
-          styles={{ root: { marginBottom: 16, borderRadius: 4 } }}
-        >
-          {tabInfo}
-        </MessageBar>
-
+        {/* Status messages */}
         {groupsMsg && (
-          <MessageBar messageBarType={MessageBarType.success} onDismiss={() => this.setState({ _spGroupsMsg: '' } as any)} style={{ marginBottom: 12 }}>{groupsMsg}</MessageBar>
+          <MessageBar messageBarType={MessageBarType.success} onDismiss={() => this.setState({ _spGroupsMsg: '' } as any)} style={{ marginBottom: 8 }}>{groupsMsg}</MessageBar>
         )}
         {groupsError && (
-          <MessageBar messageBarType={MessageBarType.error} onDismiss={() => this.setState({ _spGroupsError: '' } as any)} style={{ marginBottom: 12 }}>{groupsError}</MessageBar>
+          <MessageBar messageBarType={MessageBarType.error} onDismiss={() => this.setState({ _spGroupsError: '' } as any)} style={{ marginBottom: 8 }}>{groupsError}</MessageBar>
         )}
 
-        {/* Toolbar: search + create button */}
-        <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 12 }} style={{ marginBottom: 16 }}>
-          <SearchBox
-            placeholder="Filter groups..."
-            value={groupFilter}
-            onChange={(_, val) => this.setState({ _groupFilterText: val || '' } as any)}
-            styles={{ root: { width: 260 } }}
-          />
-          <div style={{ flex: 1 }} />
-          {activeGroupTab !== 'library' && (
-            <PrimaryButton
-              text={createLabel}
-              iconProps={{ iconName: 'AddGroup' }}
-              onClick={() => this.setState({ _showCreateGroupForm: true } as any)}
-              disabled={showCreateForm}
-              styles={{ root: { background: Colors.tealPrimary, borderColor: Colors.tealPrimary, borderRadius: 4 }, rootHovered: { background: tc.primaryDark, borderColor: tc.primaryDark } }}
-            />
-          )}
-          {activeGroupTab === 'library' && (
-            <DefaultButton
-              text="+ Create Library Group"
-              disabled
-              title="Create secure library groups via Settings > Secure Libraries"
-              styles={{ root: { borderRadius: 4, opacity: 0.5 } }}
-            />
-          )}
-        </Stack>
+        {/* Command Bar: Pill tabs (row 1) + Filter/Create (row 2) */}
+        <div style={{ background: '#fff', marginBottom: 16 }}>
+          {/* Row 1: Contained pill tabs — grey track, white active pill */}
+          <div style={{ display: 'inline-flex', gap: 4, background: '#f1f5f9', borderRadius: 10, padding: 4, marginBottom: 12 }}>
+            {allTabs.map(tab => (
+              <button key={tab.key}
+                onClick={() => this.setState({ _groupsActiveTab: tab.key, _groupFilterText: '' } as any)}
+                style={{
+                  padding: '8px 18px', fontSize: 13, cursor: 'pointer', border: 'none', borderRadius: 8,
+                  fontWeight: activeGroupTab === tab.key ? 600 : 500,
+                  color: activeGroupTab === tab.key ? '#0f172a' : '#64748b',
+                  background: activeGroupTab === tab.key ? '#ffffff' : 'transparent',
+                  boxShadow: activeGroupTab === tab.key ? '0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06)' : 'none',
+                  transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: 8
+                }}>
+                {tab.label}
+                <span style={{
+                  fontSize: 10, padding: '2px 8px', borderRadius: 10, fontWeight: 600, minWidth: 18, textAlign: 'center' as const,
+                  background: activeGroupTab === tab.key ? '#059669' : '#94a3b8',
+                  color: '#fff'
+                }}>{tab.count}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Row 2: Filter + count + Create button */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+            <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 12 }}>
+              <SearchBox
+                placeholder="Filter groups..."
+                value={groupFilter}
+                onChange={(_, val) => this.setState({ _groupFilterText: val || '' } as any)}
+                styles={{ root: { width: 240 } }}
+              />
+              <Text style={{ fontSize: 11, color: '#94a3b8', fontWeight: 500 }}>{tabGroups.length} groups</Text>
+            </Stack>
+            {activeGroupTab !== 'library' ? (
+              <PrimaryButton
+                text={createLabel}
+                iconProps={{ iconName: 'AddGroup' }}
+                onClick={() => this.setState({ _showCreateGroupForm: true } as any)}
+                disabled={showCreateForm}
+                styles={{ root: { background: 'var(--pm-primary, #0d9488)', borderColor: 'var(--pm-primary, #0d9488)', borderRadius: 4, height: 32 }, rootHovered: { background: 'var(--pm-primary-dark, #0f766e)' } }}
+              />
+            ) : (
+              <DefaultButton text="+ Create Library Group" disabled title="Create via Secure Libraries" styles={{ root: { borderRadius: 4, opacity: 0.5, height: 32 } }} />
+            )}
+          </div>
+        </div>
 
         {/* Create Group Form */}
         {showCreateForm && (

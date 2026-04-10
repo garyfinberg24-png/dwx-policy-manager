@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Groups & Permissions — Cleaned Up Layout Mockup</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', -apple-system, sans-serif; background: #f1f5f9; padding: 40px; color: #0f172a; }
+
+  .container { max-width: 1100px; margin: 0 auto; background: #fff; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; }
+
+  /* Command Bar — pill tabs + filter + create */
+  .command-bar { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 16px 20px; }
+  .command-row-1 { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .command-row-2 { display: flex; justify-content: space-between; align-items: center; }
+
+  /* Pill Tabs — Contained grey track, white active pill with shadow */
+  .pill-track { display: inline-flex; gap: 4px; background: #f1f5f9; border-radius: 10px; padding: 4px; }
+  .pill { padding: 8px 18px; font-size: 13px; font-weight: 500; color: #64748b; border: none; border-radius: 8px; cursor: pointer; background: transparent; transition: all 0.15s; display: flex; align-items: center; gap: 8px; }
+  .pill:hover { color: #334155; }
+  .pill.active { background: #fff; color: #0f172a; font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06); }
+  .pill-count { font-size: 10px; background: #059669; color: #fff; padding: 2px 8px; border-radius: 10px; font-weight: 600; min-width: 18px; text-align: center; }
+  .pill:not(.active) .pill-count { background: #94a3b8; }
+
+  /* Filter + Actions */
+  .filter-input { display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 0 12px; height: 32px; width: 240px; }
+  .filter-input svg { color: #94a3b8; flex-shrink: 0; }
+  .filter-input input { border: none; outline: none; font-size: 12px; flex: 1; font-family: inherit; color: #334155; }
+  .filter-input input::placeholder { color: #94a3b8; }
+  .group-count { font-size: 11px; color: #94a3b8; font-weight: 500; }
+  .btn-create { display: flex; align-items: center; gap: 6px; padding: 0 16px; height: 32px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; background: #0d9488; color: #fff; transition: all 0.15s; }
+  .btn-create:hover { background: #0f766e; }
+
+  /* Section Divider */
+  .section-divider { display: flex; align-items: center; gap: 12px; padding: 12px 20px 8px; }
+  .section-divider-line { flex: 1; height: 1px; background: #e2e8f0; }
+  .section-divider-text { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; white-space: nowrap; }
+
+  /* Group Row */
+  .group-list { padding: 0; }
+  .group-row { display: flex; align-items: center; padding: 12px 20px; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: background 0.1s; }
+  .group-row:hover { background: #f8fafc; }
+  .group-row.expanded { background: #f0fdfa; border-left: 3px solid #0d9488; }
+  .group-chevron { width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 12px; margin-right: 8px; transition: transform 0.15s; }
+  .group-chevron.open { transform: rotate(90deg); color: #0d9488; }
+  .group-icon { width: 32px; height: 32px; border-radius: 6px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; margin-right: 12px; flex-shrink: 0; }
+  .group-icon svg { color: #64748b; }
+  .group-info { flex: 1; }
+  .group-name { font-size: 13px; font-weight: 600; color: #0f172a; }
+  .group-desc { font-size: 11px; color: #94a3b8; margin-top: 1px; }
+  .group-badges { display: flex; gap: 8px; align-items: center; }
+  .badge { font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .badge-system { background: #f1f5f9; color: #64748b; }
+  .badge-role { background: #dbeafe; color: #2563eb; }
+  .badge-approver { background: #fef3c7; color: #d97706; }
+  .badge-reviewer { background: #dcfce7; color: #059669; }
+  .member-count { font-size: 11px; color: #94a3b8; font-weight: 500; min-width: 70px; text-align: right; }
+
+  /* Expanded Member Area */
+  .member-area { padding: 12px 20px 12px 72px; background: #fafffe; border-bottom: 1px solid #e2e8f0; }
+  .member-search { display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 0 12px; height: 32px; width: 100%; margin-bottom: 10px; }
+  .member-search input { border: none; outline: none; font-size: 12px; flex: 1; font-family: inherit; }
+  .member-row { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid #f1f5f9; }
+  .member-row:last-child { border-bottom: none; }
+  .member-avatar { width: 28px; height: 28px; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; margin-right: 10px; font-size: 11px; color: #64748b; font-weight: 600; }
+  .member-name { font-size: 13px; font-weight: 500; flex: 1; }
+  .member-email { font-size: 11px; color: #94a3b8; }
+  .member-remove { width: 24px; height: 24px; border: none; background: transparent; color: #dc2626; cursor: pointer; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+  .member-remove:hover { background: #fef2f2; }
+
+  /* Empty state */
+  .empty-state { padding: 24px 20px; text-align: center; color: #94a3b8; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Command Bar -->
+  <div class="command-bar">
+    <!-- Row 1: Pill Tabs -->
+    <div class="command-row-1">
+      <div class="pill-track">
+        <button class="pill active">Role Groups <span class="pill-count">3</span></button>
+        <button class="pill">Approvers <span class="pill-count">1</span></button>
+        <button class="pill">Reviewers <span class="pill-count">2</span></button>
+        <button class="pill">Secure Library <span class="pill-count">0</span></button>
+        <button class="pill">All Site Groups <span class="pill-count">11</span></button>
+      </div>
+    </div>
+
+    <!-- Row 2: Filter + Count + Create -->
+    <div class="command-row-2">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div class="filter-input">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4" stroke-linecap="round"/></svg>
+          <input type="text" placeholder="Filter groups..." />
+        </div>
+        <span class="group-count">3 groups</span>
+      </div>
+      <button class="btn-create">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4-4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+        + Create Group
+      </button>
+    </div>
+  </div>
+
+  <!-- Group List -->
+  <div class="group-list">
+
+    <!-- Section: PM Role Groups -->
+    <div class="section-divider">
+      <span class="section-divider-text">PM Role Groups</span>
+      <div class="section-divider-line"></div>
+    </div>
+
+    <!-- Group Row — Collapsed -->
+    <div class="group-row">
+      <div class="group-chevron">&#9654;</div>
+      <div class="group-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      </div>
+      <div class="group-info">
+        <div class="group-name">PM_PolicyAdmins</div>
+        <div class="group-desc">Policy Manager administrators</div>
+      </div>
+      <div class="group-badges">
+        <span class="badge badge-role">Role</span>
+      </div>
+      <div class="member-count">3 members</div>
+    </div>
+
+    <!-- Group Row — Collapsed -->
+    <div class="group-row">
+      <div class="group-chevron">&#9654;</div>
+      <div class="group-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      </div>
+      <div class="group-info">
+        <div class="group-name">PM_PolicyAuthors</div>
+        <div class="group-desc">Policy authors and content creators</div>
+      </div>
+      <div class="group-badges">
+        <span class="badge badge-role">Role</span>
+      </div>
+      <div class="member-count">5 members</div>
+    </div>
+
+    <!-- Group Row — Expanded -->
+    <div class="group-row expanded">
+      <div class="group-chevron open">&#9654;</div>
+      <div class="group-icon" style="background: #f0fdfa;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      </div>
+      <div class="group-info">
+        <div class="group-name">PM_PolicyManagers</div>
+        <div class="group-desc">Department managers with approval authority</div>
+      </div>
+      <div class="group-badges">
+        <span class="badge badge-role">Role</span>
+      </div>
+      <div class="member-count">2 members</div>
+    </div>
+
+    <!-- Expanded Member Area -->
+    <div class="member-area">
+      <div class="member-search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4" stroke-linecap="round"/></svg>
+        <input type="text" placeholder="Search for a user to add..." />
+      </div>
+      <div class="member-row">
+        <div class="member-avatar">GF</div>
+        <div class="member-name">Gary Finberg</div>
+        <div class="member-email">gary@firsttech.digital</div>
+        <button class="member-remove">&#10005;</button>
+      </div>
+      <div class="member-row">
+        <div class="member-avatar">GI</div>
+        <div class="member-name">Gulzar Ismail</div>
+        <div class="member-email">gulzar@mf7m.onmicrosoft.com</div>
+        <button class="member-remove">&#10005;</button>
+      </div>
+    </div>
+
+    <!-- Section: Approver Groups -->
+    <div class="section-divider">
+      <span class="section-divider-text">Approver Groups</span>
+      <div class="section-divider-line"></div>
+    </div>
+
+    <div class="group-row">
+      <div class="group-chevron">&#9654;</div>
+      <div class="group-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      </div>
+      <div class="group-info">
+        <div class="group-name">PM_PolicyApprovers</div>
+        <div class="group-desc">Users who can approve policies for publication</div>
+      </div>
+      <div class="group-badges">
+        <span class="badge badge-approver">Approver</span>
+      </div>
+      <div class="member-count">1 member</div>
+    </div>
+
+    <!-- Section: Reviewer Groups -->
+    <div class="section-divider">
+      <span class="section-divider-text">Reviewer Groups</span>
+      <div class="section-divider-line"></div>
+    </div>
+
+    <div class="group-row">
+      <div class="group-chevron">&#9654;</div>
+      <div class="group-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      </div>
+      <div class="group-info">
+        <div class="group-name">PM_PolicyReviewers</div>
+        <div class="group-desc">Users who review policies before approval</div>
+      </div>
+      <div class="group-badges">
+        <span class="badge badge-reviewer">Reviewer</span>
+      </div>
+      <div class="member-count">2 members</div>
+    </div>
+
+    <!-- Section: SharePoint System Groups (when "All Site Groups" tab active) -->
+    <div class="section-divider">
+      <span class="section-divider-text">SharePoint System Groups</span>
+      <div class="section-divider-line"></div>
+    </div>
+
+    <div class="group-row" style="opacity: 0.6;">
+      <div class="group-chevron">&#9654;</div>
+      <div class="group-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <div class="group-info">
+        <div class="group-name" style="color: #64748b;">Limited Access System Group</div>
+        <div class="group-desc">SharePoint system group — do not modify</div>
+      </div>
+      <div class="group-badges">
+        <span class="badge badge-system">System</span>
+      </div>
+      <div class="member-count">0 members</div>
+    </div>
+
+    <div class="group-row" style="opacity: 0.6;">
+      <div class="group-chevron">&#9654;</div>
+      <div class="group-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <div class="group-info">
+        <div class="group-name" style="color: #64748b;">Policy Manager Members</div>
+        <div class="group-desc">SharePoint site members</div>
+      </div>
+      <div class="group-badges">
+        <span class="badge badge-system">System</span>
+      </div>
+      <div class="member-count">8 members</div>
+    </div>
+
+  </div>
+</div>
+
+<div style="text-align: center; padding: 24px; color: #94a3b8; font-size: 12px;">
+  Groups & Permissions — Cleaned Up Layout Mockup (Session 23)
+</div>
+
+</body>
+</html>

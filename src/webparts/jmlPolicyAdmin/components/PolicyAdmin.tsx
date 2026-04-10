@@ -7662,26 +7662,56 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       }),
     ];
 
+    const cmdBtnStyle = { root: { height: 32, minWidth: 120, fontSize: 12 } };
+
     return (
       <div className={styles.sectionContent}>
-        <Stack tokens={{ childrenGap: 16 }}>
-          <Stack horizontal horizontalAlign="end" verticalAlign="center">
+        <Stack tokens={{ childrenGap: 12 }}>
+          {/* 1. Description panel — top of container */}
+          <MessageBar messageBarType={MessageBarType.warning} isMultiline>
+            <strong>Explicit permissions model.</strong> Each role sees ONLY the features toggled ON for that role — there is no inheritance. For example, a Manager does NOT automatically get Author permissions. If you want a Manager to also create policies, you must explicitly enable "Create Policy" for the Manager role. Admin always has full access.
+          </MessageBar>
+
+          {/* 2. Consolidated command bar — all actions in one row */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, padding: '8px 12px', background: '#f8fafc', borderRadius: 4, border: '1px solid #e2e8f0' }}>
+            {/* Left: Role management */}
+            <Stack horizontal tokens={{ childrenGap: 8 }} verticalAlign="center">
+              <TextField
+                placeholder="New role name..."
+                value={(st as any)._newRoleName || ''}
+                onChange={(_, v) => this.setState({ _newRoleName: v || '' } as any)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCustomRole(); } }}
+                styles={{ root: { width: 160 }, fieldGroup: { height: 32 } }}
+              />
+              <DefaultButton
+                text="+ Add Role"
+                iconProps={{ iconName: 'AddGroup' }}
+                onClick={addCustomRole}
+                disabled={!((st as any)._newRoleName || '').trim()}
+                styles={cmdBtnStyle}
+              />
+              {customRoles.length > 0 && (
+                <Text style={{ fontSize: 11, color: '#94a3b8' }}>
+                  {customRoles.length} custom role{customRoles.length !== 1 ? 's' : ''}
+                </Text>
+              )}
+            </Stack>
+            {/* Right: Save + Reset */}
             <Stack horizontal tokens={{ childrenGap: 8 }}>
               <PrimaryButton
                 text="Save Permissions"
                 iconProps={{ iconName: 'Save' }}
                 disabled={this.state.saving}
+                styles={cmdBtnStyle}
                 onClick={async () => {
                   this.setState({ saving: true });
                   try {
                     const saveData = { permissions, customRoles };
                     const permJson = JSON.stringify(saveData);
-                    await this.adminConfigService.saveConfigByCategory('RolePermissions', {
-                      'Admin.RolePermissions.Config': permJson
-                    });
-                    try { localStorage.setItem('pm_role_permissions', JSON.stringify(permissions)); } catch { /* non-critical */ }
-                    try { localStorage.setItem('pm_custom_roles', JSON.stringify(customRoles)); } catch { /* non-critical */ }
-                    void this.dialogManager.showAlert('Role permissions saved. Changes take effect immediately.', { title: 'Saved', variant: 'success' });
+                    await this.adminConfigService.saveConfigByCategory('RolePermissions', { 'Admin.RolePermissions.Config': permJson });
+                    try { localStorage.setItem('pm_role_permissions', JSON.stringify(permissions)); } catch { /* */ }
+                    try { localStorage.setItem('pm_custom_roles', JSON.stringify(customRoles)); } catch { /* */ }
+                    void this.dialogManager.showAlert('Role permissions saved.', { title: 'Saved', variant: 'success' });
                   } catch {
                     void this.dialogManager.showAlert('Failed to save permissions.', { title: 'Error' });
                   }
@@ -7690,48 +7720,25 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               />
               <DefaultButton
                 text="Reset to Defaults"
+                iconProps={{ iconName: 'Refresh' }}
+                styles={cmdBtnStyle}
                 onClick={async () => {
                   this.setState({ _rolePermissions: defaultPermissions, _customRoles: [], saving: true } as any);
                   try {
                     const permJson = JSON.stringify({ permissions: defaultPermissions, customRoles: [] });
                     await this.adminConfigService.saveConfigByCategory('RolePermissions', { 'Admin.RolePermissions.Config': permJson });
                     try { localStorage.setItem('pm_role_permissions', JSON.stringify(defaultPermissions)); } catch { /* */ }
-                    void this.dialogManager.showAlert('Role permissions reset to defaults and saved.', { title: 'Reset Complete', variant: 'success' });
+                    void this.dialogManager.showAlert('Permissions reset to defaults and saved.', { title: 'Reset', variant: 'success' });
                   } catch {
-                    void this.dialogManager.showAlert('Reset applied locally but failed to save to SharePoint.', { title: 'Warning' });
+                    void this.dialogManager.showAlert('Reset failed to save to SharePoint.', { title: 'Warning' });
                   }
                   this.setState({ saving: false });
                 }}
               />
             </Stack>
-          </Stack>
+          </div>
 
-          <MessageBar messageBarType={MessageBarType.warning} isMultiline>
-            <strong>Explicit permissions model.</strong> Each role sees ONLY the features toggled ON for that role — there is no inheritance. For example, a Manager does NOT automatically get Author permissions. If you want a Manager to also create policies, you must explicitly enable "Create Policy" for the Manager role. Admin always has full access. Custom roles can be added with the "+ Add Role" button below.
-          </MessageBar>
-
-          {/* Add Custom Role */}
-          <Stack horizontal tokens={{ childrenGap: 8 }} verticalAlign="end">
-            <TextField
-              placeholder="New role name..."
-              value={(st as any)._newRoleName || ''}
-              onChange={(_, v) => this.setState({ _newRoleName: v || '' } as any)}
-              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCustomRole(); } }}
-              styles={{ root: { width: 200 } }}
-            />
-            <DefaultButton
-              text="+ Add Role"
-              iconProps={{ iconName: 'AddGroup' }}
-              onClick={addCustomRole}
-              disabled={!((st as any)._newRoleName || '').trim()}
-            />
-            {customRoles.length > 0 && (
-              <Text style={{ fontSize: 12, color: Colors.slateLight }}>
-                {customRoles.length} custom role{customRoles.length !== 1 ? 's' : ''}
-              </Text>
-            )}
-          </Stack>
-
+          {/* 3. Permission matrix */}
           <DetailsList
             items={permissions}
             columns={columns}

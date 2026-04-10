@@ -12463,14 +12463,70 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                     description="Enter the full email address or User Principal Name" />
                 )}
 
-                {(syncMode === 'securityGroup' || syncMode === 'm365Group') && (
-                  <TextField label={`${syncMode === 'securityGroup' ? 'Security' : 'M365'} Group ID (GUID)`}
-                    placeholder="e.g. d393e847-50c6-4ef4-b2d0-660400ac7bae"
-                    value={syncGroupId}
-                    onChange={(_, v) => this.setState({ _syncGroupId: v || '' } as any)}
-                    styles={{ fieldGroup: { height: 36 } }}
-                    description="Find the Group ID in Azure Portal > Entra ID > Groups > select group > Overview" />
-                )}
+                {(syncMode === 'securityGroup' || syncMode === 'm365Group') && (() => {
+                  const entraGroups: Array<{ id: string; displayName: string; description: string; groupType: string }> = st._entraGroups || [];
+                  const entraGroupsLoading: boolean = st._entraGroupsLoading || false;
+                  const entraGroupsLoaded: boolean = st._entraGroupsLoaded || false;
+
+                  // Load Entra groups via Graph on first render of this mode
+                  if (!entraGroupsLoaded && !entraGroupsLoading) {
+                    this.setState({ _entraGroupsLoading: true, _entraGroupsLoaded: true } as any);
+                    (async () => {
+                      try {
+                        const graphClient = await this.props.context.msGraphClientFactory.getClient('3');
+                        const response = await graphClient.api('/groups').select('id,displayName,description,groupTypes,securityEnabled,mailEnabled').top(200).get();
+                        const groups = (response.value || []).map((g: any) => ({
+                          id: g.id,
+                          displayName: g.displayName || g.id,
+                          description: g.description || '',
+                          groupType: g.securityEnabled && !g.mailEnabled ? 'Security' :
+                            (g.groupTypes || []).includes('Unified') ? 'M365' : 'Distribution'
+                        }));
+                        if (this._isMounted) this.setState({ _entraGroups: groups, _entraGroupsLoading: false } as any);
+                      } catch (err) {
+                        console.warn('[EntraID Sync] Failed to load Entra groups via Graph — falling back to manual GUID entry:', err);
+                        if (this._isMounted) this.setState({ _entraGroupsLoading: false } as any);
+                      }
+                    })();
+                  }
+
+                  const filteredGroups = entraGroups.filter(g =>
+                    syncMode === 'securityGroup' ? g.groupType === 'Security' : g.groupType === 'M365'
+                  );
+
+                  return (
+                    <Stack tokens={{ childrenGap: 8 }}>
+                      {entraGroupsLoading && <Spinner size={SpinnerSize.small} label="Loading Entra groups..." />}
+                      {filteredGroups.length > 0 ? (
+                        <Dropdown
+                          label={`Select ${syncMode === 'securityGroup' ? 'Security' : 'M365'} Group`}
+                          selectedKey={syncGroupId}
+                          placeholder="Choose a group..."
+                          options={filteredGroups.map(g => ({
+                            key: g.id,
+                            text: `${g.displayName}${g.description ? ` — ${g.description.substring(0, 60)}` : ''}`,
+                          }))}
+                          onChange={(_, o) => this.setState({ _syncGroupId: o?.key as string || '' } as any)}
+                          styles={{ title: { height: 36, lineHeight: 34 } }}
+                        />
+                      ) : !entraGroupsLoading && (
+                        <TextField
+                          label={`${syncMode === 'securityGroup' ? 'Security' : 'M365'} Group ID (GUID)`}
+                          placeholder="e.g. d393e847-50c6-4ef4-b2d0-660400ac7bae"
+                          value={syncGroupId}
+                          onChange={(_, v) => this.setState({ _syncGroupId: v || '' } as any)}
+                          styles={{ fieldGroup: { height: 36 } }}
+                          description="Graph API permissions not available — enter the Group ID manually from Azure Portal > Entra ID > Groups"
+                        />
+                      )}
+                      {syncGroupId && (
+                        <Text style={{ fontSize: 11, color: '#94a3b8' }}>
+                          Selected: {filteredGroups.find(g => g.id === syncGroupId)?.displayName || syncGroupId}
+                        </Text>
+                      )}
+                    </Stack>
+                  );
+                })()}
 
                 {syncMode === 'rules' && (
                   <Stack tokens={{ childrenGap: 12 }}>

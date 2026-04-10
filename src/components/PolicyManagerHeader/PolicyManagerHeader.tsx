@@ -884,16 +884,18 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
           {/* Quick Action Buttons */}
           <div className={styles.quickActionButtons}>
             <button
-              className={`${styles.quickActionBtn} ${styles.quickActionBtnPrimary}`}
+              className={styles.actionButton}
               type="button"
               title="New Policy"
-              aria-label="New Policy"
+              aria-label="Create New Policy"
               onClick={() => window.location.href = '/sites/PolicyManager/SitePages/PolicyBuilder.aspx'}
             >
               <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <polyline points="14 2 14 8 20 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <line x1="12" y1="18" x2="12" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <line x1="9" y1="15" x2="15" y2="15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
-              New Policy
             </button>
             {/* Request Policy moved to Manager dropdown */}
             <div className={styles.dropdownContainer} ref={recentlyViewedRef} style={{ display: 'inline-flex' }}>

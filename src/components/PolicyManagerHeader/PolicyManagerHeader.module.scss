@@ -220,19 +220,6 @@ $pm-font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue'
   }
 }
 
-// Solid green filled button style (e.g. "+ New Contract", "Request Contract") — matches Contract Manager action buttons
-.quickActionBtnPrimary {
-  background: #22c55e;
-  border-color: #22c55e;
-  color: #ffffff;
-  font-weight: 500;
-
-  &:hover {
-    background: #16a34a;
-    border-color: #16a34a;
-  }
-}
-
 .actionButton {
   width: 40px;
   height: 40px;

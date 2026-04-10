@@ -4288,32 +4288,30 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               <MessageBar>Calculating SLA compliance from live data...</MessageBar>
             );
             return (
-              <div style={{
-                display: 'flex', gap: 12, flexWrap: 'wrap' as const
-              }}>
-                {/* Overall compliance */}
+              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${(dashboard.metrics || []).length + 1 + (dashboard.totalBreaches > 0 ? 1 : 0)}, 1fr)`, gap: 10 }}>
+                {/* Overall compliance — same size as process metrics */}
                 <div style={{
-                  flex: '1 1 160px', padding: 16, borderRadius: 4, textAlign: 'center' as const,
-                  background: dashboard.overallCompliancePercent >= 90 ? '#f0fdf4' : dashboard.overallCompliancePercent >= 70 ? '#fffbeb' : '#fef2f2',
-                  border: `1px solid ${dashboard.overallCompliancePercent >= 90 ? '#a7f3d0' : dashboard.overallCompliancePercent >= 70 ? '#fde68a' : '#fecaca'}`
+                  padding: '12px 16px', borderRadius: 10, textAlign: 'center' as const,
+                  borderTop: `3px solid ${dashboard.overallCompliancePercent >= 90 ? '#059669' : dashboard.overallCompliancePercent >= 70 ? '#d97706' : '#dc2626'}`,
+                  background: '#fff', border: '1px solid #e2e8f0'
                 }}>
-                  <Text variant="xLarge" style={{ fontWeight: 700, color: dashboard.overallCompliancePercent >= 90 ? '#059669' : dashboard.overallCompliancePercent >= 70 ? '#d97706' : '#dc2626', display: 'block' }}>
+                  <Text style={{ fontSize: 24, fontWeight: 700, color: dashboard.overallCompliancePercent >= 90 ? '#059669' : dashboard.overallCompliancePercent >= 70 ? '#d97706' : '#dc2626', display: 'block' }}>
                     {dashboard.overallCompliancePercent}%
                   </Text>
-                  <Text variant="small" style={{ color: '#64748b' }}>Overall SLA Compliance</Text>
+                  <Text style={{ fontSize: 10, textTransform: 'uppercase' as const, letterSpacing: 1, color: '#94a3b8', fontWeight: 600 }}>Overall</Text>
                 </div>
                 {/* Per-process metrics */}
                 {(dashboard.metrics || []).map((m: any) => (
                   <div key={m.processType} style={{
-                    flex: '1 1 160px', padding: 16, borderRadius: 4, textAlign: 'center' as const,
-                    background: m.status === 'Met' ? '#f0fdf4' : m.status === 'At Risk' ? '#fffbeb' : '#fef2f2',
-                    border: `1px solid ${m.status === 'Met' ? '#a7f3d0' : m.status === 'At Risk' ? '#fde68a' : '#fecaca'}`
+                    padding: '12px 16px', borderRadius: 10, textAlign: 'center' as const,
+                    borderTop: `3px solid ${m.status === 'Met' ? '#059669' : m.status === 'At Risk' ? '#d97706' : '#dc2626'}`,
+                    background: '#fff', border: '1px solid #e2e8f0'
                   }}>
-                    <Text variant="large" style={{ fontWeight: 700, color: m.status === 'Met' ? '#059669' : m.status === 'At Risk' ? '#d97706' : '#dc2626', display: 'block' }}>
+                    <Text style={{ fontSize: 24, fontWeight: 700, color: m.status === 'Met' ? '#059669' : m.status === 'At Risk' ? '#d97706' : '#dc2626', display: 'block' }}>
                       {m.slaCompliancePercent}%
                     </Text>
-                    <Text variant="small" style={{ fontWeight: 600, display: 'block' }}>{m.processType}</Text>
-                    <Text variant="small" style={{ color: '#64748b' }}>
+                    <Text style={{ fontSize: 10, textTransform: 'uppercase' as const, letterSpacing: 1, color: '#94a3b8', fontWeight: 600, display: 'block' }}>{m.processType}</Text>
+                    <Text style={{ fontSize: 10, color: '#94a3b8' }}>
                       {m.currentlyBreached > 0 ? `${m.currentlyBreached} breached` : m.currentlyAtRisk > 0 ? `${m.currentlyAtRisk} at risk` : `${m.totalItems} tracked`}
                     </Text>
                   </div>
@@ -4321,13 +4319,13 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                 {/* Breaches count */}
                 {dashboard.totalBreaches > 0 && (
                   <div style={{
-                    flex: '1 1 160px', padding: 16, borderRadius: 4, textAlign: 'center' as const,
-                    background: '#fef2f2', border: '1px solid #fecaca'
+                    padding: '12px 16px', borderRadius: 10, textAlign: 'center' as const,
+                    borderTop: '3px solid #dc2626', background: '#fff', border: '1px solid #e2e8f0'
                   }}>
-                    <Text variant="xLarge" style={{ fontWeight: 700, color: '#dc2626', display: 'block' }}>
+                    <Text style={{ fontSize: 24, fontWeight: 700, color: '#dc2626', display: 'block' }}>
                       {dashboard.totalBreaches}
                     </Text>
-                    <Text variant="small" style={{ color: '#dc2626' }}>Active Breaches</Text>
+                    <Text style={{ fontSize: 10, textTransform: 'uppercase' as const, letterSpacing: 1, color: '#dc2626', fontWeight: 600 }}>Breaches</Text>
                   </div>
                 )}
               </div>

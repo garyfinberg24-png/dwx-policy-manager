@@ -234,7 +234,7 @@
   }
 
   .embeddedEditorHeader {
-    background: var(--pm-header-bg, linear-gradient(135deg, var(--pm-primary-dark, #0f766e) 0%, var(--pm-primary, #0d9488) 100%));
+    background: var(--pm-header-bg, linear-gradient(135deg, #0f766e 0%, #0d9488 100%));
     color: white;
     padding: 12px 16px;
 
@@ -1152,7 +1152,7 @@
 
   .barChartFill {
     height: 100%;
-    background: var(--pm-header-bg, linear-gradient(90deg, var(--pm-primary, #0d9488) 0%, var(--pm-primary-dark, #0f766e) 100%));
+    background: var(--pm-header-bg, linear-gradient(90deg, #0d9488 0%, #0f766e 100%));
     border-radius: 4px;
     transition: width 0.5s ease;
   }

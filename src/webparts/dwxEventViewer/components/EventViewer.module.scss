@@ -235,7 +235,7 @@
 
 /* ── Header Bar ── */
 .headerBar {
-  background: var(--pm-header-bg, linear-gradient(135deg, var(--pm-primary, #0d9488), var(--pm-primary-dark, #0f766e)));
+  background: var(--pm-header-bg, linear-gradient(135deg, #0d9488, #0f766e));
   color: #fff;
   padding: 20px 32px 0;
 }

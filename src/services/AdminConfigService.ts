@@ -423,12 +423,12 @@ export class AdminConfigService {
           Description: category.Description,
           SortOrder: category.SortOrder,
           IsActive: category.IsActive,
-          IsDefault: false
+          IsDefault: category.IsDefault ?? false
         });
 
       const newId = result.data?.Id ?? 0;
       logger.info('AdminConfigService', `Created category id=${newId}: ${category.CategoryName}`);
-      return { ...category, Id: newId, IsDefault: false };
+      return { ...category, Id: newId, IsDefault: category.IsDefault ?? false };
     } catch (error) {
       logger.error('AdminConfigService', 'createCategory failed:', error);
       throw error;
@@ -447,7 +447,8 @@ export class AdminConfigService {
           Color: category.Color,
           Description: category.Description,
           SortOrder: category.SortOrder,
-          IsActive: category.IsActive
+          IsActive: category.IsActive,
+          IsDefault: category.IsDefault ?? false
         });
 
       logger.info('AdminConfigService', `Updated category id=${id}`);
@@ -821,6 +822,7 @@ export class AdminConfigService {
       }
     } catch (error) {
       logger.error('AdminConfigService', `upsertConfigValue '${key}' failed:`, error);
+      throw error;
     }
   }
 

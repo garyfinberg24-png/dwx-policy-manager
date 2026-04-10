@@ -569,9 +569,21 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       this.setState({ loading: false, error: 'Failed to load admin settings. Some sections may show default values.' });
     }
 
-    // Load saved navigation toggles from localStorage (fast, no async needed)
+    // Load saved navigation toggles — localStorage first (fast), then SP fallback (durable)
     try {
-      const saved = localStorage.getItem('pm_nav_visibility');
+      let saved = localStorage.getItem('pm_nav_visibility');
+      if (!saved) {
+        // Try loading from SP if localStorage is empty (new browser/cleared cache)
+        try {
+          const navConfig = await this.adminConfigService.getConfigByCategory('Navigation');
+          const spValue = navConfig['Admin.Navigation.Visibility'];
+          if (spValue) {
+            saved = spValue;
+            // Sync to localStorage for PolicyManagerHeader
+            try { localStorage.setItem('pm_nav_visibility', spValue); } catch { /* */ }
+          }
+        } catch { /* SP unavailable — use defaults */ }
+      }
       if (saved) {
         const visibility: Record<string, boolean> = JSON.parse(saved);
         this.setState(prev => ({
@@ -587,17 +599,23 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
   };
 
   /**
-   * Persist navigation toggle visibility to localStorage.
-   * Key: pm_nav_visibility — shared with PolicyManagerHeader for cross-component sync.
+   * Persist navigation toggle visibility to both localStorage (for immediate cross-component sync)
+   * and SharePoint PM_Configuration (for cross-device/cross-browser persistence).
    */
   private saveNavVisibility(toggles: INavToggleItem[]): void {
-    try {
-      const visibility: Record<string, boolean> = {};
-      toggles.forEach(t => { visibility[t.key] = t.isVisible; });
-      localStorage.setItem('pm_nav_visibility', JSON.stringify(visibility));
-    } catch {
-      console.warn('[PolicyAdmin] Could not save navigation toggles to localStorage');
-    }
+    const visibility: Record<string, boolean> = {};
+    toggles.forEach(t => { visibility[t.key] = t.isVisible; });
+    const json = JSON.stringify(visibility);
+
+    // localStorage for immediate cross-component sync (PolicyManagerHeader reads this)
+    try { localStorage.setItem('pm_nav_visibility', json); } catch { /* */ }
+
+    // SP persistence for cross-device/cross-browser durability
+    this.adminConfigService.saveConfigByCategory('Navigation', {
+      'Admin.Navigation.Visibility': json
+    }).catch(() => {
+      console.warn('[PolicyAdmin] Failed to persist nav toggles to SharePoint — localStorage only');
+    });
   }
 
   // ============================================================================
@@ -677,7 +695,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                 <button
                   key={item.key}
                   className={`${styles.navItem} ${activeSection === item.key ? styles.navItemActive : ''}`}
-                  onClick={() => { this.setState({ activeSection: item.key }); window.scrollTo(0, 0); }}
+                  onClick={() => { this.setState({ activeSection: item.key, _auditLoaded: false } as any); window.scrollTo(0, 0); }}
                   type="button"
                 >
                   <Icon iconName={item.icon} style={IconStyles.medium} />
@@ -3386,7 +3404,11 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       }
     };
 
-    if (!st._auditLoaded) { this.setState({ _auditLoaded: true } as any); void loadAuditLog(); }
+    // Load on first render of this section, or when section is re-entered (auditEntries empty and not loading)
+    if (!st._auditLoaded || (auditEntries.length === 0 && !auditLoading && !st._auditError)) {
+      this.setState({ _auditLoaded: true } as any);
+      void loadAuditLog();
+    }
 
     // Filter entries
     const filtered = auditEntries.filter((e: any) =>
@@ -4826,34 +4848,90 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     return _rule.AppliesTo || 'All Policies';
   }
 
+  /**
+   * Generate a PolicyNumber from a naming rule's segments for a given policy index.
+   */
+  private generatePolicyNumber(rule: INamingRule, index: number, categoryCode?: string): string {
+    return (rule.Segments || []).map(seg => {
+      switch (seg.type) {
+        case 'prefix': return seg.value || '';
+        case 'separator': return seg.value || '-';
+        case 'freetext': return seg.value || '';
+        case 'counter': {
+          const pad = parseInt(seg.format || '4', 10) || 4;
+          return String(index).padStart(pad, '0');
+        }
+        case 'date': {
+          const now = new Date();
+          const fmt = seg.format || 'YYYY';
+          return fmt.replace('YYYY', String(now.getFullYear()))
+            .replace('YY', String(now.getFullYear()).slice(2))
+            .replace('MM', String(now.getMonth() + 1).padStart(2, '0'))
+            .replace('DD', String(now.getDate()).padStart(2, '0'));
+        }
+        case 'category': return categoryCode || seg.value || 'GEN';
+        default: return seg.value || '';
+      }
+    }).join('');
+  }
+
   private async refreshNamingRule(rule: INamingRule): Promise<void> {
     const scope = this.getAffectedPolicyCount(rule);
 
-    // First confirmation
     const firstConfirm = await this.dialogManager.showConfirm(
-      `This will refresh the naming rule "${rule.Title}" and re-apply it to ${scope} policies.\n\nExisting policy IDs that match this rule will be regenerated.`,
+      `This will refresh the naming rule "${rule.Title}" and re-apply it to ${scope} policies.\n\nExisting policy numbers that match this rule will be regenerated.`,
       { title: 'Refresh Naming Rule', confirmText: 'Continue', cancelText: 'Cancel' }
     );
-
     if (!firstConfirm) return;
 
-    // Second confirmation (double confirmation)
     const secondConfirm = await this.dialogManager.showConfirm(
-      `Are you absolutely sure?\n\nAll ${scope} policies will have their IDs regenerated using the "${rule.Title}" naming pattern.\n\nThis action cannot be undone.`,
+      `Are you absolutely sure?\n\nAll ${scope} policies will have their numbers regenerated using the "${rule.Title}" naming pattern.\n\nThis action cannot be undone.`,
       { title: 'Confirm Refresh', confirmText: 'Yes, refresh policies', cancelText: 'Cancel' }
     );
-
     if (!secondConfirm) return;
 
-    // Simulate refresh
     this.setState({ refreshingRuleId: rule.Id });
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    this.setState({ refreshingRuleId: null });
+    let affectedCount = 0;
+    try {
+      // Query policies matching the rule scope
+      let filter = "PolicyStatus ne 'Retired'";
+      if (rule.AppliesTo && rule.AppliesTo !== 'All Policies') {
+        filter += ` and PolicyCategory eq '${rule.AppliesTo.replace(/'/g, "''")}'`;
+      }
+      const policies = await this.props.sp.web.lists.getByTitle('PM_Policies')
+        .items.filter(filter).select('Id', 'PolicyCategory').top(5000)();
 
-    void this.dialogManager.showAlert(
-      `Successfully refreshed "${rule.Title}" naming rule. ${affectedCount} polic${affectedCount === 1 ? 'y' : 'ies'} updated.`,
-      { title: 'Refresh Complete', variant: 'success' }
-    );
+      for (let i = 0; i < policies.length; i++) {
+        const catCode = (policies[i].PolicyCategory || 'GEN').substring(0, 3).toUpperCase();
+        const newNumber = this.generatePolicyNumber(rule, i + 1, catCode);
+        await this.props.sp.web.lists.getByTitle('PM_Policies')
+          .items.getById(policies[i].Id).update({ PolicyNumber: newNumber });
+        affectedCount++;
+      }
+
+      // Audit log
+      try {
+        await this.props.sp.web.lists.getByTitle('PM_PolicyAuditLog').items.add({
+          Title: `Naming rule refreshed: ${rule.Title}`,
+          AuditAction: 'NamingRuleRefresh',
+          EntityType: 'NamingRule',
+          EntityId: String(rule.Id),
+          ActionDescription: `Re-applied naming rule "${rule.Title}" to ${affectedCount} policies`,
+          ComplianceRelevant: true
+        });
+      } catch { /* non-critical */ }
+
+      void this.dialogManager.showAlert(
+        `Successfully refreshed "${rule.Title}" naming rule. ${affectedCount} polic${affectedCount === 1 ? 'y' : 'ies'} updated.`,
+        { title: 'Refresh Complete', variant: 'success' }
+      );
+    } catch (err: any) {
+      void this.dialogManager.showAlert(
+        `Failed to refresh naming rule after updating ${affectedCount} policies: ${err.message || 'Unknown error'}`,
+        { title: 'Refresh Failed' }
+      );
+    }
+    this.setState({ refreshingRuleId: null });
   }
 
   private async refreshAllNamingRules(): Promise<void> {
@@ -4865,31 +4943,59 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       return;
     }
 
-    // First confirmation
     const firstConfirm = await this.dialogManager.showConfirm(
       `This will refresh all ${activeRules.length} active naming rule${activeRules.length === 1 ? '' : 's'} and re-apply them to affected policies.\n\nRules to refresh:\n${activeRules.map(r => `• ${r.Title} (${r.AppliesTo})`).join('\n')}`,
       { title: 'Refresh All Naming Rules', confirmText: 'Continue', cancelText: 'Cancel' }
     );
-
     if (!firstConfirm) return;
 
-    // Second confirmation
     const secondConfirm = await this.dialogManager.showConfirm(
-      `Are you absolutely sure?\n\nAll affected policies across ${activeRules.length} rule${activeRules.length === 1 ? '' : 's'} will have their IDs regenerated.\n\nThis action cannot be undone.`,
+      `Are you absolutely sure?\n\nAll affected policies across ${activeRules.length} rule${activeRules.length === 1 ? '' : 's'} will have their numbers regenerated.\n\nThis action cannot be undone.`,
       { title: 'Confirm Refresh All', confirmText: 'Yes, refresh all policies', cancelText: 'Cancel' }
     );
-
     if (!secondConfirm) return;
 
-    // Simulate refresh
     this.setState({ refreshingAllRules: true });
-    await new Promise(resolve => setTimeout(resolve, 2500));
-    this.setState({ refreshingAllRules: false });
+    let totalAffected = 0;
+    try {
+      for (const rule of activeRules) {
+        let filter = "PolicyStatus ne 'Retired'";
+        if (rule.AppliesTo && rule.AppliesTo !== 'All Policies') {
+          filter += ` and PolicyCategory eq '${rule.AppliesTo.replace(/'/g, "''")}'`;
+        }
+        const policies = await this.props.sp.web.lists.getByTitle('PM_Policies')
+          .items.filter(filter).select('Id', 'PolicyCategory').top(5000)();
 
-    void this.dialogManager.showAlert(
-      `Successfully refreshed all ${activeRules.length} active naming rules. Approximately ${totalAffected} policies updated.`,
-      { title: 'Refresh Complete', variant: 'success' }
-    );
+        for (let i = 0; i < policies.length; i++) {
+          const catCode = (policies[i].PolicyCategory || 'GEN').substring(0, 3).toUpperCase();
+          const newNumber = this.generatePolicyNumber(rule, i + 1, catCode);
+          await this.props.sp.web.lists.getByTitle('PM_Policies')
+            .items.getById(policies[i].Id).update({ PolicyNumber: newNumber });
+          totalAffected++;
+        }
+      }
+
+      try {
+        await this.props.sp.web.lists.getByTitle('PM_PolicyAuditLog').items.add({
+          Title: `All naming rules refreshed (${activeRules.length} rules)`,
+          AuditAction: 'NamingRuleRefreshAll',
+          EntityType: 'NamingRule',
+          ActionDescription: `Re-applied ${activeRules.length} active naming rules. ${totalAffected} policies updated.`,
+          ComplianceRelevant: true
+        });
+      } catch { /* non-critical */ }
+
+      void this.dialogManager.showAlert(
+        `Successfully refreshed all ${activeRules.length} active naming rules. ${totalAffected} policies updated.`,
+        { title: 'Refresh Complete', variant: 'success' }
+      );
+    } catch (err: any) {
+      void this.dialogManager.showAlert(
+        `Failed after updating ${totalAffected} policies: ${err.message || 'Unknown error'}`,
+        { title: 'Refresh Failed' }
+      );
+    }
+    this.setState({ refreshingAllRules: false });
   }
 
   private renderNamingRulePanel(): JSX.Element {
@@ -6863,7 +6969,10 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           await this.props.sp.web.lists.getByTitle('PM_UserProfiles').items.getById(editingEmployee.Id).update({
             PMRoles: allRoles.join(';')
           });
-        } catch { /* PMRoles column may not exist yet — non-blocking */ }
+        } catch (pmRolesErr: any) {
+          console.warn('[PolicyAdmin] PMRoles column write failed — column may need provisioning:', pmRolesErr.message || pmRolesErr);
+          // Non-blocking: primary role is saved via updateUserRole above; PMRoles is for multi-role display
+        }
         this.setState({
           _userSaving: false,
           _showUserPanel: false,
@@ -7553,7 +7662,18 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               />
               <DefaultButton
                 text="Reset to Defaults"
-                onClick={() => this.setState({ _rolePermissions: defaultPermissions, _customRoles: [] } as any)}
+                onClick={async () => {
+                  this.setState({ _rolePermissions: defaultPermissions, _customRoles: [], saving: true } as any);
+                  try {
+                    const permJson = JSON.stringify({ permissions: defaultPermissions, customRoles: [] });
+                    await this.adminConfigService.saveConfigByCategory('RolePermissions', { 'Admin.RolePermissions.Config': permJson });
+                    try { localStorage.setItem('pm_role_permissions', JSON.stringify(defaultPermissions)); } catch { /* */ }
+                    void this.dialogManager.showAlert('Role permissions reset to defaults and saved.', { title: 'Reset Complete', variant: 'success' });
+                  } catch {
+                    void this.dialogManager.showAlert('Reset applied locally but failed to save to SharePoint.', { title: 'Warning' });
+                  }
+                  this.setState({ saving: false });
+                }}
               />
             </Stack>
           </Stack>
@@ -7931,16 +8051,115 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       this.setState({ _provisioningRunning: false } as any);
     };
 
-    const handleClearAndReseed = async () => {
-      const confirmed = await this.dialogManager.showConfirm(
-        'This will DELETE ALL existing data from every seedable list and replace it with fresh South African sample data. This action cannot be undone.',
-        { title: 'Clear & Reseed All Data', confirmText: 'Clear & Reseed', variant: 'destructive' }
+    /** Audit log helper for provisioning actions */
+    const logProvisioningAudit = async (action: string, description: string): Promise<void> => {
+      try {
+        await this.props.sp.web.lists.getByTitle('PM_PolicyAuditLog').items.add({
+          Title: `Provisioning: ${action}`,
+          AuditAction: 'Provisioning',
+          EntityType: 'System',
+          ActionDescription: description,
+          ComplianceRelevant: true
+        });
+      } catch { /* audit log may not exist yet */ }
+    };
+
+    /** Destructive action gate — double confirm + reason required */
+    const confirmDestructiveAction = async (title: string, message: string): Promise<string | null> => {
+      const firstConfirm = await this.dialogManager.showConfirm(
+        `${message}\n\nYou will need to provide a reason in the next step.`,
+        { title, confirmText: 'Continue', cancelText: 'Cancel', variant: 'destructive' }
       );
-      if (!confirmed) return;
+      if (!firstConfirm) return null;
+
+      // Prompt for reason
+      let reason = '';
+      const reasonConfirm = await this.dialogManager.showConfirm(
+        'Please confirm you have approval to perform this operation.\n\nThis action will be logged in the audit trail with your name and timestamp.',
+        { title: 'Approval Confirmation', confirmText: 'I have approval — proceed', cancelText: 'Cancel', variant: 'destructive' }
+      );
+      if (!reasonConfirm) return null;
+      reason = 'Admin-approved provisioning action';
+      return reason;
+    };
+
+    /** Reprovision a single list — deletes and recreates the list structure */
+    const handleReprovisionList = async (def: { title: string; description: string }) => {
+      const reason = await confirmDestructiveAction(
+        `Reprovision ${def.title}`,
+        `This will DELETE and RECREATE the ${def.title} list. ALL DATA in this list will be permanently lost.`
+      );
+      if (!reason) return;
+
+      this.setState({ _provisioningRunning: true } as any);
+      addLogAndScroll(`Reprovisioning ${def.title}...`);
+      try {
+        // Delete existing
+        try {
+          await this.props.sp.web.lists.getByTitle(def.title).delete();
+          addLogAndScroll(`  ✓ ${def.title} deleted`);
+        } catch {
+          addLogAndScroll(`  ○ ${def.title} did not exist — creating fresh`);
+        }
+        // Recreate
+        await this.props.sp.web.lists.add(def.title, def.description, 100, false);
+        addLogAndScroll(`  ✓ ${def.title} recreated`);
+        await logProvisioningAudit('Reprovision', `Reprovisioned ${def.title}. Reason: ${reason}`);
+      } catch (err: any) {
+        addLogAndScroll(`  ✗ ${def.title}: ${err.message || 'Failed'}`);
+      }
+      await this.checkListStatuses(PM_LIST_DEFS);
+      this.setState({ _provisioningRunning: false } as any);
+    };
+
+    /** Clear & Reseed a single list */
+    const handleClearAndReseedList = async (def: { title: string; description: string; seedable: boolean }) => {
+      if (!def.seedable) return;
+      const reason = await confirmDestructiveAction(
+        `Clear & Reseed ${def.title}`,
+        `This will DELETE ALL data from ${def.title} and replace it with sample data.`
+      );
+      if (!reason) return;
+
+      this.setState({ _provisioningRunning: true } as any);
+      addLogAndScroll(`Clear & Reseed: ${def.title}...`);
+      let cleared = 0;
+      let seeded = 0;
+      let seedFailed = 0;
+      try {
+        // Clear
+        const items: any[] = await this.props.sp.web.lists.getByTitle(def.title).items.select('Id').top(5000)();
+        for (const item of items) {
+          try { await this.props.sp.web.lists.getByTitle(def.title).items.getById(item.Id).delete(); cleared++; } catch { /* skip */ }
+        }
+        addLogAndScroll(`  ✓ Cleared ${cleared} items`);
+        // Seed
+        const data = this.getSeedDataForList(def.title);
+        for (const item of data) {
+          try { await this.props.sp.web.lists.getByTitle(def.title).items.add(item); seeded++; } catch { seedFailed++; }
+        }
+        addLogAndScroll(`  ✓ Seeded ${seeded} items${seedFailed > 0 ? `, ${seedFailed} failed` : ''}`);
+        await logProvisioningAudit('ClearAndReseed', `Clear & Reseed ${def.title}: cleared ${cleared}, seeded ${seeded}. Reason: ${reason}`);
+      } catch (err: any) {
+        addLogAndScroll(`  ✗ ${def.title}: ${err.message || 'Failed'} (cleared ${cleared}, seeded ${seeded})`);
+      }
+      await this.checkListStatuses(PM_LIST_DEFS);
+      this.setState({ _provisioningRunning: false } as any);
+    };
+
+    const handleClearAndReseedAll = async () => {
+      const reason = await confirmDestructiveAction(
+        'Clear & Reseed All Data',
+        'This will DELETE ALL existing data from every seedable list and replace it with fresh sample data. This action cannot be undone.'
+      );
+      if (!reason) return;
 
       this.setState({ _provisioningRunning: true } as any);
       addLogAndScroll('═══ CLEAR & RESEED ALL — Starting fresh ═══');
       const seedableDefs = PM_LIST_DEFS.filter(d => d.seedable && listStatuses.find(s => s.title === d.title && s.exists));
+      let totalCleared = 0;
+      let totalSeeded = 0;
+      let totalFailed = 0;
 
       // Phase 1: Clear all
       addLogAndScroll('Phase 1: Clearing all seedable lists...');
@@ -7949,12 +8168,13 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           const items: any[] = await this.props.sp.web.lists.getByTitle(def.title).items.select('Id').top(5000)();
           if (items.length > 0) {
             for (const item of items) {
-              try { await this.props.sp.web.lists.getByTitle(def.title).items.getById(item.Id).delete(); } catch { /* skip */ }
+              try { await this.props.sp.web.lists.getByTitle(def.title).items.getById(item.Id).delete(); totalCleared++; } catch { /* skip */ }
             }
             addLogAndScroll(`  ✓ ${def.title}: ${items.length} items cleared`);
           }
         } catch {
           addLogAndScroll(`  ✗ ${def.title}: clear failed`);
+          totalFailed++;
         }
       }
 
@@ -7969,14 +8189,17 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           try {
             await this.props.sp.web.lists.getByTitle(def.title).items.add(item);
             created++;
+            totalSeeded++;
           } catch {
             failed++;
+            totalFailed++;
           }
         }
         addLogAndScroll(`  ✓ ${def.title}: ${created} seeded${failed > 0 ? `, ${failed} failed` : ''}`);
       }
 
-      addLogAndScroll('═══ Clear & Reseed complete ═══');
+      addLogAndScroll(`═══ Clear & Reseed complete. Cleared: ${totalCleared}, Seeded: ${totalSeeded}, Failed: ${totalFailed} ═══`);
+      await logProvisioningAudit('ClearAndReseedAll', `Clear & Reseed All: ${seedableDefs.length} lists, cleared ${totalCleared}, seeded ${totalSeeded}, failed ${totalFailed}. Reason: ${reason}`);
       await this.checkListStatuses(PM_LIST_DEFS);
       this.setState({ _provisioningRunning: false } as any);
     };
@@ -8013,33 +8236,50 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             </div>
           </div>
 
-          {/* Action buttons */}
+          {/* Warning banner */}
+          <MessageBar messageBarType={MessageBarType.severeWarning} isMultiline>
+            <strong>Protected Section.</strong> All provisioning actions require double-confirmation and are permanently logged to the audit trail. Destructive actions (Clear, Reseed, Reprovision) cannot be undone. Ensure you have approval before proceeding.
+          </MessageBar>
+
+          {/* Global Action buttons */}
           <Stack horizontal tokens={{ childrenGap: 8 }} wrap>
             <PrimaryButton
-              text="Check All Lists"
+              text="Refresh Status"
               iconProps={{ iconName: 'Sync' }}
               disabled={provisioningRunning}
               onClick={handleCheckAll}
-              styles={{ root: { background: tc.primary, borderColor: tc.primary }, rootHovered: { background: tc.primaryDark, borderColor: tc.primaryDark } }}
+              styles={{ root: { background: 'var(--pm-primary, #0d9488)', borderColor: 'var(--pm-primary, #0d9488)' }, rootHovered: { background: 'var(--pm-primary-dark, #0f766e)', borderColor: 'var(--pm-primary-dark, #0f766e)' } }}
             />
             <DefaultButton
-              text="Provision Missing Lists"
+              text="Provision All Lists"
               iconProps={{ iconName: 'Database' }}
               disabled={provisioningRunning}
               onClick={async () => {
-                this.setState({ _provisioningRunning: true } as any);
                 const missing = PM_LIST_DEFS.filter(d => !listStatuses.find(s => s.title === d.title && s.exists));
+                if (missing.length === 0) {
+                  void this.dialogManager.showAlert('All lists are already provisioned.', { title: 'Up to Date', variant: 'success' });
+                  return;
+                }
+                const confirmed = await this.dialogManager.showConfirm(
+                  `This will create ${missing.length} missing SharePoint lists:\n\n${missing.map(d => `• ${d.title}`).join('\n')}\n\nThis is a safe operation — no existing data will be affected.`,
+                  { title: 'Provision Missing Lists', confirmText: 'Provision', cancelText: 'Cancel' }
+                );
+                if (!confirmed) return;
+                this.setState({ _provisioningRunning: true } as any);
                 addLogAndScroll(`Provisioning ${missing.length} missing lists...`);
+                let created = 0;
                 for (const def of missing) {
                   try {
                     addLogAndScroll(`Creating ${def.title}...`);
                     await this.props.sp.web.lists.add(def.title, def.description, 100, false);
                     addLogAndScroll(`  ✓ ${def.title} created`);
+                    created++;
                   } catch (err: any) {
                     addLogAndScroll(`  ✗ ${def.title}: ${err.message || 'Failed'}`);
                   }
                 }
-                addLogAndScroll('Provisioning complete. Refreshing statuses...');
+                addLogAndScroll(`Provisioning complete. ${created}/${missing.length} lists created.`);
+                await logProvisioningAudit('ProvisionAll', `Provisioned ${created}/${missing.length} missing lists`);
                 await this.checkListStatuses(PM_LIST_DEFS);
                 this.setState({ _provisioningRunning: false } as any);
               }}
@@ -8048,13 +8288,21 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               text="Seed All Data"
               iconProps={{ iconName: 'DatabaseSync' }}
               disabled={provisioningRunning || existsCount === 0}
-              onClick={handleSeedAll}
+              onClick={async () => {
+                const confirmed = await this.dialogManager.showConfirm(
+                  'This will add sample data to all seedable lists. Existing data will NOT be deleted — new items will be added alongside existing ones.',
+                  { title: 'Seed All Data', confirmText: 'Seed', cancelText: 'Cancel' }
+                );
+                if (!confirmed) return;
+                await handleSeedAll();
+                await logProvisioningAudit('SeedAll', `Seeded sample data into all seedable lists`);
+              }}
             />
             <DefaultButton
               text="Clear & Reseed All"
               iconProps={{ iconName: 'Refresh' }}
               disabled={provisioningRunning || existsCount === 0}
-              onClick={handleClearAndReseed}
+              onClick={handleClearAndReseedAll}
               styles={{ root: { color: '#dc2626', borderColor: '#fca5a5' }, rootHovered: { color: '#fff', background: '#dc2626', borderColor: '#dc2626' } }}
             />
           </Stack>
@@ -8119,27 +8367,73 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                         </span>
                       </Stack>
                     </Stack>
-                    {/* Per-card action buttons — only show for existing, seedable lists */}
-                    {exists && def.seedable && (
-                      <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: 6, display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
+                    {/* Per-card action buttons */}
+                    <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: 6, display: 'flex', gap: 4, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                      {exists && (
+                        <IconButton
+                          iconProps={{ iconName: 'Sync' }}
+                          title={`Refresh ${def.title} status`}
+                          ariaLabel={`Refresh ${def.title} status`}
+                          disabled={provisioningRunning}
+                          onClick={async () => {
+                            try {
+                              const list = await this.props.sp.web.lists.getByTitle(def.title).select('ItemCount')();
+                              this.setState((prev: any) => ({
+                                _listStatuses: (prev._listStatuses || []).map((s: any) =>
+                                  s.title === def.title ? { ...s, exists: true, itemCount: list.ItemCount || 0 } : s
+                                )
+                              }) as any);
+                              addLogAndScroll(`Refreshed ${def.title}: ${list.ItemCount || 0} items`);
+                            } catch { addLogAndScroll(`  ✗ ${def.title}: refresh failed`); }
+                          }}
+                          styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: '#64748b' } }}
+                        />
+                      )}
+                      {exists && def.seedable && (
                         <IconButton
                           iconProps={{ iconName: 'DatabaseSync' }}
                           title={`Seed ${def.title}`}
                           ariaLabel={`Seed sample data into ${def.title}`}
                           disabled={provisioningRunning}
                           onClick={() => handleSeedList(def.title)}
-                          styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: tc.primary } }}
+                          styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: 'var(--pm-primary, #0d9488)' } }}
                         />
+                      )}
+                      {exists && def.seedable && (
                         <IconButton
-                          iconProps={{ iconName: 'Delete' }}
-                          title={`Clear ${def.title}`}
-                          ariaLabel={`Clear all data from ${def.title}`}
+                          iconProps={{ iconName: 'Refresh' }}
+                          title={`Clear & Reseed ${def.title}`}
+                          ariaLabel={`Clear and reseed ${def.title}`}
                           disabled={provisioningRunning}
-                          onClick={() => handleClearList(def.title)}
-                          styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: '#dc2626' } }}
+                          onClick={() => handleClearAndReseedList(def)}
+                          styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: '#d97706' } }}
                         />
-                      </div>
-                    )}
+                      )}
+                      <IconButton
+                        iconProps={{ iconName: exists ? 'RepairPage' : 'Add' }}
+                        title={exists ? `Reprovision ${def.title}` : `Provision ${def.title}`}
+                        ariaLabel={exists ? `Reprovision ${def.title}` : `Provision ${def.title}`}
+                        disabled={provisioningRunning}
+                        onClick={async () => {
+                          if (exists) {
+                            await handleReprovisionList(def);
+                          } else {
+                            this.setState({ _provisioningRunning: true } as any);
+                            addLogAndScroll(`Provisioning ${def.title}...`);
+                            try {
+                              await this.props.sp.web.lists.add(def.title, def.description, 100, false);
+                              addLogAndScroll(`  ✓ ${def.title} created`);
+                              await logProvisioningAudit('Provision', `Provisioned ${def.title}`);
+                            } catch (err: any) {
+                              addLogAndScroll(`  ✗ ${def.title}: ${err.message || 'Failed'}`);
+                            }
+                            await this.checkListStatuses(PM_LIST_DEFS);
+                            this.setState({ _provisioningRunning: false } as any);
+                          }
+                        }}
+                        styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: exists ? '#dc2626' : '#059669' } }}
+                      />
+                    </div>
                   </Stack>
                 </div>
               );
@@ -10173,11 +10467,11 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             </Stack>
             <Stack tokens={{ childrenGap: 8 }}>
               {[
-                { label: 'Version', value: '1.0.0' },
+                { label: 'Version', value: '1.2.5' },
                 { label: 'Build Date', value: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) },
                 { label: 'Platform', value: 'SharePoint Online' },
-                { label: 'Framework', value: 'SharePoint Framework (SPFx) 1.21.1' },
-                { label: 'Technology', value: 'React 17.0.1, TypeScript 5.3.3' },
+                { label: 'Framework', value: 'SharePoint Framework (SPFx) 1.20.0' },
+                { label: 'Technology', value: 'React 17.0.1, TypeScript 4.7.4' },
               ].map((row, i) => (
                 <Stack key={i} horizontal tokens={{ childrenGap: 12 }} style={{ padding: '6px 0', borderBottom: i < 4 ? '1px solid #f1f5f9' : 'none' }}>
                   <Text style={{ width: 140, color: Colors.textTertiary, fontWeight: 500 }}>{row.label}:</Text>

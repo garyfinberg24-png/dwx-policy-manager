@@ -6705,18 +6705,18 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                         )}
                       </Stack>
                     </Stack>
-                    <Stack horizontal tokens={{ childrenGap: 4 }}>
+                    <Stack horizontal tokens={{ childrenGap: 8 }} verticalAlign="center">
                       <Toggle
                         checked={aud.IsActive}
                         onChange={() => handleToggleActive(aud)}
-                        styles={{ root: { marginBottom: 0 } }}
+                        styles={{ root: { marginBottom: 0, marginRight: 4 } }}
                       />
-                      <IconButton iconProps={{ iconName: 'Edit' }} title="Edit" ariaLabel="Edit" onClick={() => openEditAudience(aud)} />
+                      <IconButton iconProps={{ iconName: 'Edit' }} title="Edit" ariaLabel="Edit" onClick={() => openEditAudience(aud)} styles={{ root: { width: 32, height: 32 } }} />
                       <IconButton
                         iconProps={{ iconName: 'Delete' }}
                         title="Delete"
                         ariaLabel="Delete"
-                        styles={{ root: { color: '#dc2626' }, rootHovered: { color: '#991b1b' } }}
+                        styles={{ root: { width: 32, height: 32, color: '#dc2626' }, rootHovered: { color: '#991b1b' } }}
                         onClick={() => handleDeleteAudience(aud.Id!)}
                       />
                     </Stack>
@@ -9182,41 +9182,57 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         ) : (
           <Stack tokens={{ childrenGap: 8 }}>
             {secureLibs.map(lib => (
-              <div key={lib.id} style={{
-                border: `1px solid ${lib.isActive ? Colors.tealPrimary : Colors.borderLight}`,
-                borderRadius: 4, background: '#fff', overflow: 'hidden',
-                opacity: lib.isActive ? 1 : 0.6
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px' }}>
-                  <Icon iconName={lib.icon || 'Lock'} styles={{ root: { fontSize: 20, color: lib.isActive ? Colors.tealPrimary : Colors.slateLight } }} />
-                  <div style={{ flex: 1 }}>
-                    <Text style={{ fontWeight: 600, color: Colors.textDark, display: 'block' }}>{lib.title}</Text>
-                    <Stack horizontal tokens={{ childrenGap: 8 }} style={{ marginTop: 4 }}>
+              <div key={lib.id} className={styles.adminCard} style={{ borderLeft: `3px solid ${lib.isActive ? 'var(--pm-primary, #0d9488)' : '#94a3b8'}` }}>
+                <Stack horizontal horizontalAlign="space-between" verticalAlign="start">
+                  <Stack tokens={{ childrenGap: 6 }} style={{ flex: 1 }}>
+                    <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
+                      <Text style={{ fontWeight: 600, color: '#0f172a', fontSize: 15 }}>{lib.title}</Text>
+                      <span style={{
+                        padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600,
+                        background: lib.isActive ? '#f0fdf4' : '#f1f5f9',
+                        color: lib.isActive ? '#16a34a' : '#94a3b8'
+                      }}>
+                        {lib.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                    </Stack>
+                    {/* Security groups as badges */}
+                    <Stack horizontal tokens={{ childrenGap: 6 }} wrap>
                       {(lib.securityGroups || []).map(g => (
-                        <span key={g} style={{ padding: '1px 8px', borderRadius: 10, fontSize: 10, fontWeight: 600, background: tc.primaryLight, color: Colors.tealPrimary }}>{g}</span>
+                        <span key={g} style={{ padding: '2px 10px', borderRadius: 10, fontSize: 10, fontWeight: 600, background: 'var(--pm-primary-light, #ccfbf1)', color: 'var(--pm-primary, #0d9488)' }}>{g}</span>
                       ))}
                     </Stack>
-                    {(lib.subfolders || []).length > 0 && (
-                      <Stack horizontal tokens={{ childrenGap: 6 }} style={{ marginTop: 4 }}>
-                        <Icon iconName="FabricFolder" styles={{ root: { fontSize: 11, color: Colors.slateLight } }} />
-                        <Text style={{ fontSize: 11, color: Colors.textTertiary }}>{lib.subfolders.join(', ')}</Text>
+                    {/* Metadata row */}
+                    <Stack horizontal tokens={{ childrenGap: 16 }}>
+                      <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 4 }}>
+                        <Icon iconName="LockSolid" style={{ fontSize: 12, color: 'var(--pm-primary, #0d9488)' }} />
+                        <Text style={{ fontWeight: 600, color: 'var(--pm-primary, #0d9488)', fontSize: 12 }}>{(lib.securityGroups || []).length}</Text>
+                        <Text style={{ color: '#94a3b8', fontSize: 12 }}>groups</Text>
                       </Stack>
-                    )}
-                  </div>
-                  <Toggle
-                    checked={lib.isActive}
-                    onChange={() => handleToggleActive(lib)}
-                    onText="Active" offText="Inactive"
-                    styles={{ root: { margin: 0 } }}
-                  />
-                  <IconButton
-                    iconProps={{ iconName: 'Delete' }}
-                    title="Remove"
-                    ariaLabel="Remove secure library"
-                    onClick={() => handleDeleteLibrary(lib)}
-                    styles={{ icon: { color: '#dc2626', fontSize: 14 } }}
-                  />
-                </div>
+                      {(lib.subfolders || []).length > 0 && (
+                        <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 4 }}>
+                          <Icon iconName="FabricFolder" style={{ fontSize: 12, color: '#94a3b8' }} />
+                          <Text style={{ color: '#94a3b8', fontSize: 12 }}>{lib.subfolders.join(', ')}</Text>
+                        </Stack>
+                      )}
+                    </Stack>
+                  </Stack>
+                  {/* Actions — aligned: toggle + edit + delete */}
+                  <Stack horizontal tokens={{ childrenGap: 8 }} verticalAlign="center">
+                    <Toggle
+                      checked={lib.isActive}
+                      onChange={() => handleToggleActive(lib)}
+                      styles={{ root: { marginBottom: 0, marginRight: 4 } }}
+                    />
+                    <IconButton iconProps={{ iconName: 'Edit' }} title="Edit" ariaLabel="Edit" onClick={() => this.setState({ _editingSecureLib: lib, _showCreateSecureLib: true } as any)} styles={{ root: { width: 32, height: 32 } }} />
+                    <IconButton
+                      iconProps={{ iconName: 'Delete' }}
+                      title="Remove"
+                      ariaLabel="Remove secure library"
+                      onClick={() => handleDeleteLibrary(lib)}
+                      styles={{ root: { width: 32, height: 32, color: '#dc2626' }, rootHovered: { color: '#991b1b' } }}
+                    />
+                  </Stack>
+                </Stack>
               </div>
             ))}
           </Stack>

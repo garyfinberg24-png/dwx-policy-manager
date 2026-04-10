@@ -5,11 +5,11 @@
  */
 import * as React from 'react';
 import { IJmlAppFooterProps, IFooterLinkGroup } from './IJmlAppFooterProps';
-import { tc } from '../../utils/themeColors';
+// Theme colors applied via CSS var() in inline styles (not tc helper — module-scope objects would cache stale defaults)
 
 const footerStyles: Record<string, React.CSSProperties> = {
   footer: {
-    background: tc.headerBg,
+    background: 'var(--pm-header-bg, linear-gradient(135deg, #0d9488 0%, #0f766e 100%))',
     color: 'rgba(255,255,255,0.8)',
     padding: 0,
     marginTop: 'auto',
@@ -20,7 +20,7 @@ const footerStyles: Record<string, React.CSSProperties> = {
     fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
   },
   footerCompact: {
-    background: tc.headerBg,
+    background: 'var(--pm-header-bg, linear-gradient(135deg, #0d9488 0%, #0f766e 100%))',
     color: 'rgba(255,255,255,0.8)',
     padding: 0,
     marginTop: 'auto',
@@ -69,7 +69,7 @@ const footerStyles: Record<string, React.CSSProperties> = {
     width: 24,
     height: 24,
     borderRadius: 4,
-    background: tc.headerBg,
+    background: 'var(--pm-header-bg, linear-gradient(135deg, #0d9488 0%, #0f766e 100%))',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -154,7 +154,7 @@ const footerStyles: Record<string, React.CSSProperties> = {
   },
   supportLink: {
     fontSize: 12,
-    color: tc.primary,
+    color: 'var(--pm-primary, #0d9488)',
     textDecoration: 'none',
     display: 'flex',
     alignItems: 'center',
@@ -267,7 +267,7 @@ export const DwxAppFooter: React.FC<IJmlAppFooterProps> = ({
                     key={li}
                     href={link.url}
                     style={footerStyles.link}
-                    onMouseEnter={e => (e.currentTarget.style.color = tc.primary)}
+                    onMouseEnter={e => (e.currentTarget.style.color = 'var(--pm-primary, #0d9488)')}
                     onMouseLeave={e => (e.currentTarget.style.color = '#94a3b8')}
                   >
                     {link.text}

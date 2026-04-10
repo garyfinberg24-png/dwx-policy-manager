@@ -91,7 +91,12 @@ export class PolicyPackService {
           if (request.targetLocations) optionalData.TargetLocations = JSON.stringify(request.targetLocations);
           if (request.targetProcessType) optionalData.TargetProcessType = request.targetProcessType;
           if (request.isSequential) optionalData.PolicySequence = JSON.stringify(request.policyIds);
-          if (request.approverEmails && request.approverEmails.length > 0) optionalData.ApproverEmails = request.approverEmails.join(';');
+          if (request.approverEmails && request.approverEmails.length > 0) {
+            optionalData.ApproverEmails = request.approverEmails.join(';');
+            optionalData.ApprovalStatus = 'Pending Approval';
+          } else {
+            optionalData.ApprovalStatus = 'Draft';
+          }
           if (request.readTimeframe) optionalData.ReadTimeframe = request.readTimeframe;
           await this.sp.web.lists.getByTitle(this.POLICY_PACKS_LIST).items.getById(newId).update(optionalData);
         } catch (optErr) {
@@ -133,7 +138,8 @@ export class PolicyPackService {
         .items.select(
           'Id', 'Title', 'PackName', 'PackDescription', 'PackType', 'PackCategory',
           'PolicyIds', 'PolicyCount', 'IsActive', 'IsSequential', 'IsMandatory',
-          'SendWelcomeEmail', 'SendTeamsNotification', 'Created', 'Modified'
+          'SendWelcomeEmail', 'SendTeamsNotification', 'ApprovalStatus', 'ApproverEmails',
+          'ApprovedByEmail', 'ApprovedDate', 'ApprovalComments', 'Created', 'Modified'
         )
         .top(1000)();
       return packs.map(p => this.mapPolicyPack(p));
@@ -177,7 +183,10 @@ export class PolicyPackService {
         if (request.targetLocations) optionalData.TargetLocations = JSON.stringify(request.targetLocations);
         if (request.targetProcessType) optionalData.TargetProcessType = request.targetProcessType;
         if (request.isSequential) optionalData.PolicySequence = JSON.stringify(request.policyIds);
-        if (request.approverEmails && request.approverEmails.length > 0) optionalData.ApproverEmails = request.approverEmails.join(';');
+        if (request.approverEmails && request.approverEmails.length > 0) {
+          optionalData.ApproverEmails = request.approverEmails.join(';');
+          optionalData.ApprovalStatus = 'Pending Approval'; // Re-approval required on update
+        }
         await this.sp.web.lists.getByTitle(this.POLICY_PACKS_LIST).items.getById(packId).update(optionalData);
       } catch (optErr) {
         console.warn('[PolicyPackService] Optional fields update skipped:', optErr);
@@ -1008,6 +1017,174 @@ export class PolicyPackService {
   /**
    * Map policy pack
    */
+  // ─── Approval Workflow ─────────────────────────────────────────
+
+  /**
+   * Approve a policy pack. Sets status to Approved, records approver and date.
+   */
+  public async approvePack(packId: number, approverEmail: string, approverName: string, comments?: string): Promise<void> {
+    try {
+      await this.sp.web.lists.getByTitle(this.POLICY_PACKS_LIST).items.getById(packId).update({
+        ApprovalStatus: 'Approved',
+        ApprovedByEmail: approverEmail,
+        ApprovedDate: new Date().toISOString(),
+        ApprovalComments: comments || ''
+      });
+
+      // Audit log
+      try {
+        await this.sp.web.lists.getByTitle('PM_PolicyAuditLog').items.add({
+          Title: `Policy Pack approved`,
+          AuditAction: 'PackApproved',
+          EntityType: 'PolicyPack',
+          EntityId: String(packId),
+          ActionDescription: `Pack approved by ${approverName}${comments ? '. Comments: ' + comments : ''}`,
+          PerformedByEmail: approverEmail,
+          ComplianceRelevant: true
+        });
+      } catch { /* non-critical */ }
+
+      // Notify pack creator
+      try {
+        const pack = await this.getPolicyPackById(packId);
+        const creatorEmail = (pack as any).Author?.EMail || (pack as any).CreatedByEmail || '';
+        if (creatorEmail) {
+          await this.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
+            Title: `Pack Approved: ${pack.PackName}`,
+            To: creatorEmail,
+            RecipientEmail: creatorEmail,
+            Subject: `Your policy pack "${pack.PackName}" has been approved`,
+            Message: `<p>Your policy pack <strong>${pack.PackName}</strong> has been approved by ${approverName}.</p>${comments ? `<p>Comments: ${comments}</p>` : ''}<p>The pack is now active and available for assignment.</p>`,
+            QueueStatus: 'Pending',
+            Priority: 'Normal',
+            NotificationType: 'PackApproved',
+            Channel: 'Email'
+          });
+        }
+      } catch { /* notification best-effort */ }
+
+      logger.info('PolicyPackService', `Pack ${packId} approved by ${approverEmail}`);
+    } catch (error) {
+      logger.error('PolicyPackService', `Failed to approve pack ${packId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Reject a policy pack with reason.
+   */
+  public async rejectPack(packId: number, approverEmail: string, approverName: string, reason: string): Promise<void> {
+    try {
+      await this.sp.web.lists.getByTitle(this.POLICY_PACKS_LIST).items.getById(packId).update({
+        ApprovalStatus: 'Rejected',
+        ApprovedByEmail: approverEmail,
+        ApprovedDate: new Date().toISOString(),
+        ApprovalComments: reason,
+        IsActive: false
+      });
+
+      try {
+        await this.sp.web.lists.getByTitle('PM_PolicyAuditLog').items.add({
+          Title: `Policy Pack rejected`,
+          AuditAction: 'PackRejected',
+          EntityType: 'PolicyPack',
+          EntityId: String(packId),
+          ActionDescription: `Pack rejected by ${approverName}. Reason: ${reason}`,
+          PerformedByEmail: approverEmail,
+          ComplianceRelevant: true
+        });
+      } catch { /* non-critical */ }
+
+      // Notify creator
+      try {
+        const pack = await this.getPolicyPackById(packId);
+        const creatorEmail = (pack as any).Author?.EMail || (pack as any).CreatedByEmail || '';
+        if (creatorEmail) {
+          await this.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
+            Title: `Pack Rejected: ${pack.PackName}`,
+            To: creatorEmail,
+            RecipientEmail: creatorEmail,
+            Subject: `Your policy pack "${pack.PackName}" was rejected`,
+            Message: `<p>Your policy pack <strong>${pack.PackName}</strong> was rejected by ${approverName}.</p><p><strong>Reason:</strong> ${reason}</p><p>Please review and resubmit.</p>`,
+            QueueStatus: 'Pending',
+            Priority: 'High',
+            NotificationType: 'PackRejected',
+            Channel: 'Email'
+          });
+        }
+      } catch { /* notification best-effort */ }
+
+      logger.info('PolicyPackService', `Pack ${packId} rejected by ${approverEmail}`);
+    } catch (error) {
+      logger.error('PolicyPackService', `Failed to reject pack ${packId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Request changes on a policy pack.
+   */
+  public async requestChangesPack(packId: number, approverEmail: string, approverName: string, comments: string): Promise<void> {
+    try {
+      await this.sp.web.lists.getByTitle(this.POLICY_PACKS_LIST).items.getById(packId).update({
+        ApprovalStatus: 'Changes Requested',
+        ApprovedByEmail: approverEmail,
+        ApprovalComments: comments
+      });
+
+      try {
+        await this.sp.web.lists.getByTitle('PM_PolicyAuditLog').items.add({
+          Title: `Policy Pack changes requested`,
+          AuditAction: 'PackChangesRequested',
+          EntityType: 'PolicyPack',
+          EntityId: String(packId),
+          ActionDescription: `Changes requested by ${approverName}: ${comments}`,
+          PerformedByEmail: approverEmail,
+          ComplianceRelevant: true
+        });
+      } catch { /* non-critical */ }
+
+      // Notify creator
+      try {
+        const pack = await this.getPolicyPackById(packId);
+        const creatorEmail = (pack as any).Author?.EMail || (pack as any).CreatedByEmail || '';
+        if (creatorEmail) {
+          await this.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
+            Title: `Pack Changes Requested: ${pack.PackName}`,
+            To: creatorEmail,
+            RecipientEmail: creatorEmail,
+            Subject: `Changes requested for "${pack.PackName}"`,
+            Message: `<p>${approverName} has requested changes to your policy pack <strong>${pack.PackName}</strong>.</p><p><strong>Comments:</strong> ${comments}</p><p>Please review and resubmit for approval.</p>`,
+            QueueStatus: 'Pending',
+            Priority: 'High',
+            NotificationType: 'PackChangesRequested',
+            Channel: 'Email'
+          });
+        }
+      } catch { /* notification best-effort */ }
+
+      logger.info('PolicyPackService', `Pack ${packId}: changes requested by ${approverEmail}`);
+    } catch (error) {
+      logger.error('PolicyPackService', `Failed to request changes on pack ${packId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Submit pack for approval (set status to Pending Approval)
+   */
+  public async submitForApproval(packId: number): Promise<void> {
+    try {
+      await this.sp.web.lists.getByTitle(this.POLICY_PACKS_LIST).items.getById(packId).update({
+        ApprovalStatus: 'Pending Approval'
+      });
+    } catch (error) {
+      console.warn('[PolicyPackService] Failed to set ApprovalStatus (column may not exist):', error);
+    }
+  }
+
+  // ─── Map Helper ────────────────────────────────────────────────
+
   private mapPolicyPack(item: any): IPolicyPack {
     const safeParse = (val: any, fallback: any = []): any => {
       if (!val) return fallback;
@@ -1023,7 +1200,12 @@ export class PolicyPackService {
       TargetDepartments: safeParse(item.TargetDepartments),
       TargetRoles: safeParse(item.TargetRoles),
       TargetLocations: safeParse(item.TargetLocations),
-      PolicySequence: safeParse(item.PolicySequence, undefined)
+      PolicySequence: safeParse(item.PolicySequence, undefined),
+      ApprovalStatus: item.ApprovalStatus || 'Draft',
+      ApproverEmails: item.ApproverEmails || '',
+      ApprovedByEmail: item.ApprovedByEmail || '',
+      ApprovedDate: item.ApprovedDate || null,
+      ApprovalComments: item.ApprovalComments || ''
     } as IPolicyPack;
   }
 }

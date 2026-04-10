@@ -118,6 +118,19 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
     this._isMounted = true;
     injectPortalStyles();
     await this.loadData();
+
+    // Handle deep link from approval email CTA: ?packId=123&mode=approve
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const packId = params.get('packId');
+      const mode = params.get('mode');
+      if (packId && mode === 'approve') {
+        const pack = this.state.policyPacks.find((p: IPolicyPack) => p.Id === Number(packId));
+        if (pack && this._isMounted) {
+          this.setState({ _approvalPack: pack, _showApprovalPanel: true } as any);
+        }
+      }
+    } catch { /* URL params not available */ }
   }
 
   public componentWillUnmount(): void {
@@ -133,10 +146,10 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
       const allPacks = await this.packService.getPolicyPacks();
       const packs = allPacks.filter(p => p.IsActive !== false);
       const allPolicies = await this.policyService.getAllPolicies();
+      // Only Approved and Published policies can be added to packs
       const policies = allPolicies.filter((p: IPolicy) =>
         p.PolicyStatus === PolicyStatus.Published ||
-        p.PolicyStatus === PolicyStatus.Approved ||
-        p.PolicyStatus === PolicyStatus.Draft
+        p.PolicyStatus === PolicyStatus.Approved
       );
 
       // Load pack types from PM_Configuration (non-blocking)
@@ -243,7 +256,7 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
         } catch { /* audit best-effort */ }
       } else {
         // Create new pack
-        await this.packService.createPolicyPack(request);
+        const newPack = await this.packService.createPolicyPack(request);
         // Audit: pack created
         try {
           await this.props.sp.web.lists.getByTitle('PM_PolicyAuditLog').items.add({
@@ -276,7 +289,7 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
                 { label: 'Requested By', value: authorName },
               ],
               ctaText: 'Review Policy Pack',
-              ctaUrl: `${siteUrl}/SitePages/PolicyPacks.aspx`,
+              ctaUrl: `${siteUrl}/SitePages/PolicyPacks.aspx?packId=${newPack.Id}&mode=approve`,
             });
 
             await this.props.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
@@ -575,9 +588,27 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
                   </div>
                   <span style={{ fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: 0.5, background: badge.bg, color: badge.color, display: 'inline-block', width: 'fit-content' }}>{packType}</span>
                   <span style={{ fontWeight: 600, color: tc.primary }}>{policyCount}</span>
-                  <span style={{ fontSize: 11, color: pack.IsActive === false ? '#dc2626' : '#059669', fontWeight: 500 }}>{pack.IsActive === false ? 'Inactive' : 'Active'}</span>
+                  <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                    {(() => {
+                      const status = (pack as any).ApprovalStatus || 'Draft';
+                      const statusColors: Record<string, { bg: string; color: string }> = {
+                        'Draft': { bg: '#f1f5f9', color: '#64748b' },
+                        'Pending Approval': { bg: '#fef3c7', color: '#d97706' },
+                        'Approved': { bg: '#dcfce7', color: '#059669' },
+                        'Rejected': { bg: '#fef2f2', color: '#dc2626' },
+                        'Changes Requested': { bg: '#fff7ed', color: '#ea580c' }
+                      };
+                      const sc = statusColors[status] || statusColors['Draft'];
+                      return <span style={{ fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, textTransform: 'uppercase' as const, letterSpacing: 0.5, background: sc.bg, color: sc.color }}>{status}</span>;
+                    })()}
+                  </div>
                   <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                    <button onClick={() => this.handleAssignPack(pack)} style={{ padding: '4px 10px', borderRadius: 4, fontSize: 11, fontWeight: 600, cursor: 'pointer', border: '1px solid #e2e8f0', background: '#fff', color: '#334155', fontFamily: 'inherit' }}>Assign</button>
+                    {((pack as any).ApprovalStatus === 'Pending Approval') && (
+                      <button onClick={() => this.setState({ _approvalPack: pack, _showApprovalPanel: true } as any)} style={{ padding: '4px 10px', borderRadius: 4, fontSize: 11, fontWeight: 600, cursor: 'pointer', border: '1px solid #fbbf24', background: '#fef3c7', color: '#d97706', fontFamily: 'inherit' }}>Review</button>
+                    )}
+                    {((pack as any).ApprovalStatus === 'Approved' || !(pack as any).ApprovalStatus || (pack as any).ApprovalStatus === 'Draft') && (
+                      <button onClick={() => this.handleAssignPack(pack)} style={{ padding: '4px 10px', borderRadius: 4, fontSize: 11, fontWeight: 600, cursor: 'pointer', border: '1px solid #e2e8f0', background: '#fff', color: '#334155', fontFamily: 'inherit' }}>Assign</button>
+                    )}
                     <IconButton iconProps={{ iconName: 'Edit' }} title="Edit" onClick={() => this.handleEditPack(pack)} styles={{ root: { width: 28, height: 28 } }} />
                     <IconButton iconProps={{ iconName: 'Delete' }} title="Delete" onClick={() => this.handleDeletePack(pack.Id)} styles={{ root: { width: 28, height: 28, color: '#dc2626' }, rootHovered: { color: '#dc2626' } }} />
                   </div>
@@ -1082,10 +1113,148 @@ export default class PolicyPackManager extends React.Component<IPolicyPackManage
 
           {this.renderCreatePanel()}
           {this.renderAssignPanel()}
+          {this.renderApprovalPanel()}
           <this.dialogManager.DialogComponent />
         </section>
       </JmlAppLayout>
       </ErrorBoundary>
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // APPROVAL PANEL — Review, Approve, Reject, Request Changes
+  // ═══════════════════════════════════════════════════════════════
+
+  private renderApprovalPanel(): JSX.Element {
+    const st = this.state as any;
+    const pack = st._approvalPack;
+    const showPanel = st._showApprovalPanel || false;
+    const comments = st._approvalComments || '';
+    const processing = st._approvalProcessing || false;
+
+    if (!pack || !showPanel) return null;
+
+    const closePanel = () => this.setState({ _showApprovalPanel: false, _approvalPack: null, _approvalComments: '' } as any);
+
+    const handleAction = async (action: 'approve' | 'reject' | 'requestChanges'): Promise<void> => {
+      if ((action === 'reject' || action === 'requestChanges') && !comments.trim()) {
+        void this.dialogManager.showAlert('Please provide comments explaining your decision.', { title: 'Comments Required' });
+        return;
+      }
+      this.setState({ _approvalProcessing: true } as any);
+      try {
+        const user = await this.props.sp.web.currentUser();
+        const svc = new PolicyPackService(this.props.sp);
+        if (action === 'approve') {
+          await svc.approvePack(pack.Id, user.Email, user.Title, comments);
+        } else if (action === 'reject') {
+          await svc.rejectPack(pack.Id, user.Email, user.Title, comments);
+        } else {
+          await svc.requestChangesPack(pack.Id, user.Email, user.Title, comments);
+        }
+        const actionLabel = action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : 'returned for changes';
+        void this.dialogManager.showAlert(`Policy pack "${pack.PackName}" has been ${actionLabel}.`, { title: 'Action Complete', variant: action === 'approve' ? 'success' : undefined });
+        closePanel();
+        this.loadPolicyPacks();
+      } catch (err: any) {
+        void this.dialogManager.showAlert(`Failed: ${err.message || 'Unknown error'}`, { title: 'Error' });
+      }
+      this.setState({ _approvalProcessing: false } as any);
+    };
+
+    const policyIds = Array.isArray(pack.PolicyIds) ? pack.PolicyIds : [];
+    const approverEmails = (pack.ApproverEmails || '').split(';').filter(Boolean);
+    const statusColors: Record<string, { bg: string; color: string }> = {
+      'Pending Approval': { bg: '#fef3c7', color: '#d97706' },
+      'Approved': { bg: '#dcfce7', color: '#059669' },
+      'Rejected': { bg: '#fef2f2', color: '#dc2626' },
+      'Changes Requested': { bg: '#fff7ed', color: '#ea580c' },
+      'Draft': { bg: '#f1f5f9', color: '#64748b' }
+    };
+    const status = (pack as any).ApprovalStatus || 'Draft';
+    const sc = statusColors[status] || statusColors['Draft'];
+
+    return (
+      <StyledPanel isOpen={showPanel} onDismiss={closePanel} type={PanelType.medium} headerText={`Review: ${pack.PackName}`} isLightDismiss>
+        <Stack tokens={{ childrenGap: 20 }} style={{ paddingTop: 16 }}>
+          {/* Status Badge */}
+          <Stack horizontal tokens={{ childrenGap: 8 }} verticalAlign="center">
+            <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 4, textTransform: 'uppercase' as const, letterSpacing: 0.5, background: sc.bg, color: sc.color }}>{status}</span>
+            {(pack as any).ApprovedByEmail && <Text style={{ fontSize: 12, color: '#94a3b8' }}>by {(pack as any).ApprovedByEmail}</Text>}
+            {(pack as any).ApprovedDate && <Text style={{ fontSize: 12, color: '#94a3b8' }}>on {new Date((pack as any).ApprovedDate).toLocaleDateString()}</Text>}
+          </Stack>
+
+          {/* Pack Details */}
+          <div style={{ background: '#f8fafc', borderRadius: 8, padding: 16, border: '1px solid #e2e8f0' }}>
+            <Text style={{ fontWeight: 600, fontSize: 15, display: 'block', marginBottom: 8 }}>{pack.PackName}</Text>
+            {pack.PackDescription && <Text style={{ fontSize: 13, color: '#64748b', display: 'block', marginBottom: 12 }}>{pack.PackDescription}</Text>}
+            <Stack horizontal tokens={{ childrenGap: 16 }} wrap>
+              <div><Text style={{ fontSize: 10, color: '#94a3b8', textTransform: 'uppercase' as const, letterSpacing: 0.5, fontWeight: 600 }}>Type</Text><Text style={{ display: 'block', fontWeight: 600 }}>{pack.PackType || 'Custom'}</Text></div>
+              <div><Text style={{ fontSize: 10, color: '#94a3b8', textTransform: 'uppercase' as const, letterSpacing: 0.5, fontWeight: 600 }}>Policies</Text><Text style={{ display: 'block', fontWeight: 600 }}>{policyIds.length}</Text></div>
+              <div><Text style={{ fontSize: 10, color: '#94a3b8', textTransform: 'uppercase' as const, letterSpacing: 0.5, fontWeight: 600 }}>Sequential</Text><Text style={{ display: 'block', fontWeight: 600 }}>{pack.IsSequential ? 'Yes' : 'No'}</Text></div>
+              <div><Text style={{ fontSize: 10, color: '#94a3b8', textTransform: 'uppercase' as const, letterSpacing: 0.5, fontWeight: 600 }}>Approvers</Text><Text style={{ display: 'block', fontWeight: 600 }}>{approverEmails.length}</Text></div>
+            </Stack>
+          </div>
+
+          {/* Approver List */}
+          {approverEmails.length > 0 && (
+            <div>
+              <Text style={{ fontWeight: 600, fontSize: 13, display: 'block', marginBottom: 8 }}>Assigned Approvers</Text>
+              {approverEmails.map((email: string, i: number) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderBottom: i < approverEmails.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
+                  <Icon iconName="Contact" style={{ fontSize: 14, color: '#94a3b8' }} />
+                  <Text style={{ fontSize: 13 }}>{email}</Text>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Previous Comments */}
+          {(pack as any).ApprovalComments && (
+            <div style={{ background: '#fef3c7', borderRadius: 4, padding: 12, borderLeft: '3px solid #d97706' }}>
+              <Text style={{ fontSize: 11, fontWeight: 600, color: '#d97706', display: 'block', marginBottom: 4 }}>Previous Comments</Text>
+              <Text style={{ fontSize: 13, color: '#92400e' }}>{(pack as any).ApprovalComments}</Text>
+            </div>
+          )}
+
+          {/* Action Section — only for Pending Approval */}
+          {status === 'Pending Approval' && (
+            <>
+              <Separator>Your Decision</Separator>
+              <TextField
+                label="Comments"
+                multiline rows={3}
+                placeholder="Add comments (required for Reject / Request Changes)..."
+                value={comments}
+                onChange={(_, v) => this.setState({ _approvalComments: v || '' } as any)}
+              />
+              <Stack horizontal tokens={{ childrenGap: 10 }}>
+                <PrimaryButton
+                  text={processing ? 'Processing...' : 'Approve'}
+                  iconProps={{ iconName: 'CheckMark' }}
+                  disabled={processing}
+                  onClick={() => handleAction('approve')}
+                  styles={{ root: { background: '#059669', borderColor: '#059669' }, rootHovered: { background: '#047857', borderColor: '#047857' } }}
+                />
+                <DefaultButton
+                  text="Request Changes"
+                  iconProps={{ iconName: 'Edit' }}
+                  disabled={processing}
+                  onClick={() => handleAction('requestChanges')}
+                  styles={{ root: { color: '#ea580c', borderColor: '#fed7aa' }, rootHovered: { color: '#ea580c', borderColor: '#ea580c' } }}
+                />
+                <DefaultButton
+                  text="Reject"
+                  iconProps={{ iconName: 'Cancel' }}
+                  disabled={processing}
+                  onClick={() => handleAction('reject')}
+                  styles={{ root: { color: '#dc2626', borderColor: '#fca5a5' }, rootHovered: { color: '#dc2626', borderColor: '#dc2626' } }}
+                />
+              </Stack>
+            </>
+          )}
+        </Stack>
+      </StyledPanel>
     );
   }
 }

@@ -372,8 +372,8 @@ export default class PolicySearch extends React.Component<IPolicySearchProps, IP
     return (
       <ErrorBoundary fallbackMessage="An error occurred in Policy Search. Please try again.">
       <JmlAppLayout context={this.props.context} sp={this.props.sp} breadcrumbs={[{ text: 'Policy Manager', url: this.props.context?.pageContext?.web?.absoluteUrl || '/sites/PolicyManager' }, { text: 'Search' }]}>
-        <div className={styles.policySearch}>
-          <div className={styles.contentWrapper}>
+        <div className={styles.policySearch} style={{ width: '100%', maxWidth: '100%', overflow: 'visible' }}>
+          <div className={styles.contentWrapper} style={{ width: '100%', maxWidth: '100%', overflow: 'visible', padding: '0 16px 16px' }}>
             {/* Hero Section — Slim banner matching Help Centre style */}
             <div style={{
               background: 'var(--pm-header-bg, linear-gradient(135deg, #0d9488 0%, #0f766e 100%))', padding: '16px 40px',
@@ -441,10 +441,10 @@ export default class PolicySearch extends React.Component<IPolicySearchProps, IP
               </div>
             )}
 
-            {/* Search Results Area — filters always visible */}
-            <div className={styles.mainContent}>
+            {/* Search Results Area — INLINE STYLES to prevent SP override */}
+            <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: '24px', width: '100%', boxSizing: 'border-box' as const }}>
               {/* Filters Panel */}
-              <div className={styles.filtersPanel}>
+              <div style={{ backgroundColor: '#f8fafc', borderRadius: '8px', padding: '20px', border: '1px solid #e2e8f0', boxSizing: 'border-box' as const, minWidth: 0 }}>
                   <h3 className={styles.filtersPanelTitle}>
                     Filters
                     {activeFilterCount > 0 && (
@@ -512,8 +512,8 @@ export default class PolicySearch extends React.Component<IPolicySearchProps, IP
                   )}
                 </div>
 
-                {/* Results Panel */}
-                <div className={styles.resultsPanel}>
+                {/* Results Panel — inline styles, SP cannot override */}
+                <div style={{ minWidth: 0 }}>
                   {!hasSearched ? (
                     <div className={styles.noResults}>
                       <svg viewBox="0 0 24 24" fill="none" width="48" height="48" style={{ color: '#94a3b8', marginBottom: 12 }}>

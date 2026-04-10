@@ -69,7 +69,7 @@ const footerStyles: Record<string, React.CSSProperties> = {
     width: 24,
     height: 24,
     borderRadius: 4,
-    background: 'linear-gradient(135deg, #0d9488, #14b8a6)',
+    background: tc.headerBg,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -154,7 +154,7 @@ const footerStyles: Record<string, React.CSSProperties> = {
   },
   supportLink: {
     fontSize: 12,
-    color: '#14b8a6',
+    color: tc.primary,
     textDecoration: 'none',
     display: 'flex',
     alignItems: 'center',
@@ -267,7 +267,7 @@ export const DwxAppFooter: React.FC<IJmlAppFooterProps> = ({
                     key={li}
                     href={link.url}
                     style={footerStyles.link}
-                    onMouseEnter={e => (e.currentTarget.style.color = '#14b8a6')}
+                    onMouseEnter={e => (e.currentTarget.style.color = tc.primary)}
                     onMouseLeave={e => (e.currentTarget.style.color = '#94a3b8')}
                   >
                     {link.text}

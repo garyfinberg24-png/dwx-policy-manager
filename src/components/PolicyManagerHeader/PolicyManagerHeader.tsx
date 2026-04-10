@@ -752,8 +752,8 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
           </div>
         </a>
 
-        {/* Search Section */}
-        {showSearch && (
+        {/* Global Search Section — hidden per user feedback, use dedicated Search page instead */}
+        {false && showSearch && (
           <div className={styles.searchSection} ref={searchDropdownRef} style={{ position: 'relative' }}>
             <div className={styles.searchInput}>
               <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

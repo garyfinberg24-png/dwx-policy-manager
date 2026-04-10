@@ -168,7 +168,7 @@ $pm-light-teal: #14b8a6;
   }
 }
 
-// Main Content Grid - matches Contract Manager resultsArea styling
+// Main Content Grid - filters left + results right
 .mainContent {
   display: flex;
   flex-wrap: nowrap;
@@ -176,11 +176,9 @@ $pm-light-teal: #14b8a6;
   align-items: flex-start;
   width: 100%;
   box-sizing: border-box;
-  overflow: hidden;
 
   @media (max-width: 768px) {
     flex-direction: column;
-    flex-wrap: wrap;
   }
 }
 
@@ -406,8 +404,6 @@ $pm-light-teal: #14b8a6;
   width: 100%;
   padding: 16px;
   box-sizing: border-box;
-  max-width: 100%;
-  overflow-x: hidden;
 
   @media (max-width: 768px) {
     padding: 12px;

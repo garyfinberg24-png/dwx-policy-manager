@@ -1497,6 +1497,24 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                 </Stack>
               )}
 
+              <Separator>Compliance & Metadata</Separator>
+              <Dropdown label="Compliance Risk" selectedKey={editingTemplate.ComplianceRisk || 'Medium'}
+                options={[{ key: 'Critical', text: 'Critical' }, { key: 'High', text: 'High' }, { key: 'Medium', text: 'Medium' }, { key: 'Low', text: 'Low' }, { key: 'Informational', text: 'Informational' }]}
+                onChange={(_, o) => this.setState({ _editingTemplate: { ...editingTemplate, ComplianceRisk: o?.key as string || 'Medium' } } as any)} />
+              <Dropdown label="Suggested Read Timeframe" selectedKey={editingTemplate.SuggestedReadTimeframe || 'Week1'}
+                options={[{ key: 'Immediate', text: 'Immediate' }, { key: 'Day1', text: 'Day 1' }, { key: 'Day3', text: 'Day 3' }, { key: 'Week1', text: 'Week 1' }, { key: 'Week2', text: 'Week 2' }, { key: 'Month1', text: 'Month 1' }, { key: 'Month3', text: 'Month 3' }]}
+                onChange={(_, o) => this.setState({ _editingTemplate: { ...editingTemplate, SuggestedReadTimeframe: o?.key as string || 'Week1' } } as any)} />
+              <Toggle label="Requires Acknowledgement" checked={editingTemplate.RequiresAcknowledgement !== false} onText="Yes" offText="No"
+                onChange={(_, c) => this.setState({ _editingTemplate: { ...editingTemplate, RequiresAcknowledgement: !!c } } as any)} />
+              <Toggle label="Requires Quiz" checked={editingTemplate.RequiresQuiz || false} onText="Yes" offText="No"
+                onChange={(_, c) => this.setState({ _editingTemplate: { ...editingTemplate, RequiresQuiz: !!c } } as any)} />
+              <TextField label="Key Points (semicolon-separated)" multiline rows={2} value={editingTemplate.KeyPointsTemplate || ''}
+                onChange={(_, v) => this.setState({ _editingTemplate: { ...editingTemplate, KeyPointsTemplate: v || '' } } as any)}
+                placeholder="e.g. Point 1; Point 2; Point 3" />
+              <TextField label="Regulatory Framework" value={editingTemplate.RegulatoryFramework || ''}
+                onChange={(_, v) => this.setState({ _editingTemplate: { ...editingTemplate, RegulatoryFramework: v || '' } } as any)}
+                placeholder="e.g. GDPR, POPIA, SOX" />
+
               <Separator>Settings</Separator>
               <Toggle label="Active" checked={editingTemplate.IsActive !== false} onText="Active" offText="Inactive" onChange={(_, c) => this.setState({ _editingTemplate: { ...editingTemplate, IsActive: !!c } } as any)} />
             </Stack>
@@ -1675,7 +1693,15 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         HTMLTemplate: editingTemplate.HTMLTemplate || editingTemplate.TemplateContent || '',
         TemplateContent: editingTemplate.TemplateContent || editingTemplate.HTMLTemplate || '',
         DocumentTemplateURL: docUrl ? { Url: docUrl, Description: editingTemplate.TemplateName || 'Template file' } : null,
-        IsActive: editingTemplate.IsActive !== false
+        IsActive: editingTemplate.IsActive !== false,
+        // Compliance & metadata fields — MUST persist
+        ComplianceRisk: editingTemplate.ComplianceRisk || 'Medium',
+        SuggestedReadTimeframe: editingTemplate.SuggestedReadTimeframe || 'Week1',
+        RequiresAcknowledgement: editingTemplate.RequiresAcknowledgement !== false,
+        RequiresQuiz: editingTemplate.RequiresQuiz || false,
+        KeyPointsTemplate: editingTemplate.KeyPointsTemplate || '',
+        RegulatoryFramework: editingTemplate.RegulatoryFramework || '',
+        RegulatoryReferences: editingTemplate.RegulatoryReferences || ''
       };
     // Store sections as JSON in TemplateContent for corporate/regulatory
     try {
@@ -12476,7 +12502,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       <JmlAppLayout
         context={this.props.context}
         sp={this.props.sp}
-        policyManagerRole={PolicyManagerRole.Admin}
+        policyManagerRole={this.props.userRole === 'Admin' ? PolicyManagerRole.Admin : this.props.userRole === 'Manager' ? PolicyManagerRole.Manager : PolicyManagerRole.User}
         pageTitle="Admin Centre"
         pageDescription="Manage policy settings, templates, and configurations"
         pageIcon="Admin"

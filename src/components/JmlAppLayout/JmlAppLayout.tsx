@@ -171,21 +171,24 @@ const DwxAppLayout: React.FC<IJmlAppLayoutProps> = (props) => {
   React.useEffect(() => {
     signalAppReady();
 
-    // Load and apply custom theme
+    // Load and apply custom theme — SP is authoritative, localStorage is fast fallback
     try {
       const { ThemeManager } = require('../../utils/themeManager');
+      // Step 1: Apply from localStorage immediately (fast, prevents flash of default theme)
       const stored = ThemeManager.getTheme();
-      if (stored && stored.preset !== 'forest-teal') {
-        // Non-default theme — apply from localStorage (fast)
+      if (stored && stored.primaryColor && stored.primaryColor !== '#0d9488') {
         ThemeManager.apply(stored);
       }
-      // Also try to load from SP (slower but authoritative)
+      // Step 2: Load from SP (authoritative — overrides localStorage for all users)
       if (sp) {
         ThemeManager.loadFromSP(sp).then((spTheme: any) => {
-          if (spTheme && (spTheme.primaryColor !== '#0d9488' || spTheme.logoUrl)) {
+          if (spTheme && spTheme.primaryColor) {
+            // Always apply SP theme — it's the admin-configured source of truth
             ThemeManager.apply(spTheme);
+            // Sync to localStorage so next page load is instant
+            try { localStorage.setItem('pm_custom_theme', JSON.stringify(spTheme)); } catch { /* */ }
           }
-        }).catch(() => { /* use cached/default */ });
+        }).catch(() => { /* SP unavailable — localStorage fallback is already applied */ });
       }
     } catch { /* ThemeManager not available — use defaults */ }
   }, []);

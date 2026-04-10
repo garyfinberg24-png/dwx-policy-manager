@@ -26,6 +26,7 @@ export interface IDwxPolicyAdminWebPartProps {
 export default class DwxPolicyAdminWebPart extends BaseClientSideWebPart<IDwxPolicyAdminWebPartProps> {
   private _isDarkTheme: boolean = false;
   private _sp: SPFI;
+  private _userRole: string = 'User';
 
   public render(): void {
     const element = React.createElement(
@@ -40,7 +41,8 @@ export default class DwxPolicyAdminWebPart extends BaseClientSideWebPart<IDwxPol
           isDarkTheme: this._isDarkTheme,
           hasTeamsContext: !!this.context.sdks.microsoftTeams,
           sp: this._sp,
-          context: this.context
+          context: this.context,
+          userRole: this._userRole
         }
       )
     );
@@ -52,6 +54,18 @@ export default class DwxPolicyAdminWebPart extends BaseClientSideWebPart<IDwxPol
     injectSharePointOverrides();
     await super.onInit();
     this._sp = getSP(this.context);
+
+    // Detect user role for Admin access control
+    try {
+      const { RoleDetectionService } = await import('../../services/RoleDetectionService');
+      const { getHighestPolicyRole } = await import('../../services/PolicyRoleService');
+      const roleService = new RoleDetectionService(this._sp);
+      const userRoles = await roleService.getCurrentUserRoles();
+      const pmRole = getHighestPolicyRole(userRoles);
+      this._userRole = pmRole || 'User';
+    } catch {
+      this._userRole = 'User';
+    }
   }
 
   protected onThemeChanged(currentTheme: IReadonlyTheme | undefined): void {

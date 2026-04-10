@@ -8290,10 +8290,10 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               onClick={handleCheckAll}
               styles={{ root: { background: 'var(--pm-primary, #0d9488)', borderColor: 'var(--pm-primary, #0d9488)' }, rootHovered: { background: 'var(--pm-primary-dark, #0f766e)', borderColor: 'var(--pm-primary-dark, #0f766e)' } }}
             />
-            <DefaultButton
-              text={`Provision Missing (${PM_LIST_DEFS.filter(d => !listStatuses.find(s => s.title === d.title && s.exists)).length})`}
+            <PrimaryButton
+              text={listStatuses.length === 0 ? 'Provision Missing Lists' : `Provision Missing (${PM_LIST_DEFS.filter(d => !listStatuses.find(s => s.title === d.title && s.exists)).length})`}
               iconProps={{ iconName: 'Database' }}
-              disabled={provisioningRunning || PM_LIST_DEFS.filter(d => !listStatuses.find(s => s.title === d.title && s.exists)).length === 0}
+              disabled={provisioningRunning}
               onClick={async () => {
                 const missing = PM_LIST_DEFS.filter(d => !listStatuses.find(s => s.title === d.title && s.exists));
                 if (missing.length === 0) {

@@ -173,7 +173,7 @@ const NAV_SECTIONS: INavSection[] = [
     category: 'USERS & ACCESS',
     items: [
       { key: 'usersRoles', label: 'Users & Roles', icon: 'PlayerSettings', description: 'User management and Entra ID sync' },
-      { key: 'userSync', label: 'User Sync', icon: 'Sync', description: 'Entra ID sync with delta queries, mapping rules, and analytics' },
+      { key: 'userSync', label: 'EntraID Sync', icon: 'Sync', description: 'Microsoft Entra ID user sync with delta queries, field mapping, conflict detection, and analytics' },
       { key: 'rolePermissions', label: 'Feature Permissions', icon: 'Permissions', description: 'Feature access per role (explicit, no inheritance)' },
       { key: 'groupsPermissions', label: 'Groups & Permissions', icon: 'SecurityGroup', description: 'Role groups, workflow groups, and secure library groups' },
       { key: 'audiences', label: 'Audience Targeting', icon: 'Group', description: 'Target audiences for policy distribution' },
@@ -676,11 +676,11 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       <div className={styles.sidebar}>
         {/* Sidebar Header */}
         <div className={styles.sidebarHeader}>
-          <div className={styles.sidebarTitle}>
-            <Icon iconName="Admin" style={IconStyles.xLarge} />
+          <div className={styles.sidebarTitle} style={{ background: 'transparent', backgroundColor: 'transparent' }}>
+            <Icon iconName="Admin" style={{ ...IconStyles.xLarge, color: '#fff' }} />
             <span>Admin Centre</span>
           </div>
-          <div className={styles.sidebarSubtitle}>Policy Manager Configuration</div>
+          <div className={styles.sidebarSubtitle} style={{ background: 'transparent', backgroundColor: 'transparent' }}>Policy Manager Configuration</div>
         </div>
 
         {/* Navigation Sections */}
@@ -7946,6 +7946,16 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       { key: 'reportDefs', title: 'PM_ReportDefinitions', description: 'Report definitions and templates', seedable: false },
       { key: 'scheduledReports', title: 'PM_ScheduledReports', description: 'Scheduled report configurations', seedable: false },
       { key: 'reportExec', title: 'PM_ReportExecutions', description: 'Report execution history', seedable: false },
+      // New lists for Session 23 features
+      { key: 'securityAudit', title: 'PM_SecurityAuditLog', description: 'Security audit events with risk scoring', seedable: false },
+      { key: 'securityAlerts', title: 'PM_SecurityAlerts', description: 'Active security alerts and threat detection', seedable: false },
+      { key: 'syncLog', title: 'PM_SyncLog', description: 'EntraID sync operation history', seedable: false },
+      { key: 'syncConfig', title: 'PM_SyncConfig', description: 'Sync configuration and delta tokens', seedable: false },
+      { key: 'legalHoldsData', title: 'PM_LegalHolds', description: 'Legal hold records for compliance locks', seedable: false },
+      { key: 'audiences', title: 'PM_Audiences', description: 'Audience targeting rules and member counts', seedable: false },
+      { key: 'delegations', title: 'PM_Delegations', description: 'Approval and review delegations', seedable: false },
+      { key: 'reminderSchedule', title: 'PM_ReminderSchedule', description: 'Scheduled acknowledgement reminders', seedable: false },
+      { key: 'eventLog', title: 'PM_EventLog', description: 'Event Viewer diagnostic events', seedable: false },
     ];
 
     // Check list statuses on first load
@@ -8371,53 +8381,31 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                         </span>
                       </Stack>
                     </Stack>
-                    {/* Per-card action buttons */}
-                    <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: 6, display: 'flex', gap: 4, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                    {/* Per-card action buttons — text labels for discoverability */}
+                    <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: 8, display: 'flex', gap: 6, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                       {exists && (
-                        <IconButton
-                          iconProps={{ iconName: 'Sync' }}
-                          title={`Refresh ${def.title} status`}
-                          ariaLabel={`Refresh ${def.title} status`}
-                          disabled={provisioningRunning}
+                        <button disabled={provisioningRunning} title={`Refresh ${def.title} item count`}
+                          style={{ fontSize: 10, padding: '3px 8px', borderRadius: 4, border: '1px solid #e2e8f0', background: '#f8fafc', color: '#64748b', cursor: 'pointer', fontWeight: 500 }}
                           onClick={async () => {
                             try {
                               const list = await this.props.sp.web.lists.getByTitle(def.title).select('ItemCount')();
-                              this.setState((prev: any) => ({
-                                _listStatuses: (prev._listStatuses || []).map((s: any) =>
-                                  s.title === def.title ? { ...s, exists: true, itemCount: list.ItemCount || 0 } : s
-                                )
-                              }) as any);
+                              this.setState((prev: any) => ({ _listStatuses: (prev._listStatuses || []).map((s: any) => s.title === def.title ? { ...s, exists: true, itemCount: list.ItemCount || 0 } : s) }) as any);
                               addLogAndScroll(`Refreshed ${def.title}: ${list.ItemCount || 0} items`);
                             } catch { addLogAndScroll(`  ✗ ${def.title}: refresh failed`); }
-                          }}
-                          styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: '#64748b' } }}
-                        />
+                          }}>Refresh</button>
                       )}
                       {exists && def.seedable && (
-                        <IconButton
-                          iconProps={{ iconName: 'DatabaseSync' }}
-                          title={`Seed ${def.title}`}
-                          ariaLabel={`Seed sample data into ${def.title}`}
-                          disabled={provisioningRunning}
-                          onClick={() => handleSeedList(def.title)}
-                          styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: 'var(--pm-primary, #0d9488)' } }}
-                        />
+                        <button disabled={provisioningRunning} title={`Seed sample data into ${def.title}`}
+                          style={{ fontSize: 10, padding: '3px 8px', borderRadius: 4, border: '1px solid #bbf7d0', background: '#f0fdf4', color: '#059669', cursor: 'pointer', fontWeight: 500 }}
+                          onClick={() => handleSeedList(def.title)}>Seed</button>
                       )}
                       {exists && def.seedable && (
-                        <IconButton
-                          iconProps={{ iconName: 'Refresh' }}
-                          title={`Clear & Reseed ${def.title}`}
-                          ariaLabel={`Clear and reseed ${def.title}`}
-                          disabled={provisioningRunning}
-                          onClick={() => handleClearAndReseedList(def)}
-                          styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: '#d97706' } }}
-                        />
+                        <button disabled={provisioningRunning} title={`Clear all data and reseed ${def.title}`}
+                          style={{ fontSize: 10, padding: '3px 8px', borderRadius: 4, border: '1px solid #fde68a', background: '#fffbeb', color: '#d97706', cursor: 'pointer', fontWeight: 500 }}
+                          onClick={() => handleClearAndReseedList(def)}>Clear & Reseed</button>
                       )}
-                      <IconButton
-                        iconProps={{ iconName: exists ? 'RepairPage' : 'Add' }}
-                        title={exists ? `Reprovision ${def.title}` : `Provision ${def.title}`}
-                        ariaLabel={exists ? `Reprovision ${def.title}` : `Provision ${def.title}`}
-                        disabled={provisioningRunning}
+                      <button disabled={provisioningRunning} title={exists ? `Delete and recreate ${def.title}` : `Create ${def.title} list`}
+                        style={{ fontSize: 10, padding: '3px 8px', borderRadius: 4, border: exists ? '1px solid #fca5a5' : '1px solid #bbf7d0', background: exists ? '#fef2f2' : '#f0fdf4', color: exists ? '#dc2626' : '#059669', cursor: 'pointer', fontWeight: 500 }}
                         onClick={async () => {
                           if (exists) {
                             await handleReprovisionList(def);
@@ -8434,9 +8422,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                             await this.checkListStatuses(PM_LIST_DEFS);
                             this.setState({ _provisioningRunning: false } as any);
                           }
-                        }}
-                        styles={{ root: { width: 28, height: 28 }, icon: { fontSize: 13, color: exists ? '#dc2626' : '#059669' } }}
-                      />
+                        }}>{exists ? 'Reprovision' : 'Provision'}</button>
                     </div>
                   </Stack>
                 </div>
@@ -11663,9 +11649,9 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     const secSearch: string = st._secSearch || '';
     const secAlerts: any[] = st._securityAlerts || [];
 
-    // Load on first render
-    if (!st._securityLoaded && !secLoading) {
-      this.setState({ _securityLoaded: true, _securityLoading: true } as any);
+    // Load on first render (uses distinct key from old security settings)
+    if (!st._appSecurityLoaded && !secLoading) {
+      this.setState({ _appSecurityLoaded: true, _securityLoading: true } as any);
       const svc = new (require('../../../services/SecurityAuditService').SecurityAuditService)(this.props.sp);
       Promise.all([svc.getRecentEvents(200), svc.getSecuritySummary(30), svc.getAlerts(20)])
         .then(([events, summary, alerts]: any[]) => {
@@ -11728,7 +11714,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           <Stack horizontal tokens={{ childrenGap: 12 }} verticalAlign="end" wrap>
             <TextField label="Search" placeholder="Search by user, details..." value={secSearch} onChange={(_, v) => this.setState({ _secSearch: v || '' } as any)} styles={{ root: { minWidth: 200 } }} />
             <Dropdown label="Severity" selectedKey={secFilter} options={[{ key: 'all', text: 'All' }, { key: 'Critical', text: 'Critical' }, { key: 'High', text: 'High' }, { key: 'Medium', text: 'Medium' }, { key: 'Low', text: 'Low' }]} onChange={(_, o) => this.setState({ _securityFilter: o?.key || 'all' } as any)} styles={{ root: { minWidth: 140 } }} />
-            <DefaultButton text="Refresh" iconProps={{ iconName: 'Sync' }} onClick={() => this.setState({ _securityLoaded: false } as any)} />
+            <DefaultButton text="Refresh" iconProps={{ iconName: 'Sync' }} onClick={() => this.setState({ _appSecurityLoaded: false } as any)} />
           </Stack>
 
           {/* Events Table */}
@@ -12058,7 +12044,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
 
   private renderUserSyncContent(): JSX.Element {
     const st = this.state as any;
-    const syncTab: string = st._syncTab || 'sync';
+    const syncTab: string = st._syncTab || 'overview';
     const syncLoading: boolean = st._syncLoading || false;
     const isSyncing: boolean = st._isSyncing || false;
     const syncProgress: number = st._syncProgress || 0;
@@ -12123,17 +12109,20 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       borderTop: `3px solid ${borderColor}`, padding: '16px 20px', textAlign: 'center' as const, minWidth: 100
     });
 
+    // Pill tab style — grey track, white active pill with shadow (matching Policy Author)
     const tabStyle = (active: boolean): React.CSSProperties => ({
-      padding: '8px 16px', fontSize: 13, cursor: 'pointer', fontWeight: active ? 700 : 500,
-      color: active ? 'var(--pm-primary, #0d9488)' : '#64748b',
-      borderBottom: active ? '2px solid var(--pm-primary, #0d9488)' : '2px solid transparent',
-      marginBottom: -2, background: 'transparent', border: 'none', borderBottomWidth: 2, borderBottomStyle: 'solid'
+      padding: '8px 18px', fontSize: 13, cursor: 'pointer', fontWeight: active ? 600 : 500,
+      color: active ? '#0f172a' : '#64748b',
+      background: active ? '#ffffff' : 'transparent',
+      border: 'none', borderRadius: 8,
+      boxShadow: active ? '0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06)' : 'none',
+      transition: 'all 0.15s'
     });
 
     return (
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 16 }}>
-          {this.renderSectionIntro('User Sync', 'Synchronize users from Microsoft Entra ID (Azure AD) to Policy Manager. Supports full sync, delta sync, field mappings, and sync analytics.')}
+          {this.renderSectionIntro('EntraID Sync', 'Synchronize users from Microsoft Entra ID (Azure AD) to Policy Manager. Supports full sync, delta sync, field mappings, conflict detection, scheduling, and sync analytics.')}
 
           {/* KPI Strip */}
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' as const }}>
@@ -12143,11 +12132,15 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             <div style={kpiStyle('#d97706')}><div style={{ fontSize: 28, fontWeight: 700, color: '#d97706' }}>{syncStats.syncedToday}</div><div style={{ fontSize: 10, textTransform: 'uppercase' as const, letterSpacing: 1, color: '#94a3b8', fontWeight: 600, marginTop: 4 }}>Synced Today</div></div>
           </div>
 
-          {/* Tab bar */}
-          <div style={{ display: 'flex', gap: 0, borderBottom: '2px solid #e2e8f0' }}>
+          {/* Pill Tab bar — grey track, white active pill */}
+          <div style={{ display: 'flex', gap: 4, background: '#f1f5f9', borderRadius: 10, padding: 4 }}>
             {[
+              { key: 'overview', label: 'Overview' },
               { key: 'sync', label: 'Sync' },
+              { key: 'schedule', label: 'Schedule' },
               { key: 'history', label: 'History' },
+              { key: 'conflicts', label: 'Conflicts' },
+              { key: 'fieldMapping', label: 'Field Mapping' },
               { key: 'config', label: 'Configuration' }
             ].map(tab => (
               <button key={tab.key} style={tabStyle(syncTab === tab.key)} onClick={() => this.setState({ _syncTab: tab.key } as any)}>
@@ -12155,6 +12148,37 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               </button>
             ))}
           </div>
+
+          {/* Overview Tab */}
+          {syncTab === 'overview' && (
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 4, padding: 20 }}>
+              <Stack tokens={{ childrenGap: 16 }}>
+                <Text style={{ fontWeight: 600, fontSize: 15, display: 'block' }}>EntraID Sync Overview</Text>
+                <Text style={{ color: '#64748b', fontSize: 13, lineHeight: 1.7 }}>
+                  Microsoft Entra ID Sync keeps your Policy Manager user directory (PM_UserProfiles) synchronized with your organisation's Azure Active Directory.
+                  Users are matched by EntraObjectId or Email, and their profile data (name, department, job title, location, phone) is kept up-to-date automatically.
+                </Text>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  {[
+                    { icon: 'Sync', title: 'Full Sync', desc: 'Fetches all users from Entra ID and updates PM_UserProfiles. Safe to run anytime.' },
+                    { icon: 'SyncOccurence', title: 'Delta Sync', desc: 'Uses Microsoft Graph delta queries to sync only changed users since last sync.' },
+                    { icon: 'Clock', title: 'Scheduled Sync', desc: 'Configure automatic sync on hourly, daily, weekly, or monthly schedules.' },
+                    { icon: 'Warning', title: 'Conflict Detection', desc: 'Identifies duplicate emails, name mismatches, and orphaned records.' },
+                    { icon: 'Switch', title: 'Field Mapping', desc: 'Configure which Entra fields map to which PM_UserProfiles columns.' },
+                    { icon: 'BulletedList2', title: 'Mapping Rules', desc: 'Auto-assign roles, groups, and employment types based on Entra attributes.' },
+                  ].map((item, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 12, padding: 14, background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                      <Icon iconName={item.icon} style={{ fontSize: 18, color: 'var(--pm-primary, #0d9488)', marginTop: 2 }} />
+                      <div><Text style={{ fontWeight: 600, fontSize: 13, display: 'block' }}>{item.title}</Text><Text style={{ fontSize: 12, color: '#64748b' }}>{item.desc}</Text></div>
+                    </div>
+                  ))}
+                </div>
+                <MessageBar messageBarType={MessageBarType.info}>
+                  Last sync: {syncStats.lastSyncDate ? new Date(syncStats.lastSyncDate).toLocaleString() : 'Never'} | Total users: {syncStats.totalEmployees} | Active: {syncStats.activeEmployees}
+                </MessageBar>
+              </Stack>
+            </div>
+          )}
 
           {/* Sync Tab */}
           {syncTab === 'sync' && (
@@ -12194,18 +12218,154 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             </div>
           )}
 
+          {/* Schedule Tab */}
+          {syncTab === 'schedule' && (
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 4, padding: 20 }}>
+              <Text style={{ fontWeight: 600, fontSize: 14, display: 'block', marginBottom: 12 }}>Sync Schedule</Text>
+              <Stack tokens={{ childrenGap: 12 }}>
+                <Toggle label="Enable scheduled sync" checked={st._syncScheduleEnabled || false} onText="Enabled" offText="Disabled"
+                  onChange={(_, c) => this.setState({ _syncScheduleEnabled: !!c } as any)} />
+                <Stack horizontal tokens={{ childrenGap: 12 }} wrap>
+                  <Dropdown label="Frequency" selectedKey={st._syncScheduleFreq || 'daily'} options={[{ key: 'hourly', text: 'Hourly' }, { key: 'daily', text: 'Daily' }, { key: 'weekly', text: 'Weekly' }, { key: 'monthly', text: 'Monthly' }]}
+                    onChange={(_, o) => this.setState({ _syncScheduleFreq: o?.key || 'daily' } as any)} styles={{ root: { minWidth: 140 } }} />
+                  <TextField label="Time (HH:MM)" value={st._syncScheduleTime || '06:00'} onChange={(_, v) => this.setState({ _syncScheduleTime: v || '06:00' } as any)} styles={{ root: { width: 100 } }} />
+                  {(st._syncScheduleFreq === 'weekly') && (
+                    <Dropdown label="Day of Week" selectedKey={st._syncScheduleDay || '1'} options={[{ key: '0', text: 'Sunday' }, { key: '1', text: 'Monday' }, { key: '2', text: 'Tuesday' }, { key: '3', text: 'Wednesday' }, { key: '4', text: 'Thursday' }, { key: '5', text: 'Friday' }, { key: '6', text: 'Saturday' }]}
+                      onChange={(_, o) => this.setState({ _syncScheduleDay: o?.key || '1' } as any)} styles={{ root: { minWidth: 140 } }} />
+                  )}
+                </Stack>
+                <PrimaryButton text="Save Schedule" iconProps={{ iconName: 'Save' }} onClick={async () => {
+                  try {
+                    await this.adminConfigService.saveConfigByCategory('UserSync', {
+                      'UserSync.Schedule.Enabled': String(st._syncScheduleEnabled || false),
+                      'UserSync.Schedule.Frequency': st._syncScheduleFreq || 'daily',
+                      'UserSync.Schedule.Time': st._syncScheduleTime || '06:00',
+                      'UserSync.Schedule.DayOfWeek': st._syncScheduleDay || '1'
+                    });
+                    void this.dialogManager.showAlert('Sync schedule saved.', { title: 'Saved', variant: 'success' });
+                  } catch { void this.dialogManager.showAlert('Failed to save schedule.', { title: 'Error' }); }
+                }} styles={{ root: { maxWidth: 160 } }} />
+                <MessageBar messageBarType={MessageBarType.warning}>
+                  Scheduled sync requires an Azure Function or Power Automate flow to trigger the sync at the configured time. Configure the timer trigger to call EntraUserSyncService.syncAllUsers().
+                </MessageBar>
+              </Stack>
+            </div>
+          )}
+
+          {/* Conflicts Tab */}
+          {syncTab === 'conflicts' && (
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 4, padding: 20 }}>
+              <Text style={{ fontWeight: 600, fontSize: 14, display: 'block', marginBottom: 12 }}>Conflict Detection</Text>
+              {st._conflictsLoading ? <Spinner size={SpinnerSize.medium} label="Scanning for conflicts..." /> : (
+                <Stack tokens={{ childrenGap: 12 }}>
+                  {!st._conflictsScanned && (
+                    <DefaultButton text="Scan for Conflicts" iconProps={{ iconName: 'Warning' }} onClick={async () => {
+                      this.setState({ _conflictsLoading: true, _conflictsScanned: true } as any);
+                      try {
+                        const employees = await this.props.sp.web.lists.getByTitle('PM_UserProfiles').items.select('Id', 'Title', 'Email', 'EntraObjectId', 'EmployeeStatus').top(5000)();
+                        const conflicts: any[] = [];
+                        // Check for duplicates
+                        const emailMap = new Map<string, any[]>();
+                        employees.forEach((e: any) => { const key = (e.Email || '').toLowerCase(); if (key) { if (!emailMap.has(key)) emailMap.set(key, []); emailMap.get(key)!.push(e); } });
+                        emailMap.forEach((items, email) => { if (items.length > 1) conflicts.push({ type: 'duplicate', description: `Duplicate email: ${email} (${items.length} records)`, items }); });
+                        // Check for orphaned (no EntraObjectId)
+                        const orphaned = employees.filter((e: any) => !e.EntraObjectId && e.EmployeeStatus === 'Active');
+                        if (orphaned.length > 0) conflicts.push({ type: 'orphaned', description: `${orphaned.length} active users without Entra ID link`, items: orphaned });
+                        this.setState({ _conflicts: conflicts, _conflictsLoading: false } as any);
+                      } catch { this.setState({ _conflictsLoading: false } as any); }
+                    }} />
+                  )}
+                  {(st._conflicts || []).length === 0 && st._conflictsScanned && (
+                    <MessageBar messageBarType={MessageBarType.success}>No conflicts detected. All user records are clean.</MessageBar>
+                  )}
+                  {(st._conflicts || []).map((conflict: any, i: number) => (
+                    <div key={i} style={{ padding: 14, background: conflict.type === 'duplicate' ? '#fef2f2' : '#fffbeb', borderRadius: 4, border: `1px solid ${conflict.type === 'duplicate' ? '#fca5a5' : '#fde68a'}` }}>
+                      <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
+                        <Icon iconName={conflict.type === 'duplicate' ? 'ErrorBadge' : 'Warning'} style={{ color: conflict.type === 'duplicate' ? '#dc2626' : '#d97706' }} />
+                        <Text style={{ fontWeight: 600, fontSize: 13 }}>{conflict.description}</Text>
+                        <span style={{ ...BadgeStyles.tag, background: conflict.type === 'duplicate' ? '#dc262618' : '#d9770618', color: conflict.type === 'duplicate' ? '#dc2626' : '#d97706' }}>{conflict.type}</span>
+                      </Stack>
+                    </div>
+                  ))}
+                </Stack>
+              )}
+            </div>
+          )}
+
+          {/* Field Mapping Tab */}
+          {syncTab === 'fieldMapping' && (
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 4, padding: 20 }}>
+              <Text style={{ fontWeight: 600, fontSize: 14, display: 'block', marginBottom: 12 }}>Entra ID → PM_UserProfiles Field Mapping</Text>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 20px 1fr 60px', gap: '8px 12px', alignItems: 'center', padding: '10px 0' }}>
+                <Text style={{ fontWeight: 600, fontSize: 11, color: '#64748b', textTransform: 'uppercase' as const }}>Entra ID Field</Text>
+                <div />
+                <Text style={{ fontWeight: 600, fontSize: 11, color: '#64748b', textTransform: 'uppercase' as const }}>PM Field</Text>
+                <Text style={{ fontWeight: 600, fontSize: 11, color: '#64748b', textTransform: 'uppercase' as const }}>Active</Text>
+                {[
+                  { entra: 'displayName', pm: 'Title', enabled: true },
+                  { entra: 'givenName', pm: 'FirstName', enabled: true },
+                  { entra: 'surname', pm: 'LastName', enabled: true },
+                  { entra: 'mail', pm: 'Email', enabled: true },
+                  { entra: 'jobTitle', pm: 'JobTitle', enabled: true },
+                  { entra: 'department', pm: 'Department', enabled: true },
+                  { entra: 'officeLocation', pm: 'Location', enabled: true },
+                  { entra: 'mobilePhone', pm: 'MobilePhone', enabled: true },
+                  { entra: 'businessPhones[0]', pm: 'OfficePhone', enabled: true },
+                  { entra: 'employeeId', pm: 'EmployeeNumber', enabled: true },
+                  { entra: 'id', pm: 'EntraObjectId', enabled: true },
+                  { entra: 'accountEnabled', pm: 'EmployeeStatus', enabled: true },
+                  { entra: 'employeeType', pm: 'EmployeeType', enabled: false },
+                  { entra: 'companyName', pm: 'CompanyName', enabled: false },
+                ].map((mapping, i) => (
+                  <React.Fragment key={i}>
+                    <div style={{ padding: '6px 10px', background: '#f8fafc', borderRadius: 4, fontSize: 13, fontFamily: 'Consolas, monospace' }}>{mapping.entra}</div>
+                    <span style={{ textAlign: 'center', color: '#94a3b8' }}>→</span>
+                    <div style={{ padding: '6px 10px', background: '#f0fdf4', borderRadius: 4, fontSize: 13, fontFamily: 'Consolas, monospace' }}>{mapping.pm}</div>
+                    <div style={{ textAlign: 'center' }}>
+                      <Icon iconName={mapping.enabled ? 'CheckMark' : 'Cancel'} style={{ color: mapping.enabled ? '#059669' : '#94a3b8' }} />
+                    </div>
+                  </React.Fragment>
+                ))}
+              </div>
+              <MessageBar messageBarType={MessageBarType.info} style={{ marginTop: 12 }}>
+                Field mappings are configured in EntraUserSyncService via <code>setFieldMappings()</code>. Changes here require a code update or PM_Configuration entry.
+              </MessageBar>
+            </div>
+          )}
+
           {/* Config Tab */}
           {syncTab === 'config' && (
             <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 4, padding: 20 }}>
               <Text style={{ fontWeight: 600, fontSize: 14, display: 'block', marginBottom: 12 }}>Sync Configuration</Text>
-              <MessageBar messageBarType={MessageBarType.info} style={{ marginBottom: 16 }}>
-                Advanced sync settings (delta sync, field mappings, mapping rules, and sync schedules) are configured via the EntraUserSyncService. The full 7-tab management UI from JML is available for future expansion.
-              </MessageBar>
               <Stack tokens={{ childrenGap: 8 }}>
-                <Toggle label="Include disabled Entra accounts" checked={true} onText="Yes — mark as Inactive" offText="No — skip disabled accounts" />
-                <Toggle label="Update existing user profiles" checked={true} onText="Yes — keep profiles current" offText="No — only add new users" />
-                <Toggle label="Deactivate missing users" checked={false} onText="Yes — auto-deactivate" offText="No — manual only (safer)" />
-                <Dropdown label="Batch size" selectedKey="50" options={[{ key: '25', text: '25' }, { key: '50', text: '50 (default)' }, { key: '100', text: '100' }]} styles={{ root: { maxWidth: 200 } }} />
+                <Toggle label="Include disabled Entra accounts" checked={st._syncIncludeDisabled !== false} onText="Yes — mark as Inactive" offText="No — skip disabled accounts"
+                  onChange={(_, c) => this.setState({ _syncIncludeDisabled: !!c } as any)} />
+                <Toggle label="Update existing user profiles" checked={st._syncUpdateExisting !== false} onText="Yes — keep profiles current" offText="No — only add new users"
+                  onChange={(_, c) => this.setState({ _syncUpdateExisting: !!c } as any)} />
+                <Toggle label="Deactivate missing users" checked={st._syncDeactivateMissing || false} onText="Yes — auto-deactivate (risky)" offText="No — manual only (safer)"
+                  onChange={(_, c) => this.setState({ _syncDeactivateMissing: !!c } as any)} />
+                <Toggle label="Enable delta sync" checked={st._syncDeltaEnabled || false} onText="Enabled — only sync changes" offText="Disabled — always full sync"
+                  onChange={(_, c) => this.setState({ _syncDeltaEnabled: !!c } as any)} />
+                <Toggle label="Send notification after sync" checked={st._syncSendNotification || false} onText="Yes — email summary" offText="No notifications"
+                  onChange={(_, c) => this.setState({ _syncSendNotification: !!c } as any)} />
+                <Dropdown label="Batch size" selectedKey={st._syncBatchSize || '50'} options={[{ key: '25', text: '25' }, { key: '50', text: '50 (default)' }, { key: '100', text: '100' }, { key: '200', text: '200' }]}
+                  onChange={(_, o) => this.setState({ _syncBatchSize: o?.key || '50' } as any)} styles={{ root: { maxWidth: 200 } }} />
+                <Dropdown label="User type filter" selectedKey={st._syncUserTypeFilter || 'Member'} options={[{ key: 'Member', text: 'Members only' }, { key: 'Guest', text: 'Guests only' }, { key: 'Both', text: 'Members and Guests' }]}
+                  onChange={(_, o) => this.setState({ _syncUserTypeFilter: o?.key || 'Member' } as any)} styles={{ root: { maxWidth: 200 } }} />
+                <PrimaryButton text="Save Configuration" iconProps={{ iconName: 'Save' }} onClick={async () => {
+                  try {
+                    await this.adminConfigService.saveConfigByCategory('UserSync', {
+                      'UserSync.IncludeDisabled': String(st._syncIncludeDisabled !== false),
+                      'UserSync.UpdateExisting': String(st._syncUpdateExisting !== false),
+                      'UserSync.DeactivateMissing': String(st._syncDeactivateMissing || false),
+                      'UserSync.DeltaEnabled': String(st._syncDeltaEnabled || false),
+                      'UserSync.SendNotification': String(st._syncSendNotification || false),
+                      'UserSync.BatchSize': st._syncBatchSize || '50',
+                      'UserSync.UserTypeFilter': st._syncUserTypeFilter || 'Member'
+                    });
+                    void this.dialogManager.showAlert('Sync configuration saved.', { title: 'Saved', variant: 'success' });
+                  } catch { void this.dialogManager.showAlert('Failed to save configuration.', { title: 'Error' }); }
+                }} styles={{ root: { maxWidth: 180 } }} />
               </Stack>
             </div>
           )}

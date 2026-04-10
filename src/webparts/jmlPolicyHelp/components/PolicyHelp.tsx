@@ -714,8 +714,8 @@ export default class PolicyHelp extends React.Component<IPolicyHelpProps, IPolic
               </div>
             </div>
 
-            {/* Tab Bar — Premium */}
-            <div style={{ display: 'flex', gap: 0, borderBottom: '2px solid #e2e8f0', marginBottom: 28, background: '#fff', margin: '0 -24px 28px', padding: '0 40px' }}>
+            {/* Pill Tab Bar — grey track, white active pill */}
+            <div style={{ display: 'flex', gap: 4, background: '#f1f5f9', borderRadius: 10, padding: 4, margin: '0 -24px 28px', marginLeft: 16, marginRight: 16 }}>
               {[
                 { key: 'home' as HelpTab, label: 'Home' },
                 { key: 'articles' as HelpTab, label: 'Articles' },
@@ -724,17 +724,19 @@ export default class PolicyHelp extends React.Component<IPolicyHelpProps, IPolic
                 { key: 'videos' as HelpTab, label: 'Videos' },
                 { key: 'support' as HelpTab, label: 'Support' }
               ].map(tab => (
-                <div
+                <button
                   key={tab.key}
                   onClick={() => this.setState({ currentTab: tab.key })}
                   style={{
-                    padding: '12px 20px', fontSize: 13, cursor: 'pointer',
-                    fontWeight: currentTab === tab.key ? 700 : 500,
-                    color: currentTab === tab.key ? 'var(--pm-primary, #0d9488)' : '#64748b',
-                    borderBottom: currentTab === tab.key ? '2px solid var(--pm-primary, #0d9488)' : '2px solid transparent',
-                    marginBottom: -2, transition: 'all 0.15s'
+                    padding: '8px 18px', fontSize: 13, cursor: 'pointer',
+                    fontWeight: currentTab === tab.key ? 600 : 500,
+                    color: currentTab === tab.key ? '#0f172a' : '#64748b',
+                    background: currentTab === tab.key ? '#ffffff' : 'transparent',
+                    border: 'none', borderRadius: 8,
+                    boxShadow: currentTab === tab.key ? '0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06)' : 'none',
+                    transition: 'all 0.15s'
                   }}
-                >{tab.label}</div>
+                >{tab.label}</button>
               ))}
             </div>
 

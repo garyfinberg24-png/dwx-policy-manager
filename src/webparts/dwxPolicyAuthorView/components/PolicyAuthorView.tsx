@@ -757,7 +757,7 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
         </div>
 
         {/* Pill Tab Bar */}
-        <div style={{ padding: '0 40px', marginTop: 20, maxWidth: 1400, width: '100%', margin: '20px auto 0', boxSizing: 'border-box' }}>
+        <div style={{ padding: '0 40px', maxWidth: 1600, width: '100%', marginTop: 20, boxSizing: 'border-box' }}>
           <div style={{ display: 'flex', gap: 4, padding: 4, background: '#f1f5f9', borderRadius: 8, width: 'fit-content' }}>
             {[
               { key: 'pipeline' as AuthorViewTab, label: 'Drafts & Pipeline', count: this.state.pipelinePolicies.length },

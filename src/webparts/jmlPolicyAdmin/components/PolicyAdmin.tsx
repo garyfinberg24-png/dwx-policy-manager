@@ -8274,10 +8274,150 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             </div>
           </div>
 
+          {/* Approval-gated provisioning system */}
+          {(() => {
+            const approvedRequests: Array<{ id: string; action: string; target: string; approvedBy: string; approvedAt: string }> = st._provApprovedRequests || [];
+            const pendingRequests: Array<{ id: string; action: string; target: string; reason: string; requestedBy: string; requestedAt: string }> = st._provPendingRequests || [];
+            const isActionApproved = (action: string, target?: string): boolean => {
+              return approvedRequests.some(r => r.action === action && (!target || r.target === target || r.target === 'ALL'));
+            };
+            const consumeApproval = (action: string, target?: string): void => {
+              this.setState({ _provApprovedRequests: approvedRequests.filter(r => !(r.action === action && (!target || r.target === target || r.target === 'ALL'))) } as any);
+            };
+
+            // Load pending/approved requests on first render
+            if (!st._provRequestsLoaded) {
+              this.setState({ _provRequestsLoaded: true } as any);
+              (async () => {
+                try {
+                  const items = await this.props.sp.web.lists.getByTitle('PM_Configuration')
+                    .items.filter("substringof('Provisioning.Request', ConfigKey)")
+                    .select('Id', 'ConfigKey', 'ConfigValue', 'Category').top(50)();
+                  const approved: any[] = [];
+                  const pending: any[] = [];
+                  items.forEach((item: any) => {
+                    try {
+                      const val = JSON.parse(item.ConfigValue);
+                      if (val.status === 'Approved') approved.push(val);
+                      else if (val.status === 'Pending') pending.push(val);
+                    } catch { /* invalid JSON */ }
+                  });
+                  if (this._isMounted) this.setState({ _provApprovedRequests: approved, _provPendingRequests: pending } as any);
+                } catch { /* PM_Configuration may not have requests yet */ }
+
+                // Handle URL deep link: ?section=provisioning&requestId=xxx&approveAction=yyy
+                try {
+                  const params = new URLSearchParams(window.location.search);
+                  const reqId = params.get('requestId');
+                  const approveAction = params.get('approveAction');
+                  if (reqId && approveAction === 'approve') {
+                    // Auto-approve the request
+                    const configItems = await this.props.sp.web.lists.getByTitle('PM_Configuration')
+                      .items.filter(`ConfigKey eq 'Provisioning.Request.${reqId}'`).select('Id', 'ConfigValue').top(1)();
+                    if (configItems.length > 0) {
+                      const val = JSON.parse(configItems[0].ConfigValue);
+                      const user = await this.props.sp.web.currentUser();
+                      val.status = 'Approved';
+                      val.approvedBy = user.Email;
+                      val.approvedAt = new Date().toISOString();
+                      await this.props.sp.web.lists.getByTitle('PM_Configuration').items.getById(configItems[0].Id).update({ ConfigValue: JSON.stringify(val) });
+                      if (this._isMounted) {
+                        this.setState((prev: any) => ({ _provApprovedRequests: [...(prev._provApprovedRequests || []), val] }) as any);
+                        void this.dialogManager.showAlert(`Request approved: ${val.action} on ${val.target}`, { title: 'Approved', variant: 'success' });
+                      }
+                      await logProvisioningAudit('RequestApproved', `Provisioning request approved: ${val.action} on ${val.target}`);
+                    }
+                  }
+                } catch { /* URL params not available */ }
+              })();
+            }
+
+            const handleRequestProvisioning = async (action: string, target: string, targetDesc: string): Promise<void> => {
+              const reason = await this.dialogManager.showConfirm(
+                `You are requesting approval to perform: "${action}" on ${target}.\n\n${targetDesc}\n\nA System Admin must approve this request before the action can be executed. The request will be logged.`,
+                { title: 'Request Provisioning Approval', confirmText: 'Submit Request', cancelText: 'Cancel' }
+              );
+              if (!reason) return;
+
+              const requestId = `req_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+              const user = await this.props.sp.web.currentUser();
+              const request = {
+                id: requestId,
+                action,
+                target,
+                targetDesc,
+                reason: 'Admin-initiated provisioning request',
+                requestedBy: user.Email,
+                requestedByName: user.Title,
+                requestedAt: new Date().toISOString(),
+                status: 'Pending'
+              };
+
+              // Save to PM_Configuration
+              try {
+                await this.props.sp.web.lists.getByTitle('PM_Configuration').items.add({
+                  Title: `Provisioning Request: ${action} — ${target}`,
+                  ConfigKey: `Provisioning.Request.${requestId}`,
+                  ConfigValue: JSON.stringify(request),
+                  Category: 'Provisioning',
+                  IsActive: true,
+                  IsSystemConfig: true
+                });
+              } catch { /* non-critical */ }
+
+              // Audit log
+              await logProvisioningAudit('RequestSubmitted', `Provisioning request: ${action} on ${target} by ${user.Email}`);
+
+              // Email to system admin (site collection admins)
+              try {
+                const siteUrl = this.props.context?.pageContext?.web?.absoluteUrl || '';
+                const approveUrl = `${siteUrl}/SitePages/PolicyAdmin.aspx?section=provisioning&requestId=${requestId}&approveAction=approve`;
+                await this.props.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
+                  Title: `Provisioning Approval Required: ${action} on ${target}`,
+                  To: user.Email, // In production, this should be a System Admin group
+                  RecipientEmail: user.Email,
+                  Subject: `[ACTION REQUIRED] Provisioning Request: ${action} on ${target}`,
+                  Message: `<p><strong>${user.Title}</strong> has requested provisioning approval:</p><p><strong>Action:</strong> ${action}<br/><strong>Target:</strong> ${target}<br/><strong>Description:</strong> ${targetDesc}</p><p><a href="${approveUrl}" style="display:inline-block;padding:10px 24px;background:#059669;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;">Approve Request</a></p><p style="color:#94a3b8;font-size:12px;">This request is logged in the audit trail.</p>`,
+                  QueueStatus: 'Pending',
+                  Priority: 'High',
+                  NotificationType: 'ProvisioningApproval',
+                  Channel: 'Email'
+                });
+              } catch { /* notification best-effort */ }
+
+              this.setState((prev: any) => ({ _provPendingRequests: [...(prev._provPendingRequests || []), request] }) as any);
+              void this.dialogManager.showAlert('Provisioning request submitted. A System Admin will receive an email to approve.', { title: 'Request Submitted', variant: 'success' });
+            };
+
+            return (<>
           {/* Warning banner */}
           <MessageBar messageBarType={MessageBarType.severeWarning} isMultiline>
-            <strong>Protected Section.</strong> All provisioning actions require double-confirmation and are permanently logged to the audit trail. Destructive actions (Clear, Reseed, Reprovision) cannot be undone. Ensure you have approval before proceeding.
+            <strong>Approval-Gated Provisioning.</strong> All actions (except Refresh) require prior approval from a System Admin. Click "Request" to submit an approval request. Once approved, the action becomes available for one-time execution.
           </MessageBar>
+
+          {/* Pending requests */}
+          {pendingRequests.length > 0 && (
+            <div style={{ background: '#fef3c7', border: '1px solid #fde68a', borderRadius: 4, padding: 12 }}>
+              <Text style={{ fontWeight: 600, fontSize: 12, color: '#d97706', display: 'block', marginBottom: 6 }}>Pending Requests ({pendingRequests.length})</Text>
+              {pendingRequests.map((req: any, i: number) => (
+                <div key={i} style={{ fontSize: 12, color: '#92400e', padding: '4px 0' }}>
+                  <strong>{req.action}</strong> on {req.target} — requested by {req.requestedBy} at {new Date(req.requestedAt).toLocaleString()}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Approved requests (ready to execute) */}
+          {approvedRequests.length > 0 && (
+            <div style={{ background: '#dcfce7', border: '1px solid #86efac', borderRadius: 4, padding: 12 }}>
+              <Text style={{ fontWeight: 600, fontSize: 12, color: '#059669', display: 'block', marginBottom: 6 }}>Approved — Ready to Execute ({approvedRequests.length})</Text>
+              {approvedRequests.map((req: any, i: number) => (
+                <div key={i} style={{ fontSize: 12, color: '#166534', padding: '4px 0' }}>
+                  <strong>{req.action}</strong> on {req.target} — approved by {req.approvedBy}
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Global Action buttons */}
           <Stack horizontal tokens={{ childrenGap: 8 }} wrap>
@@ -8288,62 +8428,48 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               onClick={handleCheckAll}
               styles={{ root: { background: 'var(--pm-primary, #0d9488)', borderColor: 'var(--pm-primary, #0d9488)' }, rootHovered: { background: 'var(--pm-primary-dark, #0f766e)', borderColor: 'var(--pm-primary-dark, #0f766e)' } }}
             />
-            <PrimaryButton
-              text={listStatuses.length === 0 ? 'Provision Missing Lists' : `Provision Missing (${PM_LIST_DEFS.filter(d => !listStatuses.find(s => s.title === d.title && s.exists)).length})`}
-              iconProps={{ iconName: 'Database' }}
-              disabled={provisioningRunning}
-              onClick={async () => {
-                const missing = PM_LIST_DEFS.filter(d => !listStatuses.find(s => s.title === d.title && s.exists));
-                if (missing.length === 0) {
-                  void this.dialogManager.showAlert('All lists are already provisioned.', { title: 'Up to Date', variant: 'success' });
-                  return;
-                }
-                const confirmed = await this.dialogManager.showConfirm(
-                  `This will create ${missing.length} missing SharePoint lists. No existing data will be affected.\n\nLists to create:\n${missing.map(d => `• ${d.title} — ${d.description}`).join('\n')}`,
-                  { title: 'Provision Missing Lists', confirmText: `Create ${missing.length} Lists`, cancelText: 'Cancel' }
-                );
-                if (!confirmed) return;
-                this.setState({ _provisioningRunning: true } as any);
-                addLogAndScroll(`Provisioning ${missing.length} missing lists...`);
-                let created = 0;
-                for (const def of missing) {
-                  try {
-                    addLogAndScroll(`Creating ${def.title}...`);
-                    await this.props.sp.web.lists.add(def.title, def.description, 100, false);
-                    addLogAndScroll(`  ✓ ${def.title} created`);
-                    created++;
-                  } catch (err: any) {
-                    addLogAndScroll(`  ✗ ${def.title}: ${err.message || 'Failed'}`);
-                  }
-                }
-                addLogAndScroll(`Provisioning complete. ${created}/${missing.length} lists created.`);
-                await logProvisioningAudit('ProvisionAll', `Provisioned ${created}/${missing.length} missing lists`);
-                await this.checkListStatuses(PM_LIST_DEFS);
-                this.setState({ _provisioningRunning: false } as any);
-              }}
-            />
-            <DefaultButton
-              text="Seed All Data"
-              iconProps={{ iconName: 'DatabaseSync' }}
-              disabled={provisioningRunning || existsCount === 0}
-              onClick={async () => {
-                const confirmed = await this.dialogManager.showConfirm(
-                  'This will add sample data to all seedable lists. Existing data will NOT be deleted — new items will be added alongside existing ones.',
-                  { title: 'Seed All Data', confirmText: 'Seed', cancelText: 'Cancel' }
-                );
-                if (!confirmed) return;
-                await handleSeedAll();
-                await logProvisioningAudit('SeedAll', `Seeded sample data into all seedable lists`);
-              }}
-            />
-            <DefaultButton
-              text="Clear & Reseed All"
-              iconProps={{ iconName: 'Refresh' }}
-              disabled={provisioningRunning || existsCount === 0}
-              onClick={handleClearAndReseedAll}
-              styles={{ root: { color: '#dc2626', borderColor: '#fca5a5' }, rootHovered: { color: '#fff', background: '#dc2626', borderColor: '#dc2626' } }}
-            />
+            {isActionApproved('ProvisionMissing', 'ALL') ? (
+              <PrimaryButton
+                text={listStatuses.length === 0 ? 'Provision Missing' : `Provision Missing (${PM_LIST_DEFS.filter(d => !listStatuses.find(s => s.title === d.title && s.exists)).length})`}
+                iconProps={{ iconName: 'Database' }}
+                disabled={provisioningRunning}
+                styles={{ root: { background: '#059669', borderColor: '#059669' }, rootHovered: { background: '#047857' } }}
+                onClick={async () => {
+                  const missing = PM_LIST_DEFS.filter(d => !listStatuses.find(s => s.title === d.title && s.exists));
+                  if (missing.length === 0) { void this.dialogManager.showAlert('All lists already provisioned.', { title: 'Up to Date', variant: 'success' }); return; }
+                  this.setState({ _provisioningRunning: true } as any);
+                  addLogAndScroll(`Provisioning ${missing.length} missing lists...`);
+                  for (const def of missing) { try { await this.props.sp.web.lists.add(def.title, def.description, 100, false); addLogAndScroll(`  ✓ ${def.title} created`); } catch (err: any) { addLogAndScroll(`  ✗ ${def.title}: ${err.message || 'Failed'}`); } }
+                  await logProvisioningAudit('ProvisionAll', `Provisioned missing lists`);
+                  consumeApproval('ProvisionMissing', 'ALL');
+                  await this.checkListStatuses(PM_LIST_DEFS);
+                  this.setState({ _provisioningRunning: false } as any);
+                }}
+              />
+            ) : (
+              <DefaultButton text="Request: Provision Missing" iconProps={{ iconName: 'Database' }} disabled={provisioningRunning}
+                onClick={() => handleRequestProvisioning('ProvisionMissing', 'ALL', 'Create all missing SharePoint lists')} />
+            )}
+            {isActionApproved('SeedAll', 'ALL') ? (
+              <DefaultButton text="Seed All Data" iconProps={{ iconName: 'DatabaseSync' }} disabled={provisioningRunning}
+                styles={{ root: { background: '#059669', color: '#fff', borderColor: '#059669' } }}
+                onClick={async () => { await handleSeedAll(); await logProvisioningAudit('SeedAll', 'Seeded all lists'); consumeApproval('SeedAll', 'ALL'); }} />
+            ) : (
+              <DefaultButton text="Request: Seed All" iconProps={{ iconName: 'DatabaseSync' }} disabled={provisioningRunning}
+                onClick={() => handleRequestProvisioning('SeedAll', 'ALL', 'Add sample data to all seedable lists')} />
+            )}
+            {isActionApproved('ClearAndReseedAll', 'ALL') ? (
+              <DefaultButton text="Clear & Reseed All" iconProps={{ iconName: 'Refresh' }} disabled={provisioningRunning}
+                styles={{ root: { background: '#dc2626', color: '#fff', borderColor: '#dc2626' } }}
+                onClick={async () => { await handleClearAndReseedAll(); consumeApproval('ClearAndReseedAll', 'ALL'); }} />
+            ) : (
+              <DefaultButton text="Request: Clear & Reseed All" iconProps={{ iconName: 'Refresh' }} disabled={provisioningRunning}
+                styles={{ root: { color: '#dc2626', borderColor: '#fca5a5' } }}
+                onClick={() => handleRequestProvisioning('ClearAndReseedAll', 'ALL', 'DELETE all data from seedable lists and replace with sample data')} />
+            )}
           </Stack>
+            </>);
+          })()}
 
           {/* Progress */}
           {provisioningRunning && (
@@ -8405,7 +8531,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                         </span>
                       </Stack>
                     </Stack>
-                    {/* Per-card action buttons — text labels for discoverability */}
+                    {/* Per-card action buttons — Refresh is always active, others are approval-gated */}
                     <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: 8, display: 'flex', gap: 6, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                       {exists && (
                         <button disabled={provisioningRunning} title={`Refresh ${def.title} item count`}
@@ -8418,22 +8544,22 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                             } catch { addLogAndScroll(`  ✗ ${def.title}: refresh failed`); }
                           }}>Refresh</button>
                       )}
+                      {/* Seed / Clear&Reseed / Reprovision — greyed out, require global approval */}
                       {exists && def.seedable && (
-                        <button disabled={provisioningRunning} title={`Seed sample data into ${def.title}`}
+                        <button disabled={true} title="Requires approval — use global Request buttons above"
+                          style={{ fontSize: 10, padding: '3px 8px', borderRadius: 4, border: '1px solid #e2e8f0', background: '#f8fafc', color: '#cbd5e1', cursor: 'not-allowed', fontWeight: 500 }}>Seed</button>
+                      )}
+                      {exists && def.seedable && (
+                        <button disabled={true} title="Requires approval — use global Request buttons above"
+                          style={{ fontSize: 10, padding: '3px 8px', borderRadius: 4, border: '1px solid #e2e8f0', background: '#f8fafc', color: '#cbd5e1', cursor: 'not-allowed', fontWeight: 500 }}>Clear & Reseed</button>
+                      )}
+                      <button disabled={true} title={exists ? 'Requires approval — use global Request buttons above' : 'Requires approval'}
+                        style={{ fontSize: 10, padding: '3px 8px', borderRadius: 4, border: '1px solid #e2e8f0', background: '#f8fafc', color: '#cbd5e1', cursor: 'not-allowed', fontWeight: 500 }}>{exists ? 'Reprovision' : 'Provision'}</button>
+                      {/* Per-card: only non-existing lists can be provisioned without approval (safe operation) */}
+                      {!exists && (
+                        <button disabled={provisioningRunning} title={`Create ${def.title} list (safe — no data affected)`}
                           style={{ fontSize: 10, padding: '3px 8px', borderRadius: 4, border: '1px solid #bbf7d0', background: '#f0fdf4', color: '#059669', cursor: 'pointer', fontWeight: 500 }}
-                          onClick={() => handleSeedList(def.title)}>Seed</button>
-                      )}
-                      {exists && def.seedable && (
-                        <button disabled={provisioningRunning} title={`Clear all data and reseed ${def.title}`}
-                          style={{ fontSize: 10, padding: '3px 8px', borderRadius: 4, border: '1px solid #fde68a', background: '#fffbeb', color: '#d97706', cursor: 'pointer', fontWeight: 500 }}
-                          onClick={() => handleClearAndReseedList(def)}>Clear & Reseed</button>
-                      )}
-                      <button disabled={provisioningRunning} title={exists ? `Delete and recreate ${def.title}` : `Create ${def.title} list`}
-                        style={{ fontSize: 10, padding: '3px 8px', borderRadius: 4, border: exists ? '1px solid #fca5a5' : '1px solid #bbf7d0', background: exists ? '#fef2f2' : '#f0fdf4', color: exists ? '#dc2626' : '#059669', cursor: 'pointer', fontWeight: 500 }}
-                        onClick={async () => {
-                          if (exists) {
-                            await handleReprovisionList(def);
-                          } else {
+                          onClick={async () => {
                             this.setState({ _provisioningRunning: true } as any);
                             addLogAndScroll(`Provisioning ${def.title}...`);
                             try {
@@ -8445,8 +8571,8 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                             }
                             await this.checkListStatuses(PM_LIST_DEFS);
                             this.setState({ _provisioningRunning: false } as any);
-                          }
-                        }}>{exists ? 'Reprovision' : 'Provision'}</button>
+                          }}>Provision</button>
+                      )}
                     </div>
                   </Stack>
                 </div>

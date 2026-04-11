@@ -1564,8 +1564,9 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
     // In focused reader mode, the metadata is already in the compact bar above
     const isFocusedMode = !this.state.browseMode && (!this.state.acknowledgement || this.state.acknowledgement.AckStatus !== 'Acknowledged');
 
-    // If PolicyContent has converted HTML, render it natively (no iframe needed)
-    const hasConvertedHtml = policy.PolicyContent && policy.PolicyContent.length > 100 && policy.PolicyContent.includes('<');
+    // If HTMLContent or PolicyContent has converted HTML, render natively (no iframe needed)
+    const htmlSource = policy.HTMLContent || policy.PolicyContent || '';
+    const hasConvertedHtml = htmlSource.length > 100 && htmlSource.includes('<');
 
     return (
       <div className={styles.stepContent}>
@@ -1741,7 +1742,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
               <div className={styles.scrollProgressBar}>
                 <div className={styles.scrollProgressFill} style={{ height: `${scrollProgress}%` }} />
               </div>
-              <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(policy.PolicyContent || '') }} />
+              <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(policy.HTMLContent || policy.PolicyContent || '') }} />
             </div>
           </div>
         )}

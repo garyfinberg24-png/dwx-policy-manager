@@ -816,7 +816,50 @@ The QuizBuilder's "AI Generate" panel calls the Azure Function with:
 
 ---
 
-## Session State (Last Updated: 11 Apr 2026 — Session 23 Complete)
+## Session State (Last Updated: 12 Apr 2026 — Session 24 Complete)
+
+### Recently Completed (Session 24 — 11-12 Apr 2026)
+
+#### Deep E2E Playwright Testing + Email Pipeline Fixes + Request Notification
+
+**Build: 1.2.5** | **Commit:** `a730ff0` — pushed to ADO + GitHub
+
+**Playwright E2E Test Suite (15 spec files, 38+ tests):**
+- Full lifecycle tested: Create → Save → Submit → Review → Approve/Changes/Reject → Publish
+- All 7 document creation types verified through full 8-step wizard
+- 5 policies created with gf_admin as reviewer/approver
+- All 3 review decisions executed with real comments + success dialogs
+- Office Online document creation via wizard (Word, Excel, PPT) confirmed
+- HTML conversion verified: converted policies render natively, unconverted use Office Online iframe
+- Manager > Request Policy wizard: full 4-step flow submitted successfully (REQ-20260412-0002)
+- Author Requests tab pickup confirmed
+- Outlook notification emails verified (5+ emails arrived)
+- PM_NotificationQueue diagnostic + automated cleanup (300+ bad items deleted)
+
+**Email Pipeline Critical Fix (EscalationService):**
+- ROOT CAUSE: EscalationService wrote to PM_NotificationQueue with NO RecipientEmail
+- ~300+ "Escalation: Review overdue" items with empty recipient crashed Logic App
+- FIX: sendEscalationNotification() now requires recipientEmail param with @-sign validation
+- FIX: Resolves reviewer email via siteUsers.getById() before queue write
+- FIX: PolicyNotificationService adds includes('@') guard on RecipientEmail writes
+- FIX: Logic App Bicep adds Check_Recipient condition to skip empty-recipient items
+
+**Request-Fulfilled Notification (NEW FEATURE):**
+- EmailTemplateBuilder.requestFulfilled() — green-themed email template
+- PolicyService.publishPolicy() now notifies original requester when SourceRequestId policy publishes
+- Closes the loop: Manager requests → Author creates → Policy publishes → Manager gets email with CTA
+
+**Test Document Library (90 files):**
+- 10 HTML, 10 Word HTML, 20 .docx (Pandoc), 10 CSV, 10 .xlsx (openpyxl), 10 .pptx (Pandoc), 10 SVG
+- All with realistic professional content from "First Digital"
+
+**Key Patterns (Session 24):**
+- **Playwright nav selectors**: PolicyManagerHeader nav items are `<button class="navItem_*">` (CSS modules hashed). Use `button[class*="navItem"]` or `getByText('Manager', { exact: true })`
+- **Request Policy wizard**: Opens from Manager dropdown. Uses native `<select>` (not Fluent Dropdown). Category is required for Next to enable
+- **Date input fill**: Playwright `fill()` fails on `input[type="date"]` — use `evaluate()` with native value setter + dispatchEvent
+- **Screenshot budget**: Claude conversation context limit is 20MB. Use 1280x720 viewport, max ~25 screenshots per session
+- **PeoplePicker**: Use Override checkbox + PeoplePicker search + suggestion click. Email resolves from `secondaryText` or `loginName`
+- **Email guard pattern**: Always validate `recipientEmail.includes('@')` before writing to PM_NotificationQueue
 
 ### Recently Completed (Session 23 — 10-11 Apr 2026)
 
@@ -1737,9 +1780,9 @@ Three parallel audit streams identified ~45 optimization opportunities:
 | Code Quality | 9/10 | Single authoritative publish path, zero sp.utility.sendEmail, Admin Centre audit 9/9 fixes complete, zero stubs |
 | Notifications | 10/10 | ALL emails via PM_NotificationQueue → Logic App. Zero sp.utility.sendEmail. Premium EmailTemplateBuilder with Outlook fallback. Publish notifications fire inline. |
 | Diagnostics | 9/10 | Event Viewer with 13 features, 7 tabs, vertical nav, Troubleshooter wizard, pipeline verification script |
-| Testing | 3.5/10 | Jest config + 6 unit test suites + Verify-PublishPipeline.ps1 (51 checks). Remaining: integration, component, E2E |
+| Testing | 7/10 | Jest 6 unit suites + Playwright 15 E2E specs (38+ tests) covering full lifecycle, all doc types, review decisions, conversion, notifications. 90 test documents. Remaining: component tests, CI integration |
 | Accessibility | 3/10 | Basic Fluent UI a11y. Remaining: ARIA roles, keyboard nav, screen reader |
-| Overall | ~93/100 | Up from 91. Escalation engine, approval cards, Manager upgrades, search layout fixed, 47 commits in Session 23 |
+| Overall | ~95/100 | Up from 93. E2E Playwright suite (38+ tests), email pipeline critical fix, request-fulfilled notification, 90 test documents. Testing score 3.5→7. |
 
 ### Known Issues
 
@@ -1761,6 +1804,11 @@ Three parallel audit streams identified ~45 optimization opportunities:
 - **tc helper vs CSS var()**: Module-scope style objects (e.g., footerStyles) MUST use `var(--pm-primary, #hex)` strings, NOT `tc.primary` — `tc` caches values at import time before ThemeManager applies the theme. Use `tc.*` only inside render methods or event handlers.
 - Navigation toggles now dual-persist to localStorage + PM_Configuration. PolicyManagerHeader still reads localStorage only — SP fallback is on Admin Centre load only.
 - PMRoles column on PM_UserProfiles may not exist — multi-role write is non-blocking (logs warning)
+- **EscalationService** was flooding PM_NotificationQueue with empty-recipient items — FIXED in Session 24. Guard now validates email before queue write.
+- **Playwright date inputs**: `page.fill()` fails on `input[type="date"]` — use `page.evaluate()` with native value setter + dispatchEvent
+- **Playwright screenshot budget**: Claude conversation context limit is 20MB. Use 1280x720 viewport, max ~25 screenshots per session to stay under limit.
+- **Request Policy wizard** uses native `<select>` elements (not Fluent Dropdown) — use `selectOption()` not `.ms-Dropdown` click
+- **Upload wizard** file input is hidden (`display: none`, id=`policyFileInput`) inside a StyledPanel — opened from Step 0 "Browse & Upload" card, not Step 6
 
 ### Next Steps
 

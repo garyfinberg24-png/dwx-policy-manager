@@ -1,9 +1,12 @@
 // StartScreen — Command Centre Layout
-// Sidebar (teal gradient) + Main content (white)
+// Sidebar (theme gradient) + Main content (white)
+// All colors reference CSS custom properties set by the Admin Theme Editor
 
-$teal-primary: var(--pm-primary, #0d9488);
-$teal-dark: var(--pm-primary-dark, #0f766e);
-$teal-darker: #134e4a;
+$theme-primary: var(--pm-primary, #0d9488);
+$theme-dark: var(--pm-primary-dark, #0f766e);
+$theme-darkest: var(--pm-primary-darker, #134e4a);
+$theme-light: var(--pm-primary-light, #ccfbf1);
+$theme-lighter: var(--pm-primary-lighter, #f0fdfa);
 
 .startScreen {
   display: flex;
@@ -15,7 +18,7 @@ $teal-darker: #134e4a;
 // ── Sidebar ─────────────────────────────────
 .sidebar {
   width: 300px;
-  background: linear-gradient(180deg, $teal-primary 0%, $teal-dark 60%, $teal-darker 100%);
+  background: linear-gradient(180deg, $theme-primary 0%, $theme-dark 60%, $theme-darkest 100%);
   color: #fff;
   display: flex;
   flex-direction: column;
@@ -228,7 +231,7 @@ $teal-darker: #134e4a;
   padding: 2px 8px;
   border-radius: 3px;
   background: var(--pm-primary-light, #ccfbf1);
-  color: $teal-primary;
+  color: $theme-primary;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -255,13 +258,13 @@ $teal-darker: #134e4a;
   transition: all 0.2s;
 
   &:hover {
-    border-color: $teal-primary;
+    border-color: $theme-primary;
     box-shadow: 0 4px 16px rgba(13,148,136,0.1);
     transform: translateY(-2px);
   }
 
   &:focus-visible {
-    outline: 2px solid $teal-primary;
+    outline: 2px solid $theme-primary;
     outline-offset: 2px;
   }
 }

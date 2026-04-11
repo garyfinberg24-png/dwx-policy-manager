@@ -171,8 +171,8 @@ export class StartScreen extends React.Component<IStartScreenProps, IStartScreen
     const glanceStats: Array<{ label: string; value: number | string; color?: string }> = [
       { label: 'Published Policies', value: stats.published },
       { label: 'Acknowledged', value: stats.acknowledged, color: '#34d399' },
-      { label: 'Pending Ack', value: stats.pending, color: stats.pending > 0 ? '#fbbf24' : undefined },
-      { label: 'Overdue', value: stats.overdue, color: stats.overdue > 0 ? '#f87171' : undefined },
+      { label: 'Pending Ack', value: stats.pending, color: stats.pending > 0 ? tc.warning : undefined },
+      { label: 'Overdue', value: stats.overdue, color: stats.overdue > 0 ? tc.danger : undefined },
     ];
     if (userRole === 'Author' || userRole === 'Admin') {
       glanceStats.push({ label: 'My Drafts', value: stats.drafts, color: '#94a3b8' });
@@ -316,10 +316,10 @@ export class StartScreen extends React.Component<IStartScreenProps, IStartScreen
               <div className={styles.statsBar}>
                 <div className={styles.statCard}>
                   <div className={styles.statIcon} style={{ background: '#f0fdf4' }}>
-                    <Icon iconName="CompletedSolid" styles={{ root: { fontSize: 18, color: '#16a34a' } }} />
+                    <Icon iconName="CompletedSolid" styles={{ root: { fontSize: 18, color: tc.success } }} />
                   </div>
                   <div>
-                    <div className={styles.statValue} style={{ color: '#16a34a' }}>{stats.acknowledged}</div>
+                    <div className={styles.statValue} style={{ color: tc.success }}>{stats.acknowledged}</div>
                     <div className={styles.statLabel}>Acknowledged</div>
                   </div>
                 </div>

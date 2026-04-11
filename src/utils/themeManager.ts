@@ -31,6 +31,7 @@ export class ThemeManager {
     root.style.setProperty('--pm-primary-dark', merged.primaryDark);
     root.style.setProperty('--pm-primary-light', merged.primaryLight);
     root.style.setProperty('--pm-primary-lighter', merged.primaryLighter);
+    root.style.setProperty('--pm-primary-darker', ThemeManager.darkenColor(merged.primaryDark, 0.35));
     root.style.setProperty('--pm-accent', merged.accentColor);
     root.style.setProperty('--pm-success', merged.successColor);
     root.style.setProperty('--pm-warning', merged.warningColor);
@@ -136,6 +137,18 @@ export class ThemeManager {
       console.error('[ThemeManager] Failed to load theme from SP:', err);
     }
     return { ...DEFAULT_THEME };
+  }
+
+  /**
+   * Darken a hex color by a fraction (0 = no change, 1 = black).
+   * Used to derive --pm-primary-darker from the theme's primaryDark.
+   */
+  private static darkenColor(hex: string, fraction: number): string {
+    const h = hex.replace('#', '');
+    const r = Math.max(0, Math.round(parseInt(h.substring(0, 2), 16) * (1 - fraction)));
+    const g = Math.max(0, Math.round(parseInt(h.substring(2, 4), 16) * (1 - fraction)));
+    const b = Math.max(0, Math.round(parseInt(h.substring(4, 6), 16) * (1 - fraction)));
+    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
   }
 
   /**

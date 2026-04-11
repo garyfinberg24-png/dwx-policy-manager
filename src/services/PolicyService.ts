@@ -475,10 +475,13 @@ export class PolicyService {
       let query = this.sp.web.lists
         .getByTitle(this.POLICIES_LIST)
         .items.select(
-          '*',
-          'PolicyOwner/Id',
-          'PolicyOwner/Title',
-          'PolicyOwner/EMail'
+          'Id', 'Title', 'PolicyName', 'PolicyNumber', 'PolicyStatus',
+          'PolicyCategory', 'ComplianceRisk', 'IsActive', 'IsMandatory',
+          'VersionNumber', 'PolicyDescription', 'DocumentURL', 'DocumentFormat',
+          'CreationMethod', 'ReadTimeframe', 'RequiresAcknowledgement', 'RequiresQuiz',
+          'PublishedDate', 'EffectiveDate', 'ExpiryDate', 'ReviewDate',
+          'Department', 'Visibility', 'Modified', 'Created',
+          'PolicyOwner/Id', 'PolicyOwner/Title', 'PolicyOwner/EMail'
         )
         .expand('PolicyOwner');
 
@@ -1779,20 +1782,26 @@ export class PolicyService {
    */
   public async getDashboardMetrics(): Promise<IPolicyDashboardMetrics> {
     try {
-      const policies = await this.getPolicies();
-      const activePolicies = policies.filter(p => p.IsActive);
-      const draftPolicies = policies.filter(p => p.PolicyStatus === PolicyStatus.Draft);
-
-      // Policies expiring in next 30 days
       const thirtyDaysFromNow = new Date();
       thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      // Load ALL data sources in PARALLEL (was 3 sequential awaits)
+      const [policies, allAcknowledgements, recentFeedbackResult] = await Promise.all([
+        this.getPolicies(),
+        this.sp.web.lists.getByTitle(this.POLICY_ACKNOWLEDGEMENTS_LIST)
+          .items.select('Id', 'AckStatus', 'DueDate').top(5000)(),
+        this.sp.web.lists.getByTitle(this.POLICY_FEEDBACK_LIST)
+          .items.filter(`Created ge datetime'${thirtyDaysAgo.toISOString()}'`)
+          .select('Id').top(5000)().catch(() => [])
+      ]);
+
+      const activePolicies = policies.filter(p => p.IsActive);
+      const draftPolicies = policies.filter(p => p.PolicyStatus === PolicyStatus.Draft);
       const expiringSoon = policies.filter(p =>
         p.ExpiryDate && new Date(p.ExpiryDate) <= thirtyDaysFromNow
       );
-
-      const allAcknowledgements = await this.sp.web.lists
-        .getByTitle(this.POLICY_ACKNOWLEDGEMENTS_LIST)
-        .items.top(500)();
 
       const acks = allAcknowledgements as IPolicyAcknowledgement[];
       const acknowledged = acks.filter(a => a.AckStatus === AcknowledgementStatus.Acknowledged);
@@ -1800,21 +1809,7 @@ export class PolicyService {
 
       const criticalRisk = policies.filter(p => p.ComplianceRisk === 'Critical');
 
-      // Get recent feedback count (last 30 days)
-      let recentFeedbackCount = 0;
-      try {
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        const recentFeedback = await this.sp.web.lists
-          .getByTitle(this.POLICY_FEEDBACK_LIST)
-          .items
-          .filter(`Created ge datetime'${thirtyDaysAgo.toISOString()}'`)
-          .select('Id')();
-        recentFeedbackCount = recentFeedback.length;
-      } catch {
-        // Feedback list may not exist yet
-        recentFeedbackCount = 0;
-      }
+      let recentFeedbackCount = recentFeedbackResult.length;
 
       return {
         totalPolicies: policies.length,

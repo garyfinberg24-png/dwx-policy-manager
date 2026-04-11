@@ -125,14 +125,15 @@ export class EntraUserSyncService {
       // Fetch existing employees for matching
       const existingEmployees = await this.fetchExistingEmployees();
 
-      // Process users in batches
+      // Process users in batches — run batches in parallel for speed
       const batches = this.chunkArray(entraUsers, this.config.batchSize);
+      const allBatchResults = await Promise.all(
+        batches.map(batch => this.processBatch(batch, existingEmployees))
+      );
 
-      for (const batch of batches) {
-        const batchResults = await this.processBatch(batch, existingEmployees);
+      // Flatten and aggregate results
+      for (const batchResults of allBatchResults) {
         summary.results.push(...batchResults);
-
-        // Update counters
         for (const result of batchResults) {
           switch (result.operation) {
             case 'Added':

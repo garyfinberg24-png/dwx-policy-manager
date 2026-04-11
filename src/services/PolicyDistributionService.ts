@@ -343,26 +343,45 @@ export class PolicyDistributionService {
     const QUEUE_LIST = SystemLists.NOTIFICATION_QUEUE;
     let queued = 0;
 
-    for (const recipient of overdueRecipients) {
+    // Batch insert all notifications — avoids N+1 HTTP calls
+    // Process in chunks of 50 to stay within SP batch limits
+    const BATCH_SIZE = 50;
+    for (let i = 0; i < overdueRecipients.length; i += BATCH_SIZE) {
+      const chunk = overdueRecipients.slice(i, i + BATCH_SIZE);
       try {
-        await this.sp.web.lists.getByTitle(QUEUE_LIST).items.add({
-          Title: `Escalation: ${campaignName}`,
-          RecipientEmail: recipient.UserEmail || '',
-          RecipientName: recipient.Title || 'Unknown',
-          NotificationType: 'Escalation',
-          Subject: `Action Required: Overdue policy acknowledgement — ${campaignName}`,
-          Body: `Dear ${recipient.Title || 'Colleague'},\n\n` +
-            `You have an overdue policy acknowledgement for the distribution campaign "${campaignName}". ` +
-            `The due date was ${recipient.DueDate || 'N/A'}. Please acknowledge the policy at your earliest convenience.\n\n` +
-            `This is an automated escalation notification.`,
-          Status: 'Queued',
-          DistributionId: distributionId,
-          Priority: 'High',
-        });
-        queued++;
+        const [batchedWeb, execute] = this.sp.web.batched();
+        const batchedList = batchedWeb.lists.getByTitle(QUEUE_LIST);
+        for (const recipient of chunk) {
+          batchedList.items.add({
+            Title: `Escalation: ${campaignName}`,
+            RecipientEmail: recipient.UserEmail || '',
+            RecipientName: recipient.Title || 'Unknown',
+            NotificationType: 'Escalation',
+            Subject: `Action Required: Overdue policy acknowledgement — ${campaignName}`,
+            Body: `Dear ${recipient.Title || 'Colleague'},\n\nYou have an overdue policy acknowledgement for "${campaignName}". The due date was ${recipient.DueDate || 'N/A'}. Please acknowledge at your earliest convenience.\n\nThis is an automated escalation notification.`,
+            Status: 'Queued',
+            DistributionId: distributionId,
+            Priority: 'High',
+          });
+        }
+        await execute();
+        queued += chunk.length;
       } catch (err) {
-        logger.warn('PolicyDistributionService',
-          `Failed to queue escalation for ${recipient.UserEmail}: ${err}`);
+        logger.warn('PolicyDistributionService', `Batch escalation failed for chunk ${i}-${i + chunk.length}: ${err}`);
+        // Fallback: try individually for this chunk
+        for (const recipient of chunk) {
+          try {
+            await this.sp.web.lists.getByTitle(QUEUE_LIST).items.add({
+              Title: `Escalation: ${campaignName}`,
+              RecipientEmail: recipient.UserEmail || '',
+              NotificationType: 'Escalation',
+              Subject: `Overdue: ${campaignName}`,
+              Body: `Overdue acknowledgement for "${campaignName}".`,
+              Status: 'Queued', DistributionId: distributionId, Priority: 'High',
+            });
+            queued++;
+          } catch { /* skip individual failures */ }
+        }
       }
     }
 

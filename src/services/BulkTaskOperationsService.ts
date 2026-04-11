@@ -75,23 +75,30 @@ export class BulkTaskOperationsService {
       const [batch] = this.sp.web.batched();
       const batchedList = this.sp.web.lists.getByTitle('PM_TaskAssignments').using(batch);
 
-      // Store original values for rollback
+      // Fetch all original values in PARALLEL for rollback (not sequential)
       const rollbackData: IBulkRollbackData[] = [];
+      const originalTasks = await Promise.all(
+        taskIds.map(taskId =>
+          list.items.getById(taskId)
+            .select('Id', 'Title', 'Status', 'PercentComplete', 'ActualCompletionDate')()
+            .catch(() => null) // graceful per-item failure
+        )
+      );
 
-      for (const taskId of taskIds) {
+      for (let i = 0; i < taskIds.length; i++) {
+        const taskId = taskIds[i];
+        const originalTask = originalTasks[i];
         try {
-          // Get original task for rollback
-          const originalTask = await list.items.getById(taskId)
-            .select('Id', 'Title', 'Status', 'PercentComplete', 'ActualCompletionDate')();
-
-          rollbackData.push({
-            taskId,
-            originalValues: {
-              Status: originalTask.Status,
-              PercentComplete: originalTask.PercentComplete,
-              ActualCompletionDate: originalTask.ActualCompletionDate
-            }
-          });
+          if (originalTask) {
+            rollbackData.push({
+              taskId,
+              originalValues: {
+                Status: originalTask.Status,
+                PercentComplete: originalTask.PercentComplete,
+                ActualCompletionDate: originalTask.ActualCompletionDate
+              }
+            });
+          }
 
           // Update task in batch
           batchedList.items.getById(taskId).update({

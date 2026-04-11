@@ -602,9 +602,9 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
           : 'Unknown',
         userName: item.PerformedByEmail || 'System',
         action: item.AuditAction || item.Title || 'Unknown Action',
-        category: this.mapAuditCategory(item.EntityType || item.AuditAction || ''),
+        category: this.mapAuditCategory(item.AuditAction || item.EntityType || ''),
         resourceTitle: item.ActionDescription || item.Title || 'Unknown',
-        department: 'Policy',
+        department: item.EntityType || 'Policy',
       }));
 
       if (this._isMounted) { this.setState({
@@ -1078,11 +1078,16 @@ export default class PolicyAnalytics extends React.Component<IPolicyAnalyticsPro
 
   private mapAuditCategory(actionCategory: string): 'policy' | 'user' | 'system' | 'compliance' | 'access' {
     const cat = (actionCategory || '').toLowerCase();
-    if (cat.includes('policy') || cat.includes('publish') || cat.includes('approve') || cat.includes('review') || cat.includes('create') || cat.includes('update') || cat.includes('delete')) return 'policy';
-    if (cat.includes('user') || cat.includes('acknowledge') || cat.includes('quiz') || cat.includes('complete')) return 'user';
-    if (cat.includes('compliance') || cat.includes('violation') || cat.includes('risk')) return 'compliance';
-    if (cat.includes('access') || cat.includes('permission') || cat.includes('grant') || cat.includes('role')) return 'access';
-    return 'system';
+    // User actions — acknowledgements, quiz, user sync, delegation
+    if (cat.includes('acknowledge') || cat.includes('quiz') || cat.includes('complete') || cat.includes('usersync') || cat.includes('delegation') || cat.includes('user')) return 'user';
+    // Compliance — SLA, violations, risk, escalation, breach
+    if (cat.includes('compliance') || cat.includes('violation') || cat.includes('risk') || cat.includes('sla') || cat.includes('breach') || cat.includes('escalation') || cat.includes('naming')) return 'compliance';
+    // Access — permissions, role changes, provisioning, security
+    if (cat.includes('access') || cat.includes('permission') || cat.includes('grant') || cat.includes('role') || cat.includes('provisioning') || cat.includes('security') || cat.includes('config')) return 'access';
+    // System — sync, schedule, system, import, export, template
+    if (cat.includes('system') || cat.includes('sync') || cat.includes('schedule') || cat.includes('import') || cat.includes('export') || cat.includes('template') || cat.includes('seed')) return 'system';
+    // Policy — everything else (publish, approve, review, create, update, delete)
+    return 'policy';
   }
 
   public render(): React.ReactElement<IPolicyAnalyticsProps> {

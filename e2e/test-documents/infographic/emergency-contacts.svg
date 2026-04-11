@@ -1,0 +1,87 @@
+<!-- First Digital — Emergency Contacts Poster — DWx Policy Manager -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 750" width="600" height="750">
+  <defs>
+    <linearGradient id="hg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#dc2626"/>
+      <stop offset="100%" style="stop-color:#b91c1c"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="600" height="750" fill="#fff" rx="8"/>
+  <rect width="600" height="110" fill="url(#hg)" rx="8"/>
+  <rect y="102" width="600" height="16" fill="url(#hg)"/>
+  <text x="300" y="50" text-anchor="middle" fill="#fff" font-family="Segoe UI, Arial" font-size="28" font-weight="700">Emergency Contacts</text>
+  <text x="300" y="78" text-anchor="middle" fill="#fecaca" font-family="Segoe UI, Arial" font-size="14">First Digital — All Offices</text>
+
+  <!-- Emergency Services -->
+  <rect x="30" y="130" width="540" height="80" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="2"/>
+  <text x="300" y="160" text-anchor="middle" fill="#dc2626" font-family="Segoe UI, Arial" font-size="16" font-weight="700">EMERGENCY SERVICES</text>
+  <text x="150" y="185" text-anchor="middle" fill="#0f172a" font-family="Segoe UI, Arial" font-size="28" font-weight="700">000</text>
+  <text x="150" y="200" text-anchor="middle" fill="#64748b" font-family="Segoe UI, Arial" font-size="10">Landline</text>
+  <text x="300" y="185" text-anchor="middle" fill="#0f172a" font-family="Segoe UI, Arial" font-size="28" font-weight="700">112</text>
+  <text x="300" y="200" text-anchor="middle" fill="#64748b" font-family="Segoe UI, Arial" font-size="10">Mobile (international)</text>
+  <text x="450" y="185" text-anchor="middle" fill="#0f172a" font-family="Segoe UI, Arial" font-size="28" font-weight="700">106</text>
+  <text x="450" y="200" text-anchor="middle" fill="#64748b" font-family="Segoe UI, Arial" font-size="10">Text Emergency (hearing impaired)</text>
+
+  <!-- Internal Emergency -->
+  <rect x="30" y="225" width="540" height="55" rx="6" fill="#fffbeb" stroke="#d97706" stroke-width="1.5"/>
+  <text x="50" y="250" fill="#d97706" font-family="Segoe UI, Arial" font-size="14" font-weight="700">Internal Emergency Line</text>
+  <text x="50" y="268" fill="#334155" font-family="Segoe UI, Arial" font-size="12">Dial 9999 from any office phone — connects to Building Security 24/7</text>
+
+  <!-- Contact Cards -->
+  <rect x="30" y="295" width="260" height="70" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <rect x="30" y="295" width="260" height="4" rx="2" fill="#0d9488"/>
+  <text x="50" y="320" fill="#0d9488" font-family="Segoe UI, Arial" font-size="13" font-weight="700">WHS Manager</text>
+  <text x="50" y="338" fill="#334155" font-family="Segoe UI, Arial" font-size="11">whs@firstdigital.com</text>
+  <text x="50" y="354" fill="#334155" font-family="Segoe UI, Arial" font-size="11">Ext. 4800 | Mobile: 0412 345 678</text>
+
+  <rect x="310" y="295" width="260" height="70" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <rect x="310" y="295" width="260" height="4" rx="2" fill="#0d9488"/>
+  <text x="330" y="320" fill="#0d9488" font-family="Segoe UI, Arial" font-size="13" font-weight="700">Facilities Manager</text>
+  <text x="330" y="338" fill="#334155" font-family="Segoe UI, Arial" font-size="11">facilities@firstdigital.com</text>
+  <text x="330" y="354" fill="#334155" font-family="Segoe UI, Arial" font-size="11">Ext. 4850 | Mobile: 0412 345 679</text>
+
+  <rect x="30" y="380" width="260" height="70" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <rect x="30" y="380" width="260" height="4" rx="2" fill="#2563eb"/>
+  <text x="50" y="405" fill="#2563eb" font-family="Segoe UI, Arial" font-size="13" font-weight="700">IT Security (Cyber Incidents)</text>
+  <text x="50" y="423" fill="#334155" font-family="Segoe UI, Arial" font-size="11">security@firstdigital.com</text>
+  <text x="50" y="439" fill="#334155" font-family="Segoe UI, Arial" font-size="11">Ext. 4510 | 24/7 SOC: 1800 SEC OPS</text>
+
+  <rect x="310" y="380" width="260" height="70" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <rect x="310" y="380" width="260" height="4" rx="2" fill="#2563eb"/>
+  <text x="330" y="405" fill="#2563eb" font-family="Segoe UI, Arial" font-size="13" font-weight="700">IT Service Desk</text>
+  <text x="330" y="423" fill="#334155" font-family="Segoe UI, Arial" font-size="11">servicedesk@firstdigital.com</text>
+  <text x="330" y="439" fill="#334155" font-family="Segoe UI, Arial" font-size="11">Ext. 4357 (HELP) | Hours: 7am-7pm</text>
+
+  <rect x="30" y="465" width="260" height="70" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <rect x="30" y="465" width="260" height="4" rx="2" fill="#7c3aed"/>
+  <text x="50" y="490" fill="#7c3aed" font-family="Segoe UI, Arial" font-size="13" font-weight="700">HR / People Team</text>
+  <text x="50" y="508" fill="#334155" font-family="Segoe UI, Arial" font-size="11">hr@firstdigital.com</text>
+  <text x="50" y="524" fill="#334155" font-family="Segoe UI, Arial" font-size="11">Ext. 4100</text>
+
+  <rect x="310" y="465" width="260" height="70" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <rect x="310" y="465" width="260" height="4" rx="2" fill="#7c3aed"/>
+  <text x="330" y="490" fill="#7c3aed" font-family="Segoe UI, Arial" font-size="13" font-weight="700">Employee Assistance (EAP)</text>
+  <text x="330" y="508" fill="#334155" font-family="Segoe UI, Arial" font-size="11">Confidential 24/7 Helpline</text>
+  <text x="330" y="524" fill="#334155" font-family="Segoe UI, Arial" font-size="11">1800 EAP HELP (1800 327 4357)</text>
+
+  <rect x="30" y="550" width="260" height="70" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <rect x="30" y="550" width="260" height="4" rx="2" fill="#059669"/>
+  <text x="50" y="575" fill="#059669" font-family="Segoe UI, Arial" font-size="13" font-weight="700">First Aid Officers</text>
+  <text x="50" y="593" fill="#334155" font-family="Segoe UI, Arial" font-size="11">Sydney L3: Sarah Chen, L5: Tom Anderson</text>
+  <text x="50" y="609" fill="#334155" font-family="Segoe UI, Arial" font-size="11">Melbourne: Priya Sharma, Lisa Thompson</text>
+
+  <rect x="310" y="550" width="260" height="70" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <rect x="310" y="550" width="260" height="4" rx="2" fill="#059669"/>
+  <text x="330" y="575" fill="#059669" font-family="Segoe UI, Arial" font-size="13" font-weight="700">Fire Wardens</text>
+  <text x="330" y="593" fill="#334155" font-family="Segoe UI, Arial" font-size="11">Sydney L3: James Wilson, L5: David Park</text>
+  <text x="330" y="609" fill="#334155" font-family="Segoe UI, Arial" font-size="11">Melbourne: Michael Roberts, Rachel Green</text>
+
+  <!-- Assembly Points -->
+  <rect x="30" y="640" width="540" height="65" rx="6" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.5"/>
+  <text x="300" y="665" text-anchor="middle" fill="#0d9488" font-family="Segoe UI, Arial" font-size="14" font-weight="700">Assembly Points</text>
+  <text x="165" y="690" text-anchor="middle" fill="#334155" font-family="Segoe UI, Arial" font-size="12">Sydney: Martin Place (east side)</text>
+  <text x="435" y="690" text-anchor="middle" fill="#334155" font-family="Segoe UI, Arial" font-size="12">Melbourne: Federation Square (north)</text>
+
+  <text x="300" y="735" text-anchor="middle" fill="#94a3b8" font-family="Segoe UI, Arial" font-size="10">First Digital — DWx Policy Manager — Print and display in all common areas</text>
+</svg>

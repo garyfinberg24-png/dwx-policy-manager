@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="author" content="First Digital — DWx Policy Manager">
+<meta name="category" content="Operations">
+<meta name="format" content="Presentation">
+<title>Change Management Process</title>
+<style>
+  body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; background: #f1f5f9; color: #0f172a; }
+  .slide { width: 900px; min-height: 500px; margin: 30px auto; background: #fff; border-radius: 4px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); overflow: hidden; page-break-after: always; }
+  .slide-header { background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%); color: #fff; padding: 40px 50px 30px; }
+  .slide-header h1 { margin: 0; font-size: 32px; }
+  .slide-header p { margin: 8px 0 0; font-size: 16px; opacity: 0.9; }
+  .slide-body { padding: 40px 50px; }
+  .slide-body h2 { color: #0d9488; font-size: 24px; margin-top: 0; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
+  .slide-number { text-align: right; padding: 10px 50px 20px; color: #94a3b8; font-size: 12px; }
+  .flow { display: flex; gap: 8px; align-items: center; margin: 20px 0; flex-wrap: wrap; }
+  .flow-box { background: #f0fdfa; border: 1px solid #0d9488; border-radius: 4px; padding: 12px 16px; text-align: center; flex: 1; min-width: 120px; }
+  .flow-arrow { color: #0d9488; font-size: 20px; font-weight: 700; }
+  .type-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin: 16px 0; }
+  .type-card { border: 1px solid #e2e8f0; border-radius: 4px; padding: 16px; }
+  .type-card h3 { margin: 0 0 8px; font-size: 15px; }
+</style>
+</head>
+<body>
+
+<div class="slide">
+  <div class="slide-header">
+    <h1>Change Management Process</h1>
+    <p>First Digital &mdash; IT Operations</p>
+  </div>
+  <div class="slide-body">
+    <p style="font-size: 18px;">All changes to production systems, infrastructure, and critical applications must follow the Change Management process to minimise risk and ensure service stability.</p>
+    <div class="flow">
+      <div class="flow-box"><strong>Request</strong></div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-box"><strong>Assess</strong></div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-box"><strong>Approve</strong></div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-box"><strong>Implement</strong></div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-box"><strong>Review</strong></div>
+    </div>
+  </div>
+  <div class="slide-number">1 / 4</div>
+</div>
+
+<div class="slide">
+  <div class="slide-body">
+    <h2>Change Types</h2>
+    <div class="type-grid">
+      <div class="type-card" style="border-top: 3px solid #059669;">
+        <h3 style="color: #059669;">Standard</h3>
+        <p style="font-size: 13px;">Pre-approved, low-risk, routine changes. No CAB approval needed.</p>
+        <p style="font-size: 12px; color: #64748b;"><em>Example: Patch deployment, user account changes, certificate renewals</em></p>
+      </div>
+      <div class="type-card" style="border-top: 3px solid #d97706;">
+        <h3 style="color: #d97706;">Normal</h3>
+        <p style="font-size: 13px;">Non-urgent changes requiring planning and CAB approval. 5-day lead time.</p>
+        <p style="font-size: 12px; color: #64748b;"><em>Example: Application upgrade, firewall rule change, new integration</em></p>
+      </div>
+      <div class="type-card" style="border-top: 3px solid #dc2626;">
+        <h3 style="color: #dc2626;">Emergency</h3>
+        <p style="font-size: 13px;">Urgent fix for P1/P2 incidents. Expedited approval by Emergency CAB.</p>
+        <p style="font-size: 12px; color: #64748b;"><em>Example: Security patch for active exploit, production hotfix</em></p>
+      </div>
+    </div>
+  </div>
+  <div class="slide-number">2 / 4</div>
+</div>
+
+<div class="slide">
+  <div class="slide-body">
+    <h2>Change Request Requirements</h2>
+    <p>Every change request must include:</p>
+    <ul style="font-size: 15px; line-height: 2;">
+      <li><strong>Description:</strong> Clear explanation of what is changing and why</li>
+      <li><strong>Impact Assessment:</strong> Systems affected, users impacted, downtime expected</li>
+      <li><strong>Risk Assessment:</strong> Likelihood and impact of failure</li>
+      <li><strong>Rollback Plan:</strong> Step-by-step procedure to revert the change if issues arise</li>
+      <li><strong>Test Evidence:</strong> Results from testing in non-production environment</li>
+      <li><strong>Implementation Plan:</strong> Detailed steps, schedule, and responsible parties</li>
+      <li><strong>Communication Plan:</strong> Who needs to be notified, when, and how</li>
+    </ul>
+  </div>
+  <div class="slide-number">3 / 4</div>
+</div>
+
+<div class="slide">
+  <div class="slide-header">
+    <h1>Change Advisory Board (CAB)</h1>
+    <p>Governance and approval</p>
+  </div>
+  <div class="slide-body">
+    <p><strong>CAB meets weekly (Wednesday 2pm)</strong> to review and approve Normal change requests.</p>
+    <p><strong>Members:</strong> CTO (Chair), IT Operations Manager, Security Lead, Application Owners, Service Desk Manager</p>
+    <h3 style="color: #0f766e; margin-top: 20px;">Change Windows</h3>
+    <ul style="font-size: 15px;">
+      <li><strong>Standard maintenance:</strong> Tuesday and Thursday 10pm - 2am AEST</li>
+      <li><strong>Major releases:</strong> Saturday 6am - 12pm AEST</li>
+      <li><strong>Change freeze:</strong> 15 December - 5 January (annual), plus company-defined blackout periods</li>
+    </ul>
+    <p style="text-align: center; margin-top: 20px; color: #64748b;">Submit changes via ServiceNow &bull; Contact: changemanagement@firstdigital.com</p>
+  </div>
+  <div class="slide-number">4 / 4 &bull; First Digital &mdash; DWx Policy Manager</div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,21 @@
+SystemName,Resource,User,Author,Manager,Admin,SuperAdmin,Notes
+SharePoint,Policy Documents — Read,Yes,Yes,Yes,Yes,Yes,All published policies visible to users
+SharePoint,Policy Documents — Create,No,Yes,Yes,Yes,Yes,Authors and above can create drafts
+SharePoint,Policy Documents — Approve,No,No,Yes,Yes,Yes,Managers approve within their department
+SharePoint,Policy Documents — Delete,No,No,No,Yes,Yes,Admin only — soft delete with audit trail
+SharePoint,Admin Configuration,No,No,No,Yes,Yes,Full admin panel access
+SharePoint,Audit Logs — Read,No,No,Yes,Yes,Yes,Managers see department logs only
+SharePoint,Audit Logs — Export,No,No,No,Yes,Yes,Admin can export full audit trail
+Azure AD,User Provisioning,No,No,No,Yes,Yes,Create and manage user accounts
+Azure AD,Group Management,No,No,Yes,Yes,Yes,Managers can manage team groups
+Azure AD,Role Assignment,No,No,No,No,Yes,SuperAdmin only — security critical
+Email System,Send as Organisation,No,No,No,Yes,Yes,Policy notification emails
+Email System,Distribution Lists,No,No,Yes,Yes,Yes,Manage department distribution lists
+DWx Platform,Policy Analytics,No,No,Yes,Yes,Yes,View compliance dashboards
+DWx Platform,Quiz Builder,No,No,No,Yes,Yes,Create and manage quizzes
+DWx Platform,Distribution Campaigns,No,No,Yes,Yes,Yes,Create distribution campaigns
+DWx Platform,Bulk Upload,No,Yes,Yes,Yes,Yes,Bulk policy import
+Azure Functions,AI Chat,Yes,Yes,Yes,Yes,Yes,All authenticated users
+Azure Functions,AI Quiz Generation,No,No,No,Yes,Yes,Admin-initiated only
+Azure Functions,Email Processor,No,No,No,No,Yes,System service account only
+Key Vault,API Key Read,No,No,No,No,Yes,Managed identity access only

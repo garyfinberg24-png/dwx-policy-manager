@@ -194,58 +194,95 @@ resource logicApp 'Microsoft.Logic/workflows@2019-05-01' = {
               }
             }
 
-            // 2b: Send via Office 365
-            Send_Email: {
-              type: 'ApiConnection'
+            // 2b: Check if RecipientEmail is present (skip if empty)
+            Check_Recipient: {
+              type: 'If'
               runAfter: {
                 Set_Status_Processing: [ 'Succeeded' ]
               }
-              inputs: {
-                host: {
-                  connection: {
-                    name: '@parameters(\'$connections\')[\'office365\'][\'connectionId\']'
+              expression: {
+                and: [
+                  {
+                    not: {
+                      equals: [ '@coalesce(items(\'For_Each_Queued_Email\')?[\'RecipientEmail\'], \'\')', '' ]
+                    }
+                  }
+                ]
+              }
+              actions: {
+                // 2c: Send via Office 365 (only if RecipientEmail is not empty)
+                Send_Email: {
+                  type: 'ApiConnection'
+                  inputs: {
+                    host: {
+                      connection: {
+                        name: '@parameters(\'$connections\')[\'office365\'][\'connectionId\']'
+                      }
+                    }
+                    method: 'post'
+                    path: '/v2/Mail'
+                    body: {
+                      To: '@items(\'For_Each_Queued_Email\')?[\'RecipientEmail\']'
+                      Subject: '@items(\'For_Each_Queued_Email\')?[\'Title\']'
+                      Body: '@items(\'For_Each_Queued_Email\')?[\'Message\']'
+                      Importance: '@{if(equals(items(\'For_Each_Queued_Email\')?[\'Priority\'], \'Urgent\'), \'High\', if(equals(items(\'For_Each_Queued_Email\')?[\'Priority\'], \'High\'), \'High\', if(equals(items(\'For_Each_Queued_Email\')?[\'Priority\'], \'Low\'), \'Low\', \'Normal\')))}'
+                      IsHtml: true
+                      From: '@{if(empty(parameters(\'senderEmailAddress\')), \'\', parameters(\'senderEmailAddress\'))}'
+                    }
                   }
                 }
-                method: 'post'
-                path: '/v2/Mail'
-                body: {
-                  To: '@items(\'For_Each_Queued_Email\')?[\'RecipientEmail\']'
-                  Subject: '@items(\'For_Each_Queued_Email\')?[\'Title\']'
-                  Body: '@items(\'For_Each_Queued_Email\')?[\'Message\']'
-                  Importance: '@{if(equals(items(\'For_Each_Queued_Email\')?[\'Priority\'], \'Urgent\'), \'High\', if(equals(items(\'For_Each_Queued_Email\')?[\'Priority\'], \'High\'), \'High\', if(equals(items(\'For_Each_Queued_Email\')?[\'Priority\'], \'Low\'), \'Low\', \'Normal\')))}'
-                  IsHtml: true
-                  From: '@{if(empty(parameters(\'senderEmailAddress\')), \'\', parameters(\'senderEmailAddress\'))}'
+
+                // 2d: Success → Mark as Sent
+                Mark_As_Sent_Success: {
+                  type: 'ApiConnection'
+                  runAfter: {
+                    Send_Email: [ 'Succeeded' ]
+                  }
+                  inputs: {
+                    host: {
+                      connection: {
+                        name: '@parameters(\'$connections\')[\'sharepointonline\'][\'connectionId\']'
+                      }
+                    }
+                    method: 'patch'
+                    path: '/datasets/@{encodeURIComponent(encodeURIComponent(\'${sharePointSiteUrl}\'))}/tables/@{encodeURIComponent(encodeURIComponent(\'${emailQueueListName}\'))}/items/@{encodeURIComponent(items(\'For_Each_Queued_Email\')?[\'ID\'])}'
+                    body: {
+                      QueueStatus: 'Sent'
+                      SentAt: '@{utcNow()}'
+                      AttemptCount: '@{add(int(coalesce(items(\'For_Each_Queued_Email\')?[\'AttemptCount\'], \'0\')), 1)}'
+                    }
+                  }
+                }
+              }
+              else: {
+                actions: {
+                  // Mark as Failed — no recipient
+                  Mark_As_Failed_No_Recipient: {
+                    type: 'ApiConnection'
+                    inputs: {
+                      host: {
+                        connection: {
+                          name: '@parameters(\'$connections\')[\'sharepointonline\'][\'connectionId\']'
+                        }
+                      }
+                      method: 'patch'
+                      path: '/datasets/@{encodeURIComponent(encodeURIComponent(\'${sharePointSiteUrl}\'))}/tables/@{encodeURIComponent(encodeURIComponent(\'${emailQueueListName}\'))}/items/@{encodeURIComponent(items(\'For_Each_Queued_Email\')?[\'ID\'])}'
+                      body: {
+                        QueueStatus: 'Failed'
+                        ErrorMessage: 'RecipientEmail is empty — cannot send'
+                        AttemptCount: '@{add(int(coalesce(items(\'For_Each_Queued_Email\')?[\'AttemptCount\'], \'0\')), 1)}'
+                      }
+                    }
+                  }
                 }
               }
             }
 
-            // 2c: Success → Mark as Sent
-            Mark_As_Sent: {
-              type: 'ApiConnection'
-              runAfter: {
-                Send_Email: [ 'Succeeded' ]
-              }
-              inputs: {
-                host: {
-                  connection: {
-                    name: '@parameters(\'$connections\')[\'sharepointonline\'][\'connectionId\']'
-                  }
-                }
-                method: 'patch'
-                path: '/datasets/@{encodeURIComponent(encodeURIComponent(\'${sharePointSiteUrl}\'))}/tables/@{encodeURIComponent(encodeURIComponent(\'${emailQueueListName}\'))}/items/@{encodeURIComponent(items(\'For_Each_Queued_Email\')?[\'ID\'])}'
-                body: {
-                  QueueStatus: 'Sent'
-                  SentAt: '@{utcNow()}'
-                  AttemptCount: '@{add(int(coalesce(items(\'For_Each_Queued_Email\')?[\'AttemptCount\'], \'0\')), 1)}'
-                }
-              }
-            }
-
-            // 2d: Failure → Retry or mark Failed
+            // 2e: Failure → Retry or mark Failed
             Handle_Send_Failure: {
               type: 'ApiConnection'
               runAfter: {
-                Send_Email: [ 'Failed', 'TimedOut' ]
+                Check_Recipient: [ 'Failed', 'TimedOut' ]
               }
               inputs: {
                 host: {

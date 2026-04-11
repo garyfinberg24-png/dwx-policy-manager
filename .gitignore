@@ -42,3 +42,9 @@ azure-functions/**/*.zip
 
 # Playwright MCP
 .playwright-mcp/
+
+# Playwright test artifacts
+e2e/.auth/
+e2e-*.png
+playwright-report/
+test-results/

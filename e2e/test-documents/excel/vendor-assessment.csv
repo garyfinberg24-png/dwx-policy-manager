@@ -1,0 +1,13 @@
+VendorID,VendorName,Category,DataAccess,SecurityScore,PrivacyScore,FinancialScore,OperationalScore,OverallRating,RiskLevel,ContractExpiry,LastAssessment,NextAssessment
+VND-001,Azure Cloud Services,Cloud Infrastructure,Critical Systems,95,92,98,96,95,Low,2027-12-31,2026-01-15,2026-07-15
+VND-002,Salesforce,CRM Platform,Customer PII,90,88,94,91,91,Low,2027-06-30,2026-02-01,2026-08-01
+VND-003,ServiceNow,ITSM Platform,Employee Data,88,85,90,89,88,Low,2026-12-31,2026-01-20,2026-07-20
+VND-004,Workday,HR Management,Employee PII,92,90,88,87,89,Low,2027-03-31,2026-03-01,2026-09-01
+VND-005,Cloudflare,CDN and Security,Network Traffic,91,89,85,93,90,Low,2026-09-30,2026-02-15,2026-08-15
+VND-006,DataDog,Monitoring,System Logs,82,78,80,85,81,Medium,2026-06-30,2026-01-10,2026-07-10
+VND-007,Acme Payroll Co,Payroll Processing,Financial + PII,75,72,82,78,77,Medium,2026-12-31,2026-03-15,2026-09-15
+VND-008,DocuSign,E-Signatures,Contract Data,86,84,88,90,87,Low,2027-01-31,2026-02-20,2026-08-20
+VND-009,FastCourier Ltd,Document Delivery,Physical Addresses,60,55,70,65,63,High,2026-08-31,2026-01-25,2026-04-25
+VND-010,TechRecruit Partners,Recruitment,Candidate PII,68,65,75,72,70,Medium,2026-10-31,2026-03-10,2026-09-10
+VND-011,CleanTech Facilities,Office Cleaning,Building Access,45,40,72,68,56,High,2026-07-31,2026-02-10,2026-05-10
+VND-012,CyberShield Consulting,Pen Testing,System Access,94,92,80,88,89,Low,2026-11-30,2026-01-30,2026-07-30

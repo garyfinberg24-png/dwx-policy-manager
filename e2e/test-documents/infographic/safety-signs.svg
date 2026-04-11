@@ -1,0 +1,102 @@
+<!-- First Digital — Workplace Safety Signs Guide — DWx Policy Manager -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 700" width="600" height="700">
+  <defs>
+    <linearGradient id="hg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0d9488"/>
+      <stop offset="100%" style="stop-color:#0f766e"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="600" height="700" fill="#fff" rx="8"/>
+  <rect width="600" height="90" fill="url(#hg)" rx="8"/>
+  <rect y="82" width="600" height="16" fill="url(#hg)"/>
+  <text x="300" y="45" text-anchor="middle" fill="#fff" font-family="Segoe UI, Arial" font-size="24" font-weight="700">Workplace Safety Signs Guide</text>
+  <text x="300" y="68" text-anchor="middle" fill="#ccfbf1" font-family="Segoe UI, Arial" font-size="12">Know the signs — keep everyone safe</text>
+
+  <!-- Prohibition Signs (Red) -->
+  <text x="300" y="120" text-anchor="middle" fill="#dc2626" font-family="Segoe UI, Arial" font-size="16" font-weight="700">Prohibition Signs — Red Circle with Line</text>
+  <text x="300" y="138" text-anchor="middle" fill="#64748b" font-family="Segoe UI, Arial" font-size="11">These activities are forbidden</text>
+
+  <circle cx="80" cy="175" r="28" fill="none" stroke="#dc2626" stroke-width="3"/>
+  <line x1="60" y1="195" x2="100" y2="155" stroke="#dc2626" stroke-width="3"/>
+  <text x="80" y="180" text-anchor="middle" fill="#dc2626" font-family="Segoe UI, Arial" font-size="8" font-weight="700">NO</text>
+  <text x="80" y="215" text-anchor="middle" fill="#334155" font-family="Segoe UI, Arial" font-size="10">No Smoking</text>
+
+  <circle cx="200" cy="175" r="28" fill="none" stroke="#dc2626" stroke-width="3"/>
+  <line x1="180" y1="195" x2="220" y2="155" stroke="#dc2626" stroke-width="3"/>
+  <text x="200" y="180" text-anchor="middle" fill="#dc2626" font-family="Segoe UI, Arial" font-size="8" font-weight="700">NO</text>
+  <text x="200" y="215" text-anchor="middle" fill="#334155" font-family="Segoe UI, Arial" font-size="10">No Entry</text>
+
+  <circle cx="320" cy="175" r="28" fill="none" stroke="#dc2626" stroke-width="3"/>
+  <line x1="300" y1="195" x2="340" y2="155" stroke="#dc2626" stroke-width="3"/>
+  <text x="320" y="180" text-anchor="middle" fill="#dc2626" font-family="Segoe UI, Arial" font-size="8" font-weight="700">NO</text>
+  <text x="320" y="215" text-anchor="middle" fill="#334155" font-family="Segoe UI, Arial" font-size="10">No Photography</text>
+
+  <circle cx="440" cy="175" r="28" fill="none" stroke="#dc2626" stroke-width="3"/>
+  <line x1="420" y1="195" x2="460" y2="155" stroke="#dc2626" stroke-width="3"/>
+  <text x="440" y="180" text-anchor="middle" fill="#dc2626" font-family="Segoe UI, Arial" font-size="8" font-weight="700">NO</text>
+  <text x="440" y="215" text-anchor="middle" fill="#334155" font-family="Segoe UI, Arial" font-size="10">No Mobile Phones</text>
+
+  <!-- Warning Signs (Yellow/Amber) -->
+  <text x="300" y="260" text-anchor="middle" fill="#d97706" font-family="Segoe UI, Arial" font-size="16" font-weight="700">Warning Signs — Yellow Triangle</text>
+  <text x="300" y="278" text-anchor="middle" fill="#64748b" font-family="Segoe UI, Arial" font-size="11">Hazards to be aware of</text>
+
+  <polygon points="80,290 52,340 108,340" fill="#fffbeb" stroke="#d97706" stroke-width="3"/>
+  <text x="80" y="330" text-anchor="middle" fill="#d97706" font-family="Segoe UI, Arial" font-size="16" font-weight="700">!</text>
+  <text x="80" y="360" text-anchor="middle" fill="#334155" font-family="Segoe UI, Arial" font-size="10">General Warning</text>
+
+  <polygon points="200,290 172,340 228,340" fill="#fffbeb" stroke="#d97706" stroke-width="3"/>
+  <text x="200" y="330" text-anchor="middle" fill="#d97706" font-family="Segoe UI, Arial" font-size="12" font-weight="700">WET</text>
+  <text x="200" y="360" text-anchor="middle" fill="#334155" font-family="Segoe UI, Arial" font-size="10">Wet Floor</text>
+
+  <polygon points="320,290 292,340 348,340" fill="#fffbeb" stroke="#d97706" stroke-width="3"/>
+  <text x="320" y="332" text-anchor="middle" fill="#d97706" font-family="Segoe UI, Arial" font-size="10" font-weight="700">ELEC</text>
+  <text x="320" y="360" text-anchor="middle" fill="#334155" font-family="Segoe UI, Arial" font-size="10">Electrical Hazard</text>
+
+  <polygon points="440,290 412,340 468,340" fill="#fffbeb" stroke="#d97706" stroke-width="3"/>
+  <text x="440" y="332" text-anchor="middle" fill="#d97706" font-family="Segoe UI, Arial" font-size="10" font-weight="700">HOT</text>
+  <text x="440" y="360" text-anchor="middle" fill="#334155" font-family="Segoe UI, Arial" font-size="10">Hot Surface</text>
+
+  <!-- Mandatory Signs (Blue) -->
+  <text x="300" y="400" text-anchor="middle" fill="#2563eb" font-family="Segoe UI, Arial" font-size="16" font-weight="700">Mandatory Signs — Blue Circle</text>
+  <text x="300" y="418" text-anchor="middle" fill="#64748b" font-family="Segoe UI, Arial" font-size="11">These actions are required</text>
+
+  <circle cx="120" cy="458" r="28" fill="#eff6ff" stroke="#2563eb" stroke-width="3"/>
+  <text x="120" y="462" text-anchor="middle" fill="#2563eb" font-family="Segoe UI, Arial" font-size="8" font-weight="700">BADGE</text>
+  <text x="120" y="500" text-anchor="middle" fill="#334155" font-family="Segoe UI, Arial" font-size="10">Wear ID Badge</text>
+
+  <circle cx="270" cy="458" r="28" fill="#eff6ff" stroke="#2563eb" stroke-width="3"/>
+  <text x="270" y="462" text-anchor="middle" fill="#2563eb" font-family="Segoe UI, Arial" font-size="8" font-weight="700">PPE</text>
+  <text x="270" y="500" text-anchor="middle" fill="#334155" font-family="Segoe UI, Arial" font-size="10">Wear PPE</text>
+
+  <circle cx="420" cy="458" r="28" fill="#eff6ff" stroke="#2563eb" stroke-width="3"/>
+  <text x="420" y="462" text-anchor="middle" fill="#2563eb" font-family="Segoe UI, Arial" font-size="8" font-weight="700">WASH</text>
+  <text x="420" y="500" text-anchor="middle" fill="#334155" font-family="Segoe UI, Arial" font-size="10">Wash Hands</text>
+
+  <!-- Safe Condition Signs (Green) -->
+  <text x="300" y="540" text-anchor="middle" fill="#059669" font-family="Segoe UI, Arial" font-size="16" font-weight="700">Safe Condition Signs — Green Rectangle</text>
+  <text x="300" y="558" text-anchor="middle" fill="#64748b" font-family="Segoe UI, Arial" font-size="11">Safety equipment and escape routes</text>
+
+  <rect x="42" y="572" width="76" height="40" rx="4" fill="#f0fdf4" stroke="#059669" stroke-width="3"/>
+  <text x="80" y="597" text-anchor="middle" fill="#059669" font-family="Segoe UI, Arial" font-size="9" font-weight="700">EXIT</text>
+  <text x="80" y="625" text-anchor="middle" fill="#334155" font-family="Segoe UI, Arial" font-size="10">Emergency Exit</text>
+
+  <rect x="192" y="572" width="76" height="40" rx="4" fill="#f0fdf4" stroke="#059669" stroke-width="3"/>
+  <text x="230" y="597" text-anchor="middle" fill="#059669" font-family="Segoe UI, Arial" font-size="9" font-weight="700">FIRST AID</text>
+  <text x="230" y="625" text-anchor="middle" fill="#334155" font-family="Segoe UI, Arial" font-size="10">First Aid Kit</text>
+
+  <rect x="342" y="572" width="76" height="40" rx="4" fill="#f0fdf4" stroke="#059669" stroke-width="3"/>
+  <text x="380" y="592" text-anchor="middle" fill="#059669" font-family="Segoe UI, Arial" font-size="8" font-weight="700">ASSEMBLY</text>
+  <text x="380" y="605" text-anchor="middle" fill="#059669" font-family="Segoe UI, Arial" font-size="8" font-weight="700">POINT</text>
+  <text x="380" y="625" text-anchor="middle" fill="#334155" font-family="Segoe UI, Arial" font-size="10">Muster Point</text>
+
+  <rect x="492" y="572" width="76" height="40" rx="4" fill="#f0fdf4" stroke="#059669" stroke-width="3"/>
+  <text x="530" y="597" text-anchor="middle" fill="#059669" font-family="Segoe UI, Arial" font-size="9" font-weight="700">AED</text>
+  <text x="530" y="625" text-anchor="middle" fill="#334155" font-family="Segoe UI, Arial" font-size="10">Defibrillator</text>
+
+  <!-- Tip -->
+  <rect x="30" y="645" width="540" height="30" rx="6" fill="#f0fdfa" stroke="#0d9488" stroke-width="1"/>
+  <text x="300" y="665" text-anchor="middle" fill="#0d9488" font-family="Segoe UI, Arial" font-size="11" font-weight="600">Know where your nearest fire exit, first aid kit, and defibrillator are located.</text>
+
+  <text x="300" y="695" text-anchor="middle" fill="#94a3b8" font-family="Segoe UI, Arial" font-size="10">First Digital — DWx Policy Manager — POL-WHS-001 Work Health and Safety Policy</text>
+</svg>

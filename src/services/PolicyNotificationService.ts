@@ -942,7 +942,8 @@ export class PolicyNotificationService {
       await this.logNotification(notification);
 
       // Queue email to PM_NotificationQueue so the Logic App can send it
-      if (notification.sendEmail && notification.recipientEmail) {
+      // Guard: RecipientEmail MUST contain '@' — display names crash the Logic App
+      if (notification.sendEmail && notification.recipientEmail && notification.recipientEmail.includes('@')) {
         try {
           await this.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
             Title: notification.subject,

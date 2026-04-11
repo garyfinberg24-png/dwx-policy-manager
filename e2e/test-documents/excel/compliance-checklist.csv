@@ -1,0 +1,16 @@
+ControlID,Framework,Requirement,Status,Evidence,ResponsibleOfficer,DueDate,CompletionDate,Notes
+CC-001,ISO 27001,A.5.1 Information Security Policies,Compliant,POL-IT-001 reviewed and approved Jan 2026,CISO,2026-01-31,2026-01-15,Annual review completed
+CC-002,ISO 27001,A.6.1 Internal Organisation,Compliant,Roles and responsibilities matrix documented,IT Security Manager,2026-01-31,2026-01-20,RACI matrix updated
+CC-003,ISO 27001,A.7.1 Prior to Employment,Compliant,Background check process documented in POL-HR-004,Head of HR,2026-02-28,2026-02-10,All new hires screened
+CC-004,ISO 27001,A.8.1 Asset Management,Partially Compliant,Asset register 85% complete — cloud assets pending,IT Asset Manager,2026-03-31,,Cloud asset discovery in progress
+CC-005,GDPR,Article 5 — Principles of Processing,Compliant,Data processing register maintained in DWx,Data Protection Officer,2026-01-31,2026-01-25,Quarterly review cycle
+CC-006,GDPR,Article 6 — Lawful Basis for Processing,Compliant,Lawful basis documented for all processing activities,Privacy Lead,2026-02-28,2026-02-15,Consent management platform deployed
+CC-007,GDPR,Article 13 — Information to Data Subjects,Partially Compliant,Privacy notices updated — 3 legacy forms pending,Privacy Lead,2026-03-15,,Legacy forms being retired Q2
+CC-008,GDPR,Article 30 — Records of Processing,Compliant,ROPA maintained and reviewed quarterly,Data Protection Officer,2026-03-31,2026-03-10,42 processing activities documented
+CC-009,SOX,Section 302 — Corporate Responsibility,Compliant,CEO/CFO certification process established,CFO,2026-06-30,2026-03-01,Quarterly certification cycle
+CC-010,SOX,Section 404 — Internal Controls,In Progress,ICFR testing 60% complete,Internal Audit Manager,2026-06-30,,Phase 2 testing starts April
+CC-011,PCI-DSS,Requirement 1 — Network Security,Compliant,Firewall rules reviewed and documented,Network Security Lead,2026-03-31,2026-03-20,Quarterly firewall review
+CC-012,PCI-DSS,Requirement 3 — Protect Stored Data,Compliant,AES-256 encryption on all cardholder data at rest,Database Administrator,2026-03-31,2026-03-25,Key rotation every 90 days
+CC-013,PCI-DSS,Requirement 8 — Identify Users,Partially Compliant,MFA deployed — 12 service accounts pending,Identity Manager,2026-04-30,,Service account MFA rollout Q2
+CC-014,WHS,Emergency Procedures,Compliant,Evacuation drills completed Q1 2026 all sites,WHS Manager,2026-03-31,2026-03-15,Next drill scheduled Q3
+CC-015,WHS,Risk Assessments,Compliant,Workplace risk assessments current for all locations,WHS Manager,2026-06-30,2026-02-28,Annual reassessment complete

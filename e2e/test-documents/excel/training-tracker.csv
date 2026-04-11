@@ -1,0 +1,22 @@
+EmployeeID,EmployeeName,Department,CourseName,CourseType,CompletionStatus,CompletionDate,DueDate,Score,CertificateExpiry,Mandatory
+EMP-001,Sarah Chen,Engineering,Cybersecurity Awareness 2026,Compliance,Completed,2026-01-20,2026-02-28,92,2027-01-20,Yes
+EMP-001,Sarah Chen,Engineering,GDPR Fundamentals,Compliance,Completed,2026-01-25,2026-03-31,88,2027-01-25,Yes
+EMP-001,Sarah Chen,Engineering,AWS Solutions Architect,Technical,In Progress,,2026-06-30,,2028-06-30,No
+EMP-002,James Wilson,Engineering,Cybersecurity Awareness 2026,Compliance,Completed,2026-02-10,2026-02-28,95,2027-02-10,Yes
+EMP-002,James Wilson,Engineering,Agile Scrum Master,Professional,Completed,2025-11-15,,87,2027-11-15,No
+EMP-003,Priya Sharma,Design,Cybersecurity Awareness 2026,Compliance,Completed,2026-02-05,2026-02-28,90,2027-02-05,Yes
+EMP-003,Priya Sharma,Design,GDPR Fundamentals,Compliance,Overdue,,2026-03-31,,,Yes
+EMP-003,Priya Sharma,Design,Accessible Design Principles,Technical,Completed,2026-01-30,,94,,No
+EMP-004,Michael Roberts,Sales,Cybersecurity Awareness 2026,Compliance,Completed,2026-01-18,2026-02-28,78,2027-01-18,Yes
+EMP-004,Michael Roberts,Sales,Anti-Bribery and Corruption,Compliance,Completed,2026-02-20,2026-03-31,85,2027-02-20,Yes
+EMP-004,Michael Roberts,Sales,Effective Negotiation Skills,Professional,Not Started,,2026-06-30,,,No
+EMP-005,Lisa Thompson,Customer Support,Cybersecurity Awareness 2026,Compliance,Completed,2026-02-28,2026-02-28,82,2027-02-28,Yes
+EMP-005,Lisa Thompson,Customer Support,GDPR Fundamentals,Compliance,In Progress,,2026-03-31,,,Yes
+EMP-005,Lisa Thompson,Customer Support,Conflict Resolution,Professional,Completed,2026-01-10,,91,,No
+EMP-006,David Park,Finance,Cybersecurity Awareness 2026,Compliance,Overdue,,2026-02-28,,,Yes
+EMP-006,David Park,Finance,Anti-Money Laundering,Compliance,Completed,2026-03-05,2026-03-31,96,2027-03-05,Yes
+EMP-006,David Park,Finance,SOX Compliance Training,Compliance,Completed,2026-02-15,2026-03-31,89,2027-02-15,Yes
+EMP-007,Rachel Green,HR,Cybersecurity Awareness 2026,Compliance,Completed,2026-01-12,2026-02-28,88,2027-01-12,Yes
+EMP-007,Rachel Green,HR,Inclusive Leadership,Leadership,In Progress,,2026-04-30,,,No
+EMP-008,Tom Anderson,IT,Cybersecurity Awareness 2026,Compliance,Completed,2026-01-05,2026-02-28,98,2027-01-05,Yes
+EMP-008,Tom Anderson,IT,ISO 27001 Lead Auditor,Technical,Completed,2025-12-10,,95,2028-12-10,No

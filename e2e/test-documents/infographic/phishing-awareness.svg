@@ -1,0 +1,104 @@
+<!-- First Digital — Phishing Awareness Infographic — DWx Policy Manager -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 750" width="600" height="750">
+  <defs>
+    <linearGradient id="hg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0d9488"/>
+      <stop offset="100%" style="stop-color:#0f766e"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="600" height="750" fill="#fff" rx="8"/>
+
+  <!-- Header -->
+  <rect width="600" height="110" fill="url(#hg)" rx="8"/>
+  <rect y="102" width="600" height="16" fill="url(#hg)"/>
+  <text x="300" y="50" text-anchor="middle" fill="#fff" font-family="Segoe UI, Arial" font-size="26" font-weight="700">How to Spot Phishing</text>
+  <text x="300" y="78" text-anchor="middle" fill="#ccfbf1" font-family="Segoe UI, Arial" font-size="13">Protect yourself from email, SMS, and voice phishing attacks</text>
+
+  <!-- Stat bar -->
+  <rect x="30" y="130" width="540" height="50" rx="6" fill="#fef2f2" stroke="#dc2626" stroke-width="1"/>
+  <text x="300" y="155" text-anchor="middle" fill="#dc2626" font-family="Segoe UI, Arial" font-size="13" font-weight="600">91% of cyberattacks start with a phishing email. 1 in 4 employees will click a phishing link.</text>
+  <text x="300" y="172" text-anchor="middle" fill="#64748b" font-family="Segoe UI, Arial" font-size="10">Source: Proofpoint State of the Phish Report 2025</text>
+
+  <!-- Red Flags Section -->
+  <text x="300" y="210" text-anchor="middle" fill="#dc2626" font-family="Segoe UI, Arial" font-size="18" font-weight="700">6 Red Flags</text>
+
+  <!-- Flag 1 -->
+  <rect x="30" y="225" width="260" height="70" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <circle cx="55" cy="255" r="14" fill="#dc2626"/>
+  <text x="55" y="260" text-anchor="middle" fill="#fff" font-family="Segoe UI, Arial" font-size="14" font-weight="700">1</text>
+  <text x="80" y="250" fill="#0f172a" font-family="Segoe UI, Arial" font-size="12" font-weight="600">Urgent language</text>
+  <text x="80" y="268" fill="#64748b" font-family="Segoe UI, Arial" font-size="10">"Act now!" "Your account will be locked!"</text>
+  <text x="80" y="282" fill="#64748b" font-family="Segoe UI, Arial" font-size="10">Creates panic to bypass your judgment</text>
+
+  <!-- Flag 2 -->
+  <rect x="310" y="225" width="260" height="70" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <circle cx="335" cy="255" r="14" fill="#dc2626"/>
+  <text x="335" y="260" text-anchor="middle" fill="#fff" font-family="Segoe UI, Arial" font-size="14" font-weight="700">2</text>
+  <text x="360" y="250" fill="#0f172a" font-family="Segoe UI, Arial" font-size="12" font-weight="600">Spoofed sender</text>
+  <text x="360" y="268" fill="#64748b" font-family="Segoe UI, Arial" font-size="10">ceo@f1rstdigital.com (not firstdigital)</text>
+  <text x="360" y="282" fill="#64748b" font-family="Segoe UI, Arial" font-size="10">Look-alike domains with subtle differences</text>
+
+  <!-- Flag 3 -->
+  <rect x="30" y="305" width="260" height="70" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <circle cx="55" cy="335" r="14" fill="#dc2626"/>
+  <text x="55" y="340" text-anchor="middle" fill="#fff" font-family="Segoe UI, Arial" font-size="14" font-weight="700">3</text>
+  <text x="80" y="330" fill="#0f172a" font-family="Segoe UI, Arial" font-size="12" font-weight="600">Suspicious links</text>
+  <text x="80" y="348" fill="#64748b" font-family="Segoe UI, Arial" font-size="10">Hover to check — does the URL match?</text>
+  <text x="80" y="362" fill="#64748b" font-family="Segoe UI, Arial" font-size="10">Shortened URLs hide real destinations</text>
+
+  <!-- Flag 4 -->
+  <rect x="310" y="305" width="260" height="70" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <circle cx="335" cy="335" r="14" fill="#dc2626"/>
+  <text x="335" y="340" text-anchor="middle" fill="#fff" font-family="Segoe UI, Arial" font-size="14" font-weight="700">4</text>
+  <text x="360" y="330" fill="#0f172a" font-family="Segoe UI, Arial" font-size="12" font-weight="600">Unexpected attachments</text>
+  <text x="360" y="348" fill="#64748b" font-family="Segoe UI, Arial" font-size="10">.exe .zip .js .iso files are high risk</text>
+  <text x="360" y="362" fill="#64748b" font-family="Segoe UI, Arial" font-size="10">Even .docx with macros can be dangerous</text>
+
+  <!-- Flag 5 -->
+  <rect x="30" y="385" width="260" height="70" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <circle cx="55" cy="415" r="14" fill="#dc2626"/>
+  <text x="55" y="420" text-anchor="middle" fill="#fff" font-family="Segoe UI, Arial" font-size="14" font-weight="700">5</text>
+  <text x="80" y="410" fill="#0f172a" font-family="Segoe UI, Arial" font-size="12" font-weight="600">Requests for credentials</text>
+  <text x="80" y="428" fill="#64748b" font-family="Segoe UI, Arial" font-size="10">IT will NEVER ask for your password</text>
+  <text x="80" y="442" fill="#64748b" font-family="Segoe UI, Arial" font-size="10">Legitimate services use secure portals</text>
+
+  <!-- Flag 6 -->
+  <rect x="310" y="385" width="260" height="70" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <circle cx="335" cy="415" r="14" fill="#dc2626"/>
+  <text x="335" y="420" text-anchor="middle" fill="#fff" font-family="Segoe UI, Arial" font-size="14" font-weight="700">6</text>
+  <text x="360" y="410" fill="#0f172a" font-family="Segoe UI, Arial" font-size="12" font-weight="600">Poor grammar / spelling</text>
+  <text x="360" y="428" fill="#64748b" font-family="Segoe UI, Arial" font-size="10">Professional orgs proofread emails</text>
+  <text x="360" y="442" fill="#64748b" font-family="Segoe UI, Arial" font-size="10">Odd phrasing may indicate a foreign actor</text>
+
+  <!-- What To Do -->
+  <rect x="30" y="475" width="540" height="40" rx="6" fill="#0d9488"/>
+  <text x="300" y="500" text-anchor="middle" fill="#fff" font-family="Segoe UI, Arial" font-size="16" font-weight="700">What To Do</text>
+
+  <rect x="30" y="525" width="165" height="90" rx="6" fill="#f0fdfa" stroke="#0d9488" stroke-width="1"/>
+  <text x="112" y="550" text-anchor="middle" fill="#0d9488" font-family="Segoe UI, Arial" font-size="13" font-weight="700">STOP</text>
+  <text x="112" y="570" text-anchor="middle" fill="#334155" font-family="Segoe UI, Arial" font-size="11">Do not click links</text>
+  <text x="112" y="585" text-anchor="middle" fill="#334155" font-family="Segoe UI, Arial" font-size="11">or open attachments</text>
+  <text x="112" y="600" text-anchor="middle" fill="#334155" font-family="Segoe UI, Arial" font-size="11">from suspicious emails</text>
+
+  <rect x="215" y="525" width="165" height="90" rx="6" fill="#f0fdfa" stroke="#0d9488" stroke-width="1"/>
+  <text x="297" y="550" text-anchor="middle" fill="#0d9488" font-family="Segoe UI, Arial" font-size="13" font-weight="700">REPORT</text>
+  <text x="297" y="570" text-anchor="middle" fill="#334155" font-family="Segoe UI, Arial" font-size="11">Click the Phish Alert</text>
+  <text x="297" y="585" text-anchor="middle" fill="#334155" font-family="Segoe UI, Arial" font-size="11">button in Outlook or</text>
+  <text x="297" y="600" text-anchor="middle" fill="#334155" font-family="Segoe UI, Arial" font-size="11">email security@fd.com</text>
+
+  <rect x="400" y="525" width="170" height="90" rx="6" fill="#f0fdfa" stroke="#0d9488" stroke-width="1"/>
+  <text x="485" y="550" text-anchor="middle" fill="#0d9488" font-family="Segoe UI, Arial" font-size="13" font-weight="700">VERIFY</text>
+  <text x="485" y="570" text-anchor="middle" fill="#334155" font-family="Segoe UI, Arial" font-size="11">Contact the sender</text>
+  <text x="485" y="585" text-anchor="middle" fill="#334155" font-family="Segoe UI, Arial" font-size="11">via a separate channel</text>
+  <text x="485" y="600" text-anchor="middle" fill="#334155" font-family="Segoe UI, Arial" font-size="11">(phone, Teams chat)</text>
+
+  <!-- Already Clicked? -->
+  <rect x="30" y="635" width="540" height="70" rx="6" fill="#fffbeb" stroke="#d97706" stroke-width="1.5"/>
+  <text x="300" y="660" text-anchor="middle" fill="#d97706" font-family="Segoe UI, Arial" font-size="13" font-weight="700">Already clicked a link or entered credentials?</text>
+  <text x="300" y="680" text-anchor="middle" fill="#334155" font-family="Segoe UI, Arial" font-size="11">1. Disconnect from the network  2. Call IT Security Ext 4510 immediately  3. Change your password from another device</text>
+  <text x="300" y="695" text-anchor="middle" fill="#64748b" font-family="Segoe UI, Arial" font-size="10">Do not feel embarrassed — early reporting prevents damage</text>
+
+  <!-- Footer -->
+  <text x="300" y="735" text-anchor="middle" fill="#94a3b8" font-family="Segoe UI, Arial" font-size="10">First Digital — DWx Policy Manager — Cybersecurity Awareness Programme 2026</text>
+</svg>

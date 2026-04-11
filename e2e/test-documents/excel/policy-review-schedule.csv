@@ -1,0 +1,16 @@
+PolicyNumber,PolicyTitle,Category,Owner,LastReviewDate,NextReviewDate,ReviewFrequency,Status,Reviewer,DaysUntilDue,Priority
+POL-IT-001,Information Security Policy,Information Technology,CISO,2025-12-15,2026-06-15,6 months,On Track,Tom Anderson,65,Medium
+POL-IT-002,Acceptable Use Policy,Information Technology,IT Security Manager,2025-10-01,2026-04-01,6 months,Due Soon,Tom Anderson,-10,High
+POL-IT-003,Data Classification Policy,Information Technology,Data Protection Officer,2026-01-20,2027-01-20,12 months,On Track,Priya Sharma,285,Low
+POL-HR-001,Workplace Harassment Policy,Human Resources,Chief People Officer,2025-12-01,2026-12-01,12 months,On Track,Rachel Green,235,Low
+POL-HR-002,Leave Management Policy,Human Resources,Head of People Ops,2026-01-15,2027-01-15,12 months,On Track,Rachel Green,280,Low
+POL-HR-004,Recruitment Policy,Human Resources,Head of Talent,2025-09-01,2026-03-01,6 months,Overdue,Rachel Green,-41,Critical
+POL-HR-006,Disciplinary Procedure,Human Resources,Chief People Officer,2025-11-15,2026-11-15,12 months,On Track,Rachel Green,219,Low
+POL-FIN-001,Expense Management Policy,Finance,CFO,2025-08-01,2026-02-01,6 months,Overdue,David Park,-69,Critical
+POL-FIN-002,Procurement Policy,Finance,Procurement Manager,2026-02-01,2026-08-01,6 months,On Track,David Park,112,Low
+POL-FIN-003,Anti-Fraud Policy,Finance,CFO,2025-12-20,2026-06-20,6 months,On Track,David Park,70,Medium
+POL-LEG-001,Code of Conduct,Legal & Compliance,General Counsel,2025-07-01,2026-07-01,12 months,On Track,General Counsel,81,Medium
+POL-LEG-002,Whistleblower Policy,Legal & Compliance,General Counsel,2025-11-01,2026-05-01,6 months,Due Soon,General Counsel,20,High
+POL-OPS-001,Business Continuity Plan,Operations,COO,2025-10-15,2026-04-15,6 months,Due Soon,Facilities Manager,4,High
+POL-OPS-002,Disaster Recovery Plan,Operations,CTO,2026-01-10,2026-07-10,6 months,On Track,Tom Anderson,90,Low
+POL-WHS-001,Work Health and Safety Policy,WHS,WHS Manager,2025-12-01,2026-06-01,6 months,On Track,WHS Manager,51,Medium

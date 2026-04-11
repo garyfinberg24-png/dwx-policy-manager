@@ -1,0 +1,16 @@
+RiskID,Category,RiskDescription,Likelihood,Impact,RiskScore,MitigationStrategy,RiskOwner,Status,LastReviewDate,NextReviewDate
+RSK-001,Cybersecurity,Ransomware attack on production systems,4,5,20,Multi-layered endpoint protection with EDR and weekly backup verification,CISO,Active,2026-01-15,2026-04-15
+RSK-002,Cybersecurity,Phishing attack leading to credential theft,5,4,20,Mandatory quarterly phishing simulations and MFA on all accounts,IT Security Manager,Active,2026-02-01,2026-05-01
+RSK-003,Data Privacy,Unauthorised access to customer PII,3,5,15,Role-based access control with quarterly access reviews and DLP policies,Data Protection Officer,Active,2026-01-20,2026-04-20
+RSK-004,Compliance,Failure to meet GDPR data subject access requests within 30 days,3,4,12,Automated DSAR workflow with SLA tracking in DWx Policy Manager,Privacy Lead,Active,2026-03-01,2026-06-01
+RSK-005,Operational,Key person dependency in infrastructure team,4,3,12,Cross-training programme and documented runbooks for all critical processes,Head of Infrastructure,Mitigating,2026-02-15,2026-05-15
+RSK-006,Financial,Budget overrun on digital transformation programme,3,4,12,Monthly budget reviews with 10% contingency reserve and stage-gate approvals,CFO,Active,2026-01-10,2026-04-10
+RSK-007,Reputational,Data breach resulting in negative media coverage,2,5,10,Incident response plan with pre-approved media statements and PR agency on retainer,Head of Communications,Active,2026-03-15,2026-06-15
+RSK-008,Vendor,Critical SaaS vendor service outage,3,3,9,Multi-vendor strategy for critical services with contractual SLA penalties,Procurement Manager,Active,2026-02-20,2026-05-20
+RSK-009,Legal,Non-compliance with new employment legislation,2,4,8,Legal counsel review of policy updates quarterly with HR compliance tracking,General Counsel,Active,2026-01-25,2026-04-25
+RSK-010,Environmental,Office flood or natural disaster impacting operations,2,4,8,Business continuity plan with remote work capability and off-site backup data centre,Facilities Manager,Active,2026-03-10,2026-06-10
+RSK-011,Cybersecurity,Supply chain compromise via third-party software,3,4,12,Vendor security assessments and software composition analysis for all dependencies,IT Security Manager,Active,2026-02-10,2026-05-10
+RSK-012,People,High turnover in engineering team,4,3,12,Retention programme with quarterly stay interviews and market-rate salary benchmarking,Head of Engineering,Mitigating,2026-01-30,2026-04-30
+RSK-013,Data Privacy,Cross-border data transfer non-compliance,2,5,10,Data transfer impact assessments and Standard Contractual Clauses for all transfers,Data Protection Officer,Active,2026-03-05,2026-06-05
+RSK-014,Operational,Legacy system failure causing service disruption,3,3,9,Phased migration plan with parallel running and automated failover,CTO,Mitigating,2026-02-25,2026-05-25
+RSK-015,Compliance,Failure to maintain ISO 27001 certification,2,4,8,Internal audit programme with quarterly reviews and pre-certification gap analysis,Quality Manager,Active,2026-01-05,2026-04-05

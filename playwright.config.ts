@@ -3,6 +3,11 @@ import { defineConfig, devices } from '@playwright/test';
 /**
  * Playwright configuration for Policy Manager SPFx E2E tests
  * Tests run against SharePoint Online
+ *
+ * Screenshot budget strategy:
+ * - Viewport 1280x720 to keep PNGs small (~80-120KB vs ~200KB at 1920x1080)
+ * - Screenshots saved to disk only — not read back into conversation
+ * - Max ~15 screenshots per test run to stay under Claude's 20MB context limit
  */
 export default defineConfig({
   testDir: './e2e',
@@ -22,9 +27,9 @@ export default defineConfig({
     // Capture traces and screenshots on failure
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
-    video: 'on-first-retry',
+    video: 'off',
 
-    // Longer timeouts for SharePoint
+    // Longer timeouts for SharePoint — it's slow
     actionTimeout: 30000,
     navigationTimeout: 60000,
 
@@ -45,19 +50,19 @@ export default defineConfig({
       },
     },
 
-    // Main test project
+    // Main test project — 1280x720 to keep screenshots small
     {
       name: 'chromium',
       use: {
         ...devices['Desktop Chrome'],
-        viewport: { width: 1920, height: 1080 },
+        viewport: { width: 1280, height: 720 },
       },
       dependencies: ['setup'],
     },
   ],
 
-  // Timeout for each test
-  timeout: 120000,
+  // Timeout for each test — SharePoint pages can be slow
+  timeout: 180000,
 
   // Expect timeout
   expect: {

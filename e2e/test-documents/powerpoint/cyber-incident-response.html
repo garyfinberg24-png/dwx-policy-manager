@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="author" content="First Digital — DWx Policy Manager">
+<meta name="category" content="Information Technology">
+<meta name="format" content="Presentation">
+<title>Cyber Incident Response Playbook</title>
+<style>
+  body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; background: #f1f5f9; color: #0f172a; }
+  .slide { width: 900px; min-height: 500px; margin: 30px auto; background: #fff; border-radius: 4px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); overflow: hidden; page-break-after: always; }
+  .slide-header { background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%); color: #fff; padding: 40px 50px 30px; }
+  .slide-header h1 { margin: 0; font-size: 32px; }
+  .slide-header p { margin: 8px 0 0; font-size: 16px; opacity: 0.9; }
+  .slide-body { padding: 40px 50px; }
+  .slide-body h2 { color: #0d9488; font-size: 24px; margin-top: 0; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
+  .slide-number { text-align: right; padding: 10px 50px 20px; color: #94a3b8; font-size: 12px; }
+  .phase-flow { display: flex; gap: 6px; margin: 20px 0; }
+  .phase { flex: 1; text-align: center; padding: 16px 8px; border-radius: 4px; font-size: 13px; }
+  .sev-table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+  .sev-table th { background: #0d9488; color: #fff; padding: 10px; text-align: left; }
+  .sev-table td { padding: 8px 10px; border: 1px solid #e2e8f0; font-size: 14px; }
+  .danger-box { background: #fef2f2; border-left: 4px solid #dc2626; padding: 16px 20px; margin: 16px 0; }
+</style>
+</head>
+<body>
+
+<div class="slide">
+  <div class="slide-header">
+    <h1>Cyber Incident Response Playbook</h1>
+    <p>First Digital &mdash; IT Security Operations</p>
+  </div>
+  <div class="slide-body">
+    <p style="font-size: 18px;">This playbook defines the procedures for detecting, responding to, and recovering from cybersecurity incidents. A well-rehearsed response minimises damage and recovery time.</p>
+    <div class="phase-flow">
+      <div class="phase" style="background:#fef2f2; border:2px solid #dc2626;"><strong>1. Detect</strong></div>
+      <div class="phase" style="background:#fffbeb; border:2px solid #d97706;"><strong>2. Triage</strong></div>
+      <div class="phase" style="background:#f0fdfa; border:2px solid #0d9488;"><strong>3. Contain</strong></div>
+      <div class="phase" style="background:#eff6ff; border:2px solid #2563eb;"><strong>4. Eradicate</strong></div>
+      <div class="phase" style="background:#f0fdf4; border:2px solid #059669;"><strong>5. Recover</strong></div>
+      <div class="phase" style="background:#f8fafc; border:2px solid #64748b;"><strong>6. Learn</strong></div>
+    </div>
+  </div>
+  <div class="slide-number">1 / 5</div>
+</div>
+
+<div class="slide">
+  <div class="slide-body">
+    <h2>Severity Classification</h2>
+    <table class="sev-table">
+      <tr><th>Severity</th><th>Definition</th><th>Response Time</th><th>Example</th></tr>
+      <tr><td style="background:#fef2f2; color:#dc2626; font-weight:700;">P1 — Critical</td><td>Active data breach, ransomware, or complete service outage</td><td>Immediate (15 min)</td><td>Ransomware encrypting production systems</td></tr>
+      <tr><td style="background:#fffbeb; color:#d97706; font-weight:700;">P2 — High</td><td>Confirmed compromise without active data loss, significant service degradation</td><td>1 hour</td><td>Compromised admin account, DDoS attack</td></tr>
+      <tr><td style="background:#f0fdfa; color:#0d9488; font-weight:700;">P3 — Medium</td><td>Suspicious activity requiring investigation, localised impact</td><td>4 hours</td><td>Malware on single endpoint, phishing success</td></tr>
+      <tr><td style="background:#f8fafc; color:#64748b; font-weight:700;">P4 — Low</td><td>Minor security event, no confirmed compromise</td><td>Next business day</td><td>Failed login attempts, policy violation</td></tr>
+    </table>
+  </div>
+  <div class="slide-number">2 / 5</div>
+</div>
+
+<div class="slide">
+  <div class="slide-body">
+    <h2>Containment Actions</h2>
+    <div class="danger-box"><strong>Golden Rule:</strong> Contain first, investigate second. Stop the bleeding before performing forensics.</strong></div>
+    <h3 style="color: #0f766e;">Immediate Containment (First 30 Minutes)</h3>
+    <ul style="font-size: 15px; line-height: 1.8;">
+      <li>Isolate affected systems from the network (do NOT power off — preserve evidence)</li>
+      <li>Disable compromised user accounts</li>
+      <li>Block malicious IPs, domains, and file hashes at firewall/EDR</li>
+      <li>Revoke active sessions and force MFA re-authentication</li>
+      <li>Activate incident bridge (Teams: "Incident Response" channel)</li>
+    </ul>
+    <h3 style="color: #0f766e;">Extended Containment</h3>
+    <ul style="font-size: 15px; line-height: 1.8;">
+      <li>Deploy temporary monitoring rules for lateral movement detection</li>
+      <li>Snapshot affected VMs for forensic analysis</li>
+      <li>Engage external IR retainer if P1 (CrowdStrike: contract #FD-IR-2026)</li>
+    </ul>
+  </div>
+  <div class="slide-number">3 / 5</div>
+</div>
+
+<div class="slide">
+  <div class="slide-body">
+    <h2>Communication &amp; Notification</h2>
+    <h3 style="color: #0f766e;">Internal Escalation (All Severities)</h3>
+    <ul style="font-size: 15px; line-height: 1.8;">
+      <li><strong>P1:</strong> CISO + CTO + CEO + Legal within 30 minutes. Board notified within 4 hours.</li>
+      <li><strong>P2:</strong> CISO + CTO within 1 hour. CEO if data involved.</li>
+      <li><strong>P3-P4:</strong> IT Security Manager within 4 hours. CISO in daily summary.</li>
+    </ul>
+    <h3 style="color: #0f766e;">External Notification Requirements</h3>
+    <ul style="font-size: 15px; line-height: 1.8;">
+      <li><strong>GDPR:</strong> Supervisory authority within 72 hours of confirmed personal data breach</li>
+      <li><strong>OAIC:</strong> Australian Privacy Act — Notifiable Data Breach scheme (eligible data breach)</li>
+      <li><strong>Clients:</strong> Contractual notification obligations per agreement (typically 48 hours)</li>
+      <li><strong>Law enforcement:</strong> When criminal activity is suspected (coordinate with Legal)</li>
+    </ul>
+  </div>
+  <div class="slide-number">4 / 5</div>
+</div>
+
+<div class="slide">
+  <div class="slide-header">
+    <h1>Incident Response Team</h1>
+    <p>Key contacts and roles</p>
+  </div>
+  <div class="slide-body">
+    <table class="sev-table">
+      <tr><th>Role</th><th>Primary</th><th>Contact</th></tr>
+      <tr><td>Incident Commander</td><td>CISO</td><td>ciso@firstdigital.com | Ext 4501</td></tr>
+      <tr><td>Technical Lead</td><td>IT Security Manager</td><td>security@firstdigital.com | Ext 4510</td></tr>
+      <tr><td>Communications Lead</td><td>Head of Communications</td><td>comms@firstdigital.com | Ext 4200</td></tr>
+      <tr><td>Legal Counsel</td><td>General Counsel</td><td>legal@firstdigital.com | Ext 4300</td></tr>
+      <tr><td>External IR</td><td>CrowdStrike</td><td>Contract #FD-IR-2026 | 1800-CROWD</td></tr>
+    </table>
+    <p style="text-align: center; margin-top: 20px; color: #64748b;">24/7 Security Operations: security@firstdigital.com &bull; Ext. 4510</p>
+  </div>
+  <div class="slide-number">5 / 5 &bull; First Digital &mdash; DWx Policy Manager</div>
+</div>
+
+</body>
+</html>

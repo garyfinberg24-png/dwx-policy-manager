@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="author" content="First Digital — DWx Policy Manager">
+<meta name="category" content="Operations">
+<meta name="format" content="Presentation">
+<title>Business Continuity Planning Overview</title>
+<style>
+  body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; background: #f1f5f9; color: #0f172a; }
+  .slide { width: 900px; min-height: 500px; margin: 30px auto; background: #fff; border-radius: 4px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); overflow: hidden; page-break-after: always; }
+  .slide-header { background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%); color: #fff; padding: 40px 50px 30px; }
+  .slide-header h1 { margin: 0; font-size: 32px; }
+  .slide-header p { margin: 8px 0 0; font-size: 16px; opacity: 0.9; }
+  .slide-body { padding: 40px 50px; }
+  .slide-body h2 { color: #0d9488; font-size: 24px; margin-top: 0; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
+  .slide-number { text-align: right; padding: 10px 50px 20px; color: #94a3b8; font-size: 12px; }
+  .rto-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin: 16px 0; }
+  .rto-card { border: 1px solid #e2e8f0; border-radius: 4px; padding: 16px; text-align: center; }
+  .rto-card .tier { font-size: 12px; text-transform: uppercase; font-weight: 700; letter-spacing: 1px; margin-bottom: 4px; }
+  .rto-card .time { font-size: 24px; font-weight: 700; color: #0d9488; }
+  .icon-list { list-style: none; padding: 0; }
+  .icon-list li { padding: 6px 0 6px 24px; position: relative; }
+  .icon-list li::before { content: '\2022'; color: #0d9488; font-size: 20px; position: absolute; left: 8px; top: 4px; }
+</style>
+</head>
+<body>
+
+<div class="slide">
+  <div class="slide-header">
+    <h1>Business Continuity Planning</h1>
+    <p>First Digital &mdash; BCP Overview 2026</p>
+  </div>
+  <div class="slide-body">
+    <p style="font-size: 18px;">Our business continuity framework ensures First Digital can maintain essential operations during and after a disruptive event, protecting our people, clients, and reputation.</p>
+    <div style="display: flex; gap: 16px; margin-top: 24px;">
+      <div style="flex:1; background:#f0fdfa; border:1px solid #0d9488; padding:16px; text-align:center; border-radius:4px;"><strong style="color:#0d9488; font-size:24px;">ISO 22301</strong><br><small>Certified since 2024</small></div>
+      <div style="flex:1; background:#f8fafc; border:1px solid #e2e8f0; padding:16px; text-align:center; border-radius:4px;"><strong style="font-size:24px; color:#0f766e;">4 Hours</strong><br><small>Maximum RTO for critical systems</small></div>
+      <div style="flex:1; background:#f8fafc; border:1px solid #e2e8f0; padding:16px; text-align:center; border-radius:4px;"><strong style="font-size:24px; color:#0f766e;">99.9%</strong><br><small>Availability target</small></div>
+    </div>
+  </div>
+  <div class="slide-number">1 / 5</div>
+</div>
+
+<div class="slide">
+  <div class="slide-body">
+    <h2>Recovery Time Objectives (RTO)</h2>
+    <div class="rto-grid">
+      <div class="rto-card" style="border-top: 3px solid #dc2626;"><div class="tier" style="color:#dc2626;">Tier 1 — Critical</div><div class="time">4 Hours</div><p style="font-size:13px;">Email, VPN, SharePoint, Core ERP, Client Portal</p></div>
+      <div class="rto-card" style="border-top: 3px solid #d97706;"><div class="tier" style="color:#d97706;">Tier 2 — Important</div><div class="time">24 Hours</div><p style="font-size:13px;">CRM, HR Systems, Project Management, Analytics</p></div>
+      <div class="rto-card" style="border-top: 3px solid #0d9488;"><div class="tier" style="color:#0d9488;">Tier 3 — Standard</div><div class="time">72 Hours</div><p style="font-size:13px;">Training, Intranet, Marketing Platforms, Dev/Test</p></div>
+    </div>
+    <p><strong>Recovery Point Objective (RPO):</strong> Maximum 1 hour of data loss for Tier 1 systems (continuous replication). Tier 2: 4 hours. Tier 3: 24 hours.</p>
+  </div>
+  <div class="slide-number">2 / 5</div>
+</div>
+
+<div class="slide">
+  <div class="slide-body">
+    <h2>Activation Triggers</h2>
+    <p>The BCP is activated when an event significantly disrupts normal operations:</p>
+    <ul class="icon-list" style="font-size: 15px;">
+      <li><strong>Natural disaster</strong> — Fire, flood, earthquake, severe storm affecting office access</li>
+      <li><strong>Pandemic</strong> — Widespread illness affecting workforce availability</li>
+      <li><strong>Cyber incident</strong> — Ransomware, data breach, or sustained DDoS attack</li>
+      <li><strong>Infrastructure failure</strong> — Power outage, internet outage, or building damage</li>
+      <li><strong>Supply chain disruption</strong> — Critical vendor failure or service withdrawal</li>
+      <li><strong>Civil disruption</strong> — Transport strikes, civil unrest, or government-imposed restrictions</li>
+    </ul>
+    <p style="margin-top: 16px;"><strong>Activation authority:</strong> CEO, COO, or CTO. Notification via mass SMS and Teams broadcast.</p>
+  </div>
+  <div class="slide-number">3 / 5</div>
+</div>
+
+<div class="slide">
+  <div class="slide-body">
+    <h2>Your Role During a Disruption</h2>
+    <ul class="icon-list" style="font-size: 15px; line-height: 2;">
+      <li>Check your phone for SMS alerts from the Crisis Management Team</li>
+      <li>Log in to Teams from home — your manager will post instructions in your team channel</li>
+      <li>Follow the work-from-home procedures in the Remote Working Policy</li>
+      <li>Prioritise client-facing deliverables and critical deadlines</li>
+      <li>Report your status via the Employee Check-In form (link in SMS)</li>
+      <li>Do not speak to media — all media enquiries go to Communications</li>
+      <li>Attend daily stand-up briefings at the scheduled time until normal operations resume</li>
+    </ul>
+  </div>
+  <div class="slide-number">4 / 5</div>
+</div>
+
+<div class="slide">
+  <div class="slide-header">
+    <h1>Testing &amp; Maintenance</h1>
+    <p>A plan is only as good as its last test</p>
+  </div>
+  <div class="slide-body">
+    <ul class="icon-list" style="font-size: 15px; line-height: 2;">
+      <li><strong>Tabletop exercises:</strong> Quarterly with leadership team</li>
+      <li><strong>Functional exercises:</strong> Semi-annual simulation of specific scenarios</li>
+      <li><strong>Full-scale drill:</strong> Annual company-wide BCP activation test</li>
+      <li><strong>DR failover test:</strong> Quarterly automated failover verification</li>
+      <li><strong>Plan review:</strong> Updated after every exercise, incident, or significant change</li>
+    </ul>
+    <p style="text-align: center; margin-top: 20px; color: #64748b;">BCP Owner: COO &bull; Contact: bcp@firstdigital.com</p>
+  </div>
+  <div class="slide-number">5 / 5 &bull; First Digital &mdash; DWx Policy Manager</div>
+</div>
+
+</body>
+</html>

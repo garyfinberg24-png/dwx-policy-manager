@@ -1,0 +1,129 @@
+<!-- First Digital — Annual Compliance Calendar — DWx Policy Manager -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 650" width="700" height="650">
+  <defs>
+    <linearGradient id="hg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0d9488"/>
+      <stop offset="100%" style="stop-color:#0f766e"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="700" height="650" fill="#fff" rx="8"/>
+  <rect width="700" height="80" fill="url(#hg)" rx="8"/>
+  <rect y="72" width="700" height="16" fill="url(#hg)"/>
+  <text x="350" y="42" text-anchor="middle" fill="#fff" font-family="Segoe UI, Arial" font-size="24" font-weight="700">Annual Compliance Calendar 2026</text>
+  <text x="350" y="65" text-anchor="middle" fill="#ccfbf1" font-family="Segoe UI, Arial" font-size="12">Key dates, deadlines, and recurring obligations — First Digital</text>
+
+  <!-- Month grid - 4x3 -->
+  <!-- Q1 -->
+  <rect x="20" y="100" width="160" height="110" rx="6" fill="#f0fdfa" stroke="#0d9488" stroke-width="1"/>
+  <rect x="20" y="100" width="160" height="24" rx="6" fill="#0d9488"/>
+  <rect x="20" y="118" width="160" height="6" fill="#0d9488"/>
+  <text x="100" y="117" text-anchor="middle" fill="#fff" font-family="Segoe UI, Arial" font-size="11" font-weight="700">JANUARY</text>
+  <text x="30" y="142" fill="#334155" font-family="Segoe UI, Arial" font-size="9">Cybersecurity Training opens</text>
+  <text x="30" y="156" fill="#334155" font-family="Segoe UI, Arial" font-size="9">Annual policy review cycle starts</text>
+  <text x="30" y="170" fill="#334155" font-family="Segoe UI, Arial" font-size="9">ISO 27001 internal audit (Q1)</text>
+  <text x="30" y="184" fill="#dc2626" font-family="Segoe UI, Arial" font-size="9" font-weight="600">AML training due Jan 31</text>
+
+  <rect x="190" y="100" width="160" height="110" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <rect x="190" y="100" width="160" height="24" rx="6" fill="#64748b"/>
+  <rect x="190" y="118" width="160" height="6" fill="#64748b"/>
+  <text x="270" y="117" text-anchor="middle" fill="#fff" font-family="Segoe UI, Arial" font-size="11" font-weight="700">FEBRUARY</text>
+  <text x="200" y="142" fill="#334155" font-family="Segoe UI, Arial" font-size="9">Privacy impact assessments due</text>
+  <text x="200" y="156" fill="#334155" font-family="Segoe UI, Arial" font-size="9">Vendor security reviews (Q1 batch)</text>
+  <text x="200" y="170" fill="#d97706" font-family="Segoe UI, Arial" font-size="9" font-weight="600">Cyber training deadline Feb 28</text>
+
+  <rect x="360" y="100" width="160" height="110" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <rect x="360" y="100" width="160" height="24" rx="6" fill="#64748b"/>
+  <rect x="360" y="118" width="160" height="6" fill="#64748b"/>
+  <text x="440" y="117" text-anchor="middle" fill="#fff" font-family="Segoe UI, Arial" font-size="11" font-weight="700">MARCH</text>
+  <text x="370" y="142" fill="#334155" font-family="Segoe UI, Arial" font-size="9">GDPR training due</text>
+  <text x="370" y="156" fill="#334155" font-family="Segoe UI, Arial" font-size="9">Q1 compliance report to Board</text>
+  <text x="370" y="170" fill="#334155" font-family="Segoe UI, Arial" font-size="9">Fire drill (all offices)</text>
+  <text x="370" y="184" fill="#dc2626" font-family="Segoe UI, Arial" font-size="9" font-weight="600">SOX Q1 certification</text>
+
+  <!-- Q2 -->
+  <rect x="20" y="220" width="160" height="110" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <rect x="20" y="220" width="160" height="24" rx="6" fill="#64748b"/>
+  <rect x="20" y="238" width="160" height="6" fill="#64748b"/>
+  <text x="100" y="237" text-anchor="middle" fill="#fff" font-family="Segoe UI, Arial" font-size="11" font-weight="700">APRIL</text>
+  <text x="30" y="262" fill="#334155" font-family="Segoe UI, Arial" font-size="9">BCP tabletop exercise</text>
+  <text x="30" y="276" fill="#334155" font-family="Segoe UI, Arial" font-size="9">Access control review starts</text>
+  <text x="30" y="290" fill="#334155" font-family="Segoe UI, Arial" font-size="9">Policy ack reminders (overdue)</text>
+
+  <rect x="190" y="220" width="160" height="110" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <rect x="190" y="220" width="160" height="24" rx="6" fill="#64748b"/>
+  <rect x="190" y="238" width="160" height="6" fill="#64748b"/>
+  <text x="270" y="237" text-anchor="middle" fill="#fff" font-family="Segoe UI, Arial" font-size="11" font-weight="700">MAY</text>
+  <text x="200" y="262" fill="#334155" font-family="Segoe UI, Arial" font-size="9">Anti-bribery training opens</text>
+  <text x="200" y="276" fill="#334155" font-family="Segoe UI, Arial" font-size="9">Whistleblower policy review</text>
+  <text x="200" y="290" fill="#334155" font-family="Segoe UI, Arial" font-size="9">Privacy notice annual update</text>
+
+  <rect x="360" y="220" width="160" height="110" rx="6" fill="#f0fdfa" stroke="#0d9488" stroke-width="1"/>
+  <rect x="360" y="220" width="160" height="24" rx="6" fill="#0d9488"/>
+  <rect x="360" y="238" width="160" height="6" fill="#0d9488"/>
+  <text x="440" y="237" text-anchor="middle" fill="#fff" font-family="Segoe UI, Arial" font-size="11" font-weight="700">JUNE</text>
+  <text x="370" y="262" fill="#334155" font-family="Segoe UI, Arial" font-size="9">Mid-year policy review deadline</text>
+  <text x="370" y="276" fill="#334155" font-family="Segoe UI, Arial" font-size="9">Q2 compliance report to Board</text>
+  <text x="370" y="290" fill="#dc2626" font-family="Segoe UI, Arial" font-size="9" font-weight="600">SOX Q2 certification</text>
+  <text x="370" y="304" fill="#dc2626" font-family="Segoe UI, Arial" font-size="9" font-weight="600">ISO 27001 surveillance audit</text>
+
+  <!-- Q3 -->
+  <rect x="20" y="340" width="160" height="110" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <rect x="20" y="340" width="160" height="24" rx="6" fill="#64748b"/>
+  <rect x="20" y="358" width="160" height="6" fill="#64748b"/>
+  <text x="100" y="357" text-anchor="middle" fill="#fff" font-family="Segoe UI, Arial" font-size="11" font-weight="700">JULY</text>
+  <text x="30" y="382" fill="#334155" font-family="Segoe UI, Arial" font-size="9">DR failover test</text>
+  <text x="30" y="396" fill="#334155" font-family="Segoe UI, Arial" font-size="9">Vendor contract renewals review</text>
+  <text x="30" y="410" fill="#334155" font-family="Segoe UI, Arial" font-size="9">Mid-year performance reviews</text>
+
+  <rect x="190" y="340" width="160" height="110" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <rect x="190" y="340" width="160" height="24" rx="6" fill="#64748b"/>
+  <rect x="190" y="358" width="160" height="6" fill="#64748b"/>
+  <text x="270" y="357" text-anchor="middle" fill="#fff" font-family="Segoe UI, Arial" font-size="11" font-weight="700">AUGUST</text>
+  <text x="200" y="382" fill="#334155" font-family="Segoe UI, Arial" font-size="9">Pen testing (annual)</text>
+  <text x="200" y="396" fill="#334155" font-family="Segoe UI, Arial" font-size="9">Data retention audit</text>
+  <text x="200" y="410" fill="#334155" font-family="Segoe UI, Arial" font-size="9">BCP functional exercise</text>
+
+  <rect x="360" y="340" width="160" height="110" rx="6" fill="#f0fdfa" stroke="#0d9488" stroke-width="1"/>
+  <rect x="360" y="340" width="160" height="24" rx="6" fill="#0d9488"/>
+  <rect x="360" y="358" width="160" height="6" fill="#0d9488"/>
+  <text x="440" y="357" text-anchor="middle" fill="#fff" font-family="Segoe UI, Arial" font-size="11" font-weight="700">SEPTEMBER</text>
+  <text x="370" y="382" fill="#334155" font-family="Segoe UI, Arial" font-size="9">Fire drill (all offices)</text>
+  <text x="370" y="396" fill="#334155" font-family="Segoe UI, Arial" font-size="9">Q3 compliance report to Board</text>
+  <text x="370" y="410" fill="#dc2626" font-family="Segoe UI, Arial" font-size="9" font-weight="600">SOX Q3 certification</text>
+
+  <!-- Q4 -->
+  <rect x="20" y="460" width="160" height="110" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <rect x="20" y="460" width="160" height="24" rx="6" fill="#64748b"/>
+  <rect x="20" y="478" width="160" height="6" fill="#64748b"/>
+  <text x="100" y="477" text-anchor="middle" fill="#fff" font-family="Segoe UI, Arial" font-size="11" font-weight="700">OCTOBER</text>
+  <text x="30" y="502" fill="#334155" font-family="Segoe UI, Arial" font-size="9">Cybersecurity Awareness Month</text>
+  <text x="30" y="516" fill="#334155" font-family="Segoe UI, Arial" font-size="9">Phishing simulation campaign</text>
+  <text x="30" y="530" fill="#334155" font-family="Segoe UI, Arial" font-size="9">Annual risk assessment refresh</text>
+
+  <rect x="190" y="460" width="160" height="110" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <rect x="190" y="460" width="160" height="24" rx="6" fill="#64748b"/>
+  <rect x="190" y="478" width="160" height="6" fill="#64748b"/>
+  <text x="270" y="477" text-anchor="middle" fill="#fff" font-family="Segoe UI, Arial" font-size="11" font-weight="700">NOVEMBER</text>
+  <text x="200" y="502" fill="#334155" font-family="Segoe UI, Arial" font-size="9">Annual policy review deadline</text>
+  <text x="200" y="516" fill="#334155" font-family="Segoe UI, Arial" font-size="9">BCP full-scale drill</text>
+  <text x="200" y="530" fill="#334155" font-family="Segoe UI, Arial" font-size="9">Ethics training refresher</text>
+
+  <rect x="360" y="460" width="160" height="110" rx="6" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+  <rect x="360" y="460" width="160" height="24" rx="6" fill="#dc2626"/>
+  <rect x="360" y="478" width="160" height="6" fill="#dc2626"/>
+  <text x="440" y="477" text-anchor="middle" fill="#fff" font-family="Segoe UI, Arial" font-size="11" font-weight="700">DECEMBER</text>
+  <text x="370" y="502" fill="#334155" font-family="Segoe UI, Arial" font-size="9">All training completions due</text>
+  <text x="370" y="516" fill="#334155" font-family="Segoe UI, Arial" font-size="9">Q4 + Annual compliance report</text>
+  <text x="370" y="530" fill="#dc2626" font-family="Segoe UI, Arial" font-size="9" font-weight="600">SOX annual certification</text>
+  <text x="370" y="544" fill="#d97706" font-family="Segoe UI, Arial" font-size="9" font-weight="600">Change freeze: Dec 15 - Jan 5</text>
+
+  <!-- Legend -->
+  <rect x="30" y="585" width="170" height="28" rx="4" fill="#f0fdfa" stroke="#0d9488" stroke-width="1"/>
+  <text x="115" y="603" text-anchor="middle" fill="#0d9488" font-family="Segoe UI, Arial" font-size="10" font-weight="600">Key Milestone Month</text>
+  <rect x="215" y="585" width="120" height="28" rx="4" fill="#fef2f2" stroke="#dc2626" stroke-width="1"/>
+  <text x="275" y="603" text-anchor="middle" fill="#dc2626" font-family="Segoe UI, Arial" font-size="10" font-weight="600">Critical Deadline</text>
+  <text x="460" y="603" fill="#64748b" font-family="Segoe UI, Arial" font-size="10">Managed via DWx Policy Manager</text>
+
+  <text x="350" y="640" text-anchor="middle" fill="#94a3b8" font-family="Segoe UI, Arial" font-size="10">First Digital — DWx Policy Manager — Compliance &amp; Governance Programme 2026</text>
+</svg>

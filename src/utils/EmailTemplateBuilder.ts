@@ -21,7 +21,8 @@ export type EmailNotificationType =
   | 'policy-published' | 'policy-updated' | 'ack-required' | 'reminder-3day'
   | 'reminder-1day' | 'overdue' | 'ack-complete' | 'review-required'
   | 'approval-request' | 'approval-approved' | 'approval-rejected'
-  | 'policy-expiring' | 'policy-retired' | 'sla-breach' | 'welcome';
+  | 'policy-expiring' | 'policy-retired' | 'sla-breach' | 'welcome'
+  | 'request-fulfilled';
 
 interface IEmailTemplateConfig {
   gradientStart: string;
@@ -66,6 +67,7 @@ const TEMPLATE_CONFIGS: Record<EmailNotificationType, IEmailTemplateConfig> = {
   'policy-retired':      { gradientStart: '#64748b', gradientEnd: '#475569', notificationLabel: 'Policy Retired',          ctaColor: '#64748b' },
   'sla-breach':          { gradientStart: '#991b1b', gradientEnd: '#7f1d1d', notificationLabel: 'SLA BREACH',              ctaColor: '#991b1b' },
   'welcome':             { gradientStart: '#0d9488', gradientEnd: '#0f766e', notificationLabel: 'Welcome',                 ctaColor: '#0d9488' },
+  'request-fulfilled':   { gradientStart: '#059669', gradientEnd: '#047857', notificationLabel: 'Request Fulfilled',       ctaColor: '#059669' },
 };
 
 // ============================================================================
@@ -409,6 +411,29 @@ export class EmailTemplateBuilder {
         { label: 'Help &amp; Support', value: `<a href="${escapeHtml(p.helpUrl)}" style="color:#0d9488; text-decoration:underline;">Help Centre</a>` },
       ],
       ctaText: 'Go to My Policies',
+      ctaUrl: p.ctaUrl,
+    });
+  }
+
+  public static requestFulfilled(p: {
+    recipientName: string; requestTitle: string; referenceNumber: string;
+    policyTitle: string; policyNumber: string; publishedBy: string;
+    category: string; ctaUrl: string;
+  }): string {
+    return this.build('request-fulfilled', {
+      recipientName: p.recipientName,
+      headerTitle: 'Your Policy Request Has Been Fulfilled',
+      bodyText: `Great news! The policy you requested has been created, reviewed, and published. The authoring team has fulfilled your request and the policy is now available for your team.`,
+      rows: [
+        { label: 'Your Request', value: escapeHtml(p.requestTitle), valueBold: true },
+        { label: 'Reference', value: escapeHtml(p.referenceNumber) },
+        { label: 'Published Policy', value: escapeHtml(p.policyTitle), valueColor: '#059669', valueBold: true },
+        { label: 'Policy Number', value: escapeHtml(p.policyNumber), valueBold: true },
+        { label: 'Published By', value: escapeHtml(p.publishedBy) },
+        { label: 'Category', value: escapeHtml(p.category) },
+        { label: 'Status', value: 'Published &amp; Available', valueColor: '#059669', valueBold: true },
+      ],
+      ctaText: 'View Published Policy',
       ctaUrl: p.ctaUrl,
     });
   }

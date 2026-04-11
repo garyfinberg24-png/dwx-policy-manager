@@ -1,0 +1,75 @@
+<!-- First Digital — Onboarding Checklist Infographic — DWx Policy Manager -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800" width="600" height="800">
+  <defs>
+    <linearGradient id="hg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0d9488"/>
+      <stop offset="100%" style="stop-color:#0f766e"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="600" height="800" fill="#fff" rx="8"/>
+  <rect width="600" height="100" fill="url(#hg)" rx="8"/>
+  <rect y="92" width="600" height="16" fill="url(#hg)"/>
+  <text x="300" y="48" text-anchor="middle" fill="#fff" font-family="Segoe UI, Arial" font-size="26" font-weight="700">New Hire Checklist</text>
+  <text x="300" y="73" text-anchor="middle" fill="#ccfbf1" font-family="Segoe UI, Arial" font-size="13">Your first 90 days at First Digital</text>
+
+  <!-- Week 1 -->
+  <rect x="30" y="120" width="540" height="30" rx="4" fill="#0d9488"/>
+  <text x="50" y="140" fill="#fff" font-family="Segoe UI, Arial" font-size="14" font-weight="700">WEEK 1 — Getting Started</text>
+
+  <rect x="40" y="158" width="16" height="16" rx="3" fill="none" stroke="#0d9488" stroke-width="1.5"/>
+  <text x="66" y="172" fill="#0f172a" font-family="Segoe UI, Arial" font-size="12">Collect laptop, phone, and access card from IT</text>
+  <rect x="40" y="182" width="16" height="16" rx="3" fill="none" stroke="#0d9488" stroke-width="1.5"/>
+  <text x="66" y="196" fill="#0f172a" font-family="Segoe UI, Arial" font-size="12">Set up email, Teams, and SharePoint accounts</text>
+  <rect x="40" y="206" width="16" height="16" rx="3" fill="none" stroke="#0d9488" stroke-width="1.5"/>
+  <text x="66" y="220" fill="#0f172a" font-family="Segoe UI, Arial" font-size="12">Complete HR onboarding forms (tax, super, emergency contacts)</text>
+  <rect x="40" y="230" width="16" height="16" rx="3" fill="none" stroke="#0d9488" stroke-width="1.5"/>
+  <text x="66" y="244" fill="#0f172a" font-family="Segoe UI, Arial" font-size="12">Meet your manager and team, office tour</text>
+  <rect x="40" y="254" width="16" height="16" rx="3" fill="none" stroke="#0d9488" stroke-width="1.5"/>
+  <text x="66" y="268" fill="#0f172a" font-family="Segoe UI, Arial" font-size="12">Meet your onboarding buddy</text>
+  <rect x="40" y="278" width="16" height="16" rx="3" fill="none" stroke="#0d9488" stroke-width="1.5"/>
+  <text x="66" y="292" fill="#0f172a" font-family="Segoe UI, Arial" font-size="12">Review 90-day objectives with manager</text>
+
+  <!-- Month 1 -->
+  <rect x="30" y="310" width="540" height="30" rx="4" fill="#0f766e"/>
+  <text x="50" y="330" fill="#fff" font-family="Segoe UI, Arial" font-size="14" font-weight="700">MONTH 1 — Learn &amp; Comply</text>
+
+  <rect x="40" y="348" width="16" height="16" rx="3" fill="none" stroke="#0f766e" stroke-width="1.5"/>
+  <text x="66" y="362" fill="#0f172a" font-family="Segoe UI, Arial" font-size="12">Complete Cybersecurity Awareness training</text>
+  <rect x="40" y="372" width="16" height="16" rx="3" fill="none" stroke="#0f766e" stroke-width="1.5"/>
+  <text x="66" y="386" fill="#0f172a" font-family="Segoe UI, Arial" font-size="12">Complete GDPR / Data Protection training</text>
+  <rect x="40" y="396" width="16" height="16" rx="3" fill="none" stroke="#0f766e" stroke-width="1.5"/>
+  <text x="66" y="410" fill="#0f172a" font-family="Segoe UI, Arial" font-size="12">Acknowledge all mandatory policies in DWx Policy Manager</text>
+  <rect x="40" y="420" width="16" height="16" rx="3" fill="none" stroke="#0f766e" stroke-width="1.5"/>
+  <text x="66" y="434" fill="#0f172a" font-family="Segoe UI, Arial" font-size="12">Complete WHS induction and fire safety training</text>
+  <rect x="40" y="444" width="16" height="16" rx="3" fill="none" stroke="#0f766e" stroke-width="1.5"/>
+  <text x="66" y="458" fill="#0f172a" font-family="Segoe UI, Arial" font-size="12">Pass Code of Conduct quiz (80% passing score)</text>
+  <rect x="40" y="468" width="16" height="16" rx="3" fill="none" stroke="#0f766e" stroke-width="1.5"/>
+  <text x="66" y="482" fill="#0f172a" font-family="Segoe UI, Arial" font-size="12">Month 1 check-in with manager</text>
+
+  <!-- Month 2 -->
+  <rect x="30" y="500" width="540" height="30" rx="4" fill="#2563eb"/>
+  <text x="50" y="520" fill="#fff" font-family="Segoe UI, Arial" font-size="14" font-weight="700">MONTH 2 — Contribute</text>
+
+  <rect x="40" y="538" width="16" height="16" rx="3" fill="none" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="66" y="552" fill="#0f172a" font-family="Segoe UI, Arial" font-size="12">Complete role-specific technical training</text>
+  <rect x="40" y="562" width="16" height="16" rx="3" fill="none" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="66" y="576" fill="#0f172a" font-family="Segoe UI, Arial" font-size="12">Take ownership of initial projects or tasks</text>
+  <rect x="40" y="586" width="16" height="16" rx="3" fill="none" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="66" y="600" fill="#0f172a" font-family="Segoe UI, Arial" font-size="12">Build relationships with key stakeholders</text>
+  <rect x="40" y="610" width="16" height="16" rx="3" fill="none" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="66" y="624" fill="#0f172a" font-family="Segoe UI, Arial" font-size="12">Mid-probation review with manager</text>
+
+  <!-- Month 3 -->
+  <rect x="30" y="645" width="540" height="30" rx="4" fill="#059669"/>
+  <text x="50" y="665" fill="#fff" font-family="Segoe UI, Arial" font-size="14" font-weight="700">MONTH 3 — Own &amp; Grow</text>
+
+  <rect x="40" y="683" width="16" height="16" rx="3" fill="none" stroke="#059669" stroke-width="1.5"/>
+  <text x="66" y="697" fill="#0f172a" font-family="Segoe UI, Arial" font-size="12">Deliver independent outcomes</text>
+  <rect x="40" y="707" width="16" height="16" rx="3" fill="none" stroke="#059669" stroke-width="1.5"/>
+  <text x="66" y="721" fill="#0f172a" font-family="Segoe UI, Arial" font-size="12">Set goals for next quarter with manager</text>
+  <rect x="40" y="731" width="16" height="16" rx="3" fill="none" stroke="#059669" stroke-width="1.5"/>
+  <text x="66" y="745" fill="#0f172a" font-family="Segoe UI, Arial" font-size="12">Final probation review — appointment confirmed</text>
+
+  <text x="300" y="785" text-anchor="middle" fill="#94a3b8" font-family="Segoe UI, Arial" font-size="10">First Digital — DWx Policy Manager — POL-HR-008 Probation Policy</text>
+</svg>

@@ -1,0 +1,21 @@
+MetricID,MetricName,Category,CurrentValue,Target,Unit,Period,Trend,Status,Department,LastUpdated
+KPI-001,Policy Acknowledgement Rate,Compliance,87.3,95.0,Percentage,Q1 2026,Up,Below Target,All,2026-03-31
+KPI-002,Overdue Acknowledgements,Compliance,23,0,Count,March 2026,Down,At Risk,All,2026-03-31
+KPI-003,Average Acknowledgement Time,Compliance,4.2,3.0,Days,Q1 2026,Stable,Below Target,All,2026-03-31
+KPI-004,Policies Due for Review,Governance,8,0,Count,April 2026,Up,At Risk,All,2026-04-01
+KPI-005,Overdue Policy Reviews,Governance,3,0,Count,April 2026,Stable,Critical,All,2026-04-01
+KPI-006,Policy Coverage,Governance,94.0,100.0,Percentage,Q1 2026,Up,On Track,All,2026-03-31
+KPI-007,Compliance Training Completion,Training,91.5,100.0,Percentage,Q1 2026,Up,On Track,All,2026-03-31
+KPI-008,Overdue Training Modules,Training,7,0,Count,March 2026,Down,Below Target,All,2026-03-31
+KPI-009,Quiz Pass Rate,Training,82.4,80.0,Percentage,Q1 2026,Up,On Target,All,2026-03-31
+KPI-010,Average Quiz Score,Training,84.7,80.0,Percentage,Q1 2026,Stable,On Target,All,2026-03-31
+KPI-011,Security Incidents,Security,8,0,Count,Q1 2026,Down,Monitoring,IT,2026-03-31
+KPI-012,Mean Time to Resolve,Security,3.8,4.0,Hours,Q1 2026,Down,On Target,IT,2026-03-31
+KPI-013,Vendor Risk Assessments Current,Third Party,83.3,100.0,Percentage,Q1 2026,Up,Below Target,Procurement,2026-03-31
+KPI-014,Audit Findings Open,Audit,4,0,Count,Q1 2026,Down,Monitoring,All,2026-03-31
+KPI-015,Audit Findings Overdue,Audit,1,0,Count,Q1 2026,Stable,At Risk,All,2026-03-31
+KPI-016,Employee Onboarding Compliance,HR,96.0,100.0,Percentage,Q1 2026,Up,On Track,HR,2026-03-31
+KPI-017,Data Subject Requests Processed,Privacy,12,12,Count,Q1 2026,Stable,On Target,Legal,2026-03-31
+KPI-018,DSAR Response Time,Privacy,18,30,Days,Q1 2026,Down,On Target,Legal,2026-03-31
+KPI-019,Active Policies,Governance,47,50,Count,Q1 2026,Up,On Track,All,2026-03-31
+KPI-020,Policy Distribution Campaigns Active,Operations,3,5,Count,Q1 2026,Up,On Track,All,2026-03-31

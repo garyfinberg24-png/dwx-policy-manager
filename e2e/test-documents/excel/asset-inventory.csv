@@ -1,0 +1,16 @@
+AssetID,AssetName,AssetType,Manufacturer,Model,SerialNumber,Location,AssignedTo,Department,PurchaseDate,WarrantyExpiry,Status,Classification
+AST-0001,Dell Latitude 5540,Laptop,Dell,Latitude 5540,SN-DL5540-001,Sydney Office,Sarah Chen,Engineering,2025-06-15,2028-06-15,Active,Standard
+AST-0002,Dell Latitude 5540,Laptop,Dell,Latitude 5540,SN-DL5540-002,Sydney Office,James Wilson,Engineering,2025-06-15,2028-06-15,Active,Standard
+AST-0003,MacBook Pro 16,Laptop,Apple,MacBook Pro M3,SN-MBP16-001,Melbourne Office,Priya Sharma,Design,2025-08-01,2028-08-01,Active,Standard
+AST-0004,HP LaserJet Pro,Printer,HP,M428fdw,SN-HP428-001,Sydney Office — Level 3,Shared,Operations,2024-11-10,2027-11-10,Active,Standard
+AST-0005,iPhone 15 Pro,Mobile,Apple,iPhone 15 Pro,SN-IP15P-001,Sydney Office,Michael Roberts,Sales,2025-09-20,2027-09-20,Active,Standard
+AST-0006,Dell Monitor 27,Monitor,Dell,U2723QE,SN-DLM27-001,Sydney Office,Sarah Chen,Engineering,2025-06-15,2028-06-15,Active,Standard
+AST-0007,Dell Monitor 27,Monitor,Dell,U2723QE,SN-DLM27-002,Sydney Office,James Wilson,Engineering,2025-06-15,2028-06-15,Active,Standard
+AST-0008,Cisco Meraki Switch,Network,Cisco,MS250-48,SN-CSM48-001,Sydney Office — Server Room,IT Infrastructure,IT,2024-03-20,2029-03-20,Active,Critical
+AST-0009,Fortinet FortiGate,Firewall,Fortinet,FG-100F,SN-FG100-001,Sydney Office — Server Room,IT Infrastructure,IT,2024-05-10,2029-05-10,Active,Critical
+AST-0010,Dell PowerEdge R750,Server,Dell,PowerEdge R750,SN-DPE750-001,Data Centre — Rack A3,IT Infrastructure,IT,2024-01-15,2029-01-15,Active,Critical
+AST-0011,Jabra Evolve2 85,Headset,Jabra,Evolve2 85,SN-JBE85-001,Remote,Lisa Thompson,Customer Support,2025-03-10,2027-03-10,Active,Standard
+AST-0012,Dell Latitude 5540,Laptop,Dell,Latitude 5540,SN-DL5540-003,Storage,Unassigned,IT,2025-06-15,2028-06-15,In Storage,Standard
+AST-0013,iPhone 14,Mobile,Apple,iPhone 14,SN-IP14-001,Decommissioned,Previously: Tom Brown,Sales,2023-10-15,2025-10-15,Decommissioned,Standard
+AST-0014,Logitech Rally,Video Conferencing,Logitech,Rally Plus,SN-LGR-001,Sydney Office — Board Room,Shared,Facilities,2025-01-20,2028-01-20,Active,Standard
+AST-0015,APC Smart-UPS,UPS,APC,SRT3000XLI,SN-APC3K-001,Sydney Office — Server Room,IT Infrastructure,IT,2024-07-01,2029-07-01,Active,Critical

@@ -137,10 +137,20 @@ export class EscalationService {
           const daysOverdue = Math.floor((now.getTime() - effectiveDue.getTime()) / (1000 * 60 * 60 * 24));
 
           if (daysOverdue > 0) {
+            // Resolve reviewer email from ReviewerId
+            let reviewerEmail = '';
+            try {
+              if (review.ReviewerId) {
+                const user = await this.sp.web.siteUsers.getById(review.ReviewerId)();
+                reviewerEmail = user.Email || user.LoginName || '';
+              }
+            } catch { /* user not found */ }
+
             await this.sendEscalationNotification(
               review.PolicyId,
               'Review overdue',
-              `Review for policy ${review.PolicyId} by ${review.ReviewerType} is ${daysOverdue} days overdue`
+              `Review for policy ${review.PolicyId} by ${review.ReviewerType} is ${daysOverdue} days overdue`,
+              reviewerEmail
             );
           }
         }
@@ -219,9 +229,19 @@ export class EscalationService {
           break;
       }
 
+      // Resolve approver email for notification
+      let approverEmail = '';
+      try {
+        if (approval.RequestedById) {
+          const user = await this.sp.web.siteUsers.getById(approval.RequestedById)();
+          approverEmail = user.Email || user.LoginName || '';
+        }
+      } catch { /* user not found */ }
+
       // Send escalation notification
       await this.sendEscalationNotification(policyId, policyTitle,
-        `Approval for "${policyTitle}" is ${daysOverdue} days overdue. Action: ${action}. Escalation #${escalationCount + 1}.`);
+        `Approval for "${policyTitle}" is ${daysOverdue} days overdue. Action: ${action}. Escalation #${escalationCount + 1}.`,
+        approverEmail);
 
       // Audit log
       try {
@@ -269,13 +289,32 @@ export class EscalationService {
   }
 
   /**
-   * Send escalation notification
+   * Send escalation notification.
+   * IMPORTANT: Only queues email if recipientEmail contains a valid email address.
+   * Empty RecipientEmail causes the Logic App to crash with "To Field cannot be null".
    */
-  private async sendEscalationNotification(policyId: number, policyTitle: string, message: string): Promise<void> {
+  private async sendEscalationNotification(policyId: number, policyTitle: string, message: string, recipientEmail?: string): Promise<void> {
     try {
+      // Guard: never write to notification queue without a valid email
+      if (!recipientEmail || !recipientEmail.includes('@')) {
+        // Log to audit instead — don't crash the email pipeline
+        try {
+          await this.sp.web.lists.getByTitle('PM_PolicyAuditLog').items.add({
+            AuditAction: 'EscalationSkipped',
+            EntityType: 'Policy',
+            EntityId: policyId,
+            ActionDescription: `Escalation notification skipped — no recipient email resolved. ${message}`,
+            PerformedBy: 'System',
+            ComplianceRelevant: false
+          });
+        } catch { /* best-effort audit */ }
+        return;
+      }
+
       await this.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
         Title: `Escalation: ${policyTitle}`,
         Subject: `[ESCALATION] Approval overdue: ${policyTitle}`,
+        RecipientEmail: recipientEmail,
         Message: `<p>${message}</p><p>Please review and take action immediately.</p>`,
         QueueStatus: 'Pending',
         Priority: 'Urgent',

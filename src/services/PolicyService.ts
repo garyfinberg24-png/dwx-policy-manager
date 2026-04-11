@@ -44,6 +44,7 @@ import {
   generateCacheKey
 } from './PolicyCacheService';
 import { PolicyNotificationService } from './PolicyNotificationService';
+import { EmailTemplateBuilder } from '../utils/EmailTemplateBuilder';
 import { PolicyLists, QuizLists } from '../constants/SharePointListNames';
 import {
   DwxNotificationService,
@@ -1197,11 +1198,54 @@ export class PolicyService {
       // Auto-complete source request if this policy was created from a request
       if (policy.SourceRequestId) {
         try {
+          // Fetch the original request to get the requester's details
+          const sourceRequest = await this.sp.web.lists
+            .getByTitle('PM_PolicyRequests')
+            .items.getById(policy.SourceRequestId)
+            .select('Id', 'Title', 'RequestedByEmail', 'RequestedBy', 'ReferenceNumber')();
+
+          // Update request status to Completed
           await this.sp.web.lists
             .getByTitle('PM_PolicyRequests')
             .items.getById(policy.SourceRequestId)
             .update({ Status: 'Completed', ResultingPolicyId: request.policyId });
           logger.info('PolicyService', `Auto-completed source request ${policy.SourceRequestId} on policy publish`);
+
+          // Notify the original requester that their request has been fulfilled
+          const requesterEmail = sourceRequest.RequestedByEmail || '';
+          if (requesterEmail && requesterEmail.includes('@')) {
+            try {
+              const siteUrl = this.sp.web.toUrl().replace('/_api/web', '');
+              const policyDetailsUrl = `${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${pId}&mode=browse`;
+              const emailHtml = EmailTemplateBuilder.requestFulfilled({
+                recipientName: sourceRequest.RequestedBy || 'Manager',
+                requestTitle: sourceRequest.Title || 'Policy Request',
+                referenceNumber: sourceRequest.ReferenceNumber || `REQ-${policy.SourceRequestId}`,
+                policyTitle: policy.PolicyName || policy.Title || '',
+                policyNumber: policy.PolicyNumber || '',
+                publishedBy: this.currentUserName || '',
+                category: policy.PolicyCategory || '',
+                ctaUrl: policyDetailsUrl,
+              });
+
+              await this.sp.web.lists.getByTitle('PM_NotificationQueue').items.add({
+                Title: `Your Policy Request Has Been Fulfilled: ${policy.PolicyName || policy.Title}`,
+                RecipientEmail: requesterEmail,
+                RecipientName: sourceRequest.RequestedBy || '',
+                PolicyId: pId,
+                PolicyTitle: policy.PolicyName || policy.Title || '',
+                NotificationType: 'RequestFulfilled',
+                Channel: 'Email',
+                Message: emailHtml,
+                QueueStatus: 'Pending',
+                Priority: 'Normal',
+              });
+              logger.info('PolicyService', `Request-fulfilled notification queued to ${requesterEmail}`);
+              steps.push(`Request-fulfilled notification sent to ${requesterEmail}`);
+            } catch (notifErr) {
+              logger.warn('PolicyService', 'Failed to queue request-fulfilled notification (non-critical):', notifErr);
+            }
+          }
         } catch (reqErr) {
           logger.warn('PolicyService', `Failed to auto-complete source request ${policy.SourceRequestId}:`, reqErr);
         }

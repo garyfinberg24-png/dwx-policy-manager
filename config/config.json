@@ -129,6 +129,14 @@
           "manifest": "./src/webparts/dwxEventViewer/DwxEventViewerWebPart.manifest.json"
         }
       ]
+    },
+    "dwx-start-screen-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/dwxStartScreen/DwxStartScreenWebPart.js",
+          "manifest": "./src/webparts/dwxStartScreen/DwxStartScreenWebPart.manifest.json"
+        }
+      ]
     }
   },
   "externals": {},
@@ -149,6 +157,7 @@
     "DwxPolicyAuthorReportsWebPartStrings": "lib/webparts/dwxPolicyAuthorReports/loc/{locale}.js",
     "DwxPolicyBulkUploadWebPartStrings": "lib/webparts/dwxPolicyBulkUpload/loc/{locale}.js",
     "DwxEventViewerWebPartStrings": "lib/webparts/dwxEventViewer/loc/{locale}.js",
+    "DwxStartScreenWebPartStrings": "lib/webparts/dwxStartScreen/loc/{locale}.js",
     "ControlStrings": "node_modules/@pnp/spfx-controls-react/lib/loc/{locale}.js"
   }
 }

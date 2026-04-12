@@ -1,0 +1,25 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx/client-side-web-part-manifest.schema.json",
+  "id": "a7e3c1d4-5b2f-4e8a-9d6c-3f1a2b4c5d6e",
+  "alias": "DwxStartScreenWebPart",
+  "componentType": "WebPart",
+
+  "version": "*",
+  "manifestVersion": 2,
+
+  "requiresCustomScript": false,
+  "supportedHosts": ["SharePointWebPart", "SharePointFullPage"],
+  "supportsThemeVariants": true,
+
+  "preconfiguredEntries": [{
+    "groupId": "e4b0a295-44e2-4fa4-8f15-4eac5edf4275",
+    "group": { "default": "DWx Policy Manager" },
+    "title": { "default": "DWx Start Screen" },
+    "description": { "default": "Policy Manager command centre — personalised landing page with quick actions, recent policies, and compliance summary" },
+    "officeFabricIconFontName": "Home",
+    "properties": {
+      "title": "DWx Start Screen"
+    }
+  }],
+  "supportsFullBleed": true
+}

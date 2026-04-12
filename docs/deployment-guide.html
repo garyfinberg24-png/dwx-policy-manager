@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DWx Policy Manager — Deployment &amp; Configuration Guide</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', -apple-system, sans-serif; color: #0f172a; background: #f8fafc; line-height: 1.7; }
+
+  .header { background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%); color: #fff; padding: 48px 60px; }
+  .header h1 { font-size: 32px; font-weight: 700; margin-bottom: 4px; }
+  .header .subtitle { font-size: 14px; opacity: 0.85; }
+  .header .badge { display: inline-block; background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 4px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-top: 12px; }
+
+  .content { max-width: 1000px; margin: 0 auto; padding: 40px 60px; }
+
+  h2 { font-size: 22px; font-weight: 700; color: #0f172a; margin: 48px 0 8px; padding-bottom: 8px; border-bottom: 2px solid #0d9488; }
+  h2 .step { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: #0d9488; color: #fff; border-radius: 50%; font-size: 14px; font-weight: 700; margin-right: 10px; }
+  h3 { font-size: 16px; font-weight: 600; color: #0d9488; margin: 24px 0 8px; }
+  p { font-size: 14px; color: #475569; margin-bottom: 12px; }
+
+  .prereq { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px 24px; margin: 16px 0; }
+  .prereq-title { font-weight: 700; font-size: 14px; color: #0f172a; margin-bottom: 8px; }
+  .prereq ul { margin: 0 0 0 20px; }
+  .prereq li { font-size: 13px; color: #475569; margin-bottom: 4px; }
+
+  .step-card { background: #fff; border: 1px solid #e2e8f0; border-left: 3px solid #0d9488; border-radius: 6px; padding: 20px 24px; margin: 16px 0; }
+  .step-card code { background: #f1f5f9; padding: 2px 6px; border-radius: 3px; font-size: 12px; color: #0f766e; }
+  .step-card pre { background: #0f172a; color: #e2e8f0; padding: 14px 18px; border-radius: 6px; font-size: 12px; margin: 12px 0; overflow-x: auto; line-height: 1.5; }
+  .step-card pre .comment { color: #94a3b8; }
+  .step-card pre .cmd { color: #34d399; }
+  .step-card pre .url { color: #60a5fa; }
+
+  .callout { background: #f0fdfa; border-left: 3px solid #0d9488; padding: 14px 18px; border-radius: 4px; margin: 16px 0; font-size: 13px; }
+  .callout-title { font-weight: 700; color: #0d9488; margin-bottom: 4px; }
+  .callout-amber { background: #fffbeb; border-left-color: #d97706; }
+  .callout-amber .callout-title { color: #d97706; }
+  .callout-red { background: #fef2f2; border-left-color: #dc2626; }
+  .callout-red .callout-title { color: #dc2626; }
+
+  table { width: 100%; border-collapse: collapse; margin: 12px 0 20px; background: #fff; border-radius: 6px; overflow: hidden; }
+  th { background: #f1f5f9; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 14px; text-align: left; color: #475569; }
+  td { padding: 8px 14px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+
+  .checklist { list-style: none; margin: 12px 0; }
+  .checklist li { padding: 6px 0 6px 28px; position: relative; font-size: 13px; border-bottom: 1px solid #f8fafc; }
+  .checklist li::before { content: '☐'; position: absolute; left: 0; color: #0d9488; font-size: 16px; }
+
+  .footer { background: #0f172a; color: rgba(255,255,255,0.7); padding: 32px 60px; font-size: 12px; margin-top: 60px; }
+  .footer strong { color: #fff; }
+
+  @media print {
+    .header { padding: 24px 40px; }
+    .content { padding: 20px 40px; }
+    body { background: #fff; }
+    h2 { page-break-before: auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>DWx Policy Manager</h1>
+  <div class="subtitle">Deployment &amp; Configuration Guide</div>
+  <div class="badge">Version 1.2.5 &bull; 17 Webparts &bull; April 2026</div>
+</div>
+
+<div class="content">
+
+<!-- PREREQUISITES -->
+<h2><span class="step">0</span> Prerequisites</h2>
+
+<div class="prereq">
+  <div class="prereq-title">Required Before Deployment</div>
+  <ul>
+    <li><strong>Microsoft 365 tenant</strong> with SharePoint Online (E3/E5 or SharePoint Plan 2)</li>
+    <li><strong>SharePoint Admin</strong> access (App Catalog, site creation)</li>
+    <li><strong>Azure Subscription</strong> with Contributor role</li>
+    <li><strong>Azure CLI</strong> installed (v2.50+) with Bicep</li>
+    <li><strong>Node.js</strong> 18.x, 20.x, or 22.x</li>
+    <li><strong>PnP PowerShell</strong> module installed (<code>Install-Module PnP.PowerShell</code>)</li>
+    <li><strong>Global Admin or Application Admin</strong> for Entra App Registration</li>
+  </ul>
+</div>
+
+<div class="prereq">
+  <div class="prereq-title">Build Tools (Development Machine)</div>
+  <ul>
+    <li>Node.js 18.17.1+ / 20.x / 22.x</li>
+    <li>npm 9+ or pnpm</li>
+    <li>Gulp CLI: <code>npm install -g gulp-cli</code></li>
+    <li>SPFx Yeoman Generator: <code>npm install -g @microsoft/generator-sharepoint</code></li>
+    <li>~2 GB free disk space for webpack production build</li>
+  </ul>
+</div>
+
+
+<!-- STEP 1: SHAREPOINT SITE -->
+<h2><span class="step">1</span> Create SharePoint Site</h2>
+
+<div class="step-card">
+  <h3>1.1 — Create the Site Collection</h3>
+  <p>Create a Communication Site in SharePoint Admin Centre or via PowerShell:</p>
+  <pre><span class="comment"># Connect to SharePoint Admin</span>
+<span class="cmd">Connect-PnPOnline</span> -Url <span class="url">https://TENANT-admin.sharepoint.com</span> -Interactive
+
+<span class="comment"># Create the site</span>
+<span class="cmd">New-PnPSite</span> -Type CommunicationSite `
+  -Title "Policy Manager" `
+  -Url <span class="url">https://TENANT.sharepoint.com/sites/PolicyManager</span> `
+  -Owner "admin@TENANT.onmicrosoft.com"</pre>
+</div>
+
+<div class="step-card">
+  <h3>1.2 — Provision SharePoint Lists (30+ lists)</h3>
+  <p>Run the master provisioning script which creates all PM_ lists with correct columns and indexes:</p>
+  <pre><span class="comment"># Connect to the Policy Manager site</span>
+<span class="cmd">Connect-PnPOnline</span> -Url <span class="url">https://TENANT.sharepoint.com/sites/PolicyManager</span> -Interactive
+
+<span class="comment"># Run master deployment (all numbered scripts)</span>
+<span class="cmd">cd</span> scripts/policy-management
+<span class="cmd">.\Deploy-AllPolicyLists.ps1</span></pre>
+
+  <div class="callout">
+    <div class="callout-title">Idempotent Scripts</div>
+    <div>All provisioning scripts check for existing lists/fields before creating. Safe to re-run.</div>
+  </div>
+</div>
+
+<div class="step-card">
+  <h3>1.3 — Create SharePoint Pages</h3>
+  <pre><span class="comment"># Create all application pages</span>
+<span class="cmd">.\Provision-SharePointPages.ps1</span></pre>
+
+  <p>Or create manually in SharePoint:</p>
+  <table>
+    <tr><th>Page</th><th>Layout</th><th>Webpart</th></tr>
+    <tr><td>Start.aspx</td><td>Full-width, single column</td><td>DWx Start Screen</td></tr>
+    <tr><td>PolicyHub.aspx</td><td>Full-width, single column</td><td>DWx Policy Hub</td></tr>
+    <tr><td>MyPolicies.aspx</td><td>Full-width</td><td>My Policies</td></tr>
+    <tr><td>PolicyBuilder.aspx</td><td>Full-width</td><td>Policy Author (Builder)</td></tr>
+    <tr><td>PolicyAuthor.aspx</td><td>Full-width</td><td>DWx Policy Author View</td></tr>
+    <tr><td>PolicyDetails.aspx</td><td>Full-width</td><td>Policy Details</td></tr>
+    <tr><td>PolicyAdmin.aspx</td><td>Full-width</td><td>Policy Admin</td></tr>
+    <tr><td>PolicySearch.aspx</td><td>Full-width</td><td>Policy Search</td></tr>
+    <tr><td>PolicyHelp.aspx</td><td>Full-width</td><td>Policy Help</td></tr>
+    <tr><td>PolicyAnalytics.aspx</td><td>Full-width</td><td>Policy Analytics</td></tr>
+    <tr><td>PolicyDistribution.aspx</td><td>Full-width</td><td>Policy Distribution</td></tr>
+    <tr><td>PolicyManagerView.aspx</td><td>Full-width</td><td>DWx Policy Manager View</td></tr>
+    <tr><td>PolicyPacks.aspx</td><td>Full-width</td><td>Policy Pack Manager</td></tr>
+    <tr><td>QuizBuilder.aspx</td><td>Full-width</td><td>DWx Quiz Builder</td></tr>
+    <tr><td>PolicyBulkUpload.aspx</td><td>Full-width</td><td>DWx Policy Bulk Upload</td></tr>
+  </table>
+
+  <div class="callout-amber callout">
+    <div class="callout-title">Set Home Page</div>
+    <div>Set <strong>Start.aspx</strong> as the site home page: Site Settings → Look and Feel → Change the look → Header → Home page.</div>
+  </div>
+</div>
+
+
+<!-- STEP 2: BUILD & DEPLOY SPFX -->
+<h2><span class="step">2</span> Build &amp; Deploy SPFx Package</h2>
+
+<div class="step-card">
+  <h3>2.1 — Install Dependencies &amp; Build</h3>
+  <pre><span class="cmd">cd</span> policy-manager
+<span class="cmd">npm install</span>
+
+<span class="comment"># Production build</span>
+<span class="cmd">gulp clean</span>
+<span class="cmd">gulp bundle --ship</span>
+<span class="cmd">gulp package-solution --ship</span>
+
+<span class="comment"># Output: sharepoint/solution/policy-manager.sppkg (11 MB)</span></pre>
+</div>
+
+<div class="step-card">
+  <h3>2.2 — Upload to App Catalog</h3>
+  <ol style="margin: 8px 0 0 20px; font-size: 13px;">
+    <li>Go to <strong>SharePoint Admin Centre → More features → Apps → App Catalog</strong></li>
+    <li>Click <strong>"Apps for SharePoint"</strong></li>
+    <li>Upload <code>policy-manager.sppkg</code></li>
+    <li>Check <strong>"Make this solution available to all sites in the organization"</strong></li>
+    <li>Click <strong>Deploy</strong></li>
+  </ol>
+
+  <div class="callout-red callout">
+    <div class="callout-title">Important: Trust Dialog</div>
+    <div>The trust dialog will show 17 webpart components. Click "Enable app" to allow all webparts to run on the tenant.</div>
+  </div>
+</div>
+
+<div class="step-card">
+  <h3>2.3 — Add Webparts to Pages</h3>
+  <p>For each page, edit it and add the corresponding webpart from the "DWx Policy Manager" group. Set each page to <strong>Full-width column layout</strong>.</p>
+</div>
+
+
+<!-- STEP 3: AZURE INFRASTRUCTURE -->
+<h2><span class="step">3</span> Deploy Azure Infrastructure</h2>
+
+<div class="step-card">
+  <h3>3.1 — Quiz Generator (AI)</h3>
+  <pre><span class="cmd">cd</span> azure-functions/quiz-generator/infra
+<span class="cmd">.\deploy.ps1</span> -Environment prod -Location swedencentral</pre>
+  <p>Deploys: Function App + Azure OpenAI + Key Vault + Storage + App Insights</p>
+</div>
+
+<div class="step-card">
+  <h3>3.2 — Chat Assistant (AI)</h3>
+  <pre><span class="cmd">cd</span> azure-functions/policy-chat/infra
+<span class="cmd">.\deploy.ps1</span> -Environment prod -Location swedencentral</pre>
+  <p>Deploys: Function App + Storage + App Insights (reuses OpenAI + Key Vault from quiz-rg)</p>
+</div>
+
+<div class="step-card">
+  <h3>3.3 — Email Sender (Logic App)</h3>
+  <pre><span class="cmd">cd</span> azure-functions/email-sender/infra
+<span class="cmd">.\deploy.ps1</span> -Environment prod</pre>
+  <p>Deploys: Logic App (Consumption) + Office 365 API Connection + SharePoint API Connection</p>
+
+  <div class="callout-amber callout">
+    <div class="callout-title">Manual Step Required</div>
+    <div>After deployment, go to <strong>Azure Portal → Logic App → API Connections</strong> and <strong>authorize</strong> both the Office 365 and SharePoint connections. This requires interactive OAuth consent and cannot be automated via Bicep/ARM.</div>
+  </div>
+</div>
+
+<div class="step-card">
+  <h3>3.4 — Distribution Processor</h3>
+  <pre><span class="comment"># Deploy distribution queue processor</span>
+<span class="cmd">cd</span> azure-functions/distribution-processor/infra
+<span class="cmd">.\deploy.ps1</span> -Environment prod</pre>
+</div>
+
+
+<!-- STEP 4: CONFIGURATION -->
+<h2><span class="step">4</span> Post-Deployment Configuration</h2>
+
+<div class="step-card">
+  <h3>4.1 — Seed Sample Data (Optional)</h3>
+  <pre><span class="cmd">cd</span> scripts/policy-management
+<span class="cmd">.\Deploy-SampleData.ps1</span>
+<span class="cmd">.\Seed-ApprovalAndNotificationData.ps1</span></pre>
+</div>
+
+<div class="step-card">
+  <h3>4.2 — Admin Centre Configuration</h3>
+  <p>Navigate to <strong>PolicyAdmin.aspx</strong> and configure:</p>
+  <ul class="checklist">
+    <li>Templates — Upload policy document templates</li>
+    <li>Metadata Profiles — Create compliance presets (Risk, Timeframe, Ack)</li>
+    <li>Approval Workflows — Configure approval chains</li>
+    <li>Compliance Settings — Set risk levels and review frequencies</li>
+    <li>Notifications — Enable/disable email notification types</li>
+    <li>Naming Rules — Configure policy number format (e.g. POL-{CAT}-{NUM})</li>
+    <li>SLA Targets — Set acknowledgement and review SLA days</li>
+    <li>Navigation — Toggle which nav items are visible per role</li>
+    <li>AI Assistant — Enable AI Chat, set Function URL + API key</li>
+    <li>Theme — Customise colours, logo, fonts via Theme Editor</li>
+  </ul>
+</div>
+
+<div class="step-card">
+  <h3>4.3 — Configure AI Features</h3>
+  <p>In <strong>Admin Centre → AI Assistant</strong>:</p>
+  <table>
+    <tr><th>Setting</th><th>Config Key</th><th>Value</th></tr>
+    <tr><td>Enable AI Chat</td><td>Integration.AI.Chat.Enabled</td><td>true</td></tr>
+    <tr><td>Chat Function URL</td><td>Integration.AI.Chat.FunctionUrl</td><td>https://dwx-pm-chat-func-prod.azurewebsites.net/api/policyChatCompletion?code=...</td></tr>
+    <tr><td>Quiz Function URL</td><td>(set in QuizBuilder settings)</td><td>https://dwx-pm-quiz-func-prod.azurewebsites.net/api/generate-quiz-questions?code=...</td></tr>
+    <tr><td>Max Tokens</td><td>Integration.AI.Chat.MaxTokens</td><td>1500</td></tr>
+  </table>
+</div>
+
+<div class="step-card">
+  <h3>4.4 — Set Up Roles &amp; Permissions</h3>
+
+  <table>
+    <tr><th>Role</th><th>Who</th><th>How to Assign</th></tr>
+    <tr><td>User</td><td>All employees</td><td>Default — anyone with site access</td></tr>
+    <tr><td>Author</td><td>Policy writers</td><td>Add to <strong>PM_PolicyReviewers</strong> SP group</td></tr>
+    <tr><td>Manager</td><td>Department managers</td><td>Add to <strong>PM_PolicyApprovers</strong> SP group</td></tr>
+    <tr><td>Admin</td><td>System administrators</td><td>Add to Site Owners or configure in Admin Centre → Roles</td></tr>
+  </table>
+</div>
+
+
+<!-- STEP 5: VERIFICATION -->
+<h2><span class="step">5</span> Verification Checklist</h2>
+
+<div class="step-card">
+  <h3>Post-Deployment Smoke Test</h3>
+  <ul class="checklist">
+    <li>Start.aspx shows the Start Screen with sidebar + quick actions</li>
+    <li>PolicyHub.aspx shows the Policy Hub with published policies</li>
+    <li>MyPolicies.aspx shows the user's assigned policies</li>
+    <li>PolicyBuilder.aspx shows the wizard (Standard/Fast Track)</li>
+    <li>Create a test policy → Save Draft → verify in pipeline</li>
+    <li>Submit for Review → check reviewer receives notification email</li>
+    <li>Approve the policy → verify status changes</li>
+    <li>Publish → verify it appears in Policy Hub</li>
+    <li>PolicyAdmin.aspx loads with sidebar sections</li>
+    <li>PolicySearch.aspx search returns results</li>
+    <li>PolicyHelp.aspx shows all 5 tabs</li>
+    <li>PolicyAnalytics.aspx shows all 6 tabs</li>
+    <li>Footer shows correct build number on all pages</li>
+    <li>Theme Editor changes are reflected across all pages + Start Screen</li>
+  </ul>
+</div>
+
+<div class="step-card">
+  <h3>Email Pipeline Verification</h3>
+  <ul class="checklist">
+    <li>Logic App is running (Azure Portal → Logic App → Overview → Enabled)</li>
+    <li>API connections authorized (Office 365 + SharePoint)</li>
+    <li>Create policy → Submit for Review → email arrives in Outlook within 5 min</li>
+    <li>Admin > System Info > Email Pipeline Health shows "Healthy"</li>
+    <li>No items with empty RecipientEmail in PM_NotificationQueue</li>
+  </ul>
+</div>
+
+<div class="step-card">
+  <h3>Playwright E2E Tests (Optional)</h3>
+  <pre><span class="comment"># Run the full smoke test suite</span>
+<span class="cmd">cd</span> policy-manager
+<span class="cmd">npx playwright test</span> e2e/pages-deep.spec.ts --headed
+
+<span class="comment"># Run full lifecycle test</span>
+<span class="cmd">npx playwright test</span> e2e/step-by-step.spec.ts --headed</pre>
+</div>
+
+
+<!-- ARCHITECTURE -->
+<h2><span class="step">6</span> Architecture Overview</h2>
+
+<div class="step-card">
+  <h3>System Architecture</h3>
+  <pre style="background: #fff; color: #0f172a; border: 1px solid #e2e8f0; font-size: 11px;">
+┌─────────────────────────────────────────────────────────────────┐
+│                    SharePoint Online                             │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────────┐   │
+│  │Start     │ │Policy    │ │Policy    │ │ 30+ SP Lists     │   │
+│  │Screen    │ │Hub       │ │Builder   │ │ PM_Policies      │   │
+│  │(17 webparts total - SPFx 1.20, React 17, Fluent UI v8)  │   │
+│  └──────────┘ └──────────┘ └──────────┘ │ PM_Approvals     │   │
+│                                          │ PM_Notifications │   │
+│                                          │ PM_Configuration │   │
+│                                          └──────────────────┘   │
+└──────────────────────┬──────────────────────────────────────────┘
+                       │
+        ┌──────────────┼──────────────┐
+        │              │              │
+   ┌────▼────┐   ┌────▼────┐   ┌────▼────┐
+   │ Azure   │   │ Azure   │   │ Logic   │
+   │ Func    │   │ Func    │   │ App     │
+   │ (Quiz)  │   │ (Chat)  │   │ (Email) │
+   └────┬────┘   └────┬────┘   └────┬────┘
+        │              │              │
+   ┌────▼──────────────▼────┐   ┌────▼────┐
+   │   Azure OpenAI         │   │Office365│
+   │   GPT-4o               │   │Outlook  │
+   │   + Key Vault          │   └─────────┘
+   └────────────────────────┘
+  </pre>
+</div>
+
+</div>
+
+<div class="footer">
+  <strong>First Digital</strong> &mdash; DWx Digital Workplace Excellence Suite<br>
+  Policy Manager v1.2.5 &bull; Deployment Guide &bull; April 2026<br>
+  For support: refer to PolicyHelp.aspx or docs/session-24-handoff.md
+</div>
+
+</body>
+</html>

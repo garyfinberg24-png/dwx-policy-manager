@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DWx Policy Manager — Pricing Sheet</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', -apple-system, sans-serif; color: #0f172a; background: #f8fafc; line-height: 1.6; }
+
+  .header { background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%); color: #fff; padding: 48px 60px; }
+  .header h1 { font-size: 32px; font-weight: 700; margin-bottom: 4px; }
+  .header .subtitle { font-size: 14px; opacity: 0.85; }
+  .header .badge { display: inline-block; background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 4px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-top: 12px; }
+
+  .content { max-width: 1200px; margin: 0 auto; padding: 40px 60px; }
+
+  .section-title { font-size: 20px; font-weight: 700; color: #0f172a; margin: 40px 0 16px; padding-bottom: 8px; border-bottom: 2px solid #0d9488; }
+  .section-desc { font-size: 13px; color: #64748b; margin-bottom: 20px; }
+
+  table { width: 100%; border-collapse: collapse; margin-bottom: 32px; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  th { background: #f1f5f9; color: #475569; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 12px 16px; text-align: left; border-bottom: 2px solid #e2e8f0; }
+  td { padding: 10px 16px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #f8fafc; }
+
+  .cost { font-weight: 700; color: #0d9488; text-align: right; white-space: nowrap; }
+  .cost-warn { font-weight: 700; color: #d97706; text-align: right; }
+  .cost-note { font-size: 11px; color: #94a3b8; }
+  .free { color: #16a34a; font-weight: 600; }
+  .included { color: #2563eb; font-weight: 600; }
+
+  .total-row td { background: #0f172a !important; color: #fff; font-weight: 700; font-size: 15px; }
+  .total-row .cost { color: #34d399; }
+  .subtotal-row td { background: #f0fdfa; font-weight: 600; }
+  .subtotal-row .cost { color: #0d9488; font-weight: 700; }
+
+  .category-header td { background: #f8fafc; font-weight: 700; color: #0d9488; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; border-top: 2px solid #e2e8f0; }
+
+  .callout { background: #f0fdfa; border-left: 3px solid #0d9488; padding: 16px 20px; border-radius: 4px; margin: 20px 0; }
+  .callout-title { font-weight: 700; font-size: 13px; color: #0d9488; margin-bottom: 4px; }
+  .callout-body { font-size: 12px; color: #475569; }
+
+  .callout-amber { background: #fffbeb; border-left-color: #d97706; }
+  .callout-amber .callout-title { color: #d97706; }
+
+  .footer { background: #0f172a; color: rgba(255,255,255,0.7); padding: 32px 60px; font-size: 12px; margin-top: 60px; }
+  .footer strong { color: #fff; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+
+  @media print {
+    .header { padding: 24px 40px; }
+    .content { padding: 20px 40px; }
+    body { background: #fff; }
+    table { box-shadow: none; border: 1px solid #e2e8f0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>DWx Policy Manager — Monthly Cost Sheet</h1>
+  <div class="subtitle">Microsoft 365 + Azure Infrastructure — Production Environment Costs</div>
+  <div class="badge">Version 1.2.5 &bull; April 2026</div>
+</div>
+
+<div class="content">
+
+  <!-- M365 LICENSING -->
+  <div class="section-title">1. Microsoft 365 Licensing</div>
+  <p class="section-desc">Required M365 licenses for the SharePoint Online tenant hosting Policy Manager.</p>
+
+  <table>
+    <tr><th>Component</th><th>SKU / Tier</th><th>Notes</th><th class="cost">Monthly Cost</th></tr>
+    <tr class="category-header"><td colspan="4">SharePoint Online</td></tr>
+    <tr>
+      <td>SharePoint Online Plan</td>
+      <td>Included in M365 E3/E5 or SharePoint Plan 2</td>
+      <td>Required for custom SPFx webparts, site collections, and list storage</td>
+      <td class="cost"><span class="included">Included</span></td>
+    </tr>
+    <tr>
+      <td>SharePoint Storage</td>
+      <td>1 TB base + 10 GB/user</td>
+      <td>Policy Manager uses ~500 MB for lists + document library. Additional storage $0.20/GB/month if exceeded.</td>
+      <td class="cost"><span class="included">Included</span></td>
+    </tr>
+    <tr class="category-header"><td colspan="4">Office 365 / Exchange Online</td></tr>
+    <tr>
+      <td>Exchange Online (Email)</td>
+      <td>Included in M365 E3/E5</td>
+      <td>Required for Logic App email delivery via Office 365 connector</td>
+      <td class="cost"><span class="included">Included</span></td>
+    </tr>
+    <tr>
+      <td>Shared Mailbox (optional)</td>
+      <td>Free with Exchange Online</td>
+      <td>Recommended: noreply@company.com for policy notification emails</td>
+      <td class="cost"><span class="free">Free</span></td>
+    </tr>
+    <tr class="category-header"><td colspan="4">Microsoft Entra ID</td></tr>
+    <tr>
+      <td>Entra ID (Azure AD)</td>
+      <td>Included in M365</td>
+      <td>User authentication, group membership for role detection, security groups for policy visibility</td>
+      <td class="cost"><span class="included">Included</span></td>
+    </tr>
+    <tr>
+      <td>App Registration</td>
+      <td>Free</td>
+      <td>"JML Solution API" app registration for distribution processor Function App</td>
+      <td class="cost"><span class="free">Free</span></td>
+    </tr>
+    <tr class="subtotal-row"><td colspan="3"><strong>M365 Subtotal</strong></td><td class="cost">$0.00 *</td></tr>
+  </table>
+
+  <div class="callout">
+    <div class="callout-title">* M365 License Assumption</div>
+    <div class="callout-body">Assumes the organisation already has Microsoft 365 E3 or E5 licenses for end users. No additional M365 licensing is required for Policy Manager. If using standalone SharePoint Plan 2 ($12.50/user/month), this cost is separate.</div>
+  </div>
+
+  <!-- AZURE INFRASTRUCTURE -->
+  <div class="section-title">2. Azure Infrastructure — Monthly Costs</div>
+  <p class="section-desc">All Azure resources deployed across 4 resource groups. Costs are estimates based on Azure Consumption (Pay-As-You-Go) pricing as of April 2026.</p>
+
+  <table>
+    <tr><th>Resource</th><th>Name</th><th>SKU / Tier</th><th>Region</th><th class="cost">Est. Monthly</th></tr>
+
+    <tr class="category-header"><td colspan="5">Resource Group: dwx-pm-quiz-rg-prod (AI Quiz Generator)</td></tr>
+    <tr>
+      <td>Azure OpenAI</td>
+      <td>dwx-pm-openai-prod</td>
+      <td>GPT-4o (Standard)</td>
+      <td>Sweden Central</td>
+      <td class="cost">$5 – $50</td>
+    </tr>
+    <tr>
+      <td colspan="4" class="cost-note" style="padding-left: 32px;">Pricing: $5/1M input tokens, $15/1M output tokens. ~100 quiz generations/month ≈ $5-10. Heavy usage ≈ $50.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Function App</td>
+      <td>dwx-pm-quiz-func-prod</td>
+      <td>Consumption (Y1)</td>
+      <td>Sweden Central</td>
+      <td class="cost">$0 – $2</td>
+    </tr>
+    <tr>
+      <td colspan="4" class="cost-note" style="padding-left: 32px;">1M free executions/month included. Quiz generation is low-volume.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Key Vault</td>
+      <td>dwx-pm-kv-*</td>
+      <td>Standard</td>
+      <td>Sweden Central</td>
+      <td class="cost">$0.03</td>
+    </tr>
+    <tr>
+      <td>Storage Account</td>
+      <td>dwxpmst*</td>
+      <td>Standard LRS</td>
+      <td>Sweden Central</td>
+      <td class="cost">$0.50</td>
+    </tr>
+    <tr>
+      <td>Application Insights</td>
+      <td>dwx-pm-quiz-insights-prod</td>
+      <td>Pay-per-GB (5 GB free)</td>
+      <td>Sweden Central</td>
+      <td class="cost"><span class="free">Free *</span></td>
+    </tr>
+    <tr>
+      <td>Log Analytics Workspace</td>
+      <td>dwx-pm-quiz-logs-prod</td>
+      <td>Pay-per-GB (5 GB free)</td>
+      <td>Sweden Central</td>
+      <td class="cost"><span class="free">Free *</span></td>
+    </tr>
+
+    <tr class="category-header"><td colspan="5">Resource Group: dwx-pm-chat-rg-prod (AI Chat Assistant)</td></tr>
+    <tr>
+      <td>Function App</td>
+      <td>dwx-pm-chat-func-prod</td>
+      <td>Consumption (Y1)</td>
+      <td>Sweden Central</td>
+      <td class="cost">$0 – $5</td>
+    </tr>
+    <tr>
+      <td>Storage Account</td>
+      <td>(auto-generated)</td>
+      <td>Standard LRS</td>
+      <td>Sweden Central</td>
+      <td class="cost">$0.50</td>
+    </tr>
+    <tr>
+      <td>Application Insights</td>
+      <td>dwx-pm-chat-insights-prod</td>
+      <td>Pay-per-GB</td>
+      <td>Sweden Central</td>
+      <td class="cost"><span class="free">Free *</span></td>
+    </tr>
+    <tr>
+      <td>Azure OpenAI</td>
+      <td colspan="2"><em>Shared with quiz-rg (no additional cost)</em></td>
+      <td>—</td>
+      <td class="cost"><span class="included">Shared</span></td>
+    </tr>
+    <tr>
+      <td>Key Vault</td>
+      <td colspan="2"><em>Shared with quiz-rg (cross-RG RBAC)</em></td>
+      <td>—</td>
+      <td class="cost"><span class="included">Shared</span></td>
+    </tr>
+
+    <tr class="category-header"><td colspan="5">Resource Group: dwx-pm-email-rg-prod (Email Delivery)</td></tr>
+    <tr>
+      <td>Logic App (Consumption)</td>
+      <td>dwx-pm-email-sender-prod</td>
+      <td>Consumption</td>
+      <td>Australia East</td>
+      <td class="cost">$0.50 – $5</td>
+    </tr>
+    <tr>
+      <td colspan="4" class="cost-note" style="padding-left: 32px;">$0.000025/action. Polls every 5 min (8,640 runs/month) + email send actions. ~$0.50 base, up to $5 with heavy email volume.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>API Connection (Office 365)</td>
+      <td>office365-prod</td>
+      <td>Standard</td>
+      <td>Australia East</td>
+      <td class="cost"><span class="free">Free</span></td>
+    </tr>
+    <tr>
+      <td>API Connection (SharePoint)</td>
+      <td>sharepointonline-prod</td>
+      <td>Standard</td>
+      <td>Australia East</td>
+      <td class="cost"><span class="free">Free</span></td>
+    </tr>
+
+    <tr class="category-header"><td colspan="5">Resource Group: dwx-pm-dist-rg-prod (Distribution Processor)</td></tr>
+    <tr>
+      <td>Function App</td>
+      <td>dwx-pm-dist-func-prod</td>
+      <td>Consumption (Y1)</td>
+      <td>Australia East</td>
+      <td class="cost">$0 – $2</td>
+    </tr>
+    <tr>
+      <td colspan="4" class="cost-note" style="padding-left: 32px;">Timer trigger every 2 minutes. Processes distribution queue batches.</td>
+      <td></td>
+    </tr>
+
+    <tr class="subtotal-row"><td colspan="4"><strong>Azure Subtotal (Low Usage)</strong></td><td class="cost">~$7/month</td></tr>
+    <tr class="subtotal-row"><td colspan="4"><strong>Azure Subtotal (Medium Usage)</strong></td><td class="cost">~$25/month</td></tr>
+    <tr class="subtotal-row"><td colspan="4"><strong>Azure Subtotal (Heavy Usage)</strong></td><td class="cost">~$65/month</td></tr>
+  </table>
+
+  <div class="callout callout-amber">
+    <div class="callout-title">Azure OpenAI — Variable Cost</div>
+    <div class="callout-body">Azure OpenAI (GPT-4o) is the largest variable cost. Each quiz generation ≈ 2K-5K tokens ($0.01-0.05). Each chat conversation ≈ 5K-20K tokens ($0.03-0.15). At 100 quiz generations + 200 chat conversations/month, expect ~$15-25. Without AI features enabled, this cost is $0.</div>
+  </div>
+
+  <!-- TOTAL -->
+  <div class="section-title">3. Total Monthly Cost Summary</div>
+
+  <table>
+    <tr><th>Scenario</th><th>M365</th><th>Azure</th><th>AI (OpenAI)</th><th class="cost">Total/Month</th></tr>
+    <tr>
+      <td><strong>Minimal</strong> — Basic policy management, no AI</td>
+      <td><span class="included">Included</span></td>
+      <td>~$2</td>
+      <td>$0</td>
+      <td class="cost">~$2</td>
+    </tr>
+    <tr>
+      <td><strong>Standard</strong> — Full features, moderate AI usage</td>
+      <td><span class="included">Included</span></td>
+      <td>~$10</td>
+      <td>~$15</td>
+      <td class="cost">~$25</td>
+    </tr>
+    <tr>
+      <td><strong>Enterprise</strong> — Heavy usage, all AI features active</td>
+      <td><span class="included">Included</span></td>
+      <td>~$15</td>
+      <td>~$50</td>
+      <td class="cost">~$65</td>
+    </tr>
+    <tr class="total-row">
+      <td colspan="4">Typical Production Cost (Standard scenario)</td>
+      <td class="cost">~$25/month</td>
+    </tr>
+  </table>
+
+  <div class="callout">
+    <div class="callout-title">Cost Optimisation Notes</div>
+    <div class="callout-body">
+      <ul style="margin: 8px 0 0 16px; font-size: 12px;">
+        <li><strong>Azure Free Tier:</strong> Application Insights (5 GB/month), Function Apps (1M executions/month), and Storage (5 GB) all include generous free tiers that cover typical usage.</li>
+        <li><strong>Reserved Instances:</strong> Not applicable — all resources use Consumption/Pay-As-You-Go tiers with no minimum commitment.</li>
+        <li><strong>AI Toggle:</strong> AI features (Quiz Generator, Chat Assistant) can be disabled in Admin > AI Assistant settings. When disabled, Azure OpenAI cost = $0.</li>
+        <li><strong>Logic App:</strong> Can be paused in Azure Portal when not needed (e.g. during non-business hours) to reduce polling costs.</li>
+        <li><strong>Region:</strong> Sweden Central for AI (data residency), Australia East for email/distribution (latency to SP tenant).</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ONE-TIME COSTS -->
+  <div class="section-title">4. One-Time Setup Costs</div>
+
+  <table>
+    <tr><th>Item</th><th>Description</th><th class="cost">Estimated Cost</th></tr>
+    <tr>
+      <td>SharePoint Site Collection</td>
+      <td>Create /sites/PolicyManager with 30+ custom lists</td>
+      <td class="cost"><span class="free">Free</span></td>
+    </tr>
+    <tr>
+      <td>SPFx App Catalog</td>
+      <td>Upload policy-manager.sppkg (11 MB, 17 webparts)</td>
+      <td class="cost"><span class="free">Free</span></td>
+    </tr>
+    <tr>
+      <td>Azure Resource Deployment</td>
+      <td>4 resource groups via Bicep IaC (30 min)</td>
+      <td class="cost"><span class="free">Free</span></td>
+    </tr>
+    <tr>
+      <td>Entra App Registration</td>
+      <td>API permissions for distribution processor</td>
+      <td class="cost"><span class="free">Free</span></td>
+    </tr>
+    <tr>
+      <td>DNS / Custom Domain (optional)</td>
+      <td>Custom vanity URL for the SharePoint site</td>
+      <td class="cost">Varies</td>
+    </tr>
+  </table>
+
+</div>
+
+<div class="footer">
+  <strong>First Digital</strong> &mdash; DWx Digital Workplace Excellence Suite<br>
+  Policy Manager v1.2.5 &bull; April 2026 &bull; Pricing estimates based on Azure Pay-As-You-Go and M365 E3/E5 licensing.<br>
+  All prices in USD. Actual costs may vary based on usage, region, and enterprise agreements.
+</div>
+
+</body>
+</html>

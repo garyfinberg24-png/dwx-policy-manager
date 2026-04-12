@@ -3512,19 +3512,20 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
     const { currentView, currentUserRole, loading, error } = this.state;
 
     // Show Start Screen if:
-    // - No URL params (fresh navigation to PolicyHub)
-    // - User hasn't dismissed for this session
-    // - Not a secure library view
+    // Start Screen only shows on the site HOME page (root URL), never on PolicyHub.aspx.
+    // This ensures PolicyHub.aspx always shows the Policy Hub directly.
+    const currentPath = (window.location.pathname || '').toLowerCase();
+    const isPolicyHubPage = currentPath.includes('policyhub.aspx');
+    const isHomePage = currentPath.endsWith('/home.aspx') || currentPath === '/sites/policymanager' || currentPath === '/sites/policymanager/';
     const urlParams = new URLSearchParams(window.location.search);
     const hasUrlParams = urlParams.get('view') || urlParams.get('library') || urlParams.get('q');
-    const showStartScreen = !hasUrlParams
+    const showStartScreen = isHomePage && !isPolicyHubPage && !hasUrlParams
       && !(this.state as any)._startScreenDismissed
       && !sessionStorage.getItem('pm_start_dismissed')
       && localStorage.getItem('pm_skip_start') !== 'true';
 
     if (showStartScreen) {
       const { StartScreen } = require('../../../components/StartScreen');
-      // Map PolicyUserRole to PolicyManagerRole for StartScreen
       const roleMap: Record<string, string> = { Employee: 'User', Author: 'Author', Manager: 'Manager', Admin: 'Admin' };
       const detectedRole = roleMap[currentUserRole] || localStorage.getItem('pm_detected_role') || 'User';
       const userName = this.props.context?.pageContext?.user?.displayName || 'User';

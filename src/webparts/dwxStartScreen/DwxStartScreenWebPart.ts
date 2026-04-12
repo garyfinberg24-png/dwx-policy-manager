@@ -14,6 +14,7 @@ import { StartScreen } from '../../components/StartScreen/StartScreen';
 import { SPFI } from '@pnp/sp';
 import { getSP } from '../../utils/pnpConfig';
 import { injectSharePointOverrides, signalAppReady } from '../../utils/SharePointOverrides';
+import { ThemeManager } from '../../utils/themeManager';
 
 export interface IDwxStartScreenWebPartProps {
   title: string;
@@ -75,6 +76,20 @@ export default class DwxStartScreenWebPart extends BaseClientSideWebPart<IDwxSta
 
     await super.onInit();
     this._sp = getSP(this.context);
+
+    // Load and apply the saved theme (same as JmlAppLayout does)
+    try {
+      const stored = ThemeManager.getTheme();
+      if (stored && stored.primaryColor) {
+        ThemeManager.apply(stored);
+      } else {
+        // Try loading from SP
+        const spTheme = await ThemeManager.loadFromSP(this._sp);
+        if (spTheme && spTheme.primaryColor) {
+          ThemeManager.apply(spTheme);
+        }
+      }
+    } catch { /* use defaults if theme load fails */ }
   }
 
   protected onThemeChanged(currentTheme: IReadonlyTheme | undefined): void {

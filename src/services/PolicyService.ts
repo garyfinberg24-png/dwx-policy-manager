@@ -974,6 +974,18 @@ export class PolicyService {
       }
       steps.push(`Status validated: ${policy.PolicyStatus}`);
 
+      // Content guard — at least one content source must exist
+      const hasHtmlContent = (policy.HTMLContent || '').trim().length > 50;
+      const hasPolicyContent = (policy.PolicyContent || '').trim().length > 50;
+      const hasDocumentUrl = !!(policy.DocumentURL && (policy.DocumentURL as string).trim().length > 5);
+      if (!hasHtmlContent && !hasPolicyContent && !hasDocumentUrl) {
+        throw new Error(
+          'Cannot publish — no content attached to this policy. ' +
+          'Please add content (HTML, rich text, or an Office document) before publishing.'
+        );
+      }
+      steps.push(`Content validated: HTML=${hasHtmlContent}, PolicyContent=${hasPolicyContent}, DocURL=${hasDocumentUrl}`);
+
       // ══════════════════════════════════════════════════════════════
       // STEP 1: Update policy status → Published
       // ══════════════════════════════════════════════════════════════

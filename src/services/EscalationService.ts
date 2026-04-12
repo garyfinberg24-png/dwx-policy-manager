@@ -78,15 +78,37 @@ export class EscalationService {
     }
   }
 
+  /** Cache of recently sent escalation keys to prevent duplicates within a session */
+  private static _recentEscalations: Set<string> = new Set();
+  private static _recentEscalationsExpiry: number = 0;
+
   /**
    * Check all pending approvals for SLA breaches and escalate as needed.
    * Call this on page load or periodically.
+   * Includes deduplication: skips if an escalation for the same policy
+   * was already queued in this session or exists pending in PM_NotificationQueue.
    */
   public async checkAndEscalate(): Promise<IEscalationResult[]> {
     if (!this.config.enabled) return [];
 
     const results: IEscalationResult[] = [];
     const now = new Date();
+
+    // Reset session dedup cache every 24 hours
+    if (Date.now() > EscalationService._recentEscalationsExpiry) {
+      EscalationService._recentEscalations.clear();
+      EscalationService._recentEscalationsExpiry = Date.now() + 24 * 60 * 60 * 1000;
+    }
+
+    // Pre-load existing pending escalations from queue to prevent duplicates
+    let existingEscalationPolicyIds: Set<number> = new Set();
+    try {
+      const existing = await this.sp.web.lists.getByTitle('PM_NotificationQueue')
+        .items.filter("NotificationType eq 'Escalation' and QueueStatus eq 'Pending'")
+        .select('Id', 'PolicyId')
+        .top(500)();
+      existingEscalationPolicyIds = new Set(existing.map((e: any) => e.PolicyId).filter(Boolean));
+    } catch { /* queue may not exist */ }
 
     try {
       // Load pending approvals from PM_Approvals
@@ -112,9 +134,18 @@ export class EscalationService {
 
         // Check if SLA is breached
         if (daysOverdue > 0) {
+          // Dedup: skip if escalation already pending for this policy
+          const policyId = approval.ProcessID || 0;
+          const dedupKey = `approval-${policyId}`;
+          if (existingEscalationPolicyIds.has(policyId) || EscalationService._recentEscalations.has(dedupKey)) {
+            continue; // Already has a pending escalation — skip
+          }
           // SLA breached — execute escalation
           const result = await this.executeEscalation(approval, daysOverdue, escalationCount);
-          if (result) results.push(result);
+          if (result) {
+            results.push(result);
+            EscalationService._recentEscalations.add(dedupKey);
+          }
         } else if (daysOverdue >= -this.config.warningDays && escalationCount === 0) {
           // Approaching SLA — send warning
           await this.sendWarningNotification(approval, Math.abs(daysOverdue));
@@ -137,6 +168,12 @@ export class EscalationService {
           const daysOverdue = Math.floor((now.getTime() - effectiveDue.getTime()) / (1000 * 60 * 60 * 24));
 
           if (daysOverdue > 0) {
+            // Dedup: skip if escalation already pending for this policy
+            const dedupKey = `review-${review.PolicyId}`;
+            if (existingEscalationPolicyIds.has(review.PolicyId) || EscalationService._recentEscalations.has(dedupKey)) {
+              continue; // Already has a pending escalation — skip
+            }
+
             // Resolve reviewer email from ReviewerId
             let reviewerEmail = '';
             try {
@@ -152,6 +189,7 @@ export class EscalationService {
               `Review for policy ${review.PolicyId} by ${review.ReviewerType} is ${daysOverdue} days overdue`,
               reviewerEmail
             );
+            EscalationService._recentEscalations.add(dedupKey);
           }
         }
       } catch { /* PM_PolicyReviewers may not exist */ }

@@ -10633,7 +10633,44 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
   // RENDER: SYSTEM INFO (ABOUT)
   // ============================================================================
 
+  private async loadEmailHealthCheck(): Promise<void> {
+    if ((this.state as any)._emailHealthChecked) return;
+    try {
+      const queueItems = await this.props.sp.web.lists.getByTitle('PM_NotificationQueue')
+        .items.select('Id', 'QueueStatus', 'RecipientEmail')
+        .top(500)();
+
+      let pending = 0, failed = 0, sent = 0, empty = 0;
+      for (const item of queueItems) {
+        const status = item.QueueStatus || '';
+        if (status === 'Pending') pending++;
+        else if (status === 'Failed') failed++;
+        else if (status === 'Sent') sent++;
+        const email = item.RecipientEmail || '';
+        if (!email || !email.includes('@')) empty++;
+      }
+
+      const healthStatus = (empty > 0 || failed > 5) ? 'alert' : pending > 50 ? 'warning' : 'healthy';
+
+      this.setState({
+        _emailQueuePending: pending,
+        _emailQueueFailed: failed,
+        _emailQueueSent: sent,
+        _emailQueueEmpty: empty,
+        _emailHealthStatus: healthStatus,
+        _emailHealthChecked: true,
+      } as any);
+    } catch {
+      this.setState({ _emailHealthStatus: 'alert', _emailHealthChecked: true } as any);
+    }
+  }
+
   private renderSystemInfoContent(): JSX.Element {
+    // Load email health on first render of this section
+    if (!(this.state as any)._emailHealthChecked) {
+      this.loadEmailHealthCheck();
+    }
+
     const features = [
       { name: 'Policy Hub', description: 'Central policy browsing and discovery dashboard' },
       { name: 'My Policies', description: 'Personal policy assignments and acknowledgements' },
@@ -10727,6 +10764,55 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                 </Stack>
               ))}
             </Stack>
+          </div>
+
+          {/* Email Pipeline Health */}
+          <div className={styles.adminCard}>
+            <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 10 }} style={LayoutStyles.marginBottom16}>
+              <div style={{
+                width: 36, height: 36, borderRadius: 4,
+                background: (this.state as any)._emailHealthStatus === 'healthy' ? '#f0fdf4' : (this.state as any)._emailHealthStatus === 'warning' ? '#fef3c7' : '#fee2e2',
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}>
+                <Icon iconName="Mail" style={{ fontSize: 18, color: (this.state as any)._emailHealthStatus === 'healthy' ? '#16a34a' : (this.state as any)._emailHealthStatus === 'warning' ? '#d97706' : '#dc2626' }} />
+              </div>
+              <Text variant="mediumPlus" style={TextStyles.semiBold}>Email Pipeline Health</Text>
+              <span style={{
+                fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 3, textTransform: 'uppercase',
+                background: (this.state as any)._emailHealthStatus === 'healthy' ? '#dcfce7' : (this.state as any)._emailHealthStatus === 'warning' ? '#fef3c7' : '#fee2e2',
+                color: (this.state as any)._emailHealthStatus === 'healthy' ? '#16a34a' : (this.state as any)._emailHealthStatus === 'warning' ? '#d97706' : '#dc2626'
+              }}>
+                {(this.state as any)._emailHealthStatus === 'healthy' ? 'Healthy' : (this.state as any)._emailHealthStatus === 'warning' ? 'Warning' : (this.state as any)._emailHealthChecked ? 'Alert' : 'Checking...'}
+              </span>
+            </Stack>
+            <Stack tokens={{ childrenGap: 8 }}>
+              {[
+                { label: 'Queue Items (Pending)', value: String((this.state as any)._emailQueuePending ?? '...'), color: (this.state as any)._emailQueuePending > 10 ? '#d97706' : undefined },
+                { label: 'Queue Items (Failed)', value: String((this.state as any)._emailQueueFailed ?? '...'), color: (this.state as any)._emailQueueFailed > 0 ? '#dc2626' : undefined },
+                { label: 'Queue Items (Sent)', value: String((this.state as any)._emailQueueSent ?? '...') },
+                { label: 'Empty Recipients', value: String((this.state as any)._emailQueueEmpty ?? '...'), color: (this.state as any)._emailQueueEmpty > 0 ? '#dc2626' : undefined },
+              ].map((row, i) => (
+                <Stack key={i} horizontal tokens={{ childrenGap: 12 }} style={{ padding: '6px 0', borderBottom: i < 3 ? '1px solid #f1f5f9' : 'none' }}>
+                  <Text style={{ width: 180, color: Colors.textTertiary, fontWeight: 500 }}>{row.label}:</Text>
+                  <Text style={{ fontWeight: 700, color: row.color || '#0f172a' }}>{row.value}</Text>
+                </Stack>
+              ))}
+            </Stack>
+            {(this.state as any)._emailQueueEmpty > 0 && (
+              <div style={{ marginTop: 12, padding: '10px 14px', background: '#fef2f2', borderRadius: 4, borderLeft: '3px solid #dc2626' }}>
+                <Text style={{ fontSize: 12, color: '#991b1b' }}>
+                  <strong>Alert:</strong> {(this.state as any)._emailQueueEmpty} queue items have empty recipient emails. These will cause the Logic App to fail.
+                  The EscalationService fix (Session 24) should prevent new ones, but existing items need manual cleanup.
+                </Text>
+              </div>
+            )}
+            {(this.state as any)._emailQueuePending > 50 && (
+              <div style={{ marginTop: 12, padding: '10px 14px', background: '#fffbeb', borderRadius: 4, borderLeft: '3px solid #d97706' }}>
+                <Text style={{ fontSize: 12, color: '#92400e' }}>
+                  <strong>Warning:</strong> {(this.state as any)._emailQueuePending} emails pending. The Logic App may be stopped or the API connection may have expired. Check Azure Portal.
+                </Text>
+              </div>
+            )}
           </div>
 
           {/* Technology Stack */}

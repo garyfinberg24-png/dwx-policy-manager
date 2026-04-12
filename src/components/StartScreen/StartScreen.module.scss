@@ -195,30 +195,30 @@ $theme-lighter: var(--pm-primary-lighter, #f0fdfa);
 // ── Main Content ─────────────────────────────
 .main {
   flex: 1;
-  padding: 48px 56px;
+  padding: 32px 40px;
   overflow-y: auto;
   background: #fff;
 }
 
 .main h1 {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 700;
   color: #0f172a;
-  margin: 0 0 8px;
+  margin: 0 0 6px;
 }
 
 .mainDesc {
-  font-size: 14px;
+  font-size: 13px;
   color: #64748b;
-  line-height: 1.7;
+  line-height: 1.6;
   max-width: 700px;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
 .mainHint {
-  font-size: 12px;
+  font-size: 11px;
   color: #94a3b8;
-  margin-bottom: 32px;
+  margin-bottom: 20px;
 }
 
 .sectionLabel {
@@ -227,7 +227,7 @@ $theme-lighter: var(--pm-primary-lighter, #f0fdfa);
   letter-spacing: 1.5px;
   color: #94a3b8;
   font-weight: 600;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -244,14 +244,17 @@ $theme-lighter: var(--pm-primary-lighter, #f0fdfa);
   letter-spacing: 0.5px;
 }
 
-// Action cards grid
+// Action cards grid — 4 per row, compact
 .actionsGrid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-bottom: 40px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
 
-  @media (max-width: 900px) {
+  @media (max-width: 1100px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  @media (max-width: 800px) {
     grid-template-columns: repeat(2, 1fr);
   }
 }
@@ -259,8 +262,8 @@ $theme-lighter: var(--pm-primary-lighter, #f0fdfa);
 .actionCard {
   background: #fff;
   border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 28px 24px;
+  border-radius: 10px;
+  padding: 20px 16px;
   text-align: center;
   cursor: pointer;
   transition: all 0.2s;
@@ -278,20 +281,20 @@ $theme-lighter: var(--pm-primary-lighter, #f0fdfa);
 }
 
 .actionIcon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 14px;
+  margin: 0 auto 10px;
 }
 
 .actionTitle {
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 700;
   color: #0f172a;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   position: relative;
   display: inline-block;
 }
@@ -318,15 +321,12 @@ $theme-lighter: var(--pm-primary-lighter, #f0fdfa);
   line-height: 1.5;
 }
 
-// Stats bar
+// Stats bar — compact inline strip
 .statsBar {
   display: flex;
-  gap: 16px;
-  margin-bottom: 32px;
-
-  @media (max-width: 900px) {
-    flex-wrap: wrap;
-  }
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
 }
 
 .statCard {
@@ -334,17 +334,17 @@ $theme-lighter: var(--pm-primary-lighter, #f0fdfa);
   background: #fff;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
-  padding: 16px 20px;
+  padding: 10px 14px;
   display: flex;
   align-items: center;
-  gap: 14px;
-  min-width: 140px;
+  gap: 10px;
+  min-width: 120px;
 }
 
 .statIcon {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -352,13 +352,13 @@ $theme-lighter: var(--pm-primary-lighter, #f0fdfa);
 }
 
 .statValue {
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 700;
   color: #0f172a;
 }
 
 .statLabel {
-  font-size: 11px;
+  font-size: 10px;
   color: #94a3b8;
   text-transform: uppercase;
   letter-spacing: 0.5px;

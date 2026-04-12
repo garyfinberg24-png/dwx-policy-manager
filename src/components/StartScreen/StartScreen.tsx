@@ -281,11 +281,6 @@ export class StartScreen extends React.Component<IStartScreenProps, IStartScreen
           </p>
           <p className={styles.mainHint}>Choose an action below to get started, or use the sidebar to jump back to a recent policy.</p>
 
-          <div className={styles.sectionLabel}>
-            Quick Actions
-            <span className={styles.roleBadge}>{userRole}</span>
-          </div>
-
           <div className={styles.actionsGrid}>
             {visibleActions.map(action => (
               <div

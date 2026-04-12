@@ -13,7 +13,7 @@ import * as strings from 'DwxStartScreenWebPartStrings';
 import { StartScreen } from '../../components/StartScreen/StartScreen';
 import { SPFI } from '@pnp/sp';
 import { getSP } from '../../utils/pnpConfig';
-import { injectSharePointOverrides } from '../../utils/SharePointOverrides';
+import { injectSharePointOverrides, signalAppReady } from '../../utils/SharePointOverrides';
 
 export interface IDwxStartScreenWebPartProps {
   title: string;
@@ -26,6 +26,15 @@ export default class DwxStartScreenWebPart extends BaseClientSideWebPart<IDwxSta
     // Detect role from localStorage (set by JmlAppLayout / PolicyManagerHeader)
     const storedRole = localStorage.getItem('pm_detected_role') || 'User';
 
+    // Render directly into domElement with inline fallback
+    this.domElement.innerHTML = '';
+    this.domElement.style.cssText = 'min-height: 100vh; width: 100%;';
+
+    const container = document.createElement('div');
+    container.id = 'dwx-start-screen-root';
+    container.style.cssText = 'min-height: 100vh; width: 100%;';
+    this.domElement.appendChild(container);
+
     const element = React.createElement(
       StartScreen,
       {
@@ -34,31 +43,17 @@ export default class DwxStartScreenWebPart extends BaseClientSideWebPart<IDwxSta
         userRole: storedRole,
         siteUrl: this.context.pageContext.web.absoluteUrl,
         onDismiss: () => {
-          // Navigate to Policy Hub when user clicks "Skip to Policy Hub"
           sessionStorage.setItem('pm_start_dismissed', 'true');
           window.location.href = `${this.context.pageContext.web.absoluteUrl}/SitePages/PolicyHub.aspx`;
         }
       }
     );
 
-    ReactDom.render(element, this.domElement);
+    ReactDom.render(element, container);
 
-    // Signal to SharePoint that the webpart is ready — dismisses the loading skeleton
-    this._signalReady();
-  }
-
-  private _signalReady(): void {
-    try {
-      // SPFx 1.20+ signalAppReady
-      if ((this.context as any).application?.signalAppReady) {
-        (this.context as any).application.signalAppReady();
-      }
-      // Also remove SP loading indicators manually
-      const loadingIndicators = document.querySelectorAll(
-        '.sp-webpart-loading, [class*="placeholderSpinner"], [class*="webPartLoading"]'
-      );
-      loadingIndicators.forEach(el => (el as HTMLElement).style.display = 'none');
-    } catch { /* non-critical */ }
+    // Signal app ready — hides the JML loading skeleton
+    signalAppReady();
+    console.log('[DwxStartScreen] Rendered and signalled ready');
   }
 
   protected async onInit(): Promise<void> {

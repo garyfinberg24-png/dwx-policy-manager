@@ -480,7 +480,7 @@ export class PolicyService {
           'PolicyCategory', 'ComplianceRisk', 'IsActive', 'IsMandatory',
           'VersionNumber', 'PolicyDescription', 'DocumentURL', 'DocumentFormat',
           'CreationMethod', 'ReadTimeframe', 'RequiresAcknowledgement', 'RequiresQuiz',
-          'PublishedDate', 'EffectiveDate', 'ExpiryDate', 'ReviewDate',
+          'PublishedDate', 'EffectiveDate', 'ExpiryDate', 'NextReviewDate',
           'Department', 'Visibility', 'Modified', 'Created',
           'PolicyOwner/Id', 'PolicyOwner/Title', 'PolicyOwner/EMail'
         )

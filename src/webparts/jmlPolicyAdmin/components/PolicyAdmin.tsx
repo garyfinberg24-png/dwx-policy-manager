@@ -168,6 +168,8 @@ const NAV_SECTIONS: INavSection[] = [
       { key: 'customTheme', label: 'Theme Editor', icon: 'Color', description: 'Brand colors, logo, fonts, and preset themes' },
       { key: 'provisioning', label: 'Provisioning', icon: 'Database', description: 'SharePoint lists, seed data, and system setup' },
       { key: 'eventViewer', label: 'Event Viewer', icon: 'EventDate', description: 'Diagnostic event capture, buffer sizes, AI triage, and retention' },
+      { key: 'spAdmin', label: 'SharePoint Admin', icon: 'SharepointAppIcon16', description: 'Quick access to SP pages, lists, site settings' },
+      { key: 'backup', label: 'Backup & Restore', icon: 'CloudDownload', description: 'On-demand backup of all PM_ lists to JSON/CSV' },
       { key: 'systemInfo', label: 'System Info', icon: 'Info', description: 'Version, technology stack, and diagnostics' }
     ]
   },
@@ -10633,6 +10635,374 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
   // RENDER: SYSTEM INFO (ABOUT)
   // ============================================================================
 
+  // ============================================================================
+  // SHAREPOINT ADMIN LINKS
+  // ============================================================================
+
+  private renderSharePointAdminContent(): JSX.Element {
+    const siteUrl = this.props.context?.pageContext?.web?.absoluteUrl || '';
+    const tenantUrl = siteUrl.split('/sites/')[0] || '';
+    const tenantName = (tenantUrl.replace('https://', '').split('.')[0]) || '';
+
+    const linkStyle: React.CSSProperties = {
+      display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px',
+      background: '#fff', border: '1px solid #e2e8f0', borderRadius: 6,
+      cursor: 'pointer', textDecoration: 'none', color: '#0f172a', fontSize: 13,
+      transition: 'all 0.15s'
+    };
+    const iconBox = (color: string, bg: string): React.CSSProperties => ({
+      width: 32, height: 32, borderRadius: 6, background: bg, display: 'flex',
+      alignItems: 'center', justifyContent: 'center', flexShrink: 0
+    });
+
+    // All PM_ pages
+    const pages = [
+      'Start.aspx', 'PolicyHub.aspx', 'MyPolicies.aspx', 'PolicyBuilder.aspx',
+      'PolicyAuthor.aspx', 'PolicyDetails.aspx', 'PolicyAdmin.aspx', 'PolicySearch.aspx',
+      'PolicyHelp.aspx', 'PolicyAnalytics.aspx', 'PolicyDistribution.aspx',
+      'PolicyManagerView.aspx', 'PolicyPacks.aspx', 'QuizBuilder.aspx', 'PolicyBulkUpload.aspx'
+    ];
+
+    // List groups
+    const listGroups = [
+      { name: 'Core', lists: ['PM_Policies', 'PM_PolicyVersions', 'PM_PolicyAcknowledgements', 'PM_PolicyCategories', 'PM_PolicySubCategories'] },
+      { name: 'Approval', lists: ['PM_Approvals', 'PM_ApprovalChains', 'PM_ApprovalHistory', 'PM_ApprovalDelegations', 'PM_ApprovalTemplates'] },
+      { name: 'Notification', lists: ['PM_Notifications', 'PM_NotificationQueue', 'PM_EmailTemplates'] },
+      { name: 'Quiz', lists: ['PM_PolicyQuizzes', 'PM_PolicyQuizQuestions', 'PM_PolicyQuizResults'] },
+      { name: 'Config & Admin', lists: ['PM_Configuration', 'PM_PolicyAuditLog', 'PM_UserProfiles', 'PM_PolicyTemplates', 'PM_PolicyMetadataProfiles'] },
+      { name: 'Distribution', lists: ['PM_PolicyDistributions', 'PM_ReminderSchedule', 'PM_PolicyPacks', 'PM_PolicyPackAssignments'] },
+      { name: 'Social', lists: ['PM_PolicyRatings', 'PM_PolicyComments', 'PM_PolicyFollowers', 'PM_PolicyShares'] },
+    ];
+
+    // Load list item counts on first render
+    if (!(this.state as any)._spAdminLoaded) {
+      this.loadListCounts();
+    }
+    const listCounts: Record<string, number> = (this.state as any)._listCounts || {};
+
+    return (
+      <div className={styles.sectionContent}>
+        <Stack tokens={{ childrenGap: 24 }}>
+          {this.renderSectionIntro('SharePoint Admin', 'Quick access to SharePoint management surfaces. All links open in a new tab outside the Policy Manager shell.')}
+
+          {/* Site Management */}
+          <div>
+            <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }} style={{ marginBottom: 12 }}>
+              <Icon iconName="Settings" style={{ fontSize: 16, color: tc.primary }} />
+              <Text style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1 }}>Site Management</Text>
+            </Stack>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+              {[
+                { label: 'Site Settings', icon: 'Settings', url: `${siteUrl}/_layouts/15/settings.aspx`, color: '#475569', bg: '#f1f5f9' },
+                { label: 'Site Contents', icon: 'BulletedList2', url: `${siteUrl}/_layouts/15/viewlsts.aspx`, color: '#0284c7', bg: '#e0f2fe' },
+                { label: 'Site Permissions', icon: 'Permissions', url: `${siteUrl}/_layouts/15/user.aspx`, color: '#7c3aed', bg: '#f5f3ff' },
+                { label: 'Recycle Bin', icon: 'RecycleBin', url: `${siteUrl}/_layouts/15/RecycleBin.aspx`, color: '#d97706', bg: '#fef3c7' },
+                { label: 'Site Usage', icon: 'BarChartVertical', url: `${siteUrl}/_layouts/15/usage.aspx`, color: '#0d9488', bg: '#f0fdfa' },
+                { label: 'Site Features', icon: 'WebAppBuilderModule', url: `${siteUrl}/_layouts/15/ManageFeatures.aspx`, color: '#6d28d9', bg: '#ede9fe' },
+              ].map((link, i) => (
+                <a key={i} href={link.url} target="_blank" rel="noopener noreferrer" style={linkStyle}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = tc.primary; (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = '#e2e8f0'; (e.currentTarget as HTMLElement).style.transform = 'none'; }}>
+                  <div style={iconBox(link.color, link.bg)}>
+                    <Icon iconName={link.icon} styles={{ root: { fontSize: 16, color: link.color } }} />
+                  </div>
+                  <Text style={{ fontWeight: 600, fontSize: 13 }}>{link.label}</Text>
+                </a>
+              ))}
+            </div>
+          </div>
+
+          {/* Pages */}
+          <div>
+            <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }} style={{ marginBottom: 12 }}>
+              <Icon iconName="Page" style={{ fontSize: 16, color: tc.primary }} />
+              <Text style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1 }}>SharePoint Pages</Text>
+            </Stack>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+              {pages.map((page, i) => (
+                <a key={i} href={`${siteUrl}/SitePages/${page}`} target="_blank" rel="noopener noreferrer"
+                  style={{ ...linkStyle, padding: '8px 12px' }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = tc.primary; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = '#e2e8f0'; }}>
+                  <Icon iconName="FileHTML" styles={{ root: { fontSize: 14, color: '#64748b' } }} />
+                  <Text style={{ fontSize: 12, fontWeight: 500 }}>{page.replace('.aspx', '')}</Text>
+                </a>
+              ))}
+              <a href={`${siteUrl}/SitePages/Forms/AllPages.aspx`} target="_blank" rel="noopener noreferrer"
+                style={{ ...linkStyle, padding: '8px 12px', background: tc.primaryLighter }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = tc.primary; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = '#e2e8f0'; }}>
+                <Icon iconName="PageList" styles={{ root: { fontSize: 14, color: tc.primary } }} />
+                <Text style={{ fontSize: 12, fontWeight: 600, color: tc.primary }}>All Pages</Text>
+              </a>
+            </div>
+          </div>
+
+          {/* Lists by category */}
+          <div>
+            <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }} style={{ marginBottom: 12 }}>
+              <Icon iconName="BulletedList2" style={{ fontSize: 16, color: tc.primary }} />
+              <Text style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1 }}>SharePoint Lists</Text>
+              <Text style={{ fontSize: 11, color: '#94a3b8' }}>({Object.keys(listCounts).length} lists loaded)</Text>
+            </Stack>
+            {listGroups.map((group, gi) => (
+              <div key={gi} style={{ marginBottom: 16 }}>
+                <Text style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6, display: 'block' }}>{group.name}</Text>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                  {group.lists.map((list, li) => (
+                    <a key={li} href={`${siteUrl}/Lists/${list}/AllItems.aspx`} target="_blank" rel="noopener noreferrer"
+                      style={{ ...linkStyle, padding: '8px 12px' }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = tc.primary; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = '#e2e8f0'; }}>
+                      <Icon iconName="BulletedList" styles={{ root: { fontSize: 14, color: '#64748b' } }} />
+                      <div style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 12, fontWeight: 500, display: 'block' }}>{list}</Text>
+                      </div>
+                      {listCounts[list] !== undefined && (
+                        <span style={{ fontSize: 10, fontWeight: 700, color: '#64748b', background: '#f1f5f9', padding: '2px 6px', borderRadius: 3 }}>
+                          {listCounts[list]}
+                        </span>
+                      )}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Admin Tools */}
+          <div>
+            <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }} style={{ marginBottom: 12 }}>
+              <Icon iconName="AdminALogoInverse32" style={{ fontSize: 16, color: tc.primary }} />
+              <Text style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1 }}>External Admin Tools</Text>
+            </Stack>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+              {[
+                { label: 'SharePoint Admin Centre', icon: 'SharepointAppIcon16', url: `https://${tenantName}-admin.sharepoint.com`, color: '#0d9488', bg: '#f0fdfa' },
+                { label: 'App Catalog', icon: 'AppIconDefault', url: `${tenantUrl}/sites/appcatalog`, color: '#2563eb', bg: '#eff6ff' },
+                { label: 'Entra ID (Azure AD)', icon: 'AADLogo', url: 'https://entra.microsoft.com', color: '#0284c7', bg: '#e0f2fe' },
+                { label: 'Azure Portal', icon: 'AzureLogo', url: 'https://portal.azure.com', color: '#0078d4', bg: '#e0f2fe' },
+                { label: 'M365 Admin Centre', icon: 'OfficeLogo', url: 'https://admin.microsoft.com', color: '#d83b01', bg: '#fff4e5' },
+                { label: 'Power Automate', icon: 'Flow', url: 'https://make.powerautomate.com', color: '#0066ff', bg: '#e8f0fe' },
+              ].map((link, i) => (
+                <a key={i} href={link.url} target="_blank" rel="noopener noreferrer" style={linkStyle}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = tc.primary; (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = '#e2e8f0'; (e.currentTarget as HTMLElement).style.transform = 'none'; }}>
+                  <div style={iconBox(link.color, link.bg)}>
+                    <Icon iconName={link.icon} styles={{ root: { fontSize: 16, color: link.color } }} />
+                  </div>
+                  <Text style={{ fontWeight: 600, fontSize: 13 }}>{link.label}</Text>
+                </a>
+              ))}
+            </div>
+          </div>
+        </Stack>
+      </div>
+    );
+  }
+
+  private async loadListCounts(): Promise<void> {
+    try {
+      this.setState({ _spAdminLoaded: true } as any);
+      const lists = await this.props.sp.web.lists
+        .filter("substringof('PM_', Title)")
+        .select('Title', 'ItemCount')();
+      const counts: Record<string, number> = {};
+      for (const list of lists) {
+        counts[list.Title] = list.ItemCount;
+      }
+      this.setState({ _listCounts: counts } as any);
+    } catch { /* non-critical */ }
+  }
+
+
+  // ============================================================================
+  // BACKUP & RESTORE
+  // ============================================================================
+
+  private renderBackupContent(): JSX.Element {
+    const st = this.state as any;
+    const backupRunning = st._backupRunning || false;
+    const backupProgress = st._backupProgress || '';
+    const backupResult = st._backupResult || null;
+    const lastBackup = localStorage.getItem('pm_last_backup_time') || 'Never';
+
+    // All lists to back up
+    const backupGroups = [
+      { name: 'Core Lists', key: 'core', lists: ['PM_Policies', 'PM_PolicyVersions', 'PM_PolicyAcknowledgements', 'PM_PolicyCategories', 'PM_PolicySubCategories', 'PM_PolicyDocuments'], checked: st._backupCore !== false },
+      { name: 'Approval Lists', key: 'approval', lists: ['PM_Approvals', 'PM_ApprovalChains', 'PM_ApprovalHistory', 'PM_ApprovalDelegations', 'PM_ApprovalTemplates'], checked: st._backupApproval !== false },
+      { name: 'Notification Lists', key: 'notification', lists: ['PM_Notifications', 'PM_NotificationQueue', 'PM_EmailTemplates'], checked: st._backupNotification !== false },
+      { name: 'Quiz Lists', key: 'quiz', lists: ['PM_PolicyQuizzes', 'PM_PolicyQuizQuestions', 'PM_PolicyQuizResults'], checked: st._backupQuiz !== false },
+      { name: 'Config & Admin', key: 'config', lists: ['PM_Configuration', 'PM_PolicyTemplates', 'PM_PolicyMetadataProfiles', 'PM_NamingRules', 'PM_SLAConfigs', 'PM_UserProfiles'], checked: st._backupConfig !== false },
+      { name: 'Audit & Analytics', key: 'audit', lists: ['PM_PolicyAuditLog', 'PM_PolicyAnalytics', 'PM_EventLog'], checked: st._backupAudit === true },
+    ];
+
+    return (
+      <div className={styles.sectionContent}>
+        <Stack tokens={{ childrenGap: 24 }}>
+          {this.renderSectionIntro('Backup & Restore', 'Create on-demand backups of all Policy Manager SharePoint lists. Backups are downloaded as JSON files that can be used to restore data if needed.')}
+
+          {/* Status Card */}
+          <div className={styles.adminCard} style={{ borderLeft: `3px solid ${tc.primary}` }}>
+            <Stack horizontal horizontalAlign="space-between" verticalAlign="center">
+              <Stack tokens={{ childrenGap: 4 }}>
+                <Text style={{ fontSize: 14, fontWeight: 600 }}>Last Backup</Text>
+                <Text style={{ fontSize: 12, color: '#64748b' }}>{lastBackup}</Text>
+              </Stack>
+              <Stack horizontal tokens={{ childrenGap: 8 }}>
+                <PrimaryButton
+                  text={backupRunning ? 'Backing up...' : 'Backup Now'}
+                  iconProps={{ iconName: backupRunning ? 'Sync' : 'CloudDownload' }}
+                  disabled={backupRunning}
+                  onClick={() => this.executeBackup(backupGroups.filter(g => g.checked))}
+                />
+                <DefaultButton
+                  text="Export as CSV"
+                  iconProps={{ iconName: 'ExcelDocument' }}
+                  disabled={backupRunning}
+                  onClick={() => this.executeBackup(backupGroups.filter(g => g.checked), 'csv')}
+                />
+              </Stack>
+            </Stack>
+            {backupRunning && (
+              <div style={{ marginTop: 12 }}>
+                <Spinner size={SpinnerSize.small} label={backupProgress} styles={{ label: { fontSize: 12 } }} />
+              </div>
+            )}
+            {backupResult && (
+              <div style={{ marginTop: 12, padding: '10px 14px', background: '#f0fdf4', borderRadius: 4, borderLeft: '3px solid #16a34a' }}>
+                <Text style={{ fontSize: 12, color: '#166534' }}>
+                  <strong>Backup complete:</strong> {backupResult.listCount} lists, {backupResult.totalItems} items, {backupResult.fileSize}
+                </Text>
+              </div>
+            )}
+          </div>
+
+          {/* Scope Selection */}
+          <div className={styles.adminCard}>
+            <Text style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, display: 'block' }}>Backup Scope</Text>
+            <Stack tokens={{ childrenGap: 8 }}>
+              {backupGroups.map((group, i) => (
+                <Stack key={i} horizontal verticalAlign="center" tokens={{ childrenGap: 10 }}
+                  style={{ padding: '8px 12px', background: group.checked ? '#f0fdfa' : '#fafafa', borderRadius: 6, border: `1px solid ${group.checked ? tc.primary : '#e2e8f0'}` }}>
+                  <input type="checkbox" checked={group.checked}
+                    onChange={(e) => this.setState({ [`_backup${group.key.charAt(0).toUpperCase() + group.key.slice(1)}`]: e.target.checked } as any)}
+                    style={{ accentColor: tc.primary }} />
+                  <div style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 13, fontWeight: 600 }}>{group.name}</Text>
+                    <Text style={{ fontSize: 11, color: '#94a3b8', display: 'block' }}>{group.lists.length} lists: {group.lists.join(', ')}</Text>
+                  </div>
+                </Stack>
+              ))}
+            </Stack>
+          </div>
+
+          {/* Info */}
+          <div style={{ padding: '14px 18px', background: '#f0fdfa', borderLeft: '3px solid #0d9488', borderRadius: 4 }}>
+            <Text style={{ fontWeight: 700, fontSize: 12, color: '#0d9488', marginBottom: 4, display: 'block' }}>Backup Format</Text>
+            <Text style={{ fontSize: 12, color: '#475569' }}>
+              <strong>JSON:</strong> Full-fidelity backup including field types, lookup IDs, and metadata. Suitable for programmatic restore.<br/>
+              <strong>CSV:</strong> One file per list in a ZIP archive. Human-readable, Excel-compatible. Good for auditing and manual review.
+            </Text>
+          </div>
+        </Stack>
+      </div>
+    );
+  }
+
+  private async executeBackup(groups: Array<{ name: string; lists: string[] }>, format: 'json' | 'csv' = 'json'): Promise<void> {
+    this.setState({ _backupRunning: true, _backupProgress: 'Initialising backup...', _backupResult: null } as any);
+
+    try {
+      const backup: Record<string, any> = {
+        _meta: {
+          timestamp: new Date().toISOString(),
+          site: this.props.context?.pageContext?.web?.absoluteUrl || '',
+          version: '1.2.5',
+          format,
+          groups: groups.map(g => g.name)
+        }
+      };
+
+      let totalItems = 0;
+      const allLists = groups.flatMap(g => g.lists);
+
+      for (let i = 0; i < allLists.length; i++) {
+        const listName = allLists[i];
+        this.setState({ _backupProgress: `Backing up ${listName} (${i + 1}/${allLists.length})...` } as any);
+
+        try {
+          const items = await this.props.sp.web.lists.getByTitle(listName).items.top(5000)();
+          backup[listName] = items;
+          totalItems += items.length;
+        } catch {
+          backup[listName] = { error: 'List not found or access denied', items: [] };
+        }
+      }
+
+      // Generate download
+      if (format === 'json') {
+        const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        a.href = url;
+        a.download = `PM_Backup_${ts}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } else {
+        // CSV format — generate one CSV per list, then zip via concatenated download
+        // (Simple approach: download as a single CSV with list separators)
+        let csvContent = '';
+        for (const listName of allLists) {
+          const items = backup[listName];
+          if (!Array.isArray(items) || items.length === 0) continue;
+
+          csvContent += `\n\n=== ${listName} (${items.length} items) ===\n`;
+          const headers = Object.keys(items[0]).filter(k => !k.startsWith('odata') && !k.startsWith('__'));
+          csvContent += headers.join(',') + '\n';
+          for (const item of items) {
+            csvContent += headers.map(h => {
+              const val = item[h];
+              if (val === null || val === undefined) return '';
+              const str = String(val).replace(/"/g, '""');
+              return str.includes(',') || str.includes('\n') ? `"${str}"` : str;
+            }).join(',') + '\n';
+          }
+        }
+
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        a.href = url;
+        a.download = `PM_Backup_${ts}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+
+      const fileSize = format === 'json'
+        ? `${(JSON.stringify(backup).length / (1024 * 1024)).toFixed(1)} MB`
+        : 'Downloaded';
+
+      localStorage.setItem('pm_last_backup_time', new Date().toLocaleString());
+
+      this.setState({
+        _backupRunning: false,
+        _backupProgress: '',
+        _backupResult: { listCount: allLists.length, totalItems, fileSize }
+      } as any);
+
+    } catch (error) {
+      this.setState({
+        _backupRunning: false,
+        _backupProgress: '',
+        _backupResult: { listCount: 0, totalItems: 0, fileSize: `Error: ${(error as Error).message}` }
+      } as any);
+    }
+  }
+
+
   private async loadEmailHealthCheck(): Promise<void> {
     if ((this.state as any)._emailHealthChecked) return;
     try {
@@ -12985,6 +13355,8 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       case 'legalHolds': return this.renderLegalHoldsContent();
       case 'dlpRules': return this.renderDLPRulesContent();
       case 'dataRetention': return this.renderDataRetentionContent(); // legacy — merged into Data Lifecycle
+      case 'spAdmin': return this.renderSharePointAdminContent();
+      case 'backup': return this.renderBackupContent();
       case 'systemInfo': return this.renderSystemInfoContent();
       case 'eventViewer': return this.renderEventViewerConfigContent();
       case 'policyPacks': return this.renderPolicyPackTypesContent();

@@ -42,11 +42,42 @@ export default class DwxStartScreenWebPart extends BaseClientSideWebPart<IDwxSta
     );
 
     ReactDom.render(element, this.domElement);
+
+    // Signal to SharePoint that the webpart is ready — dismisses the loading skeleton
+    this._signalReady();
+  }
+
+  private _signalReady(): void {
+    try {
+      // SPFx 1.20+ signalAppReady
+      if ((this.context as any).application?.signalAppReady) {
+        (this.context as any).application.signalAppReady();
+      }
+      // Also remove SP loading indicators manually
+      const loadingIndicators = document.querySelectorAll(
+        '.sp-webpart-loading, [class*="placeholderSpinner"], [class*="webPartLoading"]'
+      );
+      loadingIndicators.forEach(el => (el as HTMLElement).style.display = 'none');
+    } catch { /* non-critical */ }
   }
 
   protected async onInit(): Promise<void> {
-    // Hide SharePoint chrome for full app-like experience
+    // Inject critical CSS immediately to hide SP chrome before React mounts
     injectSharePointOverrides();
+
+    // Also inject inline style to hide SP skeleton ASAP
+    const style = document.createElement('style');
+    style.textContent = `
+      .CanvasZone [class*="placeholder"],
+      .CanvasZone [class*="Placeholder"],
+      [class*="webPartLoading"],
+      [class*="sp-webpart-loading"] {
+        display: none !important;
+      }
+      .CanvasZone { overflow: visible !important; }
+    `;
+    document.head.appendChild(style);
+
     await super.onInit();
     this._sp = getSP(this.context);
   }

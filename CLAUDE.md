@@ -62,7 +62,7 @@ Do NOT skip step 2 and jump straight to implementation. The user must confirm un
 
 ## Architecture Overview
 
-### WebParts (16 total)
+### WebParts (17 total)
 1. **jmlMyPolicies** - Personal policy dashboard for employees
 2. **jmlPolicyHub** - Central policy discovery, browsing, and search
 3. **jmlPolicyAdmin** - Administrative interface (sidebar + content layout)
@@ -78,6 +78,8 @@ Do NOT skip step 2 and jump straight to implementation. The user must confirm un
 13. **dwxPolicyManagerView** - Manager dashboard for team compliance, approvals, delegations, reviews, reports
 14. **dwxPolicyAuthorReports** - Author-specific reports: policy performance, ack rates, review schedules, quiz stats
 15. **dwxPolicyBulkUpload** - Bulk policy import with drag-and-drop, AI classification, batch metadata assignment
+16. **dwxEventViewer** - Real-time event monitoring, diagnostics, and troubleshooting
+17. **dwxStartScreen** - Personalised landing page with role-based quick actions, recent policies, compliance summary
 
 ### SharePoint Pages
 | Page | WebPart | Purpose |
@@ -97,6 +99,7 @@ Do NOT skip step 2 and jump straight to implementation. The user must confirm un
 | PolicyManagerView.aspx | dwxPolicyManagerView | Manager compliance dashboard |
 | PolicyAuthorReports.aspx | dwxPolicyAuthorReports | Author performance reports |
 | PolicyBulkUpload.aspx | dwxPolicyBulkUpload | Bulk policy import with AI |
+| Start.aspx | dwxStartScreen | Landing page / command centre (set as site home) |
 
 ### Directory Structure
 ```
@@ -820,46 +823,86 @@ The QuizBuilder's "AI Generate" panel calls the Azure Function with:
 
 ### Recently Completed (Session 24 — 11-12 Apr 2026)
 
-#### Deep E2E Playwright Testing + Email Pipeline Fixes + Request Notification
+#### 14 Commits — E2E Testing + Email Fix + Start Screen Webpart + Production Hardening
 
-**Build: 1.2.5** | **Commit:** `a730ff0` — pushed to ADO + GitHub
+**Build: 1.2.5** | **Commits:** `a730ff0`..`84565de` (14 commits) — pushed to ADO + GitHub
 
-**Playwright E2E Test Suite (15 spec files, 38+ tests):**
-- Full lifecycle tested: Create → Save → Submit → Review → Approve/Changes/Reject → Publish
-- All 7 document creation types verified through full 8-step wizard
-- 5 policies created with gf_admin as reviewer/approver
-- All 3 review decisions executed with real comments + success dialogs
-- Office Online document creation via wizard (Word, Excel, PPT) confirmed
-- HTML conversion verified: converted policies render natively, unconverted use Office Online iframe
-- Manager > Request Policy wizard: full 4-step flow submitted successfully (REQ-20260412-0002)
-- Author Requests tab pickup confirmed
-- Outlook notification emails verified (5+ emails arrived)
-- PM_NotificationQueue diagnostic + automated cleanup (300+ bad items deleted)
+**Playwright E2E Test Suite (22 spec files, 164 tests):**
+
+- Full lifecycle: Create → Save → Submit → Review → Approve/Changes/Reject → Publish → Retire
+- All 7 document creation types through full 8-step wizard with realistic metadata
+- 5 policies created with gf_admin as reviewer/approver via Override PeoplePicker
+- All 3 review decisions executed with real comments + success dialogs confirmed
+- Office Online doc creation (Word, Excel, PPT) via "Create Document" button
+- HTML conversion verified: policies 1-3 render natively, 101-109 use Office Online iframe
+- Manager > Request Policy: 4-step wizard submitted (REQ-20260412-0002), Author Requests tab pickup
+- Publish + Retire executed via pipeline action icons (ariaLabel="Verb PolicyTitle")
+- All 15 SharePoint pages verified: Hub, Search, Help (5 tabs), Analytics (6 tabs), Manager (6 dropdown), Admin, Author (4 tabs), Packs, Quiz, Distribution
+- Outlook notifications: 5+ emails confirmed in inbox
+- PM_NotificationQueue: diagnostic + automated cleanup of 300+ bad items via REST API
+- 90 test documents created (HTML, DOCX, XLSX, PPTX, SVG) with Pandoc + openpyxl
 
 **Email Pipeline Critical Fix (EscalationService):**
+
 - ROOT CAUSE: EscalationService wrote to PM_NotificationQueue with NO RecipientEmail
 - ~300+ "Escalation: Review overdue" items with empty recipient crashed Logic App
-- FIX: sendEscalationNotification() now requires recipientEmail param with @-sign validation
+- FIX: sendEscalationNotification() requires recipientEmail + @-sign validation
 - FIX: Resolves reviewer email via siteUsers.getById() before queue write
+- FIX: Escalation deduplication — session cache + queue pre-check prevents duplicates
 - FIX: PolicyNotificationService adds includes('@') guard on RecipientEmail writes
 - FIX: Logic App Bicep adds Check_Recipient condition to skip empty-recipient items
 
+**Production Hardening (3 critical fixes):**
+
+- Escalation deduplication: static _recentEscalations Set + PM_NotificationQueue pre-load
+- Publish content validation: pre-flight checks HTMLContent/PolicyContent/DocumentURL exists
+- Email health check: Admin > System Info shows queue health (Pending/Failed/Sent/Empty)
+
 **Request-Fulfilled Notification (NEW FEATURE):**
+
 - EmailTemplateBuilder.requestFulfilled() — green-themed email template
-- PolicyService.publishPolicy() now notifies original requester when SourceRequestId policy publishes
-- Closes the loop: Manager requests → Author creates → Policy publishes → Manager gets email with CTA
+- PolicyService.publishPolicy() notifies original requester when SourceRequestId policy publishes
+- Closes the loop: Manager requests → Author creates → Policy publishes → Manager notified
+
+**DWx Start Screen Webpart (17th webpart — NEW):**
+
+- Standalone full-bleed webpart: `dwxStartScreen` with SP chrome hidden
+- Separated from PolicyHub.tsx — PolicyHub.aspx always shows Policy Hub directly
+- Renders StartScreen component directly (no JmlAppLayout/header)
+- Theme-aware: loads saved theme from localStorage/SP via ThemeManager in onInit
+- signalAppReady() dismisses JML loading skeleton
+- Sidebar SP #F3F2F1 background override via transparent !important
+- Compact layout: 4 cards per row, smaller icons/text, fits above fold
+- "QUICK ACTIONS [Admin]" label removed
+- Add to Home.aspx/Start.aspx via SharePoint page editor
+
+**Policy Packs Fix:**
+
+- PolicyService.getPolicies() select clause had 'ReviewDate' → changed to 'NextReviewDate'
+
+**Start Screen Theme + Readability:**
+
+- SCSS vars: hardcoded $teal-* → $theme-* with CSS var() fallbacks
+- Sidebar text: opacity-based → explicit rgba(255,255,255,0.9) for readability
+- themeColors.ts: added --pm-primary-darker + tc.primaryDarker
+- themeManager.ts: added darkenColor() helper + sets --pm-primary-darker on apply
 
 **Test Document Library (90 files):**
-- 10 HTML, 10 Word HTML, 20 .docx (Pandoc), 10 CSV, 10 .xlsx (openpyxl), 10 .pptx (Pandoc), 10 SVG
-- All with realistic professional content from "First Digital"
+
+- e2e/test-documents/: HTML (10), Word HTML (10), DOCX (20), CSV (10), XLSX (10), PPTX (10), SVG (10)
 
 **Key Patterns (Session 24):**
-- **Playwright nav selectors**: PolicyManagerHeader nav items are `<button class="navItem_*">` (CSS modules hashed). Use `button[class*="navItem"]` or `getByText('Manager', { exact: true })`
-- **Request Policy wizard**: Opens from Manager dropdown. Uses native `<select>` (not Fluent Dropdown). Category is required for Next to enable
-- **Date input fill**: Playwright `fill()` fails on `input[type="date"]` — use `evaluate()` with native value setter + dispatchEvent
-- **Screenshot budget**: Claude conversation context limit is 20MB. Use 1280x720 viewport, max ~25 screenshots per session
-- **PeoplePicker**: Use Override checkbox + PeoplePicker search + suggestion click. Email resolves from `secondaryText` or `loginName`
-- **Email guard pattern**: Always validate `recipientEmail.includes('@')` before writing to PM_NotificationQueue
+
+- **Playwright nav selectors**: `button[class*="navItem"]` or `getByText('Manager', { exact: true })`
+- **Pipeline action icons**: `button[aria-label*="Publish PolicyName"]`, `button[aria-label*="Retire PolicyName"]`
+- **Request Policy wizard**: Opens from Manager dropdown. Uses native `<select>` (not Fluent Dropdown)
+- **Date input fill**: Playwright `fill()` fails on `input[type="date"]` — use `evaluate()` with native setter
+- **Screenshot budget**: Claude conversation context limit is 20MB. Use 1280x720, max ~25/session
+- **PeoplePicker**: Override checkbox → search → suggestion click. Email from `secondaryText`
+- **Email guard**: Always validate `recipientEmail.includes('@')` before PM_NotificationQueue write
+- **SP background bleed**: SharePoint injects #F3F2F1 on child divs — use `background: transparent !important`
+- **signalAppReady**: Required in standalone webparts (no JmlAppLayout) to dismiss loading skeleton
+- **Theme in standalone webparts**: Must call `ThemeManager.getTheme()` + `.apply()` in `onInit` — JmlAppLayout normally handles this
 
 ### Recently Completed (Session 23 — 10-11 Apr 2026)
 

@@ -473,18 +473,19 @@ export class PolicyService {
         }
       }
 
+      // Select only fields that are guaranteed to exist on PM_Policies.
+      // Fields like Department, ReviewDate, DocumentFormat, IsMandatory
+      // may not be provisioned — requesting them causes SP 400 errors.
       let query = this.sp.web.lists
         .getByTitle(this.POLICIES_LIST)
         .items.select(
           'Id', 'Title', 'PolicyName', 'PolicyNumber', 'PolicyStatus',
-          'PolicyCategory', 'ComplianceRisk', 'IsActive', 'IsMandatory',
-          'VersionNumber', 'PolicyDescription', 'DocumentURL', 'DocumentFormat',
+          'PolicyCategory', 'ComplianceRisk', 'IsActive',
+          'VersionNumber', 'PolicyDescription', 'DocumentURL',
           'CreationMethod', 'ReadTimeframe', 'RequiresAcknowledgement', 'RequiresQuiz',
           'PublishedDate', 'EffectiveDate', 'ExpiryDate', 'NextReviewDate',
-          'Visibility', 'Modified', 'Created',
-          'PolicyOwner/Id', 'PolicyOwner/Title', 'PolicyOwner/EMail'
-        )
-        .expand('PolicyOwner');
+          'Visibility', 'Modified', 'Created'
+        );
 
       // Apply filters
       const filterConditions: string[] = [];

@@ -1830,6 +1830,7 @@ export default class PolicyHub extends React.Component<IPolicyHubProps, IPolicyH
               </svg>
               <input
                 type="text"
+                className="pm-hero-search"
                 value={searchText}
                 onChange={(e) => this.handleSearchAsYouType((e.target as HTMLInputElement).value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') this.handleSearch(searchText); }}

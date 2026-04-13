@@ -395,6 +395,7 @@ export default class PolicySearch extends React.Component<IPolicySearchProps, IP
                     </svg>
                     <input
                       type="text"
+                      className="pm-hero-search"
                       value={searchQuery}
                       onChange={(e) => this.setState({ searchQuery: (e.target as HTMLInputElement).value })}
                       onKeyDown={(e) => { if (e.key === 'Enter') this.handleSearch(searchQuery); }}

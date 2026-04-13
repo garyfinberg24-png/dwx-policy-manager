@@ -697,6 +697,7 @@ export default class PolicyHelp extends React.Component<IPolicyHelpProps, IPolic
                     </svg>
                     <input
                       type="text"
+                      className="pm-hero-search"
                       value={searchQuery}
                       onChange={(e) => this.setState({ searchQuery: (e.target as HTMLInputElement).value })}
                       onKeyDown={(e) => { if (e.key === 'Enter') this.handleSearch(searchQuery); }}

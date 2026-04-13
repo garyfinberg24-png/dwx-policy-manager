@@ -11433,9 +11433,12 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
             })().map((product) => {
               // DWx branded splash card — gradient depends on IQ vs Standard
               const isIQProduct = product.isIQ || product.isAI;
-              const gradient = isIQProduct
-                ? 'linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #5b21b6 100%)'
-                : 'linear-gradient(135deg, #0d3a5c 0%, #1a5a8a 50%, #2d7ab8 100%)';
+              // Each product gets its own gradient derived from its brand color
+              const hex = product.color || '#1a5a8a';
+              const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+              const dark = `rgb(${Math.round(r * 0.35)},${Math.round(g * 0.35)},${Math.round(b * 0.35)})`;
+              const mid = `rgb(${Math.round(r * 0.7)},${Math.round(g * 0.7)},${Math.round(b * 0.7)})`;
+              const gradient = `linear-gradient(135deg, ${dark} 0%, ${mid} 50%, ${hex} 100%)`;
 
               // DWx 3-blocks brandmark SVG (inline)
               const blocksMarkup = (

@@ -1445,7 +1445,9 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       this.setState({ saving: true });
 
       // Resolve reviewer PeoplePicker objects to SP user IDs for notification service
-      const allReviewerPersonas = [...reviewers, ...approvers];
+      // IMPORTANT: Only send review notifications to REVIEWERS, not approvers.
+      // Approvers are notified later when all reviewers have approved.
+      const allReviewerPersonas = [...reviewers];
       const reviewerIds: number[] = [];
       for (const person of allReviewerPersonas) {
         try {

@@ -481,7 +481,7 @@ export class PolicyService {
           'VersionNumber', 'PolicyDescription', 'DocumentURL', 'DocumentFormat',
           'CreationMethod', 'ReadTimeframe', 'RequiresAcknowledgement', 'RequiresQuiz',
           'PublishedDate', 'EffectiveDate', 'ExpiryDate', 'NextReviewDate',
-          'Department', 'Visibility', 'Modified', 'Created',
+          'Visibility', 'Modified', 'Created',
           'PolicyOwner/Id', 'PolicyOwner/Title', 'PolicyOwner/EMail'
         )
         .expand('PolicyOwner');

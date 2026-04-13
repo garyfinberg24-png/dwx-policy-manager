@@ -195,7 +195,7 @@ export class StartScreen extends React.Component<IStartScreenProps, IStartScreen
               <path d="M12 16l3 3 5-6" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
             <div>
-              <div className={styles.brandName}>Policy Manager</div>
+              <div className={styles.brandName}>PolicyIQ</div>
               <div className={styles.brandSub}>POLICY GOVERNANCE & COMPLIANCE</div>
             </div>
           </div>

@@ -1,6 +1,6 @@
 // @ts-nocheck
 /**
- * JmlAppFooter - Global footer for the Policy Manager application
+ * JmlAppFooter - Global footer for the PolicyIQ application
  * Forest Teal themed footer with branding, links, and version info
  */
 import * as React from 'react';
@@ -178,7 +178,7 @@ const footerStyles: Record<string, React.CSSProperties> = {
 
 const defaultLinkGroups: IFooterLinkGroup[] = [
   {
-    title: 'Policy Manager',
+    title: 'PolicyIQ',
     links: [
       { text: 'Browse Policies', url: '/sites/PolicyManager/SitePages/PolicyHub.aspx' },
       { text: 'My Policies', url: '/sites/PolicyManager/SitePages/MyPolicies.aspx' },
@@ -214,7 +214,7 @@ export const DwxAppFooter: React.FC<IJmlAppFooterProps> = ({
           <div style={footerStyles.compactRow}>
             <div style={footerStyles.compactLeft}>
               <div style={footerStyles.brandIcon}>PM</div>
-              <span style={{ fontSize: 13, color: '#fff', fontWeight: 500 }}>Policy Manager</span>
+              <span style={{ fontSize: 13, color: '#fff', fontWeight: 500 }}>PolicyIQ</span>
               <span style={footerStyles.versionBadge}>v{VERSION}</span>
               <span style={{ ...footerStyles.versionBadge, marginLeft: 4, background: 'rgba(255,255,255,0.06)' }}>Build {BUILD_NUMBER}</span>
               <span style={footerStyles.copyright}>
@@ -248,7 +248,7 @@ export const DwxAppFooter: React.FC<IJmlAppFooterProps> = ({
           <div style={footerStyles.brandSection}>
             <div style={footerStyles.brandName}>
               <div style={footerStyles.brandIcon}>PM</div>
-              Policy Manager
+              PolicyIQ
             </div>
             <div style={footerStyles.brandDescription}>
               Enterprise policy management, distribution, and compliance tracking for your organisation.

@@ -72,7 +72,6 @@ export class PolicyHubService {
           'PolicyDescription', 'ComplianceRisk', 'VersionNumber', 'IsActive',
           'EffectiveDate', 'PublishedDate', 'Modified', 'Created',
           'ReadTimeframe', 'RequiresAcknowledgement', 'RequiresQuiz',
-          'DistributionScope',
           'DocumentURL'
         );
 
@@ -228,25 +227,19 @@ export class PolicyHubService {
    */
   private applyTextSearch(policies: any[], searchText: string, searchFields?: string[]): any[] {
     const lowerSearch = searchText.toLowerCase();
-    const fields = searchFields || ['title', 'description', 'keywords'];
 
     return policies.filter(policy => {
-      if (fields.includes('title') && policy.Title?.toLowerCase().includes(lowerSearch)) {
-        return true;
-      }
-      if (fields.includes('description') && policy.Description?.toLowerCase().includes(lowerSearch)) {
-        return true;
-      }
-      if (fields.includes('keywords')) {
-        let keywords: string[] = [];
-        try {
-          keywords = policy.Keywords ? JSON.parse(policy.Keywords) : [];
-        } catch { keywords = []; }
-        if (keywords.some((k: string) => k.toLowerCase().includes(lowerSearch))) {
-          return true;
-        }
-      }
-      return false;
+      // Search across all text fields that exist on the policy item
+      const searchableText = [
+        policy.Title,
+        policy.PolicyName,
+        policy.PolicyDescription,
+        policy.PolicyNumber,
+        policy.PolicyCategory,
+        policy.ComplianceRisk,
+      ].filter(Boolean).join(' ').toLowerCase();
+
+      return searchableText.includes(lowerSearch);
     });
   }
 

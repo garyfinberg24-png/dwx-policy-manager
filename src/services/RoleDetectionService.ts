@@ -134,13 +134,14 @@ export class RoleDetectionService {
       }
 
       const currentUser = await this.sp.web.currentUser();
-      const roles = await this.getUserRoles(currentUser.LoginName);
+      const email = currentUser.Email || currentUser.LoginName || '';
+      const roles = new Set<UserRole>();
 
-      // ALSO check PM_UserProfiles for Admin Centre role assignment
-      // This ensures roles set via Admin Centre > User Directory work
-      // even if the SP group sync failed or groups don't exist
+      // ══════════════════════════════════════════════════════════════
+      // PRIMARY: PM_UserProfiles — Admin Centre is the single source of truth
+      // Roles set in Admin Centre > User Directory control all access.
+      // ══════════════════════════════════════════════════════════════
       try {
-        const email = currentUser.Email || currentUser.LoginName || '';
         if (email) {
           const profiles = await this.sp.web.lists.getByTitle('PM_UserProfiles')
             .items.filter(`EMail eq '${email.replace(/'/g, "''")}'`)
@@ -151,29 +152,29 @@ export class RoleDetectionService {
             const pmRoles = profiles[0].PMRoles || '';
             const allRoleStrings = [pmRole, ...pmRoles.split(';')].map((r: string) => r.trim()).filter(Boolean);
 
-            // Map PM role strings to UserRole enum
             const roleMap: Record<string, UserRole> = {
               'Admin': UserRole.SiteAdmin,
               'Manager': UserRole.Manager,
-              'Author': UserRole.Recruiter, // Recruiter maps to Author via PolicyRoleService
+              'Author': UserRole.Recruiter,
               'User': UserRole.Employee
             };
 
             for (const roleStr of allRoleStrings) {
               const mapped = roleMap[roleStr];
-              if (mapped) {
-                roles.push(mapped);
-              }
+              if (mapped) roles.add(mapped);
             }
           }
         }
       } catch {
-        // PM_UserProfiles may not exist or column may be missing — non-blocking
+        // PM_UserProfiles may not exist — fall through to site admin check
       }
 
-      // Deduplicate
-      const uniqueRoles = Array.from(new Set(roles));
-      const finalRoles = uniqueRoles.length > 0 ? uniqueRoles : [UserRole.Employee];
+      // Site admin always gets Admin role regardless of PM_UserProfiles
+      if (currentUser.IsSiteAdmin) {
+        roles.add(UserRole.SiteAdmin);
+      }
+
+      const finalRoles = roles.size > 0 ? Array.from(roles) : [UserRole.Employee];
 
       // Cache in sessionStorage for other webparts
       this.setSessionCachedRoles(finalRoles);
@@ -181,7 +182,6 @@ export class RoleDetectionService {
       return finalRoles;
     } catch (error) {
       console.error('[RoleDetectionService] Error getting current user roles:', error);
-      // Fallback to Employee role if detection fails
       return [UserRole.Employee];
     }
   }

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PolicyIQ — QA Test Sheet — Build 1.2.5.29 — 12 April 2026</title>
+<title>PolicyIQ — QA Test Sheet — Build 1.2.5.29 — 12-13 April 2026</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -65,12 +65,12 @@
 
 <div class="header">
   <h1>PolicyIQ — QA Test Sheet</h1>
-  <div class="sub">Session 24 Changes — Build 1.2.5.29 — 12 April 2026</div>
+  <div class="sub">Session 24 Changes — Build 1.2.5.29 — 12-13 April 2026</div>
   <div class="meta">
     <span class="meta-item">Build: 1.2.5.29</span>
-    <span class="meta-item">39 Commits</span>
+    <span class="meta-item">40 Commits</span>
     <span class="meta-item">17 Webparts</span>
-    <span class="meta-item">Date: 12 Apr 2026</span>
+    <span class="meta-item">Sat 12 — Mon 13 Apr 2026</span>
   </div>
 </div>
 
@@ -80,11 +80,11 @@
   <div class="summary">
     <div class="summary-grid">
       <div class="summary-stat">
-        <div class="summary-num" style="color: #dc2626;">19</div>
+        <div class="summary-num" style="color: #dc2626;">25</div>
         <div class="summary-label">Bug Fixes</div>
       </div>
       <div class="summary-stat">
-        <div class="summary-num" style="color: #2563eb;">10</div>
+        <div class="summary-num" style="color: #2563eb;">15</div>
         <div class="summary-label">New Features</div>
       </div>
       <div class="summary-stat">
@@ -92,8 +92,8 @@
         <div class="summary-label">Docs</div>
       </div>
       <div class="summary-stat">
-        <div class="summary-num" style="color: #d97706;">6</div>
-        <div class="summary-label">Test Specs</div>
+        <div class="summary-num" style="color: #d97706;">40</div>
+        <div class="summary-label">Commits</div>
       </div>
     </div>
   </div>
@@ -261,8 +261,186 @@
   </table>
 
 
-  <!-- ═══ NEW FEATURES ═══ -->
-  <h2>New Features <span class="count">10</span></h2>
+  <!-- ═══ MONDAY 13 APR FIXES ═══ -->
+  <h2>Monday 13 April — Bug Fixes &amp; Features <span class="count">21</span></h2>
+  <p class="section-intro">Fixes deployed on Monday based on tester feedback, client demo issues, and continued development.</p>
+
+  <table>
+    <tr><th style="width: 30px;"></th><th>Change</th><th>Type</th><th>Area</th><th>Details</th><th class="status-cell">Status</th></tr>
+
+    <tr class="priority-critical">
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Policy Packs crash — 'Department' field</strong></td>
+      <td><span class="tag tag-fix">Fix</span></td>
+      <td>Policy Packs</td>
+      <td>Removed 'Department' from select clause — not provisioned on PM_Policies.</td>
+      <td></td>
+    </tr>
+    <tr class="priority-critical">
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Policy Packs crash — 'Visibility' field</strong></td>
+      <td><span class="tag tag-fix">Fix</span></td>
+      <td>Policy Packs</td>
+      <td>Removed 'Visibility' from select clause.</td>
+      <td></td>
+    </tr>
+    <tr class="priority-critical">
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Rejected policy goes to Draft instead of Rejected</strong></td>
+      <td><span class="tag tag-fix">Fix</span></td>
+      <td>Review Policy</td>
+      <td>Reject now sets PolicyStatus: 'Rejected'. Request Changes returns to 'Draft'.</td>
+      <td></td>
+    </tr>
+    <tr class="priority-critical">
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Escalation email flooding</strong></td>
+      <td><span class="tag tag-fix">Fix</span></td>
+      <td>Notifications</td>
+      <td>Default changed to <code>enabled: false</code>. Admin must enable explicitly.</td>
+      <td></td>
+    </tr>
+    <tr class="priority-critical">
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Review + Approval emails sent simultaneously</strong></td>
+      <td><span class="tag tag-fix">Fix</span></td>
+      <td>Review Policy</td>
+      <td>Only reviewers notified on submit. Was combining reviewers + approvers.</td>
+      <td></td>
+    </tr>
+    <tr class="priority-high">
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Role detection — SP groups vs Admin Centre</strong></td>
+      <td><span class="tag tag-fix">Fix</span></td>
+      <td>Roles &amp; Access</td>
+      <td>PM_UserProfiles is now sole source of truth. SP group detection removed. Custom roles supported.</td>
+      <td></td>
+    </tr>
+    <tr class="priority-high">
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Search not returning results</strong></td>
+      <td><span class="tag tag-fix">Fix</span></td>
+      <td>Policy Hub / Search</td>
+      <td>Field name mismatch: was checking Description instead of PolicyDescription. Removed DistributionScope.</td>
+      <td></td>
+    </tr>
+    <tr class="priority-high">
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Review mode — Office doc content not shown</strong></td>
+      <td><span class="tag tag-fix">Fix</span></td>
+      <td>Review Policy</td>
+      <td>Added Office Online viewer (WopiFrame) fallback when no HTML content.</td>
+      <td></td>
+    </tr>
+    <tr class="priority-high">
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Reject doesn't close remaining reviewer actions</strong></td>
+      <td><span class="tag tag-fix">Fix</span></td>
+      <td>Review Policy</td>
+      <td>Pending reviewers set to 'Cancelled' when one reviewer rejects.</td>
+      <td></td>
+    </tr>
+    <tr class="priority-high">
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>User Directory rows not clickable</strong></td>
+      <td><span class="tag tag-fix">Fix</span></td>
+      <td>Admin Centre</td>
+      <td>Removed multi-select checkbox that intercepted click events.</td>
+      <td></td>
+    </tr>
+    <tr class="priority-high">
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>My Policies links throw 404</strong></td>
+      <td><span class="tag tag-fix">Fix</span></td>
+      <td>My Policies</td>
+      <td>Hardcoded URL replaced with dynamic context URL.</td>
+      <td></td>
+    </tr>
+    <tr class="priority-medium">
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Metadata profile not restored on edit</strong></td>
+      <td><span class="tag tag-fix">Fix</span></td>
+      <td>Create Policy</td>
+      <td>Checks MetadataProfileId → restores "existing" mode instead of always Custom.</td>
+      <td></td>
+    </tr>
+    <tr class="priority-medium">
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Audience step Targeted/Role error</strong></td>
+      <td><span class="tag tag-fix">Fix</span></td>
+      <td>Create Policy</td>
+      <td>Validation now accepts departments, roles, or security group names.</td>
+      <td></td>
+    </tr>
+    <tr class="priority-medium">
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Search placeholder invisible on gradient</strong></td>
+      <td><span class="tag tag-fix">Fix</span></td>
+      <td>Hub / Search / Help</td>
+      <td>Added .pm-hero-search::placeholder CSS rule for white text.</td>
+      <td></td>
+    </tr>
+    <tr class="priority-medium">
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>My Policies hero banner padding</strong></td>
+      <td><span class="tag tag-fix">Fix</span></td>
+      <td>My Policies</td>
+      <td>Equal 40px padding on both sides.</td>
+      <td></td>
+    </tr>
+    <tr class="priority-medium">
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Product cards gradient not rendering</strong></td>
+      <td><span class="tag tag-fix">Fix</span></td>
+      <td>Admin Centre</td>
+      <td>backgroundImage override fixed with multi-layer CSS.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Rebrand → PolicyIQ</strong></td>
+      <td><span class="tag tag-feat">Feat</span></td>
+      <td>Global</td>
+      <td>Header, Start Screen, Footer. Subtitle: "Smart Policy Lifecycle Management".</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>DWx Product Suite rebrand (10 renames)</strong></td>
+      <td><span class="tag tag-feat">Feat</span></td>
+      <td>Admin Centre</td>
+      <td>IQ branding, hero banner, 3-blocks brandmark, per-app gradient cards.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Policy Builder Tips Panel</strong></td>
+      <td><span class="tag tag-feat">Feat</span></td>
+      <td>Create Policy</td>
+      <td>24 step-specific tips, show/hide toggle, admin global setting.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Custom role support in detection</strong></td>
+      <td><span class="tag tag-feat">Feat</span></td>
+      <td>Roles &amp; Access</td>
+      <td>Custom role names from PM_UserProfiles stored in localStorage for permission lookups.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Per-app gradient product cards</strong></td>
+      <td><span class="tag tag-feat">Feat</span></td>
+      <td>Admin Centre</td>
+      <td>Each product card derives gradient from its own brand colour.</td>
+      <td></td>
+    </tr>
+  </table>
+
+
+  <!-- ═══ NEW FEATURES (Saturday) ═══ -->
+  <h2>Saturday 12 April — New Features <span class="count">10</span></h2>
 
   <table>
     <tr><th style="width: 30px;"></th><th>Feature</th><th>Area</th><th>Details</th><th class="status-cell">Status</th></tr>
@@ -460,7 +638,7 @@
 
 <div class="footer">
   <strong>PolicyIQ</strong> — Smart Policy Lifecycle Management<br>
-  Build 1.2.5.29 &bull; Session 24 &bull; 12 April 2026 &bull; 39 commits &bull; First Digital — DWx Digital Workplace Excellence
+  Build 1.2.5.29 &bull; Session 24 &bull; 12-13 April 2026 &bull; 40 commits &bull; First Digital — DWx Digital Workplace Excellence
 </div>
 
 </body>

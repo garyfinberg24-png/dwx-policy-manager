@@ -7100,7 +7100,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
     return (
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 20 }}>
-          {this.renderSectionIntro('Users & Roles', 'View and manage user role assignments. Users are assigned roles (User, Author, Manager, Admin) that determine what they can see and do in Policy Manager.', ['Roles are detected from SharePoint groups (PM_PolicyAdmins, PM_PolicyAuthors, etc.)', 'Use Role Permissions to customise what each role can access'])}
+          {this.renderSectionIntro('Users & Roles', 'View and manage user role assignments. Users are assigned roles (User, Author, Manager, Admin, or custom roles) that determine what they can see and do in PolicyIQ.', ['Roles assigned here are the single source of truth for access control', 'Use Role Permissions to customise what each role can access', 'Custom roles can be created in Role Permissions with their own permission set'])}
           {/* Success / Sync messages */}
           {userSaveMessage && (
             <MessageBar messageBarType={MessageBarType.success} onDismiss={() => this.setState({ _userSaveMessage: '' } as any)}>

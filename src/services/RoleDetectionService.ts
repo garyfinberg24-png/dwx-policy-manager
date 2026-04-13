@@ -161,8 +161,15 @@ export class RoleDetectionService {
 
             for (const roleStr of allRoleStrings) {
               const mapped = roleMap[roleStr];
-              if (mapped) roles.add(mapped);
+              if (mapped) {
+                roles.add(mapped);
+              }
             }
+
+            // Store raw role strings (including custom roles) in localStorage
+            // so PolicyManagerHeader can use them for permission table lookups
+            localStorage.setItem('pm_detected_role', allRoleStrings[0] || 'User');
+            localStorage.setItem('pm_detected_roles_all', allRoleStrings.join(';'));
           }
         }
       } catch {

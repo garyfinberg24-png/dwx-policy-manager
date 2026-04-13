@@ -7310,9 +7310,20 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                   });
                 })()}
                 layoutMode={DetailsListLayoutMode.justified}
-                selectionMode={SelectionMode.none}
-                checkboxVisibility={CheckboxVisibility.hidden}
-                getKey={(item: any) => item.Id}
+                selectionMode={SelectionMode.multiple}
+                selection={this._userSelection}
+                checkboxVisibility={CheckboxVisibility.always}
+                getKey={(item: any) => String(item.Id)}
+                onActiveItemChanged={(item: any) => {
+                  if (item) {
+                    this.setState({
+                      _editingEmployee: item, _editingRole: item.PMRole || 'User',
+                      _editingRoles: item.PMRoles ? item.PMRoles.split(';').map((r: string) => r.trim()).filter(Boolean) : [item.PMRole || 'User'],
+                      _editingManagedDepts: item.ManagedDepartments ? item.ManagedDepartments.split(';').map((d: string) => d.trim()).filter(Boolean) : [],
+                      _showUserPanel: true,
+                    } as any);
+                  }
+                }}
                 onItemInvoked={(item: any) => {
                   this.setState({
                     _editingEmployee: item, _editingRole: item.PMRole || 'User',

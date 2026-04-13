@@ -440,7 +440,7 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
     return (
       <div style={{
         background: tc.headerBg,
-        padding: '16px 40px', position: 'relative', overflow: 'hidden', margin: '0 -24px'
+        padding: '16px 40px', position: 'relative', overflow: 'hidden'
       }}>
         <div style={{ position: 'absolute', right: -60, bottom: -60, width: 200, height: 200, background: 'rgba(255,255,255,0.03)', borderRadius: '50%' }} />
         <div style={{ maxWidth: 1400, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 24, position: 'relative', zIndex: 1 }}>

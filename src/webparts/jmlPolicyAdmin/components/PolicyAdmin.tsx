@@ -11359,46 +11359,78 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       <div className={styles.sectionContent}>
         <Stack tokens={{ childrenGap: 24 }}>
           {this.renderSectionIntro('DWx Suite', 'Explore the complete DWx (Digital Workplace Excellence) suite. Click any product to see the full product sheet with features, integrations, and demo request.')}
-          {/* Header */}
+          {/* ═══ IQ RANGE HERO BANNER ═══ */}
           <div style={{
-            background: 'linear-gradient(135deg, #7c3aed, #5b21b6)',
-            borderRadius: 4, padding: '28px 32px', color: '#fff', position: 'relative', overflow: 'hidden'
+            background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #5b21b6 100%)',
+            borderRadius: 12, padding: '32px 36px', color: '#fff', position: 'relative', overflow: 'hidden'
           }}>
-            <div style={{ position: 'absolute', right: -40, top: -40, width: 180, height: 180, borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
-            <Stack horizontal horizontalAlign="space-between" verticalAlign="center" style={{ position: 'relative', zIndex: 1 }}>
-              <Stack tokens={{ childrenGap: 4 }}>
-                <Text style={{ fontSize: 24, fontWeight: 700, color: '#fff' }}>DWx Product Suite</Text>
-                <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 14 }}>Digital Workplace Excellence by First Digital — {dwxProducts.length} products, one unified platform</Text>
-              </Stack>
-              <Stack horizontal tokens={{ childrenGap: 24 }}>
-                <Stack tokens={{ childrenGap: 0 }} horizontalAlign="center">
-                  <Text style={{ fontSize: 28, fontWeight: 700, color: '#fff' }}>{dwxProducts.length}</Text>
-                  <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: 1 }}>Products</Text>
-                </Stack>
-                <Stack tokens={{ childrenGap: 0 }} horizontalAlign="center">
-                  <Text style={{ fontSize: 28, fontWeight: 700, color: '#fbbf24' }}>{iqCount}</Text>
-                  <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: 1 }}>IQ Products</Text>
-                </Stack>
-                <Stack tokens={{ childrenGap: 0 }} horizontalAlign="center">
-                  <Text style={{ fontSize: 28, fontWeight: 700, color: '#38bdf8' }}>{aiCount}</Text>
-                  <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: 1 }}>AI-Powered</Text>
-                </Stack>
-              </Stack>
-            </Stack>
+            <div style={{ position: 'absolute', top: -40, right: -40, width: 200, height: 200, borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
+            <div style={{ position: 'absolute', bottom: -60, left: '30%', width: 300, height: 300, borderRadius: '50%', background: 'rgba(255,255,255,0.03)' }} />
+            {/* Count badge */}
+            <div style={{ position: 'absolute', top: 32, right: 36, textAlign: 'right', zIndex: 1 }}>
+              <div style={{ fontSize: 42, fontWeight: 800, opacity: 0.2, lineHeight: 1 }}>{iqCount}</div>
+              <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, opacity: 0.5 }}>IQ Products</div>
+            </div>
+            {/* Badge pill */}
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.15)', padding: '4px 12px', borderRadius: 20, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 16 }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#818cf8' }} /> DWx IQ Range — Powered by Azure AI
+            </div>
+            {/* Title */}
+            <div style={{ fontSize: 24, fontWeight: 700, marginBottom: 8, position: 'relative', zIndex: 1, background: 'linear-gradient(90deg, #e0e7ff, #c4b5fd)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' } as any}>
+              Intelligent. Autonomous. Transformative.
+            </div>
+            {/* Description */}
+            <div style={{ fontSize: 13, lineHeight: 1.7, opacity: 0.9, maxWidth: 720, position: 'relative', zIndex: 1, marginBottom: 20 }}>
+              The DWx IQ range represents the next generation of digital workplace applications — each powered by Azure OpenAI and agentic AI to automate complex workflows, surface actionable insights, and make intelligent decisions on your behalf. From recruitment to risk management, IQ products learn from your organisation's data to deliver smarter outcomes with less manual effort.
+            </div>
+            {/* Feature chips */}
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', position: 'relative', zIndex: 1 }}>
+              {['Agentic AI Workflows', 'Predictive Analytics', 'Azure OpenAI GPT-4o', 'Zero-Trust Security'].map((f, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.1)', padding: '8px 14px', borderRadius: 6, fontSize: 12, fontWeight: 500 }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                    {i === 0 && <><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></>}
+                    {i === 1 && <><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/><path d="M9 12l2 2 4-4"/></>}
+                    {i === 2 && <><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></>}
+                    {i === 3 && <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>}
+                  </svg>
+                  {f}
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Category Filter */}
           <Stack horizontal tokens={{ childrenGap: 8 }} wrap>
             <button onClick={() => this.setState({ _productFilter: 'all' } as any)} style={{ padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: productFilter === 'all' ? 700 : 500, cursor: 'pointer', border: productFilter === 'all' ? '2px solid #7c3aed' : '1px solid #e2e8f0', background: productFilter === 'all' ? '#7c3aed' : '#fff', color: productFilter === 'all' ? '#fff' : '#64748b' }}>All ({dwxProducts.length})</button>
+            <button onClick={() => this.setState({ _productFilter: 'iq' } as any)} style={{ padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: productFilter === 'iq' ? 700 : 500, cursor: 'pointer', border: productFilter === 'iq' ? '2px solid #7c3aed' : '1px solid #e2e8f0', background: productFilter === 'iq' ? '#7c3aed' : '#fff', color: productFilter === 'iq' ? '#fff' : '#64748b' }}>IQ Range ({iqCount})</button>
             {categories.map(cat => {
               const count = dwxProducts.filter(p => p.category === cat).length;
               return <button key={cat} onClick={() => this.setState({ _productFilter: cat } as any)} style={{ padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: productFilter === cat ? 700 : 500, cursor: 'pointer', border: productFilter === cat ? '2px solid #7c3aed' : '1px solid #e2e8f0', background: productFilter === cat ? '#7c3aed' : '#fff', color: productFilter === cat ? '#fff' : '#64748b' }}>{cat} ({count})</button>;
             })}
           </Stack>
 
-          {/* Product Grid */}
+          {/* IQ Products Section (shown first when filter is 'all' or 'iq') */}
+          {(productFilter === 'all' || productFilter === 'iq') && (
+            <>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#7c3aed', textTransform: 'uppercase', letterSpacing: 1.5, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#7c3aed' }} />
+                IQ Products — AI-Powered
+              </div>
+            </>
+          )}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
-            {filtered.map((product) => (
+            {/* IQ products first, then standard */}
+            {(() => {
+              let sortedProducts = [...filtered];
+              if (productFilter === 'all') {
+                const iq = sortedProducts.filter(p => p.isIQ || p.isAI);
+                const standard = sortedProducts.filter(p => !p.isIQ && !p.isAI);
+                sortedProducts = [...iq, ...standard];
+              } else if (productFilter === 'iq') {
+                sortedProducts = sortedProducts.filter(p => p.isIQ || p.isAI);
+              }
+              return sortedProducts;
+            })().map((product) => (
               <div key={product.id} className={styles.adminCard} style={{
                 borderTop: `4px solid ${product.color}`, cursor: 'pointer', position: 'relative',
                 background: `linear-gradient(135deg, ${product.color}08, #fff)`, transition: 'all 0.2s'

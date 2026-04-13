@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DWx IQ Product Range — Intro Mockup</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', -apple-system, sans-serif; background: #f8fafc; padding: 40px; }
+
+  .iq-hero {
+    background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 50%, #4c1d95 100%);
+    border-radius: 12px;
+    padding: 32px 36px;
+    color: #fff;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .iq-hero::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.05);
+  }
+  .iq-hero::after {
+    content: '';
+    position: absolute;
+    bottom: -60px; left: 30%;
+    width: 300px; height: 300px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.03);
+  }
+
+  .iq-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.15);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 16px;
+  }
+  .iq-badge .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #a78bfa;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+
+  .iq-title {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    position: relative;
+    z-index: 1;
+  }
+  .iq-title span {
+    background: linear-gradient(90deg, #fff, #c4b5fd);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .iq-desc {
+    font-size: 13px;
+    line-height: 1.7;
+    opacity: 0.9;
+    max-width: 720px;
+    position: relative;
+    z-index: 1;
+    margin-bottom: 20px;
+  }
+
+  .iq-features {
+    display: flex;
+    gap: 20px;
+    position: relative;
+    z-index: 1;
+    flex-wrap: wrap;
+  }
+  .iq-feature {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.1);
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .iq-feature svg {
+    width: 16px; height: 16px;
+    flex-shrink: 0;
+  }
+
+  .iq-count {
+    position: absolute;
+    top: 32px; right: 36px;
+    text-align: right;
+    z-index: 1;
+  }
+  .iq-count-num {
+    font-size: 42px;
+    font-weight: 800;
+    opacity: 0.2;
+    line-height: 1;
+  }
+  .iq-count-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.5;
+  }
+
+  /* Product grid below */
+  .section-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #94a3b8;
+    font-weight: 700;
+    margin: 32px 0 12px;
+  }
+
+  .product-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+
+  .product-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 20px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .product-card:hover {
+    border-color: #7c3aed;
+    box-shadow: 0 4px 16px rgba(124,58,237,0.1);
+    transform: translateY(-2px);
+  }
+  .product-card.iq {
+    border-left: 3px solid #7c3aed;
+  }
+
+  .product-mono {
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 14px;
+    color: #fff;
+    margin: 0 auto 10px;
+  }
+  .product-name { font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
+  .product-tag { font-size: 11px; color: #94a3b8; }
+  .product-iq-badge {
+    display: inline-block;
+    font-size: 8px;
+    font-weight: 800;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: #ede9fe;
+    color: #7c3aed;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-left: 4px;
+    vertical-align: top;
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══ IQ RANGE INTRO HERO ═══ -->
+<div class="iq-hero">
+  <div class="iq-count">
+    <div class="iq-count-num">10</div>
+    <div class="iq-count-label">IQ Products</div>
+  </div>
+
+  <div class="iq-badge">
+    <div class="dot"></div>
+    DWx IQ Range — Powered by Azure AI
+  </div>
+
+  <div class="iq-title"><span>Intelligent. Autonomous. Transformative.</span></div>
+
+  <div class="iq-desc">
+    The DWx IQ range represents the next generation of digital workplace applications — each powered by Azure OpenAI
+    and agentic AI to automate complex workflows, surface actionable insights, and make intelligent decisions on
+    your behalf. From recruitment to risk management, IQ products learn from your organisation's data to deliver
+    smarter outcomes with less manual effort.
+  </div>
+
+  <div class="iq-features">
+    <div class="iq-feature">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a4 4 0 0 1 4 4v2a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z"/><path d="M16 14H8a4 4 0 0 0-4 4v2h16v-2a4 4 0 0 0-4-4z"/></svg>
+      Agentic AI Workflows
+    </div>
+    <div class="iq-feature">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/><path d="M9 12l2 2 4-4"/></svg>
+      Predictive Analytics
+    </div>
+    <div class="iq-feature">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      Azure OpenAI GPT-4o
+    </div>
+    <div class="iq-feature">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Zero-Trust Security
+    </div>
+  </div>
+</div>
+
+<!-- ═══ IQ PRODUCTS GRID ═══ -->
+<div class="section-label">IQ Products</div>
+<div class="product-grid">
+  <div class="product-card iq">
+    <div class="product-mono" style="background: #7c3aed;">R</div>
+    <div class="product-name">RecruitIQ <span class="product-iq-badge">IQ</span></div>
+    <div class="product-tag">AI-native recruitment</div>
+  </div>
+  <div class="product-card iq">
+    <div class="product-mono" style="background: #b4009e;">L</div>
+    <div class="product-name">LearnIQ <span class="product-iq-badge">IQ</span></div>
+    <div class="product-tag">Learn with AI</div>
+  </div>
+  <div class="product-card iq">
+    <div class="product-mono" style="background: #7c3aed;">PIQ</div>
+    <div class="product-name">PerformanceIQ <span class="product-iq-badge">IQ</span></div>
+    <div class="product-tag">Elevate performance</div>
+  </div>
+  <div class="product-card iq" style="border-left-color: #0d9488;">
+    <div class="product-mono" style="background: #0d9488;">PIQ</div>
+    <div class="product-name">PolicyIQ <span class="product-iq-badge" style="background: #f0fdfa; color: #0d9488;">Current</span></div>
+    <div class="product-tag">Smart policy lifecycle</div>
+  </div>
+  <div class="product-card iq">
+    <div class="product-mono" style="background: #0d9488;">CIQ</div>
+    <div class="product-name">ContractIQ <span class="product-iq-badge">IQ</span></div>
+    <div class="product-tag">Smart contract lifecycle</div>
+  </div>
+  <div class="product-card iq">
+    <div class="product-mono" style="background: #7c3aed;">IIQ</div>
+    <div class="product-name">IncidentIQ <span class="product-iq-badge">IQ</span></div>
+    <div class="product-tag">AI incident analysis</div>
+  </div>
+  <div class="product-card iq">
+    <div class="product-mono" style="background: #7c3aed;">PIQ</div>
+    <div class="product-name">ProjectIQ <span class="product-iq-badge">IQ</span></div>
+    <div class="product-tag">Deliver on time</div>
+  </div>
+  <div class="product-card iq">
+    <div class="product-mono" style="background: #7c3aed;">FIQ</div>
+    <div class="product-name">FinanceIQ <span class="product-iq-badge">IQ</span></div>
+    <div class="product-tag">Financial control</div>
+  </div>
+  <div class="product-card iq">
+    <div class="product-mono" style="background: #7c3aed;">FIQ</div>
+    <div class="product-name">FacilitiesIQ <span class="product-iq-badge">IQ</span></div>
+    <div class="product-tag">Maintain everything</div>
+  </div>
+  <div class="product-card iq">
+    <div class="product-mono" style="background: #7c3aed;">EIQ</div>
+    <div class="product-name">EventIQ <span class="product-iq-badge">IQ</span></div>
+    <div class="product-tag">AI event management</div>
+  </div>
+</div>
+
+<!-- ═══ STANDARD PRODUCTS ═══ -->
+<div class="section-label">Standard Products</div>
+<div class="product-grid">
+  <div class="product-card">
+    <div class="product-mono" style="background: #2563eb;">JL</div>
+    <div class="product-name">JML</div>
+    <div class="product-tag">Lifecycle made simple</div>
+  </div>
+  <div class="product-card">
+    <div class="product-mono" style="background: #e3008c;">GM</div>
+    <div class="product-name">Gamification Manager</div>
+    <div class="product-tag">Engage & reward</div>
+  </div>
+  <div class="product-card">
+    <div class="product-mono" style="background: #0d9488;">RA</div>
+    <div class="product-name">Risk & Audit Manager</div>
+    <div class="product-tag">Mitigate risk</div>
+  </div>
+  <div class="product-card">
+    <div class="product-mono" style="background: #7c3aed;">SC</div>
+    <div class="product-name">SHE CI Manager</div>
+    <div class="product-tag">Safety first</div>
+  </div>
+  <!-- ... remaining standard products ... -->
+</div>
+
+</body>
+</html>

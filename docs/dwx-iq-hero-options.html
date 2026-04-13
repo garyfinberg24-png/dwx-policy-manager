@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DWx IQ Hero Banner — Colour Options</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', -apple-system, sans-serif; background: #f1f5f9; padding: 40px 60px; }
+
+  h1 { font-size: 20px; color: #0f172a; margin-bottom: 8px; }
+  .page-desc { font-size: 13px; color: #64748b; margin-bottom: 40px; }
+
+  .option-label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;
+    color: #94a3b8; margin: 40px 0 12px; display: flex; align-items: center; gap: 8px;
+  }
+  .option-label .num {
+    width: 24px; height: 24px; border-radius: 50%; background: #0f172a; color: #fff;
+    display: flex; align-items: center; justify-content: center; font-size: 11px;
+  }
+
+  /* ═══ SHARED HERO STYLES ═══ */
+  .iq-hero {
+    border-radius: 12px;
+    padding: 32px 36px;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+  }
+  .iq-hero::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.05);
+  }
+  .iq-hero::after {
+    content: '';
+    position: absolute;
+    bottom: -60px; left: 30%;
+    width: 300px; height: 300px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.03);
+  }
+
+  .iq-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,0.15); padding: 4px 12px; border-radius: 20px;
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;
+    margin-bottom: 16px;
+  }
+  .iq-badge .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+
+  .iq-title {
+    font-size: 24px; font-weight: 700; margin-bottom: 8px;
+    position: relative; z-index: 1;
+  }
+  .iq-desc {
+    font-size: 13px; line-height: 1.7; opacity: 0.9; max-width: 720px;
+    position: relative; z-index: 1; margin-bottom: 20px;
+  }
+  .iq-features {
+    display: flex; gap: 12px; flex-wrap: wrap;
+    position: relative; z-index: 1;
+  }
+  .iq-feature {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.1); padding: 8px 14px; border-radius: 6px;
+    font-size: 12px; font-weight: 500;
+  }
+  .iq-feature svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+  .iq-count {
+    position: absolute; top: 32px; right: 36px;
+    text-align: right; z-index: 1;
+  }
+  .iq-count-num { font-size: 42px; font-weight: 800; opacity: 0.2; line-height: 1; }
+  .iq-count-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.5; }
+</style>
+</head>
+<body>
+
+<h1>DWx IQ Hero Banner — Colour Options</h1>
+<p class="page-desc">Choose a colour theme for the IQ product range intro banner in Admin Centre → DWx Products.</p>
+
+<!-- ═══ OPTION A: DEEP PURPLE (Original) ═══ -->
+<div class="option-label"><span class="num">A</span> Deep Purple — Premium AI Brand</div>
+<div class="iq-hero" style="background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 50%, #4c1d95 100%);">
+  <div class="iq-count"><div class="iq-count-num">10</div><div class="iq-count-label">IQ Products</div></div>
+  <div class="iq-badge"><div class="dot" style="background: #a78bfa;"></div> DWx IQ Range — Powered by Azure AI</div>
+  <div class="iq-title" style="background: linear-gradient(90deg, #fff, #c4b5fd); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Intelligent. Autonomous. Transformative.</div>
+  <div class="iq-desc">The DWx IQ range represents the next generation of digital workplace applications — each powered by Azure OpenAI and agentic AI to automate complex workflows, surface actionable insights, and make intelligent decisions on your behalf.</div>
+  <div class="iq-features">
+    <div class="iq-feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Agentic AI Workflows</div>
+    <div class="iq-feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/><path d="M9 12l2 2 4-4"/></svg> Predictive Analytics</div>
+    <div class="iq-feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg> Azure OpenAI GPT-4o</div>
+    <div class="iq-feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Zero-Trust Security</div>
+  </div>
+</div>
+
+
+<!-- ═══ OPTION B: MIDNIGHT BLUE → PURPLE ═══ -->
+<div class="option-label"><span class="num">B</span> Midnight Blue → Purple — Enterprise Sophistication</div>
+<div class="iq-hero" style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #5b21b6 100%);">
+  <div class="iq-count"><div class="iq-count-num">10</div><div class="iq-count-label">IQ Products</div></div>
+  <div class="iq-badge"><div class="dot" style="background: #818cf8;"></div> DWx IQ Range — Powered by Azure AI</div>
+  <div class="iq-title" style="background: linear-gradient(90deg, #e0e7ff, #c4b5fd); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Intelligent. Autonomous. Transformative.</div>
+  <div class="iq-desc">The DWx IQ range represents the next generation of digital workplace applications — each powered by Azure OpenAI and agentic AI to automate complex workflows, surface actionable insights, and make intelligent decisions on your behalf.</div>
+  <div class="iq-features">
+    <div class="iq-feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Agentic AI Workflows</div>
+    <div class="iq-feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/><path d="M9 12l2 2 4-4"/></svg> Predictive Analytics</div>
+    <div class="iq-feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg> Azure OpenAI GPT-4o</div>
+    <div class="iq-feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Zero-Trust Security</div>
+  </div>
+</div>
+
+
+<!-- ═══ OPTION C: DARK SLATE → TEAL ═══ -->
+<div class="option-label"><span class="num">C</span> Dark Slate → Teal — Matches Forest Teal Theme</div>
+<div class="iq-hero" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 40%, #0f766e 100%);">
+  <div class="iq-count"><div class="iq-count-num">10</div><div class="iq-count-label">IQ Products</div></div>
+  <div class="iq-badge"><div class="dot" style="background: #2dd4bf;"></div> DWx IQ Range — Powered by Azure AI</div>
+  <div class="iq-title" style="background: linear-gradient(90deg, #fff, #99f6e4); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Intelligent. Autonomous. Transformative.</div>
+  <div class="iq-desc">The DWx IQ range represents the next generation of digital workplace applications — each powered by Azure OpenAI and agentic AI to automate complex workflows, surface actionable insights, and make intelligent decisions on your behalf.</div>
+  <div class="iq-features">
+    <div class="iq-feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Agentic AI Workflows</div>
+    <div class="iq-feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/><path d="M9 12l2 2 4-4"/></svg> Predictive Analytics</div>
+    <div class="iq-feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg> Azure OpenAI GPT-4o</div>
+    <div class="iq-feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Zero-Trust Security</div>
+  </div>
+</div>
+
+
+<!-- ═══ OPTION D: DARK CHARCOAL → ELECTRIC PURPLE ═══ -->
+<div class="option-label"><span class="num">D</span> Dark Charcoal → Electric Purple — Bold & Modern</div>
+<div class="iq-hero" style="background: linear-gradient(135deg, #18181b 0%, #27272a 30%, #7c3aed 100%);">
+  <div class="iq-count"><div class="iq-count-num">10</div><div class="iq-count-label">IQ Products</div></div>
+  <div class="iq-badge"><div class="dot" style="background: #a78bfa;"></div> DWx IQ Range — Powered by Azure AI</div>
+  <div class="iq-title" style="background: linear-gradient(90deg, #fafafa, #d8b4fe); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Intelligent. Autonomous. Transformative.</div>
+  <div class="iq-desc">The DWx IQ range represents the next generation of digital workplace applications — each powered by Azure OpenAI and agentic AI to automate complex workflows, surface actionable insights, and make intelligent decisions on your behalf.</div>
+  <div class="iq-features">
+    <div class="iq-feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Agentic AI Workflows</div>
+    <div class="iq-feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/><path d="M9 12l2 2 4-4"/></svg> Predictive Analytics</div>
+    <div class="iq-feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg> Azure OpenAI GPT-4o</div>
+    <div class="iq-feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Zero-Trust Security</div>
+  </div>
+</div>
+
+
+<!-- ═══ OPTION E: GRADIENT MESH — PURPLE / BLUE / PINK ═══ -->
+<div class="option-label"><span class="num">E</span> Purple / Blue / Pink Mesh — Vibrant & Contemporary</div>
+<div class="iq-hero" style="background: linear-gradient(135deg, #6d28d9 0%, #2563eb 50%, #db2777 100%);">
+  <div class="iq-count"><div class="iq-count-num">10</div><div class="iq-count-label">IQ Products</div></div>
+  <div class="iq-badge"><div class="dot" style="background: #f9a8d4;"></div> DWx IQ Range — Powered by Azure AI</div>
+  <div class="iq-title" style="background: linear-gradient(90deg, #fff, #fbcfe8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Intelligent. Autonomous. Transformative.</div>
+  <div class="iq-desc">The DWx IQ range represents the next generation of digital workplace applications — each powered by Azure OpenAI and agentic AI to automate complex workflows, surface actionable insights, and make intelligent decisions on your behalf.</div>
+  <div class="iq-features">
+    <div class="iq-feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Agentic AI Workflows</div>
+    <div class="iq-feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/><path d="M9 12l2 2 4-4"/></svg> Predictive Analytics</div>
+    <div class="iq-feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg> Azure OpenAI GPT-4o</div>
+    <div class="iq-feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Zero-Trust Security</div>
+  </div>
+</div>
+
+
+<!-- ═══ OPTION F: DARK NAVY → GOLD ACCENT ═══ -->
+<div class="option-label"><span class="num">F</span> Dark Navy → Gold Accent — Executive & Premium</div>
+<div class="iq-hero" style="background: linear-gradient(135deg, #0c1222 0%, #1e293b 60%, #1e3a5f 100%);">
+  <div class="iq-count"><div class="iq-count-num" style="color: #fbbf24;">10</div><div class="iq-count-label">IQ Products</div></div>
+  <div class="iq-badge" style="border: 1px solid rgba(251,191,36,0.3);"><div class="dot" style="background: #fbbf24;"></div> DWx IQ Range — Powered by Azure AI</div>
+  <div class="iq-title" style="background: linear-gradient(90deg, #fef3c7, #fbbf24, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Intelligent. Autonomous. Transformative.</div>
+  <div class="iq-desc">The DWx IQ range represents the next generation of digital workplace applications — each powered by Azure OpenAI and agentic AI to automate complex workflows, surface actionable insights, and make intelligent decisions on your behalf.</div>
+  <div class="iq-features">
+    <div class="iq-feature" style="border: 1px solid rgba(251,191,36,0.15);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Agentic AI Workflows</div>
+    <div class="iq-feature" style="border: 1px solid rgba(251,191,36,0.15);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/><path d="M9 12l2 2 4-4"/></svg> Predictive Analytics</div>
+    <div class="iq-feature" style="border: 1px solid rgba(251,191,36,0.15);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg> Azure OpenAI GPT-4o</div>
+    <div class="iq-feature" style="border: 1px solid rgba(251,191,36,0.15);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Zero-Trust Security</div>
+  </div>
+</div>
+
+<div style="height: 60px;"></div>
+</body>
+</html>

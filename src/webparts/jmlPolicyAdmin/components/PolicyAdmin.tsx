@@ -11456,10 +11456,10 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                   onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = 'none'; (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)'; }}>
                   {/* Splash area */}
                   <div style={{
-                    background: gradient, padding: '24px 20px 20px', textAlign: 'center', position: 'relative', overflow: 'hidden', minHeight: 200,
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                    backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)',
-                    backgroundSize: '40px 40px'
+                    backgroundImage: `linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px), ${gradient}`,
+                    backgroundSize: '40px 40px, 40px 40px, 100% 100%',
+                    padding: '24px 20px 20px', textAlign: 'center', position: 'relative', overflow: 'hidden', minHeight: 200,
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'
                   }}>
                     {/* Badges */}
                     {product.isIQ && <span style={{ position: 'absolute', top: 10, left: 10, background: '#fbbf24', padding: '2px 8px', borderRadius: 10, fontSize: 8, color: '#1a1a2e', fontWeight: 800, textTransform: 'uppercase', zIndex: 2 }}>IQ</span>}

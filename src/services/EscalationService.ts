@@ -37,7 +37,7 @@ export interface IEscalationConfig {
 }
 
 const DEFAULT_CONFIG: IEscalationConfig = {
-  enabled: true,
+  enabled: false, // Default OFF — admin must enable via PM_Configuration 'Admin.Escalation.Enabled'
   warningDays: 1,
   defaultSLADays: 7,
   escalationAction: 'Notify',

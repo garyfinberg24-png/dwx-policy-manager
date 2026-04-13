@@ -2935,7 +2935,11 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
         const anyRejected = updatedReviewers.some((r: any) => r.ReviewStatus === 'Rejected' || r.ReviewStatus === 'Revision Requested');
 
         // Update policy status
-        if (reviewDecision === 'reject' || reviewDecision === 'changes') {
+        if (reviewDecision === 'reject') {
+          await this.props.sp.web.lists.getByTitle('PM_Policies')
+            .items.getById(policy!.Id).update({ PolicyStatus: 'Rejected' });
+        } else if (reviewDecision === 'changes') {
+          // Changes requested — return to Draft so author can edit and resubmit
           await this.props.sp.web.lists.getByTitle('PM_Policies')
             .items.getById(policy!.Id).update({ PolicyStatus: 'Draft' });
           // Reset ALL reviewer statuses to Pending for resubmission

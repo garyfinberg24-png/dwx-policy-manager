@@ -355,7 +355,8 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
   }
 
   private handlePolicyClick = (policyId: number): void => {
-    window.location.href = `/sites/PolicyManager/SitePages/PolicyDetails.aspx?policyId=${policyId}`;
+    const siteUrl = this.props.context?.pageContext?.web?.absoluteUrl || '/sites/PolicyManager';
+    window.location.href = `${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policyId}`;
   };
 
   private selectPolicy = (policyId: number): void => {

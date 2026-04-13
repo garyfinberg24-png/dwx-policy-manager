@@ -7310,9 +7310,8 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                   });
                 })()}
                 layoutMode={DetailsListLayoutMode.justified}
-                selectionMode={SelectionMode.multiple}
-                selection={this._userSelection}
-                checkboxVisibility={CheckboxVisibility.always}
+                selectionMode={SelectionMode.none}
+                checkboxVisibility={CheckboxVisibility.hidden}
                 getKey={(item: any) => item.Id}
                 onItemInvoked={(item: any) => {
                   this.setState({

@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DWx Product Cards v2 — Faithful Brand Identity</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', -apple-system, sans-serif; background: #f1f5f9; padding: 40px 60px; color: #0f172a; }
+
+  h1 { font-size: 24px; font-weight: 800; margin-bottom: 4px; }
+  .page-desc { font-size: 13px; color: #64748b; margin-bottom: 40px; }
+  .option-label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;
+    color: #94a3b8; margin: 48px 0 16px; display: flex; align-items: center; gap: 8px;
+  }
+  .option-label .num {
+    width: 28px; height: 28px; border-radius: 50%; background: #1a5a8a; color: #fff;
+    display: flex; align-items: center; justify-content: center; font-size: 12px;
+  }
+  .option-desc { font-size: 12px; color: #64748b; margin-bottom: 16px; }
+
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+
+  /* ═══ DWx BRAND BLOCKS — faithful SVG reproduction ═══ */
+  /* The 3 overlapping blocks from the brand guide:
+     3 rounded rectangles, slightly offset and rotated,
+     stacked to create depth. The front block contains the DWx logo. */
+
+
+  /* ═══ OPTION A: SPLASH CARD WITH EXACT BRAND BLOCKS ═══ */
+  .splash-card {
+    border-radius: 12px; overflow: hidden; cursor: pointer;
+    transition: all 0.25s; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .splash-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,0.18); }
+
+  .splash-top {
+    padding: 28px 20px 24px; text-align: center; position: relative; overflow: hidden;
+    min-height: 220px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+
+  .splash-card .version-badge {
+    position: absolute; top: 10px; right: 10px;
+    background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 10px;
+    font-size: 9px; color: #fff; font-weight: 600; z-index: 2;
+  }
+  .splash-card .iq-badge {
+    position: absolute; top: 10px; left: 10px;
+    background: #fbbf24; padding: 2px 8px; border-radius: 10px;
+    font-size: 8px; color: #1a1a2e; font-weight: 800; text-transform: uppercase; z-index: 2;
+  }
+
+  /* App icon circle */
+  .app-icon-circle {
+    width: 56px; height: 56px; border-radius: 50%;
+    background: rgba(255,255,255,0.2); backdrop-filter: blur(4px);
+    border: 2px solid rgba(255,255,255,0.3);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 16px; position: relative; z-index: 2;
+  }
+  .app-icon-circle svg { width: 26px; height: 26px; stroke: #fff; fill: none; stroke-width: 2; }
+
+  /* DWx brand text */
+  .brand-text { font-size: 7px; letter-spacing: 2.5px; text-transform: uppercase; opacity: 0.5; color: #fff; position: relative; z-index: 2; }
+  .dwx-text { font-size: 22px; font-weight: 800; color: #fff; margin-bottom: 12px; position: relative; z-index: 2; }
+  .dwx-text span { font-weight: 300; }
+  .app-name { font-size: 16px; font-weight: 700; color: #fff; position: relative; z-index: 2; }
+  .app-sub { font-size: 11px; color: rgba(255,255,255,0.7); position: relative; z-index: 2; margin-top: 3px; }
+
+  /* White info strip */
+  .splash-bottom {
+    background: #fff; padding: 14px 16px;
+  }
+  .splash-bottom-name { font-size: 13px; font-weight: 700; color: #0f172a; }
+  .splash-bottom-desc { font-size: 11px; color: #94a3b8; margin-top: 2px; line-height: 1.5; }
+
+
+  /* ═══ OPTION B: COMPACT WHITE CARD WITH BRAND ICON ═══ */
+  .brand-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+    padding: 20px; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden;
+  }
+  .brand-card:hover { border-color: #1a5a8a; box-shadow: 0 4px 16px rgba(26,90,138,0.12); transform: translateY(-2px); }
+  .brand-card .accent-bar { position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+  .brand-card .card-head { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+
+  /* Brand icon block — contains the 3 blocks SVG + app icon */
+  .brand-icon-block {
+    width: 52px; height: 52px; border-radius: 10px; position: relative;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    overflow: hidden;
+  }
+  .brand-icon-block .app-svg { position: relative; z-index: 2; }
+  .brand-icon-block .app-svg svg { width: 24px; height: 24px; stroke: #fff; fill: none; stroke-width: 2; }
+
+  .brand-card .card-info { flex: 1; }
+  .brand-card .card-name { font-size: 14px; font-weight: 700; }
+  .brand-card .card-tag { font-size: 11px; font-style: italic; }
+  .brand-card .card-desc { font-size: 12px; color: #64748b; margin-bottom: 10px; line-height: 1.5; }
+  .brand-card .card-foot { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f5f9; padding-top: 10px; }
+  .brand-card .card-ver { font-size: 10px; color: #94a3b8; }
+  .brand-card .badges { display: flex; gap: 4px; }
+  .brand-card .badge { padding: 2px 8px; border-radius: 3px; font-size: 8px; font-weight: 800; text-transform: uppercase; }
+</style>
+</head>
+<body>
+
+<h1>DWx Product Cards v2 — Faithful Brand Identity</h1>
+<p class="page-desc">Using the exact DWx 3-block logo from the brand guide, with unique app icons per product.</p>
+
+
+<!-- ═══ OPTION A: SPLASH CARDS WITH EXACT BRAND BLOCKS ═══ -->
+<div class="option-label"><span class="num">A</span> Splash Cards — Faithful DWx brand blocks + unique app icon</div>
+<p class="option-desc">Each card replicates the splash screen: gradient → DWx 3-block logo (SVG) → app icon circle → FIRST DIGITAL → DWx → App Name. IQ products use purple gradient, standard use blue.</p>
+
+<div class="grid">
+  <!-- PolicyIQ -->
+  <div class="splash-card">
+    <div class="splash-top" style="background: linear-gradient(135deg, #1e1b4b, #312e81, #5b21b6);">
+      <span class="iq-badge">IQ</span>
+      <span class="version-badge">v1.2.5</span>
+      <!-- DWx 3-block brand logo (exact from PDF) -->
+      <svg viewBox="0 0 120 90" width="120" height="90" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -60%); opacity: 0.07; z-index: 1;">
+        <rect x="5" y="20" width="70" height="48" rx="8" ry="8" fill="none" stroke="#fff" stroke-width="2" transform="rotate(-6 40 44)"/>
+        <rect x="18" y="14" width="70" height="48" rx="8" ry="8" fill="rgba(255,255,255,0.15)" stroke="#fff" stroke-width="2" transform="rotate(-2 53 38)"/>
+        <rect x="30" y="8" width="70" height="48" rx="8" ry="8" fill="rgba(255,255,255,0.25)" stroke="#fff" stroke-width="2" transform="rotate(2 65 32)"/>
+      </svg>
+      <!-- App icon -->
+      <div class="app-icon-circle">
+        <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+      </div>
+      <div class="brand-text">FIRST DIGITAL</div>
+      <div class="dwx-text">DW<span>x</span></div>
+      <div class="app-name">PolicyIQ</div>
+      <div class="app-sub">Smart Policy Lifecycle Management</div>
+    </div>
+    <div class="splash-bottom">
+      <div class="splash-bottom-name">PolicyIQ</div>
+      <div class="splash-bottom-desc">17 webparts • 150+ services • AI Chat & Quiz • Compliance dashboards</div>
+    </div>
+  </div>
+
+  <!-- ContractIQ -->
+  <div class="splash-card">
+    <div class="splash-top" style="background: linear-gradient(135deg, #1e1b4b, #312e81, #5b21b6);">
+      <span class="iq-badge">IQ</span>
+      <span class="version-badge">v2.0.0</span>
+      <svg viewBox="0 0 120 90" width="120" height="90" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -60%); opacity: 0.07; z-index: 1;">
+        <rect x="5" y="20" width="70" height="48" rx="8" ry="8" fill="none" stroke="#fff" stroke-width="2" transform="rotate(-6 40 44)"/>
+        <rect x="18" y="14" width="70" height="48" rx="8" ry="8" fill="rgba(255,255,255,0.15)" stroke="#fff" stroke-width="2" transform="rotate(-2 53 38)"/>
+        <rect x="30" y="8" width="70" height="48" rx="8" ry="8" fill="rgba(255,255,255,0.25)" stroke="#fff" stroke-width="2" transform="rotate(2 65 32)"/>
+      </svg>
+      <div class="app-icon-circle">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+      </div>
+      <div class="brand-text">FIRST DIGITAL</div>
+      <div class="dwx-text">DW<span>x</span></div>
+      <div class="app-name">ContractIQ</div>
+      <div class="app-sub">Smart Contract Lifecycle Management</div>
+    </div>
+    <div class="splash-bottom">
+      <div class="splash-bottom-name">ContractIQ</div>
+      <div class="splash-bottom-desc">Contract lifecycle • Obligation tracking • Key date alerts • Audit trail</div>
+    </div>
+  </div>
+
+  <!-- RecruitIQ -->
+  <div class="splash-card">
+    <div class="splash-top" style="background: linear-gradient(135deg, #1e1b4b, #312e81, #5b21b6);">
+      <span class="iq-badge">IQ</span>
+      <span class="version-badge">v1.0.0</span>
+      <svg viewBox="0 0 120 90" width="120" height="90" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -60%); opacity: 0.07; z-index: 1;">
+        <rect x="5" y="20" width="70" height="48" rx="8" ry="8" fill="none" stroke="#fff" stroke-width="2" transform="rotate(-6 40 44)"/>
+        <rect x="18" y="14" width="70" height="48" rx="8" ry="8" fill="rgba(255,255,255,0.15)" stroke="#fff" stroke-width="2" transform="rotate(-2 53 38)"/>
+        <rect x="30" y="8" width="70" height="48" rx="8" ry="8" fill="rgba(255,255,255,0.25)" stroke="#fff" stroke-width="2" transform="rotate(2 65 32)"/>
+      </svg>
+      <div class="app-icon-circle">
+        <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6"/><path d="M23 11h-6"/></svg>
+      </div>
+      <div class="brand-text">FIRST DIGITAL</div>
+      <div class="dwx-text">DW<span>x</span></div>
+      <div class="app-name">RecruitIQ</div>
+      <div class="app-sub">AI-Native Recruitment</div>
+    </div>
+    <div class="splash-bottom">
+      <div class="splash-bottom-name">RecruitIQ</div>
+      <div class="splash-bottom-desc">AI candidate matching • Screening workflows • Interview scheduling</div>
+    </div>
+  </div>
+
+  <!-- JML (Standard — blue gradient) -->
+  <div class="splash-card">
+    <div class="splash-top" style="background: linear-gradient(135deg, #0d3a5c, #1a5a8a, #2d7ab8);">
+      <span class="version-badge">v3.0.0</span>
+      <svg viewBox="0 0 120 90" width="120" height="90" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -60%); opacity: 0.07; z-index: 1;">
+        <rect x="5" y="20" width="70" height="48" rx="8" ry="8" fill="none" stroke="#fff" stroke-width="2" transform="rotate(-6 40 44)"/>
+        <rect x="18" y="14" width="70" height="48" rx="8" ry="8" fill="rgba(255,255,255,0.15)" stroke="#fff" stroke-width="2" transform="rotate(-2 53 38)"/>
+        <rect x="30" y="8" width="70" height="48" rx="8" ry="8" fill="rgba(255,255,255,0.25)" stroke="#fff" stroke-width="2" transform="rotate(2 65 32)"/>
+      </svg>
+      <div class="app-icon-circle">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </div>
+      <div class="brand-text">FIRST DIGITAL</div>
+      <div class="dwx-text">DW<span>x</span></div>
+      <div class="app-name">JML</div>
+      <div class="app-sub">Joiner, Mover, Leaver</div>
+    </div>
+    <div class="splash-bottom">
+      <div class="splash-bottom-name">JML</div>
+      <div class="splash-bottom-desc">8-step onboarding • Role transitions • Offboarding checklists</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══ OPTION B: WHITE CARDS WITH BRAND ICON BLOCK ═══ -->
+<div class="option-label"><span class="num">B</span> Compact White Cards — DWx brand block as icon with app SVG overlay</div>
+<p class="option-desc">Clean white cards. The icon area contains a mini DWx brand block (3 blocks SVG) with the app icon overlaid. More text space.</p>
+
+<div class="grid">
+  <!-- PolicyIQ -->
+  <div class="brand-card">
+    <div class="accent-bar" style="background: linear-gradient(90deg, #312e81, #5b21b6);"></div>
+    <div class="card-head">
+      <div class="brand-icon-block" style="background: linear-gradient(135deg, #312e81, #5b21b6);">
+        <!-- 3 blocks SVG inside icon -->
+        <svg viewBox="0 0 52 52" width="52" height="52" style="position: absolute; inset: 0; opacity: 0.15;">
+          <rect x="4" y="14" width="28" height="20" rx="4" ry="4" fill="none" stroke="#fff" stroke-width="1.5" transform="rotate(-6 18 24)"/>
+          <rect x="10" y="10" width="28" height="20" rx="4" ry="4" fill="rgba(255,255,255,0.2)" stroke="#fff" stroke-width="1.5" transform="rotate(-2 24 20)"/>
+          <rect x="16" y="7" width="28" height="20" rx="4" ry="4" fill="rgba(255,255,255,0.3)" stroke="#fff" stroke-width="1.5" transform="rotate(2 30 17)"/>
+        </svg>
+        <div class="app-svg"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></div>
+      </div>
+      <div class="card-info">
+        <div class="card-name">PolicyIQ</div>
+        <div class="card-tag" style="color: #7c3aed;">Smart policy lifecycle</div>
+      </div>
+    </div>
+    <div class="card-desc">Centralised policy governance with version-controlled documents, mandatory acknowledgements, compliance dashboards, AI chat, and quiz integration.</div>
+    <div class="card-foot">
+      <span class="card-ver">v1.2.5 • 17 webparts</span>
+      <div class="badges">
+        <span class="badge" style="background: #ede9fe; color: #7c3aed;">IQ</span>
+        <span class="badge" style="background: #f0fdfa; color: #0d9488;">Current</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ContractIQ -->
+  <div class="brand-card">
+    <div class="accent-bar" style="background: linear-gradient(90deg, #312e81, #5b21b6);"></div>
+    <div class="card-head">
+      <div class="brand-icon-block" style="background: linear-gradient(135deg, #312e81, #5b21b6);">
+        <svg viewBox="0 0 52 52" width="52" height="52" style="position: absolute; inset: 0; opacity: 0.15;">
+          <rect x="4" y="14" width="28" height="20" rx="4" ry="4" fill="none" stroke="#fff" stroke-width="1.5" transform="rotate(-6 18 24)"/>
+          <rect x="10" y="10" width="28" height="20" rx="4" ry="4" fill="rgba(255,255,255,0.2)" stroke="#fff" stroke-width="1.5" transform="rotate(-2 24 20)"/>
+          <rect x="16" y="7" width="28" height="20" rx="4" ry="4" fill="rgba(255,255,255,0.3)" stroke="#fff" stroke-width="1.5" transform="rotate(2 30 17)"/>
+        </svg>
+        <div class="app-svg"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></div>
+      </div>
+      <div class="card-info">
+        <div class="card-name">ContractIQ</div>
+        <div class="card-tag" style="color: #7c3aed;">Smart contract lifecycle</div>
+      </div>
+    </div>
+    <div class="card-desc">Full contract lifecycle management from creation through renewal. Obligation tracking, key date alerts, and compliance audit trail.</div>
+    <div class="card-foot">
+      <span class="card-ver">v2.0.0</span>
+      <div class="badges"><span class="badge" style="background: #ede9fe; color: #7c3aed;">IQ</span></div>
+    </div>
+  </div>
+
+  <!-- PerformanceIQ -->
+  <div class="brand-card">
+    <div class="accent-bar" style="background: linear-gradient(90deg, #312e81, #5b21b6);"></div>
+    <div class="card-head">
+      <div class="brand-icon-block" style="background: linear-gradient(135deg, #312e81, #5b21b6);">
+        <svg viewBox="0 0 52 52" width="52" height="52" style="position: absolute; inset: 0; opacity: 0.15;">
+          <rect x="4" y="14" width="28" height="20" rx="4" ry="4" fill="none" stroke="#fff" stroke-width="1.5" transform="rotate(-6 18 24)"/>
+          <rect x="10" y="10" width="28" height="20" rx="4" ry="4" fill="rgba(255,255,255,0.2)" stroke="#fff" stroke-width="1.5" transform="rotate(-2 24 20)"/>
+          <rect x="16" y="7" width="28" height="20" rx="4" ry="4" fill="rgba(255,255,255,0.3)" stroke="#fff" stroke-width="1.5" transform="rotate(2 30 17)"/>
+        </svg>
+        <div class="app-svg"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+      </div>
+      <div class="card-info">
+        <div class="card-name">PerformanceIQ</div>
+        <div class="card-tag" style="color: #7c3aed;">Elevate performance</div>
+      </div>
+    </div>
+    <div class="card-desc">Comprehensive performance management with review cycles, OKR tracking, 360-degree feedback, and team performance dashboards.</div>
+    <div class="card-foot">
+      <span class="card-ver">v2.0.0</span>
+      <div class="badges"><span class="badge" style="background: #ede9fe; color: #7c3aed;">IQ</span></div>
+    </div>
+  </div>
+
+  <!-- JML (Standard — blue) -->
+  <div class="brand-card">
+    <div class="accent-bar" style="background: linear-gradient(90deg, #0d3a5c, #1a5a8a);"></div>
+    <div class="card-head">
+      <div class="brand-icon-block" style="background: linear-gradient(135deg, #0d3a5c, #1a5a8a);">
+        <svg viewBox="0 0 52 52" width="52" height="52" style="position: absolute; inset: 0; opacity: 0.15;">
+          <rect x="4" y="14" width="28" height="20" rx="4" ry="4" fill="none" stroke="#fff" stroke-width="1.5" transform="rotate(-6 18 24)"/>
+          <rect x="10" y="10" width="28" height="20" rx="4" ry="4" fill="rgba(255,255,255,0.2)" stroke="#fff" stroke-width="1.5" transform="rotate(-2 24 20)"/>
+          <rect x="16" y="7" width="28" height="20" rx="4" ry="4" fill="rgba(255,255,255,0.3)" stroke="#fff" stroke-width="1.5" transform="rotate(2 30 17)"/>
+        </svg>
+        <div class="app-svg"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+      </div>
+      <div class="card-info">
+        <div class="card-name">JML</div>
+        <div class="card-tag" style="color: #1a5a8a;">Lifecycle made simple</div>
+      </div>
+    </div>
+    <div class="card-desc">Complete employee lifecycle management with wizard-driven onboarding, role transitions, and offboarding workflows.</div>
+    <div class="card-foot">
+      <span class="card-ver">v3.0.0</span>
+      <div class="badges"></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══ OPTION C: HYBRID — Splash top + expanded info ═══ -->
+<div class="option-label"><span class="num">C</span> Hybrid — Mini splash header + detailed info card below</div>
+<p class="option-desc">Combines the splash screen visual impact with detailed product information. The top section is the branded splash, the bottom shows description and USPs.</p>
+
+<div class="grid grid-3">
+  <!-- PolicyIQ -->
+  <div class="splash-card">
+    <div class="splash-top" style="background: linear-gradient(135deg, #1e1b4b, #312e81, #5b21b6); min-height: 180px; padding: 20px 16px;">
+      <span class="iq-badge">IQ</span>
+      <span class="version-badge">v1.2.5</span>
+      <svg viewBox="0 0 120 90" width="100" height="75" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -58%); opacity: 0.07; z-index: 1;">
+        <rect x="5" y="20" width="70" height="48" rx="8" ry="8" fill="none" stroke="#fff" stroke-width="2" transform="rotate(-6 40 44)"/>
+        <rect x="18" y="14" width="70" height="48" rx="8" ry="8" fill="rgba(255,255,255,0.15)" stroke="#fff" stroke-width="2" transform="rotate(-2 53 38)"/>
+        <rect x="30" y="8" width="70" height="48" rx="8" ry="8" fill="rgba(255,255,255,0.25)" stroke="#fff" stroke-width="2" transform="rotate(2 65 32)"/>
+      </svg>
+      <div class="app-icon-circle" style="width: 48px; height: 48px; margin-bottom: 10px;">
+        <svg viewBox="0 0 24 24" style="width: 22px; height: 22px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+      </div>
+      <div class="brand-text">FIRST DIGITAL</div>
+      <div class="dwx-text" style="font-size: 18px; margin-bottom: 8px;">DW<span>x</span></div>
+      <div class="app-name" style="font-size: 15px;">PolicyIQ</div>
+      <div class="app-sub" style="font-size: 10px;">Smart Policy Lifecycle Management</div>
+    </div>
+    <div class="splash-bottom" style="padding: 16px;">
+      <div class="splash-bottom-name" style="margin-bottom: 8px;">PolicyIQ</div>
+      <div class="splash-bottom-desc" style="margin-bottom: 10px;">Centralised policy governance with version-controlled documents, mandatory acknowledgements, and compliance dashboards.</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px;">
+        <span style="font-size: 9px; padding: 2px 6px; background: #f0fdfa; color: #0d9488; border-radius: 3px; font-weight: 600;">17 Webparts</span>
+        <span style="font-size: 9px; padding: 2px 6px; background: #f0fdfa; color: #0d9488; border-radius: 3px; font-weight: 600;">AI Chat</span>
+        <span style="font-size: 9px; padding: 2px 6px; background: #f0fdfa; color: #0d9488; border-radius: 3px; font-weight: 600;">Quiz Builder</span>
+        <span style="font-size: 9px; padding: 2px 6px; background: #f0fdfa; color: #0d9488; border-radius: 3px; font-weight: 600;">Email Pipeline</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f5f9; padding-top: 8px;">
+        <span style="font-size: 10px; color: #94a3b8;">v1.2.5 • SPFx 1.20</span>
+        <span style="font-size: 8px; padding: 2px 8px; background: #f0fdfa; color: #0d9488; border-radius: 3px; font-weight: 800; text-transform: uppercase;">Current App</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ContractIQ -->
+  <div class="splash-card">
+    <div class="splash-top" style="background: linear-gradient(135deg, #1e1b4b, #312e81, #5b21b6); min-height: 180px; padding: 20px 16px;">
+      <span class="iq-badge">IQ</span>
+      <span class="version-badge">v2.0.0</span>
+      <svg viewBox="0 0 120 90" width="100" height="75" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -58%); opacity: 0.07; z-index: 1;">
+        <rect x="5" y="20" width="70" height="48" rx="8" ry="8" fill="none" stroke="#fff" stroke-width="2" transform="rotate(-6 40 44)"/>
+        <rect x="18" y="14" width="70" height="48" rx="8" ry="8" fill="rgba(255,255,255,0.15)" stroke="#fff" stroke-width="2" transform="rotate(-2 53 38)"/>
+        <rect x="30" y="8" width="70" height="48" rx="8" ry="8" fill="rgba(255,255,255,0.25)" stroke="#fff" stroke-width="2" transform="rotate(2 65 32)"/>
+      </svg>
+      <div class="app-icon-circle" style="width: 48px; height: 48px; margin-bottom: 10px;">
+        <svg viewBox="0 0 24 24" style="width: 22px; height: 22px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+      </div>
+      <div class="brand-text">FIRST DIGITAL</div>
+      <div class="dwx-text" style="font-size: 18px; margin-bottom: 8px;">DW<span>x</span></div>
+      <div class="app-name" style="font-size: 15px;">ContractIQ</div>
+      <div class="app-sub" style="font-size: 10px;">Smart Contract Lifecycle Management</div>
+    </div>
+    <div class="splash-bottom" style="padding: 16px;">
+      <div class="splash-bottom-name" style="margin-bottom: 8px;">ContractIQ</div>
+      <div class="splash-bottom-desc" style="margin-bottom: 10px;">Full contract lifecycle from creation through renewal. Obligation tracking, automated reminders, and compliance audit trail.</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px;">
+        <span style="font-size: 9px; padding: 2px 6px; background: #ede9fe; color: #7c3aed; border-radius: 3px; font-weight: 600;">CLM</span>
+        <span style="font-size: 9px; padding: 2px 6px; background: #ede9fe; color: #7c3aed; border-radius: 3px; font-weight: 600;">Obligations</span>
+        <span style="font-size: 9px; padding: 2px 6px; background: #ede9fe; color: #7c3aed; border-radius: 3px; font-weight: 600;">Key Dates</span>
+        <span style="font-size: 9px; padding: 2px 6px; background: #ede9fe; color: #7c3aed; border-radius: 3px; font-weight: 600;">Renewals</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f5f9; padding-top: 8px;">
+        <span style="font-size: 10px; color: #94a3b8;">v2.0.0 • Enterprise</span>
+        <span style="font-size: 8px; padding: 2px 8px; background: #ede9fe; color: #7c3aed; border-radius: 3px; font-weight: 800; text-transform: uppercase;">IQ</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- JML (Standard) -->
+  <div class="splash-card">
+    <div class="splash-top" style="background: linear-gradient(135deg, #0d3a5c, #1a5a8a, #2d7ab8); min-height: 180px; padding: 20px 16px;">
+      <span class="version-badge">v3.0.0</span>
+      <svg viewBox="0 0 120 90" width="100" height="75" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -58%); opacity: 0.07; z-index: 1;">
+        <rect x="5" y="20" width="70" height="48" rx="8" ry="8" fill="none" stroke="#fff" stroke-width="2" transform="rotate(-6 40 44)"/>
+        <rect x="18" y="14" width="70" height="48" rx="8" ry="8" fill="rgba(255,255,255,0.15)" stroke="#fff" stroke-width="2" transform="rotate(-2 53 38)"/>
+        <rect x="30" y="8" width="70" height="48" rx="8" ry="8" fill="rgba(255,255,255,0.25)" stroke="#fff" stroke-width="2" transform="rotate(2 65 32)"/>
+      </svg>
+      <div class="app-icon-circle" style="width: 48px; height: 48px; margin-bottom: 10px;">
+        <svg viewBox="0 0 24 24" style="width: 22px; height: 22px;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </div>
+      <div class="brand-text">FIRST DIGITAL</div>
+      <div class="dwx-text" style="font-size: 18px; margin-bottom: 8px;">DW<span>x</span></div>
+      <div class="app-name" style="font-size: 15px;">JML</div>
+      <div class="app-sub" style="font-size: 10px;">Joiner, Mover, Leaver</div>
+    </div>
+    <div class="splash-bottom" style="padding: 16px;">
+      <div class="splash-bottom-name" style="margin-bottom: 8px;">JML</div>
+      <div class="splash-bottom-desc" style="margin-bottom: 10px;">Complete employee lifecycle management with wizard-driven onboarding, role transitions, and offboarding workflows.</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px;">
+        <span style="font-size: 9px; padding: 2px 6px; background: #e0f2fe; color: #0284c7; border-radius: 3px; font-weight: 600;">Onboarding</span>
+        <span style="font-size: 9px; padding: 2px 6px; background: #e0f2fe; color: #0284c7; border-radius: 3px; font-weight: 600;">Movers</span>
+        <span style="font-size: 9px; padding: 2px 6px; background: #e0f2fe; color: #0284c7; border-radius: 3px; font-weight: 600;">Offboarding</span>
+        <span style="font-size: 9px; padding: 2px 6px; background: #e0f2fe; color: #0284c7; border-radius: 3px; font-weight: 600;">Doc Packs</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f5f9; padding-top: 8px;">
+        <span style="font-size: 10px; color: #94a3b8;">v3.0.0 • Standard</span>
+        <span style="font-size: 8px; padding: 2px 8px; background: #e0f2fe; color: #0284c7; border-radius: 3px; font-weight: 800; text-transform: uppercase;">Standard</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div style="height: 60px;"></div>
+</body>
+</html>

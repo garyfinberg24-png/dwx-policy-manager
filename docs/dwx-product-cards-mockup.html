@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DWx Product Cards — Brand Identity Mockup</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', -apple-system, sans-serif; background: #f1f5f9; padding: 40px 60px; color: #0f172a; }
+
+  h1 { font-size: 24px; font-weight: 800; margin-bottom: 4px; }
+  .page-desc { font-size: 13px; color: #64748b; margin-bottom: 40px; }
+
+  .option-label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;
+    color: #94a3b8; margin: 48px 0 16px; display: flex; align-items: center; gap: 8px;
+  }
+  .option-label .num {
+    width: 28px; height: 28px; border-radius: 50%; background: #1a5a8a; color: #fff;
+    display: flex; align-items: center; justify-content: center; font-size: 12px;
+  }
+  .option-desc { font-size: 12px; color: #64748b; margin-bottom: 16px; }
+
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+
+  /* ═══ 3 OVERLAPPING BLOCKS SVG ═══ */
+  .blocks-svg { position: absolute; opacity: 0.08; }
+
+  /* ═══ OPTION A: MINI SPLASH CARDS ═══ */
+  .card-a {
+    border-radius: 12px; overflow: hidden; cursor: pointer;
+    transition: all 0.2s; position: relative;
+  }
+  .card-a:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+  .card-a .card-gradient {
+    padding: 24px 20px 20px; text-align: center; position: relative; overflow: hidden;
+  }
+  .card-a .card-icon {
+    width: 52px; height: 52px; border-radius: 50%; background: rgba(255,255,255,0.2);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 12px; backdrop-filter: blur(4px); border: 2px solid rgba(255,255,255,0.3);
+  }
+  .card-a .card-icon svg { width: 24px; height: 24px; stroke: #fff; fill: none; stroke-width: 2; }
+  .card-a .card-brand { font-size: 8px; letter-spacing: 2px; text-transform: uppercase; opacity: 0.6; color: #fff; margin-bottom: 2px; }
+  .card-a .card-dwx { font-size: 16px; font-weight: 800; color: #fff; margin-bottom: 8px; }
+  .card-a .card-dwx span { font-weight: 300; }
+  .card-a .card-name { font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 2px; }
+  .card-a .card-sub { font-size: 10px; color: rgba(255,255,255,0.7); }
+  .card-a .card-version {
+    position: absolute; top: 10px; right: 10px;
+    background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 10px;
+    font-size: 9px; color: #fff; font-weight: 600;
+  }
+  .card-a .card-iq-badge {
+    position: absolute; top: 10px; left: 10px;
+    background: #fbbf24; padding: 2px 8px; border-radius: 10px;
+    font-size: 8px; color: #1a1a2e; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  /* 3 blocks motif */
+  .card-a .blocks {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    opacity: 0.06;
+  }
+  .card-a .blocks div {
+    width: 80px; height: 56px; border-radius: 8px; position: absolute;
+    border: 2px solid #fff;
+  }
+  .card-a .blocks div:nth-child(1) { top: -30px; left: -44px; transform: rotate(-8deg); }
+  .card-a .blocks div:nth-child(2) { top: -20px; left: -30px; transform: rotate(-2deg); background: rgba(255,255,255,0.03); }
+  .card-a .blocks div:nth-child(3) { top: -10px; left: -16px; transform: rotate(4deg); background: rgba(255,255,255,0.05); }
+
+
+  /* ═══ OPTION B: COMPACT BRANDED CARDS ═══ */
+  .card-b {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+    padding: 20px; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden;
+  }
+  .card-b:hover { border-color: #1a5a8a; box-shadow: 0 4px 16px rgba(26,90,138,0.1); transform: translateY(-2px); }
+  .card-b .card-top { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+  .card-b .card-icon-wrap {
+    width: 48px; height: 48px; border-radius: 10px; position: relative;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .card-b .card-icon-wrap svg { width: 22px; height: 22px; stroke: #fff; fill: none; stroke-width: 2; position: relative; z-index: 1; }
+  /* Mini blocks behind icon */
+  .card-b .mini-blocks { position: absolute; inset: 0; opacity: 0.15; }
+  .card-b .mini-blocks div {
+    width: 24px; height: 16px; border-radius: 3px; position: absolute; border: 1.5px solid #fff;
+  }
+  .card-b .mini-blocks div:nth-child(1) { top: 4px; left: 2px; transform: rotate(-8deg); }
+  .card-b .mini-blocks div:nth-child(2) { top: 8px; left: 8px; transform: rotate(-2deg); }
+  .card-b .mini-blocks div:nth-child(3) { top: 12px; left: 14px; transform: rotate(4deg); }
+
+  .card-b .card-info { flex: 1; }
+  .card-b .card-name { font-size: 14px; font-weight: 700; }
+  .card-b .card-tag { font-size: 11px; font-style: italic; }
+  .card-b .card-desc { font-size: 12px; color: #64748b; margin-bottom: 10px; line-height: 1.5; }
+  .card-b .card-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f5f9; padding-top: 10px; }
+  .card-b .card-version { font-size: 10px; color: #94a3b8; }
+  .card-b .card-badges { display: flex; gap: 4px; }
+  .card-b .badge-iq { padding: 2px 8px; border-radius: 3px; font-size: 8px; font-weight: 800; background: #ede9fe; color: #7c3aed; text-transform: uppercase; }
+  .card-b .badge-current { padding: 2px 8px; border-radius: 3px; font-size: 8px; font-weight: 800; background: #f0fdfa; color: #0d9488; text-transform: uppercase; }
+  .card-b .accent-bar { position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+
+
+  /* ═══ OPTION C: FULL SPLASH MINI ═══ */
+  .card-c {
+    border-radius: 12px; overflow: hidden; cursor: pointer;
+    transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .card-c:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+  .card-c .splash {
+    padding: 28px 20px 24px; text-align: center; position: relative; overflow: hidden; min-height: 200px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  /* Large blocks motif */
+  .card-c .lg-blocks { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -55%); opacity: 0.08; }
+  .card-c .lg-blocks div { width: 100px; height: 70px; border-radius: 10px; position: absolute; border: 2px solid #fff; }
+  .card-c .lg-blocks div:nth-child(1) { top: -38px; left: -54px; transform: rotate(-10deg); }
+  .card-c .lg-blocks div:nth-child(2) { top: -24px; left: -36px; transform: rotate(-3deg); background: rgba(255,255,255,0.04); }
+  .card-c .lg-blocks div:nth-child(3) { top: -10px; left: -18px; transform: rotate(5deg); background: rgba(255,255,255,0.06); }
+
+  .card-c .card-icon {
+    width: 56px; height: 56px; border-radius: 50%; background: rgba(255,255,255,0.2);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 14px; backdrop-filter: blur(4px); border: 2px solid rgba(255,255,255,0.3);
+    position: relative; z-index: 1;
+  }
+  .card-c .card-icon svg { width: 26px; height: 26px; stroke: #fff; fill: none; stroke-width: 2; }
+  .card-c .card-brand { font-size: 7px; letter-spacing: 2.5px; text-transform: uppercase; opacity: 0.5; color: #fff; position: relative; z-index: 1; }
+  .card-c .card-dwx { font-size: 22px; font-weight: 800; color: #fff; margin-bottom: 10px; position: relative; z-index: 1; }
+  .card-c .card-dwx span { font-weight: 300; }
+  .card-c .card-name { font-size: 16px; font-weight: 700; color: #fff; position: relative; z-index: 1; }
+  .card-c .card-sub { font-size: 11px; color: rgba(255,255,255,0.7); position: relative; z-index: 1; margin-top: 2px; }
+  .card-c .card-version {
+    position: absolute; top: 10px; right: 10px;
+    background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 10px;
+    font-size: 9px; color: #fff; font-weight: 600; z-index: 1;
+  }
+  .card-c .card-iq {
+    position: absolute; top: 10px; left: 10px;
+    background: #fbbf24; padding: 2px 8px; border-radius: 10px;
+    font-size: 8px; color: #1a1a2e; font-weight: 800; text-transform: uppercase; z-index: 1;
+  }
+  .card-c .card-bottom {
+    background: #fff; padding: 14px 16px; border-top: none;
+  }
+  .card-c .card-bottom-name { font-size: 13px; font-weight: 700; color: #0f172a; }
+  .card-c .card-bottom-desc { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+
+
+  /* ═══ OPTION D: HORIZONTAL BRANDED ═══ */
+  .card-d {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+    display: flex; overflow: hidden; cursor: pointer; transition: all 0.2s;
+  }
+  .card-d:hover { border-color: #1a5a8a; box-shadow: 0 4px 16px rgba(26,90,138,0.1); }
+  .card-d .card-left {
+    width: 80px; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; position: relative; overflow: hidden; flex-shrink: 0; padding: 16px 0;
+  }
+  .card-d .card-left svg { width: 28px; height: 28px; stroke: #fff; fill: none; stroke-width: 2; position: relative; z-index: 1; }
+  .card-d .card-right { padding: 14px 16px; flex: 1; }
+  .card-d .card-name { font-size: 14px; font-weight: 700; color: #0f172a; }
+  .card-d .card-tag { font-size: 11px; font-style: italic; color: #64748b; }
+  .card-d .card-desc { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+  .card-d .card-meta { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+  .card-d .badge { padding: 2px 6px; border-radius: 3px; font-size: 8px; font-weight: 700; text-transform: uppercase; }
+
+</style>
+</head>
+<body>
+
+<h1>DWx Product Cards — Brand Identity Options</h1>
+<p class="page-desc">Applying the DWx brand (3 overlapping blocks, app icons, Inter font) to the product showcase cards in Admin Centre.</p>
+
+
+<!-- ═══ OPTION A: MINI SPLASH CARDS ═══ -->
+<div class="option-label"><span class="num">A</span> Mini Splash Cards — Full gradient with blocks motif</div>
+<p class="option-desc">Each card is a miniature version of the splash screen. Gradient background, 3 overlapping blocks, circle icon, DWx branding.</p>
+<div class="grid">
+
+  <div class="card-a">
+    <div class="card-gradient" style="background: linear-gradient(135deg, #1e1b4b, #5b21b6);">
+      <div class="blocks"><div></div><div></div><div></div></div>
+      <span class="card-iq-badge">IQ</span>
+      <span class="card-version">v1.2.5</span>
+      <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></div>
+      <div class="card-brand">FIRST DIGITAL</div>
+      <div class="card-dwx">DW<span>x</span></div>
+      <div class="card-name">PolicyIQ</div>
+      <div class="card-sub">Smart Policy Lifecycle Management</div>
+    </div>
+  </div>
+
+  <div class="card-a">
+    <div class="card-gradient" style="background: linear-gradient(135deg, #1e1b4b, #5b21b6);">
+      <div class="blocks"><div></div><div></div><div></div></div>
+      <span class="card-iq-badge">IQ</span>
+      <span class="card-version">v2.0.0</span>
+      <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></div>
+      <div class="card-brand">FIRST DIGITAL</div>
+      <div class="card-dwx">DW<span>x</span></div>
+      <div class="card-name">ContractIQ</div>
+      <div class="card-sub">Smart Contract Lifecycle Management</div>
+    </div>
+  </div>
+
+  <div class="card-a">
+    <div class="card-gradient" style="background: linear-gradient(135deg, #1e1b4b, #5b21b6);">
+      <div class="blocks"><div></div><div></div><div></div></div>
+      <span class="card-iq-badge">IQ</span>
+      <span class="card-version">v1.0.0</span>
+      <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6"/><path d="M23 11h-6"/></svg></div>
+      <div class="card-brand">FIRST DIGITAL</div>
+      <div class="card-dwx">DW<span>x</span></div>
+      <div class="card-name">RecruitIQ</div>
+      <div class="card-sub">AI-Native Recruitment</div>
+    </div>
+  </div>
+
+  <div class="card-a">
+    <div class="card-gradient" style="background: linear-gradient(135deg, #0d3a5c, #1a5a8a);">
+      <div class="blocks"><div></div><div></div><div></div></div>
+      <span class="card-version">v3.0.0</span>
+      <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+      <div class="card-brand">FIRST DIGITAL</div>
+      <div class="card-dwx">DW<span>x</span></div>
+      <div class="card-name">JML</div>
+      <div class="card-sub">Joiner, Mover, Leaver</div>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ═══ OPTION B: COMPACT BRANDED CARDS ═══ -->
+<div class="option-label"><span class="num">B</span> Compact Branded Cards — White cards with branded icon block</div>
+<p class="option-desc">Clean white cards with the app icon on a mini gradient square (blocks motif behind). More text-focused, showing description.</p>
+<div class="grid">
+
+  <div class="card-b">
+    <div class="accent-bar" style="background: linear-gradient(90deg, #5b21b6, #7c3aed);"></div>
+    <div class="card-top">
+      <div class="card-icon-wrap" style="background: linear-gradient(135deg, #5b21b6, #7c3aed);">
+        <div class="mini-blocks"><div></div><div></div><div></div></div>
+        <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+      </div>
+      <div class="card-info">
+        <div class="card-name">PolicyIQ</div>
+        <div class="card-tag" style="color: #7c3aed;">Smart policy lifecycle</div>
+      </div>
+    </div>
+    <div class="card-desc">Centralised policy governance with version-controlled documents, mandatory acknowledgements, compliance dashboards, and AI-powered quiz integration.</div>
+    <div class="card-footer">
+      <span class="card-version">v1.2.5</span>
+      <div class="card-badges">
+        <span class="badge-iq">IQ</span>
+        <span class="badge-current">Current</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-b">
+    <div class="accent-bar" style="background: linear-gradient(90deg, #5b21b6, #7c3aed);"></div>
+    <div class="card-top">
+      <div class="card-icon-wrap" style="background: linear-gradient(135deg, #5b21b6, #7c3aed);">
+        <div class="mini-blocks"><div></div><div></div><div></div></div>
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+      </div>
+      <div class="card-info">
+        <div class="card-name">ContractIQ</div>
+        <div class="card-tag" style="color: #7c3aed;">Smart contract lifecycle</div>
+      </div>
+    </div>
+    <div class="card-desc">Full contract lifecycle management from creation through renewal or expiry. Manage obligations, track key dates, and ensure compliance.</div>
+    <div class="card-footer">
+      <span class="card-version">v2.0.0</span>
+      <div class="card-badges"><span class="badge-iq">IQ</span></div>
+    </div>
+  </div>
+
+  <div class="card-b">
+    <div class="accent-bar" style="background: linear-gradient(90deg, #5b21b6, #7c3aed);"></div>
+    <div class="card-top">
+      <div class="card-icon-wrap" style="background: linear-gradient(135deg, #5b21b6, #7c3aed);">
+        <div class="mini-blocks"><div></div><div></div><div></div></div>
+        <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6"/><path d="M23 11h-6"/></svg>
+      </div>
+      <div class="card-info">
+        <div class="card-name">RecruitIQ</div>
+        <div class="card-tag" style="color: #7c3aed;">AI-native recruitment</div>
+      </div>
+    </div>
+    <div class="card-desc">Advanced AI-driven recruitment with proactive candidate matching, autonomous screening workflows, and intelligent interview scheduling.</div>
+    <div class="card-footer">
+      <span class="card-version">v1.0.0</span>
+      <div class="card-badges"><span class="badge-iq">IQ</span></div>
+    </div>
+  </div>
+
+  <div class="card-b">
+    <div class="accent-bar" style="background: linear-gradient(90deg, #0d3a5c, #1a5a8a);"></div>
+    <div class="card-top">
+      <div class="card-icon-wrap" style="background: linear-gradient(135deg, #0d3a5c, #1a5a8a);">
+        <div class="mini-blocks"><div></div><div></div><div></div></div>
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </div>
+      <div class="card-info">
+        <div class="card-name">JML</div>
+        <div class="card-tag" style="color: #1a5a8a;">Lifecycle made simple</div>
+      </div>
+    </div>
+    <div class="card-desc">Complete employee lifecycle management with wizard-driven workflows for onboarding, role transitions, and offboarding.</div>
+    <div class="card-footer">
+      <span class="card-version">v3.0.0</span>
+      <div class="card-badges"></div>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ═══ OPTION C: FULL SPLASH MINI ═══ -->
+<div class="option-label"><span class="num">C</span> Full Splash Mini — Exact splash screen replica in card format</div>
+<p class="option-desc">Each card replicates the splash screen design with gradient, blocks, icon circle, DWx logo, and a white info strip at the bottom.</p>
+<div class="grid grid-3">
+
+  <div class="card-c">
+    <div class="splash" style="background: linear-gradient(135deg, #1e1b4b, #312e81, #5b21b6);">
+      <div class="lg-blocks"><div></div><div></div><div></div></div>
+      <span class="card-iq">IQ</span>
+      <span class="card-version">v1.2.5</span>
+      <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></div>
+      <div class="card-brand">FIRST DIGITAL</div>
+      <div class="card-dwx">DW<span>x</span></div>
+      <div class="card-name">PolicyIQ</div>
+      <div class="card-sub">Smart Policy Lifecycle Management</div>
+    </div>
+    <div class="card-bottom">
+      <div class="card-bottom-name">PolicyIQ — Smart Policy Lifecycle Management</div>
+      <div class="card-bottom-desc">17 webparts • 150+ services • AI Chat & Quiz • Email pipeline</div>
+    </div>
+  </div>
+
+  <div class="card-c">
+    <div class="splash" style="background: linear-gradient(135deg, #1e1b4b, #312e81, #5b21b6);">
+      <div class="lg-blocks"><div></div><div></div><div></div></div>
+      <span class="card-iq">IQ</span>
+      <span class="card-version">v2.0.0</span>
+      <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></div>
+      <div class="card-brand">FIRST DIGITAL</div>
+      <div class="card-dwx">DW<span>x</span></div>
+      <div class="card-name">ContractIQ</div>
+      <div class="card-sub">Smart Contract Lifecycle Management</div>
+    </div>
+    <div class="card-bottom">
+      <div class="card-bottom-name">ContractIQ — Smart Contract Lifecycle Management</div>
+      <div class="card-bottom-desc">Contract lifecycle • Obligation tracking • Key date alerts</div>
+    </div>
+  </div>
+
+  <div class="card-c">
+    <div class="splash" style="background: linear-gradient(135deg, #0d3a5c, #1a5a8a, #2d7ab8);">
+      <div class="lg-blocks"><div></div><div></div><div></div></div>
+      <span class="card-version">v3.0.0</span>
+      <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+      <div class="card-brand">FIRST DIGITAL</div>
+      <div class="card-dwx">DW<span>x</span></div>
+      <div class="card-name">JML</div>
+      <div class="card-sub">Joiner, Mover, Leaver</div>
+    </div>
+    <div class="card-bottom">
+      <div class="card-bottom-name">JML — Joiner, Mover, Leaver</div>
+      <div class="card-bottom-desc">Onboarding wizard • Role transitions • Offboarding checklists</div>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ═══ OPTION D: HORIZONTAL BRANDED ═══ -->
+<div class="option-label"><span class="num">D</span> Horizontal Branded — Icon strip left, info right</div>
+<p class="option-desc">Horizontal layout with a branded gradient strip on the left containing the icon, and product info on the right. More compact, fits more text.</p>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 32px;">
+
+  <div class="card-d">
+    <div class="card-left" style="background: linear-gradient(180deg, #1e1b4b, #5b21b6);">
+      <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+    </div>
+    <div class="card-right">
+      <div class="card-name">PolicyIQ</div>
+      <div class="card-tag">Smart Policy Lifecycle Management</div>
+      <div class="card-desc">Centralised policy governance with compliance dashboards, AI chat, and quiz integration.</div>
+      <div class="card-meta">
+        <span class="badge" style="background: #ede9fe; color: #7c3aed;">IQ</span>
+        <span class="badge" style="background: #f0fdfa; color: #0d9488;">Current</span>
+        <span style="font-size: 10px; color: #94a3b8;">v1.2.5</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-d">
+    <div class="card-left" style="background: linear-gradient(180deg, #1e1b4b, #5b21b6);">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+    </div>
+    <div class="card-right">
+      <div class="card-name">ContractIQ</div>
+      <div class="card-tag">Smart Contract Lifecycle Management</div>
+      <div class="card-desc">Full contract lifecycle from creation through renewal. Obligation tracking and compliance.</div>
+      <div class="card-meta">
+        <span class="badge" style="background: #ede9fe; color: #7c3aed;">IQ</span>
+        <span style="font-size: 10px; color: #94a3b8;">v2.0.0</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-d">
+    <div class="card-left" style="background: linear-gradient(180deg, #1e1b4b, #5b21b6);">
+      <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6"/><path d="M23 11h-6"/></svg>
+    </div>
+    <div class="card-right">
+      <div class="card-name">RecruitIQ</div>
+      <div class="card-tag">AI-Native Recruitment</div>
+      <div class="card-desc">Proactive candidate matching, autonomous screening, intelligent interview scheduling.</div>
+      <div class="card-meta">
+        <span class="badge" style="background: #ede9fe; color: #7c3aed;">IQ</span>
+        <span style="font-size: 10px; color: #94a3b8;">v1.0.0</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-d">
+    <div class="card-left" style="background: linear-gradient(180deg, #0d3a5c, #1a5a8a);">
+      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    </div>
+    <div class="card-right">
+      <div class="card-name">JML</div>
+      <div class="card-tag">Joiner, Mover, Leaver</div>
+      <div class="card-desc">Employee lifecycle management with onboarding, role transition, and offboarding wizards.</div>
+      <div class="card-meta">
+        <span style="font-size: 10px; color: #94a3b8;">v3.0.0</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div style="height: 60px;"></div>
+</body>
+</html>

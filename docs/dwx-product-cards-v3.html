@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DWx Product Cards v3 — Exact Brand Replication</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', -apple-system, sans-serif; background: #f1f5f9; padding: 40px 60px; color: #0f172a; }
+
+  h1 { font-size: 24px; font-weight: 800; margin-bottom: 4px; }
+  .page-desc { font-size: 13px; color: #64748b; margin-bottom: 16px; }
+
+  .option-label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;
+    color: #94a3b8; margin: 48px 0 16px; display: flex; align-items: center; gap: 8px;
+  }
+  .option-label .num {
+    width: 28px; height: 28px; border-radius: 50%; background: #1a5a8a; color: #fff;
+    display: flex; align-items: center; justify-content: center; font-size: 12px;
+  }
+  .option-desc { font-size: 12px; color: #64748b; margin-bottom: 16px; }
+
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+
+  /* ═══ DWx 3-BLOCKS BRANDMARK SVG ═══
+     The exact 3-block icon from the brand guide:
+     3 small overlapping squares arranged in a diagonal stack,
+     sitting to the left of "DWx" text */
+
+  /* ═══ SPLASH CARD ═══ */
+  .splash-card {
+    border-radius: 14px; overflow: hidden; cursor: pointer;
+    transition: all 0.25s; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .splash-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,0.2); }
+
+  .splash-inner {
+    padding: 28px 24px 24px; text-align: center; position: relative; overflow: hidden;
+    min-height: 240px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+
+  /* Subtle grid pattern background */
+  .splash-inner::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    z-index: 0;
+  }
+
+  .version-badge {
+    position: absolute; top: 12px; right: 12px;
+    background: rgba(255,255,255,0.15); padding: 3px 10px; border-radius: 12px;
+    font-size: 10px; color: #fff; font-weight: 600; z-index: 2;
+    backdrop-filter: blur(4px);
+  }
+  .iq-badge {
+    position: absolute; top: 12px; left: 12px;
+    background: #fbbf24; padding: 3px 10px; border-radius: 12px;
+    font-size: 9px; color: #1a1a2e; font-weight: 800; text-transform: uppercase; z-index: 2;
+    letter-spacing: 0.5px;
+  }
+
+  /* App icon circle */
+  .app-icon {
+    width: 60px; height: 60px; border-radius: 50%;
+    background: rgba(255,255,255,0.15); backdrop-filter: blur(8px);
+    border: 2px solid rgba(255,255,255,0.25);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 18px; position: relative; z-index: 2;
+  }
+  .app-icon svg { width: 28px; height: 28px; stroke: #fff; fill: none; stroke-width: 1.8; }
+
+  /* DWx logo lockup: 3-blocks icon + "DWx" text */
+  .dwx-lockup {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    margin-bottom: 12px; position: relative; z-index: 2;
+  }
+  .brand-label {
+    font-size: 7px; letter-spacing: 3px; text-transform: uppercase;
+    opacity: 0.5; color: #fff; position: relative; z-index: 2; margin-bottom: 4px;
+  }
+  .dwx-logo-text {
+    font-size: 24px; font-weight: 800; color: #fff;
+  }
+  .dwx-logo-text .x { font-weight: 300; }
+
+  .app-name {
+    font-size: 17px; font-weight: 700; color: #fff;
+    position: relative; z-index: 2;
+  }
+  .app-sub {
+    font-size: 11px; color: rgba(255,255,255,0.65);
+    position: relative; z-index: 2; margin-top: 4px;
+  }
+
+  /* White info strip */
+  .splash-bottom {
+    background: #fff; padding: 14px 18px;
+  }
+  .splash-bottom-name { font-size: 13px; font-weight: 700; color: #0f172a; }
+  .splash-bottom-desc { font-size: 11px; color: #94a3b8; margin-top: 3px; line-height: 1.5; }
+</style>
+</head>
+<body>
+
+<h1>DWx Product Cards v3 — Faithful Brand Replication</h1>
+<p class="page-desc">Exact splash screen layout from the DWx Brand Guide: gradient → grid pattern → app icon circle → "FIRST DIGITAL" → 3-blocks + DWx → App Name → Subtitle</p>
+
+<!-- THE 3-BLOCKS SVG — extracted as reusable inline -->
+<!-- This is the small geometric brandmark: 3 overlapping squares arranged diagonally -->
+
+<!-- ═══ IQ PRODUCTS (Purple gradient) ═══ -->
+<div class="option-label"><span class="num">IQ</span> IQ Range — Midnight Blue → Purple</div>
+
+<div class="grid">
+
+  <!-- PolicyIQ -->
+  <div class="splash-card">
+    <div class="splash-inner" style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #5b21b6 100%);">
+      <span class="iq-badge">IQ</span>
+      <span class="version-badge">v1.2.5</span>
+      <div class="app-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+      </div>
+      <div class="brand-label">FIRST DIGITAL</div>
+      <div class="dwx-lockup">
+        <!-- 3-blocks brandmark -->
+        <svg viewBox="0 0 24 24" width="20" height="20" style="opacity: 0.8;">
+          <rect x="2" y="10" width="10" height="10" rx="2" fill="rgba(255,255,255,0.3)" stroke="rgba(255,255,255,0.5)" stroke-width="0.8"/>
+          <rect x="7" y="6" width="10" height="10" rx="2" fill="rgba(255,255,255,0.5)" stroke="rgba(255,255,255,0.6)" stroke-width="0.8"/>
+          <rect x="12" y="2" width="10" height="10" rx="2" fill="rgba(255,255,255,0.8)" stroke="rgba(255,255,255,0.8)" stroke-width="0.8"/>
+        </svg>
+        <span class="dwx-logo-text">DW<span class="x">x</span></span>
+      </div>
+      <div class="app-name">PolicyIQ</div>
+      <div class="app-sub">Smart Policy Lifecycle Management</div>
+    </div>
+    <div class="splash-bottom">
+      <div class="splash-bottom-name">PolicyIQ</div>
+      <div class="splash-bottom-desc">17 webparts • 150+ services • AI Chat & Quiz • Compliance dashboards</div>
+    </div>
+  </div>
+
+  <!-- ContractIQ -->
+  <div class="splash-card">
+    <div class="splash-inner" style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #5b21b6 100%);">
+      <span class="iq-badge">IQ</span>
+      <span class="version-badge">v2.0.0</span>
+      <div class="app-icon">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+      </div>
+      <div class="brand-label">FIRST DIGITAL</div>
+      <div class="dwx-lockup">
+        <svg viewBox="0 0 24 24" width="20" height="20" style="opacity: 0.8;">
+          <rect x="2" y="10" width="10" height="10" rx="2" fill="rgba(255,255,255,0.3)" stroke="rgba(255,255,255,0.5)" stroke-width="0.8"/>
+          <rect x="7" y="6" width="10" height="10" rx="2" fill="rgba(255,255,255,0.5)" stroke="rgba(255,255,255,0.6)" stroke-width="0.8"/>
+          <rect x="12" y="2" width="10" height="10" rx="2" fill="rgba(255,255,255,0.8)" stroke="rgba(255,255,255,0.8)" stroke-width="0.8"/>
+        </svg>
+        <span class="dwx-logo-text">DW<span class="x">x</span></span>
+      </div>
+      <div class="app-name">ContractIQ</div>
+      <div class="app-sub">Smart Contract Lifecycle Management</div>
+    </div>
+    <div class="splash-bottom">
+      <div class="splash-bottom-name">ContractIQ</div>
+      <div class="splash-bottom-desc">Contract lifecycle • Obligation tracking • Key date alerts • Audit trail</div>
+    </div>
+  </div>
+
+  <!-- RecruitIQ -->
+  <div class="splash-card">
+    <div class="splash-inner" style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #5b21b6 100%);">
+      <span class="iq-badge">IQ</span>
+      <span class="version-badge">v1.0.0</span>
+      <div class="app-icon">
+        <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6"/><path d="M23 11h-6"/></svg>
+      </div>
+      <div class="brand-label">FIRST DIGITAL</div>
+      <div class="dwx-lockup">
+        <svg viewBox="0 0 24 24" width="20" height="20" style="opacity: 0.8;">
+          <rect x="2" y="10" width="10" height="10" rx="2" fill="rgba(255,255,255,0.3)" stroke="rgba(255,255,255,0.5)" stroke-width="0.8"/>
+          <rect x="7" y="6" width="10" height="10" rx="2" fill="rgba(255,255,255,0.5)" stroke="rgba(255,255,255,0.6)" stroke-width="0.8"/>
+          <rect x="12" y="2" width="10" height="10" rx="2" fill="rgba(255,255,255,0.8)" stroke="rgba(255,255,255,0.8)" stroke-width="0.8"/>
+        </svg>
+        <span class="dwx-logo-text">DW<span class="x">x</span></span>
+      </div>
+      <div class="app-name">RecruitIQ</div>
+      <div class="app-sub">AI-Native Recruitment</div>
+    </div>
+    <div class="splash-bottom">
+      <div class="splash-bottom-name">RecruitIQ</div>
+      <div class="splash-bottom-desc">AI candidate matching • Screening workflows • Interview scheduling</div>
+    </div>
+  </div>
+
+  <!-- LearnIQ -->
+  <div class="splash-card">
+    <div class="splash-inner" style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #5b21b6 100%);">
+      <span class="iq-badge">IQ</span>
+      <span class="version-badge">v1.0.0</span>
+      <div class="app-icon">
+        <svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+      </div>
+      <div class="brand-label">FIRST DIGITAL</div>
+      <div class="dwx-lockup">
+        <svg viewBox="0 0 24 24" width="20" height="20" style="opacity: 0.8;">
+          <rect x="2" y="10" width="10" height="10" rx="2" fill="rgba(255,255,255,0.3)" stroke="rgba(255,255,255,0.5)" stroke-width="0.8"/>
+          <rect x="7" y="6" width="10" height="10" rx="2" fill="rgba(255,255,255,0.5)" stroke="rgba(255,255,255,0.6)" stroke-width="0.8"/>
+          <rect x="12" y="2" width="10" height="10" rx="2" fill="rgba(255,255,255,0.8)" stroke="rgba(255,255,255,0.8)" stroke-width="0.8"/>
+        </svg>
+        <span class="dwx-logo-text">DW<span class="x">x</span></span>
+      </div>
+      <div class="app-name">LearnIQ</div>
+      <div class="app-sub">AI-Powered Learning</div>
+    </div>
+    <div class="splash-bottom">
+      <div class="splash-bottom-name">LearnIQ</div>
+      <div class="splash-bottom-desc">Personalised learning paths • Skills gap analysis • AI-curated content</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══ STANDARD PRODUCTS (DWx Blue gradient) ═══ -->
+<div class="option-label"><span class="num" style="background: #1a5a8a;">S</span> Standard Range — DWx Brand Blue</div>
+
+<div class="grid">
+
+  <!-- JML -->
+  <div class="splash-card">
+    <div class="splash-inner" style="background: linear-gradient(135deg, #0d3a5c 0%, #1a5a8a 50%, #2d7ab8 100%);">
+      <span class="version-badge">v3.0.0</span>
+      <div class="app-icon">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </div>
+      <div class="brand-label">FIRST DIGITAL</div>
+      <div class="dwx-lockup">
+        <svg viewBox="0 0 24 24" width="20" height="20" style="opacity: 0.8;">
+          <rect x="2" y="10" width="10" height="10" rx="2" fill="rgba(255,255,255,0.3)" stroke="rgba(255,255,255,0.5)" stroke-width="0.8"/>
+          <rect x="7" y="6" width="10" height="10" rx="2" fill="rgba(255,255,255,0.5)" stroke="rgba(255,255,255,0.6)" stroke-width="0.8"/>
+          <rect x="12" y="2" width="10" height="10" rx="2" fill="rgba(255,255,255,0.8)" stroke="rgba(255,255,255,0.8)" stroke-width="0.8"/>
+        </svg>
+        <span class="dwx-logo-text">DW<span class="x">x</span></span>
+      </div>
+      <div class="app-name">JML</div>
+      <div class="app-sub">Joiner, Mover, Leaver</div>
+    </div>
+    <div class="splash-bottom">
+      <div class="splash-bottom-name">JML</div>
+      <div class="splash-bottom-desc">8-step onboarding • Role transitions • Offboarding checklists</div>
+    </div>
+  </div>
+
+  <!-- Gamification Manager -->
+  <div class="splash-card">
+    <div class="splash-inner" style="background: linear-gradient(135deg, #0d3a5c 0%, #1a5a8a 50%, #2d7ab8 100%);">
+      <span class="version-badge">v2.0.0</span>
+      <div class="app-icon">
+        <svg viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5C5.3 4 6 4.7 6 5.5V9z"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5C18.7 4 18 4.7 18 5.5V9z"/><path d="M4 22h16"/><path d="M10 22V2h4v20"/><path d="M4 15l4-4 4 4 4-4 4 4"/></svg>
+      </div>
+      <div class="brand-label">FIRST DIGITAL</div>
+      <div class="dwx-lockup">
+        <svg viewBox="0 0 24 24" width="20" height="20" style="opacity: 0.8;">
+          <rect x="2" y="10" width="10" height="10" rx="2" fill="rgba(255,255,255,0.3)" stroke="rgba(255,255,255,0.5)" stroke-width="0.8"/>
+          <rect x="7" y="6" width="10" height="10" rx="2" fill="rgba(255,255,255,0.5)" stroke="rgba(255,255,255,0.6)" stroke-width="0.8"/>
+          <rect x="12" y="2" width="10" height="10" rx="2" fill="rgba(255,255,255,0.8)" stroke="rgba(255,255,255,0.8)" stroke-width="0.8"/>
+        </svg>
+        <span class="dwx-logo-text">DW<span class="x">x</span></span>
+      </div>
+      <div class="app-name">Gamification Manager</div>
+      <div class="app-sub">Rewards & Recognition</div>
+    </div>
+    <div class="splash-bottom">
+      <div class="splash-bottom-name">Gamification Manager</div>
+      <div class="splash-bottom-desc">Points & badges • Leaderboards • Peer recognition • Rewards</div>
+    </div>
+  </div>
+
+  <!-- Asset Manager -->
+  <div class="splash-card">
+    <div class="splash-inner" style="background: linear-gradient(135deg, #0d3a5c 0%, #1a5a8a 50%, #2d7ab8 100%);">
+      <span class="version-badge">v2.1.0</span>
+      <div class="app-icon">
+        <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>
+      </div>
+      <div class="brand-label">FIRST DIGITAL</div>
+      <div class="dwx-lockup">
+        <svg viewBox="0 0 24 24" width="20" height="20" style="opacity: 0.8;">
+          <rect x="2" y="10" width="10" height="10" rx="2" fill="rgba(255,255,255,0.3)" stroke="rgba(255,255,255,0.5)" stroke-width="0.8"/>
+          <rect x="7" y="6" width="10" height="10" rx="2" fill="rgba(255,255,255,0.5)" stroke="rgba(255,255,255,0.6)" stroke-width="0.8"/>
+          <rect x="12" y="2" width="10" height="10" rx="2" fill="rgba(255,255,255,0.8)" stroke="rgba(255,255,255,0.8)" stroke-width="0.8"/>
+        </svg>
+        <span class="dwx-logo-text">DW<span class="x">x</span></span>
+      </div>
+      <div class="app-name">Asset Manager</div>
+      <div class="app-sub">IT Asset Tracking & Management</div>
+    </div>
+    <div class="splash-bottom">
+      <div class="splash-bottom-name">Asset Manager</div>
+      <div class="splash-bottom-desc">Asset lifecycle • Employee allocation • Depreciation • Barcode scanning</div>
+    </div>
+  </div>
+
+  <!-- Room Booking -->
+  <div class="splash-card">
+    <div class="splash-inner" style="background: linear-gradient(135deg, #0d3a5c 0%, #1a5a8a 50%, #2d7ab8 100%);">
+      <span class="version-badge">v2.0.0</span>
+      <div class="app-icon">
+        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </div>
+      <div class="brand-label">FIRST DIGITAL</div>
+      <div class="dwx-lockup">
+        <svg viewBox="0 0 24 24" width="20" height="20" style="opacity: 0.8;">
+          <rect x="2" y="10" width="10" height="10" rx="2" fill="rgba(255,255,255,0.3)" stroke="rgba(255,255,255,0.5)" stroke-width="0.8"/>
+          <rect x="7" y="6" width="10" height="10" rx="2" fill="rgba(255,255,255,0.5)" stroke="rgba(255,255,255,0.6)" stroke-width="0.8"/>
+          <rect x="12" y="2" width="10" height="10" rx="2" fill="rgba(255,255,255,0.8)" stroke="rgba(255,255,255,0.8)" stroke-width="0.8"/>
+        </svg>
+        <span class="dwx-logo-text">DW<span class="x">x</span></span>
+      </div>
+      <div class="app-name">Room Booking Manager</div>
+      <div class="app-sub">Hotseat, Office & Boardroom</div>
+    </div>
+    <div class="splash-bottom">
+      <div class="splash-bottom-name">Room Booking Manager</div>
+      <div class="splash-bottom-desc">Floor plans • Hot desk booking • Outlook/Teams integration</div>
+    </div>
+  </div>
+
+</div>
+
+<div style="height: 60px;"></div>
+</body>
+</html>

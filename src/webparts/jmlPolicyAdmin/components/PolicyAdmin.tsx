@@ -11418,7 +11418,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
               </div>
             </>
           )}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
             {/* IQ products first, then standard */}
             {(() => {
               let sortedProducts = [...filtered];
@@ -11430,41 +11430,67 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                 sortedProducts = sortedProducts.filter(p => p.isIQ || p.isAI);
               }
               return sortedProducts;
-            })().map((product) => (
-              <div key={product.id} className={styles.adminCard} style={{
-                borderTop: `4px solid ${product.color}`, cursor: 'pointer', position: 'relative',
-                background: `linear-gradient(135deg, ${product.color}08, #fff)`, transition: 'all 0.2s'
-              }} onClick={() => this.setState({ selectedProduct: product, showProductPanel: true })}>
-                {/* Badges */}
-                <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 4 }}>
-                  {product.isCurrent && <span style={{ padding: '2px 8px', borderRadius: 4, fontSize: 9, fontWeight: 700, background: 'var(--pm-primary, #0d9488)', color: '#fff', textTransform: 'uppercase' }}>Current</span>}
-                  {product.isIQ && <span style={{ padding: '2px 8px', borderRadius: 4, fontSize: 9, fontWeight: 700, background: '#fbbf24', color: '#1a1a2e', textTransform: 'uppercase' }}>IQ</span>}
-                  {product.isAI && <span style={{ padding: '2px 8px', borderRadius: 4, fontSize: 9, fontWeight: 700, background: '#38bdf8', color: '#0c4a6e', textTransform: 'uppercase' }}>AI</span>}
-                  {product.isNew && <span style={{ padding: '2px 8px', borderRadius: 4, fontSize: 9, fontWeight: 700, background: '#e3008c', color: '#fff', textTransform: 'uppercase' }}>New</span>}
-                  {product.isCore && <span style={{ padding: '2px 8px', borderRadius: 4, fontSize: 9, fontWeight: 700, background: '#10b981', color: '#fff', textTransform: 'uppercase' }}>Core</span>}
+            })().map((product) => {
+              // DWx branded splash card — gradient depends on IQ vs Standard
+              const isIQProduct = product.isIQ || product.isAI;
+              const gradient = isIQProduct
+                ? 'linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #5b21b6 100%)'
+                : 'linear-gradient(135deg, #0d3a5c 0%, #1a5a8a 50%, #2d7ab8 100%)';
+
+              // DWx 3-blocks brandmark SVG (inline)
+              const blocksMarkup = (
+                <svg viewBox="0 0 24 24" width="18" height="18" style={{ opacity: 0.8 }}>
+                  <rect x="2" y="10" width="10" height="10" rx="2" fill="rgba(255,255,255,0.3)" stroke="rgba(255,255,255,0.5)" strokeWidth="0.8"/>
+                  <rect x="7" y="6" width="10" height="10" rx="2" fill="rgba(255,255,255,0.5)" stroke="rgba(255,255,255,0.6)" strokeWidth="0.8"/>
+                  <rect x="12" y="2" width="10" height="10" rx="2" fill="rgba(255,255,255,0.8)" stroke="rgba(255,255,255,0.8)" strokeWidth="0.8"/>
+                </svg>
+              );
+
+              return (
+                <div key={product.id} style={{ borderRadius: 14, overflow: 'hidden', cursor: 'pointer', transition: 'all 0.25s', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
+                  onClick={() => this.setState({ selectedProduct: product, showProductPanel: true })}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 12px 32px rgba(0,0,0,0.2)'; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = 'none'; (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)'; }}>
+                  {/* Splash area */}
+                  <div style={{
+                    background: gradient, padding: '24px 20px 20px', textAlign: 'center', position: 'relative', overflow: 'hidden', minHeight: 200,
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)',
+                    backgroundSize: '40px 40px'
+                  }}>
+                    {/* Badges */}
+                    {product.isIQ && <span style={{ position: 'absolute', top: 10, left: 10, background: '#fbbf24', padding: '2px 8px', borderRadius: 10, fontSize: 8, color: '#1a1a2e', fontWeight: 800, textTransform: 'uppercase', zIndex: 2 }}>IQ</span>}
+                    {product.isCurrent && <span style={{ position: 'absolute', top: 10, left: product.isIQ ? 46 : 10, background: 'rgba(255,255,255,0.2)', padding: '2px 8px', borderRadius: 10, fontSize: 8, color: '#fff', fontWeight: 700, textTransform: 'uppercase', zIndex: 2 }}>Current</span>}
+                    {product.isNew && <span style={{ position: 'absolute', top: 10, left: 10, background: '#e3008c', padding: '2px 8px', borderRadius: 10, fontSize: 8, color: '#fff', fontWeight: 800, textTransform: 'uppercase', zIndex: 2 }}>New</span>}
+                    <span style={{ position: 'absolute', top: 10, right: 10, background: 'rgba(255,255,255,0.15)', padding: '2px 8px', borderRadius: 10, fontSize: 9, color: '#fff', fontWeight: 600, zIndex: 2 }}>{product.version}</span>
+
+                    {/* App icon circle */}
+                    <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)', border: '2px solid rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14, position: 'relative', zIndex: 2 }}>
+                      <Icon iconName={product.icon} styles={{ root: { fontSize: 24, color: '#fff' } }} />
+                    </div>
+
+                    {/* FIRST DIGITAL label */}
+                    <span style={{ fontSize: 7, letterSpacing: 3, textTransform: 'uppercase', opacity: 0.5, color: '#fff', position: 'relative', zIndex: 2, marginBottom: 2 }}>FIRST DIGITAL</span>
+
+                    {/* DWx lockup: 3-blocks + DWx text */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, marginBottom: 10, position: 'relative', zIndex: 2 }}>
+                      {blocksMarkup}
+                      <span style={{ fontSize: 20, fontWeight: 800, color: '#fff' }}>DW<span style={{ fontWeight: 300 }}>x</span></span>
+                    </div>
+
+                    {/* App name + subtitle */}
+                    <span style={{ fontSize: 15, fontWeight: 700, color: '#fff', position: 'relative', zIndex: 2 }}>{product.name}</span>
+                    <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.65)', position: 'relative', zIndex: 2, marginTop: 3 }}>{product.description}</span>
+                  </div>
+
+                  {/* White info strip */}
+                  <div style={{ background: '#fff', padding: '12px 16px' }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#0f172a', display: 'block' }}>{product.name}</span>
+                    <span style={{ fontSize: 11, color: '#94a3b8', display: 'block', marginTop: 2 }}>{product.tagline} • {product.category}</span>
+                  </div>
                 </div>
-                <Stack tokens={{ childrenGap: 8 }}>
-                  <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 12 }}>
-                    <div style={{ width: 44, height: 44, borderRadius: 8, background: `linear-gradient(135deg, ${product.color}, ${product.color}cc)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: '#fff', letterSpacing: -0.5 }}>
-                      {product.monogram || product.name.substring(0, 2).toUpperCase()}
-                    </div>
-                    <Stack>
-                      <Text style={{ fontWeight: 600, fontSize: 14, color: '#0f172a' }}>{product.name}</Text>
-                      <Text style={{ fontSize: 11, color: product.color, fontWeight: 500, fontStyle: 'italic' }}>{product.tagline}</Text>
-                    </Stack>
-                  </Stack>
-                  <Text variant="small" style={{ color: '#64748b' }}>{product.description}</Text>
-                  <Stack horizontal horizontalAlign="space-between" verticalAlign="center" style={{ borderTop: '1px solid #f1f5f9', paddingTop: 8, marginTop: 2 }}>
-                    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                      <span style={{ fontSize: 10, color: '#94a3b8', fontWeight: 500 }}>{product.version}</span>
-                      <span style={{ fontSize: 10, color: '#94a3b8' }}>|</span>
-                      <span style={{ fontSize: 10, color: '#94a3b8' }}>{product.category}</span>
-                    </div>
-                    <span style={{ fontSize: 11, color: product.color, fontWeight: 600 }}>View Details →</span>
-                  </Stack>
-                </Stack>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Contact CTA */}

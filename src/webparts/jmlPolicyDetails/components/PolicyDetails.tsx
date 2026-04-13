@@ -2938,6 +2938,15 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
         if (reviewDecision === 'reject') {
           await this.props.sp.web.lists.getByTitle('PM_Policies')
             .items.getById(policy!.Id).update({ PolicyStatus: 'Rejected' });
+          // Close all remaining open reviewer actions — policy is rejected
+          try {
+            for (const r of reviewerItems) {
+              if (r.ReviewStatus === 'Pending') {
+                await this.props.sp.web.lists.getByTitle('PM_PolicyReviewers')
+                  .items.getById(r.Id).update({ ReviewStatus: 'Cancelled', ReviewComments: 'Cancelled — policy rejected by another reviewer' });
+              }
+            }
+          } catch { /* best-effort */ }
         } else if (reviewDecision === 'changes') {
           // Changes requested — return to Draft so author can edit and resubmit
           await this.props.sp.web.lists.getByTitle('PM_Policies')
@@ -3149,9 +3158,41 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
               <Text style={{ fontSize: 22, fontWeight: 700, color: '#0f172a', display: 'block' }}>{policy!.PolicyName || policy!.Title}</Text>
               <Text style={{ fontSize: 13, color: '#64748b', marginTop: 4, display: 'block' }}>{policy!.PolicyCategory} &bull; v{(policy as any).VersionNumber || '1.0'} &bull; Effective: {policy!.EffectiveDate ? new Date(policy!.EffectiveDate).toLocaleDateString() : 'TBD'}</Text>
             </div>
-            <div style={{ padding: 32, minHeight: 400, lineHeight: 1.7, fontSize: 14, color: '#334155' }}
-              dangerouslySetInnerHTML={{ __html: policy!.HTMLContent || policy!.PolicyContent || policy!.Description || '<p>No content available.</p>' }}
-            />
+            {(() => {
+              const htmlContent = policy!.HTMLContent || policy!.PolicyContent || '';
+              const hasHtml = htmlContent.length > 50 && htmlContent.includes('<');
+              const docUrl = typeof policy!.DocumentURL === 'string' ? policy!.DocumentURL : (policy!.DocumentURL as any)?.Url || '';
+              const docExt = docUrl ? docUrl.split('.').pop()?.toLowerCase() || '' : '';
+              const isOfficeDoc = ['docx', 'doc', 'pptx', 'ppt', 'xlsx', 'xls'].includes(docExt);
+              const isPdf = docExt === 'pdf';
+
+              if (hasHtml) {
+                // Rendered converted HTML
+                return <div style={{ padding: 32, minHeight: 400, lineHeight: 1.7, fontSize: 14, color: '#334155' }}
+                  dangerouslySetInnerHTML={{ __html: htmlContent }} />;
+              } else if (isOfficeDoc && docUrl) {
+                // Office Online viewer (WopiFrame)
+                const viewerUrl = `${siteUrl}/_layouts/15/WopiFrame.aspx?sourcedoc=${encodeURIComponent(docUrl)}&action=view`;
+                return <div style={{ padding: 0, minHeight: 500 }}>
+                  <iframe src={viewerUrl} style={{ width: '100%', height: 500, border: 'none' }} title="Policy Document Viewer" />
+                </div>;
+              } else if (isPdf && docUrl) {
+                // PDF embed
+                return <div style={{ padding: 0, minHeight: 500 }}>
+                  <object data={`${docUrl}#toolbar=0&navpanes=0`} type="application/pdf" style={{ width: '100%', height: 500, border: 'none' }}>
+                    <iframe src={docUrl} style={{ width: '100%', height: 500, border: 'none' }} title="PDF Viewer" />
+                  </object>
+                </div>;
+              } else if (policy!.Description) {
+                return <div style={{ padding: 32, minHeight: 200, lineHeight: 1.7, fontSize: 14, color: '#334155' }}>
+                  <p>{policy!.Description}</p>
+                </div>;
+              } else {
+                return <div style={{ padding: 32, minHeight: 200, textAlign: 'center', color: '#94a3b8' }}>
+                  <p>No content available. The document may not have been uploaded or converted yet.</p>
+                </div>;
+              }
+            })()}
             {/* Key Points */}
             {(policy as any).InternalNotes && (
               <div style={{ padding: '20px 32px', background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>

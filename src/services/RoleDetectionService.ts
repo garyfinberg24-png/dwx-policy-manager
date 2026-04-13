@@ -136,10 +136,49 @@ export class RoleDetectionService {
       const currentUser = await this.sp.web.currentUser();
       const roles = await this.getUserRoles(currentUser.LoginName);
 
-      // Cache in sessionStorage for other webparts
-      this.setSessionCachedRoles(roles);
+      // ALSO check PM_UserProfiles for Admin Centre role assignment
+      // This ensures roles set via Admin Centre > User Directory work
+      // even if the SP group sync failed or groups don't exist
+      try {
+        const email = currentUser.Email || currentUser.LoginName || '';
+        if (email) {
+          const profiles = await this.sp.web.lists.getByTitle('PM_UserProfiles')
+            .items.filter(`EMail eq '${email.replace(/'/g, "''")}'`)
+            .select('PMRole', 'PMRoles')
+            .top(1)();
+          if (profiles.length > 0) {
+            const pmRole = profiles[0].PMRole || '';
+            const pmRoles = profiles[0].PMRoles || '';
+            const allRoleStrings = [pmRole, ...pmRoles.split(';')].map((r: string) => r.trim()).filter(Boolean);
 
-      return roles;
+            // Map PM role strings to UserRole enum
+            const roleMap: Record<string, UserRole> = {
+              'Admin': UserRole.SiteAdmin,
+              'Manager': UserRole.Manager,
+              'Author': UserRole.Recruiter, // Recruiter maps to Author via PolicyRoleService
+              'User': UserRole.Employee
+            };
+
+            for (const roleStr of allRoleStrings) {
+              const mapped = roleMap[roleStr];
+              if (mapped) {
+                roles.push(mapped);
+              }
+            }
+          }
+        }
+      } catch {
+        // PM_UserProfiles may not exist or column may be missing — non-blocking
+      }
+
+      // Deduplicate
+      const uniqueRoles = Array.from(new Set(roles));
+      const finalRoles = uniqueRoles.length > 0 ? uniqueRoles : [UserRole.Employee];
+
+      // Cache in sessionStorage for other webparts
+      this.setSessionCachedRoles(finalRoles);
+
+      return finalRoles;
     } catch (error) {
       console.error('[RoleDetectionService] Error getting current user roles:', error);
       // Fallback to Employee role if detection fails

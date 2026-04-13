@@ -8123,7 +8123,7 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
     // ── Styles ──
     const S = {
       // Wizard wrapper — the main card
-      wrapper: { display: 'grid', gridTemplateColumns: '240px 1fr 260px', gridTemplateRows: '1fr auto', minHeight: 'calc(100vh - 180px)', background: '#fff', borderRadius: 10, overflow: 'hidden', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' } as React.CSSProperties,
+      wrapper: { display: 'grid', gridTemplateColumns: showTips ? '240px 1fr 260px' : '240px 1fr', gridTemplateRows: '1fr auto', minHeight: 'calc(100vh - 180px)', background: '#fff', borderRadius: 10, overflow: 'hidden', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', transition: 'grid-template-columns 0.3s' } as React.CSSProperties,
       // Sidebar
       sidebar: { background: '#fff', borderRight: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gridRow: '1 / 3', borderRadius: '10px 0 0 10px', overflowY: 'auto' } as React.CSSProperties,
       sidebarHeader: { padding: '24px 20px 16px', borderBottom: '1px solid #e2e8f0' } as React.CSSProperties,
@@ -8154,24 +8154,55 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       footerFill: { height: '100%', background: tc.primary, borderRadius: 2, transition: 'width 0.3s' } as React.CSSProperties,
     };
 
-    // ── Tips data ──
-    const tipsMap: Record<number, { t: string; b: string }[]> = {
-      0: [{ t: 'Choosing a Type', b: 'Select your document type, then choose blank or a template within that type.' }, { t: 'Templates', b: 'Templates include pre-approved structure and formatting for consistency.' }],
-      1: [{ t: 'Policy Title Best Practices', b: 'Use descriptive, action-oriented titles. Avoid acronyms unless universally understood.' }, { t: 'Category Selection', b: 'Choose the primary category that best represents the policy scope.' }, { t: 'Writing a Good Summary', b: "Include the policy's purpose, who it applies to, and key requirements. 2-3 sentences." }],
-      2: [{ t: 'Risk Assessment', b: 'Consider regulatory, legal, and operational risk if this policy is not followed.' }, { t: 'Acknowledgement & Quiz', b: 'Critical policies should require both acknowledgement and quiz completion.' }],
-      3: [{ t: 'Target Audience', b: 'Select "All Employees" for company-wide policies, or build a targeted audience.' }, { t: 'Contractors', b: 'If your policy applies to external contractors, include them in the audience.' }],
-      4: [{ t: 'Effective Dates', b: 'Allow at least 2 weeks between publication and effective date for reading time.' }, { t: 'Review Cycle', b: 'Most policies should be reviewed annually. Critical compliance = quarterly.' }],
-      5: [{ t: 'Review Workflow', b: 'Add subject matter experts as reviewers and department heads as approvers.' }, { t: 'Multi-Level Approval', b: 'High-risk policies typically require both department and executive approval.' }],
-      6: [{ t: 'Content Structure', b: 'Use clear headings. Start with purpose, then scope, responsibilities, procedures.' }, { t: 'Key Points', b: 'Add 3-5 key points that summarize the most important takeaways.' }],
-      7: [{ t: 'Final Check', b: 'Review all sections. Once submitted, the policy enters the review workflow.' }, { t: 'Draft Option', b: 'Not ready? Save as draft to continue editing later.' }]
+    // ── Tips panel state ──
+    const tipsPanelVisible = (this.state as any)._tipsPanelVisible !== false; // default visible
+    const tipsDisabledGlobally = localStorage.getItem('pm_tips_panel_disabled') === 'true';
+    const showTips = tipsPanelVisible && !tipsDisabledGlobally;
+
+    // ── Step-specific tips — rich, contextual guidance per wizard step ──
+    const tipsMap: Record<number, { t: string; b: string; icon?: string }[]> = {
+      0: [
+        { t: 'Choosing a Document Type', b: 'Each type determines how your content is created. Rich Text and HTML use the built-in editor. Word, Excel, and PowerPoint create Office documents that open in Office Online.', icon: 'DocumentSet' },
+        { t: 'Templates Save Time', b: 'Templates include pre-approved structure, formatting, and section headings. They ensure consistency across your organisation\'s policies. Check with your compliance team for recommended templates.', icon: 'PageList' },
+        { t: 'Upload Existing Documents', b: 'Already have a policy document? Select "Upload" to import a Word, Excel, PowerPoint, or PDF file. The system will extract metadata automatically.', icon: 'Upload' }
+      ],
+      1: [
+        { t: 'Writing a Good Title', b: 'Use clear, descriptive titles that employees can easily search for. Include the topic and scope — e.g. "Remote Working Policy" not just "WFH Rules". Avoid internal acronyms.', icon: 'Rename' },
+        { t: 'Category Matters', b: 'The category determines where your policy appears in the Policy Hub filters and helps employees discover it. Choose the primary category that best represents the policy\'s scope.', icon: 'BulletedList2' },
+        { t: 'Effective Summary', b: 'Write 2-3 sentences covering: what the policy is about, who it applies to, and why it exists. This is shown in search results and the Policy Hub cards.', icon: 'TextDocument' }
+      ],
+      2: [
+        { t: 'Risk Level Guide', b: 'Critical = regulatory/legal obligation (GDPR, H&S). High = significant operational impact. Medium = standard business practice. Low = informational/guidance. The risk level determines escalation priority and SLA targets.', icon: 'Shield' },
+        { t: 'Acknowledgement Settings', b: 'Enable acknowledgement for policies employees must confirm they\'ve read. Enable quiz for policies where comprehension verification is required (e.g. safety, compliance).', icon: 'CheckboxComposite' },
+        { t: 'Metadata Profiles', b: 'Select an existing profile to auto-fill risk level, read timeframe, and acknowledgement settings. This ensures consistency for similar policy types.', icon: 'Tag' }
+      ],
+      3: [
+        { t: 'Audience Targeting', b: '"All Employees" distributes to everyone. "Targeted" lets you select specific departments. "Role-Based" targets by job function. "Security Group" uses existing Entra ID groups for precise control.', icon: 'People' },
+        { t: 'New Hire Consideration', b: 'If your policy should be part of the onboarding process, ensure new hires are included in the audience. They\'ll receive the policy automatically when their account is created.', icon: 'AddFriend' },
+        { t: 'Contractors & Externals', b: 'External users can only access policies via Security Group targeting. Ensure the relevant security group includes the external users you need to reach.', icon: 'SecurityGroup' }
+      ],
+      4: [
+        { t: 'Effective Date Planning', b: 'Allow at least 2 weeks between publication and the effective date. This gives employees time to read and acknowledge. For major policy changes, consider 30 days.', icon: 'Calendar' },
+        { t: 'Review Frequency', b: 'Annual review is standard for most policies. Quarterly for critical compliance or fast-changing regulations. The system will automatically create review reminders based on your selection.', icon: 'Sync' },
+        { t: 'Supersedes Field', b: 'If this policy replaces an existing one, select it in "Supersedes Policy". The old policy will be automatically retired when this one is published.', icon: 'Switch' }
+      ],
+      5: [
+        { t: 'Choosing Reviewers', b: 'Add subject matter experts who can verify accuracy and completeness. Reviewers see the document in Review Mode and can Approve, Request Changes, or Reject with comments.', icon: 'ReviewSolid' },
+        { t: 'Approval Workflow', b: 'Approvers are notified AFTER all reviewers approve. For high-risk policies, add both a department-level and executive-level approver. Use the Override checkbox to assign anyone.', icon: 'Flow' },
+        { t: 'Delegation', b: 'If your usual reviewer/approver is unavailable, they can delegate to a colleague via Author View → Delegations. The delegate inherits their review permissions temporarily.', icon: 'Assign' }
+      ],
+      6: [
+        { t: 'Content Best Practices', b: 'Start with Purpose, then Scope, then Policy Statements. Use numbered sections and clear headings. Keep sentences short and use active voice. Avoid jargon.', icon: 'EditNote' },
+        { t: 'Key Points', b: 'Add 3-5 key points that summarise the most critical takeaways. These are shown prominently in the policy reader and help employees quickly understand what matters.', icon: 'BulletedListText' },
+        { t: 'Office Documents', b: 'For Word/Excel/PowerPoint: click "Create Document" to generate a blank file in SharePoint, then edit in Office Online. The document will be converted to HTML at review submission.', icon: 'WordDocument' }
+      ],
+      7: [
+        { t: 'Final Review Checklist', b: 'Before submitting: verify the title is clear, category is correct, content is complete, audience is appropriate, dates are realistic, and reviewers are assigned.', icon: 'CheckboxComposite' },
+        { t: 'Save vs Submit', b: '"Save Draft" keeps the policy editable without starting the review process. "Submit for Review" sends it to your assigned reviewers and locks it for editing until the review is complete.', icon: 'Send' },
+        { t: 'What Happens Next', b: 'After submission: status changes to "In Review". Reviewers receive email notifications. Once all reviewers approve, the policy moves to "Approved" and is ready to publish.', icon: 'Flow' }
+      ]
     };
     const tips = tipsMap[currentStep] || [];
-
-    const relatedPolicies = [
-      { title: 'Code of Conduct', cat: 'HR & People', status: 'Active' },
-      { title: 'Data Classification Policy', cat: 'IT Security', status: 'Active' },
-      { title: 'Acceptable Use Policy', cat: 'IT Security', status: 'Active' }
-    ];
 
     return (
       <div style={S.wrapper}>
@@ -8257,36 +8288,60 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
           </div>
         </main>
 
-        {/* ── RIGHT PANEL ── */}
-        <aside style={S.rightPanel}>
-          <div style={{ marginBottom: 24 }}>
-            <div style={S.panelHeading as React.CSSProperties}>
-              <Icon iconName="Lightbulb" style={{ fontSize: 12, color: tc.primary }} />
-              Tips & Guidance
+        {/* ── RIGHT PANEL: Tips & Guidance ── */}
+        {showTips && (
+          <aside style={S.rightPanel}>
+            {/* Panel header with hide toggle */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <div style={S.panelHeading as React.CSSProperties}>
+                <Icon iconName="Lightbulb" style={{ fontSize: 12, color: tc.primary }} />
+                Tips & Guidance
+              </div>
+              <button
+                onClick={() => this.setState({ _tipsPanelVisible: false } as any)}
+                title="Hide tips panel"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 4, color: '#94a3b8', fontSize: 12 }}
+              >
+                <Icon iconName="ChevronRight" style={{ fontSize: 12 }} />
+              </button>
             </div>
+
+            {/* Step-specific tips */}
             {tips.map((tip, i) => (
               <div key={i} style={S.tipCard}>
-                <span style={S.tipTitle}>{tip.t}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                  {tip.icon && <Icon iconName={tip.icon} styles={{ root: { fontSize: 13, color: tc.primary } }} />}
+                  <span style={S.tipTitle}>{tip.t}</span>
+                </div>
                 <Text style={S.tipBody}>{tip.b}</Text>
               </div>
             ))}
-          </div>
-          <div>
-            <div style={S.panelHeading as React.CSSProperties}>
-              <Icon iconName="Documentation" style={{ fontSize: 12, color: tc.primary }} />
-              Related Policies
+
+            {/* Step indicator */}
+            <div style={{ marginTop: 16, padding: '10px 12px', background: '#f8fafc', borderRadius: 6, border: '1px solid #e2e8f0' }}>
+              <Text style={{ fontSize: 10, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', marginBottom: 4 }}>Current Step</Text>
+              <Text style={{ fontSize: 12, fontWeight: 600, color: '#0f172a' }}>{currentStepConfig?.title || `Step ${currentStep + 1}`}</Text>
+              <Text style={{ fontSize: 10, color: '#64748b', marginTop: 2, display: 'block' }}>{currentStepConfig?.description || ''}</Text>
             </div>
-            {relatedPolicies.map((p, i) => (
-              <div key={i} style={S.relatedItem}>
-                <span style={S.relatedDot} />
-                <div>
-                  <Text style={{ fontSize: 12, fontWeight: 500, color: '#0f172a', display: 'block' }}>{p.title}</Text>
-                  <Text style={{ fontSize: 10, color: '#94a3b8' }}>{p.cat} &bull; {p.status}</Text>
-                </div>
-              </div>
-            ))}
+          </aside>
+        )}
+
+        {/* Tips panel collapsed toggle — show button when hidden */}
+        {!showTips && !tipsDisabledGlobally && (
+          <div style={{ position: 'absolute', right: 12, top: 12, zIndex: 10 }}>
+            <button
+              onClick={() => this.setState({ _tipsPanelVisible: true } as any)}
+              title="Show tips panel"
+              style={{
+                background: tc.primaryLighter, border: `1px solid ${tc.primary}`, borderRadius: 6,
+                cursor: 'pointer', padding: '6px 10px', display: 'flex', alignItems: 'center', gap: 4,
+                color: tc.primary, fontSize: 11, fontWeight: 600
+              }}
+            >
+              <Icon iconName="Lightbulb" style={{ fontSize: 12 }} /> Tips
+            </button>
           </div>
-        </aside>
+        )}
 
         {/* ── ANCHORED FOOTER ── */}
         <div style={S.footer}>

@@ -577,7 +577,14 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
         _maxDocSizeMB: Number((generalExtConfig as any)['Admin.General.MaxDocSizeMB']) || 25,
         _maxVideoSizeMB: Number((generalExtConfig as any)['Admin.General.MaxVideoSizeMB']) || 100,
         _quizPassingScore: Number((generalExtConfig as any)['Admin.General.QuizPassingScore']) || 80,
+        _tipsPanelDisabled: (generalExtConfig as any)['Admin.General.TipsPanelDisabled'] === 'true',
       } as any);
+      // Sync tips panel setting to localStorage for client-side access
+      if ((generalExtConfig as any)['Admin.General.TipsPanelDisabled'] === 'true') {
+        localStorage.setItem('pm_tips_panel_disabled', 'true');
+      } else {
+        localStorage.removeItem('pm_tips_panel_disabled');
+      }
     } catch (error) {
       console.error('[PolicyAdmin] loadSavedSettings failed:', error);
       this.setState({ loading: false, error: 'Failed to load admin settings. Some sections may show default values.' });
@@ -5532,7 +5539,10 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                       'Admin.General.MaxDocSizeMB': String(st._maxDocSizeMB || 25),
                       'Admin.General.MaxVideoSizeMB': String(st._maxVideoSizeMB || 100),
                       'Admin.General.QuizPassingScore': String(st._quizPassingScore || 80),
+                      'Admin.General.TipsPanelDisabled': String(st._tipsPanelDisabled || false),
                     });
+                    // Sync tips panel setting to localStorage for all users
+                    localStorage.setItem('pm_tips_panel_disabled', String(st._tipsPanelDisabled || false));
                     void this.dialogManager.showAlert('General settings saved successfully.', { title: 'Saved', variant: 'success' });
                   } catch {
                     void this.dialogManager.showAlert('Failed to save general settings.', { title: 'Error' });
@@ -5785,6 +5795,28 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
           </div>
 
           {/* AI Quiz Generation — moved to AI Assistant section */}
+
+          {/* Policy Builder Tips Panel Setting */}
+          <div className={styles.adminCard}>
+            <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 10 }} style={LayoutStyles.marginBottom16}>
+              <Icon iconName="Lightbulb" style={IconStyles.mediumTeal} />
+              <Text variant="mediumPlus" style={TextStyles.semiBold}>Policy Builder Tips Panel</Text>
+            </Stack>
+            <Stack tokens={{ childrenGap: 12 }}>
+              <Toggle
+                label="Show Tips & Guidance panel in Policy Builder wizard"
+                checked={!(this.state as any)._tipsPanelDisabled}
+                onText="Visible — authors see step-specific tips while creating policies"
+                offText="Hidden — tips panel is disabled for all users"
+                onChange={(_, checked) => {
+                  this.setState({ _tipsPanelDisabled: !checked } as any);
+                }}
+              />
+              <Text style={{ fontSize: 11, color: '#94a3b8', fontStyle: 'italic' }}>
+                When enabled, authors can still individually hide the panel using the toggle on the wizard. This setting controls the global default.
+              </Text>
+            </Stack>
+          </div>
         </Stack>
       </div>
     );

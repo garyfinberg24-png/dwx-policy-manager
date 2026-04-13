@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PolicyIQ — QA Test Sheet — Build 1.2.5.29 — 12 April 2026</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', 'Segoe UI', sans-serif; background: #f8fafc; color: #0f172a; line-height: 1.6; }
+
+  .header { background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #5b21b6 100%); color: #fff; padding: 36px 60px; }
+  .header h1 { font-size: 28px; font-weight: 800; margin-bottom: 4px; }
+  .header .sub { font-size: 13px; opacity: 0.8; }
+  .header .meta { display: flex; gap: 24px; margin-top: 16px; font-size: 12px; }
+  .header .meta-item { background: rgba(255,255,255,0.15); padding: 4px 12px; border-radius: 4px; }
+
+  .content { max-width: 1100px; margin: 0 auto; padding: 32px 60px 60px; }
+
+  h2 { font-size: 18px; font-weight: 700; margin: 36px 0 12px; padding-bottom: 6px; border-bottom: 2px solid #5b21b6; color: #1e1b4b; }
+  h2 .count { font-size: 12px; font-weight: 600; background: #ede9fe; color: #7c3aed; padding: 2px 8px; border-radius: 10px; margin-left: 8px; vertical-align: middle; }
+
+  .summary { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px 24px; margin-bottom: 24px; }
+  .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .summary-stat { text-align: center; }
+  .summary-num { font-size: 28px; font-weight: 800; }
+  .summary-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; }
+
+  table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04); margin-bottom: 24px; }
+  th { background: #f1f5f9; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 14px; text-align: left; color: #475569; border-bottom: 2px solid #e2e8f0; }
+  td { padding: 10px 14px; border-bottom: 1px solid #f1f5f9; font-size: 13px; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #f8fafc; }
+
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+  .tag-fix { background: #fee2e2; color: #dc2626; }
+  .tag-feat { background: #dbeafe; color: #2563eb; }
+  .tag-docs { background: #f0fdf4; color: #16a34a; }
+  .tag-test { background: #fef3c7; color: #d97706; }
+  .tag-critical { background: #dc2626; color: #fff; }
+  .tag-high { background: #f97316; color: #fff; }
+  .tag-medium { background: #eab308; color: #1a1a2e; }
+
+  .priority-critical { border-left: 3px solid #dc2626; }
+  .priority-high { border-left: 3px solid #f97316; }
+  .priority-medium { border-left: 3px solid #eab308; }
+
+  .checkbox { width: 16px; height: 16px; accent-color: #5b21b6; }
+  .status-cell { min-width: 80px; }
+
+  .section-intro { font-size: 13px; color: #64748b; margin-bottom: 16px; }
+
+  .footer { background: #0f172a; color: rgba(255,255,255,0.6); padding: 24px 60px; font-size: 11px; margin-top: 40px; }
+  .footer strong { color: #fff; }
+
+  @media print {
+    .header { padding: 20px 30px; }
+    .content { padding: 16px 30px; }
+    body { background: #fff; }
+    .checkbox { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>PolicyIQ — QA Test Sheet</h1>
+  <div class="sub">Session 24 Changes — Build 1.2.5.29 — 12 April 2026</div>
+  <div class="meta">
+    <span class="meta-item">Build: 1.2.5.29</span>
+    <span class="meta-item">39 Commits</span>
+    <span class="meta-item">17 Webparts</span>
+    <span class="meta-item">Date: 12 Apr 2026</span>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- Summary -->
+  <div class="summary">
+    <div class="summary-grid">
+      <div class="summary-stat">
+        <div class="summary-num" style="color: #dc2626;">19</div>
+        <div class="summary-label">Bug Fixes</div>
+      </div>
+      <div class="summary-stat">
+        <div class="summary-num" style="color: #2563eb;">10</div>
+        <div class="summary-label">New Features</div>
+      </div>
+      <div class="summary-stat">
+        <div class="summary-num" style="color: #16a34a;">4</div>
+        <div class="summary-label">Docs</div>
+      </div>
+      <div class="summary-stat">
+        <div class="summary-num" style="color: #d97706;">6</div>
+        <div class="summary-label">Test Specs</div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ═══ BUG FIXES ═══ -->
+  <h2>Bug Fixes <span class="count">19</span></h2>
+  <p class="section-intro">All bugs reported by testers and discovered during E2E testing. Verify each fix in the deployed build.</p>
+
+  <table>
+    <tr><th style="width: 30px;"></th><th>Bug</th><th>Area</th><th>Priority</th><th>Fix Details</th><th class="status-cell">Status</th></tr>
+
+    <tr class="priority-critical">
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Escalation email flooding</strong></td>
+      <td>Notifications</td>
+      <td><span class="tag tag-critical">Critical</span></td>
+      <td>EscalationService default changed from <code>enabled: true</code> to <code>enabled: false</code>. Stops the flood of empty-recipient "Review overdue" emails. Admin must explicitly enable via PM_Configuration.</td>
+      <td></td>
+    </tr>
+    <tr class="priority-critical">
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Email pipeline crash — empty recipients</strong></td>
+      <td>Notifications</td>
+      <td><span class="tag tag-critical">Critical</span></td>
+      <td>EscalationService now validates <code>recipientEmail.includes('@')</code> before writing to PM_NotificationQueue. ~300 bad items cleaned. Logic App Bicep adds Check_Recipient condition.</td>
+      <td></td>
+    </tr>
+    <tr class="priority-critical">
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Review + Approval emails sent simultaneously</strong></td>
+      <td>Review Policy</td>
+      <td><span class="tag tag-critical">Critical</span></td>
+      <td>Submit for Review was combining <code>[...reviewers, ...approvers]</code> into one notification list. Now only sends to reviewers. Approvers notified separately after review approval.</td>
+      <td></td>
+    </tr>
+    <tr class="priority-high">
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Rejected policy goes back to Draft</strong></td>
+      <td>Review Policy</td>
+      <td><span class="tag tag-high">High</span></td>
+      <td>Reject now sets <code>PolicyStatus: 'Rejected'</code> (was 'Draft'). Request Changes still returns to Draft for editing.</td>
+      <td></td>
+    </tr>
+    <tr class="priority-high">
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Reject doesn't close remaining reviewer actions</strong></td>
+      <td>Review Policy</td>
+      <td><span class="tag tag-high">High</span></td>
+      <td>When one reviewer rejects, all other pending reviewer statuses set to 'Cancelled' with comment. Previously stayed Pending indefinitely.</td>
+      <td></td>
+    </tr>
+    <tr class="priority-high">
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Review mode — Office doc content not shown</strong></td>
+      <td>Review Policy</td>
+      <td><span class="tag tag-high">High</span></td>
+      <td>Review mode now shows Office Online viewer (WopiFrame) for .docx/.xlsx/.pptx when no HTML conversion exists. PDF uses &lt;object&gt; embed. Previously showed "No content available".</td>
+      <td></td>
+    </tr>
+    <tr class="priority-high">
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Role detection — SP groups vs Admin Centre disconnect</strong></td>
+      <td>Roles & Access</td>
+      <td><span class="tag tag-high">High</span></td>
+      <td>RoleDetectionService now reads from PM_UserProfiles.PMRole (Admin Centre) as sole source of truth. SP group detection removed. Custom roles supported.</td>
+      <td></td>
+    </tr>
+    <tr class="priority-high">
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>User Directory rows not clickable</strong></td>
+      <td>Admin Centre</td>
+      <td><span class="tag tag-high">High</span></td>
+      <td>Removed multi-select checkbox mode that intercepted click events. Pencil icon and double-click now open the edit panel.</td>
+      <td></td>
+    </tr>
+    <tr class="priority-high">
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Policy Packs crash — 'ReviewDate' field missing</strong></td>
+      <td>Policy Packs</td>
+      <td><span class="tag tag-high">High</span></td>
+      <td>Changed <code>'ReviewDate'</code> → <code>'NextReviewDate'</code> in PolicyService select clause.</td>
+      <td></td>
+    </tr>
+    <tr class="priority-high">
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Policy Packs crash — 'Department' field missing</strong></td>
+      <td>Policy Packs</td>
+      <td><span class="tag tag-high">High</span></td>
+      <td>Removed <code>'Department'</code> from PolicyService select clause — not provisioned on PM_Policies.</td>
+      <td></td>
+    </tr>
+    <tr class="priority-high">
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Policy Packs crash — 'Visibility' field missing</strong></td>
+      <td>Policy Packs</td>
+      <td><span class="tag tag-high">High</span></td>
+      <td>Removed <code>'Visibility'</code> from PolicyService select clause.</td>
+      <td></td>
+    </tr>
+    <tr class="priority-high">
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Search not returning results</strong></td>
+      <td>Policy Hub / Search</td>
+      <td><span class="tag tag-high">High</span></td>
+      <td>applyTextSearch() was checking <code>policy.Description</code> (doesn't exist) instead of <code>PolicyDescription</code>. Now searches across Title, PolicyName, PolicyDescription, PolicyNumber, Category, Risk.</td>
+      <td></td>
+    </tr>
+    <tr class="priority-medium">
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>My Policies links throw 404</strong></td>
+      <td>My Policies</td>
+      <td><span class="tag tag-medium">Medium</span></td>
+      <td>Hardcoded <code>/sites/PolicyManager/</code> URL replaced with dynamic <code>context.pageContext.web.absoluteUrl</code>.</td>
+      <td></td>
+    </tr>
+    <tr class="priority-medium">
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Metadata profile not restored on draft edit</strong></td>
+      <td>Create Policy</td>
+      <td><span class="tag tag-medium">Medium</span></td>
+      <td>Draft edit always showed Custom settings instead of the saved profile. Now checks MetadataProfileId first → restores "existing" mode.</td>
+      <td></td>
+    </tr>
+    <tr class="priority-medium">
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Audience step — Targeted/Role options error</strong></td>
+      <td>Create Policy</td>
+      <td><span class="tag tag-medium">Medium</span></td>
+      <td>Validation required audience card click even when departments/roles/groups were selected. Now accepts departments OR roles OR security group names.</td>
+      <td></td>
+    </tr>
+    <tr class="priority-medium">
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Start Screen shows on PolicyHub.aspx</strong></td>
+      <td>Policy Hub</td>
+      <td><span class="tag tag-medium">Medium</span></td>
+      <td>Start Screen removed from PolicyHub.tsx entirely. Now a standalone webpart (dwxStartScreen) on Start.aspx.</td>
+      <td></td>
+    </tr>
+    <tr class="priority-medium">
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Start Screen sidebar text unreadable</strong></td>
+      <td>Start Screen</td>
+      <td><span class="tag tag-medium">Medium</span></td>
+      <td>Opacity-based text → explicit rgba(255,255,255,0.9). SP #F3F2F1 background bleed fixed with transparent !important.</td>
+      <td></td>
+    </tr>
+    <tr class="priority-medium">
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Search placeholder text invisible on gradient</strong></td>
+      <td>Hub / Search / Help</td>
+      <td><span class="tag tag-medium">Medium</span></td>
+      <td>Added <code>.pm-hero-search::placeholder</code> CSS rule. Placeholder text now white on gradient backgrounds.</td>
+      <td></td>
+    </tr>
+    <tr class="priority-medium">
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>My Policies hero banner unequal padding</strong></td>
+      <td>My Policies</td>
+      <td><span class="tag tag-medium">Medium</span></td>
+      <td>Removed <code>margin: '0 -24px'</code> negative margin hack. Equal 40px padding on both sides.</td>
+      <td></td>
+    </tr>
+  </table>
+
+
+  <!-- ═══ NEW FEATURES ═══ -->
+  <h2>New Features <span class="count">10</span></h2>
+
+  <table>
+    <tr><th style="width: 30px;"></th><th>Feature</th><th>Area</th><th>Details</th><th class="status-cell">Status</th></tr>
+
+    <tr>
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>DWx Start Screen webpart (17th)</strong></td>
+      <td>Start Screen</td>
+      <td>Standalone full-bleed webpart. Theme-aware sidebar. signalAppReady. Compact 4-per-row cards. Add to Start.aspx via page editor.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>SharePoint Admin Links</strong></td>
+      <td>Admin Centre</td>
+      <td>New section: Site Management (6 links), Pages (15), Lists (30+ with item counts), External Tools (6). All open in new tab.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Backup & Restore</strong></td>
+      <td>Admin Centre</td>
+      <td>On-demand backup of all PM_ lists. JSON + CSV formats. Configurable scope (6 groups). Progress indicator. Download file.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Policy Builder Tips Panel</strong></td>
+      <td>Create Policy</td>
+      <td>24 step-specific tips (3 per step) with icons. Show/hide toggle. Admin global setting in General Settings. Panel collapses, content expands.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Request-Fulfilled Notification</strong></td>
+      <td>Notifications</td>
+      <td>When a policy created from a Manager request is published, the requesting manager receives an email with the published policy link.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Email Pipeline Health Check</strong></td>
+      <td>Admin Centre</td>
+      <td>System Info shows Pending/Failed/Sent/Empty queue counts. Status badge (Healthy/Warning/Alert). Warning banners for issues.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Publish Content Validation</strong></td>
+      <td>Publish</td>
+      <td>Pre-flight check: HTMLContent, PolicyContent, or DocumentURL must exist before publishing. Prevents empty "No content" policies.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Rebrand: PolicyIQ</strong></td>
+      <td>Global</td>
+      <td>Header, Start Screen, Footer all renamed from "Policy Manager" to "PolicyIQ". Subtitle: "Smart Policy Lifecycle Management".</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>DWx Product Suite rebrand</strong></td>
+      <td>Admin Centre</td>
+      <td>10 product renames (IQ branding). IQ hero banner (Midnight Blue → Purple). DWx 3-blocks brandmark. Per-app gradient cards. IQ products grouped first.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Escalation Deduplication</strong></td>
+      <td>Notifications</td>
+      <td>Static session cache + PM_NotificationQueue pre-load prevents duplicate escalation notifications.</td>
+      <td></td>
+    </tr>
+  </table>
+
+
+  <!-- ═══ TEST SCENARIOS ═══ -->
+  <h2>Key Test Scenarios <span class="count">12</span></h2>
+  <p class="section-intro">End-to-end scenarios that should be validated after deployment.</p>
+
+  <table>
+    <tr><th style="width: 30px;"></th><th>Scenario</th><th>Steps</th><th>Expected Result</th><th class="status-cell">Status</th></tr>
+
+    <tr>
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Create policy (Rich Text)</strong></td>
+      <td>Policy Builder → Standard Wizard → Rich Text → Fill all 8 steps → Save Draft</td>
+      <td>Draft saves. "Draft saved successfully!" dialog. Appears in pipeline.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Create policy (Word doc)</strong></td>
+      <td>Policy Builder → Word → Create Document → Save Draft → Submit for Review</td>
+      <td>Word doc created in SP. On submit, conversion runs. Reviewer sees content.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Review → Approve</strong></td>
+      <td>Reviewer opens review mode → selects Approve → adds comments → Submit Approval</td>
+      <td>Status → Approved. Author notified. Reviewer sees only review email (not approval).</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Review → Reject</strong></td>
+      <td>Reviewer opens review mode → selects Reject → adds comments → Submit Rejection</td>
+      <td>Status → Rejected (not Draft). Other pending reviewers → Cancelled. Shows in Rejected filter.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Publish approved policy</strong></td>
+      <td>Author pipeline → Approved filter → click Publish icon → confirm</td>
+      <td>Status → Published. Appears in Policy Hub. Email sent to target audience.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Search returns results</strong></td>
+      <td>Policy Hub → type policy name in search → press Enter</td>
+      <td>Matching policies appear. Search works across title, number, category, description.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Policy Packs loads</strong></td>
+      <td>Navigate to PolicyPacks.aspx</td>
+      <td>Page loads without error. Shows existing packs + Create button.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Role assignment via Admin Centre</strong></td>
+      <td>Admin → User Directory → click pencil → change role → save</td>
+      <td>Role saved. User sees correct nav items on next login. No SP group dependency.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Audience targeting (Targeted)</strong></td>
+      <td>Create Policy → Step 4 → select "Targeted" → select departments → Next</td>
+      <td>No validation error. Proceeds to Step 5. Selected departments saved.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Metadata profile restored on edit</strong></td>
+      <td>Create policy with profile → save draft → edit draft → check Step 3</td>
+      <td>Step 3 shows "Existing" mode with the previously selected profile (not Custom).</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Tips panel show/hide</strong></td>
+      <td>Policy Builder → check tips panel → click chevron to hide → re-open via "Tips" button</td>
+      <td>Panel hides, content expands. "Tips" button appears. Click restores panel. Tips change per step.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><input type="checkbox" class="checkbox"></td>
+      <td><strong>Start Screen on Start.aspx</strong></td>
+      <td>Navigate to site root / Start.aspx</td>
+      <td>Start Screen renders with theme colours. "Skip to Policy Hub" navigates correctly. PolicyHub.aspx shows Hub directly.</td>
+      <td></td>
+    </tr>
+  </table>
+
+
+  <!-- ═══ PAGES TO VERIFY ═══ -->
+  <h2>Pages to Verify Load Correctly <span class="count">15</span></h2>
+
+  <table>
+    <tr><th style="width: 30px;"></th><th>Page</th><th>URL</th><th>Key Check</th><th class="status-cell">Status</th></tr>
+    <tr><td><input type="checkbox" class="checkbox"></td><td>Start Screen</td><td>Start.aspx</td><td>Sidebar + cards render, theme applied</td><td></td></tr>
+    <tr><td><input type="checkbox" class="checkbox"></td><td>Policy Hub</td><td>PolicyHub.aspx</td><td>Shows Hub directly (no Start Screen)</td><td></td></tr>
+    <tr><td><input type="checkbox" class="checkbox"></td><td>My Policies</td><td>MyPolicies.aspx</td><td>Policies listed, eye icon works</td><td></td></tr>
+    <tr><td><input type="checkbox" class="checkbox"></td><td>Policy Builder</td><td>PolicyBuilder.aspx</td><td>Wizard loads, tips panel visible</td><td></td></tr>
+    <tr><td><input type="checkbox" class="checkbox"></td><td>Policy Author</td><td>PolicyAuthor.aspx</td><td>All 4 tabs load</td><td></td></tr>
+    <tr><td><input type="checkbox" class="checkbox"></td><td>Policy Details</td><td>PolicyDetails.aspx?policyId=1</td><td>Content renders (HTML or Office)</td><td></td></tr>
+    <tr><td><input type="checkbox" class="checkbox"></td><td>Policy Admin</td><td>PolicyAdmin.aspx</td><td>Sidebar sections load, new sections visible</td><td></td></tr>
+    <tr><td><input type="checkbox" class="checkbox"></td><td>Policy Search</td><td>PolicySearch.aspx</td><td>Search returns results</td><td></td></tr>
+    <tr><td><input type="checkbox" class="checkbox"></td><td>Policy Help</td><td>PolicyHelp.aspx</td><td>5 tabs load</td><td></td></tr>
+    <tr><td><input type="checkbox" class="checkbox"></td><td>Policy Analytics</td><td>PolicyAnalytics.aspx</td><td>6 tabs load</td><td></td></tr>
+    <tr><td><input type="checkbox" class="checkbox"></td><td>Policy Distribution</td><td>PolicyDistribution.aspx</td><td>KPIs + campaigns visible</td><td></td></tr>
+    <tr><td><input type="checkbox" class="checkbox"></td><td>Manager View</td><td>PolicyManagerView.aspx</td><td>Dashboard + 6 dropdown items</td><td></td></tr>
+    <tr><td><input type="checkbox" class="checkbox"></td><td>Policy Packs</td><td>PolicyPacks.aspx</td><td>Loads without error</td><td></td></tr>
+    <tr><td><input type="checkbox" class="checkbox"></td><td>Quiz Builder</td><td>QuizBuilder.aspx</td><td>Quiz + Create + AI Generate</td><td></td></tr>
+    <tr><td><input type="checkbox" class="checkbox"></td><td>Bulk Upload</td><td>PolicyBulkUpload.aspx</td><td>Upload wizard loads</td><td></td></tr>
+  </table>
+
+</div>
+
+<div class="footer">
+  <strong>PolicyIQ</strong> — Smart Policy Lifecycle Management<br>
+  Build 1.2.5.29 &bull; Session 24 &bull; 12 April 2026 &bull; 39 commits &bull; First Digital — DWx Digital Workplace Excellence
+</div>
+
+</body>
+</html>

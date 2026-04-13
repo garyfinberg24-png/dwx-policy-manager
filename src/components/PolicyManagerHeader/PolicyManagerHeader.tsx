@@ -748,7 +748,7 @@ export const PolicyManagerHeader: React.FC<IPolicyManagerHeaderProps> = ({
           </div>
           <div className={styles.logoText}>
             <span className={styles.appName}>PolicyIQ</span>
-            <span className={styles.appSubtitle}>POLICY GOVERNANCE & COMPLIANCE</span>
+            <span className={styles.appSubtitle}>SMART POLICY LIFECYCLE MANAGEMENT</span>
           </div>
         </a>
 

@@ -484,7 +484,7 @@ export class PolicyService {
           'VersionNumber', 'PolicyDescription', 'DocumentURL',
           'CreationMethod', 'ReadTimeframe', 'RequiresAcknowledgement', 'RequiresQuiz',
           'PublishedDate', 'EffectiveDate', 'ExpiryDate', 'NextReviewDate',
-          'Visibility', 'Modified', 'Created'
+          'Modified', 'Created'
         );
 
       // Apply filters

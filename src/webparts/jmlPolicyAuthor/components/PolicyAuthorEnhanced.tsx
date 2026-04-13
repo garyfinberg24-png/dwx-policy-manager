@@ -638,8 +638,8 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
         readTimeframeDays: policy.ReadTimeframeDays || 7,
         requiresAcknowledgement: policy.RequiresAcknowledgement,
         requiresQuiz: policy.RequiresQuiz || false,
-        // Auto-switch to custom profile mode when draft has metadata values
-        _profileMode: (policy.ComplianceRisk || policy.ReadTimeframe) ? 'custom' : 'existing',
+        // Restore profile mode: if a MetadataProfileId was saved, use 'existing'; otherwise 'custom'
+        _profileMode: (policy as any).MetadataProfileId ? 'existing' : (policy.ComplianceRisk || policy.ReadTimeframe) ? 'custom' : 'existing',
         selectedQuizId: policy.LinkedQuizId || null,
         effectiveDate: (typeof policy.EffectiveDate === 'string' ? policy.EffectiveDate : policy.EffectiveDate?.toISOString() || '').split('T')[0],
         expiryDate: policy.ExpiryDate ? (typeof policy.ExpiryDate === 'string' ? policy.ExpiryDate : policy.ExpiryDate.toISOString()).split('T')[0] : '',
@@ -1564,10 +1564,19 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       case 3: // Audience
         {
           const selectedAud = (this.state as any)._selectedAudienceId;
-          const { targetAllEmployees } = this.state;
-          // Allow if audience selected OR "All Employees" is effectively chosen
-          if (!selectedAud && !targetAllEmployees) {
-            errors.push('Please select an audience');
+          const { targetAllEmployees, targetDepartments, targetRoles } = this.state;
+          const distScope = (this.state as any)._distributionScope || '';
+          const secGroups = ((this.state as any)._targetSecurityGroups || '').trim();
+
+          // Valid if any targeting method has been configured
+          const hasTarget = targetAllEmployees
+            || selectedAud
+            || (distScope === 'Targeted' && targetDepartments && targetDepartments.length > 0)
+            || (distScope === 'Role-Based' && targetRoles && targetRoles.length > 0)
+            || (distScope === 'Security Group' && secGroups.length > 0);
+
+          if (!hasTarget) {
+            errors.push('Please select a distribution scope and configure the target audience');
           }
         }
         break;

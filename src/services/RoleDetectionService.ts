@@ -138,9 +138,25 @@ export class RoleDetectionService {
       const roles = new Set<UserRole>();
 
       // ══════════════════════════════════════════════════════════════
-      // PRIMARY: PM_UserProfiles — Admin Centre is the single source of truth
-      // Roles set in Admin Centre > User Directory control all access.
+      // ROLE DETECTION PRIORITY (highest wins):
+      //
+      //   1. PM_UserProfiles.PMRole — Admin Centre is the primary source
+      //      Admin assigns role → stored in PMRole column → read here
+      //
+      //   2. Site Collection Admin — IsSiteAdmin = true → Admin role
+      //      Can be overridden by PM_UserProfiles if a lower role is set
+      //      (e.g. Site Admin who should only be Author in PolicyIQ)
+      //
+      //   3. Default — User role (no PM_UserProfiles entry = basic access)
+      //
+      // SP Security Groups (PM_PolicyAdmins, PM_PolicyAuthors, etc.)
+      // are synced FOR REFERENCE ONLY when admin assigns roles. They
+      // are NOT used for role detection — PM_UserProfiles is the source.
       // ══════════════════════════════════════════════════════════════
+
+      let detectedRole = 'User'; // default
+
+      // Step 1: Check PM_UserProfiles (Admin Centre assignment)
       try {
         if (email) {
           const profiles = await this.sp.web.lists.getByTitle('PM_UserProfiles')
@@ -148,38 +164,39 @@ export class RoleDetectionService {
             .select('PMRole', 'PMRoles')
             .top(1)();
           if (profiles.length > 0) {
-            const pmRole = profiles[0].PMRole || '';
-            const pmRoles = profiles[0].PMRoles || '';
+            const pmRole = (profiles[0].PMRole || '').trim();
+            const pmRoles = (profiles[0].PMRoles || '').trim();
             const allRoleStrings = [pmRole, ...pmRoles.split(';')].map((r: string) => r.trim()).filter(Boolean);
 
-            const roleMap: Record<string, UserRole> = {
-              'Admin': UserRole.SiteAdmin,
-              'Manager': UserRole.Manager,
-              'Author': UserRole.Recruiter,
-              'User': UserRole.Employee
-            };
-
-            for (const roleStr of allRoleStrings) {
-              const mapped = roleMap[roleStr];
-              if (mapped) {
-                roles.add(mapped);
-              }
+            if (allRoleStrings.length > 0) {
+              detectedRole = allRoleStrings[0]; // Primary role
             }
 
-            // Store raw role strings (including custom roles) in localStorage
-            // so PolicyManagerHeader can use them for permission table lookups
-            localStorage.setItem('pm_detected_role', allRoleStrings[0] || 'User');
+            // Store raw role strings for permission table lookups
+            localStorage.setItem('pm_detected_role', detectedRole);
             localStorage.setItem('pm_detected_roles_all', allRoleStrings.join(';'));
           }
         }
       } catch {
-        // PM_UserProfiles may not exist — fall through to site admin check
+        // PM_UserProfiles may not exist yet
       }
 
-      // Site admin always gets Admin role regardless of PM_UserProfiles
-      if (currentUser.IsSiteAdmin) {
-        roles.add(UserRole.SiteAdmin);
+      // Step 2: Site Collection Admin gets Admin IF no PM_UserProfiles role is set
+      // (If admin explicitly assigned a lower role in PM_UserProfiles, respect that)
+      if (detectedRole === 'User' && currentUser.IsSiteAdmin) {
+        detectedRole = 'Admin';
+        localStorage.setItem('pm_detected_role', 'Admin');
       }
+
+      // Map to UserRole enum
+      const roleMap: Record<string, UserRole> = {
+        'Admin': UserRole.SiteAdmin,
+        'Manager': UserRole.Manager,
+        'Author': UserRole.Recruiter,
+        'User': UserRole.Employee
+      };
+      const mapped = roleMap[detectedRole];
+      if (mapped) roles.add(mapped);
 
       const finalRoles = roles.size > 0 ? Array.from(roles) : [UserRole.Employee];
 

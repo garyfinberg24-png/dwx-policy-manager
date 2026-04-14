@@ -7042,21 +7042,14 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
       this.setState({ _userSaving: true } as any);
       try {
         const managedDepts: string[] = st._editingManagedDepts || [];
-        const allRoles: string[] = st._editingRoles || [st._editingRole || 'User'];
-        // Save primary role + multi-role string
-        await this.userManagementService.updateUserRole(editingEmployee.Id, st._editingRole, managedDepts);
-        // Sync SP group membership so RoleDetectionService picks up the role
+        const role = st._editingRole || 'User';
+
+        // Save role to PM_UserProfiles.PMRole
+        await this.userManagementService.updateUserRole(editingEmployee.Id, role, managedDepts);
+
+        // Sync SP group membership (adds to correct group, removes from others)
         if (editingEmployee.Email) {
-          await this.userManagementService.syncRoleGroupMembership(editingEmployee.Email, st._editingRole);
-        }
-        // Save additional roles as semicolon-delimited in PMRoles column
-        try {
-          await this.props.sp.web.lists.getByTitle('PM_UserProfiles').items.getById(editingEmployee.Id).update({
-            PMRoles: allRoles.join(';')
-          });
-        } catch (pmRolesErr: any) {
-          console.warn('[PolicyAdmin] PMRoles column write failed — column may need provisioning:', pmRolesErr.message || pmRolesErr);
-          // Non-blocking: primary role is saved via updateUserRole above; PMRoles is for multi-role display
+          await this.userManagementService.syncRoleGroupMembership(editingEmployee.Email, role);
         }
         this.setState({
           _userSaving: false,
@@ -7445,10 +7438,10 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
 
               <Separator />
 
-              {/* Role assignment — multiple roles via checkboxes */}
-              <Label>Policy Manager Roles</Label>
+              {/* Role assignment — single role selection */}
+              <Label>PolicyIQ Role</Label>
               <Text variant="small" style={{ ...TextStyles.secondary, marginBottom: 8, display: 'block' }}>
-                Assign one or more roles. The highest role determines the user's primary access level.
+                Each user has one role. The role determines what they can see and do.
               </Text>
               <Stack tokens={{ childrenGap: 8 }}>
                 {[
@@ -7457,8 +7450,8 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                   { key: 'Manager', label: 'Manager', desc: 'Analytics, approvals, distribution', color: '#d97706' },
                   { key: 'Admin', label: 'Admin', desc: 'Full system access and configuration', color: '#dc2626' },
                 ].map(r => {
-                  const editingRoles: string[] = st._editingRoles || [st._editingRole || 'User'];
-                  const isChecked = editingRoles.includes(r.key);
+                  const currentRole = st._editingRole || 'User';
+                  const isChecked = currentRole === r.key;
                   return (
                     <div key={r.key} style={{
                       padding: '8px 12px', borderRadius: 4,
@@ -7467,20 +7460,13 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                       cursor: 'pointer'
                     }}
                       onClick={() => {
-                        const current: string[] = [...(st._editingRoles || [st._editingRole || 'User'])];
-                        const updated = isChecked
-                          ? current.filter((x: string) => x !== r.key)
-                          : [...current, r.key];
-                        // Ensure at least User role
-                        const final = updated.length === 0 ? ['User'] : updated;
-                        // Set primary role to highest
-                        const LEVEL: Record<string, number> = { User: 0, Author: 1, Manager: 2, Admin: 3 };
-                        const highest = final.reduce((a, b) => (LEVEL[b] || 0) > (LEVEL[a] || 0) ? b : a, 'User');
-                        this.setState({ _editingRoles: final, _editingRole: highest } as any);
+                        this.setState({ _editingRole: r.key, _editingRoles: [r.key] } as any);
                       }}
                     >
                       <Stack horizontal verticalAlign="center" tokens={{ childrenGap: 8 }}>
-                        <Checkbox checked={isChecked} styles={{ root: { pointerEvents: 'none' } }} />
+                        <div style={{ width: 16, height: 16, borderRadius: '50%', border: `2px solid ${isChecked ? r.color : '#cbd5e1'}`, background: isChecked ? r.color : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {isChecked && <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#fff' }} />}
+                        </div>
                         <div>
                           <Text style={{ fontWeight: 600, color: isChecked ? r.color : Colors.textDark }}>{r.label}</Text>
                           <Text variant="small" style={{ color: Colors.textSlate, display: 'block' }}>{r.desc}</Text>
@@ -7491,7 +7477,7 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                 })}
               </Stack>
               <Text variant="small" style={{ color: Colors.slateLight, marginTop: 4, display: 'block' }}>
-                Primary role (highest): <strong>{st._editingRole || 'User'}</strong>
+                Assigned role: <strong>{st._editingRole || 'User'}</strong>
               </Text>
 
               {/* Managed departments — multi-select */}

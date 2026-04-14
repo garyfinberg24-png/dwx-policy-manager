@@ -8129,6 +8129,11 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       return <Stack horizontalAlign="center" tokens={{ padding: 60 }}><Spinner size={SpinnerSize.large} label="Loading policy builder..." /></Stack>;
     }
 
+    // ── Tips panel state (must be before S styles so showTips is available for grid) ──
+    const tipsPanelVisible = (this.state as any)._tipsPanelVisible !== false;
+    const tipsDisabledGlobally = localStorage.getItem('pm_tips_panel_disabled') === 'true';
+    const showTips = tipsPanelVisible && !tipsDisabledGlobally;
+
     // ── Styles ──
     const S = {
       // Wizard wrapper — the main card
@@ -8162,11 +8167,6 @@ export default class PolicyAuthorEnhanced extends React.Component<IPolicyAuthorP
       footerTrack: { width: 100, height: 4, background: '#e2e8f0', borderRadius: 2, overflow: 'hidden' } as React.CSSProperties,
       footerFill: { height: '100%', background: tc.primary, borderRadius: 2, transition: 'width 0.3s' } as React.CSSProperties,
     };
-
-    // ── Tips panel state ──
-    const tipsPanelVisible = (this.state as any)._tipsPanelVisible !== false; // default visible
-    const tipsDisabledGlobally = localStorage.getItem('pm_tips_panel_disabled') === 'true';
-    const showTips = tipsPanelVisible && !tipsDisabledGlobally;
 
     // ── Step-specific tips — rich, contextual guidance per wizard step ──
     const tipsMap: Record<number, { t: string; b: string; icon?: string }[]> = {

@@ -7308,10 +7308,11 @@ export default class PolicyAdmin extends React.Component<IPolicyAdminProps, IPol
                 checkboxVisibility={CheckboxVisibility.always}
                 getKey={(item: any) => String(item.Id)}
                 onActiveItemChanged={(item: any) => {
-                  if (item) {
+                  // Only open panel if not already open (prevents re-open on Cancel click)
+                  if (item && !(this.state as any)._showUserPanel) {
                     this.setState({
                       _editingEmployee: item, _editingRole: item.PMRole || 'User',
-                      _editingRoles: item.PMRoles ? item.PMRoles.split(';').map((r: string) => r.trim()).filter(Boolean) : [item.PMRole || 'User'],
+                      _editingRoles: [item.PMRole || 'User'],
                       _editingManagedDepts: item.ManagedDepartments ? item.ManagedDepartments.split(';').map((d: string) => d.trim()).filter(Boolean) : [],
                       _showUserPanel: true,
                     } as any);

@@ -439,69 +439,15 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
         await this.policyService.trackPolicyOpen(acknowledgement.Id);
       }
     } catch (error) {
-      console.error('Failed to load policy details, falling back to mock data:', error);
-      // Fall back to mock data so the wizard can be tested without live SharePoint lists
-      this.loadMockPolicyDetails();
+      console.error('[PolicyDetails] Failed to load policy details:', error);
+      if (this._isMounted) {
+        const errMsg = error instanceof Error ? error.message : String(error);
+        this.setState({
+          error: `Unable to load policy ${policyId}. ${errMsg}`,
+          loading: false
+        });
+      }
     }
-  }
-
-  private loadMockPolicyDetails(): void {
-    const { policyId, browseMode } = this.state;
-    const mockPolicy: IPolicy = {
-      Id: policyId || 1,
-      Title: 'Information Security Policy',
-      PolicyNumber: 'POL-2024-001',
-      PolicyName: 'Information Security Policy',
-      PolicyDescription: 'This policy establishes the information security requirements for all employees to protect company assets, data, and systems from unauthorized access, disclosure, and modification.',
-      PolicyCategory: 'IT Security',
-      PolicyStatus: 'Published',
-      PolicyVersion: '2.1',
-      EffectiveDate: new Date('2024-01-15'),
-      ReviewDate: new Date('2025-01-15'),
-      ExpiryDate: new Date('2025-12-31'),
-      PolicyOwner: 'Sarah Johnson',
-      PolicyOwnerId: 1,
-      Department: 'Information Technology',
-      RequiresQuiz: true,
-      QuizPassingScore: 80,
-      AllowRetake: true,
-      MaxRetakeAttempts: 3,
-      DocumentURL: '/sites/PolicyManager/PolicyDocuments/Information-Security-Policy.pdf',
-      Created: new Date('2024-01-10'),
-      Modified: new Date('2024-06-15'),
-      AuthorId: 1
-    } as IPolicy;
-
-    const mockAcknowledgement: IPolicyAcknowledgement = {
-      Id: 100,
-      Title: 'Ack-001',
-      PolicyId: policyId || 1,
-      UserId: 1,
-      AckStatus: browseMode ? 'Acknowledged' : 'Pending',
-      AssignedDate: new Date('2024-06-01'),
-      DueDate: new Date('2024-07-01'),
-      QuizRequired: true,
-      Created: new Date('2024-06-01'),
-      Modified: new Date('2024-06-01'),
-      AuthorId: 1
-    } as IPolicyAcknowledgement;
-
-    this.setState({
-      policy: mockPolicy,
-      acknowledgement: mockAcknowledgement,
-      ratings: [],
-      comments: [],
-      isFollowing: false,
-      loading: false,
-      quizRequired: true
-    });
-
-    // Track mock policy view in Recently Viewed (localStorage)
-    RecentlyViewedService.trackView(
-      mockPolicy.Id,
-      mockPolicy.PolicyName || mockPolicy.Title,
-      mockPolicy.PolicyCategory || ''
-    );
   }
 
   private startReadTracking(): void {
@@ -1581,19 +1527,13 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
             marginBottom: 12,
             overflow: 'hidden'
           }}>
-            {/* Header Row — always visible */}
+            {/* Header Row */}
             <div
-              role="button"
-              tabIndex={0}
-              onClick={() => this.setState({ _headerExpanded: !(this.state as any)._headerExpanded } as any)}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') this.setState({ _headerExpanded: !(this.state as any)._headerExpanded } as any); }}
               style={{
                 display: 'flex', alignItems: 'center', padding: '10px 16px',
-                cursor: 'pointer', gap: 12, userSelect: 'none'
+                gap: 12
               }}
             >
-              <Icon iconName={(this.state as any)._headerExpanded ? 'ChevronUp' : 'ChevronDown'}
-                styles={{ root: { fontSize: 12, color: '#94a3b8', transition: 'transform 0.2s' } }} />
               <Text style={{ fontWeight: 700, color: '#0f172a', fontSize: 15, flex: 1 }}>
                 {policy.PolicyNumber} - {policy.PolicyName}
               </Text>
@@ -1631,37 +1571,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
               </Stack>
             </div>
 
-            {/* Expanded Details — collapsible */}
-            {(this.state as any)._headerExpanded && (
-              <div style={{ padding: '0 16px 12px', borderTop: '1px solid #f1f5f9' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, paddingTop: 12 }}>
-                  <div>
-                    <Text variant="tiny" style={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Department</Text>
-                    <Text variant="small" style={{ color: '#334155', fontWeight: 500 }}>{policy.PolicyCategory || 'General'}</Text>
-                  </div>
-                  <div>
-                    <Text variant="tiny" style={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Effective Date</Text>
-                    <Text variant="small" style={{ color: '#334155', fontWeight: 500 }}>{policy.EffectiveDate ? new Date(policy.EffectiveDate).toLocaleDateString() : 'N/A'}</Text>
-                  </div>
-                  <div>
-                    <Text variant="tiny" style={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Version</Text>
-                    <Text variant="small" style={{ color: '#334155', fontWeight: 500 }}>v{policy.VersionNumber || '1.0'}</Text>
-                  </div>
-                  {acknowledgement?.DueDate && (
-                    <div>
-                      <Text variant="tiny" style={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Ack. Due</Text>
-                      <Text variant="small" style={{ color: statusColor, fontWeight: 500 }}>{new Date(acknowledgement.DueDate).toLocaleDateString()}</Text>
-                    </div>
-                  )}
-                  {policy.PolicySummary && (
-                    <div style={{ gridColumn: '1 / -1' }}>
-                      <Text variant="tiny" style={{ color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Summary</Text>
-                      <Text variant="small" style={{ color: '#334155' }}>{policy.PolicySummary}</Text>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+            {/* Details already shown in pill badges above — no expanded row needed */}
           </div>
         )}
 
@@ -1669,7 +1579,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
         {hasConvertedHtml && (
           <div className={styles.documentViewerWrapper} ref={this.viewerWrapperRef} style={{
             ...(this.state.isFullscreen ? { background: '#fff', padding: 0 } : {}),
-            ...(isFocusedMode ? { marginBottom: 0 } : {})
+            ...(isFocusedMode ? { marginBottom: 0, display: 'flex', flexDirection: 'column', flex: 1 } : {})
           }}>
             {/* Toolbar — matches iframe viewer chrome */}
             {!isFocusedMode && (
@@ -1710,21 +1620,12 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                     styles={{ root: { height: 28, width: 28 }, icon: { fontSize: 14, color: tc.primary } }}
                   />
                   {documentUrl && (
-                    <>
-                      <DefaultButton
-                        iconProps={{ iconName: 'OpenInNewTab' }}
-                        text="Open Original"
-                        href={documentUrl}
-                        target="_blank"
-                        styles={{ root: { height: 28, padding: '0 10px' }, label: { fontSize: 11 } }}
-                      />
-                      <DefaultButton
-                        iconProps={{ iconName: 'Download' }}
-                        text="Download"
-                        href={documentUrl}
-                        styles={{ root: { height: 28, padding: '0 10px' }, label: { fontSize: 11 } }}
-                      />
-                    </>
+                    <DefaultButton
+                      iconProps={{ iconName: 'Download' }}
+                      text="Download"
+                      href={documentUrl}
+                      styles={{ root: { height: 28, padding: '0 10px' }, label: { fontSize: 11 } }}
+                    />
                   )}
                 </Stack>
               </div>
@@ -1734,8 +1635,8 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
               ref={this.documentViewerRef}
               onScroll={this.handleDocumentScroll}
               style={{
-                padding: isFocusedMode ? '32px 48px 80px' : '24px 32px',
-                ...(isFocusedMode ? { height: 'calc(100vh - 140px)' } : {}),
+                padding: isFocusedMode ? '24px 48px 8px' : '24px 32px',
+                ...(isFocusedMode ? { flex: 1, minHeight: 0 } : {}),
                 ...(this.state.isFullscreen ? { height: 'calc(100vh - 80px)' } : {})
               }}
             >
@@ -1751,7 +1652,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
         {!hasConvertedHtml && hasDocuments && documentUrl && (
           <div className={styles.documentViewerWrapper} ref={this.viewerWrapperRef} style={{
             ...(this.state.isFullscreen ? { background: '#fff', padding: 0 } : {}),
-            ...(isFocusedMode ? { marginBottom: 0 } : {})
+            ...(isFocusedMode ? { marginBottom: 0, display: 'flex', flexDirection: 'column', flex: 1 } : {})
           }}>
             {/* Toolbar hidden in focused mode — title already in metadata strip */}
             {!isFocusedMode && (
@@ -1793,7 +1694,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
               className={styles.documentViewer}
               ref={this.documentViewerRef}
               onScroll={this.handleDocumentScroll}
-              style={isFocusedMode ? { height: 600 } : undefined}
+              style={isFocusedMode ? { flex: 1, minHeight: 0 } : undefined}
             >
               <div className={styles.scrollProgressBar}>
                 <div className={styles.scrollProgressFill} style={{ height: `${scrollProgress}%` }} />
@@ -4063,58 +3964,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
             {currentFlowStep === 'acknowledge' && this.renderAcknowledgeStep()}
             {currentFlowStep === 'complete' && this.renderCompleteStep()}
 
-            {/* Floating action card (bottom-right) — only during reading step */}
-            {currentFlowStep === 'reading' && (
-              <div style={{
-                position: 'fixed', bottom: 24, right: 24, width: 300,
-                background: '#fff', borderRadius: 4, boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
-                border: '1px solid #e2e8f0', overflow: 'hidden', zIndex: 100
-              }}>
-                <div style={{ background: tc.headerBg, padding: '14px 18px', color: '#fff' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                    <span style={{ fontSize: 13, fontWeight: 600 }}>Reading Progress</span>
-                    <span style={{ fontSize: 12, opacity: 0.8 }}>Step {currentStepIndex + 1} of {totalSteps}</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: 4 }}>
-                    {flowSteps.map((s, i) => (
-                      <div key={s.key} style={{
-                        flex: 1, height: 4, borderRadius: 2,
-                        background: i <= currentStepIndex ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.2)'
-                      }} />
-                    ))}
-                  </div>
-                </div>
-                <div style={{ padding: '16px 18px' }}>
-                  {scrollPct >= 95 ? (
-                    <div style={{ fontSize: 13, color: '#059669', marginBottom: 12, fontWeight: 500 }}>
-                      Document reviewed. Click below to proceed.
-                    </div>
-                  ) : (
-                    <div style={{ fontSize: 13, color: '#64748b', marginBottom: 12 }}>
-                      Scroll to the end of the document to continue.
-                    </div>
-                  )}
-                  <button
-                    onClick={() => this.handleMarkAsRead()}
-                    disabled={scrollPct < 95}
-                    style={{
-                      width: '100%', padding: '10px 16px', borderRadius: 4, border: 'none',
-                      background: scrollPct >= 95 ? tc.primary : '#94a3b8',
-                      color: '#fff', fontWeight: 600, fontSize: 14,
-                      cursor: scrollPct >= 95 ? 'pointer' : 'not-allowed',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8
-                    }}
-                  >
-                    I Have Read This Policy →
-                  </button>
-                  {this.state.readDuration > 0 && (
-                    <div style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center', marginTop: 8 }}>
-                      Reading time: {this.formatDuration(this.state.readDuration)}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+            {/* Read confirmation is in the bottom bar (renderWizardFooter) — no floating panel */}
           </div>
 
           {/* Panels (acknowledgement, receipt, etc.) */}
@@ -4144,7 +3994,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
           { text: browseMode ? 'Browse Policies' : 'My Policies', url: browseMode ? '/sites/PolicyManager/SitePages/PolicyHub.aspx' : '/sites/PolicyManager/SitePages/MyPolicies.aspx' },
           { text: policy ? `${policy.PolicyNumber}` : 'Policy Details' }
         ]}
-        activeNavKey="browse"
+        activeNavKey={browseMode ? "browse" : "my-policies"}
         showQuickLinks={true}
         showSearch={true}
         showNotifications={true}

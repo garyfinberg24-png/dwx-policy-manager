@@ -64,16 +64,10 @@ export class PolicyHubService {
    */
   public async searchPolicyHub(request: IPolicyDocumentSearchRequest): Promise<IPolicyHubSearchResult> {
     try {
-      // Select only columns the Policy Hub actually uses — reduces JSON payload by ~70%
+      // Use select('*') to avoid 400 errors when specific columns aren't provisioned.
       let policyQuery = this.sp.web.lists
         .getByTitle(this.POLICIES_LIST)
-        .items.select(
-          'Id', 'Title', 'PolicyName', 'PolicyNumber', 'PolicyCategory', 'PolicyStatus',
-          'PolicyDescription', 'ComplianceRisk', 'VersionNumber', 'IsActive',
-          'EffectiveDate', 'PublishedDate', 'Modified', 'Created',
-          'ReadTimeframe', 'RequiresAcknowledgement', 'RequiresQuiz',
-          'DocumentURL'
-        );
+        .items;
 
       // Apply filters
       const filterConditions = this.buildFilterConditions(request.filters);

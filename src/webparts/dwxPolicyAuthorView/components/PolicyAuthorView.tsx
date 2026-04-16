@@ -1358,89 +1358,26 @@ export default class PolicyAuthorView extends React.Component<IPolicyAuthorViewP
   private async handlePipelineSubmitForReview(policyId: number, title: string): Promise<void> {
     const confirmed = await this.dialogManager.showConfirm(`Submit "${title}" for review? Reviewers and approvers will be notified.`, { title: 'Submit for Review', confirmText: 'Submit', cancelText: 'Cancel' });
     if (!confirmed) return;
-    const siteUrl = this.props.context?.pageContext?.web?.absoluteUrl || '/sites/PolicyManager';
     try {
-      // Update status to In Review
-      await this.props.sp.web.lists.getByTitle(PM_LISTS.POLICIES)
-        .items.getById(policyId).update({ PolicyStatus: 'In Review' });
+      // Resolve reviewer IDs from PM_PolicyReviewers — deduplicated
+      const reviewerItems = await this.props.sp.web.lists
+        .getByTitle(PM_LISTS.POLICY_REVIEWERS)
+        .items.filter(`PolicyId eq ${policyId}`)
+        .select('ReviewerId').top(50)();
+      const seen = new Set<number>();
+      const reviewerIds: number[] = [];
+      for (const r of reviewerItems) {
+        const id = r.ReviewerId;
+        if (id && !seen.has(id)) { seen.add(id); reviewerIds.push(id); }
+      }
 
-      // Log to audit
-      try {
-        await this.props.sp.web.lists.getByTitle('PM_PolicyAuditLog').items.add({
-          Title: `SubmittedForReview - Policy ${policyId}`,
-          PolicyId: policyId,
-          EntityType: 'Policy',
-          EntityId: policyId,
-          AuditAction: 'SubmittedForReview',
-          ActionDescription: `Policy "${title}" submitted for review`,
-          PerformedByEmail: this.props.context?.pageContext?.user?.email || '',
-          ActionDate: new Date().toISOString()
-        });
-      } catch { /* audit log may not exist */ }
-
-      // Send notifications to reviewers
-      try {
-        const reviewerItems = await this.props.sp.web.lists
-          .getByTitle(PM_LISTS.POLICY_REVIEWERS)
-          .items.filter(`PolicyId eq ${policyId}`)
-          .select('ReviewerId').top(50)();
-        const reviewerIds = reviewerItems.map((r: any) => r.ReviewerId).filter(Boolean);
-
-        if (reviewerIds.length > 0) {
-          // Queue in-app notifications
-          for (const reviewerId of reviewerIds) {
-            try {
-              await this.props.sp.web.lists.getByTitle('PM_Notifications').items.add({
-                Title: `Review Required: ${title}`,
-                RecipientId: reviewerId,
-                Type: 'Policy',
-                Message: `"${title}" has been submitted for your review.`,
-                RelatedItemId: policyId,
-                IsRead: false,
-                Priority: 'High',
-                ActionUrl: `${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policyId}&mode=review`
-              });
-            } catch { /* notification list may not exist */ }
-          }
-
-          // Queue email notification
-          try {
-            const submitterName = this.props.context?.pageContext?.user?.displayName || 'An author';
-            for (const reviewerId of reviewerIds) {
-              try {
-                const user = await this.props.sp.web.siteUsers.getById(reviewerId).select('Email', 'Title')();
-                if (user?.Email) {
-                  const policyUrl = `${siteUrl}/SitePages/PolicyDetails.aspx?policyId=${policyId}&mode=review`;
-                  const emailHtml = EmailTemplateBuilder.reviewRequired({
-                    recipientName: user.Title || 'Reviewer',
-                    policyTitle: title,
-                    policyNumber: '', // not available in this context
-                    submittedBy: submitterName,
-                    category: '',
-                    version: '',
-                    reviewDeadline: '',
-                    ctaUrl: policyUrl
-                  });
-                  await this.queueEmail({
-                    Title: `Review Required: ${title}`,
-                    RecipientEmail: user.Email,
-                    RecipientName: user.Title || '',
-                    SenderName: submitterName,
-                    SenderEmail: this.props.context?.pageContext?.user?.email || '',
-                    PolicyId: policyId,
-                    PolicyTitle: title,
-                    NotificationType: 'review-required',
-                    Channel: 'Email',
-                    Message: emailHtml,
-                    QueueStatus: 'Pending',
-                    Priority: 'High'
-                  });
-                }
-              } catch { /* per-recipient — continue on failure */ }
-            }
-          } catch { /* email queue may not exist */ }
-        }
-      } catch { /* reviewer list may not exist */ }
+      // Delegate to PolicyService — single authoritative submit-for-review flow
+      // Handles: status update, document conversion, audit log, email notifications (deduplicated), in-app notifications
+      const siteUrl = this.props.context?.pageContext?.web?.absoluteUrl || '/sites/PolicyManager';
+      const { PolicyService } = await import('../../../services/PolicyService');
+      const policyService = new PolicyService(this.props.sp, siteUrl);
+      await policyService.initialize();
+      await policyService.submitForReview(policyId, reviewerIds);
 
       await this.reloadPipeline();
     } catch (err) {

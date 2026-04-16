@@ -161,53 +161,86 @@ export function filterNavForRole<T extends { key: string }>(
 
 /**
  * Minimum role required for each nav item key.
- * Higher roles automatically have access to everything below them.
+ * Used as FALLBACK when a key is not in the explicit permission table.
+ * Keys not listed here default to Admin-only.
  */
 const NAV_MINIMUM_ROLE: Record<string, PolicyManagerRole> = {
-  'browse':        PolicyManagerRole.User,
-  'my-policies':   PolicyManagerRole.User,
-  'details':       PolicyManagerRole.User,
-  'search':        PolicyManagerRole.User,
-  'help':          PolicyManagerRole.User,
-  'create':        PolicyManagerRole.Author,
-  'newpolicy':     PolicyManagerRole.Author,
-  'author':        PolicyManagerRole.Author,
-  'author-reports': PolicyManagerRole.Author,
-  'bulk-upload':   PolicyManagerRole.Author,
-  'packs':         PolicyManagerRole.Author,
-  'quiz':          PolicyManagerRole.Admin,
-  'requests':      PolicyManagerRole.Author,
-  'distribution':  PolicyManagerRole.Manager,
-  'analytics':     PolicyManagerRole.Manager,
-  'manager':       PolicyManagerRole.Manager,
-  'approvals':     PolicyManagerRole.Manager,
-  'delegations':   PolicyManagerRole.Manager,
-  'reports':       PolicyManagerRole.Manager,
-  'executive':     PolicyManagerRole.Manager,
-  'admin':         PolicyManagerRole.Admin,
-  'eventviewer':   PolicyManagerRole.Admin,
+  // ── User ──
+  'browse':           PolicyManagerRole.User,
+  'my-policies':      PolicyManagerRole.User,
+  'details':          PolicyManagerRole.User,
+  'search':           PolicyManagerRole.User,
+  'help':             PolicyManagerRole.User,
+  // ── Author ──
+  'newpolicy':        PolicyManagerRole.Author,
+  'create':           PolicyManagerRole.Author,
+  'author':           PolicyManagerRole.Author,
+  'packs':            PolicyManagerRole.Author,
+  'quiz':             PolicyManagerRole.Author,
+  'author-reports':   PolicyManagerRole.Author,
+  'bulk-upload':      PolicyManagerRole.Author,
+  'requests':         PolicyManagerRole.Author,
+  // ── Manager ──
+  'manager-dashboard': PolicyManagerRole.Manager,
+  'approvals':        PolicyManagerRole.Manager,
+  'distribution':     PolicyManagerRole.Manager,
+  'team-compliance':  PolicyManagerRole.Manager,
+  'delegations':      PolicyManagerRole.Manager,
+  'reviews':          PolicyManagerRole.Manager,
+  'reports':          PolicyManagerRole.Manager,
+  'analytics':        PolicyManagerRole.Manager,
+  'request-policy':   PolicyManagerRole.Manager,
+  'executive':        PolicyManagerRole.Manager,
+  'manager':          PolicyManagerRole.Manager,
+  // ── Admin ──
+  'admin':            PolicyManagerRole.Admin,
+  'eventviewer':      PolicyManagerRole.Admin,
 };
 
 /**
- * Default permission table — used when admin hasn't configured custom permissions
+ * Default permission table — explicit per-role visibility for each nav item.
+ * KEYS MUST MATCH the nav item keys in PolicyManagerHeader.tsx exactly.
+ *
+ * Role visibility rules:
+ *   User:    My Policies, Policy Hub, Help, Search
+ *   Author:  + New Policy, Drafts & Pipeline, Policy Packs, Quiz Builder, Reports (Author), Bulk Upload
+ *            Author does NOT see: Manager items (Dashboard, Approvals, Distribution, Analytics, etc.)
+ *   Manager: + Dashboard, Approvals, Distribution, Team Compliance, Delegations, Review Cycles,
+ *            Reports (Manager), Analytics, Request Policy
+ *            Manager does NOT see: Author items (New Policy, Drafts, Packs, Quiz, Author Reports, Bulk Upload)
+ *   Admin:   Everything
  */
 export function getDefaultPermissions(): IRolePermissionEntry[] {
   return [
-    { feature: 'Browse Policies', key: 'browse', user: true, author: true, manager: true, admin: true },
-    { feature: 'My Policies', key: 'myPolicies', user: true, author: true, manager: true, admin: true },
-    { feature: 'Policy Details', key: 'details', user: true, author: true, manager: true, admin: true },
-    { feature: 'Create Policy', key: 'create', user: false, author: true, manager: false, admin: true },
-    { feature: 'Edit Policy', key: 'edit', user: false, author: true, manager: false, admin: true },
-    { feature: 'Delete Policy', key: 'delete', user: false, author: false, manager: false, admin: true },
-    { feature: 'Policy Packs', key: 'packs', user: false, author: true, manager: false, admin: true },
-    { feature: 'Approvals', key: 'approvals', user: false, author: false, manager: true, admin: true },
-    { feature: 'Delegations', key: 'delegations', user: false, author: false, manager: true, admin: true },
-    { feature: 'Distribution', key: 'distribution', user: false, author: false, manager: true, admin: true },
-    { feature: 'Analytics', key: 'analytics', user: false, author: false, manager: true, admin: true },
-    { feature: 'Quiz Builder', key: 'quizBuilder', user: false, author: true, manager: false, admin: true },
-    { feature: 'Admin Centre', key: 'adminPanel', user: false, author: false, manager: false, admin: true },
-    { feature: 'User Management', key: 'userMgmt', user: false, author: false, manager: false, admin: true },
-    { feature: 'System Settings', key: 'settings', user: false, author: false, manager: false, admin: true },
+    // ── Visible to ALL roles ──
+    { feature: 'Policy Hub',        key: 'browse',           user: true,  author: true,  manager: true,  admin: true },
+    { feature: 'My Policies',       key: 'my-policies',      user: true,  author: true,  manager: true,  admin: true },
+    { feature: 'Policy Details',    key: 'details',          user: true,  author: true,  manager: true,  admin: true },
+    { feature: 'Search',            key: 'search',           user: true,  author: true,  manager: true,  admin: true },
+    { feature: 'Help',              key: 'help',             user: true,  author: true,  manager: true,  admin: true },
+    // ── Author + Admin only ──
+    { feature: 'New Policy',        key: 'newpolicy',        user: false, author: true,  manager: false, admin: true },
+    { feature: 'Create Policy',     key: 'create',           user: false, author: true,  manager: false, admin: true },
+    { feature: 'Drafts & Pipeline', key: 'author',           user: false, author: true,  manager: false, admin: true },
+    { feature: 'Policy Packs',      key: 'packs',            user: false, author: true,  manager: false, admin: true },
+    { feature: 'Quiz Builder',      key: 'quiz',             user: false, author: true,  manager: false, admin: true },
+    { feature: 'Reports (Author)',  key: 'author-reports',   user: false, author: true,  manager: false, admin: true },
+    { feature: 'Bulk Upload',       key: 'bulk-upload',      user: false, author: true,  manager: false, admin: true },
+    // ── Manager + Admin only ──
+    { feature: 'Dashboard',         key: 'manager-dashboard',user: false, author: false, manager: true,  admin: true },
+    { feature: 'Approvals',         key: 'approvals',        user: false, author: false, manager: true,  admin: true },
+    { feature: 'Distribution',      key: 'distribution',     user: false, author: false, manager: true,  admin: true },
+    { feature: 'Team Compliance',   key: 'team-compliance',  user: false, author: false, manager: true,  admin: true },
+    { feature: 'Delegations',       key: 'delegations',      user: false, author: false, manager: true,  admin: true },
+    { feature: 'Review Cycles',     key: 'reviews',          user: false, author: false, manager: true,  admin: true },
+    { feature: 'Reports (Manager)', key: 'reports',          user: false, author: false, manager: true,  admin: true },
+    { feature: 'Analytics',         key: 'analytics',        user: false, author: false, manager: true,  admin: true },
+    { feature: 'Request Policy',    key: 'request-policy',   user: false, author: false, manager: true,  admin: true },
+    // ── Admin only ──
+    { feature: 'Admin Centre',      key: 'admin',            user: false, author: false, manager: false, admin: true },
+    { feature: 'Event Viewer',      key: 'eventviewer',      user: false, author: false, manager: false, admin: true },
+    { feature: 'Edit Policy',       key: 'edit',             user: false, author: true,  manager: false, admin: true },
+    { feature: 'Delete Policy',     key: 'delete',           user: false, author: false, manager: false, admin: true },
   ];
 }
 
@@ -220,7 +253,7 @@ export function getHeaderVisibility(role: PolicyManagerRole, _permissions?: IRol
     showSearch: true,
     showNotifications: true,
     showHelp: true,
-    showSettings: hasMinimumRole(role, PolicyManagerRole.Manager)
+    showSettings: hasMinimumRole(role, PolicyManagerRole.Admin)
   };
 }
 

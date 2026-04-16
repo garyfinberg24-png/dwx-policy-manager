@@ -611,7 +611,7 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.selectPolicy(policy.id); } }}
         style={{
           display: 'grid',
-          gridTemplateColumns: '44px minmax(180px, 1fr) 90px 48px 100px 100px 140px 100px 36px',
+          gridTemplateColumns: '44px minmax(180px, 1fr) 90px 48px 100px 100px 140px 100px 72px',
           gap: 12,
           padding: isSelected || isOverdueRow ? '10px 20px 10px 17px' : '10px 20px',
           borderBottom: '1px solid #f1f5f9',
@@ -695,7 +695,8 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
           {dueInfo.text}
         </div>
 
-        {/* Eye icon — Read Policy */}
+        {/* Action icons — info (detail panel) + eye (open reader) */}
+        <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); this.selectPolicy(policy.id); }}
@@ -708,6 +709,26 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
           }}
           onMouseEnter={(e) => { e.currentTarget.style.borderColor = tc.primary; e.currentTarget.style.color = tc.primary; e.currentTarget.style.background = tc.primaryLighter; }}
           onMouseLeave={(e) => { if (!isSelected) { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.background = '#fff'; } }}
+          title="Policy details"
+          aria-label={`Details for ${policy.title}`}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+          </svg>
+        </button>
+        {/* Eye icon — open directly in HTML Reader */}
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); this.handlePolicyClick(policy.id); }}
+          style={{
+            width: 32, height: 32, borderRadius: 6,
+            border: '1px solid #e2e8f0',
+            background: '#fff',
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: '#94a3b8', transition: 'all 0.15s',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = tc.primary; e.currentTarget.style.color = tc.primary; e.currentTarget.style.background = tc.primaryLighter; }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.background = '#fff'; }}
           title="Read policy"
           aria-label={`Read ${policy.title}`}
         >
@@ -715,6 +736,7 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
           </svg>
         </button>
+        </div>
       </div>
     );
   }
@@ -735,7 +757,7 @@ export default class MyPolicies extends React.Component<IMyPoliciesProps, IMyPol
         {/* Column header */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: '44px minmax(180px, 1fr) 90px 48px 100px 100px 140px 100px 36px',
+          gridTemplateColumns: '44px minmax(180px, 1fr) 90px 48px 100px 100px 140px 100px 72px',
           gap: 12,
           padding: '8px 20px',
           background: '#f8fafc',

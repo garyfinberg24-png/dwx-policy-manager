@@ -318,16 +318,27 @@ export class PolicyService {
         }
       }
 
-      const item = await this.sp.web.lists
-        .getByTitle(this.POLICIES_LIST)
-        .items.getById(policyId)
-        .select(
-          '*',
-          'PolicyOwner/Id',
-          'PolicyOwner/Title',
-          'PolicyOwner/EMail'
-        )
-        .expand('PolicyOwner')();
+      let item: any;
+      try {
+        // Try with PolicyOwner expand for rich owner data
+        item = await this.sp.web.lists
+          .getByTitle(this.POLICIES_LIST)
+          .items.getById(policyId)
+          .select(
+            '*',
+            'PolicyOwner/Id',
+            'PolicyOwner/Title',
+            'PolicyOwner/EMail'
+          )
+          .expand('PolicyOwner')();
+      } catch {
+        // PolicyOwner expand can fail if the field type changed or user was deleted.
+        // Fall back to simple select('*') which always works.
+        console.warn(`[PolicyService] getPolicyById(${policyId}): expand('PolicyOwner') failed, falling back to select('*')`);
+        item = await this.sp.web.lists
+          .getByTitle(this.POLICIES_LIST)
+          .items.getById(policyId)();
+      }
 
       const policy = this.mapPolicyItem(item);
 
@@ -473,19 +484,11 @@ export class PolicyService {
         }
       }
 
-      // Select only fields that are guaranteed to exist on PM_Policies.
-      // Fields like Department, ReviewDate, DocumentFormat, IsMandatory
-      // may not be provisioned — requesting them causes SP 400 errors.
+      // Use select('*') to avoid 400 errors when specific columns aren't provisioned.
+      // SharePoint returns all columns that exist — missing columns are simply absent.
       let query = this.sp.web.lists
         .getByTitle(this.POLICIES_LIST)
-        .items.select(
-          'Id', 'Title', 'PolicyName', 'PolicyNumber', 'PolicyStatus',
-          'PolicyCategory', 'ComplianceRisk', 'IsActive',
-          'VersionNumber', 'PolicyDescription', 'DocumentURL',
-          'CreationMethod', 'ReadTimeframe', 'RequiresAcknowledgement', 'RequiresQuiz',
-          'PublishedDate', 'EffectiveDate', 'ExpiryDate', 'NextReviewDate',
-          'Modified', 'Created'
-        );
+        .items;
 
       // Apply filters
       const filterConditions: string[] = [];
@@ -1757,10 +1760,6 @@ export class PolicyService {
       const allAcknowledgements = await this.sp.web.lists
         .getByTitle(this.POLICY_ACKNOWLEDGEMENTS_LIST)
         .items.filter(`AckUserId eq ${ValidationUtils.validateInteger(userId, 'userId', 1)}`)
-        .select('Id', 'Title', 'PolicyId', 'PolicyName', 'PolicyNumber', 'PolicyCategory',
-                'AckStatus', 'AckUserId', 'UserEmail', 'AssignedDate', 'DueDate',
-                'AcknowledgedDate', 'IsCompliant', 'IsMandatory', 'ReadTimeframe',
-                'QuizRequired', 'QuizCompleted', 'PolicyVersionNumber')
         .top(1000)();
 
       const acks = allAcknowledgements as IPolicyAcknowledgement[];

@@ -2779,19 +2779,7 @@ export default class PolicyManagerView extends React.Component<IPolicyManagerVie
         logger.info('PolicyManagerView', `Policy ${realPolicyId} returned/rejected: ${reason}`);
       }
 
-      // Write audit trail entry
-      try {
-        const currentUser = await this.props.sp.web.currentUser();
-        await this.props.sp.web.lists.getByTitle('PM_PolicyAuditLog').items.add({
-          Title: approval?.PolicyTitle || `Policy #${realPolicyId}`,
-          AuditAction: status === 'Approved' ? 'PolicyApproved' : status === 'Returned' ? 'PolicyReturned' : 'PolicyRejected',
-          ActionDescription: status === 'Approved' ? 'Approved via Manager Dashboard' : (rejectionReason || `${status} via Manager Dashboard`),
-          PerformedBy: currentUser.Title,
-          PerformedDate: new Date().toISOString(),
-          ResourceId: realPolicyId,
-          ResourceType: 'Policy'
-        });
-      } catch { /* audit logging non-blocking */ }
+      // Audit trail is handled by PolicyService.approvePolicy/rejectPolicy — no duplicate write
 
       void this.dialogManager?.showAlert?.(
         status === 'Approved' ? `"${approval?.PolicyTitle}" has been approved.` : `"${approval?.PolicyTitle}" has been returned.`,

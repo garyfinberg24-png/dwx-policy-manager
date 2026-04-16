@@ -114,9 +114,17 @@ const DwxAppLayout: React.FC<IJmlAppLayoutProps> = (props) => {
             });
           };
 
-          // Helper: check PM_UserProfiles then fall back to groups
-          const detectViaProfiles = (): void => {
-            if (!userEmail) { detectViaGroups(); return; }
+          // ══════════════════════════════════════════════════════════════
+          // ROLE DETECTION PRIORITY:
+          //   1. PM_UserProfiles.PMRole — Admin Centre assignment is THE source of truth
+          //   2. IsSiteAdmin — fallback ONLY when no PM_UserProfiles record exists
+          //   3. SP group membership — final fallback
+          //
+          // PM_UserProfiles MUST win. If an admin changed a user's role from
+          // Author to User in Admin Centre, that change must take effect even
+          // if the user is a Site Collection Admin.
+          // ══════════════════════════════════════════════════════════════
+          if (!userEmail) { detectViaGroups(); } else {
             spInstance.web.lists.getByTitle('PM_UserProfiles')
               .items.filter("Email eq '" + userEmail.replace(/'/g, "''") + "'")
               .select('PMRole', 'PMRoles')
@@ -132,31 +140,38 @@ const DwxAppLayout: React.FC<IJmlAppLayoutProps> = (props) => {
                   setDetectedRole(highest as PolicyManagerRole);
                   return;
                 }
-                console.log('[PolicyManager] No PM_UserProfiles record, falling back to SP groups');
-                detectViaGroups();
+                // No PM_UserProfiles record — fall back to IsSiteAdmin check
+                console.log('[PolicyManager] No PM_UserProfiles record, checking IsSiteAdmin...');
+                spInstance.web.currentUser.select('IsSiteAdmin')()
+                  .then((user: any) => {
+                    if (user.IsSiteAdmin) {
+                      console.log('[PolicyManager] User is Site Collection Admin (no profile) → Admin role');
+                      setDetectedRole(PolicyManagerRole.Admin);
+                      return;
+                    }
+                    // Not a site admin either — try SP groups
+                    detectViaGroups();
+                  })
+                  .catch(() => {
+                    detectViaGroups();
+                  });
               })
               .catch(() => {
-                console.log('[PolicyManager] PM_UserProfiles unavailable, falling back to SP groups');
-                detectViaGroups();
+                console.log('[PolicyManager] PM_UserProfiles unavailable, checking IsSiteAdmin...');
+                spInstance.web.currentUser.select('IsSiteAdmin')()
+                  .then((user: any) => {
+                    if (user.IsSiteAdmin) {
+                      console.log('[PolicyManager] User is Site Collection Admin (profile error) → Admin role');
+                      setDetectedRole(PolicyManagerRole.Admin);
+                      return;
+                    }
+                    detectViaGroups();
+                  })
+                  .catch(() => {
+                    detectViaGroups();
+                  });
               });
-          };
-
-          // Step 1: Check IsSiteAdmin — Site Collection Admins are always Admin
-          spInstance.web.currentUser.select('IsSiteAdmin')()
-            .then((user: any) => {
-              if (user.IsSiteAdmin) {
-                console.log('[PolicyManager] User is Site Collection Admin → Admin role');
-                setDetectedRole(PolicyManagerRole.Admin);
-                return;
-              }
-              // Step 2: Check PM_UserProfiles → Step 3: SP groups
-              detectViaProfiles();
-            })
-            .catch(() => {
-              // IsSiteAdmin check failed — continue with profile/group detection
-              console.warn('[PolicyManager] IsSiteAdmin check failed, continuing with profile detection');
-              detectViaProfiles();
-            });
+          }
         }
       } catch {
         console.warn('[PolicyManager] Role detection failed entirely, defaulting to User');

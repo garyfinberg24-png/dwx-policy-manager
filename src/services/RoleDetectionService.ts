@@ -155,8 +155,9 @@ export class RoleDetectionService {
       // ══════════════════════════════════════════════════════════════
 
       let detectedRole = 'User'; // default
+      let hasProfileRecord = false; // tracks whether PM_UserProfiles had a record
 
-      // Step 1: Check PM_UserProfiles (Admin Centre assignment)
+      // Step 1: Check PM_UserProfiles (Admin Centre assignment) — THIS IS THE SOURCE OF TRUTH
       try {
         if (email) {
           const profiles = await this.sp.web.lists.getByTitle('PM_UserProfiles')
@@ -164,6 +165,7 @@ export class RoleDetectionService {
             .select('PMRole', 'PMRoles')
             .top(1)();
           if (profiles.length > 0) {
+            hasProfileRecord = true;
             const pmRole = (profiles[0].PMRole || '').trim();
             const pmRoles = (profiles[0].PMRoles || '').trim();
             const allRoleStrings = [pmRole, ...pmRoles.split(';')].map((r: string) => r.trim()).filter(Boolean);
@@ -181,9 +183,9 @@ export class RoleDetectionService {
         // PM_UserProfiles may not exist yet
       }
 
-      // Step 2: Site Collection Admin gets Admin IF no PM_UserProfiles role is set
-      // (If admin explicitly assigned a lower role in PM_UserProfiles, respect that)
-      if (detectedRole === 'User' && currentUser.IsSiteAdmin) {
+      // Step 2: Site Collection Admin gets Admin ONLY when there is NO PM_UserProfiles record.
+      // If admin explicitly set a role (even 'User') in PM_UserProfiles, that decision is final.
+      if (!hasProfileRecord && currentUser.IsSiteAdmin) {
         detectedRole = 'Admin';
         localStorage.setItem('pm_detected_role', 'Admin');
       }

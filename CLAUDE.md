@@ -819,7 +819,59 @@ The QuizBuilder's "AI Generate" panel calls the Azure Function with:
 
 ---
 
-## Session State (Last Updated: 12 Apr 2026 — Session 24 Complete)
+## Session State (Last Updated: 16 Apr 2026 — Session 25 Complete)
+
+### Recently Completed (Session 25 — 16 Apr 2026)
+
+#### 10 Critical Fixes — Role Detection, Email Notifications, Reader UI, Nav Permissions
+
+**Build: 1.2.4** | **Commits:** `d1c8cba`, `d15bad0` — pushed to ADO + GitHub
+
+**Role Detection Overhaul (2 files):**
+- JmlAppLayout.tsx: PM_UserProfiles checked FIRST, IsSiteAdmin only as fallback when no profile record exists (was reversed — IsSiteAdmin short-circuited before checking PM_UserProfiles)
+- RoleDetectionService.ts: `hasProfileRecord` flag prevents IsSiteAdmin from overriding an explicit Admin Centre role assignment (even 'User')
+
+**Submit-for-Review Email Fix (1 file):**
+- PolicyAuthorView.tsx: Replaced 80 lines of inline notification code (no dedup, no doc conversion, hardcoded &mode=review) with single delegation to PolicyService.submitForReview(). Fixes triplicate emails, wrong URL in review email, and missing document conversion.
+
+**PolicyDetails — Mock Data Removed + Reader UI (2 files):**
+- Deleted loadMockPolicyDetails() — 57 lines of hardcoded "Information Security Policy" data that silently masked real SP query errors. Users now see actual error messages.
+- Removed floating "Reading Progress" panel (redundant with bottom bar)
+- Removed expanded subtitle row (Department, Date, Version — already in pill badges)
+- Removed "Open Original" button (users read converted HTML only)
+- Content area now fills to footer bar: documentViewer height 520px→flex:1, margin-bottom 16px→0
+- Same flex fill applied to PDF/iframe viewer
+- activeNavKey correctly highlights My Policies when coming from My Policies (was hardcoded to Policy Hub)
+
+**SP Query Resilience (2 files):**
+- PolicyService.ts getPolicies(): select('*') replaces explicit column list
+- PolicyService.ts getPolicyById(): fallback when expand('PolicyOwner') fails
+- PolicyService.ts getUserDashboard(): removed 'PolicyNumber' from select on PM_PolicyAcknowledgements (column doesn't exist on that list — ROOT CAUSE of the 400 error hidden by mock data)
+- PolicyHubService.ts searchPolicyHub(): same select('*') fix
+
+**Nav Permissions — Complete Rewrite (1 file):**
+- PolicyRoleService.ts: Fixed key mismatches (myPolicies vs my-policies, quizBuilder vs quiz)
+- Added 5 missing Manager keys (manager-dashboard, team-compliance, reviews, request-policy, request-policy)
+- Explicit per-role permissions: Author sees ONLY Author items, Manager sees ONLY Manager items
+- Quiz Builder: Admin-only → Author+Admin
+- Settings cog: Manager+ → Admin-only
+
+**Double Audit Fix (1 file):**
+- PolicyManagerView.tsx: Removed inline audit write after PolicyService already logs
+
+**My Policies UX (1 file):**
+- MyPolicies.tsx: Added info icon (detail panel) beside eye icon (direct to reader). Grid column widened 36px→72px.
+
+**PolicyIQ Business Proposal for Clicks:**
+- 14-section HTML proposal with pricing (R175K), AI capabilities, signing page
+- Word version via python-docx with native formatting
+
+**Key Patterns (Session 25):**
+- **PM_UserProfiles is the source of truth for roles**: IsSiteAdmin is fallback only when no profile record exists. JmlAppLayout and RoleDetectionService now have identical priority.
+- **select('*') for SP queries**: Explicit column lists break when columns aren't provisioned on a list. Use select('*') and let SharePoint return what exists.
+- **Mock data fallbacks mask real errors**: Never silently fall back to hardcoded data in production. Show the actual error so it can be diagnosed.
+- **Multiple code paths = recurring bugs**: Submit-for-review had 3 paths, only some got fixed. Consolidated to single PolicyService delegation (same pattern as publish).
+- **Permission table keys must match nav item keys exactly**: Mismatched keys fall through to NAV_MINIMUM_ROLE fallback, causing unexpected visibility.
 
 ### Recently Completed (Session 24 — 11-12 Apr 2026)
 
@@ -1825,7 +1877,7 @@ Three parallel audit streams identified ~45 optimization opportunities:
 | Diagnostics | 9/10 | Event Viewer with 13 features, 7 tabs, vertical nav, Troubleshooter wizard, pipeline verification script |
 | Testing | 7/10 | Jest 6 unit suites + Playwright 15 E2E specs (38+ tests) covering full lifecycle, all doc types, review decisions, conversion, notifications. 90 test documents. Remaining: component tests, CI integration |
 | Accessibility | 3/10 | Basic Fluent UI a11y. Remaining: ARIA roles, keyboard nav, screen reader |
-| Overall | ~95/100 | Up from 93. E2E Playwright suite (38+ tests), email pipeline critical fix, request-fulfilled notification, 90 test documents. Testing score 3.5→7. |
+| Overall | ~96/100 | Up from 95. Role detection fixed (PM_UserProfiles is source of truth), submit-for-review consolidated to single path, mock data removed, nav permissions rewritten with correct key mappings, reader UI streamlined. |
 
 ### Known Issues
 
@@ -1852,6 +1904,9 @@ Three parallel audit streams identified ~45 optimization opportunities:
 - **Playwright screenshot budget**: Claude conversation context limit is 20MB. Use 1280x720 viewport, max ~25 screenshots per session to stay under limit.
 - **Request Policy wizard** uses native `<select>` elements (not Fluent Dropdown) — use `selectOption()` not `.ms-Dropdown` click
 - **Upload wizard** file input is hidden (`display: none`, id=`policyFileInput`) inside a StyledPanel — opened from Step 0 "Browse & Upload" card, not Step 6
+- **PolicyDetails review/approval inline code** — PolicyDetails.tsx still has ~220 lines of inline review/approval decision handling (direct SP writes to PM_PolicyReviewers, PM_PolicyAuditLog, PM_ApprovalHistory, PM_WorkflowInstances). This works but bypasses PolicyService. Should be consolidated in a future session.
+- **Multiple code paths pattern** — submit-for-review was consolidated in Session 25 but review/approval decisions still have inline paths in PolicyDetails + service paths in PolicyManagerView. Same consolidation needed.
+- **select('*') trade-off** — Changed getPolicies, searchPolicyHub, getUserDashboard from explicit selects to select('*'). This avoids 400 errors but returns more data than needed. Performance impact is minimal for current dataset sizes but should be revisited if lists grow past 5000 items.
 
 ### Next Steps
 

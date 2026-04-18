@@ -819,13 +819,13 @@ The QuizBuilder's "AI Generate" panel calls the Azure Function with:
 
 ---
 
-## Session State (Last Updated: 16 Apr 2026 — Session 25 Complete)
+## Session State (Last Updated: 18 Apr 2026 — Session 25 Complete)
 
-### Recently Completed (Session 25 — 16 Apr 2026)
+### Recently Completed (Session 25 — 16-18 Apr 2026)
 
-#### 10 Critical Fixes — Role Detection, Email Notifications, Reader UI, Nav Permissions
+#### 13 Fixes + QA Guide + Business Proposal — Role Detection, Emails, Reader, Nav, AI, PDF
 
-**Build: 1.2.4** | **Commits:** `d1c8cba`, `d15bad0` — pushed to ADO + GitHub
+**Build: 1.2.4** | **Commits:** `d1c8cba`..`54802ea` (5 commits) — pushed to ADO + GitHub
 
 **Role Detection Overhaul (2 files):**
 - JmlAppLayout.tsx: PM_UserProfiles checked FIRST, IsSiteAdmin only as fallback when no profile record exists (was reversed — IsSiteAdmin short-circuited before checking PM_UserProfiles)
@@ -862,9 +862,35 @@ The QuizBuilder's "AI Generate" panel calls the Azure Function with:
 **My Policies UX (1 file):**
 - MyPolicies.tsx: Added info icon (detail panel) beside eye icon (direct to reader). Grid column widened 36px→72px.
 
+**AI Bulk Classification Fix (1 file):**
+- BulkUpload.tsx: Content threshold 100→20 chars (was sending empty content to AI when extraction returned <100 chars)
+- Added console.log diagnostics at every step (extraction size, AI response preview, parse errors)
+- Strip markdown code fences from AI response before JSON parse
+- Explicit "no markdown, no code fences" instruction in prompt
+
+**PDF/Iframe Viewer Height Fix (1 file):**
+- PolicyDetails.tsx: PDF `<object>` and Office iframe use `minHeight: calc(100vh - 200px)` in focused mode
+- Parent `.documentViewer` container gets `height: calc(100vh - 180px)` — PDF fills viewport
+- Was `height: 100%` which collapsed to near-zero inside a flex container
+
+**QA Testing Guide (new):**
+- docs/testing-guide-qa-lead.html — 79 interactive test cases across 13 sections
+- Functional (F1-F6), Process (P1-P3), Role-Based (R1-R4)
+- Pass/Fail/Block/Skip buttons, step checkboxes, notes, CSV export
+- Role visibility matrix and policy lifecycle reference
+
 **PolicyIQ Business Proposal for Clicks:**
 - 14-section HTML proposal with pricing (R175K), AI capabilities, signing page
 - Word version via python-docx with native formatting
+
+**Nav Permission Definitive Matrix (Session 25):**
+
+| Nav Item | User | Author | Manager | Admin |
+|----------|------|--------|---------|-------|
+| My Policies, Policy Hub, Search, Help | Yes | Yes | Yes | Yes |
+| New Policy, Drafts, Packs, Quiz, Reports(A), Bulk Upload | - | Yes | - | Yes |
+| Dashboard, Approvals, Distribution, Compliance, Delegations, Reviews, Reports(M), Analytics, Request Policy | - | - | Yes | Yes |
+| Settings cog | - | - | - | Yes |
 
 **Key Patterns (Session 25):**
 - **PM_UserProfiles is the source of truth for roles**: IsSiteAdmin is fallback only when no profile record exists. JmlAppLayout and RoleDetectionService now have identical priority.
@@ -872,6 +898,8 @@ The QuizBuilder's "AI Generate" panel calls the Azure Function with:
 - **Mock data fallbacks mask real errors**: Never silently fall back to hardcoded data in production. Show the actual error so it can be diagnosed.
 - **Multiple code paths = recurring bugs**: Submit-for-review had 3 paths, only some got fixed. Consolidated to single PolicyService delegation (same pattern as publish).
 - **Permission table keys must match nav item keys exactly**: Mismatched keys fall through to NAV_MINIMUM_ROLE fallback, causing unexpected visibility.
+- **PDF/iframe height in flex containers**: `height: 100%` doesn't work inside flex parents. Use explicit `calc(100vh - Xpx)` or `minHeight` for embeds.
+- **AI prompt hygiene**: Tell the model "no markdown, no code fences" explicitly. Strip fences before JSON parse. Always log the raw AI response for debugging.
 
 ### Recently Completed (Session 24 — 11-12 Apr 2026)
 

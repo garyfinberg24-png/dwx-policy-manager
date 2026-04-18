@@ -520,40 +520,38 @@ export default class PolicyBulkUpload extends React.Component<IPolicyBulkUploadP
         let content = ''; if (item.file) { try { content = await this.extractTextFromFile(item.file); } catch { /* */ } }
         let suggestions: any = {};
         if (functionUrl) {
-          const contentSnippet = content.length > 100 ? content.substring(0, 8000) : '';
+          // Send whatever content we extracted — even short snippets help the AI
+          const contentSnippet = content.substring(0, 8000).trim();
+          const hasContent = contentSnippet.length > 20;
+          console.log(`[BulkUpload] AI classify "${item.fileName}": extracted ${content.length} chars, sending ${contentSnippet.length} chars`);
           const classificationPrompt = `You are an expert policy analyst for a corporate Policy Management system. Analyze this document and extract structured metadata.
 
 DOCUMENT FILENAME: "${item.fileName}"
-${contentSnippet ? `\nDOCUMENT CONTENT (first ${contentSnippet.length} characters):\n"""\n${contentSnippet}\n"""` : '\n(No document content extracted — classify from filename only)'}
+${hasContent ? `\nDOCUMENT CONTENT (${contentSnippet.length} characters extracted):\n"""\n${contentSnippet}\n"""` : `\n(No document content could be extracted — classify based on filename only. Be conservative with risk and category.)`}
 
-TASK: Extract the following metadata by analyzing the document content. Use the content to make informed decisions — do not guess blindly from the filename alone.
+TASK: Extract the following metadata. ${hasContent ? 'Use the document content to make informed, specific decisions.' : 'Use the filename to infer the topic. Be conservative — default to Medium risk if unsure.'}
 
-Think step by step:
-1. Read the document content carefully
-2. Identify the subject matter and regulatory context
-3. Determine the appropriate category and risk level based on content
-4. Extract key points and a concise summary
+IMPORTANT: Your response must be ONLY a JSON object. No markdown, no explanation, no code fences.
 
-REQUIRED OUTPUT (respond with ONLY this JSON object, no other text):
 {
-  "title": "Clean, professional policy title (e.g., 'Information Security Policy' not 'InfoSec_Policy_v2_FINAL')",
+  "title": "Clean professional policy title derived from ${hasContent ? 'the content' : 'the filename'}",
   "category": "EXACTLY ONE OF: IT Security | HR | Compliance | Data Protection | Health & Safety | Finance | Legal | Operations | Governance | Other",
   "risk": "EXACTLY ONE OF: Critical | High | Medium | Low | Informational",
-  "departments": "Comma-separated list of target departments (e.g., 'All Employees' or 'IT, Engineering' or 'Finance, Legal')",
-  "summary": "2-3 sentence summary of what this policy covers and why it matters",
+  "departments": "Target departments as comma-separated string (e.g. 'All Employees' or 'IT, Engineering')",
+  "summary": "2-3 sentence summary of what this policy covers${hasContent ? '' : ' (inferred from filename)'}",
   "readTimeframe": "EXACTLY ONE OF: Immediate | Day 1 | Day 3 | Week 1 | Week 2 | Month 1",
   "keyPoints": ["Key point 1", "Key point 2", "Key point 3"],
-  "regulatoryReferences": "Any regulatory frameworks mentioned (e.g., 'POPIA, GDPR' or 'ISO 27001' or 'None detected')",
+  "regulatoryReferences": "Regulatory frameworks mentioned (e.g. 'POPIA, ISO 27001') or 'None detected'",
   "reviewFrequency": "EXACTLY ONE OF: Annual | Biannual | Quarterly | As Needed",
-  "requiresAcknowledgement": true or false (true if the policy requires staff to formally acknowledge they have read it)
+  "requiresAcknowledgement": true
 }
 
 CLASSIFICATION GUIDANCE:
-- Critical risk: Legal/regulatory obligations, data breaches, health/safety hazards
-- High risk: Security policies, financial controls, compliance requirements
-- Medium risk: Operational procedures, HR policies, general guidelines
-- Low risk: Best practices, recommendations, informational guides
-- Immediate/Day 1: Critical safety or compliance. Week 1: Standard policies. Month 1: Reference material.`;
+- Critical: Legal/regulatory obligations, data breaches, health/safety hazards
+- High: Security policies, financial controls, compliance requirements
+- Medium: Operational procedures, HR policies, general guidelines
+- Low: Best practices, recommendations, informational guides
+- Immediate/Day 1: Critical safety or compliance. Week 1: Standard. Month 1: Reference.`;
 
           try {
             const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 45000);
@@ -564,9 +562,23 @@ CLASSIFICATION GUIDANCE:
             if (resp.ok) {
               const d = await resp.json();
               const raw = d?.message || d?.response || d?.content || '';
-              try { const m = raw.match(/\{[\s\S]*\}/); if (m) suggestions = JSON.parse(m[0]); } catch { /* JSON parse failed */ }
+              console.log(`[BulkUpload] AI response for "${item.fileName}":`, raw.substring(0, 200));
+              try {
+                // Strip markdown code fences if present, then extract JSON
+                const cleaned = raw.replace(/```(?:json)?\s*/g, '').replace(/```\s*/g, '');
+                const m = cleaned.match(/\{[\s\S]*\}/);
+                if (m) suggestions = JSON.parse(m[0]);
+              } catch (parseErr) {
+                console.warn(`[BulkUpload] JSON parse failed for "${item.fileName}":`, parseErr, 'Raw:', raw.substring(0, 300));
+              }
+            } else {
+              console.warn(`[BulkUpload] AI call failed for "${item.fileName}": HTTP ${resp.status}`);
             }
-          } catch { /* AI call failed — will fall through to heuristic */ }
+          } catch (fetchErr) {
+            console.warn(`[BulkUpload] AI call error for "${item.fileName}":`, fetchErr);
+          }
+        } else {
+          console.warn('[BulkUpload] No AI function URL configured — using heuristic only');
         }
         if (!suggestions.category) suggestions = this.heuristicClassify(item.fileName, item.title);
 

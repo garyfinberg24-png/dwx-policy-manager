@@ -1694,7 +1694,7 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
               className={styles.documentViewer}
               ref={this.documentViewerRef}
               onScroll={this.handleDocumentScroll}
-              style={isFocusedMode ? { flex: 1, minHeight: 0 } : undefined}
+              style={isFocusedMode ? { flex: 1, minHeight: 0, height: 'calc(100vh - 180px)' } : undefined}
             >
               <div className={styles.scrollProgressBar}>
                 <div className={styles.scrollProgressFill} style={{ height: `${scrollProgress}%` }} />
@@ -1704,19 +1704,18 @@ export default class PolicyDetails extends React.Component<IPolicyDetailsProps, 
                   <img src={viewerUrl} alt={policy.Title} style={{ maxWidth: '100%', maxHeight: 600, borderRadius: 4 }} />
                 </div>
               ) : ext === 'pdf' ? (
-                /* PDF — native browser embed, zero chrome */
+                /* PDF — native browser embed, fills container */
                 <object
                   data={`${documentUrl}#toolbar=0&navpanes=0&scrollbar=1`}
                   type="application/pdf"
-                  style={{ width: '100%', height: this.state.isFullscreen ? 'calc(100vh - 80px)' : '100%', border: 'none' }}
+                  style={{ width: '100%', height: '100%', border: 'none', minHeight: isFocusedMode ? 'calc(100vh - 200px)' : 500 }}
                   title={`${policy.Title} PDF Viewer`}
                 >
-                  {/* Fallback if browser can't render PDF inline */}
                   <iframe src={documentUrl} style={{ width: '100%', height: '100%', border: 'none' }} title={`${policy.Title} PDF Viewer`} />
                 </object>
               ) : (
-                /* Office docs — Office Online iframe with hidden headers */
-                <iframe src={viewerUrl} style={{ width: '100%', height: this.state.isFullscreen ? 'calc(100vh - 80px)' : '100%', border: 'none' }} title={`${policy.Title} Document Viewer`} />
+                /* Office docs — Office Online iframe */
+                <iframe src={viewerUrl} style={{ width: '100%', height: '100%', border: 'none', minHeight: isFocusedMode ? 'calc(100vh - 200px)' : 500 }} title={`${policy.Title} Document Viewer`} />
               )}
             </div>
           </div>

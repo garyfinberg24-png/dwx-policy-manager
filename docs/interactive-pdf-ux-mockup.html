@@ -1,0 +1,1583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LearnIQ — Interactive PDF Lesson (Agentic) — Mockup</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Segoe UI', -apple-system, Roboto, sans-serif;
+    background: #F8FAFC;
+    color: #0F172A;
+    overflow: hidden;
+  }
+  a { text-decoration: none; color: inherit; }
+  button { font-family: inherit; }
+  ::selection { background: rgba(55, 48, 163, 0.25); }
+
+  /* ---------- APP HEADER ---------- */
+  .app-header {
+    background: linear-gradient(135deg, #2D3748 0%, #1A202C 100%);
+    height: 64px;
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    position: relative;
+    z-index: 100;
+    flex: 0 0 auto;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand-icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: rgba(255,255,255,0.12);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .brand-title { font-size: 18px; font-weight: 700; color: #fff; }
+  .brand-sub { font-size: 10px; color: rgba(255,255,255,0.6); letter-spacing: 0.08em; }
+
+  .centre-search {
+    flex: 1; display: flex; justify-content: center; padding: 0 32px;
+  }
+  .search-pill {
+    display: flex; align-items: center;
+    background: rgba(255,255,255,0.12); border-radius: 20px;
+    width: 100%; max-width: 380px; padding: 0 16px; height: 36px;
+  }
+  .search-pill input {
+    flex: 1; border: none; outline: none; background: transparent;
+    color: #fff; font-size: 14px; margin-left: 8px;
+  }
+  .search-kbd {
+    font-size: 11px; color: rgba(255,255,255,0.4);
+    border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; padding: 1px 6px;
+  }
+  .header-actions { display: flex; align-items: center; gap: 4px; }
+  .header-btn {
+    width: 38px; height: 38px; border-radius: 8px;
+    border: none; background: transparent; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+  .header-btn:hover { background: rgba(255,255,255,0.08); }
+  .badge {
+    position: absolute; top: 4px; right: 4px; min-width: 16px; height: 16px;
+    border-radius: 4px; background: #EF4444; color: #fff;
+    font-size: 10px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; padding: 0 4px;
+  }
+  .avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: linear-gradient(135deg, #3730A3, #7C3AED);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; color: #fff; margin-left: 8px;
+  }
+
+  /* ---------- MAIN NAV ---------- */
+  .app-nav {
+    background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    height: 48px; display: flex; align-items: center;
+    padding: 0 24px; flex: 0 0 auto; z-index: 99;
+  }
+  .nav-tab {
+    height: 48px; padding: 0 16px;
+    display: flex; align-items: center; gap: 6px;
+    font-size: 14px; color: #64748B; border-bottom: 2px solid transparent;
+    cursor: pointer;
+  }
+  .nav-tab.active { color: #3730A3; font-weight: 600; border-bottom-color: #3730A3; }
+  .nav-tab:hover:not(.active) { color: #3730A3; }
+
+  /* ---------- LESSON BREADCRUMB BAR ---------- */
+  .lesson-bar {
+    background: #FFFFFF;
+    border-bottom: 1px solid #E2E8F0;
+    padding: 10px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex: 0 0 auto;
+  }
+  .breadcrumb {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; color: #64748B;
+  }
+  .breadcrumb b { color: #0F172A; font-weight: 600; }
+  .breadcrumb .sep { color: #CBD5E1; }
+  .lesson-actions { display: flex; align-items: center; gap: 8px; }
+  .lesson-progress-pill {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 12px; border-radius: 20px;
+    background: #F1F5F9; font-size: 12px; color: #475569;
+  }
+  .progress-bar {
+    width: 80px; height: 6px; border-radius: 3px; background: #E2E8F0; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; width: 42%;
+    background: linear-gradient(90deg, #3730A3, #6366F1);
+    transition: width 600ms ease;
+  }
+  .pill-btn {
+    padding: 6px 14px; border-radius: 20px; border: 1px solid #E2E8F0;
+    background: #fff; font-size: 12px; color: #475569; cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .pill-btn:hover { border-color: #3730A3; color: #3730A3; }
+  .pill-btn.primary { background: #3730A3; color: #fff; border-color: #3730A3; }
+  .pill-btn.primary:hover { background: #312E81; }
+  .pill-btn.locked {
+    background: #F1F5F9; color: #94A3B8; border-color: #E2E8F0; cursor: not-allowed;
+  }
+
+  /* ---------- MAIN LAYOUT ---------- */
+  .lesson-main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 44px 1fr 420px;
+    min-height: 0;
+  }
+
+  /* ---------- LESSON SIDEBAR (lesson nav, minimal) ---------- */
+  .lesson-nav {
+    background: #0F172A;
+    color: #CBD5E1;
+    padding: 12px 6px;
+    display: flex; flex-direction: column; gap: 6px;
+    align-items: center;
+  }
+  .lesson-nav-item {
+    width: 32px; height: 32px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; position: relative;
+  }
+  .lesson-nav-item.done { color: #10B981; }
+  .lesson-nav-item.active {
+    background: rgba(99, 102, 241, 0.18);
+    color: #818CF8; box-shadow: inset 2px 0 0 #6366F1;
+  }
+  .lesson-nav-item:hover { background: rgba(255,255,255,0.06); }
+  .lesson-nav-tooltip {
+    position: absolute; left: 44px; top: 50%; transform: translateY(-50%);
+    background: #1E293B; color: #F1F5F9; font-size: 11px;
+    padding: 6px 10px; border-radius: 4px; white-space: nowrap;
+    opacity: 0; pointer-events: none; transition: opacity 120ms;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+  .lesson-nav-item:hover .lesson-nav-tooltip { opacity: 1; }
+
+  /* ---------- PDF VIEWER (centre) ---------- */
+  .pdf-shell {
+    background: #475569;
+    padding: 20px 20px 200px;
+    overflow-y: auto;
+    position: relative;
+    scroll-behavior: smooth;
+  }
+  .pdf-toolbar {
+    position: sticky; top: 0; z-index: 10;
+    background: #334155;
+    border-radius: 8px;
+    display: flex; align-items: center; gap: 12px;
+    padding: 8px 16px; margin-bottom: 14px;
+    color: #F1F5F9; font-size: 12px;
+  }
+  .pdf-toolbar-btn {
+    background: transparent; border: 1px solid rgba(255,255,255,0.15);
+    color: #F1F5F9; padding: 4px 8px; border-radius: 4px; cursor: pointer;
+    font-size: 12px; display: flex; align-items: center; gap: 4px;
+  }
+  .pdf-toolbar-btn:hover { background: rgba(255,255,255,0.1); }
+  .pdf-pagenum { font-variant-numeric: tabular-nums; }
+  .pdf-divider { width: 1px; height: 16px; background: rgba(255,255,255,0.2); }
+  .toolbar-spacer { flex: 1; }
+
+  .pdf-page {
+    background: #fff;
+    width: 760px; max-width: 100%;
+    margin: 0 auto 14px;
+    padding: 64px 72px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.28);
+    border-radius: 2px;
+    position: relative;
+    scroll-margin-top: 80px;
+  }
+  .pdf-page.highlight-flash {
+    box-shadow: 0 0 0 3px #FCD34D, 0 6px 18px rgba(0,0,0,0.28);
+    transition: box-shadow 400ms;
+  }
+  .pdf-page-header {
+    position: absolute;
+    top: 18px; left: 72px; right: 72px;
+    display: flex; justify-content: space-between;
+    font-size: 10px; color: #94A3B8;
+    border-bottom: 1px solid #F1F5F9;
+    padding-bottom: 4px;
+    letter-spacing: 0.05em; text-transform: uppercase;
+  }
+  .pdf-page-footer {
+    position: absolute;
+    bottom: 18px; left: 72px; right: 72px;
+    text-align: center;
+    font-size: 10px; color: #94A3B8;
+  }
+  .pdf-section-heading {
+    font-size: 16px; font-weight: 700; color: #1E293B;
+    margin: 18px 0 10px; letter-spacing: -0.01em;
+  }
+  .pdf-subheading {
+    font-size: 13px; font-weight: 600; color: #334155;
+    margin: 14px 0 8px;
+  }
+  .pdf-body {
+    font-size: 13px; line-height: 1.75; color: #334155;
+    font-family: 'Georgia', 'Segoe UI', serif;
+    text-align: justify;
+  }
+  .pdf-body p { margin-bottom: 10px; }
+  .pdf-list { padding-left: 22px; font-size: 13px; line-height: 1.75; }
+  .pdf-list li { margin-bottom: 4px; }
+  .pdf-clause-label {
+    font-weight: 700; color: #1E293B;
+  }
+
+  /* Citation highlight overlay (polygon-based in real impl; here a span class) */
+  .pdf-citation-anchor {
+    background: rgba(252, 211, 77, 0);
+    transition: background 320ms, box-shadow 320ms;
+    padding: 1px 2px; border-radius: 2px;
+  }
+  .pdf-citation-anchor.flash {
+    background: rgba(252, 211, 77, 0.65);
+    box-shadow: 0 0 0 2px rgba(252, 211, 77, 0.8);
+  }
+
+  /* Reading heatmap gutter (right edge of each page) */
+  .pdf-heatmap {
+    position: absolute;
+    right: 8px; top: 60px; bottom: 40px; width: 6px;
+    border-radius: 3px; background: #F1F5F9;
+    overflow: hidden;
+  }
+  .pdf-heatmap-fill {
+    position: absolute; left: 0; right: 0;
+    background: #10B981; opacity: 0.75;
+  }
+
+  /* Floating "Ask Copilot" action on selection */
+  .selection-action {
+    position: absolute; display: none;
+    background: #1E293B; color: #F1F5F9;
+    padding: 6px 10px; border-radius: 6px;
+    font-size: 12px; font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    cursor: pointer; z-index: 1000;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .selection-action .spark { color: #A78BFA; }
+
+  /* ---------- RIGHT COPILOT PANEL ---------- */
+  .copilot-panel {
+    background: #FFFFFF;
+    border-left: 1px solid #E2E8F0;
+    display: flex; flex-direction: column;
+    min-height: 0;
+  }
+  .copilot-header {
+    background: linear-gradient(135deg, #2D3748 0%, #1A202C 100%);
+    color: #fff; padding: 0 20px; height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex: 0 0 auto;
+  }
+  .copilot-title {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .copilot-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: linear-gradient(135deg, #6366F1, #A855F7);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 12px rgba(168, 85, 247, 0.5);
+  }
+  .copilot-name { font-size: 15px; font-weight: 700; }
+  .copilot-mode { font-size: 10px; letter-spacing: 0.08em; color: rgba(255,255,255,0.6); text-transform: uppercase; }
+  .copilot-close {
+    background: transparent; border: none; color: #fff; cursor: pointer;
+    width: 32px; height: 32px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .copilot-close:hover { background: rgba(255,255,255,0.1); }
+
+  .copilot-tabs {
+    display: flex; border-bottom: 1px solid #E2E8F0;
+    flex: 0 0 auto;
+  }
+  .copilot-tab {
+    flex: 1; padding: 12px 8px;
+    font-size: 12px; font-weight: 600; color: #64748B;
+    border: none; background: transparent; cursor: pointer;
+    border-bottom: 2px solid transparent;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .copilot-tab.active { color: #3730A3; border-bottom-color: #3730A3; }
+  .copilot-tab:hover:not(.active) { color: #3730A3; background: #F8FAFC; }
+  .copilot-tab-badge {
+    background: #3730A3; color: #fff; font-size: 10px;
+    padding: 1px 6px; border-radius: 10px; font-weight: 600;
+  }
+
+  .copilot-body { flex: 1; overflow-y: auto; padding: 16px; }
+  .copilot-body::-webkit-scrollbar { width: 8px; }
+  .copilot-body::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* Chat */
+  .chat-empty {
+    text-align: center; color: #64748B;
+    padding: 24px 12px;
+  }
+  .chat-empty-icon {
+    width: 48px; height: 48px; margin: 0 auto 12px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #EEF2FF, #E0E7FF);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .chat-empty h3 {
+    font-size: 14px; color: #1E293B; margin-bottom: 6px;
+  }
+  .chat-empty p {
+    font-size: 12px; line-height: 1.5;
+  }
+  .quick-actions {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    margin-top: 16px;
+  }
+  .quick-action {
+    padding: 10px 12px; border-radius: 8px;
+    background: #F8FAFC; border: 1px solid #E2E8F0;
+    font-size: 12px; color: #475569; cursor: pointer;
+    text-align: left; line-height: 1.4;
+    transition: all 120ms;
+  }
+  .quick-action:hover {
+    border-color: #3730A3; background: #EEF2FF; color: #3730A3;
+  }
+  .quick-action .qa-icon { display: block; margin-bottom: 4px; }
+
+  .chat-msg { margin-bottom: 14px; }
+  .chat-msg.user {
+    display: flex; justify-content: flex-end;
+  }
+  .chat-msg.user .bubble {
+    background: #3730A3; color: #fff;
+    border-radius: 12px 12px 2px 12px;
+    padding: 10px 14px; max-width: 85%;
+    font-size: 13px; line-height: 1.5;
+  }
+  .chat-msg.assistant .msg-header {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; color: #64748B; margin-bottom: 4px;
+  }
+  .chat-msg.assistant .msg-header .dot {
+    width: 14px; height: 14px; border-radius: 50%;
+    background: linear-gradient(135deg, #6366F1, #A855F7);
+  }
+  .chat-msg.assistant .bubble {
+    background: #F8FAFC; color: #1E293B;
+    border-radius: 2px 12px 12px 12px;
+    padding: 12px 14px; font-size: 13px; line-height: 1.55;
+    border: 1px solid #E2E8F0;
+  }
+  .chat-msg.assistant .bubble p { margin-bottom: 8px; }
+  .chat-msg.assistant .bubble p:last-child { margin-bottom: 0; }
+  .citation-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: #FEF3C7; color: #92400E;
+    padding: 1px 8px; border-radius: 10px;
+    font-size: 11px; font-weight: 600;
+    margin: 0 2px; cursor: pointer;
+    border: 1px solid #FDE68A;
+    vertical-align: baseline;
+  }
+  .citation-chip:hover { background: #FDE68A; }
+  .cite-num {
+    display: inline-block; width: 14px; height: 14px; border-radius: 50%;
+    background: #F59E0B; color: #fff; font-size: 9px; font-weight: 700;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .msg-feedback {
+    display: flex; gap: 4px; margin-top: 6px;
+    font-size: 11px; color: #94A3B8;
+  }
+  .msg-feedback button {
+    background: none; border: none; color: inherit; cursor: pointer;
+    padding: 2px 4px; border-radius: 4px;
+  }
+  .msg-feedback button:hover { background: #F1F5F9; color: #3730A3; }
+
+  .typing-indicator {
+    display: flex; gap: 4px; padding: 12px 14px;
+    background: #F8FAFC; border-radius: 2px 12px 12px 12px;
+    width: fit-content; border: 1px solid #E2E8F0;
+  }
+  .typing-indicator span {
+    width: 6px; height: 6px; border-radius: 50%; background: #94A3B8;
+    animation: typing 1.2s infinite;
+  }
+  .typing-indicator span:nth-child(2) { animation-delay: 0.15s; }
+  .typing-indicator span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes typing {
+    0%, 60%, 100% { opacity: 0.35; transform: translateY(0); }
+    30% { opacity: 1; transform: translateY(-3px); }
+  }
+
+  .chat-input-zone {
+    border-top: 1px solid #E2E8F0; padding: 12px;
+    background: #fff;
+    flex: 0 0 auto;
+  }
+  .chat-persona {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; color: #64748B; margin-bottom: 8px;
+  }
+  .chat-persona select {
+    border: 1px solid #E2E8F0; border-radius: 4px;
+    padding: 2px 6px; font-size: 11px; color: #475569;
+    background: #fff; font-family: inherit;
+  }
+  .chat-input-wrap {
+    display: flex; align-items: flex-end; gap: 8px;
+    border: 1px solid #E2E8F0; border-radius: 8px;
+    padding: 8px; background: #fff;
+  }
+  .chat-input-wrap:focus-within { border-color: #3730A3; box-shadow: 0 0 0 3px rgba(55, 48, 163, 0.08); }
+  .chat-input {
+    flex: 1; border: none; outline: none; resize: none;
+    font-family: inherit; font-size: 13px; color: #1E293B;
+    min-height: 20px; max-height: 120px;
+  }
+  .chat-send {
+    width: 32px; height: 32px; border-radius: 6px;
+    background: #3730A3; color: #fff; border: none;
+    cursor: pointer; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .chat-send:hover { background: #312E81; }
+  .chat-disclaimer {
+    font-size: 10px; color: #94A3B8; margin-top: 6px; text-align: center;
+    line-height: 1.4;
+  }
+
+  /* Artefacts tab */
+  .artefact-card {
+    background: #F8FAFC; border: 1px solid #E2E8F0;
+    border-radius: 8px; padding: 14px;
+    margin-bottom: 12px; cursor: pointer;
+    transition: all 120ms;
+  }
+  .artefact-card:hover {
+    border-color: #3730A3; background: #fff;
+    box-shadow: 0 2px 8px rgba(55, 48, 163, 0.08);
+  }
+  .artefact-header {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 6px;
+  }
+  .artefact-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .ai-summary-icon { background: #EEF2FF; color: #6366F1; }
+  .ai-flashcard-icon { background: #F0FDF4; color: #16A34A; }
+  .ai-quiz-icon { background: #FEF3C7; color: #D97706; }
+  .ai-audio-icon { background: #FAE8FF; color: #A855F7; }
+  .ai-regulator-icon { background: #FEE2E2; color: #DC2626; }
+  .ai-glossary-icon { background: #ECFEFF; color: #0891B2; }
+  .artefact-title {
+    font-size: 13px; font-weight: 600; color: #1E293B;
+  }
+  .artefact-meta { font-size: 11px; color: #64748B; }
+  .artefact-body {
+    font-size: 12px; color: #475569; line-height: 1.5;
+  }
+  .ai-badge {
+    display: inline-flex; align-items: center; gap: 3px;
+    background: linear-gradient(135deg, #EEF2FF, #FAE8FF);
+    color: #6D28D9; font-size: 9px; font-weight: 700;
+    padding: 2px 6px; border-radius: 10px; letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+
+  /* Notes tab */
+  .note-card {
+    padding: 10px 12px; border-left: 3px solid #FCD34D;
+    background: #FFFBEB; margin-bottom: 8px;
+    font-size: 12px; color: #92400E;
+    border-radius: 0 6px 6px 0; line-height: 1.5;
+  }
+  .note-source { font-size: 11px; color: #B45309; margin-top: 4px; font-weight: 600; }
+
+  /* Engagement tab */
+  .engagement-score-card {
+    background: linear-gradient(135deg, #EEF2FF, #F0FDF4);
+    border-radius: 12px; padding: 16px; text-align: center;
+    margin-bottom: 16px;
+  }
+  .score-big {
+    font-size: 36px; font-weight: 800; color: #3730A3;
+    line-height: 1;
+  }
+  .score-label { font-size: 11px; color: #64748B; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .score-state {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: #DCFCE7; color: #166534;
+    padding: 3px 10px; border-radius: 10px;
+    font-size: 11px; font-weight: 600; margin-top: 8px;
+  }
+  .metric-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0; border-bottom: 1px solid #F1F5F9;
+    font-size: 12px;
+  }
+  .metric-row:last-child { border-bottom: none; }
+  .metric-label { color: #475569; }
+  .metric-value { color: #1E293B; font-weight: 600; }
+  .mini-bar {
+    width: 100px; height: 6px; border-radius: 3px; background: #F1F5F9; overflow: hidden;
+    display: inline-block; margin-right: 8px; vertical-align: middle;
+  }
+  .mini-bar-fill { height: 100%; background: #6366F1; }
+
+  /* ---------- PROACTIVE TUTOR MODAL ---------- */
+  .proactive-modal-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(3px);
+    z-index: 1200; display: none;
+    align-items: center; justify-content: center;
+  }
+  .proactive-modal-backdrop.show { display: flex; animation: fade-in 180ms; }
+  @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+  .proactive-modal {
+    background: #fff; border-radius: 16px;
+    padding: 0; width: 480px; max-width: 92vw;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    overflow: hidden;
+    animation: slide-up 220ms;
+  }
+  @keyframes slide-up { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .proactive-header {
+    padding: 18px 24px;
+    background: linear-gradient(135deg, #F59E0B, #D97706);
+    color: #fff;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .proactive-header-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: rgba(255,255,255,0.2);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .proactive-title { font-size: 14px; font-weight: 700; line-height: 1.3; }
+  .proactive-sub { font-size: 11px; opacity: 0.9; margin-top: 2px; }
+  .proactive-body { padding: 22px 24px; }
+  .proactive-question {
+    font-size: 14px; color: #0F172A; line-height: 1.5;
+    font-weight: 500; margin-bottom: 16px;
+  }
+  .proactive-option {
+    display: block; width: 100%;
+    padding: 12px 14px; border-radius: 8px;
+    border: 2px solid #E2E8F0; background: #fff;
+    font-size: 13px; color: #334155; text-align: left;
+    cursor: pointer; margin-bottom: 8px;
+    transition: all 120ms;
+  }
+  .proactive-option:hover {
+    border-color: #3730A3; background: #EEF2FF;
+  }
+  .proactive-option.correct { border-color: #16A34A; background: #F0FDF4; color: #166534; }
+  .proactive-option.wrong { border-color: #DC2626; background: #FEF2F2; color: #991B1B; }
+  .proactive-source {
+    font-size: 11px; color: #64748B; margin-top: 12px; display: flex; align-items: center; gap: 6px;
+  }
+  .proactive-footer {
+    padding: 14px 24px; border-top: 1px solid #F1F5F9;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 11px; color: #64748B;
+  }
+  .proactive-skip {
+    background: none; border: none; color: #64748B; font-size: 12px;
+    cursor: pointer; text-decoration: underline;
+  }
+
+  /* ---------- TOAST ---------- */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: #1E293B; color: #F1F5F9; padding: 10px 18px;
+    border-radius: 8px; font-size: 13px; z-index: 1500;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    opacity: 0; pointer-events: none; transition: opacity 180ms;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .toast.show { opacity: 1; pointer-events: auto; }
+
+  /* ---------- RESPONSIVE ---------- */
+  @media (max-width: 1100px) {
+    .lesson-main { grid-template-columns: 44px 1fr 360px; }
+    .pdf-page { width: 100%; padding: 48px 40px; }
+  }
+
+  .app-frame {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Scrollbar cosmetic on pdf shell */
+  .pdf-shell::-webkit-scrollbar { width: 10px; }
+  .pdf-shell::-webkit-scrollbar-thumb { background: #64748B; border-radius: 5px; }
+  .pdf-shell::-webkit-scrollbar-track { background: #334155; }
+
+  /* Footer */
+  .app-footer {
+    background: linear-gradient(135deg, #0F2942 0%, #0A1E30 100%);
+    height: 36px; display: flex; align-items: center;
+    justify-content: space-between; padding: 0 24px;
+    color: rgba(255,255,255,0.7); font-size: 11px;
+    flex: 0 0 auto;
+  }
+</style>
+</head>
+<body>
+
+<div class="app-frame">
+
+  <!-- ═══════════ APP HEADER ═══════════ -->
+  <div class="app-header">
+    <div class="brand">
+      <div class="brand-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 1.66 2.69 3 6 3s6-1.34 6-3v-5"/></svg>
+      </div>
+      <div>
+        <div class="brand-title">LearnIQ</div>
+        <div class="brand-sub">WEBBER WENTZEL · LEGAL TRAINING ACADEMY</div>
+      </div>
+    </div>
+    <div class="centre-search">
+      <div class="search-pill">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" placeholder="Search courses, topics, domains...">
+        <span class="search-kbd">Ctrl+K</span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="header-btn" title="Search">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </button>
+      <button class="header-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+        <span class="badge">3</span>
+      </button>
+      <button class="header-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06"/></svg>
+      </button>
+      <div class="avatar">GF</div>
+    </div>
+  </div>
+
+  <!-- ═══════════ MAIN NAV ═══════════ -->
+  <div class="app-nav">
+    <a class="nav-tab" href="#">Home</a>
+    <a class="nav-tab active" href="#">My Learning</a>
+    <a class="nav-tab" href="#">Course Catalogue</a>
+    <a class="nav-tab" href="#">Content Studio</a>
+    <a class="nav-tab" href="#">Programmes</a>
+    <a class="nav-tab" href="#">Insights</a>
+    <a class="nav-tab" href="#">AI Hub</a>
+  </div>
+
+  <!-- ═══════════ LESSON BREADCRUMB ═══════════ -->
+  <div class="lesson-bar">
+    <div class="breadcrumb">
+      <span>My Learning</span>
+      <svg class="sep" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      <span>POPIA Compliance for Legal Practitioners</span>
+      <svg class="sep" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      <b>Module 2 · Lesson 3 · POPIA Consent and Legitimate Interest</b>
+    </div>
+    <div class="lesson-actions">
+      <div class="lesson-progress-pill" title="Engagement score">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6366F1" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <span>Engagement <strong id="engagement-pct" style="color:#3730A3">42%</strong></span>
+        <div class="progress-bar"><div class="progress-fill" id="engagement-bar"></div></div>
+      </div>
+      <button class="pill-btn" onclick="showToast('Lesson notes downloaded')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        My notes
+      </button>
+      <button class="pill-btn locked" id="assessment-btn" title="Unlocks at 65% engagement — keep reading!">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        Take assessment (locked)
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══════════ MAIN AREA ═══════════ -->
+  <div class="lesson-main">
+
+    <!-- Lesson nav rail -->
+    <div class="lesson-nav">
+      <div class="lesson-nav-item done" title="L1: Introduction to POPIA">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polyline points="20 6 9 17 4 12" fill="none" stroke="currentColor" stroke-width="3"/></svg>
+        <span class="lesson-nav-tooltip">L1 · Intro to POPIA ✓</span>
+      </div>
+      <div class="lesson-nav-item done" title="L2: Key terms">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polyline points="20 6 9 17 4 12" fill="none" stroke="currentColor" stroke-width="3"/></svg>
+        <span class="lesson-nav-tooltip">L2 · Key terms ✓</span>
+      </div>
+      <div class="lesson-nav-item active">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span class="lesson-nav-tooltip">L3 · Consent & legitimate interest (current)</span>
+      </div>
+      <div class="lesson-nav-item" title="L4: Data subject rights">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg>
+        <span class="lesson-nav-tooltip">L4 · Data subject rights</span>
+      </div>
+      <div class="lesson-nav-item" title="L5: Cross-border transfers">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+        <span class="lesson-nav-tooltip">L5 · Cross-border transfers</span>
+      </div>
+      <div class="lesson-nav-item" style="margin-top: auto;" title="Final assessment — locked until 65% engagement">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        <span class="lesson-nav-tooltip">Final assessment 🔒</span>
+      </div>
+    </div>
+
+    <!-- PDF viewer -->
+    <div class="pdf-shell" id="pdf-shell">
+      <div class="pdf-toolbar">
+        <button class="pdf-toolbar-btn">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <span class="pdf-pagenum">Page <span id="current-page">1</span> of 4</span>
+        <button class="pdf-toolbar-btn">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="pdf-divider"></div>
+        <button class="pdf-toolbar-btn" title="Zoom out">−</button>
+        <span>100%</span>
+        <button class="pdf-toolbar-btn" title="Zoom in">+</button>
+        <div class="pdf-divider"></div>
+        <button class="pdf-toolbar-btn" title="Highlight">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        </button>
+        <button class="pdf-toolbar-btn" title="Download">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </button>
+        <div class="toolbar-spacer"></div>
+        <span style="color: #94A3B8; font-size: 11px;" id="doc-name">Firm Policy 4.2 · POPIA Consent & Legitimate Interest · v3.1 · March 2026</span>
+      </div>
+
+      <!-- Floating "Ask Copilot" action -->
+      <div id="selection-action" class="selection-action">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#A78BFA" stroke-width="2"><path d="M12 3l1.912 5.813L20 10l-6.088 1.187L12 17l-1.912-5.813L4 10l6.088-1.187L12 3z"/></svg>
+        Ask Copilot about this
+      </div>
+
+      <!-- Page 1 -->
+      <div class="pdf-page" id="page-1" data-page="1">
+        <div class="pdf-page-header">
+          <span>WEBBER WENTZEL · FIRM POLICY 4.2</span>
+          <span>POPIA CONSENT & LEGITIMATE INTEREST</span>
+        </div>
+        <div class="pdf-heatmap"><div class="pdf-heatmap-fill" style="top:0; bottom:30%"></div></div>
+
+        <h1 class="pdf-section-heading">1. PURPOSE AND SCOPE</h1>
+        <div class="pdf-body">
+          <p>This policy sets out the firm's approach to the lawful processing of personal information under the Protection of Personal Information Act No. 4 of 2013 ("POPIA"). It applies to all legal practitioners, paralegals, support staff and contractors of Webber Wentzel who collect, use, store or disclose personal information in the course of professional practice.</p>
+          <p>Compliance with this policy is mandatory. Breaches may be reported to the Information Regulator and may result in administrative fines of up to ZAR 10 million, civil liability, and disciplinary action under the Legal Practice Act.</p>
+        </div>
+
+        <h2 class="pdf-subheading">1.1 Applicability</h2>
+        <div class="pdf-body">
+          <p>This policy applies in all circumstances in which personal information is processed in connection with firm business, including:</p>
+        </div>
+        <ol class="pdf-list">
+          <li><span class="pdf-clause-label">Client matters</span> — processing of information relating to clients, opposing parties, witnesses and third parties in the course of providing legal services;</li>
+          <li><span class="pdf-clause-label">Business development</span> — processing of information for marketing, pitching and business development purposes;</li>
+          <li><span class="pdf-clause-label">Human resources</span> — processing of information relating to partners, employees, secondees and candidates;</li>
+          <li><span class="pdf-clause-label">Vendors and suppliers</span> — processing of information exchanged with service providers, including counsel, experts and technology vendors.</li>
+        </ol>
+
+        <h1 class="pdf-section-heading">2. LAWFUL BASIS FOR PROCESSING</h1>
+        <div class="pdf-body">
+          <p>Section 11 of POPIA requires that personal information be processed only where one of the listed lawful grounds applies. <span class="pdf-citation-anchor" id="cite-11-1">The lawful grounds available to the firm are consent, contractual necessity, compliance with a legal obligation, the legitimate interest of the firm, the legitimate interest of the data subject, and public law duty.</span> The firm will not rely on blanket or implied consent in circumstances where an alternative lawful ground is more appropriate.</p>
+        </div>
+        <div class="pdf-page-footer">Page 1 of 4 · Firm Policy 4.2 v3.1 · © Webber Wentzel Attorneys</div>
+      </div>
+
+      <!-- Page 2 -->
+      <div class="pdf-page" id="page-2" data-page="2">
+        <div class="pdf-page-header">
+          <span>WEBBER WENTZEL · FIRM POLICY 4.2</span>
+          <span>POPIA CONSENT & LEGITIMATE INTEREST</span>
+        </div>
+        <div class="pdf-heatmap"><div class="pdf-heatmap-fill" style="top:40%; bottom:30%"></div></div>
+
+        <h1 class="pdf-section-heading">3. CONSENT</h1>
+        <div class="pdf-body">
+          <p>Where the firm elects to rely on consent as the lawful ground for processing, consent must be <span class="pdf-clause-label">specific, informed, voluntary, and expressed</span>. Bundled consent, pre-ticked checkboxes, and consent buried within general terms are not valid under POPIA.</p>
+        </div>
+
+        <h2 class="pdf-subheading">3.1 Requirements for valid consent</h2>
+        <div class="pdf-body">
+          <p>Valid consent under this policy requires, at a minimum, that the data subject is provided with the following:</p>
+        </div>
+        <ol class="pdf-list">
+          <li>The identity of the responsible party (the firm) and, where applicable, any co-responsible parties;</li>
+          <li><span class="pdf-citation-anchor" id="cite-3-1-b">The specific purpose for which the information is to be processed and any intended further use;</span></li>
+          <li>The categories of information to be processed;</li>
+          <li>Any intended recipients of the information, including where information will be transferred outside the Republic;</li>
+          <li>The consequences of refusing to provide the information, including any effect on the service to be provided;</li>
+          <li>The rights of the data subject under Chapter 3 of POPIA, including the right to withdraw consent at any time.</li>
+        </ol>
+
+        <h2 class="pdf-subheading">3.2 Withdrawal of consent</h2>
+        <div class="pdf-body">
+          <p><span class="pdf-citation-anchor" id="cite-3-2">A data subject may withdraw consent at any time, subject to the firm's overriding legal obligations (including regulatory record-keeping under FICA and the Legal Practice Act). Withdrawal of consent does not affect the lawfulness of processing carried out prior to the withdrawal.</span> The firm must provide a clear and accessible mechanism for consent withdrawal.</p>
+          <p>Where consent is withdrawn and no alternative lawful ground applies, the firm must cease processing the relevant personal information within 30 days and arrange for secure deletion or de-identification.</p>
+        </div>
+
+        <div class="pdf-page-footer">Page 2 of 4 · Firm Policy 4.2 v3.1 · © Webber Wentzel Attorneys</div>
+      </div>
+
+      <!-- Page 3 -->
+      <div class="pdf-page" id="page-3" data-page="3">
+        <div class="pdf-page-header">
+          <span>WEBBER WENTZEL · FIRM POLICY 4.2</span>
+          <span>POPIA CONSENT & LEGITIMATE INTEREST</span>
+        </div>
+        <div class="pdf-heatmap"><div class="pdf-heatmap-fill" style="top:60%; bottom:30%"></div></div>
+
+        <h1 class="pdf-section-heading">4. LEGITIMATE INTEREST</h1>
+        <div class="pdf-body">
+          <p>Section 11(1)(f) of POPIA permits the processing of personal information where it is necessary for the pursuit of the legitimate interests of the firm or a third party to whom the information is supplied, provided that such processing does not unjustifiably infringe the rights and freedoms of the data subject.</p>
+        </div>
+
+        <h2 class="pdf-subheading">4.1 The three-part test</h2>
+        <div class="pdf-body">
+          <p>Before relying on legitimate interest, the responsible lawyer must conduct and document a three-part test:</p>
+        </div>
+        <ol class="pdf-list">
+          <li><span class="pdf-clause-label">Purpose test</span> — Is the firm pursuing a legitimate interest? Examples include fraud prevention, conflict checking, recovery of outstanding fees, and the effective conduct of pending or contemplated litigation.</li>
+          <li><span class="pdf-clause-label">Necessity test</span> — Is the processing necessary to achieve that purpose? If the same purpose can be achieved by less intrusive means (e.g. using de-identified information), the legitimate interest ground cannot be relied upon.</li>
+          <li><span class="pdf-citation-anchor" id="cite-4-1-3"><span class="pdf-clause-label">Balancing test</span> — Does the firm's legitimate interest override the rights and freedoms of the data subject, having regard to the nature of the information, the reasonable expectations of the data subject, and the potential impact on that person?</span></li>
+        </ol>
+
+        <h2 class="pdf-subheading">4.2 Documenting the assessment</h2>
+        <div class="pdf-body">
+          <p>The three-part test must be documented using the firm's Legitimate Interest Assessment ("LIA") template, retained on the matter file, and reviewed annually where processing is ongoing. The LIA must be reviewed and approved by the supervising partner before the processing commences.</p>
+        </div>
+
+        <h2 class="pdf-subheading">4.3 When legitimate interest cannot be relied upon</h2>
+        <div class="pdf-body">
+          <p>Legitimate interest is <span class="pdf-clause-label">not</span> an appropriate lawful ground in the following circumstances:</p>
+        </div>
+        <ol class="pdf-list">
+          <li>Processing of special personal information (health, biometric, criminal behaviour information) — see Section 26 POPIA;</li>
+          <li>Processing of a child's personal information without an alternative lawful ground;</li>
+          <li>Direct marketing by means of unsolicited electronic communications — see Section 69 POPIA.</li>
+        </ol>
+
+        <div class="pdf-page-footer">Page 3 of 4 · Firm Policy 4.2 v3.1 · © Webber Wentzel Attorneys</div>
+      </div>
+
+      <!-- Page 4 -->
+      <div class="pdf-page" id="page-4" data-page="4">
+        <div class="pdf-page-header">
+          <span>WEBBER WENTZEL · FIRM POLICY 4.2</span>
+          <span>POPIA CONSENT & LEGITIMATE INTEREST</span>
+        </div>
+        <div class="pdf-heatmap"><div class="pdf-heatmap-fill" style="top:70%; bottom:25%"></div></div>
+
+        <h1 class="pdf-section-heading">5. PRACTICAL SCENARIOS</h1>
+
+        <h2 class="pdf-subheading">5.1 Conflict checks</h2>
+        <div class="pdf-body">
+          <p>Conflict checking against the firm's client database is ordinarily justifiable on the ground of legitimate interest (pursuit of compliance with professional rules of conduct and prevention of conflicts), and does not require specific consent from the proposed new client or from existing clients.</p>
+        </div>
+
+        <h2 class="pdf-subheading">5.2 Secondee access to client information</h2>
+        <div class="pdf-body">
+          <p>Where a secondee is placed with a client, the firm must obtain written confirmation from the client specifying the categories of information the secondee may access and the purposes of that access. Legitimate interest alone is insufficient where the information includes special personal information.</p>
+        </div>
+
+        <h2 class="pdf-subheading">5.3 Marketing and business development</h2>
+        <div class="pdf-body">
+          <p>Direct marketing to existing clients in respect of services similar to those already provided may proceed on the basis of legitimate interest, provided that an opt-out mechanism is included in each communication. Marketing to prospective clients, or in respect of services materially different to those already provided, requires prior opt-in consent.</p>
+        </div>
+
+        <h1 class="pdf-section-heading">6. RECORD KEEPING AND REVIEW</h1>
+        <div class="pdf-body">
+          <p>Each lawful basis relied upon must be recorded on the matter file, together with the supporting analysis (consent record or LIA, as applicable). The firm's Information Officer conducts a quarterly compliance review and reports to the Managing Partner's Committee.</p>
+          <p>This policy is reviewed annually and following any material amendment to POPIA, the Regulations, or binding guidance issued by the Information Regulator.</p>
+        </div>
+
+        <div class="pdf-page-footer">Page 4 of 4 · Firm Policy 4.2 v3.1 · © Webber Wentzel Attorneys</div>
+      </div>
+
+    </div><!-- /pdf-shell -->
+
+    <!-- ═══════════ COPILOT PANEL ═══════════ -->
+    <div class="copilot-panel">
+      <div class="copilot-header">
+        <div class="copilot-title">
+          <div class="copilot-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 3l1.912 5.813L20 10l-6.088 1.187L12 17l-1.912-5.813L4 10l6.088-1.187L12 3z"/></svg>
+          </div>
+          <div>
+            <div class="copilot-name">DWx Copilot</div>
+            <div class="copilot-mode">DOCUMENT TUTOR MODE</div>
+          </div>
+        </div>
+        <button class="copilot-close" title="Hide panel">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
+        </button>
+      </div>
+
+      <div class="copilot-tabs">
+        <button class="copilot-tab active" data-tab="chat" onclick="showTab('chat')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          Chat
+        </button>
+        <button class="copilot-tab" data-tab="artefacts" onclick="showTab('artefacts')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Study
+          <span class="copilot-tab-badge">5</span>
+        </button>
+        <button class="copilot-tab" data-tab="notes" onclick="showTab('notes')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Notes
+        </button>
+        <button class="copilot-tab" data-tab="engagement" onclick="showTab('engagement')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Progress
+        </button>
+      </div>
+
+      <!-- CHAT TAB -->
+      <div class="copilot-body tab-panel active" id="panel-chat">
+        <div id="chat-messages">
+          <div class="chat-empty" id="chat-empty">
+            <div class="chat-empty-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6366F1" stroke-width="1.5"><path d="M12 3l1.912 5.813L20 10l-6.088 1.187L12 17l-1.912-5.813L4 10l6.088-1.187L12 3z"/></svg>
+            </div>
+            <h3>Ask anything about this policy</h3>
+            <p>I've read every line and I cite my sources. I'll never leak client names or matter details.</p>
+            <div class="quick-actions">
+              <button class="quick-action" onclick="runQuickAction('withdraw')">
+                <svg class="qa-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6366F1" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                Can a client withdraw consent mid-matter?
+              </button>
+              <button class="quick-action" onclick="runQuickAction('secondee')">
+                <svg class="qa-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6366F1" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                Does this apply to secondees?
+              </button>
+              <button class="quick-action" onclick="runQuickAction('conflict')">
+                <svg class="qa-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6366F1" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                Is conflict check consent-based?
+              </button>
+              <button class="quick-action" onclick="runQuickAction('regulator')">
+                <svg class="qa-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6366F1" stroke-width="2"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0112 2a8 8 0 018 8.2c0 7.3-8 11.8-8 11.8z"/><circle cx="12" cy="10" r="3"/></svg>
+                What would the Regulator ask?
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ARTEFACTS TAB -->
+      <div class="copilot-body tab-panel" id="panel-artefacts">
+        <div style="font-size: 11px; color: #64748B; margin-bottom: 12px; display:flex; align-items:center; gap:6px;">
+          <span class="ai-badge">AI-generated</span>
+          Author-reviewed March 2026 · 5 artefacts
+        </div>
+
+        <div class="artefact-card" onclick="showToast('Opening Executive Summary...')">
+          <div class="artefact-header">
+            <div class="artefact-icon ai-summary-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            </div>
+            <div>
+              <div class="artefact-title">Executive Summary</div>
+              <div class="artefact-meta">1 page · 2 min read</div>
+            </div>
+          </div>
+          <div class="artefact-body">
+            Policy covers 6 lawful grounds under POPIA s11 with focus on consent (specific, informed, voluntary, expressed) and legitimate interest (3-part test required). Special information and child data require stricter handling.
+          </div>
+        </div>
+
+        <div class="artefact-card" onclick="showToast('Opening Audio Overview — 2 AI hosts, 6 min...')">
+          <div class="artefact-header">
+            <div class="artefact-icon ai-audio-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg>
+            </div>
+            <div>
+              <div class="artefact-title">Audio Overview <span class="ai-badge">NEW</span></div>
+              <div class="artefact-meta">6 min · 2 AI hosts discuss</div>
+            </div>
+          </div>
+          <div class="artefact-body">
+            Podcast-style walkthrough of consent vs legitimate interest with practical examples. Ideal for commute listening.
+          </div>
+        </div>
+
+        <div class="artefact-card" onclick="showToast('Opening 12 flashcards...')">
+          <div class="artefact-header">
+            <div class="artefact-icon ai-flashcard-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="13" height="13" rx="2"/><path d="M7 3h13v13"/></svg>
+            </div>
+            <div>
+              <div class="artefact-title">Flashcards</div>
+              <div class="artefact-meta">12 cards · spaced repetition</div>
+            </div>
+          </div>
+          <div class="artefact-body">
+            Q&A deck covering the 6 lawful grounds, the 3-part LIA test, consent withdrawal rules, and s11 exceptions.
+          </div>
+        </div>
+
+        <div class="artefact-card" onclick="showToast('Opening Scenario Quiz...')">
+          <div class="artefact-header">
+            <div class="artefact-icon ai-quiz-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            <div>
+              <div class="artefact-title">Scenario Quiz</div>
+              <div class="artefact-meta">8 scenarios · AI-graded · CPD-linked</div>
+            </div>
+          </div>
+          <div class="artefact-body">
+            "A client withdraws consent 6 weeks into a matter; FICA retention requirements apply. What's your correct next step?" Free-text responses graded against policy + rubric.
+          </div>
+        </div>
+
+        <div class="artefact-card" onclick="showToast('Opening Regulator Critique...')">
+          <div class="artefact-header">
+            <div class="artefact-icon ai-regulator-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0112 2a8 8 0 018 8.2c0 7.3-8 11.8-8 11.8z"/><circle cx="12" cy="10" r="3"/></svg>
+            </div>
+            <div>
+              <div class="artefact-title">Regulator's Perspective</div>
+              <div class="artefact-meta">Enterprise tier · critique + audit Qs</div>
+            </div>
+          </div>
+          <div class="artefact-body">
+            What the Information Regulator would ask in an audit: 14 pointed questions with model answers grounded on the policy and recent enforcement notices.
+          </div>
+        </div>
+
+        <div class="artefact-card" onclick="showToast('Opening Glossary — 18 terms')">
+          <div class="artefact-header">
+            <div class="artefact-icon ai-glossary-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+            </div>
+            <div>
+              <div class="artefact-title">Glossary</div>
+              <div class="artefact-meta">18 terms linked to source</div>
+            </div>
+          </div>
+          <div class="artefact-body">
+            "Responsible party", "legitimate interest", "data subject", "special information", LIA, Information Officer — click any term → jumps to definition in PDF.
+          </div>
+        </div>
+      </div>
+
+      <!-- NOTES TAB -->
+      <div class="copilot-body tab-panel" id="panel-notes">
+        <div style="font-size: 12px; color: #64748B; margin-bottom: 12px;">
+          Your highlights and notes are private. Anything you ask Copilot gets saved here.
+        </div>
+        <div class="note-card">
+          "A data subject may withdraw consent at any time, subject to the firm's overriding legal obligations..."
+          <div class="note-source">📍 p2 § 3.2 · highlighted today</div>
+        </div>
+        <div class="note-card" style="border-left-color:#6366F1; background:#EEF2FF; color:#3730A3;">
+          💭 Need to check: does the 30-day deletion rule apply if we're mid-litigation? → Ask partner Monday.
+          <div class="note-source" style="color:#4338CA;">📍 p2 § 3.2 · note · 2 min ago</div>
+        </div>
+        <div class="note-card">
+          "Before relying on legitimate interest, the responsible lawyer must conduct and document a three-part test..."
+          <div class="note-source">📍 p3 § 4.1 · highlighted yesterday</div>
+        </div>
+      </div>
+
+      <!-- ENGAGEMENT TAB -->
+      <div class="copilot-body tab-panel" id="panel-engagement">
+        <div class="engagement-score-card">
+          <div class="score-big" id="big-score">0.42</div>
+          <div class="score-label">Engagement score</div>
+          <div class="score-state" style="background: #FEF3C7; color: #92400E;" id="score-state">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            Keep reading — 0.65 unlocks assessment
+          </div>
+        </div>
+
+        <h4 style="font-size: 12px; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Breakdown</h4>
+
+        <div class="metric-row">
+          <span class="metric-label">Reading dwell (40%)</span>
+          <span class="metric-value"><span class="mini-bar"><span class="mini-bar-fill" style="width: 55%; background: #10B981;"></span></span>0.22</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Scroll coverage (20%)</span>
+          <span class="metric-value"><span class="mini-bar"><span class="mini-bar-fill" style="width: 45%; background: #F59E0B;"></span></span>0.09</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Interactions (20%)</span>
+          <span class="metric-value"><span class="mini-bar"><span class="mini-bar-fill" style="width: 30%; background: #F59E0B;"></span></span>0.06</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Comprehension (20%)</span>
+          <span class="metric-value"><span class="mini-bar"><span class="mini-bar-fill" style="width: 25%; background: #EF4444;"></span></span>0.05</span>
+        </div>
+
+        <h4 style="font-size: 12px; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; margin: 18px 0 8px;">Coverage</h4>
+        <div style="font-size: 12px; color: #475569; line-height: 1.6;">
+          <div style="display:flex; justify-content:space-between; padding: 4px 0;"><span>Page 1 — Purpose & Scope</span><span style="color:#16A34A">✓ Read</span></div>
+          <div style="display:flex; justify-content:space-between; padding: 4px 0;"><span>Page 2 — Consent</span><span style="color:#16A34A">✓ Read</span></div>
+          <div style="display:flex; justify-content:space-between; padding: 4px 0;"><span>Page 3 — Legitimate Interest</span><span style="color:#F59E0B">⚠ Skimmed</span></div>
+          <div style="display:flex; justify-content:space-between; padding: 4px 0;"><span>Page 4 — Scenarios & Records</span><span style="color:#94A3B8">○ Not reached</span></div>
+        </div>
+
+        <div style="margin-top: 18px; padding: 12px; background: #EEF2FF; border-radius: 8px; border-left: 3px solid #3730A3; font-size: 12px; color: #3730A3; line-height: 1.5;">
+          <strong>Audit evidence:</strong> every interaction here is logged to <code style="background:#fff; padding: 1px 4px; border-radius: 3px;">LMS_AuditLog</code> with your LRN reference. Your Comprehension Certificate will attest to genuine engagement, not just attendance.
+        </div>
+      </div>
+
+      <!-- CHAT INPUT ZONE (persistent footer for chat tab) -->
+      <div class="chat-input-zone" id="chat-input-zone">
+        <div class="chat-persona">
+          Explain as
+          <select id="persona-select">
+            <option>Legal — default</option>
+            <option>Basic plain English</option>
+            <option>Regulator's perspective</option>
+            <option>Speaking to a client</option>
+          </select>
+        </div>
+        <div class="chat-input-wrap">
+          <textarea class="chat-input" id="chat-input" rows="1" placeholder="Ask about this policy — e.g. 'Does a secondee need separate consent?'"></textarea>
+          <button class="chat-send" id="chat-send" title="Send (Enter)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+        <div class="chat-disclaimer">
+          Copilot cites its sources. AI is a training aid — verify with a partner before acting. No client PII leaves your tenant.
+        </div>
+      </div>
+
+    </div><!-- /copilot-panel -->
+
+  </div><!-- /lesson-main -->
+
+  <!-- ═══════════ FOOTER ═══════════ -->
+  <div class="app-footer">
+    <div>© 2026 First Digital · Webber Wentzel LearnIQ · Privacy · Terms</div>
+    <div>Powered by First Digital — DWx</div>
+  </div>
+
+</div><!-- /app-frame -->
+
+<!-- PROACTIVE TUTOR MODAL -->
+<div class="proactive-modal-backdrop" id="proactive-modal">
+  <div class="proactive-modal">
+    <div class="proactive-header">
+      <div class="proactive-header-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      </div>
+      <div>
+        <div class="proactive-title">Quick check — you're moving fast through this</div>
+        <div class="proactive-sub">Section 4 · Legitimate Interest — just 30 seconds</div>
+      </div>
+    </div>
+    <div class="proactive-body">
+      <div class="proactive-question">
+        Before relying on legitimate interest as the lawful ground, the firm must perform a three-part test. Which of the following is <strong>not</strong> one of the three parts?
+      </div>
+      <button class="proactive-option" onclick="answerProactive(this, false)">A · Purpose test — is the firm pursuing a legitimate interest?</button>
+      <button class="proactive-option" onclick="answerProactive(this, false)">B · Necessity test — is the processing necessary for the purpose?</button>
+      <button class="proactive-option" onclick="answerProactive(this, true)">C · Consent test — has the data subject provided written consent?</button>
+      <button class="proactive-option" onclick="answerProactive(this, false)">D · Balancing test — does the firm's interest override the data subject's rights?</button>
+      <div class="proactive-source">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg>
+        Source: Firm Policy 4.2 · p3 § 4.1 · The three-part test
+      </div>
+    </div>
+    <div class="proactive-footer">
+      <button class="proactive-skip" onclick="hideProactive()">Skip this check</button>
+      <span>Comprehension check · logged to audit trail</span>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+  <span id="toast-msg">Saved</span>
+</div>
+
+<script>
+  /* ═══════════════════════════════════════════════════════════════════════════
+     MOCKUP INTERACTIONS — faked but behaviourally realistic
+     ═══════════════════════════════════════════════════════════════════════════ */
+
+  var state = {
+    engagement: 0.42,
+    page: 1,
+    proactiveFired: false,
+    chatStarted: false
+  };
+
+  /* ---- Tab switching ---- */
+  function showTab(tab) {
+    var tabs = document.querySelectorAll('.copilot-tab');
+    for (var i = 0; i < tabs.length; i++) {
+      tabs[i].classList.toggle('active', tabs[i].dataset.tab === tab);
+    }
+    var panels = document.querySelectorAll('.tab-panel');
+    for (var j = 0; j < panels.length; j++) {
+      panels[j].classList.toggle('active', panels[j].id === 'panel-' + tab);
+    }
+    // chat input only on chat tab
+    document.getElementById('chat-input-zone').style.display = tab === 'chat' ? 'block' : 'none';
+  }
+
+  /* ---- Citation jump from chat chip to PDF page ---- */
+  function jumpToCitation(pageNum, anchorId) {
+    var shell = document.getElementById('pdf-shell');
+    var page = document.getElementById('page-' + pageNum);
+    if (!page) return;
+    // scroll page into view
+    page.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    page.classList.add('highlight-flash');
+    setTimeout(function () { page.classList.remove('highlight-flash'); }, 1200);
+    // flash the anchor
+    if (anchorId) {
+      setTimeout(function () {
+        var a = document.getElementById(anchorId);
+        if (a) {
+          a.classList.add('flash');
+          setTimeout(function () { a.classList.remove('flash'); }, 2500);
+        }
+      }, 400);
+    }
+    bumpEngagement(0.03, 'Citation clicked');
+  }
+
+  /* ---- Chat: empty-state quick actions ---- */
+  function runQuickAction(kind) {
+    var q, reply;
+    if (kind === 'withdraw') {
+      q = 'Can a client withdraw consent mid-matter?';
+      reply = {
+        text: [
+          'Yes — but subject to the firm\'s overriding legal obligations.',
+          'Under Policy 4.2 § 3.2 {CITE:2:cite-3-2}, a data subject may withdraw consent at any time, and this does <strong>not</strong> affect the lawfulness of processing already carried out.',
+          'If no alternative lawful ground applies, the firm must cease processing within <strong>30 days</strong> and arrange secure deletion or de-identification. However, FICA record-keeping and Legal Practice Act obligations can override withdrawal. You should update the LIA on the matter file and raise with the supervising partner.'
+        ],
+        cites: [{ page: 2, anchor: 'cite-3-2', label: 'p2 § 3.2' }]
+      };
+    } else if (kind === 'secondee') {
+      q = 'Does this policy apply to secondees?';
+      reply = {
+        text: [
+          'Yes, and secondees are specifically addressed in § 5.2 {CITE:4:}.',
+          'The firm must obtain <strong>written confirmation from the client</strong> specifying the categories of information the secondee may access and the purposes of that access. Legitimate interest alone is insufficient where special personal information is involved (health, biometric, criminal-behaviour information — s26 POPIA).',
+          'Practical step: add a secondment data-handling addendum to the secondment agreement and log it on the matter file.'
+        ],
+        cites: [{ page: 4, anchor: null, label: 'p4 § 5.2' }]
+      };
+    } else if (kind === 'conflict') {
+      q = 'Is running a conflict check based on consent or legitimate interest?';
+      reply = {
+        text: [
+          '<strong>Legitimate interest</strong> — not consent {CITE:4:}.',
+          'Policy 4.2 § 5.1 is explicit: conflict checking against the firm\'s client database is ordinarily justifiable on legitimate interest (pursuit of compliance with professional rules of conduct and prevention of conflicts), and does <strong>not</strong> require specific consent from the proposed new client or from existing clients.',
+          'The underlying ground comes from POPIA s11(1)(f) {CITE:3:cite-4-1-3}, and you still need to document the three-part LIA test on the matter file. The firm\'s Conflicts Team usually handles this centrally.'
+        ],
+        cites: [
+          { page: 4, anchor: null, label: 'p4 § 5.1' },
+          { page: 3, anchor: 'cite-4-1-3', label: 'p3 § 4.1' }
+        ]
+      };
+    } else if (kind === 'regulator') {
+      q = "What questions would the Information Regulator ask about this policy?";
+      reply = {
+        text: [
+          'In my simulated regulator audit, these are the likely questions with the highest risk of a non-compliance finding:',
+          '<strong>1.</strong> Where consent is relied upon, can you produce the record showing it was specific, informed, voluntary and expressed? (§ 3.1 {CITE:2:})',
+          '<strong>2.</strong> For each legitimate-interest reliance, can you produce the signed LIA, and is it reviewed annually? (§ 4.2 {CITE:3:cite-4-1-3})',
+          '<strong>3.</strong> What\'s your 30-day purge workflow when consent is withdrawn? (§ 3.2 {CITE:2:cite-3-2})',
+          '<strong>4.</strong> How do you separate legitimate-interest-based marketing to existing clients from marketing requiring opt-in? (§ 5.3 {CITE:4:})',
+          'Open the <em>Regulator\'s Perspective</em> artefact (Study tab) for the full 14-question audit simulation.'
+        ],
+        cites: [
+          { page: 2, anchor: null, label: 'p2 § 3.1' },
+          { page: 3, anchor: 'cite-4-1-3', label: 'p3 § 4.1' },
+          { page: 2, anchor: 'cite-3-2', label: 'p2 § 3.2' },
+          { page: 4, anchor: null, label: 'p4 § 5.3' }
+        ]
+      };
+    }
+    sendChat(q, reply);
+  }
+
+  /* ---- Chat send ---- */
+  function sendChat(userText, mockReply) {
+    state.chatStarted = true;
+    var empty = document.getElementById('chat-empty');
+    if (empty) empty.style.display = 'none';
+    var msgs = document.getElementById('chat-messages');
+
+    // user bubble
+    var u = document.createElement('div');
+    u.className = 'chat-msg user';
+    u.innerHTML = '<div class="bubble">' + escapeHtml(userText) + '</div>';
+    msgs.appendChild(u);
+
+    // typing indicator
+    var typing = document.createElement('div');
+    typing.className = 'chat-msg assistant';
+    typing.innerHTML =
+      '<div class="msg-header"><span class="dot"></span> DWx Copilot · Tutor</div>' +
+      '<div class="typing-indicator"><span></span><span></span><span></span></div>';
+    msgs.appendChild(typing);
+    scrollChatToBottom();
+
+    // default reply if not provided
+    if (!mockReply) {
+      mockReply = {
+        text: [
+          'Good question. Based on Policy 4.2, the short answer is <strong>it depends on whether special information is involved</strong> — see § 4.3 {CITE:3:}.',
+          'For ordinary personal information, legitimate interest may suffice with a properly documented LIA. For special personal information (health, biometric, criminal-behaviour data) you\'ll need an alternative lawful ground under s27 POPIA.'
+        ],
+        cites: [{ page: 3, anchor: null, label: 'p3 § 4.3' }]
+      };
+    }
+
+    setTimeout(function () {
+      typing.remove();
+      renderAssistantReply(msgs, mockReply);
+      bumpEngagement(0.08, 'Asked Copilot a question');
+      scrollChatToBottom();
+    }, 900);
+  }
+
+  function renderAssistantReply(msgs, reply) {
+    var m = document.createElement('div');
+    m.className = 'chat-msg assistant';
+    var html =
+      '<div class="msg-header"><span class="dot"></span> DWx Copilot · Tutor <span style="margin-left:auto; color:#10B981;">● grounded</span></div>' +
+      '<div class="bubble">';
+    for (var i = 0; i < reply.text.length; i++) {
+      html += '<p>' + injectCiteChips(reply.text[i], reply.cites) + '</p>';
+    }
+    html += '</div>' +
+      '<div class="msg-feedback">' +
+      '<button title="Helpful"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3zM7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3"/></svg></button>' +
+      '<button title="Not helpful"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 15v4a3 3 0 003 3l4-9V2H5.72a2 2 0 00-2 1.7l-1.38 9a2 2 0 002 2.3zm7-13h2.67A2.31 2.31 0 0122 4v7a2.31 2.31 0 01-2.33 2H17"/></svg></button>' +
+      '<button title="Copy">Copy</button>' +
+      '<button title="Save to notes">Save</button>' +
+      '</div>';
+    m.innerHTML = html;
+    msgs.appendChild(m);
+  }
+
+  /* Convert "{CITE:page:anchor}" markers → citation chips */
+  function injectCiteChips(text, cites) {
+    return text.replace(/\{CITE:(\d+):([^\}]*)\}/g, function (_, page, anchor) {
+      var label = 'p' + page;
+      // find matching cite for a prettier label
+      for (var i = 0; i < cites.length; i++) {
+        if (String(cites[i].page) === page) { label = cites[i].label; break; }
+      }
+      return '<span class="citation-chip" onclick="jumpToCitation(' + page + ",'" + (anchor || '') + "')\" " +
+             'title="Jump to source">' +
+             '<span class="cite-num">' + page + '</span>' + label + '</span>';
+    });
+  }
+
+  function scrollChatToBottom() {
+    var body = document.getElementById('panel-chat');
+    body.scrollTop = body.scrollHeight;
+  }
+
+  function escapeHtml(s) { return s.replace(/[&<>"']/g, function (c) { return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]; }); }
+
+  /* ---- Text selection → floating "Ask Copilot" action ---- */
+  var selAction = document.getElementById('selection-action');
+  document.addEventListener('mouseup', function (e) {
+    var sel = window.getSelection();
+    var text = sel ? String(sel).trim() : '';
+    // only if selection is inside a pdf page
+    var inPdf = false;
+    var node = sel && sel.anchorNode;
+    while (node) {
+      if (node.classList && node.classList.contains('pdf-page')) { inPdf = true; break; }
+      node = node.parentNode;
+    }
+    if (text && text.length > 8 && inPdf) {
+      var rect = sel.getRangeAt(0).getBoundingClientRect();
+      selAction.style.display = 'flex';
+      selAction.style.top = (rect.top + window.scrollY - 36) + 'px';
+      selAction.style.left = (rect.left + rect.width / 2 - 80) + 'px';
+      selAction.dataset.text = text;
+    } else {
+      selAction.style.display = 'none';
+    }
+  });
+  selAction.addEventListener('click', function () {
+    var t = selAction.dataset.text || '';
+    selAction.style.display = 'none';
+    window.getSelection().removeAllRanges();
+    showTab('chat');
+    sendChat('Explain this passage: "' + (t.length > 140 ? t.slice(0, 140) + '…' : t) + '"', {
+      text: [
+        'You highlighted a passage from the policy. Here\'s what it means in practice:',
+        'The clause you selected establishes the <strong>firm\'s obligation</strong>, not an optional best practice. In an audit, the Regulator will expect to see documentation. For this specific passage, the supervising partner must sign off before processing commences.',
+        'Common mistake: treating this as a one-time sign-off. The LIA must be reviewed annually for ongoing processing.'
+      ],
+      cites: [{ page: state.page, anchor: null, label: 'p' + state.page }]
+    });
+  });
+
+  /* ---- Scroll-based page tracker + proactive tutor trigger ---- */
+  var shell = document.getElementById('pdf-shell');
+  shell.addEventListener('scroll', function () {
+    var pages = document.querySelectorAll('.pdf-page');
+    var mid = shell.scrollTop + shell.clientHeight / 2;
+    for (var i = 0; i < pages.length; i++) {
+      var p = pages[i];
+      if (p.offsetTop <= mid && p.offsetTop + p.offsetHeight > mid) {
+        if (state.page !== Number(p.dataset.page)) {
+          state.page = Number(p.dataset.page);
+          document.getElementById('current-page').textContent = state.page;
+          bumpEngagement(0.02, 'Reached page ' + state.page);
+          // Fire proactive tutor when reaching page 3 fast
+          if (state.page === 3 && !state.proactiveFired) {
+            state.proactiveFired = true;
+            setTimeout(showProactive, 1600);
+          }
+        }
+        break;
+      }
+    }
+  });
+
+  /* ---- Engagement score updates ---- */
+  function bumpEngagement(delta, reason) {
+    state.engagement = Math.min(1, state.engagement + delta);
+    var pct = Math.round(state.engagement * 100);
+    document.getElementById('engagement-pct').textContent = pct + '%';
+    document.getElementById('engagement-bar').style.width = pct + '%';
+    document.getElementById('big-score').textContent = state.engagement.toFixed(2);
+    // unlock assessment at 0.65
+    var btn = document.getElementById('assessment-btn');
+    var state2 = document.getElementById('score-state');
+    if (state.engagement >= 0.65) {
+      btn.classList.remove('locked');
+      btn.classList.add('primary');
+      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Take assessment';
+      state2.style.background = '#DCFCE7';
+      state2.style.color = '#166534';
+      state2.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Assessment unlocked — comprehension confirmed';
+    }
+    if (reason) console.log('[engagement] +' + delta.toFixed(2) + ' · ' + reason + ' → ' + state.engagement.toFixed(2));
+  }
+
+  /* ---- Proactive tutor ---- */
+  function showProactive() {
+    document.getElementById('proactive-modal').classList.add('show');
+  }
+  function hideProactive() {
+    document.getElementById('proactive-modal').classList.remove('show');
+  }
+  function answerProactive(btn, isCorrect) {
+    var opts = btn.parentNode.querySelectorAll('.proactive-option');
+    for (var i = 0; i < opts.length; i++) {
+      opts[i].disabled = true;
+    }
+    if (isCorrect) {
+      btn.classList.add('correct');
+      bumpEngagement(0.12, 'Proactive check · correct');
+      showToast('Correct — consent is NOT one of the three parts of the LIA test.');
+    } else {
+      btn.classList.add('wrong');
+      // reveal the correct one
+      opts[2].classList.add('correct');
+      bumpEngagement(0.04, 'Proactive check · incorrect but attempted');
+      showToast('Not quite — the three parts are Purpose, Necessity and Balancing.');
+    }
+    setTimeout(hideProactive, 1800);
+  }
+
+  /* ---- Chat input send ---- */
+  document.getElementById('chat-send').addEventListener('click', sendCurrent);
+  document.getElementById('chat-input').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendCurrent();
+    }
+  });
+  function sendCurrent() {
+    var input = document.getElementById('chat-input');
+    var t = input.value.trim();
+    if (!t) return;
+    input.value = '';
+    // map to pre-canned replies for the demo
+    var lower = t.toLowerCase();
+    if (lower.indexOf('secondee') >= 0) return runQuickAction('secondee');
+    if (lower.indexOf('withdraw') >= 0 || lower.indexOf('revoke') >= 0) return runQuickAction('withdraw');
+    if (lower.indexOf('conflict') >= 0) return runQuickAction('conflict');
+    if (lower.indexOf('regulator') >= 0 || lower.indexOf('audit') >= 0) return runQuickAction('regulator');
+    // otherwise generic
+    sendChat(t);
+  }
+
+  /* ---- Toast ---- */
+  function showToast(msg) {
+    var t = document.getElementById('toast');
+    document.getElementById('toast-msg').textContent = msg;
+    t.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(function () { t.classList.remove('show'); }, 2600);
+  }
+
+  /* ---- Slow passive engagement tick (simulating dwell time) ---- */
+  setInterval(function () {
+    if (document.visibilityState === 'visible') {
+      bumpEngagement(0.005);
+    }
+  }, 2500);
+
+  /* Hide selection action on click elsewhere */
+  document.addEventListener('mousedown', function (e) {
+    if (e.target.closest('#selection-action')) return;
+    selAction.style.display = 'none';
+  });
+
+  /* Progress bar initial paint */
+  document.getElementById('engagement-bar').style.width = '42%';
+
+  /* Welcome toast */
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      showToast('Tip: highlight text in the policy to ask Copilot about it.');
+    }, 1400);
+  });
+</script>
+
+</body>
+</html>

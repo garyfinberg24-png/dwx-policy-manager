@@ -1,0 +1,2020 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PolicyIQ — QA Testing Guide</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+  :root {
+    --teal: #0d9488;
+    --teal-dark: #0f766e;
+    --teal-light: #ccfbf1;
+    --teal-pale: #f0fdfa;
+    --navy: #0f172a;
+    --slate: #334155;
+    --muted: #64748b;
+    --border: #e2e8f0;
+    --bg: #f8fafc;
+    --white: #fff;
+    --green: #059669;
+    --green-light: #ecfdf5;
+    --amber: #d97706;
+    --amber-light: #fffbeb;
+    --red: #dc2626;
+    --red-light: #fef2f2;
+    --blue: #2563eb;
+    --blue-light: #eff6ff;
+    --purple: #7c3aed;
+    --purple-light: #f5f3ff;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: var(--slate);
+    line-height: 1.6;
+    background: var(--bg);
+  }
+
+  /* ─── HEADER ─── */
+  .app-header {
+    background: linear-gradient(135deg, var(--navy) 0%, #1e293b 50%, var(--teal-dark) 100%);
+    color: white;
+    padding: 32px 40px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  }
+
+  .app-header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .app-header p {
+    font-size: 13px;
+    color: rgba(255,255,255,0.6);
+  }
+
+  .header-meta {
+    display: flex;
+    gap: 24px;
+    margin-top: 12px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.5);
+  }
+
+  .header-meta span { display: flex; align-items: center; gap: 6px; }
+
+  /* ─── LAYOUT ─── */
+  .layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    min-height: calc(100vh - 120px);
+  }
+
+  /* ─── SIDEBAR ─── */
+  .sidebar {
+    background: var(--white);
+    border-right: 1px solid var(--border);
+    padding: 20px 0;
+    position: sticky;
+    top: 90px;
+    height: calc(100vh - 90px);
+    overflow-y: auto;
+  }
+
+  .sidebar-group {
+    margin-bottom: 4px;
+  }
+
+  .sidebar-group-title {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--muted);
+    padding: 12px 20px 6px;
+  }
+
+  .sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 20px;
+    font-size: 13px;
+    color: var(--slate);
+    cursor: pointer;
+    text-decoration: none;
+    border-left: 3px solid transparent;
+    transition: all 0.15s;
+  }
+
+  .sidebar-item:hover {
+    background: var(--teal-pale);
+    color: var(--teal-dark);
+  }
+
+  .sidebar-item.active {
+    background: var(--teal-pale);
+    color: var(--teal);
+    border-left-color: var(--teal);
+    font-weight: 600;
+  }
+
+  .sidebar-badge {
+    margin-left: auto;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: var(--teal-light);
+    color: var(--teal-dark);
+  }
+
+  /* ─── CONTENT ─── */
+  .content {
+    padding: 32px 40px;
+    max-width: 1100px;
+  }
+
+  .section {
+    display: none;
+    animation: fadeIn 0.25s ease;
+  }
+
+  .section.active { display: block; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .section-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 4px;
+  }
+
+  .section-subtitle {
+    font-size: 14px;
+    color: var(--muted);
+    margin-bottom: 24px;
+  }
+
+  /* ─── PROGRESS BAR ─── */
+  .progress-bar {
+    background: var(--border);
+    height: 6px;
+    border-radius: 3px;
+    margin-bottom: 32px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--teal), var(--green));
+    transition: width 0.4s ease;
+  }
+
+  .progress-stats {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  /* ─── TEST CASE ─── */
+  .test-case {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 16px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .test-case.passed { border-left: 4px solid var(--green); }
+  .test-case.failed { border-left: 4px solid var(--red); }
+  .test-case.blocked { border-left: 4px solid var(--amber); }
+  .test-case.skipped { border-left: 4px solid var(--muted); }
+
+  .test-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .test-header:hover { background: var(--bg); }
+
+  .test-id {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--teal);
+    background: var(--teal-pale);
+    padding: 2px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+
+  .test-title {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--navy);
+  }
+
+  .test-priority {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .test-priority.critical { background: var(--red-light); color: var(--red); }
+  .test-priority.high { background: var(--amber-light); color: var(--amber); }
+  .test-priority.medium { background: var(--blue-light); color: var(--blue); }
+  .test-priority.low { background: #f8fafc; color: var(--muted); }
+
+  .test-status-btn {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: var(--white);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .test-status-btn:hover { border-color: var(--teal); }
+  .test-status-btn.pass { background: var(--green-light); color: var(--green); border-color: var(--green); }
+  .test-status-btn.fail { background: var(--red-light); color: var(--red); border-color: var(--red); }
+  .test-status-btn.block { background: var(--amber-light); color: var(--amber); border-color: var(--amber); }
+  .test-status-btn.skip { background: #f1f5f9; color: var(--muted); border-color: var(--muted); }
+
+  .test-body {
+    display: none;
+    padding: 0 18px 18px;
+    border-top: 1px solid var(--border);
+  }
+
+  .test-case.expanded .test-body { display: block; }
+
+  .test-steps {
+    list-style: none;
+    padding: 0;
+    margin: 14px 0;
+  }
+
+  .test-steps li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 0;
+    font-size: 13px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .test-steps li:last-child { border-bottom: none; }
+
+  .step-num {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--teal-pale);
+    color: var(--teal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .step-check {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    border: 2px solid var(--border);
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-top: 2px;
+    transition: all 0.15s;
+  }
+
+  .step-check.checked {
+    background: var(--green);
+    border-color: var(--green);
+  }
+
+  .step-check.checked::after {
+    content: '\2713';
+    color: white;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+  }
+
+  .expected {
+    background: var(--teal-pale);
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--teal-dark);
+  }
+
+  .expected strong {
+    display: block;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+    color: var(--teal);
+  }
+
+  .precondition {
+    background: var(--amber-light);
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin: 10px 0;
+    font-size: 12px;
+    color: #92400e;
+  }
+
+  .precondition strong {
+    display: block;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+    color: var(--amber);
+  }
+
+  .notes-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: inherit;
+    margin-top: 10px;
+    resize: vertical;
+    min-height: 40px;
+  }
+
+  .notes-input:focus { outline: none; border-color: var(--teal); }
+
+  /* ─── ROLE MATRIX ─── */
+  .role-matrix {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 13px;
+  }
+
+  .role-matrix th {
+    background: var(--teal-pale);
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--teal-dark);
+  }
+
+  .role-matrix td {
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .role-matrix tbody tr:hover { background: var(--bg); }
+
+  .check-yes { color: var(--green); font-weight: 700; }
+  .check-no { color: #cbd5e1; }
+
+  /* ─── INFO CARD ─── */
+  .info-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+
+  .info-card h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--navy);
+    margin-bottom: 8px;
+  }
+
+  .info-card p, .info-card li {
+    font-size: 13px;
+    color: var(--slate);
+  }
+
+  .info-card ul {
+    padding-left: 18px;
+    margin-top: 6px;
+  }
+
+  .info-card ul li { padding: 3px 0; }
+
+  /* ─── LIFECYCLE FLOW ─── */
+  .lifecycle {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin: 20px 0;
+    flex-wrap: wrap;
+  }
+
+  .lifecycle-step {
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    background: var(--white);
+  }
+
+  .lifecycle-step.draft { border-color: var(--muted); color: var(--muted); }
+  .lifecycle-step.review { border-color: var(--blue); color: var(--blue); background: var(--blue-light); }
+  .lifecycle-step.approved { border-color: var(--green); color: var(--green); background: var(--green-light); }
+  .lifecycle-step.published { border-color: var(--teal); color: var(--teal); background: var(--teal-light); }
+
+  .lifecycle-arrow { color: #cbd5e1; padding: 0 6px; font-size: 16px; }
+
+  /* ─── FILTER BAR ─── */
+  .filter-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .filter-btn {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid var(--border);
+    background: var(--white);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .filter-btn:hover { border-color: var(--teal); color: var(--teal); }
+  .filter-btn.active { background: var(--teal); color: var(--white); border-color: var(--teal); }
+
+  /* ─── SUMMARY CARDS ─── */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .summary-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+  }
+
+  .summary-card .value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--navy);
+  }
+
+  .summary-card .label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    font-weight: 600;
+    margin-top: 4px;
+  }
+
+  .summary-card.green .value { color: var(--green); }
+  .summary-card.red .value { color: var(--red); }
+  .summary-card.amber .value { color: var(--amber); }
+  .summary-card.blue .value { color: var(--blue); }
+
+  /* ─── EXPORT ─── */
+  .export-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--white);
+    border-top: 1px solid var(--border);
+    padding: 10px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 99;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.04);
+  }
+
+  .export-bar button {
+    padding: 8px 20px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--white);
+    transition: all 0.15s;
+  }
+
+  .export-bar button:hover { border-color: var(--teal); color: var(--teal); }
+
+  .export-bar button.primary {
+    background: var(--teal);
+    color: var(--white);
+    border-color: var(--teal);
+  }
+
+  .export-bar button.primary:hover { background: var(--teal-dark); }
+
+  @media print {
+    .app-header { position: relative; }
+    .sidebar { display: none; }
+    .layout { grid-template-columns: 1fr; }
+    .export-bar { display: none; }
+    .section { display: block !important; page-break-inside: avoid; }
+    .test-body { display: block !important; }
+    .test-case { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <h1>PolicyIQ - QA Testing Guide</h1>
+  <p>End-to-End Testing Scripts - Draft to Publish to Distribution</p>
+  <div class="header-meta">
+    <span>Version 1.2.4</span>
+    <span>|</span>
+    <span>Site: mf7m.sharepoint.com/sites/PolicyManager</span>
+    <span>|</span>
+    <span>Generated: 17 April 2026</span>
+    <span>|</span>
+    <span id="overall-status">0 / 0 tests completed</span>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- Sidebar Navigation -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-group">
+      <div class="sidebar-group-title">Overview</div>
+      <a class="sidebar-item active" data-section="overview">Dashboard</a>
+      <a class="sidebar-item" data-section="roles">Role Matrix</a>
+      <a class="sidebar-item" data-section="lifecycle">Policy Lifecycle</a>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-group-title">Functional Tests</div>
+      <a class="sidebar-item" data-section="f-create">F1: Policy Creation <span class="sidebar-badge" id="badge-f-create">0/8</span></a>
+      <a class="sidebar-item" data-section="f-review">F2: Review Process <span class="sidebar-badge" id="badge-f-review">0/6</span></a>
+      <a class="sidebar-item" data-section="f-approve">F3: Approval Process <span class="sidebar-badge" id="badge-f-approve">0/5</span></a>
+      <a class="sidebar-item" data-section="f-publish">F4: Publish & Distribute <span class="sidebar-badge" id="badge-f-publish">0/6</span></a>
+      <a class="sidebar-item" data-section="f-read">F5: Read & Acknowledge <span class="sidebar-badge" id="badge-f-read">0/7</span></a>
+      <a class="sidebar-item" data-section="f-email">F6: Email Notifications <span class="sidebar-badge" id="badge-f-email">0/8</span></a>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-group-title">Process Tests</div>
+      <a class="sidebar-item" data-section="p-e2e">P1: End-to-End Flow <span class="sidebar-badge" id="badge-p-e2e">0/5</span></a>
+      <a class="sidebar-item" data-section="p-edge">P2: Edge Cases <span class="sidebar-badge" id="badge-p-edge">0/6</span></a>
+      <a class="sidebar-item" data-section="p-regression">P3: Regression <span class="sidebar-badge" id="badge-p-regression">0/6</span></a>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-group-title">Role-Based Tests</div>
+      <a class="sidebar-item" data-section="r-user">R1: User Role <span class="sidebar-badge" id="badge-r-user">0/5</span></a>
+      <a class="sidebar-item" data-section="r-author">R2: Author Role <span class="sidebar-badge" id="badge-r-author">0/6</span></a>
+      <a class="sidebar-item" data-section="r-manager">R3: Manager Role <span class="sidebar-badge" id="badge-r-manager">0/6</span></a>
+      <a class="sidebar-item" data-section="r-admin">R4: Admin Role <span class="sidebar-badge" id="badge-r-admin">0/5</span></a>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="content" id="main-content">
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- OVERVIEW                                                    -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div class="section active" id="section-overview">
+      <div class="section-title">QA Testing Dashboard</div>
+      <div class="section-subtitle">Track testing progress across all categories</div>
+
+      <div class="summary-grid" id="summary-grid">
+        <div class="summary-card"><div class="value" id="total-tests">0</div><div class="label">Total Tests</div></div>
+        <div class="summary-card green"><div class="value" id="total-passed">0</div><div class="label">Passed</div></div>
+        <div class="summary-card red"><div class="value" id="total-failed">0</div><div class="label">Failed</div></div>
+        <div class="summary-card amber"><div class="value" id="total-blocked">0</div><div class="label">Blocked</div></div>
+      </div>
+
+      <div class="progress-stats">
+        <span id="progress-label">0% complete</span>
+        <span id="progress-count">0 of 0 tests</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+
+      <div class="info-card">
+        <h4>Test Environment</h4>
+        <ul>
+          <li><strong>Site:</strong> https://mf7m.sharepoint.com/sites/PolicyManager</li>
+          <li><strong>Build:</strong> 1.2.4</li>
+          <li><strong>Admin account:</strong> gf_admin (Site Collection Admin)</li>
+          <li><strong>Test accounts needed:</strong> 1x User, 1x Author, 1x Manager, 1x Admin (set via Admin Centre &gt; User Directory)</li>
+          <li><strong>Browser:</strong> Incognito mode recommended for role testing (clears localStorage cache)</li>
+        </ul>
+      </div>
+
+      <div class="info-card">
+        <h4>How to Use This Guide</h4>
+        <ul>
+          <li>Click any test to expand steps and expected results</li>
+          <li>Use <strong>Pass / Fail / Block / Skip</strong> buttons to record results</li>
+          <li>Add notes in the text field for any issues found</li>
+          <li>Progress auto-saves to localStorage</li>
+          <li>Use <strong>Export Results</strong> at the bottom to download a summary</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- ROLE MATRIX                                                 -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div class="section" id="section-roles">
+      <div class="section-title">Role Visibility Matrix</div>
+      <div class="section-subtitle">Verify each role sees only the correct navigation items and actions</div>
+
+      <table class="role-matrix">
+        <thead>
+          <tr><th>Navigation Item</th><th>User</th><th>Author</th><th>Manager</th><th>Admin</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>My Policies</strong></td><td class="check-yes">&#10003;</td><td class="check-yes">&#10003;</td><td class="check-yes">&#10003;</td><td class="check-yes">&#10003;</td></tr>
+          <tr><td><strong>Policy Hub</strong></td><td class="check-yes">&#10003;</td><td class="check-yes">&#10003;</td><td class="check-yes">&#10003;</td><td class="check-yes">&#10003;</td></tr>
+          <tr><td><strong>Search</strong></td><td class="check-yes">&#10003;</td><td class="check-yes">&#10003;</td><td class="check-yes">&#10003;</td><td class="check-yes">&#10003;</td></tr>
+          <tr><td><strong>Help</strong></td><td class="check-yes">&#10003;</td><td class="check-yes">&#10003;</td><td class="check-yes">&#10003;</td><td class="check-yes">&#10003;</td></tr>
+          <tr style="background:var(--teal-pale);"><td colspan="5" style="font-size:11px; font-weight:700; color:var(--teal); text-transform:uppercase; letter-spacing:1px;">Author Dropdown</td></tr>
+          <tr><td>New Policy</td><td class="check-no">&mdash;</td><td class="check-yes">&#10003;</td><td class="check-no">&mdash;</td><td class="check-yes">&#10003;</td></tr>
+          <tr><td>Drafts &amp; Pipeline</td><td class="check-no">&mdash;</td><td class="check-yes">&#10003;</td><td class="check-no">&mdash;</td><td class="check-yes">&#10003;</td></tr>
+          <tr><td>Policy Packs</td><td class="check-no">&mdash;</td><td class="check-yes">&#10003;</td><td class="check-no">&mdash;</td><td class="check-yes">&#10003;</td></tr>
+          <tr><td>Quiz Builder</td><td class="check-no">&mdash;</td><td class="check-yes">&#10003;</td><td class="check-no">&mdash;</td><td class="check-yes">&#10003;</td></tr>
+          <tr><td>Reports (Author)</td><td class="check-no">&mdash;</td><td class="check-yes">&#10003;</td><td class="check-no">&mdash;</td><td class="check-yes">&#10003;</td></tr>
+          <tr><td>Bulk Upload</td><td class="check-no">&mdash;</td><td class="check-yes">&#10003;</td><td class="check-no">&mdash;</td><td class="check-yes">&#10003;</td></tr>
+          <tr style="background:var(--amber-light);"><td colspan="5" style="font-size:11px; font-weight:700; color:var(--amber); text-transform:uppercase; letter-spacing:1px;">Manager Dropdown</td></tr>
+          <tr><td>Dashboard</td><td class="check-no">&mdash;</td><td class="check-no">&mdash;</td><td class="check-yes">&#10003;</td><td class="check-yes">&#10003;</td></tr>
+          <tr><td>Approvals</td><td class="check-no">&mdash;</td><td class="check-no">&mdash;</td><td class="check-yes">&#10003;</td><td class="check-yes">&#10003;</td></tr>
+          <tr><td>Distribution</td><td class="check-no">&mdash;</td><td class="check-no">&mdash;</td><td class="check-yes">&#10003;</td><td class="check-yes">&#10003;</td></tr>
+          <tr><td>Team Compliance</td><td class="check-no">&mdash;</td><td class="check-no">&mdash;</td><td class="check-yes">&#10003;</td><td class="check-yes">&#10003;</td></tr>
+          <tr><td>Delegations</td><td class="check-no">&mdash;</td><td class="check-no">&mdash;</td><td class="check-yes">&#10003;</td><td class="check-yes">&#10003;</td></tr>
+          <tr><td>Review Cycles</td><td class="check-no">&mdash;</td><td class="check-no">&mdash;</td><td class="check-yes">&#10003;</td><td class="check-yes">&#10003;</td></tr>
+          <tr><td>Reports (Manager)</td><td class="check-no">&mdash;</td><td class="check-no">&mdash;</td><td class="check-yes">&#10003;</td><td class="check-yes">&#10003;</td></tr>
+          <tr><td>Analytics</td><td class="check-no">&mdash;</td><td class="check-no">&mdash;</td><td class="check-yes">&#10003;</td><td class="check-yes">&#10003;</td></tr>
+          <tr><td>Request Policy</td><td class="check-no">&mdash;</td><td class="check-no">&mdash;</td><td class="check-yes">&#10003;</td><td class="check-yes">&#10003;</td></tr>
+          <tr style="background:var(--red-light);"><td colspan="5" style="font-size:11px; font-weight:700; color:var(--red); text-transform:uppercase; letter-spacing:1px;">Admin Only</td></tr>
+          <tr><td>Settings Cog (icon)</td><td class="check-no">&mdash;</td><td class="check-no">&mdash;</td><td class="check-no">&mdash;</td><td class="check-yes">&#10003;</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- POLICY LIFECYCLE                                            -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div class="section" id="section-lifecycle">
+      <div class="section-title">Policy Lifecycle</div>
+      <div class="section-subtitle">The complete journey of a policy from draft to retirement</div>
+
+      <div class="lifecycle">
+        <div class="lifecycle-step draft">Draft</div>
+        <div class="lifecycle-arrow">&rarr;</div>
+        <div class="lifecycle-step review">In Review</div>
+        <div class="lifecycle-arrow">&rarr;</div>
+        <div class="lifecycle-step" style="border-color:var(--amber);color:var(--amber);background:var(--amber-light);">Pending Approval</div>
+        <div class="lifecycle-arrow">&rarr;</div>
+        <div class="lifecycle-step approved">Approved</div>
+        <div class="lifecycle-arrow">&rarr;</div>
+        <div class="lifecycle-step published">Published</div>
+        <div class="lifecycle-arrow">&rarr;</div>
+        <div class="lifecycle-step" style="border-color:var(--muted);color:var(--muted);">Archived / Retired</div>
+      </div>
+
+      <div class="info-card">
+        <h4>Status Transitions</h4>
+        <ul>
+          <li><strong>Draft &rarr; In Review:</strong> Author clicks "Submit for Review" (requires at least 1 reviewer assigned)</li>
+          <li><strong>In Review &rarr; Approved:</strong> ALL assigned reviewers approve (triggers approval notification to approvers if any)</li>
+          <li><strong>In Review &rarr; Draft:</strong> Reviewer requests changes OR rejects (all reviewer statuses reset)</li>
+          <li><strong>Approved &rarr; Published:</strong> Author clicks "Publish" on pipeline (version bumps to next major)</li>
+          <li><strong>Published &rarr; Retired:</strong> Author retires with reason (outstanding acks cancelled, users notified)</li>
+          <li><strong>Published &rarr; Draft (Revision):</strong> Author clicks "Revise" (version snapshot, original stays published)</li>
+        </ul>
+      </div>
+
+      <div class="info-card">
+        <h4>Document Conversion</h4>
+        <ul>
+          <li>Office docs (DOCX, PPTX, XLSX) are converted to HTML at <strong>submit-for-review</strong> time</li>
+          <li>PDFs are NOT converted &mdash; displayed via native browser PDF viewer</li>
+          <li>HTML policies are rendered natively in the reader (no iframe)</li>
+          <li>Safety-net fallback conversion also runs at publish time if missed</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Sections will be populated by JavaScript below -->
+    <div id="test-sections-container"></div>
+
+  </main>
+</div>
+
+<div class="export-bar">
+  <div style="font-size:12px; color:var(--muted);">
+    Progress auto-saved to localStorage | <span id="last-saved">Not saved yet</span>
+  </div>
+  <div style="display:flex; gap:8px;">
+    <button onclick="resetAll()">Reset All</button>
+    <button onclick="expandAll()">Expand All</button>
+    <button onclick="collapseAll()">Collapse All</button>
+    <button class="primary" onclick="exportResults()">Export Results</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// TEST DATA
+// ═══════════════════════════════════════════════════════════════
+
+const testSections = [
+  // ── F1: POLICY CREATION ──
+  {
+    id: 'f-create',
+    title: 'F1: Policy Creation',
+    subtitle: 'Test all creation methods and wizard steps',
+    tests: [
+      {
+        id: 'F1.1', title: 'Create blank HTML policy via 8-step wizard', priority: 'critical',
+        precondition: 'Logged in as Author. Navigate to Author > New Policy.',
+        steps: [
+          'Step 1 (Creation Method): Select "Blank" option',
+          'Step 2 (Basic Info): Enter policy name "QA Test Policy - Blank", select category "HR Policies"',
+          'Step 3 (Metadata): Select compliance risk "Medium", read timeframe "Week 1", toggle "Requires Acknowledgement" ON',
+          'Step 4 (Audience): Select "All Employees"',
+          'Step 5 (Dates): Set effective date to tomorrow, review frequency "Annual"',
+          'Step 6 (Workflow): Select 1 reviewer and 1 approver from the configured groups',
+          'Step 7 (Content): Type policy content in the TinyMCE editor (at least 2 paragraphs with headings)',
+          'Step 8 (Review): Verify all fields displayed correctly. Click "Save Draft".',
+        ],
+        expected: 'Policy saved as Draft. Appears in Drafts & Pipeline with status "Draft". Policy number auto-generated (e.g., POL-HR-XXX). No email notifications sent.'
+      },
+      {
+        id: 'F1.2', title: 'Create policy by uploading a Word document', priority: 'critical',
+        precondition: 'Logged in as Author. Have a .docx file ready.',
+        steps: [
+          'Step 1: Select "Upload" creation method',
+          'Click "Browse & Upload" and select a .docx file (under 25MB)',
+          'Verify file name appears with Word icon',
+          'Complete Steps 2-6 with valid data',
+          'Step 7: Verify uploaded document is shown in the viewer (Office Online iframe)',
+          'Step 8: Click "Save Draft"',
+        ],
+        expected: 'Draft created with DocumentURL pointing to the uploaded file. Document visible in viewer.'
+      },
+      {
+        id: 'F1.3', title: 'Create policy from a template', priority: 'high',
+        precondition: 'Logged in as Author. At least 1 template exists in Admin Centre.',
+        steps: [
+          'Step 1: Select "Template" creation method',
+          'Browse available templates and select one',
+          'Verify template metadata pre-fills in Step 2 and Step 3',
+          'Verify template content loads in Step 7 editor',
+          'Modify content and save as draft',
+        ],
+        expected: 'Draft created with template content and pre-filled metadata. SourceTemplateId recorded.'
+      },
+      {
+        id: 'F1.4', title: 'Create Office document (Word/Excel/PPT)', priority: 'high',
+        precondition: 'Logged in as Author.',
+        steps: [
+          'Step 1: Select "Word Document" creation method',
+          'Wait for "Create Document" button to appear in Step 7',
+          'Click "Create Document" - new Word doc opens in Office Online',
+          'Enter content in the Word editor and save (Ctrl+S)',
+          'Return to Policy Builder and verify document URL is captured',
+          'Save as draft',
+        ],
+        expected: 'Policy created with DocumentURL pointing to the new Word document in PM_PolicySourceDocuments.'
+      },
+      {
+        id: 'F1.5', title: 'Fast Track wizard (4 steps)', priority: 'medium',
+        precondition: 'Logged in as Author.',
+        steps: [
+          'Step 1: Select "Fast Track" creation method',
+          'Select a Fast Track template from the dropdown',
+          'Verify wizard shows only 4-5 steps (not 8)',
+          'Complete all steps and submit',
+        ],
+        expected: 'Policy created with metadata pre-filled from Fast Track template. Fewer steps than standard wizard.'
+      },
+      {
+        id: 'F1.6', title: 'Upload PDF document', priority: 'high',
+        precondition: 'Logged in as Author. Have a .pdf file ready.',
+        steps: [
+          'Step 1: Select "Upload" creation method',
+          'Upload a PDF file',
+          'Complete all wizard steps',
+          'Step 7: Verify PDF is displayed in the embedded viewer (not converted to HTML)',
+          'Save as draft',
+        ],
+        expected: 'Draft created. PDF stored as-is. No HTML conversion. Displayed via native PDF viewer.'
+      },
+      {
+        id: 'F1.7', title: 'Edit an existing Draft policy', priority: 'critical',
+        precondition: 'At least 1 Draft policy exists. Logged in as the policy author.',
+        steps: [
+          'Navigate to Author > Drafts & Pipeline',
+          'Find a Draft policy and click the Edit icon',
+          'Verify all previously saved data loads correctly in the wizard',
+          'Modify the policy name and content',
+          'Save the draft again',
+        ],
+        expected: 'Updated data saved. Modified date updated. No new version created (still draft).'
+      },
+      {
+        id: 'F1.8', title: 'Submit policy for review', priority: 'critical',
+        precondition: 'A Draft policy exists with at least 1 reviewer assigned in Step 6.',
+        steps: [
+          'Navigate to Author > Drafts & Pipeline',
+          'Find a Draft policy and click the Submit (Send) icon',
+          'Confirm the submission dialog',
+          'Verify status changes to "In Review"',
+          'Check email inbox of assigned reviewer(s)',
+          'Verify EXACTLY ONE email per reviewer (not duplicates)',
+          'Click the email CTA link and verify it opens the correct policy in review mode',
+        ],
+        expected: 'Status: "In Review". Each reviewer gets exactly 1 email. Email link opens PolicyDetails.aspx?policyId=X&mode=review for the correct policy. Document is converted to HTML (if Word/Office doc). Audit log entry created.'
+      },
+    ]
+  },
+  // ── F2: REVIEW PROCESS ──
+  {
+    id: 'f-review',
+    title: 'F2: Review Process',
+    subtitle: 'Test reviewer decisions and their effects on policy status',
+    tests: [
+      {
+        id: 'F2.1', title: 'Reviewer approves a policy', priority: 'critical',
+        precondition: 'A policy is "In Review" with you as an assigned reviewer. Open the review link from email.',
+        steps: [
+          'Click the review link from the email notification',
+          'Verify PolicyDetails opens in Review Mode (teal "Review Mode" banner visible)',
+          'Verify the correct policy content is displayed (not a different policy)',
+          'Read the policy content',
+          'In the review panel (right side), enter approval comments',
+          'Click "Approve"',
+          'Verify success dialog appears',
+        ],
+        expected: 'Reviewer status updated to "Approved" in PM_PolicyReviewers. If all reviewers approved: policy status changes to "Approved". Author receives "Approval Approved" email. Audit log entry created.'
+      },
+      {
+        id: 'F2.2', title: 'Reviewer requests changes', priority: 'critical',
+        precondition: 'A policy is "In Review" with you as an assigned reviewer.',
+        steps: [
+          'Open the policy in review mode',
+          'Enter detailed comments explaining what needs to change',
+          'Click "Request Changes"',
+          'Verify success dialog',
+        ],
+        expected: 'Policy status returns to "Draft". ALL reviewer statuses reset to "Pending". Author receives "Changes Requested" email with comments. Author can edit and resubmit.'
+      },
+      {
+        id: 'F2.3', title: 'Reviewer rejects a policy', priority: 'critical',
+        precondition: 'A policy is "In Review" with you as an assigned reviewer.',
+        steps: [
+          'Open the policy in review mode',
+          'Enter rejection reason in the comments field',
+          'Click "Reject"',
+          'Verify success dialog',
+        ],
+        expected: 'Policy status changes to "Rejected". Other pending reviewers cancelled. Author receives "Rejected" email with reason. Audit log entry with ComplianceRelevant flag.'
+      },
+      {
+        id: 'F2.4', title: 'Multiple reviewers - partial approval', priority: 'high',
+        precondition: 'A policy with 2+ reviewers, both "In Review".',
+        steps: [
+          'Login as Reviewer 1 and approve',
+          'Verify policy stays "In Review" (not all approved yet)',
+          'Login as Reviewer 2 and approve',
+          'Verify policy now moves to "Approved"',
+        ],
+        expected: 'Policy stays "In Review" until ALL reviewers approve. Only then does it move to "Approved".'
+      },
+      {
+        id: 'F2.5', title: 'Review mode shows correct policy content', priority: 'critical',
+        precondition: 'Submit 3 different policies for review. Each with different content.',
+        steps: [
+          'Open review link for Policy A - verify Policy A content shows',
+          'Open review link for Policy B - verify Policy B content shows (NOT Policy A)',
+          'Open review link for Policy C - verify Policy C content shows',
+          'Check that policy number, title, and category match in the header badges',
+        ],
+        expected: 'Each review link opens the CORRECT policy. No cross-contamination between policies.'
+      },
+      {
+        id: 'F2.6', title: 'Resubmit after changes requested', priority: 'high',
+        precondition: 'A policy that was returned to Draft after "Request Changes".',
+        steps: [
+          'Find the rejected/returned Draft in Drafts & Pipeline',
+          'Click Edit',
+          'Make the requested changes',
+          'Save and Submit for Review again',
+          'Verify reviewer gets a NEW review email',
+          'Verify previous review comments are cleared',
+        ],
+        expected: 'Policy goes back to "In Review". Fresh review cycle starts. Reviewer statuses all reset to "Pending".'
+      },
+    ]
+  },
+  // ── F3: APPROVAL PROCESS ──
+  {
+    id: 'f-approve',
+    title: 'F3: Approval Process',
+    subtitle: 'Test final approval decisions after all reviewers approve',
+    tests: [
+      {
+        id: 'F3.1', title: 'Approver approves a policy', priority: 'critical',
+        precondition: 'A policy has all reviewers approved (status "Approved" or "Pending Approval").',
+        steps: [
+          'Login as the assigned approver',
+          'Open the approval link from the email',
+          'Verify the policy content and reviewer feedback is visible',
+          'Enter approval comments',
+          'Click "Approve"',
+        ],
+        expected: 'Policy status: "Approved". Author receives approval notification with link to Dashboard for publishing. Audit log entry created.'
+      },
+      {
+        id: 'F3.2', title: 'Approver rejects a policy', priority: 'high',
+        precondition: 'A policy awaiting approval.',
+        steps: [
+          'Open the policy as approver',
+          'Enter rejection reason',
+          'Click "Reject"',
+        ],
+        expected: 'Policy returns to "Draft". Author receives rejection email. All reviewer statuses reset.'
+      },
+      {
+        id: 'F3.3', title: 'Manager approves via Manager Dashboard', priority: 'high',
+        precondition: 'A policy awaiting approval. Login as Manager.',
+        steps: [
+          'Navigate to Manager > Approvals tab',
+          'Find the pending policy',
+          'Click "Approve" button',
+          'Verify success message',
+        ],
+        expected: 'Policy approved via PolicyService. Single audit log entry (no duplicates). Author notified.'
+      },
+      {
+        id: 'F3.4', title: 'Same person as reviewer AND approver', priority: 'critical',
+        precondition: 'Create a policy where the same person is both reviewer and approver.',
+        steps: [
+          'Submit for review',
+          'Verify the person receives exactly ONE review email (not both review + approval)',
+          'Approve as reviewer',
+          'Now verify approval email arrives (only after review is complete)',
+          'Approve as approver',
+        ],
+        expected: 'Review and approval emails are separate steps, not simultaneous. Person gets review email first, approval email only after review completes.'
+      },
+      {
+        id: 'F3.5', title: 'Publish after approval', priority: 'critical',
+        precondition: 'A policy with status "Approved".',
+        steps: [
+          'Navigate to Author > Drafts & Pipeline',
+          'Find the Approved policy',
+          'Click the Publish icon',
+          'Confirm the publish dialog',
+          'Verify status changes to "Published"',
+          'Verify version number bumps (e.g., v0.1 -> v1.0)',
+          'Verify policy appears in Policy Hub for all users',
+        ],
+        expected: 'Status: "Published". Version bumped to next major. Acknowledgements created for target audience. Notification emails sent. Policy visible in Policy Hub.'
+      },
+    ]
+  },
+  // ── F4: PUBLISH & DISTRIBUTE ──
+  {
+    id: 'f-publish',
+    title: 'F4: Publish & Distribute',
+    subtitle: 'Test the publish flow and distribution to target audience',
+    tests: [
+      {
+        id: 'F4.1', title: 'Publish sends "Policy Published" emails', priority: 'critical',
+        precondition: 'An approved policy with target audience "All Employees".',
+        steps: [
+          'Publish the policy',
+          'Wait 5-10 minutes for Logic App email delivery',
+          'Check PM_NotificationQueue in SharePoint for queued items',
+          'Check email inbox of target users',
+        ],
+        expected: 'Each target user receives exactly ONE "Policy Published" email with CTA to read the policy.'
+      },
+      {
+        id: 'F4.2', title: 'Policy appears in My Policies after publish', priority: 'critical',
+        precondition: 'A policy just published to "All Employees".',
+        steps: [
+          'Login as a User (not Author/Manager)',
+          'Navigate to My Policies',
+          'Verify the newly published policy appears in the Pending tab',
+          'Verify status shows "Pending" or with due date badge',
+        ],
+        expected: 'Published policy appears in My Policies with correct title, category, and due date.'
+      },
+      {
+        id: 'F4.3', title: 'Policy appears in Policy Hub after publish', priority: 'high',
+        precondition: 'A policy just published.',
+        steps: [
+          'Navigate to Policy Hub',
+          'Verify the policy appears in the list/grid',
+          'Click on it and verify it opens in Browse mode (read-only, no acknowledgement flow)',
+        ],
+        expected: 'Policy visible in Hub with correct badges. Opens in browse mode (no wizard steps).'
+      },
+      {
+        id: 'F4.4', title: 'Targeted distribution (specific departments)', priority: 'high',
+        precondition: 'Create and publish a policy targeting only "IT" department.',
+        steps: [
+          'In Step 4 (Audience): Select "Targeted", choose department "IT"',
+          'Complete wizard and publish',
+          'Login as IT department user - verify policy appears in My Policies',
+          'Login as HR department user - verify policy does NOT appear',
+        ],
+        expected: 'Only IT users see the policy in My Policies. HR users do not.'
+      },
+      {
+        id: 'F4.5', title: 'Revise a published policy', priority: 'high',
+        precondition: 'A published policy exists.',
+        steps: [
+          'Navigate to Author > Drafts & Pipeline',
+          'Find the Published policy and click "Revise" icon',
+          'Verify a new Draft version is created',
+          'Verify the original remains Published',
+          'Edit the draft and resubmit for review',
+        ],
+        expected: 'New draft created with incremented minor version. Original stays published. Blue "Revision Mode" banner visible in wizard.'
+      },
+      {
+        id: 'F4.6', title: 'Retire a published policy', priority: 'medium',
+        precondition: 'A published policy with pending acknowledgements.',
+        steps: [
+          'Click "Retire" icon on the published policy',
+          'Enter retirement reason in the dialog',
+          'Confirm retirement',
+          'Verify status changes to "Retired"',
+          'Verify outstanding acknowledgements are cancelled',
+          'Check that affected users receive "Policy Retired" email',
+        ],
+        expected: 'Status: "Retired". Pending acks cancelled. Retirement reason in audit log.'
+      },
+    ]
+  },
+  // ── F5: READ & ACKNOWLEDGE ──
+  {
+    id: 'f-read',
+    title: 'F5: Read & Acknowledge',
+    subtitle: 'Test the complete reading flow from My Policies through to completion',
+    tests: [
+      {
+        id: 'F5.1', title: 'Open policy in HTML Reader from My Policies', priority: 'critical',
+        precondition: 'A published policy assigned to you. Login as User.',
+        steps: [
+          'Navigate to My Policies',
+          'Find the assigned policy in the list',
+          'Click the Eye icon (direct to reader)',
+          'Verify the HTML Reader opens with the correct policy content',
+          'Verify "My Policies" tab is highlighted in the nav (not Policy Hub)',
+          'Verify the header shows: policy title, Published badge, category, policy number, version',
+          'Verify the bottom bar shows "Step 1 of 3 - Read the policy document"',
+        ],
+        expected: 'Reader opens with correct policy. My Policies nav highlighted. Bottom bar shows step progress. No floating "Reading Progress" panel.'
+      },
+      {
+        id: 'F5.2', title: 'Info icon opens detail panel (not reader)', priority: 'high',
+        precondition: 'Same as above.',
+        steps: [
+          'Click the Info icon (circle-i) next to the Eye icon',
+          'Verify the detail panel expands inline (below the row)',
+          'Verify it shows policy details, buttons: "Read Policy", "Take Quiz"',
+          'Click "Read Policy" button in the panel',
+          'Verify the reader opens',
+        ],
+        expected: 'Info icon opens inline detail panel. Eye icon goes directly to reader. Both work independently.'
+      },
+      {
+        id: 'F5.3', title: 'Complete the reading step (scroll to bottom)', priority: 'critical',
+        precondition: 'Policy open in the HTML Reader (Step 1).',
+        steps: [
+          'Scroll through the document content',
+          'Scroll past 95% of the document',
+          'Verify the "I Have Read This Policy" button in the bottom bar becomes enabled',
+          'Click the button',
+          'Verify you advance to Step 2 (Quiz) or Step 3 (Acknowledge) depending on quiz requirement',
+        ],
+        expected: 'Button enables after 95% scroll. Clicking advances to next step. Read time tracked.'
+      },
+      {
+        id: 'F5.4', title: 'Complete quiz (if required)', priority: 'high',
+        precondition: 'Policy requires quiz. You are on Step 2 (Quiz).',
+        steps: [
+          'Answer each quiz question',
+          'First wrong answer: amber "try again" indicator',
+          'Second wrong answer: red indicator, correct answer revealed',
+          'Correct answer: green indicator',
+          'Complete all questions',
+          'Verify results screen shows score, pass/fail, and per-question review',
+          'Must score 80% or higher to proceed',
+        ],
+        expected: '2-attempt flow per question. Results screen with full review. 80% pass rate required.'
+      },
+      {
+        id: 'F5.5', title: 'Complete acknowledgement', priority: 'critical',
+        precondition: 'You are on the Acknowledge step (Step 3).',
+        steps: [
+          'Check all 3 legal agreement checkboxes',
+          'Enter your name in the signature field (minimum 3 characters)',
+          'Click "Submit Acknowledgement"',
+          'Verify the Complete step shows with receipt number',
+        ],
+        expected: 'Acknowledgement recorded. Receipt generated. AckStatus changes to "Acknowledged". Compliance percentage updates.'
+      },
+      {
+        id: 'F5.6', title: 'PDF viewer in reader', priority: 'high',
+        precondition: 'A published policy with a PDF document (not HTML).',
+        steps: [
+          'Open the PDF policy from My Policies',
+          'Verify PDF renders in the native browser PDF viewer',
+          'Verify the viewer extends to fill the space above the bottom bar (no large white gap)',
+          'Verify the Download button is available in the toolbar',
+          'Verify NO "Open Original" button is shown',
+        ],
+        expected: 'PDF displayed natively. Content area fills to footer. Download available. No Open Original.'
+      },
+      {
+        id: 'F5.7', title: 'Different policies show different content', priority: 'critical',
+        precondition: 'At least 3 published policies with different content.',
+        steps: [
+          'From My Policies, open Policy A - note the content',
+          'Go back, open Policy B - verify DIFFERENT content shows',
+          'Go back, open Policy C - verify DIFFERENT content shows',
+          'Verify policy number and title in the header match the content',
+        ],
+        expected: 'Each policy shows its own unique content. No hardcoded "Information Security Policy" or "404 NOT FOUND" errors.'
+      },
+    ]
+  },
+  // ── F6: EMAIL NOTIFICATIONS ──
+  {
+    id: 'f-email',
+    title: 'F6: Email Notifications',
+    subtitle: 'Verify email delivery, content, and deduplication',
+    tests: [
+      {
+        id: 'F6.1', title: 'Review Required email - correct recipient and link', priority: 'critical',
+        precondition: 'Submit a policy for review with 2 reviewers assigned.',
+        steps: [
+          'Submit the policy for review',
+          'Wait for emails (Logic App polls every 5 min)',
+          'Check Reviewer 1 inbox: exactly 1 "Review Required" email',
+          'Check Reviewer 2 inbox: exactly 1 "Review Required" email',
+          'Verify NO duplicate emails (not 2 or 3 of the same)',
+          'Click the CTA link in the email',
+          'Verify it opens the CORRECT policy (check policyId in URL)',
+          'Verify it opens in review mode (&mode=review)',
+        ],
+        expected: 'Exactly 1 email per reviewer. Correct policy. Review mode. No duplicates.'
+      },
+      {
+        id: 'F6.2', title: 'Approval Approved email to author', priority: 'high',
+        precondition: 'All reviewers approve a policy.',
+        steps: [
+          'Approve the policy as the final reviewer',
+          'Check the policy author\'s inbox',
+          'Verify "Approval Approved" email received',
+          'Verify CTA links to Author Dashboard',
+        ],
+        expected: 'Author gets 1 approval email. Link goes to PolicyAuthor.aspx (Dashboard).'
+      },
+      {
+        id: 'F6.3', title: 'Rejection email to author', priority: 'high',
+        precondition: 'A policy "In Review".',
+        steps: [
+          'Reject the policy as reviewer',
+          'Check author inbox',
+          'Verify "Approval Rejected" email with rejection reason',
+          'Verify CTA links to Policy Builder for editing',
+        ],
+        expected: 'Author gets rejection email with reason. Link goes to PolicyBuilder.aspx?editPolicyId=X.'
+      },
+      {
+        id: 'F6.4', title: 'Policy Published email to target audience', priority: 'critical',
+        precondition: 'Publish a policy targeting all employees.',
+        steps: [
+          'Publish the policy',
+          'Check PM_NotificationQueue list in SharePoint',
+          'Verify queue items have correct RecipientEmail, Subject, QueueStatus',
+          'Wait for Logic App delivery',
+          'Check user inbox for "Policy Published" email',
+        ],
+        expected: 'Queue items created with QueueStatus "Pending". After Logic App runs: status "Sent". User inbox has email.'
+      },
+      {
+        id: 'F6.5', title: 'Acknowledgement Complete email', priority: 'medium',
+        precondition: 'Complete a policy acknowledgement (read + quiz + ack).',
+        steps: [
+          'Complete the full acknowledgement flow',
+          'Check your inbox',
+          'Verify "Acknowledgement Complete" email with receipt details',
+        ],
+        expected: 'Confirmation email received with policy name, date, and receipt reference.'
+      },
+      {
+        id: 'F6.6', title: 'No empty-recipient emails in queue', priority: 'critical',
+        precondition: 'Several policies have been submitted/published.',
+        steps: [
+          'Open PM_NotificationQueue list in SharePoint',
+          'Filter for items where RecipientEmail is empty',
+          'Verify there are ZERO items with blank/missing RecipientEmail',
+        ],
+        expected: 'All queue items have valid email addresses. No empty recipients.'
+      },
+      {
+        id: 'F6.7', title: 'Email template renders correctly', priority: 'medium',
+        precondition: 'Any email notification received.',
+        steps: [
+          'Open any PolicyIQ email in Outlook',
+          'Verify branded header with teal gradient',
+          'Verify metadata rows (Policy Number, Category, etc.)',
+          'Verify CTA button is clickable',
+          'Verify footer with "First Digital - DWx Policy Manager"',
+        ],
+        expected: 'Professional branded email. All fields populated. CTA works. No broken HTML.'
+      },
+      {
+        id: 'F6.8', title: '3-day and 1-day reminder emails', priority: 'medium',
+        precondition: 'A published policy with ReadTimeframe "Day 3". Wait for due date to approach.',
+        steps: [
+          'Assign a policy with short due date',
+          'Verify 3-day reminder email arrives (3 days before due)',
+          'Verify 1-day reminder email arrives (1 day before due)',
+          'Verify overdue email arrives (after due date passes)',
+        ],
+        expected: 'Progressive escalation emails: 3-day (amber), 1-day (orange), overdue (red).'
+      },
+    ]
+  },
+  // ── P1: END-TO-END FLOW ──
+  {
+    id: 'p-e2e',
+    title: 'P1: End-to-End Flow',
+    subtitle: 'Complete lifecycle tests from creation to retirement',
+    tests: [
+      {
+        id: 'P1.1', title: 'Full lifecycle: Create > Review > Approve > Publish > Read > Acknowledge', priority: 'critical',
+        precondition: 'Author, Reviewer, Approver, and User accounts available.',
+        steps: [
+          '(Author) Create a new policy with all fields, upload a Word doc, assign reviewer + approver',
+          '(Author) Submit for review',
+          '(Reviewer) Open review email link, verify correct policy, approve with comments',
+          '(Approver) If separate from reviewer: open approval, approve',
+          '(Author) Publish the approved policy',
+          '(User) Navigate to My Policies, find the new policy',
+          '(User) Click Eye icon to open in reader, scroll through HTML content',
+          '(User) Complete quiz (if required), acknowledge with signature',
+          'Verify acknowledgement receipt',
+          'Verify compliance % increases on Manager dashboard',
+        ],
+        expected: 'Complete lifecycle works end-to-end. Each step produces the correct status transition, email, and audit trail.'
+      },
+      {
+        id: 'P1.2', title: 'Rejection and resubmit cycle', priority: 'high',
+        precondition: 'A draft policy with reviewer assigned.',
+        steps: [
+          '(Author) Submit for review',
+          '(Reviewer) Reject with reason "Content needs updating"',
+          '(Author) Verify rejection email received with reason',
+          '(Author) Edit the draft, make changes',
+          '(Author) Resubmit for review',
+          '(Reviewer) Verify new review email arrives',
+          '(Reviewer) Approve this time',
+        ],
+        expected: 'Full rejection-resubmit cycle works. Clean state on resubmit. No stale data.'
+      },
+      {
+        id: 'P1.3', title: 'Changes requested and resubmit cycle', priority: 'high',
+        precondition: 'A draft policy with 2 reviewers.',
+        steps: [
+          '(Author) Submit for review',
+          '(Reviewer 1) Approve',
+          '(Reviewer 2) Request Changes with comments',
+          'Verify policy returns to Draft',
+          'Verify ALL reviewer statuses reset to Pending (including Reviewer 1 who approved)',
+          '(Author) Edit and resubmit',
+          'Verify both reviewers get new review emails',
+        ],
+        expected: 'Changes requested resets ALL reviewers. Both must re-review.'
+      },
+      {
+        id: 'P1.4', title: 'Revision of published policy', priority: 'high',
+        precondition: 'A published policy with active acknowledgements.',
+        steps: [
+          '(Author) Click "Revise" on published policy',
+          'Verify new Draft version created, original stays Published',
+          'Edit the draft with changes',
+          'Submit for review, get approved, publish',
+          'Verify version number incremented (e.g., v1.0 -> v2.0)',
+          'Verify users get "Policy Updated" notification',
+        ],
+        expected: 'Revision creates new version. Seamless transition. Users notified of update.'
+      },
+      {
+        id: 'P1.5', title: 'Manager requests policy, author fulfils', priority: 'medium',
+        precondition: 'Login as Manager.',
+        steps: [
+          '(Manager) Navigate to Manager > Request Policy',
+          'Fill in request details and submit',
+          '(Author) Navigate to Author > Requests tab',
+          'Find the request and click "Accept & Start Drafting"',
+          'Verify wizard opens with pre-filled data from request',
+          'Complete and publish the policy',
+          'Verify Manager gets "Request Fulfilled" email',
+        ],
+        expected: 'Request-to-publish cycle works. Author gets pre-filled data. Manager notified on publish.'
+      },
+    ]
+  },
+  // ── P2: EDGE CASES ──
+  {
+    id: 'p-edge',
+    title: 'P2: Edge Cases',
+    subtitle: 'Boundary conditions and error handling',
+    tests: [
+      {
+        id: 'P2.1', title: 'Submit for review with no reviewers assigned', priority: 'high',
+        precondition: 'Create a draft policy without assigning any reviewers in Step 6.',
+        steps: [
+          'Try to submit for review from the pipeline',
+          'Verify appropriate error or warning message',
+        ],
+        expected: 'Warning dialog asking user to assign reviewers. OR policy submits as self-approved draft.'
+      },
+      {
+        id: 'P2.2', title: 'Concurrent reviewers - race condition', priority: 'medium',
+        precondition: 'A policy with 2 reviewers.',
+        steps: [
+          'Both reviewers open the policy at the same time',
+          'Reviewer 1 approves',
+          'Reviewer 2 (who still has the page open) also tries to approve',
+          'Verify no errors or duplicate records',
+        ],
+        expected: 'Both approvals recorded. No errors. Status correctly reflects all-approved.'
+      },
+      {
+        id: 'P2.3', title: 'Large document (25MB limit)', priority: 'medium',
+        precondition: 'A document file close to 25MB.',
+        steps: [
+          'Try to upload a file just under 25MB',
+          'Verify it uploads successfully',
+          'Try to upload a file over 25MB',
+          'Verify error message about size limit',
+        ],
+        expected: 'Under 25MB: success. Over 25MB: clear error message.'
+      },
+      {
+        id: 'P2.4', title: 'Policy with special characters in title', priority: 'medium',
+        precondition: 'None.',
+        steps: [
+          'Create a policy with special characters: "Test & Policy <Draft> (v2.0) #123"',
+          'Save and verify title displays correctly throughout the system',
+          'Submit for review - verify email subject handles special chars',
+        ],
+        expected: 'Special characters handled safely (HTML-escaped in emails, displayed correctly in UI).'
+      },
+      {
+        id: 'P2.5', title: 'Delete a draft policy', priority: 'medium',
+        precondition: 'A Draft policy exists.',
+        steps: [
+          'Click Delete icon on a Draft policy',
+          'Confirm the deletion dialog',
+          'Verify policy is removed from the pipeline',
+          'Verify audit log entry created',
+        ],
+        expected: 'Policy deleted. Removed from all views. Audit trail preserved.'
+      },
+      {
+        id: 'P2.6', title: 'Browser refresh during wizard', priority: 'medium',
+        precondition: 'Halfway through the 8-step wizard.',
+        steps: [
+          'Fill in Steps 1-4 of the wizard',
+          'Refresh the browser (F5)',
+          'Verify what happens - does data persist?',
+        ],
+        expected: 'If policy was saved as draft, data reloads on refresh. If not saved, data is lost (expected behaviour).'
+      },
+    ]
+  },
+  // ── P3: REGRESSION ──
+  {
+    id: 'p-regression',
+    title: 'P3: Regression Tests',
+    subtitle: 'Verify previously fixed issues remain fixed',
+    tests: [
+      {
+        id: 'P3.1', title: 'REGRESSION: No triplicate emails on submit', priority: 'critical',
+        precondition: 'Submit any policy for review.',
+        steps: [
+          'Submit a policy for review',
+          'Check PM_NotificationQueue list in SharePoint',
+          'Count items for this policy + review-required type',
+          'Verify exactly 1 item per reviewer',
+          'Check reviewer inbox - exactly 1 email',
+        ],
+        expected: 'Exactly 1 notification per reviewer. No duplicates. Previously broken in PolicyAuthorView (fixed Session 25).'
+      },
+      {
+        id: 'P3.2', title: 'REGRESSION: No "Information Security Policy" on every page', priority: 'critical',
+        precondition: 'Open any policy from My Policies.',
+        steps: [
+          'Open Policy A from My Policies',
+          'Verify it shows Policy A content (NOT "Information Security Policy")',
+          'Verify no "404 NOT FOUND" in the content area',
+          'Open Policy B - verify different content',
+        ],
+        expected: 'Each policy shows its own content. Mock data fallback removed in Session 25.'
+      },
+      {
+        id: 'P3.3', title: 'REGRESSION: Role changes take effect immediately', priority: 'critical',
+        precondition: 'Admin access to change roles in User Directory.',
+        steps: [
+          'Change a user\'s role from Author to User in Admin Centre > User Directory',
+          'Have the user log out, clear cache, close browser, reopen',
+          'Verify user sees ONLY: My Policies, Policy Hub, Search, Help',
+          'Verify NO Author dropdown visible',
+          'Verify NO Manager dropdown visible',
+          'Verify NO settings cog visible',
+        ],
+        expected: 'Role change takes effect immediately. PM_UserProfiles is source of truth (fixed Session 25).'
+      },
+      {
+        id: 'P3.4', title: 'REGRESSION: Settings cog hidden for non-admins', priority: 'high',
+        precondition: 'Login as User, Author, and Manager accounts.',
+        steps: [
+          'As User: verify NO settings cog icon in header',
+          'As Author: verify NO settings cog icon',
+          'As Manager: verify NO settings cog icon',
+          'As Admin: verify settings cog IS visible',
+        ],
+        expected: 'Only Admin sees settings cog. Fixed from Manager+ to Admin-only in Session 25.'
+      },
+      {
+        id: 'P3.5', title: 'REGRESSION: Email review link opens correct policy', priority: 'critical',
+        precondition: 'Submit 2 different policies for review.',
+        steps: [
+          'Submit Policy A for review',
+          'Submit Policy B for review',
+          'Open review email for Policy A - verify URL has correct policyId',
+          'Open review email for Policy B - verify URL has correct policyId',
+          'Verify content matches the clicked policy',
+        ],
+        expected: 'Each email link opens the correct policy. Not always the same one.'
+      },
+      {
+        id: 'P3.6', title: 'REGRESSION: No double audit entries from Manager dashboard', priority: 'medium',
+        precondition: 'Approve a policy from Manager Dashboard.',
+        steps: [
+          'Approve a policy from Manager > Approvals',
+          'Check PM_PolicyAuditLog in SharePoint',
+          'Verify only 1 audit entry for the approval action (not 2)',
+        ],
+        expected: 'Single audit entry per action. Duplicate removed in Session 25.'
+      },
+    ]
+  },
+  // ── R1: USER ROLE ──
+  {
+    id: 'r-user',
+    title: 'R1: User Role Tests',
+    subtitle: 'Verify User (Employee) sees only what they should',
+    tests: [
+      {
+        id: 'R1.1', title: 'User navigation - only 4 items visible', priority: 'critical',
+        precondition: 'Login as a user with PMRole = "User" in PM_UserProfiles.',
+        steps: [
+          'Verify nav shows: My Policies, Policy Hub',
+          'Verify Search icon visible in header',
+          'Verify Help icon visible in header',
+          'Verify NO Author dropdown',
+          'Verify NO Manager dropdown',
+          'Verify NO Settings cog',
+        ],
+        expected: 'Only My Policies, Policy Hub, Search, Help visible. Nothing else.'
+      },
+      {
+        id: 'R1.2', title: 'User can read and acknowledge policies', priority: 'critical',
+        precondition: 'User with assigned policies.',
+        steps: [
+          'Open My Policies',
+          'Click Eye icon to read a policy',
+          'Complete the read > quiz > acknowledge flow',
+          'Verify acknowledgement receipt',
+        ],
+        expected: 'Full acknowledgement flow works for User role.'
+      },
+      {
+        id: 'R1.3', title: 'User can browse Policy Hub', priority: 'high',
+        precondition: 'Published policies exist.',
+        steps: [
+          'Navigate to Policy Hub',
+          'Browse policies, click on one',
+          'Verify it opens in browse mode (read-only)',
+          'Verify NO edit/approve/publish actions available',
+        ],
+        expected: 'Read-only browse. No write actions.'
+      },
+      {
+        id: 'R1.4', title: 'User cannot access admin pages by URL', priority: 'high',
+        precondition: 'Logged in as User.',
+        steps: [
+          'Try navigating directly to PolicyAdmin.aspx',
+          'Try navigating to PolicyBuilder.aspx',
+          'Try navigating to PolicyAnalytics.aspx',
+        ],
+        expected: 'Pages load but show limited/no data. Admin controls hidden.'
+      },
+      {
+        id: 'R1.5', title: 'User can search and use help', priority: 'medium',
+        precondition: 'Logged in as User.',
+        steps: [
+          'Click Search icon or navigate to Search page',
+          'Search for a known policy by name',
+          'Navigate to Help page',
+          'Verify help content loads (articles, FAQs)',
+        ],
+        expected: 'Search returns published policies. Help centre accessible.'
+      },
+    ]
+  },
+  // ── R2: AUTHOR ROLE ──
+  {
+    id: 'r-author',
+    title: 'R2: Author Role Tests',
+    subtitle: 'Verify Author sees creation tools but NOT manager functions',
+    tests: [
+      {
+        id: 'R2.1', title: 'Author navigation - Author dropdown visible, Manager hidden', priority: 'critical',
+        precondition: 'Login as user with PMRole = "Author".',
+        steps: [
+          'Verify Author dropdown visible with: New Policy, Drafts & Pipeline, Policy Packs, Quiz Builder, Reports, Bulk Upload',
+          'Verify NO Manager dropdown',
+          'Verify NO Settings cog',
+        ],
+        expected: 'Author sees all Author items. Cannot see Manager items or settings.'
+      },
+      {
+        id: 'R2.2', title: 'Author can create and manage policies', priority: 'critical',
+        precondition: 'Logged in as Author.',
+        steps: [
+          'Navigate to New Policy - verify wizard opens',
+          'Navigate to Drafts & Pipeline - verify policy list loads',
+          'Create a draft, verify it appears in pipeline',
+          'Edit the draft, submit for review',
+        ],
+        expected: 'Full authoring workflow available.'
+      },
+      {
+        id: 'R2.3', title: 'Author can access Quiz Builder', priority: 'high',
+        precondition: 'Logged in as Author.',
+        steps: [
+          'Navigate to Author > Quiz Builder',
+          'Verify quiz list loads',
+          'Create a new quiz',
+          'Add questions (manual + AI generate if configured)',
+        ],
+        expected: 'Quiz Builder fully functional for Author role.'
+      },
+      {
+        id: 'R2.4', title: 'Author can view reports', priority: 'medium',
+        precondition: 'Logged in as Author with published policies.',
+        steps: [
+          'Navigate to Author > Reports',
+          'Verify Overview, Acknowledgements, Lifecycle, Review Schedule, Activity tabs',
+        ],
+        expected: 'Author reports load with real data.'
+      },
+      {
+        id: 'R2.5', title: 'Author CANNOT see Manager items', priority: 'critical',
+        precondition: 'Logged in as Author.',
+        steps: [
+          'Verify NO Manager dropdown in nav',
+          'Verify NO Dashboard, Approvals, Distribution, Analytics links',
+          'Try navigating to PolicyManagerView.aspx directly',
+          'Try navigating to PolicyAnalytics.aspx directly',
+        ],
+        expected: 'Manager items hidden. Direct URL access shows limited/no data.'
+      },
+      {
+        id: 'R2.6', title: 'Author can use bulk upload', priority: 'medium',
+        precondition: 'Logged in as Author. Have multiple files ready.',
+        steps: [
+          'Navigate to Author > Bulk Upload',
+          'Upload 3+ files via drag-and-drop',
+          'Verify file metadata extraction',
+          'Complete the 4-step wizard',
+        ],
+        expected: 'Bulk upload creates draft policies for each file.'
+      },
+    ]
+  },
+  // ── R3: MANAGER ROLE ──
+  {
+    id: 'r-manager',
+    title: 'R3: Manager Role Tests',
+    subtitle: 'Verify Manager sees oversight tools but NOT author creation tools',
+    tests: [
+      {
+        id: 'R3.1', title: 'Manager navigation - Manager dropdown visible, Author hidden', priority: 'critical',
+        precondition: 'Login as user with PMRole = "Manager".',
+        steps: [
+          'Verify Manager dropdown visible with: Dashboard, Approvals, Distribution, Team Compliance, Delegations, Review Cycles, Reports, Analytics, Request Policy',
+          'Verify NO Author dropdown',
+          'Verify NO Settings cog',
+        ],
+        expected: 'Manager sees all Manager items. Cannot see Author items or settings.'
+      },
+      {
+        id: 'R3.2', title: 'Manager Dashboard KPIs', priority: 'high',
+        precondition: 'Logged in as Manager. Policies assigned to team members.',
+        steps: [
+          'Navigate to Manager > Dashboard',
+          'Verify KPI cards: Total, Acknowledged, Pending, Overdue',
+          'Click a KPI card - verify it navigates to the relevant tab',
+        ],
+        expected: 'Dashboard shows real data. Cards are clickable.'
+      },
+      {
+        id: 'R3.3', title: 'Manager can approve policies', priority: 'critical',
+        precondition: 'A policy pending approval.',
+        steps: [
+          'Navigate to Manager > Approvals',
+          'Find the pending policy',
+          'Approve or reject it',
+          'Verify status update and notification',
+        ],
+        expected: 'Approval works from Manager dashboard.'
+      },
+      {
+        id: 'R3.4', title: 'Manager can request a new policy', priority: 'high',
+        precondition: 'Logged in as Manager.',
+        steps: [
+          'Navigate to Manager > Request Policy',
+          'Fill in the request form',
+          'Submit the request',
+          'Verify it appears in Author > Requests tab',
+        ],
+        expected: 'Request created and visible to authors.'
+      },
+      {
+        id: 'R3.5', title: 'Manager CANNOT see Author items', priority: 'critical',
+        precondition: 'Logged in as Manager.',
+        steps: [
+          'Verify NO Author dropdown in nav',
+          'Verify NO New Policy, Drafts & Pipeline, Quiz Builder links',
+          'Try navigating to PolicyBuilder.aspx directly',
+          'Try navigating to QuizBuilder.aspx directly',
+        ],
+        expected: 'Author items hidden. Direct URL access shows limited/no data.'
+      },
+      {
+        id: 'R3.6', title: 'Manager can view analytics', priority: 'medium',
+        precondition: 'Logged in as Manager.',
+        steps: [
+          'Navigate to Manager > Analytics',
+          'Verify 6 tabs load: Executive, Policy Metrics, Acknowledgements, SLA, Compliance, Audit',
+          'Click through each tab',
+        ],
+        expected: 'Analytics dashboard loads with real data across all tabs.'
+      },
+    ]
+  },
+  // ── R4: ADMIN ROLE ──
+  {
+    id: 'r-admin',
+    title: 'R4: Admin Role Tests',
+    subtitle: 'Verify Admin has full access including settings',
+    tests: [
+      {
+        id: 'R4.1', title: 'Admin navigation - everything visible', priority: 'critical',
+        precondition: 'Login as user with PMRole = "Admin".',
+        steps: [
+          'Verify Author dropdown visible with all items',
+          'Verify Manager dropdown visible with all items',
+          'Verify Settings cog visible in header',
+          'Verify Secure Policies dropdown (if configured)',
+        ],
+        expected: 'Admin sees ALL nav items including settings cog.'
+      },
+      {
+        id: 'R4.2', title: 'Admin Centre accessible', priority: 'critical',
+        precondition: 'Logged in as Admin.',
+        steps: [
+          'Click Settings cog',
+          'Verify Admin Centre loads with sidebar',
+          'Navigate through sections: Templates, Metadata, Workflows, Compliance, Notifications, etc.',
+          'Verify User Directory shows user list with role management',
+        ],
+        expected: 'Full Admin Centre access with all 21+ sections.'
+      },
+      {
+        id: 'R4.3', title: 'Admin can change user roles', priority: 'critical',
+        precondition: 'Logged in as Admin.',
+        steps: [
+          'Navigate to Admin Centre > User Directory',
+          'Find a user and click Edit',
+          'Change their role (e.g., User to Author)',
+          'Save the change',
+          'Verify PM_UserProfiles list is updated',
+          'Have the user refresh their browser',
+          'Verify the user now sees the new role\'s nav items',
+        ],
+        expected: 'Role change persists in PM_UserProfiles. Takes effect on user\'s next page load.'
+      },
+      {
+        id: 'R4.4', title: 'Admin can configure notification settings', priority: 'medium',
+        precondition: 'Logged in as Admin.',
+        steps: [
+          'Navigate to Admin Centre > Notifications',
+          'Toggle notification settings on/off',
+          'Save changes',
+          'Verify settings persist in PM_Configuration',
+        ],
+        expected: 'Notification settings saved and applied to future notifications.'
+      },
+      {
+        id: 'R4.5', title: 'Admin can access Event Viewer', priority: 'medium',
+        precondition: 'Logged in as Admin.',
+        steps: [
+          'Navigate to Event Viewer',
+          'Verify Event Stream tab shows recent events',
+          'Check System Health tab',
+          'Run Troubleshooter wizard',
+        ],
+        expected: 'Event Viewer loads with diagnostic data. Admin-only access enforced.'
+      },
+    ]
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════
+// APP LOGIC
+// ═══════════════════════════════════════════════════════════════
+
+const STORAGE_KEY = 'policyiq_qa_results';
+
+let results = {};
+
+function loadResults() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) results = JSON.parse(saved);
+  } catch { results = {}; }
+}
+
+function saveResults() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(results));
+  document.getElementById('last-saved').textContent = 'Saved ' + new Date().toLocaleTimeString();
+  updateDashboard();
+}
+
+function setTestStatus(testId, status) {
+  if (!results[testId]) results[testId] = {};
+  results[testId].status = results[testId].status === status ? '' : status; // toggle
+  saveResults();
+  renderTestCase(testId);
+}
+
+function setTestNotes(testId, notes) {
+  if (!results[testId]) results[testId] = {};
+  results[testId].notes = notes;
+  saveResults();
+}
+
+function toggleStep(testId, stepIdx) {
+  if (!results[testId]) results[testId] = {};
+  if (!results[testId].steps) results[testId].steps = {};
+  results[testId].steps[stepIdx] = !results[testId].steps[stepIdx];
+  saveResults();
+}
+
+function toggleTest(testId) {
+  const el = document.querySelector(`[data-test-id="${testId}"]`);
+  if (el) el.classList.toggle('expanded');
+}
+
+function renderTestCase(testId) {
+  const el = document.querySelector(`[data-test-id="${testId}"]`);
+  if (!el) return;
+  const r = results[testId] || {};
+  el.className = 'test-case' + (el.classList.contains('expanded') ? ' expanded' : '') +
+    (r.status === 'pass' ? ' passed' : r.status === 'fail' ? ' failed' : r.status === 'block' ? ' blocked' : r.status === 'skip' ? ' skipped' : '');
+
+  // Update status buttons
+  ['pass', 'fail', 'block', 'skip'].forEach(s => {
+    const btn = el.querySelector(`.test-status-btn[data-status="${s}"]`);
+    if (btn) {
+      btn.className = 'test-status-btn' + (r.status === s ? ` ${s}` : '');
+    }
+  });
+
+  // Update step checkboxes
+  el.querySelectorAll('.step-check').forEach(cb => {
+    const idx = cb.dataset.step;
+    cb.className = 'step-check' + (r.steps && r.steps[idx] ? ' checked' : '');
+  });
+}
+
+function updateDashboard() {
+  let total = 0, passed = 0, failed = 0, blocked = 0;
+  testSections.forEach(section => {
+    let sectionDone = 0;
+    section.tests.forEach(t => {
+      total++;
+      const r = results[t.id] || {};
+      if (r.status === 'pass') { passed++; sectionDone++; }
+      else if (r.status === 'fail') { failed++; sectionDone++; }
+      else if (r.status === 'block') { blocked++; sectionDone++; }
+      else if (r.status === 'skip') { sectionDone++; }
+    });
+    const badge = document.getElementById(`badge-${section.id}`);
+    if (badge) badge.textContent = `${sectionDone}/${section.tests.length}`;
+  });
+
+  document.getElementById('total-tests').textContent = total;
+  document.getElementById('total-passed').textContent = passed;
+  document.getElementById('total-failed').textContent = failed;
+  document.getElementById('total-blocked').textContent = blocked;
+
+  const done = passed + failed + blocked;
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-label').textContent = pct + '% complete';
+  document.getElementById('progress-count').textContent = `${done} of ${total} tests`;
+  document.getElementById('overall-status').textContent = `${done} / ${total} tests completed`;
+}
+
+function renderSections() {
+  const container = document.getElementById('test-sections-container');
+  testSections.forEach(section => {
+    const div = document.createElement('div');
+    div.className = 'section';
+    div.id = `section-${section.id}`;
+
+    let html = `<div class="section-title">${section.title}</div>`;
+    html += `<div class="section-subtitle">${section.subtitle}</div>`;
+
+    html += `<div class="filter-bar">
+      <button class="filter-btn active" onclick="filterTests('${section.id}','all',this)">All</button>
+      <button class="filter-btn" onclick="filterTests('${section.id}','critical',this)">Critical</button>
+      <button class="filter-btn" onclick="filterTests('${section.id}','high',this)">High</button>
+      <button class="filter-btn" onclick="filterTests('${section.id}','untested',this)">Untested</button>
+      <button class="filter-btn" onclick="filterTests('${section.id}','failed',this)">Failed</button>
+    </div>`;
+
+    section.tests.forEach(test => {
+      const r = results[test.id] || {};
+      html += `<div class="test-case${r.status === 'pass' ? ' passed' : r.status === 'fail' ? ' failed' : r.status === 'block' ? ' blocked' : ''}" data-test-id="${test.id}" data-priority="${test.priority}">
+        <div class="test-header" onclick="toggleTest('${test.id}')">
+          <span class="test-id">${test.id}</span>
+          <span class="test-title">${test.title}</span>
+          <span class="test-priority ${test.priority}">${test.priority}</span>
+          <button class="test-status-btn${r.status==='pass'?' pass':''}" data-status="pass" onclick="event.stopPropagation();setTestStatus('${test.id}','pass')">Pass</button>
+          <button class="test-status-btn${r.status==='fail'?' fail':''}" data-status="fail" onclick="event.stopPropagation();setTestStatus('${test.id}','fail')">Fail</button>
+          <button class="test-status-btn${r.status==='block'?' block':''}" data-status="block" onclick="event.stopPropagation();setTestStatus('${test.id}','block')">Block</button>
+          <button class="test-status-btn${r.status==='skip'?' skip':''}" data-status="skip" onclick="event.stopPropagation();setTestStatus('${test.id}','skip')">Skip</button>
+        </div>
+        <div class="test-body">
+          ${test.precondition ? `<div class="precondition"><strong>Precondition</strong>${test.precondition}</div>` : ''}
+          <ol class="test-steps">
+            ${test.steps.map((step, i) => `<li>
+              <div class="step-check${r.steps && r.steps[i] ? ' checked' : ''}" data-step="${i}" onclick="toggleStep('${test.id}',${i})"></div>
+              <span>${step}</span>
+            </li>`).join('')}
+          </ol>
+          <div class="expected"><strong>Expected Result</strong>${test.expected}</div>
+          <textarea class="notes-input" placeholder="Notes / issues found..." onchange="setTestNotes('${test.id}',this.value)">${r.notes || ''}</textarea>
+        </div>
+      </div>`;
+    });
+
+    div.innerHTML = html;
+    container.appendChild(div);
+  });
+}
+
+function filterTests(sectionId, filter, btn) {
+  const section = document.getElementById(`section-${sectionId}`);
+  section.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  section.querySelectorAll('.test-case').forEach(tc => {
+    const testId = tc.dataset.testId;
+    const priority = tc.dataset.priority;
+    const r = results[testId] || {};
+    let show = true;
+    if (filter === 'critical') show = priority === 'critical';
+    else if (filter === 'high') show = priority === 'high' || priority === 'critical';
+    else if (filter === 'untested') show = !r.status;
+    else if (filter === 'failed') show = r.status === 'fail' || r.status === 'block';
+    tc.style.display = show ? '' : 'none';
+  });
+}
+
+// ── Navigation ──
+document.querySelectorAll('.sidebar-item').forEach(item => {
+  item.addEventListener('click', () => {
+    const sectionId = item.dataset.section;
+    if (!sectionId) return;
+    document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+    item.classList.add('active');
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    const target = document.getElementById(`section-${sectionId}`);
+    if (target) target.classList.add('active');
+  });
+});
+
+// ── Actions ──
+function expandAll() {
+  document.querySelectorAll('.test-case').forEach(tc => tc.classList.add('expanded'));
+}
+
+function collapseAll() {
+  document.querySelectorAll('.test-case').forEach(tc => tc.classList.remove('expanded'));
+}
+
+function resetAll() {
+  if (confirm('Reset ALL test results? This cannot be undone.')) {
+    results = {};
+    localStorage.removeItem(STORAGE_KEY);
+    location.reload();
+  }
+}
+
+function exportResults() {
+  let csv = 'Test ID,Title,Priority,Status,Notes\n';
+  testSections.forEach(section => {
+    section.tests.forEach(test => {
+      const r = results[test.id] || {};
+      csv += `"${test.id}","${test.title}","${test.priority}","${r.status || 'Not Tested'}","${(r.notes || '').replace(/"/g, '""')}"\n`;
+    });
+  });
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `PolicyIQ-QA-Results-${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── Init ──
+loadResults();
+renderSections();
+updateDashboard();
+</script>
+
+</body>
+</html>

@@ -44,6 +44,14 @@ Do NOT skip step 2 and jump straight to implementation. The user must confirm un
 - **Package ID**: `12538121-8a6b-4e41-8bc7-17f252d5c36e`
 - **SharePoint Site**: https://mf7m.sharepoint.com/sites/PolicyManager
 
+### Source Control (as of 22 Apr 2026)
+
+- **Repository**: Azure DevOps only — `https://dev.azure.com/gfinberg/DWx/_git/dwx-policy-manager`
+- **Main branch**: `master`
+- **GitHub mirror retired** on 22 Apr 2026. All historical session notes below that reference "pushed to ADO + GitHub" are accurate for the time they were written. From 22 Apr 2026 onwards, all pushes go to ADO only.
+- **Branch policy**: Direct pushes to `master` require owner approval via PR. QA and contributors work on `qa/*` branches and open PRs.
+- **Per-repo access**: Scoped via Organization-level "Project-Scoped Users" group plus explicit repo-level permissions on `dwx-policy-manager` (see `CLAUDE.qa.md` for QA workflow guardrails).
+
 ---
 
 ## Technology Stack

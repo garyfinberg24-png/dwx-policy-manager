@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "description": "Shared Claude Code settings for the Policy Manager repo. Blocks production-affecting commands unless explicitly approved by the repo owner. Personal overrides belong in .claude/settings.local.json (gitignored).",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PROJECT_DIR}/.claude/hooks/guard-production.sh\""
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "deny": [
+      "Bash(gulp package-solution --ship*)",
+      "Bash(npm run ship*)",
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git push --no-verify*)",
+      "Bash(git commit*--no-verify*)",
+      "Bash(git reset --hard origin*)",
+      "Bash(git config --global*)",
+      "Bash(*Deploy-AllPolicyLists.ps1*)",
+      "Bash(*Deploy-SampleData.ps1*)",
+      "Bash(*Seed-ApprovalAndNotificationData*)",
+      "Bash(*Create-PolicyManagementLists*)",
+      "Bash(*Provision-SharePointPages*)",
+      "Bash(*scripts/policy-management/*.ps1*)",
+      "Bash(*scripts\\policy-management\\*.ps1*)",
+      "Bash(az deployment group create*)",
+      "Bash(az deployment sub create*)",
+      "Bash(az functionapp deployment*)",
+      "Bash(az functionapp create*)",
+      "Bash(az logic*)",
+      "Bash(az keyvault*set*)",
+      "Bash(*deploy.ps1*)"
+    ]
+  }
+}

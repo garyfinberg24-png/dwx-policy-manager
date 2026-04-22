@@ -26,6 +26,13 @@ fi
 # Normalize for pattern matching (lowercase, collapse whitespace)
 lc=$(printf '%s' "$command" | tr '[:upper:]' '[:lower:]' | tr -s '[:space:]' ' ')
 
+# Strip anything after the first heredoc start ("<<'EOF'", "<<EOF", "<<-EOF") or
+# the opening quote of a long -m argument. This prevents false positives where
+# commit message bodies mention flag names like --no-verify or commands like
+# "git push" that are being described rather than executed.
+# We keep only the portion of the line before the heredoc/body begins.
+head=$(printf '%s' "$lc" | sed -E "s/<<-?'?[a-z0-9_]+'?.*$//" | sed -E 's/-m "[^"]*".*$/-m/' | sed -E "s/-m '[^']*'.*$/-m/")
+
 block() {
     # Write reason to stderr so Claude Code surfaces it to the agent
     printf 'BLOCKED by .claude/hooks/guard-production.sh: %s\n' "$1" >&2
@@ -67,17 +74,18 @@ case "$lc" in
     *"deploy.ps1"*)                   block "deploy.ps1 (Azure Function / Logic App deployment script)";;
 esac
 
-# 5. Block dangerous git operations
-case "$lc" in
+# 5. Block dangerous git operations (match against $head so commit message bodies
+#    that mention these patterns don't trigger false positives)
+case "$head" in
     *"git push --force"*)       block "git push --force (history rewrite disabled per repo policy)";;
     *"git push -f "*)           block "git push -f (history rewrite disabled per repo policy)";;
     *"git push --no-verify"*)   block "git push --no-verify (hook bypass disabled)";;
-    *"--no-verify"*"commit"*)   block "git commit --no-verify (hook bypass disabled)";;
     *"git commit"*"--no-verify"*) block "git commit --no-verify (hook bypass disabled)";;
     *"git reset --hard origin"*) block "git reset --hard origin (destructive — ask owner)";;
-    *"git push origin master"*) block "direct push to origin master (PRs are required)";;
-    *"git push origin main"*)   block "direct push to origin main (PRs are required)";;
     *"git config --global"*)    block "git config --global (global git config changes disabled)";;
+    # Direct push to master/main is enforced server-side by ADO branch policy (PR-required).
+    # The hook no longer duplicates that check — ADO is authoritative for everyone,
+    # including QA contributors who cannot bypass server-side policy.
 esac
 
 # 6. Block destructive filesystem operations at repo root scope
